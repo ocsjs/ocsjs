@@ -1,0 +1,42 @@
+
+#skdiv{
+
+    position: fixed;
+    z-index: 999999999;
+    background:#F5F5F5;
+    height: auto;
+    width: 20%;
+    padding: 10px;
+    top: 300px;
+    right: 24%;
+    border:1px solid #000;
+    border-radius:5px;
+    text-align: center;
+
+}
+
+button{
+
+background: lightblue;
+font-weight: bold;
+
+}
+
+#rate_txt{
+	
+	float:left;
+	margin-top:10px;
+	width:80%;
+	text-align:left;
+	
+}
+
+#startplay{
+	margin-top:10px
+	
+}
+
+#b1{
+	display: block;
+	
+}
