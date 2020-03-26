@@ -18,7 +18,7 @@ if($('.topic-item').length!=0){
 function drawWindow(){//绘制窗口
 //加载css文件
 $('head').append('<link href="https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/main.css?t='+new Date().getTime()+'" rel="stylesheet" type="text/css" />');
-
+ 
 //下面是标签拼接
 $("body").append("<div id='skdiv'></div>");
 $("#skdiv").html("<p ><span style='font-weight:bold;    font-size: large;'>智慧树刷课脚本</span>（可用鼠标拖动）<p><p>最后更新时间：2020/3/6/16:50</p><div id='content' style='   border-top: 2px solid;'></div>");
