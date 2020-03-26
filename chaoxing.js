@@ -14,7 +14,7 @@ var isplay=true;//是否播放
 
 drawWindow();
 
-
+ 
 function drawWindow(){//绘制窗口
 //加载css文件
 $('head').append('<link href="https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/main.css?t='+new Date().getTime()+'" rel="stylesheet" type="text/css" />');
