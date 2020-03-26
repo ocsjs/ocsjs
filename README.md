@@ -1,8 +1,8 @@
 # OnlineCourseScript
 ## 大学生网课刷课脚本，不定期更新！目前支持：超星学习通，智慧树
 
-<img src="/src/智慧树logo.png" />
-<img src="/src/超星logo.jpg" />
+<img src="/src/智慧树logo.png" width='200px' />
+<img src="/src/超星logo.jpg" width='200px' />
 
 所有脚本均由本人制作，转载请注明出处，禁止商业用途
 ****
