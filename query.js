@@ -20,7 +20,7 @@ $.ajax({
         question:$('#myquestion').val().replace(/\s*/g,"")//题目
     },
     dataType:"json",
-    success:function(data){
+    success:function(data){ 
         console.log(data);
         $('#myanswer').text("答案："+data.answer);
         $('#myquestion2').text("题目："+data.realquestion);
