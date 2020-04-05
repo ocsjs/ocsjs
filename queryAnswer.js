@@ -22,7 +22,7 @@ $.ajax({
     success:function(data){
         console.log(data);
         $('#myanswer').text("答案："+data.answer);
-        $('#myquestion2').text("题目："+data.realquestion);
+        $('#myquestion2').text("题目："+data.realquestion); 
         $("#zzcx").text("");
     },
 });
