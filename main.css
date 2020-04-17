@@ -1,7 +1,7 @@
 
 #skdiv{
 
-    position: fixed;
+    position: absolute;
     z-index: 999999999;
     background:#F5F5F5;
     height: auto;
