@@ -16,7 +16,7 @@ var isplay=true;//是否播放
 
 //多视频播放值：
 var video_length=0;//视频数量
-var now_page_video_index=0;//当有多个视频的时候，当前视频的索引
+var now_page_video_index=0;//当有多个视频的时候， 当前视频的索引
 
 var set_video_index=0;//自己可以设置的自定义视频索引
 
