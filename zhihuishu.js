@@ -24,7 +24,7 @@ $("body").append("<div id='skdiv'></div>");
 $("#skdiv").html("<p ><span style='font-weight:bold;    font-size: large;'>智慧树刷课脚本</span>（可用鼠标拖动）<p><p>最后更新时间：2020/3/6/16:50</p><div id='content' style='   border-top: 2px solid;'></div>");
 $('#content').html('<div ><p  id="rate_txt" >播放速度：默认1.5倍速</p><button id="startplay" onclick="start()">点击开始播放</button>');
 $('#content').html($('#content').html()+"<div style='margin-top:10px'><p style='font-weight:bold'>当前进度:&nbsp;&nbsp;<span id='progress'>0%</span></p><hr></hr><p  id='cp'>当前章节：</p><p id='np'>下一章节：</p></div>");
-$('#content').html('<hr></hr><div><p  class="skp" style="color:red;">3块钱一门课！全网最低！</p><p  class="skp">稳定代看，包答题，包考试，95分以上</p><p id="klds"  class="skp"  style="color:#00BFFF;font-weight:bold;    cursor: pointer;">→ KL代刷网 ←</p></div><hr></hr>'+$('#content').html());
+
 
 dragPanelMove("#skdiv","#skdiv");
 //跳转到代刷网
