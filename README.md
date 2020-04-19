@@ -25,4 +25,5 @@ v1.1——2020/4/5: 更新可以查答案的脚本
 ****
 
 ## 使用教程：
+__CSDN主页__: https://blog.csdn.net/qq_31254489
 CSDN博客：https://blog.csdn.net/qq_31254489/article/details/104579438
