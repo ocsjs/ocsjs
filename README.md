@@ -35,9 +35,10 @@ __文章直链__：https://blog.csdn.net/qq_31254489/article/details/104579438
 ## 2：文字教程：
 ### 按照步骤来：
 
-### 1.打开超星学习通的学习界面！！！。
 准备一个浏览器！，谷歌，火狐，qq浏览器都行！，我这个不是油猴，不要用油猴。
 登录进你的超星账号然后：
+### 1.打开超星学习通的学习界面！！！。
+
 
 ![学习界面](https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/src/stadypage.png)
 
