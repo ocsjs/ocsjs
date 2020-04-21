@@ -15,7 +15,7 @@ $("#zzcx").text("正在查询...");
 $.ajax({
     //请不要自己乱发请求，如果服务器炸了到时候查不了答案我可不负责，还有就算备案下来了也不可能马上可以用，至少还要经过大量测试
     type:"POST",
-    url:"http://101.200.130.50/queryAnswer",
+    url:"此接口崩了",
     data:{
         question:$('#myquestion').val().replace(/\s*/g,"")//题目
     },
