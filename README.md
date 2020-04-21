@@ -1,5 +1,5 @@
 # 大学生网课刷课脚本
-## 现在https://greasyfork.org/ 里面好像出了几个新的脚本，自己找找吧，大家可以不用我的垃圾脚本了。
+## 现在https://greasyfork.org/zh-CN/scripts/by-site/chaoxing.com 里面好像出了几个新的脚本，自己找找吧，大家可以不用我的菜鸡脚本了qwq。
 ## 不定期更新！目前支持：超星学习通，智慧树
 
 <div align='center'>
