@@ -30,7 +30,7 @@ $('head').append('<link href="https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourse
 
 //下面是标签拼接
 $("body").append("<div id='skdiv'></div>");
-$("#skdiv").html("<p ><span style='font-weight:bold;    font-size: large;'>超星刷课脚本</span>（可用鼠标拖动）<p><p>最后更新时间：2020/4/46/16:42<br/>更新内容:支持一个章节多个视频的观看</p><div id='content' style='   border-top: 2px solid;'></div>");
+$("#skdiv").html("<p ><span style='font-weight:bold;    font-size: large;'>超星脚本(测试版)</span>（可用鼠标拖动）<p><p>最后更新时间：2020/4/16/16:42<br/>更新内容:支持一个章节多个视频的观看</p><div id='content' style='   border-top: 2px solid;'></div>");
 $('#content').html('<div ><p id="rate_txt" >播放速度：1X</p><div style="float:left"><button id="b1">▲</button><button id="b2">▼</button></div></div><button id="startplay" onclick="init()">点击开始播放</button>');
 $('#content').html($('#content').html()+"<div style='margin-top:10px'><p style='font-weight:bold'>当前进度:&nbsp;&nbsp;<span id='progress'>0%</span></p><hr></hr><p  id='cp'>当前章节：</p><p id='np'>下一章节：</p></div>");
 
