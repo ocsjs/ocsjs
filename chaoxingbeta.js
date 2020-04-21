@@ -4,7 +4,7 @@
 版本：1.0
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，不能自动答题
 
-*/
+*/ 
 var rate=1;//播放速度
 var jobCount=document.getElementsByClassName('jobCount');//未完成的课程数组
 var no_done_number=0;//未完成课的计数
