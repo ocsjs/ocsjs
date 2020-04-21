@@ -16,7 +16,7 @@ var isplay=true;//是否播放
 
 //多视频播放值：
 var video_length=0;//视频数量
-var now_page_video_index=0;//当有多个视频的时候， 当前视频的索引
+var now_page_video_index=0;//当有多个视频的时候，当前视频的索引
 
 var set_video_index=0;//自己可以设置的自定义视频索引
 
@@ -30,7 +30,7 @@ $('head').append('<link href="https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourse
 
 //下面是标签拼接
 $("body").append("<div id='skdiv'></div>");
-$("#skdiv").html("<p ><span style='font-weight:bold;    font-size: large;'>超星脚本(测试版)</span>（可用鼠标拖动）<p><p>最后更新时间：2020/4/16/16:42<br/>更新内容:支持一个章节多个视频的观看</p><div id='content' style='   border-top: 2px solid;'></div>");
+$("#skdiv").html("<p ><span style='font-weight:bold;    font-size: large;'>超星刷课脚本</span>（可用鼠标拖动）<p><p>最后更新时间：2020/4/46/16:42<br/>更新内容:支持一个章节多个视频的观看</p><div id='content' style='   border-top: 2px solid;'></div>");
 $('#content').html('<div ><p id="rate_txt" >播放速度：1X</p><div style="float:left"><button id="b1">▲</button><button id="b2">▼</button></div></div><button id="startplay" onclick="init()">点击开始播放</button>');
 $('#content').html($('#content').html()+"<div style='margin-top:10px'><p style='font-weight:bold'>当前进度:&nbsp;&nbsp;<span id='progress'>0%</span></p><hr></hr><p  id='cp'>当前章节：</p><p id='np'>下一章节：</p></div>");
 
@@ -169,20 +169,7 @@ function play(){
 						//每次结束玩就点击下一个视频节点,或者下一个视频
 						mylog("当前章节已经播放完毕，正在切换下一章节");
 						clickNext();
-						/*
-						if(video_length==1 || $('#iframe').eq(0).contents().find('.ans-job-finished').length==video_length){
-							
-							
-						}else{
-							if($('#iframe').eq(0).contents().find('.ans-job-finished').length!=video_length){
-								now_page_video_index++;
-								mylog("多视频完成数量："+now_page_video_index+"，还剩下:"+(video_length-now_page_video_index)+"个视频");
-							}
-								
-		
-						}
-							
-						*/
+						
 					}
 				
 				}
@@ -253,6 +240,7 @@ function isfinished(){
 	if($('#iframe').eq(0).contents().find('.ans-job-finished').length==1 && video_length==1){
 		setTimeout(" clickNext()",2000);
 		mylog("视频已经播放完毕，开始跳转下一节");
+		set_video_index++;
 	
 	}
 	else if(video_length>1){
@@ -261,11 +249,12 @@ function isfinished(){
 		
 		setTimeout(" clickNext()",2000);
 		mylog("视频已经播放多视频完毕，开始跳转下一节");
-		mylog($('#iframe').eq(0).contents().find('.ans-job-finished').length==video_length);
+		set_video_index++;
 		}else{
 		loadName();
 		setTimeout("play()",2000); 
-	}
+		
+		}
 		
 	}
 
@@ -364,10 +353,6 @@ Date.prototype.format = function(fmt){
 
   return fmt;
 }
-
-
-
-
 
 
 
