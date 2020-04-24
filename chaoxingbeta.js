@@ -1,7 +1,7 @@
   /*
 超星学习通刷课脚本
 作者：LDS-Skeleton（github）
-版本：1.3.1
+版本：1.0
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
 */
 
@@ -386,7 +386,7 @@ function drawWindow() {
 			<p>\
 				<span style='font-weight:bold;    font-size: large;'>超星刷课脚本</span>（可用鼠标拖动）\
 			<p>\
-			<p>最后更新时间：2020/4/46/16:42<br />更新内容:支持一个章节多个视频的观看</p>\
+			<p>最后更新时间：2020/4/24 <br /> 超星正式版v1.0发布</p>\
 			\
 			<div id='content' style='   border-top: 2px solid;'></div>");
 	$('#content').html("\
