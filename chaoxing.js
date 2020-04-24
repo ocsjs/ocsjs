@@ -1,7 +1,7 @@
  /*
 超星学习通刷课脚本
 作者：LDS-Skeleton（github）
-版本：1.0.0
+版本：1.0.0 
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
 */
 
@@ -52,7 +52,7 @@ function init() {
 	if (jobCount == undefined) mylog("章节信息加载失败,或者课程已完成！！！", 'error');
 	else {
 		//如果是第一次点击播放视频
-		if (play_type == 0) {
+		if (play_type == 0) { 
 			play_type = 1;
 		} else {
 			set.set_video_index++;
