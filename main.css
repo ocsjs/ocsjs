@@ -48,3 +48,14 @@ input{
 
 }
 
+#div-setting{
+    width: 100%;
+    font-size: 14px;
+    font-weight: bold;
+    background: white;
+    width:100%;
+    height:auto;
+    display:none;
+    border:1px solid;
+}
+
