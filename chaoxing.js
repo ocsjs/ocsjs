@@ -51,7 +51,7 @@ function main_tocheck_browser() {
 
 //============================================主函数,判断页面是否正确，在文件最后执行============================================
 function check_url_isright() {
-	mylog('\n超星学习通刷课脚本\n作者：LDS-Skeleton（github）\n版本：1.3.1\n功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题');
+	mylog('\n超星学习通刷课脚本\n作者：LDS-Skeleton（github）\n功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题');
 	if(href_is_Has(url.studentstudy));
 	else if (href_is_Has(url.studentcourse)) mylog("当前是学习进度界面！请点击任意的任务点，或者章节，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.index)) mylog("当前是学生主页！请点击任意的课程，进入学习界面！！！", 'error');
