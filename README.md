@@ -77,7 +77,7 @@ var uri="chaoxing";
 $.getScript("https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/"+uri+".js?t="+new Date().getTime());
 ```
 ****
-2.__智慧树__↓↓↓
+2. __智慧树__ ↓↓↓
 ```js
 var uri="zhihuishu";
 $.getScript("https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/"+uri+".js?t="+new Date().getTime());
