@@ -40,8 +40,9 @@ var url = {
 function main_tocheck_browser() { 
 	
 	var explorer =navigator.userAgent;
-	mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。','error');
+	
 	if (explorer.indexOf("Firefox") == -1 && explorer.indexOf("chrome") == -1 && explorer.indexOf("Chrome") == -1) {
+		mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。','error');
         setInterval(() => {
 		mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。','error');
 	}, set.response_time);
