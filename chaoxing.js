@@ -1,7 +1,7 @@
  /*
 超星学习通刷课脚本
 作者：LDS-Skeleton（github）
-版本：1.0.0 
+版本：1.0.1
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
 */
 
@@ -34,26 +34,38 @@ var url = {
 	index: 'http://i.mooc.chaoxing.com/space/index',
 	login: 'https://passport2.chaoxing.com/login?loginType=3&newversion=true&fid=-1',
 }
-//绘制窗口
-drawWindow();
-//鼠标拖动刷课框
-dragPanelMove("#skdiv", "#skdiv");
 
-//============================================主函数，在文件最后执行============================================
+
+
+//============================================判断当前浏览器能否运行次脚本============================================
+function main_tocheck_browser() { 
+	
+	var explorer =navigator.userAgent;
+
+	if (explorer.indexOf("Firefox") == -1 && explorer.indexOf("chrome") == -1 && explorer.indexOf("Chrome") == -1) {
+        setInterval(() => {
+			mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。','error');
+		}, set.response_time);
+    } 
+}
+
+//============================================主函数,判断页面是否正确，在文件最后执行============================================
 function check_url_isright() {
 	mylog('\n超星学习通刷课脚本\n作者：LDS-Skeleton（github）\n版本：1.3.1\n功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题');
 	if(href_is_Has(url.studentstudy));
 	else if (href_is_Has(url.studentcourse)) mylog("当前是学习进度界面！请点击任意的任务点，或者章节，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.index)) mylog("当前是学生主页！请点击任意的课程，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.chaoxing) && !href_is_Has(url.studentstudy)) mylog("这个是：超星学习通脚本，请您检查一下是否是在超星学习界面。超星登陆链接：" + url.login, 'error');
-	else mylog("请您检查一下是否是在超星学习界面。超星登陆链接：" + url.login, 'error');
+	else {
+		mylog("当前不是超星学习通界面，超星登陆链接：" + url.login, 'error');
+	};
 }
 //============================================初始化数据============================================
 function init() {
 	if (jobCount == undefined) mylog("章节信息加载失败,或者课程已完成！！！", 'error');
 	else {
 		//如果是第一次点击播放视频
-		if (play_type == 0) { 
+		if (play_type == 0) {
 			play_type = 1;
 		} else {
 			set.set_video_index++;
@@ -205,7 +217,7 @@ function clickNext() {
 
 		var doc = $("#iframe").contents().find('iframe').contents();
 		$(doc).ready(function () {
-			find_video();
+			setTimeout(find_video,set.response_time);
 		});
 
 	}
@@ -215,7 +227,10 @@ function clickNext() {
 function find_video() {
 	mylog("页面加载成功，开始检测");
 	var doc = $("#iframe").contents().find('iframe').contents();
-	if (doc.find('video').length != 0) {
+	if($("#iframe").contents().find('iframe').contents().find('object').length!=0){
+		mylog("此浏览器不能运行改脚本，请更换主流浏览器，目前经过测试可运行的浏览器：",'error');
+	}
+	else if (doc.find('video').length != 0) {
 		mylog("页面查找到视频，进行视频模式检测");
 		//点击视频按钮
 		setTimeout("clickPlayButton();", set.response_time);
@@ -437,5 +452,11 @@ function dragPanelMove(downDiv, moveDiv) {
 function href_is_Has(str) { return window.location.href.indexOf(str) == -1 ? false : true; }
 
 
+//绘制窗口
+drawWindow();
+//鼠标拖动刷课框
+dragPanelMove("#skdiv", "#skdiv");
 //============================================主函数============================================
 check_url_isright();
+//判断当前浏览器能否运行次脚本
+main_tocheck_browser();
