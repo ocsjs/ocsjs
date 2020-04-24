@@ -59,3 +59,7 @@ input{
     border:1px solid;
 }
 
+div#div-setting * {
+    margin: 4px;
+}
+
