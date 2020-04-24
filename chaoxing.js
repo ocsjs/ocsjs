@@ -45,9 +45,7 @@ function check_url_isright() {
 	if (href_is_Has(url.studentcourse)) mylog("当前是学习进度界面！请点击任意的任务点，或者章节，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.index)) mylog("当前是学生主页！请点击任意的课程，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.chaoxing) && !href_is_Has(url.studentstudy)) mylog("这个是：超星学习通脚本，请您检查一下是否是在超星学习界面。超星登陆链接：" + url.login, 'error');
-	else {
-
-	};
+	else mylog("请您检查一下是否是在超星学习界面。超星登陆链接：" + url.login, 'error');
 }
 //============================================初始化数据============================================
 function init() {
