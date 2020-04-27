@@ -3,7 +3,7 @@
 作者：LDS-Skeleton（github）
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
 */
-var version = '1.0.1';
+var version = '1.1.1';
 var last_set_time='2020/4/27';
 var jobCount = document.getElementsByClassName('jobCount');//未完成的课程数组，任务点
 
