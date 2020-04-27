@@ -4,6 +4,7 @@
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
 */
 var version = '1.0.1';
+var last_set_time='2020/4/27';
 var jobCount = document.getElementsByClassName('jobCount');//未完成的课程数组，任务点
 
 var cp = "";//这一章
@@ -423,7 +424,7 @@ function drawWindow() {
 			<p>\
 				<span style='font-weight:bold;    font-size: large;'>超星刷课脚本-v"+ version + "</span><br/>（可用鼠标拖动）\
 			<p>\
-			<p>最后更新时间：2020/4/27</p>\
+			<p>最后更新时间："+last_set_time+"</p>\
 			\
 			<div id='content' style='   border-top: 2px solid;'></div>");
 	$('#content').html("\
@@ -485,7 +486,7 @@ function show_play_mode() {
 
 }
 
-setInterval(show_play_mode,1000);
+setInterval(show_play_mode,500);
 //绘制窗口
 drawWindow();
 //鼠标拖动刷课框
