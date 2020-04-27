@@ -1,9 +1,9 @@
-  /*
+ /*
 超星学习通刷课脚本
 作者：LDS-Skeleton（github）
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
 */
-var version='1.0.1';
+var version = '1.0.2';
 var jobCount = document.getElementsByClassName('jobCount');//未完成的课程数组，任务点
 
 var cp = "";//这一章
@@ -37,22 +37,22 @@ var url = {
 
 
 //============================================判断当前浏览器能否运行次脚本============================================
-function main_tocheck_browser() { 
-	
-	var explorer =navigator.userAgent;
-	
+function main_tocheck_browser() {
+
+	var explorer = navigator.userAgent;
+
 	if (explorer.indexOf("Firefox") == -1 && explorer.indexOf("chrome") == -1 && explorer.indexOf("Chrome") == -1) {
-		mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。','error');
-        setInterval(() => {
-		mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。','error');
-	}, set.response_time);
-    } 
+		mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。', 'error');
+		setInterval(() => {
+			mylog('\n超星脚本对当前浏览器不兼容！\n如果运行可能产生不可预知的后果！\n请更换浏览器，目前支持的浏览器:\n● 谷歌浏览器\n● QQ浏览器\n● 火狐浏览器\n或者浏览器内核是使用chrome，firefox的浏览器内核即可。', 'error');
+		}, set.response_time);
+	}
 }
 
 //============================================主函数,判断页面是否正确，在文件最后执行============================================
 function check_url_isright() {
-	mylog('\n超星学习通刷课脚本\n作者：LDS-Skeleton（github）\n版本：'+version+'\n功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题');
-	if(href_is_Has(url.studentstudy));
+	mylog('\n超星学习通刷课脚本\n作者：LDS-Skeleton（github）\n版本：' + version + '\n功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题');
+	if (href_is_Has(url.studentstudy));
 	else if (href_is_Has(url.studentcourse)) mylog("当前是学习进度界面！请点击任意的任务点，或者章节，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.index)) mylog("当前是学生主页！请点击任意的课程，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.chaoxing) && !href_is_Has(url.studentstudy)) mylog("这个是：超星学习通脚本，请您检查一下是否是在超星学习界面。超星登陆链接：" + url.login, 'error');
@@ -217,7 +217,7 @@ function clickNext() {
 
 		var doc = $("#iframe").contents().find('iframe').contents();
 		$(doc).ready(function () {
-			setTimeout(find_video,set.response_time);
+			setTimeout(find_video, set.response_time);
 		});
 
 	}
@@ -227,8 +227,8 @@ function clickNext() {
 function find_video() {
 	mylog("页面加载成功，开始检测");
 	var doc = $("#iframe").contents().find('iframe').contents();
-	if($("#iframe").contents().find('iframe').contents().find('object').length!=0){
-		mylog("此浏览器不能运行改脚本，请更换主流浏览器，目前经过测试可运行的浏览器：",'error');
+	if ($("#iframe").contents().find('iframe').contents().find('object').find('param[name="flashvars"]').length==1 != 0) {
+		mylog("此浏览器不能运行该脚本，请更换主流浏览器，目前经过测试可运行的浏览器：", 'error');
 	}
 	else if (doc.find('video').length != 0) {
 		mylog("页面查找到视频，进行视频模式检测");
