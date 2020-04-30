@@ -308,9 +308,6 @@ function check_finished() {
 		if ($('#no-auto-play').attr('checked') == undefined) {
 			setTimeout(" clickNext()", set.response_time);
 			mylog("视频已经播放完毕，开始跳转下一节");
-			if ($('#unlocking-mode-play').attr()) {
-
-			}
 			set.set_video_index++;
 		} else {
 			mylog("视频已经播放完毕，请手动切换到要播放的视频", 'error');
