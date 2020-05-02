@@ -3,41 +3,213 @@
 作者：LDS-Skeleton（github）
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
 */
-var version = '1.1.2';
-var last_set_time = '2020/4/29';
-var jobCount = document.getElementsByClassName('jobCount');//未完成的课程数组，任务点
+var version = '1.2.1';
+var last_set_time = '2020/5/2';
+var jobCounts = null;//未完成的课程数组，任务点
+var now_video_index = 0;//当前界面播放视频的索引值
 
 var cp = "";//这一章
 var np = "";//下一章
-var timeout = 0;//如果播放视频超时，或者没有视频，则跳过这一章节
-var isplay = true;//是否播放
 var play_type = 0;//用来识别是第一次点击播放，还是第n次点击播放，用来做适配
 
 //设置变量的json，可以自己在控制台设置改变
-
 var set = {
 	rate: 1,//播放速度
 	response_time: 3000,//事件之间的相应时间，三秒
 	response_time_fast: 1000,//事件之间的相应时间，三秒
+	network: 1,//默认选择公网一
 	//下面多视频播放值：
 	video_length: 0,//视频数量
 	now_page_video_index: 0,//当有多个视频的时候，当前视频的索引
-	set_video_index: 0//自己可以设置的自定义视频索引
+	set_video_index: 0,//自己可以设置的自定义视频索引
+	set_span_index: 0,//每个章节视频顶部的标签，例如：课程，章节测验
+	play_interval: null,//视频播放的定时器，定时执行
+	_clearInterval() {
+		if (this.play_interval != null) {
+			clearInterval(this.play_interval);
+			this.play_interval = null;
+			GetInfo.video.getVideoDoc().find('.vjs-play-control').eq(now_video_index).click();//点击播放按钮暂停
+		}
+	}
 }
-
 //各种url的json
 var url = {
 	//超星url
 	chaoxing: 'chaoxing.com',
+	//课程页面
 	studentcourse: 'https://mooc1-1.chaoxing.com/mycourse/studentcourse',
+	//学习界面
 	studentstudy: 'https://mooc1-1.chaoxing.com/mycourse/studentstudy',
+	//主页
 	index: 'http://i.mooc.chaoxing.com/space/index',
+	//登录页
 	login: 'https://passport2.chaoxing.com/login?loginType=3&newversion=true&fid=-1',
 }
+//检测函数json
+var check = {
+	timeout_has_video: 10,
+	timeout_video_already: 10,
 
+	init() {
+		this.timeout_has_video = 10;
+		this.timeout_video_already = 10;
+	},
+	//视频是否用h5插件播放
+	compatible_h5video() {
+		if (GetInfo.page.getFlashVideo().length == 1) {
+			mylog("此浏览器不能运行该脚本，请更换主流浏览器，目前经过测试可运行的浏览器：", 'error');
+			return false;
+		} else {
+			mylog("视频加载成功，进行视频模式检测");
+			return true;
+		}
+	},
+	//是否存在视频
+	has_video() {
+		if (GetInfo.video.getVideoLength() == 0) {
+			mylog("未查找到视频，将在" + (this.timeout_has_video--) + "秒后跳过该章节", 'error');
+			return false;
+		}
+		else return true;
+	},
+	//视频是否加载完成
+	video_already() {
+		if (GetInfo.video.getVideoLoding_Visibility() != 'hidden') {
+			mylog("正在加载视频," + (this.timeout_video_already--) + "秒内未加载成功，将自动跳转下一个章节", 'error');
+			return false;
+		}
+		else return true;
+	},
+	//检测如果超时
+	isTimeout(check_interval) {
+		if (this.timeout_has_video < 0 || this.timeout_video_already < 0) {
+			this.jump_next();
+			clearInterval(check_interval);
+			return true;
+		}
+		else return false;
+	},
+	//跳转
+	jump_next() {
+		//如果手动播放模式开启，则不自动跳转
+		if (modeAttrChecked.noAuto() != undefined) {
+			mylog("页面未查找到视频，请重新选择你要播放的视频", 'error');
+		} else {
+			mylog("页面未查找到视频，将跳转到下一任务点");
+			setTimeout(clickNext, set.response_time_fast);
+		}
+		set.set_video_index++;
+	}
+}
+//获取播放模式选择的属性
+var modeAttrChecked = {
+	//解锁模式
+	unLocking() {
+		return $('#unlocking-mode-play').attr('checked');
+	},
+	//手动模式
+	noAuto() {
+		return $('#no-auto-play').attr('checked');
+	}
 
-
-//============================================判断当前浏览器能否运行次脚本============================================
+}
+//获取播放页面的一些视频信息
+var GetInfo = {
+	//主要是一些播放界面的信息
+	page: {
+		//播放页面顶部的第几个按钮，通常有视频，章节测验
+		getTabTag(index) {
+			return $('.tabtags').find('span').eq(index);
+		},
+		//播放页面顶部的所有按钮，通常有视频，章节测验
+		getTabTags() {
+			return $('.tabtags').find('span');
+		},
+		//未完成的课程数组	
+		getJobCounts() {
+			return document.getElementsByClassName('jobCount');//必须用原生js，不然点击a链接，界面将不会跳转，超星这里很坑。
+		},
+		//获取falsh播放器，如果获取到了，则不能使用脚本。
+		getFlashVideo() {
+			return $("#iframe").contents().find('iframe').contents().find('object').find('param[name="flashvars"]');
+		},
+		//页面中所有完成任务点数量
+		getFinishJobLength() {
+			return $('#iframe').contents().find('.ans-job-finished').length;
+		},
+		//现在章节中完成的任务点中存在视频的数量，因为有些任务点可能是题目之类的，所以这里要分辨清楚
+		getFinishVideoLength() {
+			var finish_job_video_length = 0;
+			for (var i = 0; i < this.getFinishJobLength(); i++) {
+				if ($('#iframe').eq(0).contents().find('.ans-job-finished').eq(i).find('iframe').contents().find('video').length == 1) finish_job_video_length++;
+			}
+			return finish_job_video_length;
+		},
+	},
+	//主要是播放视频的信息
+	video: {
+		//获取2层iframe下面的document元素
+		getVideoDoc() {
+			return $("#iframe").contents().find('iframe').contents();
+		},
+		//获取视频数量
+		getVideoLength() {
+			return $('#iframe').contents().find('iframe').contents().find('video').length;
+		},
+		//获取禁音按钮
+		getVoiceButton(index) {
+			return this.getVideoDoc().find('.vjs-vol-3').eq(index);
+		},
+		//获取禁音按钮数组
+		getVoiceButtons() {
+			return this.getVideoDoc().find('.vjs-vol-3');
+		},
+		//获取播放按钮，只要视频暂停了，这个按钮就会出现
+		getPlayButton(index) {
+			return this.getVideoDoc().find('#video button.vjs-big-play-button').eq(index);
+		},
+		//获取播放按钮数组，只要视频暂停了，这个按钮就会出现
+		getPlayButtons() {
+			return this.getVideoDoc().find('#video button.vjs-big-play-button');
+		},
+		//获取视频进度条值
+		getProgressValue(index) {
+			return this.getVideoDoc().find('.vjs-progress-holder').eq(index).attr('aria-valuenow');
+		},
+		//获取视频进度条数组
+		getProgresses() {
+			return this.getVideoDoc().find('.vjs-progress-holder');
+		},
+		//获取视频加载中的界面，如果没有则代表视频加载成功
+		getVideoLoding_Visibility() {
+			return this.getVideoDoc().find('#loading').css('visibility');
+		},
+		//获取视频选择的公网
+		getVideoSelectedNetWorks() {
+			return $('#iframe').contents().find('iframe').contents().find('video').eq(now_video_index).parent('.video-js').find('.vjs-control-bar').find('.vjs-menu-button').find('.vjs-menu').eq(2).find('.vjs-menu-item');
+		},
+		//获取视频选择的公网类型，1就是公网1,2就是公网2
+		getVideoSelectedNetWork(index) {
+			return this.getVideoSelectedNetWorks().eq(index);
+		},
+		//获取视频选择的公网的数字，1就是公网1,2就是公网2
+		getVideoSelectedNetWork_num(now_video_index) {
+			var selected = $('#iframe').contents().find('iframe').contents().find('video').eq(now_video_index).parent('.video-js').find('.vjs-control-bar').find('.vjs-menu-button').find('.vjs-menu').eq(2).find('.vjs-selected');
+			return selected.eq(0).text().substring(2);//播放速度大于2的时候，css选择到的不一样，很奇怪，如果不加判断将会卡bug
+		},
+		//获取目前第video_index个播放视频的速度
+		getVideoPlayRate(video_index) {
+			var video = this.getVideoDoc().find('video')[video_index];
+			return video == undefined ? undefined : video.playbackRate;
+		},
+		//设置目前第video_index个播放视频的速度
+		setVideoPlayRate(video_index, rate) {
+			var video = this.getVideoDoc().find('video')[video_index];
+			video == undefined ? undefined : video.playbackRate = rate;
+		}
+	}
+}
+//判断当前浏览器能否运行次脚本
 function main_tocheck_browser() {
 
 	var explorer = navigator.userAgent;
@@ -49,11 +221,10 @@ function main_tocheck_browser() {
 		}, set.response_time);
 	}
 }
-
-//============================================主函数,判断页面是否正确，在文件最后执行============================================
+//主函数,判断页面是否正确，在文件最后执行
 function check_url_isright() {
 	mylog('\n超星学习通刷课脚本\n作者：LDS-Skeleton（github）\n版本：' + version + '\n功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题');
-	if (href_is_Has(url.studentstudy));
+	if (href_is_Has(url.studentstudy));//页面正确
 	else if (href_is_Has(url.studentcourse)) mylog("当前是学习进度界面！请点击任意的任务点，或者章节，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.index)) mylog("当前是学生主页！请点击任意的课程，进入学习界面！！！", 'error');
 	else if (href_is_Has(url.chaoxing) && !href_is_Has(url.studentstudy)) mylog("这个是：超星学习通脚本，请您检查一下是否是在超星学习界面。超星登陆链接：" + url.login, 'error');
@@ -61,27 +232,28 @@ function check_url_isright() {
 		mylog("当前不是超星学习通界面，超星登陆链接：" + url.login, 'error');
 	};
 }
-//============================================初始化数据============================================
+//初始化数据
 function init() {
-	if (jobCount == undefined) mylog("章节信息加载失败,或者课程已完成！！！", 'error');
+	set._clearInterval();
+	jobCounts = GetInfo.page.getJobCounts()
+	if (jobCounts == undefined) mylog("章节信息加载失败,或者课程已完成！！！", 'error');
 	else {
 		//如果是第一次点击播放视频
 		if (play_type == 0) {
 			play_type = 1;
+			mylog("正在加载...");
+			$('#startplay').text("正在初始化信息中...");
+			jump_to_select();//如果设置中，是从点击的章节开始，则跳转到点击的章节
+			clickNext();//点击视频
+			loadName();//加载章节名字
+			playbackRate_event();//播放速率的一些事件
 		} else {
-			set.set_video_index++;
-			mylog('正在强制跳转下一个视频');
+			$('#startplay').text("点击开始播放");
+			play_type = 0
 		}
-		rate = 1;
-		mylog("正在加载...");
-		$('#startplay').text("正在初始化信息中...");
-		jump_to_select();//如果设置中，是从点击的章节开始，则跳转到点击的章节
-		clickNext();//点击视频
-		loadName();//加载章节名字
-		playbackRate_event();//播放速率的一些事件
 	}
 }
-//============================================播放速率的一些事件============================================
+//播放速率的一些事件
 function playbackRate_event() {
 	//删除点击事件
 	$("#b1").unbind("click");
@@ -97,196 +269,114 @@ function playbackRate_event() {
 		$("#rate_txt").text('播放速度：' + set.rate + "X");
 	});
 }
+//开始运行
 
-
-//============================================开始运行============================================
 function play() {
 	//视频数量
-	set.video_length = $('#iframe').contents().find('iframe').contents().find('.vjs-play-control').length;
-	//进入二级iframe
-	var doc = $("#iframe").contents().find('iframe').contents();
-
+	set.video_length = GetInfo.video.getVideoLength();
 	//判断现在视频的索引值，是多视频的，还是单视频的情况
-	var now_video_index = set.video_length == 1 ? 0 : set.now_page_video_index;
-
+	now_video_index = set.video_length == 1 ? 0 : set.now_page_video_index;
 	//检测课程是否完成
-	if (jobCount.length == 0) {
+	if (jobCounts.length == 0) {
 		job_is_finish();
-		isplay = false;
 	} else {
 
-		//如果加载视频超时，直接强制跳过这个视频。
-		if (timeout > 100) {
-			mylog("加载视频超时！！！", 'error');
-			clickNext();
-			timeout = 0;
-		}
+		var noSound = GetInfo.video.getVoiceButton(now_video_index);//禁音按钮
+		var playRate = GetInfo.video.getProgressValue(now_video_index);//播放完成百分比
 
-		//如果视频正在加载
-		if (doc.find('#loading').css('visibility') != 'hidden') {
-			mylog("正在加载查找视频，如果不存在，将在：" + ((10000 - timeout * 100) / 1000) + "  秒后跳过当前视频");
-			timeout++;
-			if (isplay == true) setTimeout("play()", 100);
+
+		//静音
+		if (noSound != null) noSound.click();
+		//如果暂停，点击播放
+		GetInfo.video.getPlayButton(now_video_index).click();
+		//实时改变播放速度
+		GetInfo.video.setVideoPlayRate(now_video_index, set.rate);
+
+		//开启定时器
+		if (set.play_interval == null) {
+			set.play_interval = setInterval(play, 100);
+		}
+		//如果没有播放完毕，继续运行
+		check_is_done(playRate, now_video_index);
+	}
+}
+//检测视频是否完成
+function check_is_done(playRate, now_video_index) {
+	if (playRate != 100) {//如果没有播放完成
+		$('#progress').text(playRate + "%");
+		$('#startplay').text("播放中...,点击暂停");
+	} else {//如果播放结束
+		//每次结束玩就点击下一个视频节点,或者下一个视频
+		set._clearInterval();
+		//如果手动播放模式开启，则不自动跳转
+		if (modeAttrChecked.noAuto() != undefined) {
+			mylog("当前全部视频已经播放完毕，请手动切换到要播放的视频", 'error');
+			$('#startplay').text("手动播放选择的视频");
 		} else {
-			timeout = 0;
-
-			var noSound = doc.find('.vjs-vol-3').eq(now_video_index);//禁音按钮
-			var playbutton = doc.find('.vjs-play-control').eq(now_video_index);//播放按钮
-			var playRate = doc.find('.vjs-progress-holder').eq(now_video_index).attr('aria-valuenow');//播放完成百分比
-
-			if (playbutton.text() == undefined || playRate == undefined) {
-				//视频信息获取失败
-			} else {
-
-				//点击播放按钮
-				doc.find('#video button.vjs-big-play-button').eq(now_video_index).click();
-
-				//静音
-				if (noSound != null) noSound.click();
-
-				//如果暂停，点击播放
-				if (playbutton.text() == "播放") {
-					play_function.click_playBtn(now_video_index);
-				}
-				//如果没有播放完毕，继续运行
-				play_function.check_is_done(playRate, now_video_index);
-
-			}
-
-			if (isplay == true) setTimeout("play()", 100);//继续运行progress
+			mylog("当前章节已经播放完毕，正在切换下一章节");
+			$('#startplay').text("播放完毕，正在切换下一章节");
+			setTimeout(clickNext, set.response_time);
 		}
-
 	}
 }
 
-//============================================播放视频的一些函数============================================
-var play_function = {
-
-	check_is_done: function (playRate, now_video_index) {//检测视频进度。如果没有播放完毕，继续运行
-		if (playRate != 100) {
-			//实时改变播放速度
-			var doc = $("#iframe").contents().find('iframe').contents();
-			doc.find('video')[now_video_index].playbackRate = set.rate;
-			$('#progress').text(playRate + "%");
-			if ($('#no-auto-play').attr('checked') != undefined) {
-				$('#startplay').text("开始播放手动选择的视频");
-			} else {
-				$('#startplay').text("播放中...\n点击将跳过当前视频");
-			}
-		} else {//如果播放结束
-			//每次结束玩就点击下一个视频节点,或者下一个视频
-			isplay = false;
-			//如果手动播放模式开启，则不自动跳转
-			if ($('#no-auto-play').attr('checked') != undefined) {
-				mylog("当前全部视频已经播放完毕，请手动切换到要播放的视频", 'error');
-			} else {
-				mylog("当前章节已经播放完毕，正在切换下一章节");
-				setTimeout('clickNext();', set.response_time);
-			}
-
-		}
-	},
-
-	click_playBtn: function (now_video_index) {
-		//当前页面的视频数量
-		if (set.video_length == 1) {
-			mylog("正在播放单视频");
-			setTimeout("$('#iframe').contents().find('iframe').contents().find('.vjs-play-control').eq(0).click();", 100);
-		} else {
-			setTimeout("$('#iframe').contents().find('iframe').contents().find('.vjs-play-control').eq(" + now_video_index + ").click();", 100);
-			mylog("正在播放第" + (now_video_index + 1) + "个多视频");
-		}
-	}
-
-}
-
-
-//============================================点击下一个视频节点============================================
+//点击下一个视频节点
 function clickNext() {
-	isplay = true;
 	//初始化数据
 	set.now_page_video_index = 0;
-	jobCount = document.getElementsByClassName('jobCount');//未完成的课程数组	
-
+	jobCounts = GetInfo.page.getJobCounts();
 	//检测课程是否完成
-	if (jobCount.length == 0) {
+	if (jobCounts.length == 0 || jobCounts[set.set_video_index] == undefined) {
 		job_is_finish();
-		isplay = false;
 	} else {
 		//点击视频连接,如果手动播放模式开启，则不自动点击链接
+
 		//如果是解锁模式，那么就一直播放最后一个章节
-		if ($('#unlocking-mode-play').attr('checked') != undefined) {
-			jobCount[jobCount.length - 1].parentNode.getElementsByTagName('a')[0].click();
+		if (modeAttrChecked.unLocking() != undefined) {
+			jobCounts[jobCounts.length - 1].parentNode.getElementsByTagName('a')[0].click();
 		}
-		else if ($('#no-auto-play').attr('checked') == undefined) jobCount[set.set_video_index].parentNode.getElementsByTagName('a')[0].click();//点击链接
+		//如果不是手动播放，那么就点击顺序的链接
+		else if (modeAttrChecked.noAuto() == undefined) {
+			jobCounts[set.set_video_index].parentNode.getElementsByTagName('a')[0].click();//点击链接
+		}
 
+		//检测视频
+		setTimeout(clickNext_span, set.response_time);
 
-		var doc = $("#iframe").contents().find('iframe').contents();
-		$(doc).ready(function () {
-			setTimeout(find_video, set.response_time);
-		});
 
 	}
 }
 
-//============================================查找视频，如果没有视频那么跳转============================================
+//点击下一个tag点,tag点完成后才能继续下一个章节
+function clickNext_span() {
+	//如果相等，则此章节播放完毕，span——lenght归零
+	if (set.set_span_index == GetInfo.page.getTabTags().length) set.set_span_index =0;
+	GetInfo.page.getTabTag(set.set_span_index).click();
+	setTimeout(find_video, set.response_time);
+}
+
+//查找视频，如果没有视频，视频播放完那么跳转
 function find_video() {
-	var i = 0;
 	mylog("页面加载成功，开始检测");
+	//开始检测是否存在视频,或者视频是否加载成功
+	check.init();
 
-	//点击章节中的视频按钮，就是视频顶部，上面那几个按钮，如果没有就不点
-	for (var i = 0; i < $('.tabtags').find('span').length; i++) {
-		if ($('.tabtags').find('span').eq(i).text().replace(/\s*/g, "") == "视频") {
-			$('.tabtags').find('span').eq(i).click();
-			break;
-		}
-	}
-	//开始检测是否存在视频
-	var check = setInterval(function () {
-		var doc = $("#iframe").contents().find('iframe').contents();
-		doc.find('video').length
-		if (doc.find('video').length == 0) {
-			mylog("未查找到视频，将在" + (10 - (i++)) + "后跳过", 'error');
-		} else {
-			clearInterval(check);
-			if ($("#iframe").contents().find('iframe').contents().find('object').find('param[name="flashvars"]').length == 1 != 0) {
-				mylog("此浏览器不能运行该脚本，请更换主流浏览器，目前经过测试可运行的浏览器：", 'error');
-			}
-			else if (doc.find('video').length != 0) {
-				mylog("页面查找到视频，进行视频模式检测");
-				//点击视频按钮
-				setTimeout("clickPlayButton();", set.response_time_fast);
-			} else {
-				//如果手动播放模式开启，则不自动跳转
-				if ($('#no-auto-play').attr('checked') != undefined) {
-					mylog("页面未查找到视频，请重新选择你要播放的视频", 'error');
-				} else {
-					mylog("页面未查找到视频，将跳转到下一节");
-					setTimeout("clickNext();", set.response_time_fast);
-				}
-
-				set.set_video_index++;
-
-			}
+	var check_interval = setInterval(function () {
+		if (check.isTimeout(check_interval)) return;//检测如果超时
+		//检测是否存在视频，视频是否加载完成，视频是否支持h5视频插件播放
+		if (check.has_video() && check.video_already() && check.compatible_h5video()) {//是否存在视频
+			setTimeout(initPlayMmode, set.response_time_fast);//初始化视频播放模式
+			clearInterval(check_interval);
 		}
 	}, set.response_time_fast);
-
-
-
 }
-
-
-//============================================点击视频按钮============================================
-function clickPlayButton() {
-
-
-
+//初始化视频播放模式
+function initPlayMmode() {
 	//判断章节是多视频还是单视频模式
-	set.video_length = $('#iframe').contents().find('iframe').contents().find('.vjs-play-control').length;
+	set.video_length = GetInfo.video.getVideoLength();
 	if (set.video_length > 1) mylog("检测到多视频，多视频数量：" + set.video_length);
 	//找出多视频中，播放完成的个数，并且直接将索引值定位到未播放的视频
 	if (set.video_length >= 1) {
-
 		var iframe_length = $("#iframe").contents().find('iframe').length;//iframe数量
 		var iframe = $("#iframe").contents().find('iframe');
 		var not_video_length = 0;//不是视频的数量
@@ -300,83 +390,68 @@ function clickPlayButton() {
 					break;
 				} else {
 					not_video_length++;
-					//console.log(not_video_length);
 				}
 			}
 		}
 	}
-
 	//如果视频已经播放完成
-	setTimeout("check_finished()", set.response_time_fast);
+	setTimeout(check_finished, set.response_time_fast);
 }
-
-
-//============================================如果视频已经播放完成，就播放下一个视频============================================
+//如果视频已经播放完成，就播放下一个视频
 function check_finished() {
-
-	var finish_job_length = $('#iframe').eq(0).contents().find('.ans-job-finished').length;//完成视频数量
-	var finish_job_video_length = 0;//现在章节中完成的任务点中存在视频的数量，因为有些任务点可能是题目之类的，所以这里要分辨
-	for (var i = 0; i < finish_job_length; i++) {
-		if ($('#iframe').eq(0).contents().find('.ans-job-finished').eq(i).find('iframe').contents().find('video').length == 1) finish_job_video_length++;
-	}
+	//现在章节中完成的任务点中存在视频的数量，因为有些任务点可能是题目之类的，所以这里要分辨
+	var finish_job_video_length = GetInfo.page.getFinishVideoLength();
 	//如果当前视频中，只有一个视频，且完成的任务点也只有一个
 	if (finish_job_video_length == 1 && set.video_length == 1) {
-		if ($('#no-auto-play').attr('checked') == undefined) {
-			setTimeout(" clickNext()", set.response_time);
-			mylog("视频已经播放完毕，开始跳转下一节");
-			if ($('#unlocking-mode-play').attr()) {
-
-			}
-			set.set_video_index++;
+		if (modeAttrChecked.noAuto() == undefined) {
+			setTimeout(clickNext, set.response_time);
+			mylog("视频已经播放完毕，开始跳转下一任务点");
+			//如果当前章节的全部任务点完成，才能跳转
+			if (set.set_span_index == GetInfo.page.getTabTags().length) set.set_video_index++;
+			else set.set_span_index++;
 		} else {
 			mylog("视频已经播放完毕，请手动切换到要播放的视频", 'error');
 		}
-
-
 	}
 	//如果当前模式是多视频模式
 	else if (set.video_length > 1) {
 		//如果当前视频中，视频完成数量，等于视频总数量
 		if (finish_job_video_length == set.video_length) {
 			//如果手动播放模式开启，则不自动跳转
-			if ($('#no-auto-play').attr('checked') == undefined) {
-				setTimeout(" clickNext()", set.response_time);
-				mylog("多视频已经播放完毕，开始跳转下一节");
-
-				set.set_video_index++;
+			if (modeAttrChecked.noAuto() == undefined) {
+				setTimeout(clickNext, set.response_time);
+				mylog("多视频已经播放完毕，开始跳转下一任务点");
+				//如果当前章节的全部任务点完成，才能跳转
+				if (set.set_span_index == GetInfo.page.getTabTags().length) set.set_video_index++;
+				else set.set_span_index++;
 			} else {
 				mylog("多视频已经播放完毕，请手动切换到要播放的视频", 'error');
 			}
 		} else {
 			loadName();
-			setTimeout("play()", set.response_time);
+			setTimeout(play, set.response_time);
 		}
-	}
-
-	else {
+	} else {
 		loadName();
-		setTimeout("play()", set.response_time);
+		setTimeout(play, set.response_time);
 	}
 }
-
-//============================================加载章节名称============================================
+//加载章节名称
 function loadName() {
 	if ($('#unlocking-mode-play').attr('checked') != undefined) {
-		jobCount[jobCount.length - 1].parentNode.getElementsByTagName('a')[0].click();
-		cp = jobCount[jobCount.length - 1].parentNode.getElementsByTagName('span')[2].innerText;  //当前章节
-		if (jobCount[jobCount.length] != undefined) np = jobCount[set.set_video_index + 1].parentNode.getElementsByTagName('span')[2].innerText;  //下一章节
+		jobCounts[jobCounts.length - 1].parentNode.getElementsByTagName('a')[0].click();
+		cp = jobCounts[jobCounts.length - 1].parentNode.getElementsByTagName('span')[2].innerText;  //当前章节
+		if (jobCounts[jobCounts.length] != undefined) np = jobCounts[set.set_video_index + 1].parentNode.getElementsByTagName('span')[2].innerText;  //下一章节
 		else np = "无";
 	} else {
-		cp = jobCount[set.set_video_index].parentNode.getElementsByTagName('span')[2].innerText;  //当前章节
-		if (jobCount[set.set_video_index + 1] != undefined) np = jobCount[set.set_video_index + 1].parentNode.getElementsByTagName('span')[2].innerText;  //下一章节
+		cp = jobCounts[set.set_video_index].parentNode.getElementsByTagName('span')[2].innerText;  //当前章节
+		if (jobCounts[set.set_video_index + 1] != undefined) np = jobCounts[set.set_video_index + 1].parentNode.getElementsByTagName('span')[2].innerText;  //下一章节
 		else np = "无";
 	}
-
 	$("#cp").text("当前章节：" + cp);
 	$("#np").text("下一章节：" + np);
-
 }
-//============================================播放设置，点击后淡出淡入============================================
+//播放设置，点击后淡出淡入
 function setting() {
 	if ($("#div-setting").css('display') == 'none') {
 		$("#div-setting").fadeIn();
@@ -384,31 +459,29 @@ function setting() {
 		$("#div-setting").css('display', 'none');
 	}
 }
-
-//============================================跳转到选择的章节============================================
+//跳转到选择的章节
 function jump_to_select() {
 
-	jobCount = document.getElementsByClassName('jobCount');//未完成的课程数组	
+	jobCounts = GetInfo.page.getJobCounts();//未完成的课程数组	
 
 	if ($("#select-job-play").attr("checked") != undefined || $("#no-auto-play").attr("checked") != undefined) {
-		for (var i = 0; i < jobCount.length; i++) {
-			if ($(jobCount).eq(i).parent('h5').hasClass('currents') || $(jobCount).eq(i).parent('h4').hasClass('currents')) {
+		for (var i = 0; i < jobCounts.length; i++) {
+			if ($(jobCounts).eq(i).parent('h5').hasClass('currents') || $(jobCounts).eq(i).parent('h4').hasClass('currents')) {
 				set.set_video_index = i;
 				mylog('正在切换到选中的章节');
 			}
 		}
 	}
 }
-
-//============================================下面都是没什么用的一些函数============================================
-//============================================自定义输出============================================
+//下面都是没什么用的一些函数
+//自定义输出
 function mylog(str, type) {
 	var time = "[" + new Date().format("MM月dd日hh:mm:ss") + "]";
 	var title = "[超星脚本]:";
 	if (type == 'error') console.error(time + title + "%c" + str, 'color:red;');
 	else console.log(time + title + "%c" + str, 'color:green;');
 }
-//============================================日期格式化，不用看，就是显示日期的工具函数============================================
+//日期格式化，不用看，就是显示日期的工具函数
 Date.prototype.format = function (fmt) {
 	var o = {
 		"M+": this.getMonth() + 1,                 //月份
@@ -423,14 +496,14 @@ Date.prototype.format = function (fmt) {
 	for (var k in o) if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
 	return fmt;
 }
-//============================================播放完毕============================================
+//播放完毕
 function job_is_finish() {
 	setTimeout(() => {
 		mylog('视频已经播放完毕，觉得赞的请给博主点个赞哦！博客链接：https://blog.csdn.net/qq_31254489/article/details/104579438');
 		alert('视频已经播放完毕，觉得赞的请给博主点个赞哦！博客链接：https://blog.csdn.net/qq_31254489/article/details/104579438');
 	}, 5000);
 }
-//============================================绘制窗口============================================
+//绘制窗口
 function drawWindow() {
 	//加载css文件
 	$('head').append('<link href="https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/main.css?t=' + new Date().getTime() + '" rel="stylesheet" type="text/css" />');
@@ -438,7 +511,7 @@ function drawWindow() {
 	$("body").append("<div id='skdiv'></div>");
 	$("#skdiv").html("\
 			<p>\
-				<span style='font-weight:bold;    font-size: large;'>超星刷课脚本-v"+ version + "</span><br/>（可用鼠标拖动）\
+				<span style='font-weight:bold;    font-size: large;'>超星刷课脚本 </span><span style='font-weight:bold;'> v"+ version + "</span><br/>（可用鼠标拖动）\
 			<p>\
 			<p>最后更新时间："+ last_set_time + "</p>\
 			\
@@ -447,11 +520,18 @@ function drawWindow() {
 			<div>\
 				<p id='rate_txt'>播放速度：1X</p>\
 				<div style='float:left'><button id='b1'>▲</button><button id='b2'>▼</button></div>\
-			</div><button id='startplay' onclick='init()'>点击开始播放</button>\
+			</div>\
+			<button id='startplay' onclick='init()'>点击开始播放</button>\
 			<p>\
 				<hr />\
 			</p>\
-			<button id='settingbtn' onclick='setting()''>播放模式</button>\
+			<button id='settingbtn' onclick='setting()'>播放模式</button>\
+			<div id='net-work'>\
+				<ul>\
+					<li><span style='margin:4px;font-weight:bold'>公网1</span><input type='radio' name='netwwork'   onclick='setNetwork(1)' checked></li>\
+					<li><span  style='margin:4px;font-weight:bold'>公网2</span><input type='radio' name='netwwork' onclick='setNetwork(2)'></li>\
+				</ul>\
+			</div>\
 			<div id='setting'></div>\
 			<div style='margin-top:10px'>\
 				<p style='font-weight:bold'>当前进度:&nbsp;&nbsp;<span id='progress'>0%</span></p>\
@@ -472,26 +552,61 @@ function drawWindow() {
 	</div>');
 	$('#setting').append(settingDiv);
 }
-//============================================鼠标拖动刷课框============================================
-function dragPanelMove(downDiv, moveDiv) {
+//鼠标拖动刷课框
+function dragPanelMove(downDiv) {
 	$(downDiv).mousedown(function (e) {
-		var isMove = true;
-		var div_x = e.pageX - $(moveDiv).offset().left;
-		var div_y = e.pageY - $(moveDiv).offset().top;
+		var positionDiv = $(this).offset();
+		var distenceX = e.pageX - positionDiv.left;
+		var distenceY = e.pageY - positionDiv.top;
 		$(document).mousemove(function (e) {
-			if (isMove) {
-				var obj = $(moveDiv);
-				obj.css({ "left": e.pageX - div_x, "top": e.pageY - div_y });
+			var x = e.pageX - distenceX;
+			var y = e.pageY - distenceY;
+			if (x < 0) {
+				x = 0;
+			} else if (x > $(document).width() - $(downDiv).outerWidth(true)) {
+				x = $(document).width() - $(downDiv).outerWidth(true);
 			}
-		}).mouseup(
-			function () {
-				isMove = false;
+			if (y < 0) {
+				y = 0;
+			} else if (y > $(document).height() - $(downDiv).outerHeight(true)) {
+				y = $(document).height() - $(downDiv).outerHeight(true);
+			}
+			$(downDiv).css({
+				'left': x + 'px',
+				'top': y + 'px'
 			});
+		});
+		$(document).mouseup(function () {
+			$(document).off('mousemove');
+		});
 	});
 }
-//============================================判断href字符串包含============================================
+//切换公网
+function setNetwork(param) {
+	set.network = param;
+}
+//改变公网
+setInterval(() => {
+	if (set.play_interval != null) changeNetwork();
+}, set.response_time_fast);
+//改变公网
+function changeNetwork() {
+	var num = parseInt(GetInfo.video.getVideoSelectedNetWork_num(now_video_index));
+	if (!isNaN(num)) {
+		if (num != set.network) {
+			if (num == 1) {
+				GetInfo.video.getVideoSelectedNetWorks().eq(1).click();
+				mylog("正在切换到公网2");
+			} else {
+				GetInfo.video.getVideoSelectedNetWorks().eq(0).click();
+				mylog("正在切换到公网1");
+			}
+		}
+	}
+}
+//判断href字符串包含
 function href_is_Has(str) { return window.location.href.indexOf(str) == -1 ? false : true; }
-//============================================显示播放模式============================================
+//显示播放模式
 function show_play_mode() {
 	var length = $('input[name=sk]').length;
 	for (var i = 0; i < length; i++) {
@@ -501,13 +616,16 @@ function show_play_mode() {
 	}
 
 }
+//提示
+alert('倍速播放很可能会导致挂科！，或者不良记录\n播放前请先设置好播放模式\n再次点击播放按钮即可暂停，公网可任意切换\n最后！！！请吧当前窗口独立出来，可以覆盖当前窗口，但是不能最小化窗口！，不然视频过一段时间会自动暂停');
 
+//=============下面是主运行代码=============
 setInterval(show_play_mode, 1000);
 //绘制窗口
 drawWindow();
 //鼠标拖动刷课框
-dragPanelMove("#skdiv", "#skdiv");
-//============================================主函数============================================
+dragPanelMove("#skdiv");
+//主函数
 check_url_isright();
 //判断当前浏览器能否运行次脚本
 main_tocheck_browser();
