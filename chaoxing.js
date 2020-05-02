@@ -305,7 +305,7 @@ function check_is_done(playRate, now_video_index) {
 		$('#progress').text(playRate + "%");
 		$('#startplay').text("播放中...,点击暂停");
 	} else {//如果播放结束
-		mylog("当前全部视频已经播放完毕，请手动切换到要播放的视频", 'error');
+		
 		//每次结束玩就点击下一个视频节点,或者下一个视频
 		set._clearInterval();
 		//如果手动播放模式开启，则不自动跳转
