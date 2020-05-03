@@ -1,4 +1,4 @@
-/*
+ /*
 超星学习通刷课脚本
 作者：LDS-Skeleton（github）
 功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
@@ -318,8 +318,8 @@ function check_is_done(playRate, now_video_index) {
 			mylog("当前全部视频已经播放完毕，请手动切换到要播放的视频", 'error');
 			$('#startplay').text("手动播放选择的视频");
 		} else {
-			mylog("当前章节已经播放完毕，正在切换下一章节");
-			$('#startplay').text("播放完毕，正在切换下一章节");
+			mylog("当前视频已经播放完毕，正在切换下一任务点");
+			$('#startplay').text("播放完毕，正在切换下一任务点");
 			setTimeout(clickNext, set.response_time);
 		}
 	}
