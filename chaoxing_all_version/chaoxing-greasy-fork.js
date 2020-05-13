@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         超星刷课脚本（作者：skeleton）
 // @namespace    skeleton
-// @version      1.4.3
+// @version      1.4.4
 // @description  超星视频自动播放，自动下一页，自动答题。
 // @author       skeleton
 // @match        *://*.chaoxing.com/*
