@@ -1,4 +1,4 @@
-// ==UserScript==
+ // ==UserScript==
 // @name         超星刷课脚本（作者：skeleton）
 // @namespace    skeleton
 // @version      1.4.5
@@ -121,6 +121,8 @@ function hookVideo() {
 
 if (window.location.href.indexOf("studentstudy") != -1) {
     chaoxing_script();
+    
+
 }
 
 if(window.location.href.indexOf("http://i.mooc.chaoxing.com/space/index") != -1){
@@ -138,8 +140,7 @@ function chaoxing_script() {
     功能：支持看完自动跳转下一节，暂停自动播放，倍速播放，支持修改播放模式，不能自动答题
     ======================================================================================================
     */
-    var version = '1.4.3';
-    var last_set_time = '2020/5/13';
+
     var jobCounts = null;//未完成的课程数组，任务点
     var cp = "";//这一章
     var np = "";//下一章
@@ -883,10 +884,10 @@ function chaoxing_script() {
     setTimeout(() => {
         init();
         mylog("开始刷课");
-    }, 2000);
+        alert('● 倍速播放很可能会导致挂科！，或者不良记录\n●公网和播放速度，可任意切换\n● 最后！！！请吧当前窗口独立出来，可以覆盖当前窗口，但是不能最小化窗口！，不然视频过一段时间会自动暂停');
+        alert("注意！目前脚本不能搜索到图片和语音，如果题目有大量图片慎用次脚本！");
+    }, 3000);
 
-    alert('● 倍速播放很可能会导致挂科！，或者不良记录\n●公网和播放速度，可任意切换\n● 最后！！！请吧当前窗口独立出来，可以覆盖当前窗口，但是不能最小化窗口！，不然视频过一段时间会自动暂停');
-    alert("注意！目前脚本不能搜索到图片和语音，如果题目有大量图片慎用次脚本！");
 
 
 
