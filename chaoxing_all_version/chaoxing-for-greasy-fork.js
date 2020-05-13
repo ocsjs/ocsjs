@@ -617,7 +617,6 @@ function chaoxing_script() {
                <div style='float:left'><button id='b1'>▲</button><button id='b2'>▼</button></div>\
            </div>\
            <hr style=' float: left;width: 100%;'>\
-           <p style='text-align:center;'>- 自动播放中 -</p>\
            <div id='net-work' >\
            <p>\
            <ul >\
