@@ -1,7 +1,7 @@
-// ==UserScript==
+ // ==UserScript==
 // @name         超星刷课脚本（作者：skeleton）
 // @namespace    skeleton
-// @version      1.4.4
+// @version      1.4.5
 // @description  超星视频自动播放，自动下一页，自动答题。
 // @author       skeleton
 // @match        *://*.chaoxing.com/*
@@ -15,7 +15,7 @@
 // @license      MIT
 // ==/UserScript==
 
-var version = '1.4.4';
+var version = '1.4.5';
 var last_set_time = '2020/5/13';
 
 
@@ -885,6 +885,10 @@ function chaoxing_script() {
         init();
         mylog("开始刷课");
     }, 2000);
+
+    alert('● 倍速播放很可能会导致挂科！，或者不良记录\n●公网和播放速度，可任意切换\n● 最后！！！请吧当前窗口独立出来，可以覆盖当前窗口，但是不能最小化窗口！，不然视频过一段时间会自动暂停');
+    alert("注意！目前脚本不能搜索到图片和语音，如果题目有大量图片慎用次脚本！");
+
 
 
 
