@@ -1,16 +1,16 @@
 
 #skdiv{
 
-    position: absolute;
+    position: fixed;
     z-index: 999999999;
-    background:#F5F5F5;
+    background: #F5F5F5;
     height: auto;
     width: 20%;
     padding: 10px;
-    top: 300px;
-    right: 24%;
-    border:1px solid #000;
-    border-radius:5px;
+    top: 50px;
+    right: 20%;
+    border: 1px solid #000;
+    border-radius: 5px;
     text-align: center;
 
 }
