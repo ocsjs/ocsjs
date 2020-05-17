@@ -8,32 +8,47 @@
 </div>
 
 ****
-
-__版本：__ v1.3.2(稳定版)    
 __作者：__ 骷髅：LDS-Skeleton    
 
 __脚本，技术交流群__：https://jq.qq.com/?_wv=1027&k=5hR45ae （点击添加，别进来问脚本怎么用，下面有教程），群号：532537990   
 
-**所有脚本均由本人（LDS-Skeleton）制作，转载请注明出处，禁止商业用途** 
+**所有脚本均由本人（LDS-Skeleton）制作，转载请注明出处** 
 
 ****
 ## 如何参与开发
 加群找到群主，给权限审核后即可参与开发。
 
 ## 功能概览
-| 最新版本：超星 v1.3.2
+| 最新版本：超星 v1.6.0
 | -----
+| 自动答题功能开启，但不支持图片答题。
 |自动刷视频，自动跳转下一个任务点，自定义选择视频播放
 |自动禁音，鼠标离开不会暂停，可随时切换公网，随时暂停
 |支持倍速播放（慎用，如果学校查的严，会有不良记录）
-|__自动答题__：__（不要再问我有没有答题的脚本了，無）__ 目前尚未支持，博主一个人做自动答题系统也不是不可能，但是需要消耗大量精力。 5月中旬之后将会考虑制作自动答题功能
 
-在自动答题没出来之前，博主提供一个自己的网课答案题库，供大家查询答案：[kl网课答案查询](http://klwangke.top)
+
+## 使用教程：
+## csdn教程（和下面的一样）    
+__CSDN主页__: https://blog.csdn.net/qq_31254489  (如果使用教程404了，那么就是我的文章正在审核)    
+__文章直链__：https://blog.csdn.net/qq_31254489/article/details/104579438
+
+### 按照步骤来：
+
+- 1.下载脚本专用浏览器-browser.7z：[点击此处下载](https://share.weiyun.com/c5OIR80X)
+- 2.解压缩browser.7z
+下载后是这样的：
+![压缩包图片](https://github.com/KL-Skeleton/OnlineCourseScript/blob/master/src/ysb.png)
+- 3.打开专用浏览器
+![专用浏览器](https://github.com/KL-Skeleton/OnlineCourseScript/blob/master/src/index.png)
+- 4.登录，并进入到超星或者智慧树，的学习界面
+![学习界面](https://github.com/KL-Skeleton/OnlineCourseScript/blob/master/src/studypage.png)
+- 5.等待刷课框弹出，自动刷课，可以修改倍速，公网，和自动答题选项。
 
 ## 更新：
 
 更新时间     | 说明
 -------- | -----
+2020/5/17| __超星v1.6.0__ ：增加自动答题功能，增加空任务点的清除，增加ppt类型的任务点播放。
 2020/5/3| **超星 v1.3.2** ：修复一个章节多任务栏，但是只播放一个任务栏的bug，新增界面缩放功能，和强制跳转功能
 2020/5/2| 超星 v1.2.1 ：增加暂停功能，增加切换公网功能，优化大部分的代码
 2020/4/24| **==超星脚本正式版v1.0==** 正式发布 ：使用的人数变多，为了完善大家的体验，在此经过多次测试，发布超星脚本正式版v1.0，解决了之前的多视频播放问题，新增播放设置，可以在任意播放模式之间切换，做到视频的自定义播放，和自动播放，解决了视频适配的问题。
@@ -43,69 +58,8 @@ __脚本，技术交流群__：https://jq.qq.com/?_wv=1027&k=5hR45ae （点击�
 2020/3/5 |解决部分没有视频，只有文字，造成脚本卡顿。
 2020/3/3  | 解决了严重的bug，并优化代码，只需一句话即可使用。
 
-****
-## 脚本可以运行的浏览器
-| 浏览器
-| -----
-|谷歌浏览器（chrome）
-|QQ浏览器
-|火狐浏览器（FireFox）
-|360极速浏览器，（不能用360安全浏览器！）
-| 电脑自带的IE浏览器（不推荐）
-****
 
-## 使用教程：
-## csdn教程（和下面的一样）    
-__CSDN主页__: https://blog.csdn.net/qq_31254489  (如果使用教程404了，那么就是我的文章正在审核)    
-__文章直链__：https://blog.csdn.net/qq_31254489/article/details/104579438
-
-### 按照步骤来：
-
-准备一个浏览器！，谷歌，火狐，qq浏览器都行！，我这个不是油猴，不要用油猴。
-登录进你的超星账号然后：
-### 1.打开超星学习通的学习界面！！！。
-
-
-![学习界面](https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/src/stadypage.png)
-
-### 2.按下键盘上的F12 ！！！
-F12不懂是什么可以劝退了    
-有些浏览器是不支持F12的！，如果没有反应请换一个浏览器    
-你会看到浏览器右边弹出一个东西：（qq浏览器，和谷歌都是这个页面）    
-![控制台console](https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/src/console.png)    
-如果是其他浏览器，可能会有中文，比如说火狐   
-
-![控制台console](https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/src/clickconsole.jpg)   
-然后点击Console，中文的话，就点击”控制台“   
-![控制台console](https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/src/kzt,jpg)   
-
-### 3.复制下面代码到console的空白区域中！！！
-
-**你没看错！只需要——两行代码！**
-
-目前更新：支持:**超星学习通**，**智慧树**！
-
-1.__超星v1.0正式版__ ↓↓↓
- 
-```js
-var uri="chaoxing";
-$.getScript("https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/"+uri+".js?t="+new Date().getTime());
-```
-****
-2. __智慧树__ ↓↓↓
-```js
-var uri="zhihuishu";
-$.getScript("https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/"+uri+".js?t="+new Date().getTime());
-```
-
-
-****
-就像这样：吧代码输入进去就行了    
-![代码](https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/src/code.png)
-
-### 4.然后回车，运行代码，屏幕中间出现刷课框：
-![刷课框](https://ghcdn.rawgit.org/LDS-Skeleton/OnlineCourseScript/master/src/result.png)    
-****
-点击播放即可。视频会一直刷下去。可以实时改变播放速度，建议还是一倍速比较好，如果下面那个框框支持2倍速，你可以加到2倍，默认是一倍速的。
 
 制作不易，点个star再走？
+
+
