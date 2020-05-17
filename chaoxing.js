@@ -692,6 +692,7 @@ check_url_isright();
 //判断当前浏览器能否运行次脚本
 main_tocheck_browser();
 //提示
-alert('● 倍速播放很可能会导致挂科！，或者不良记录\n● 播放前请先设置好播放模式\n● 再次点击播放按钮即可暂停，公网可任意切换\n● 最后！！！请吧当前窗口独立出来，可以覆盖当前窗口，但是不能最小化窗口！，不然视频过一段时间会自动暂停');
-alert('！！！！注意！！！！！\n 请再次按下键盘的F12键，关闭右边的代码输入框，不然到了答题界面可能会卡死！\n！！！！注意！！！！！');
-mylog('\n！！！！！注意！！！！！\n 请再次按下键盘的F12键，关闭右边的代码输入框，不然到了答题界面可能会卡死！\n！！！！！注意！！！！！！','error');
+alert("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
+mylog("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
+alert("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
+mylog("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
