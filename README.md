@@ -36,7 +36,7 @@ __文章直链__：https://blog.csdn.net/qq_31254489/article/details/104579438
 
 - 1.下载脚本专用浏览器-browser.7z：[点击此处下载](https://share.weiyun.com/c5OIR80X)
 - 2.解压缩browser.7z
-下载后是这样的：
+解压缩后是这样的：
 ![压缩包图片](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/ysb.png)
 - 3.打开专用浏览器
 ![专用浏览器](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/index.png)
