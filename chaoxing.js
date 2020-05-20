@@ -693,6 +693,5 @@ check_url_isright();
 main_tocheck_browser();
 //提示
 alert("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
-mylog("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
-alert("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
+alert('● 倍速播放很可能会导致挂科！，或者不良记录\n●公网和播放速度，可任意切换\n● 最后！！！请吧当前窗口独立出来，可以覆盖当前窗口，但是不能最小化窗口！，不然视频过一段时间会自动暂停');
 mylog("最新脚本已经更新，可自动答题，请前往csdn查看：https://blog.csdn.net/qq_31254489/article/details/104579438");
