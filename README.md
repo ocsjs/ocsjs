@@ -18,8 +18,8 @@ __脚本，技术交流群__：https://jq.qq.com/?_wv=1027&k=5hR45ae （点击�
 ## 如何参与开发
 加群找到群主，给权限审核后即可参与开发。
 ## 源码
-__超星只刷视频的源码__ ，就是上面文件里面的chaoxing.js
-__油猴脚本代码__ 在 chaoxing_all_version里面的 chaoxing_for_greasyfork.js 那个文件
+__超星只刷视频的源码__ ，就是上面文件里面的chaoxing.js    
+__油猴脚本代码__ 在 chaoxing_all_version里面的 chaoxing_for_greasyfork.js 那个文件    
 
 ## 功能概览
 | 最新版本：超星 v1.6.0
