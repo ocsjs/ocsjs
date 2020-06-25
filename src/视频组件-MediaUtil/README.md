@@ -1,6 +1,10 @@
 # 视频组件-MediaUtil
 
 ## 说明：
+- 只需要传入一个 jq 媒体的元素对象，还有配置参数，即可
+- html5 的 媒体元素有 video，audio
+- 动态引入url提供：[http://c.ykhulian.com:81/resourse/src/MediaUtil-1.0.0.js]()
+
 视频封装函数，封装了：
 - 视频暂停后自动播放
 - 视频加载异常回调
