@@ -56,6 +56,8 @@ var vusetting = {
 
 //启动队列模式实例：
 
+//自定义函数：queueMedia
+//参数 medias——媒体元素
 function queueMedia(medias) {
 
     for(let i =0;i<medias.length;i++){
@@ -64,6 +66,8 @@ function queueMedia(medias) {
     }
     MediaUtils.shift().start();
 }
+
+//启动队列
 queueMedia($('video'));
 
 ```
