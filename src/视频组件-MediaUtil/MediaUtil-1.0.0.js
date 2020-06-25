@@ -72,9 +72,6 @@ function MediaUtil(media_obj, parameter) {
     obj.log('MediaEndEvent:' + (obj.MediaEndEvent));
     obj.log('timeOut:' + (obj.timeOut));
 
-setInterval(() => {
-    
-}, interval);
 
     var media = media_obj[0];
     obj.interval = null;//定时器
