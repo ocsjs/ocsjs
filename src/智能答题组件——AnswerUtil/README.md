@@ -17,7 +17,7 @@ var a = new AnswerUtil('中国是什么', ["中华人民共和国（People's Rep
 
 ]);
 
-a.getAnswer()
+a.getAnswer()//获得回答
 ```
 __运行结果：(1) [2]__
 
@@ -45,8 +45,9 @@ var a = new AnswerUtil('法律部门都有哪些', ["宪法","刑法","民商法
     "民商法"
 
 ]);
-```
 a.getAnswer()
+```
+
 __运行结果：(3) [2, 1, 3]__
 
 ## 思路
