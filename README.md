@@ -40,11 +40,11 @@ __文章直链__：https://blog.csdn.net/qq_31254489/article/details/104579438
 - 1.下载脚本专用浏览器-browser.7z：[点击此处下载](https://share.weiyun.com/c5OIR80X)
 - 2.解压缩browser.7z
 解压缩后是这样的：
-![压缩包图片](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/ysb.png)
+![压缩包图片](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/img/ysb.png)
 - 3.打开专用浏览器
-![专用浏览器](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/index.png)
+![专用浏览器](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/img/index.png)
 - 4.登录，并进入到超星或者智慧树，的学习界面
-![学习界面](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/studypage.png)
+![学习界面](https://ghcdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/img/studypage.png)
 - 5.等待刷课框弹出，自动刷课，可以修改倍速，公网，和自动答题选项。
 
 ## 更新：
