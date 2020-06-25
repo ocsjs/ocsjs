@@ -6,6 +6,7 @@
 即可返回较为正确的选项索引。
 
 ## 运行实例：
+###  一：
 ```javascript
 var a = new AnswerUtil('中国是什么', ["中华人民共和国（People's Republic of China），简称“中国”"], [
 
@@ -18,8 +19,35 @@ var a = new AnswerUtil('中国是什么', ["中华人民共和国（People's Rep
 
 a.getAnswer()
 ```
-### 结果：
-[2] - Array()
+__运行结果：(1) [2]__
+
+### 二：
+```javascript
+var a = new AnswerUtil('中国是什么', ["CD"], [
+
+    "A,,SAD中华人民共和国（People's Republic of），简称“中国”",
+    "B,C,D中华人民共和国（People's Republic of China），“中国”",
+    "中华人民共和国（People's Republic of China），称“中国”",
+    "中华人民共和国（People's Republic of China），简称“中国”"
+
+]);
+a.getAnswer()
+```
+__运行结果：(2) [2, 3]__
+
+## 三：
+```javascript
+var a = new AnswerUtil('法律部门都有哪些', ["宪法","刑法","民商法"], [
+
+    "行政法",
+    "刑法",
+    "宪法",
+    "民商法"
+
+]);
+```
+a.getAnswer()
+__运行结果：(3) [2, 1, 3]__
 
 ## 思路
 
