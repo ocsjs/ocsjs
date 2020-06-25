@@ -40,11 +40,12 @@ __文章直链__：https://blog.csdn.net/qq_31254489/article/details/104579438
 - 1.下载脚本专用浏览器-browser.7z：[点击此处下载](https://share.weiyun.com/c5OIR80X)
 - 2.解压缩browser.7z
 解压缩后是这样的：
-![压缩包图片](https://cdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/img/ysb.png)
+![压缩包图片](https://img-blog.csdnimg.cn/20200517142343942.png)
 - 3.打开专用浏览器
-![专用浏览器](https://cdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/img/index.png)
+![专用浏览器](https://img-blog.csdnimg.cn/20200517142402875.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMxMjU0NDg5,size_16,color_FFFFFF,t_70)
+![](https://img-blog.csdnimg.cn/20200605191835491.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMxMjU0NDg5,size_16,color_FFFFFF,t_70)
 - 4.登录，并进入到超星或者智慧树，的学习界面
-![学习界面](https://cdn.rawgit.org/KL-Skeleton/OnlineCourseScript/master/src/img/studypage.png)
+![学习界面](https://img-blog.csdnimg.cn/20200517142422695.png?x-oss-process=image/watermark,type_ZmFuZ3poZW5naGVpdGk,shadow_10,text_aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L3FxXzMxMjU0NDg5,size_16,color_FFFFFF,t_70)
 - 5.等待刷课框弹出，自动刷课，可以修改倍速，公网，和自动答题选项。
 
 ## 更新：
