@@ -1,0 +1,34 @@
+# 视频组件-MediaUtil
+//参数实例：
+var vusetting = {
+    auto: true,
+    muted: true,
+    playbackRate: 2,
+    timeout_reload: true,
+    debug: true,
+    MediaEndEvent() {
+        console.log("媒体播放完毕");
+    },
+    timeOut() {
+        console.log("媒体加载超时");
+    }
+}
+//启动实例：
+vu = new MediaUtil($('video'), vusetting);
+vu.start();
+
+ * =====================================================================
+ * 参数:
+ * auto:boolean             ——自动播放，一旦媒体暂停，立刻点击开始
+ * muted :boolean           ——静音
+ * playbackRate: value      ——播放速度
+ * debug:boolean            ——调试模式，会打印调试信息
+ * reload_times:value       ——媒体异常重新加载次数，默认5秒
+ * readyTimeout: value      ——加载超时时长，默认10秒
+ * timeout_reload:boolean   ——加载异常是否重新加载媒体
+ * MediaEndEvent: callback  ——媒体播放完毕的回调函数
+ * timeOut: callback       ——媒体加载异常，超时回调函数
+ * 
+ *  html5媒体属性大全 : 
+ *  @see  https://www.cnblogs.com/boonya/p/10983066.html
+ */
