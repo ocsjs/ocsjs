@@ -13,7 +13,7 @@
 
 减少了dom操作。
 
-## 单个视频配置参数实例：
+## 单个视频配置参数，启动实例：
 ```javascript
 var vuSetting = {
     auto: true,
@@ -28,15 +28,14 @@ var vuSetting = {
         console.log("媒体加载超时");
     }
 }
-```
-## 单个视频启动实例：
-```javascript
+
+
 vu = new MediaUtil($('video'), vuSetting);
 vu.start();
 ```
 
 
-## 多视频队列模式，参数配置实例：
+## 多视频队列模式，参数配置，启动实例：
 
 ```javascript
 
