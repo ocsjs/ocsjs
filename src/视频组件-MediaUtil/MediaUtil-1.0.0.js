@@ -181,34 +181,3 @@ setInterval(() => {
 }
 
 
-var MediaUtils = new Array();
-
-//参数实例：
-var vusetting = {
-    auto: true,
-    muted: true,
-    playbackRate: 2,
-    timeout_reload: true,
-    debug: true,
-    MediaEndEvent() {
-        console.log("媒体播放完毕");
-        MediaUtils.shift().start();
-        
-    },
-    timeOut() {
-        console.log("媒体加载超时");
-    }
-}
-//启动实例：
-
-function queueMedia(medias) {
-
-    for(let i =0;i<medias.length;i++){
-        var vu = new MediaUtil(medias.eq(i), vusetting);
-        MediaUtils.push(vu);
-    }
-    MediaUtils.shift().start();
-}
-queueMedia($('#iframe').contents().find('iframe').contents().find('video'));
-// vu = new MediaUtil($('video'), vusetting);
-// vu.start();
