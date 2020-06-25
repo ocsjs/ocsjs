@@ -1,4 +1,4 @@
-
+ 
 
 /**
  * 思路：
@@ -48,14 +48,6 @@ function AnswerUtil(question, answers, options) {
     var option = new Array();
     option = option.concat(options);
 
-    //数组中删除val元素
-    Array.prototype.remove = function (val) {
-        var index = this.indexOf(val);
-        if (index > -1) {
-            this.splice(index, 1);
-        }
-        return this;
-    };
     //数组全部元素替换
     Array.prototype.replace = function (regexp, key) {
         for (let i = 0; i < this.length; i++) {
@@ -72,10 +64,9 @@ function AnswerUtil(question, answers, options) {
     obj.init = function (question, answer, option) {
 
         if (
-            //直接给出abc选项，那么转换成数字索引即可
-            obj.transformABC(answer.replace(normal_char, ''))
+
             //是否为判断题
-            || obj.isT_or_F(answer, option)//是否为判断题
+            obj.isT_or_F(answer, option)//是否为判断题
             || obj.isT_or_F(answer.replace(char, ''), option.replace(char, ''))//去除特殊字符再，判断题
             || obj.isT_or_F(answer.replace(normal_char, ''), option.replace(normal_char, ''))//去除特殊字符再，判断题
             //以下是全等判断
@@ -86,14 +77,15 @@ function AnswerUtil(question, answers, options) {
             || obj.isIndexOF_InArray(answer, option)//模糊判断
             || obj.isIndexOF_InArray(answer.replace(char, ''), option.replace(char, ''))//去掉句号，逗号，空格，回车，等特殊字符再模糊判断
             || obj.isIndexOF_InArray(answer.replace(normal_char, ''), option.replace(normal_char, ''))//去除除了中文，数字，日文，韩文，英文字符，再模糊判断
-            || obj.isSame(answer, option)//字符串每个字符进行对比，判断相似度
             //以下是对题目的判断
-            || obj.isIndexOF_InArray(question, option)//模糊判断
-            || obj.isIndexOF_InArray(question.replace(char, ''), option.replace(char, ''))//去掉句号，逗号，空格，回车，等特殊字符再模糊判断
-            || obj.isIndexOF_InArray(question.replace(normal_char, ''), option.replace(normal_char, ''))//去除除了中文，数字，日文，韩文，英文字符，再模糊判断
-            || obj.isSame(question, option)//从题目当中判断是否包含答案，模糊判断
+            || obj.isIndexOF_InArray([question], option, 'question')//模糊判断
+            || obj.isIndexOF_InArray([question].replace(char, ''), option.replace(char, ''), 'question')//去掉句号，逗号，空格，回车，等特殊字符再模糊判断
+            || obj.isIndexOF_InArray([question].replace(normal_char, ''), option.replace(normal_char, ''), 'question')//去除除了中文，数字，日文，韩文，英文字符，再模糊判断
+            || obj.isSame([question], option)//从题目当中判断是否包含答案，模糊判断
+            || obj.isSame(answer, option)//字符串每个字符进行对比，判断相似度
+            || obj.transformABC(answer.replace(normal_char, ''))//直接给出abc选项，那么转换成数字索引即可
         ) {
-
+            obj.norepeat(obj.result)//数组去重
         }
     }
 
@@ -132,7 +124,7 @@ function AnswerUtil(question, answers, options) {
                     if (opt[j] != '' && array[i] != '') {
                         if (opt[j] == array[i]) {
                             result.push(j);
-                            break;
+                            array[i] = '';
                         }
                     }
                 }
@@ -144,7 +136,7 @@ function AnswerUtil(question, answers, options) {
     }
 
     //是否包含其中某个字符串
-    obj.isIndexOF_InArray = function (array, opt) {
+    obj.isIndexOF_InArray = function (array, opt, type) {
         obj.step++;
         let result = new Array();
         //for循环判断
@@ -155,7 +147,10 @@ function AnswerUtil(question, answers, options) {
                     if (opt[j] != '' && array[i] != '') {
                         if (opt[j].length > array[i].length ? opt[j].indexOf(array[i]) != -1 : array[i].indexOf(opt[j]) != -1) {
                             result.push(j);
-                            break;
+                            //如果包含，则删除对应答案，避免下次匹配重新配对
+                            if (type != 'question') array[i] = '';
+                            //如果类型是，题目中包含答案，那么就删除答案中的字符
+                            else array[0].replace(opt[j], '');
                         }
                     }
                 }
@@ -207,7 +202,10 @@ function AnswerUtil(question, answers, options) {
                     }
                 }
                 // //保存索引
-                if (index != -1) result.push(index);
+                if (index != -1) {
+                    result.push(index);
+                    answer[i] = '';
+                }
 
 
             }
@@ -275,13 +273,29 @@ function AnswerUtil(question, answers, options) {
 
     }
 
+    //数组去重
+    obj.norepeat = function (arr) {
+        for (var i = 0; i < arr.length - 1; i++) {
+            for (var j = i + 1; j < arr.length; j++) {
+                if (arr[i] == arr[j]) {
+                    arr.splice(j, 1);
+                    j--;
+                }
+            }
+        }
+        return arr;
+    }
+
     obj.init(question, answer, option);
 
     obj.getAnswer = function () {
-        return obj.result;
+        return obj.norepeat(obj.result);
     }
 
 
 
     return obj;
 }
+
+
+
