@@ -9,7 +9,7 @@
 
 减少了dom操作。
 
-## 配置参数实例：
+## 单个视频配置参数实例：
 ```javascript
 var vuSetting = {
     auto: true,
@@ -25,10 +25,47 @@ var vuSetting = {
     }
 }
 ```
-## 启动实例：
+## 单个视频启动实例：
 ```javascript
 vu = new MediaUtil($('video'), vuSetting);
 vu.start();
+```
+
+
+## 多视频队列模式，参数配置实例：
+
+```javascript
+
+var MediaUtils = new Array();
+//队列模式参数实例：
+var vusetting = {
+    auto: true,
+    muted: true,
+    playbackRate: 2,
+    timeout_reload: true,
+    debug: true,
+    MediaEndEvent() {
+        console.log("媒体播放完毕");
+        MediaUtils.shift().start(); // 队列模式
+        
+    },
+    timeOut() {
+        console.log("媒体加载超时");
+    }
+}
+
+//启动队列模式实例：
+
+function queueMedia(medias) {
+
+    for(let i =0;i<medias.length;i++){
+        var vu = new MediaUtil(medias.eq(i), vusetting);
+        MediaUtils.push(vu);
+    }
+    MediaUtils.shift().start();
+}
+queueMedia($('video'));
+
 ```
 
 ## 配置参数大全：
