@@ -1,6 +1,8 @@
 # 视频组件-MediaUtil
-//参数实例：
-var vusetting = {
+
+## 配置参数实例：
+```javascript
+var vuSetting = {
     auto: true,
     muted: true,
     playbackRate: 2,
@@ -13,10 +15,14 @@ var vusetting = {
         console.log("媒体加载超时");
     }
 }
-//启动实例：
-vu = new MediaUtil($('video'), vusetting);
+```
+## 启动实例：
+```javascript
+vu = new MediaUtil($('video'), vuSetting);
 vu.start();
+```
 
+## 配置参数大全：
  * =====================================================================
  * 参数:
  * auto:boolean             ——自动播放，一旦媒体暂停，立刻点击开始
