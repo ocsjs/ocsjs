@@ -5,6 +5,10 @@
 传入 ：题目，答案，多个选项
 即可返回较为正确的选项索引。
 
+```javascript
+var a = new AnswerUtil('题目',回答Array[],选项Array[]);
+a.getAnswer();//获得匹配的选项的下标索引。
+```
 ## 运行实例：
 ###  一：
 ```javascript
