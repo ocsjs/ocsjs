@@ -1,3 +1,6 @@
+![GitHub All Releases](https://img.shields.io/github/downloads/KL-Skeleton/OnlineCourseScript/total)
+
+
 ## OnlineCourseScript——大学生网课刷课脚本
 
 ### 教程
