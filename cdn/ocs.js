@@ -28,7 +28,7 @@ function startSK(p) {
     if (urlMatch(window.location.href, chaoxingUrls)) {
         
         //引入超星刷课脚本
-        p.$.getScript(p.originUrl+'/cdn/chaoxing/sk-main.js?_='+new Date().getTime(),function(r,s){
+        p.$.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/sk-main.js?_='+new Date().getTime(),function(r,s){
             console.log(s)
             startChaoxingSK(p)
             // startChaoxingSK(p.chatiId,p.unsafeWindow,p.$,p.Vue,p.orginUrl,p.setting)
@@ -36,14 +36,14 @@ function startSK(p) {
     }
     if (urlMatch(window.location.href, chaoxingWorkUrls)) {
         //引入超星作业考试主脚本
-         p.$.getScript(p.originUrl+'/cdn/chaoxingWork/sk-main.js?_='+new Date().getTime(),function(r,s){
+         p.$.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxingWork/sk-main.js?_='+new Date().getTime(),function(r,s){
             console.log(s)
             startChaoxingWorkSk(p.chatiId,p.unsafeWindow)
         });
     }
     if (urlMatch(window.location.href, zhsSkWorkUrls)) {
         //引入智慧树刷课作业考试主脚本
-         p.$.getScript(p.originUrl+'/cdn/zhs/sk-main.js?_='+new Date().getTime(),function(r,s){
+         p.$.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/zhs/sk-main.js?_='+new Date().getTime(),function(r,s){
             console.log(s)
             startZhsSK(p.chatiId,p.unsafeWindow)
         });

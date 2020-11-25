@@ -207,7 +207,7 @@ function  startChaoxingSK(params) {
     let dataVersion = '1.1.1'  //数据版本，为了方便设置setting字段的更新，如果需要添加或者删除字段，需要更改一下版本即可
 
     $('head').append('<style id="skPanelCss">' + localStorage.skPanelCss + '</style>')
-    $('head').append('<script src="https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript@1.6.1/src/%E6%99%BA%E8%83%BD%E7%AD%94%E9%A2%98%E7%BB%84%E4%BB%B6%E2%80%94%E2%80%94AnswerUtil/AnswerUtil-1.0.0.js"></script>')
+    $('head').append('<script src="https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/AnswerUtil-1.0.0.js"></script>')
     $('head').append('<script src="https://cdn.bootcss.com/blueimp-md5/2.10.0/js/md5.min.js"></script>')
 
   
@@ -260,7 +260,7 @@ function  startChaoxingSK(params) {
     function start() {
         $.ajax({
             type: "get",
-            url: originUrl + "/cdn/chaoxing/sk-panel.html?_=" + new Date().getTime(),
+            url:   "https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/sk-panel.html?_=" + new Date().getTime(),
             timeout: 20000,
             dataType: "html",
             success: function (skpanel) {
