@@ -18,6 +18,9 @@ function startZhsSK(chatiId,unsafeWindow){
     $.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/MediaUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
         console.log(s)
     });
+        $.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/AnswerUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
+        console.log(s)
+    });
  
 
     function start(all_li,with_out_what){
