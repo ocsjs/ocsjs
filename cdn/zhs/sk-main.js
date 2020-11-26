@@ -15,7 +15,7 @@ function startZhsSK(chatiId,unsafeWindow){
     setTimeout(function(){document.onselectstart=null},2000);//解除智慧树网页不能复制的限制
     
                //引入视频组件
-    $.getScript(originUrl+'https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/MediaUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
+    $.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/MediaUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
         console.log(s)
     });
  
@@ -188,10 +188,10 @@ function startZhsSK(chatiId,unsafeWindow){
      //绘制窗口
     function drawWindow() {
         //加载css文件
-        $('head').append('<link href="'+originUrl+'https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime() + '" rel="stylesheet" type="text/css" />');
+        $('head').append('<link href="https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime() + '" rel="stylesheet" type="text/css" />');
         $.ajax({
             type: "get",
-            url: originUrl+'https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime(),
+            url: 'https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime(),
             success: function (r) {
                 console.log(r.responseText);
                 var style=$('<style></style>');
