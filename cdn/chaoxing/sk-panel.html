@@ -1,0 +1,331 @@
+-<div id="app" v-cloak>
+    <div v-show="setting.allDisplay" style="z-index: 9999999999999;margin-left: 10px;">
+        <el-link @click="setting.allDisplay=!setting.allDisplay"><i class="el-icon-view"></i></el-link>
+    </div>
+    <div v-show="!setting.allDisplay" id="content">
+        <el-row>
+
+            <el-row>
+
+
+                <el-col>
+                    <el-card class="box-card">
+                        <div>
+
+                            <span style="font-size:medium;font-weight: bold;">超星刷课脚本</span>
+                            <el-link @click="appShow=!appShow"><span v-text="appShow===true?'收起':'下拉'"
+                                    style="float: right;padding: 0px 10px 10px 5px"></span></el-link>
+
+                        </div>
+                        <div>
+                            <el-card v-show="appShow" class="card-content" shadow="hover" style="padding-bottom: 10px;">
+
+
+                                <el-collapse v-model="activeName" accordion>
+
+                                    <el-collapse-item title="脚本介绍" name="10">
+                                        <p>超星刷课脚本</p>
+                                        <p>作者: skeleton</p>
+                                        <p>交流1群: 976662217 (已满)</p>
+                                        <p>交流2群: 940881245 </p>
+                                        <el-button size="mini" plain type="primary" @click="window.open('https://ocs.klweb.top/','_blank');"  >查看教程 </el-button>
+                                        
+                                        <el-alert title="请大家填写查题码,100万次，用完即止:"
+                                                type="success">
+                                        </el-alert>
+                                        <el-alert title="9683d1f02f0711eba205178e57fefea8"
+                                                type="success">
+                                        </el-alert>
+
+                                        <!--<div class="setting-form">-->
+                                        <!--    <el-alert title="不是学校公共选修课请不要使用高倍速！！！！，倍速在后台可以看见，公共课一般管得不严才能使用。"-->
+                                        <!--        type="warning">-->
+                                        <!--    </el-alert>-->
+                                        <!--</div>-->
+
+
+
+
+                                    </el-collapse-item>
+
+
+                                    <el-collapse-item title="个人设置" name="1">
+                                        <el-form ref="setting" :model="setting" label-width="100px"
+                                            class="setting-form">
+                                            <el-form-item label="禁止超星弹窗" style="margin-bottom:5px">
+                                                <el-switch class="form-switch" v-model="setting.alertDIsable">
+                                            </el-form-item>
+
+
+                                            <el-form-item label="开启日志输出" style="margin-bottom:5px">
+                                                <el-switch class="form-switch" v-model="setting.consoleShow">
+                                            </el-form-item>
+
+                                            <el-form-item label="全部隐藏至左上角的小眼睛" style="margin-bottom:5px">
+                                                <el-switch class="form-switch" v-model="setting.allDisplay">
+                                            </el-form-item>
+
+                                        </el-form>
+
+
+
+
+                                    </el-collapse-item>
+
+
+                                    <el-collapse-item title="脚本设置" name="2">
+                                        <el-form ref="setting" :model="setting" label-width="80px" class="setting-form"
+                                            style="width: 300px;">
+                                            <el-form-item label="播放速度">
+                                                <el-col :span="2">{{setting.media.playbackRate}}x</el-col>
+                                                <el-col :span="18" :offset="2">
+                                                    <el-slider v-model="setting.media.playbackRate" :min=1 :max=16>
+                                                    </el-slider>
+                                                </el-col>
+
+                                            </el-form-item>
+                                            <el-form-item label="视频静音">
+                                                <el-switch class="form-switch" v-model="setting.media.muted"
+                                                    active-text="静音" inactive-text="不静音">
+                                            </el-form-item>
+                                            <el-form-item label="网络类型">
+                                                <el-switch class="form-switch" v-model="setting.media.network1"
+                                                    active-text="公网1" inactive-text="公网2">
+                                            </el-form-item>
+
+
+
+
+                                            <el-form-item label="播放模式">
+                                                <el-radio-group v-model="setting.skType">
+
+                                                    <el-tooltip class="item" effect="dark"
+                                                        content="全自动模式：根据当前未完成的任务点全自动刷，不会刷已经完成的任务点" placement="right">
+                                                        <el-radio label="全自动" class="setting-radio" @click="">
+                                                    </el-tooltip>
+
+
+                                                    <el-tooltip class="item" effect="dark"
+                                                        content="手动模式：手动点击搜索任务点，手动点击开始任务按钮，或者全部开始按钮" placement="right">
+                                                        <el-radio label="手动" class="setting-radio">
+                                                    </el-tooltip>
+
+
+                                                    <el-tooltip class="item" effect="dark"
+                                                        content="复习模式，除了章节测试，全部任务重新做一遍" placement="right">
+                                                        <el-radio label="复习" class="setting-radio">
+                                                    </el-tooltip>
+
+                                                </el-radio-group>
+                                            </el-form-item>
+
+
+                                        </el-form>
+
+
+                                    </el-collapse-item>
+
+                                    <el-collapse-item title="自动答题设置" name="3">
+                                        <el-form ref="setting" :model="setting" label-width="150px" style="width: 300px;">
+                                            <el-form-item label="自动提交百分比(不懂意思不要乱调)">
+                                                <el-tooltip class="item" effect="dark"
+                                                    content="设定通过百分比，如果搜索成功的题目超过指定的百分比，例如:60%(10题查到6题)，就自动提交，否则保存答案，例如 100%就是 全部搜到才提交 ， 0% 的话就是不管怎么样都会自动提交"
+                                                    placement="right">
+                                                    <template>
+                                                        <el-input-number controls-position="right" size="small" v-model="setting.work.passRate"  :min="0" :max="100" ></el-input-number>
+                                                      </template>
+                                                    <!-- <el-input v-model="setting.work.passRate" type="number"
+                                                        placeholder="通过率">
+                                                        <template slot="append">%</template>
+                                                    </el-input> -->
+                                                </el-tooltip>
+                                                
+                                            </el-form-item>
+                                            <el-form-item label="查题码（必填）">
+                                                    <el-popover
+                                                      placement="right"
+                                                       
+                                                      trigger="hover">
+                                                      
+                                                      <div>
+                                                          <div>查题码： 关注微信小程序 “网课答” 免费获取查题码 <br/> 获取完后请到脚本管理，修改脚本20几行填写查题码 </div>
+                                                          <div>
+                                                               
+                                                              <img style="width:300px;height:300px" src="https://wk.klweb.top/cdn/wkd.png">
+                                                          </div>
+                                                      </div>
+                                                      
+                                                      <el-input disabled slot="reference" size="small" v-model="chatiId" ></el-input>
+                                                       
+                                                    </el-popover>
+                                               
+                                            </el-form-item>
+ 
+                                        </el-form>
+
+                                    </el-collapse-item>
+ 
+
+                                </el-collapse>
+                                <div style="padding: 5px;">
+                                    <el-button style="float: right;" type="primary" @click="personSetting()">永久保存设置
+                                    </el-button>
+                                </div>
+                            </el-card>
+
+                        </div>
+                    </el-card>
+                </el-col>
+
+            </el-row>
+            <el-row>
+                <div v-show="setting.consoleShow">
+                    <el-card class="box-card" style="margin-top: 20px;">
+                        <div>
+                            <span style="font-size:medium;font-weight: bold;">日志:</span>
+                            <br />
+ 
+                            <el-tag style="max-width: 120px;" v-show="!appShow"
+                                :type="consoleArray[consoleArray.length-1].type" size="mini"
+                                v-text="(consoleArray.length-1)+':'+consoleArray[consoleArray.length-1].str">
+                            </el-tag>
+                        </div>
+                        <div style="height: 200px;" v-show="appShow" class="card-content">
+                            <el-card style="height: 200px;overflow: auto;" shadow="hover">
+                                <p style="max-width: 120px;" v-for="(obj,index) in consoleArray">
+                                    <el-tag :type="obj.type" :key="index" size="mini" v-text="index+':'+obj.str">
+                                    </el-tag>
+                                </p>
+                            </el-card>
+                        </div>
+
+
+
+                    </el-card>
+                </div>
+            </el-row>
+            <el-row>
+                <el-card class="box-card" style="margin-top: 20px;">
+                    <div class="setting-form">
+                        <div>在线查题</div>
+                        <el-input placeholder="请输入题目查题" v-model="searchText" class="input-with-select">
+ 
+                             <el-button slot="append" style="cursor:pointer ; " icon="el-icon-search" @click="queryTiMu()"></el-button>
+                        </el-input>
+                         <div v-if="searchQuestion!=''">题目：{{searchQuestion}}</div>
+                        <div style="margin-top:20px" v-if="searchAnswer!=''">答案：{{searchAnswer}}</div>
+                    </div>
+                </el-card>
+            </el-row>
+
+        </el-row>
+
+        <!-- 如果是第一次使用，则弹出对话框 -->
+        <el-dialog top="20px" :visible.sync="setting.dialogVisible" style="width: 100%;height: 100%; " :append-to-body="true"
+            :close-on-click-modal="false" :close-on-press-escape="false" :show-close="false">
+            <iframe src="https://ocs.klweb.top/" frameborder="0"
+                style="height: 75vh;width: 100%;overflow:auto"></iframe>
+            <span slot="footer" class="dialog-footer">
+                <el-button type="primary" @click="setting.dialogVisible = false;">我已阅读完毕</el-button>
+                <el-link @click="personSetting(setting.dialogVisible = false)">下次不再弹出</el-link>
+            </span>
+        </el-dialog>
+ 
+ 
+
+        <div class="sk-main">
+            <div class="sk-content">
+                <el-card :body-style="{paddingBottom:'5px',paddingTop:'5px'}">
+                    <el-collapse v-model="activeName">
+                        <el-collapse-item title="当前任务列表: " name="20">
+
+                            <div
+                            v-loading="allJob.length==0 || setting.skType!='手动'"
+                            :element-loading-text="setting.skType!='手动'?'只有手动模式可用（左边设置界面设置播放模式为手动）':'拼命加载中'"
+                            element-loading-spinner="el-icon-lock"
+                            >
+
+                                
+
+                                <div>
+
+                                    <div>
+                                        <el-button type="primary" plain v-for="(obj,index) in tabtags"
+                                            v-text="obj.innerText==''?'无标题':obj.innerText" @click="obj.onclick"></el-button>
+                                    </div>
+
+
+                                    <el-table :data="allJob" height="220">
+                                        <el-table-column prop="type" label="类型" width="100">
+                                        </el-table-column>
+                                        <el-table-column prop="desc" label="描述">
+                                        </el-table-column>
+                                        <el-table-column label="状态" width="100">
+                                            <template slot-scope="scope">
+                                                <div
+                                                    :style="{color:allJob[scope.$index].start==true?'#67c23a':'#f56c6c'}">
+                                                    <i
+                                                        :class="allJob[scope.$index].start==true?'el-icon-success':'el-icon-s-release'"></i>
+                                                    <span
+                                                        v-text="allJob[scope.$index].start==true? (allJob[scope.$index].finish==true?'已完成':'进行中') :(allJob[scope.$index].error==true?'任务异常':'待分配')"></span>
+                                                </div>
+                                            </template>
+
+                                        </el-table-column>
+                                        <el-table-column label="操作" width="100">
+                                            <template slot-scope="scope">
+                                                <el-button @click="play(allJob[scope.$index])"
+                                                    :disabled='allJob[scope.$index].start' type="primary" size="mini"
+                                                    v-text="allJob[scope.$index].finish?'重新做':'开始'"></el-button>
+
+                                            </template>
+                                        </el-table-column>
+                                    </el-table>
+                                </div>
+                                <div style="padding: 10px;">
+                                    <el-button type="primary" size="small" @click="reSearchIframe()"> <i
+                                            class="el-icon-refresh"></i> 重新检测任务</el-button>
+
+
+                                    <!-- <el-button type="primary" size="small" @click="play(this.allJob[0])" title=""> <i
+                                            class="el-icon-d-arrow-right"></i> 队列开始
+                                    </el-button> -->
+
+                                    <el-button type="primary" size="small" @click="allStart($event)" title="">
+                                         <i class="el-icon-d-arrow-right"></i> 全部开始
+                                    </el-button>
+                                </div>
+
+                            </div>
+
+
+
+                        </el-collapse-item>
+                    </el-collapse>
+ 
+                </el-card>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+
+<style>
+    /*解决刷课框被挡住的问题*/
+    .zad729 {
+     margin-left: 0px;
+     height: 100px;
+    }
+    #selector{
+        left: auto;
+        right: 0px;
+    }
+    
+    .el-dialog{
+        margin-top: 20px;
+        margin-left: 8%;
+        width: 70%;
+    }
+    
+</style>
