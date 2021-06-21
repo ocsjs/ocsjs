@@ -3,7 +3,7 @@
 
 ## OnlineCourseScript——大学生网课刷课脚本
 
-2021 后不再更新 ...
+最新脚本正在制作中 ...
 
 ## 脚本教程网
 所有的教程，疑难问答，都在这里：[https://ocs.klweb.top/](https://ocs.klweb.top/)
