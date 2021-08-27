@@ -299,7 +299,7 @@ function  startChaoxingSK(params) {
                     _top.pageChange(page.pageInfo.direction, page.pageInfo.chapterId, page.pageJob)
                 })
 
-                if($('#skdiv').length!=0) _this.messageBox('警告',"检测到您安装了超星刷课的旧脚本，请删除旧版本，保证新脚本的运行！！！，如何删除请看教程：\n<a href='https://ocs.klweb.top/script/tampermonkey/#油猴使用' target='_blank'>https://ocs.klweb.top/script/tampermonkey/#油猴使用</a>","warning")
+                if($('#skdiv').length!=0) _this.messageBox('警告',"检测到您安装了超星刷课的旧脚本，请删除旧版本，保证新脚本的运行！！！，如何删除请看教程：\n<a href='https://ocs.enncy.cn/script/tampermonkey/#油猴使用' target='_blank'>https://ocs.enncy.cn/script/tampermonkey/#油猴使用</a>","warning")
 
                 _top.pageChange = function (direction, chapterId, pageJob, callback) {
                     _top.sk.operationTime = new Date().getTime()
@@ -329,7 +329,7 @@ function  startChaoxingSK(params) {
                 }
                 if(chatiId==undefined || chatiId=='' ){
                     // this.messageBox("警告","检测到您未填写查题码，请在←左边，答题设置，填写查题码才能查题，关注微信小程序“网课答” 免费获取查题码",'warning')
-                     _this.loading.obj.text = '检测到您未填写查题码，请在←左边，答题设置，填写查题码才能查题，关注微信小程序 “网课答” 免费获取查题码' //'题库异常！请在教程网站: https://ocs.klweb.top 查找qq群，联系群主解决！！！'
+                     _this.loading.obj.text = '检测到您未填写查题码，请在←左边，答题设置，填写查题码才能查题，关注微信小程序 “网课答” 免费获取查题码' //'题库异常！请在教程网站: https://ocs.enncy.cn 查找qq群，联系群主解决！！！'
                         _this.loading.obj.spinner = 'el-icon-error'
                         _this.loading.obj.customClass = 'load-error'
                         setTimeout(function () { _this.loading.obj.close() }, 10000)
@@ -356,7 +356,7 @@ function  startChaoxingSK(params) {
     
                         },
                         error: function (e) {
-                            _this.loading.obj.text = '题库异常!!!，或者没有填写答题吗！！！' //'题库异常！请在教程网站: https://ocs.klweb.top     查找qq群，联系群主解决！！！'
+                            _this.loading.obj.text = '题库异常!!!，或者没有填写答题吗！！！' //'题库异常！请在教程网站: https://ocs.enncy.cn     查找qq群，联系群主解决！！！'
                             _this.loading.obj.spinner = 'el-icon-error'
                             _this.loading.obj.customClass = 'load-error'
                             setTimeout(function () { _this.loading.obj.close() }, 10000)
