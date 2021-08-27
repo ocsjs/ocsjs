@@ -7,7 +7,7 @@ function startZhsSK(chatiId,unsafeWindow){
     //示例
     // var chatiId = '123456' //123456就是你的查题码
 
-    var originUrl = 'https://wk.klweb.top' ;
+    var originUrl = 'https://wk.enncy.cn' ;
 
 
     var $=unsafeWindow.jQuery;
