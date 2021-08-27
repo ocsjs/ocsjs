@@ -3,7 +3,7 @@ function startChaoxingWorkSk(chatiId,unsafeWindow) {
     
     var $ = unsafeWindow.jQuery;
     
-    $.getScript("https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/AnswerUtil-1.0.0.js?_="+new Date().getTime(),function(r,s){
+    $.getScript("https://cdn.jsdelivr.net/gh/enncy/OnlineCourseScript/cdn/chaoxing/AnswerUtil-1.0.0.js?_="+new Date().getTime(),function(r,s){
         console.log(s)
 
     });
@@ -204,11 +204,11 @@ function startChaoxingWorkSk(chatiId,unsafeWindow) {
         //绘制窗口
         function drawWindow() {
             //加载css文件
-            $('head').append('<link href="https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime() + '" rel="stylesheet" type="text/css" />');
+            $('head').append('<link href="https://cdn.jsdelivr.net/gh/enncy/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime() + '" rel="stylesheet" type="text/css" />');
             
             $.ajax({
                 type: "get",
-                url:'https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime(),
+                url:'https://cdn.jsdelivr.net/gh/enncy/OnlineCourseScript/cdn/chaoxing/main.css?t=' + new Date().getTime(),
                 success: function (r) {
                     
                     console.log(r);
