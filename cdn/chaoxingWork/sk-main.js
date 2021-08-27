@@ -9,7 +9,7 @@ function startChaoxingWorkSk(chatiId,unsafeWindow) {
     });
  
 
-    var version = '1.4.0';
+    var version = '1.4.0';x
     var last_set_time = '2020/11/25';
 
      
@@ -17,7 +17,7 @@ function startChaoxingWorkSk(chatiId,unsafeWindow) {
     //示例
     // var chatiId = '123456' //123456就是你的查题码
 
-    var originUrl = 'https://wk.klweb.top';
+    var originUrl = 'https://wk.enncy.cn';
 
     var exam_ready_time = 2;//考试的时候，会停止左边你设置的秒数（默认暂停2秒），然后再搜索题目，答题。
     var exam_response_time = 5;//考试的题目间隔时间5秒一题。
