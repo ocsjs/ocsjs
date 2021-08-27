@@ -15,10 +15,10 @@ function startZhsSK(chatiId,unsafeWindow){
     setTimeout(function(){document.onselectstart=null},2000);//解除智慧树网页不能复制的限制
     
                //引入视频组件
-    $.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/MediaUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
+    $.getScript('https://cdn.jsdelivr.net/gh/enncy/OnlineCourseScript/cdn/MediaUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
         console.log(s)
     });
-        $.getScript('https://cdn.jsdelivr.net/gh/KL-Skeleton/OnlineCourseScript/cdn/chaoxing/AnswerUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
+        $.getScript('https://cdn.jsdelivr.net/gh/enncy/OnlineCourseScript/cdn/chaoxing/AnswerUtil-1.0.0.js?_='+new Date().getTime(),function(r,s){
         console.log(s)
     });
  
