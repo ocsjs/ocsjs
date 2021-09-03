@@ -6,7 +6,7 @@
 正在更新中...
 
 ## 脚本教程网
-所有的教程，疑难问答，都在这里：[https://ocs.klweb.top/](https://ocs.klweb.top/)
+所有的教程，疑难问答，都在这里：[https://ocs.enncy.cn/](https://ocs.klweb.top/)
 以后所有教程，所有更新信息都在这发布
 ## 查题小程序
 微信搜索小程序： ‘网课答’    
