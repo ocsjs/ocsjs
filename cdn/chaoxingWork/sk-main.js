@@ -9,7 +9,7 @@ function startChaoxingWorkSk(chatiId,unsafeWindow) {
     });
  
 
-    var version = '1.4.0';x
+    var version = '1.4.0';
     var last_set_time = '2020/11/25';
 
      
