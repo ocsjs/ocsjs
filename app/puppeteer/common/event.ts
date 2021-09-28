@@ -16,27 +16,27 @@ export class ScriptEvent extends EventEmitter {
 
     info(status: Status, msg: string = '') {
         this.log.info({ status: Status[status], msg })
-        this.emit('info', status, msg)
-        CurrentWindow?.webContents.send('info', status, msg)
+        this.emit('info', Status[status], msg)
+        CurrentWindow?.webContents.send('info', Status[status], msg)
     }
 
     success(status: Status, msg: string = '') {
         this.log.info({ status: Status[status], msg })
-        this.emit('success', status, msg)
-        CurrentWindow?.webContents.send('success', status, msg)
+        this.emit('success', Status[status], msg)
+        CurrentWindow?.webContents.send('success', Status[status], msg)
     }
 
     error(status: Status, msg: string = '') {
         this.log.error({ status: Status[status], msg })
-        this.emit('error', status, msg)
-        CurrentWindow?.webContents.send('error', status, msg)
+        this.emit('error', Status[status], msg)
+        CurrentWindow?.webContents.send('error', Status[status], msg)
     }
 
 
     warn(status: Status, msg: string = '') {
         this.log.warn({ status: Status[status], msg })
-        this.emit('warning', status, msg)
-        CurrentWindow?.webContents.send('warning', status, msg)
+        this.emit('warning', Status[status], msg)
+        CurrentWindow?.webContents.send('warning', Status[status], msg)
     }
 
 

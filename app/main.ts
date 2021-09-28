@@ -24,8 +24,9 @@ app.whenReady().then(async () => {
 
     protocol.registerFileProtocol('app', (req: any, callback: any) => {
         const url = req.url.replace('app://', '')
-        info({ path: path.normalize(`${__dirname}/${url}`) });
-        callback({ path: path.normalize(`${__dirname}/${url}`) })
+        const resolve = path.normalize(path.resolve(`./resources/app`, url))
+        info({ path: resolve });
+        callback({ path: resolve })
     })
 
     CurrentWindow = await createWindow()

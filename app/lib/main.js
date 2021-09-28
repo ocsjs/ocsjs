@@ -72,8 +72,9 @@ electron_1.app.whenReady().then(function () { return __awaiter(void 0, void 0, v
             case 0:
                 electron_1.protocol.registerFileProtocol('app', function (req, callback) {
                     var url = req.url.replace('app://', '');
-                    (0, electron_log_1.info)({ path: path_1.default.normalize(__dirname + "/" + url) });
-                    callback({ path: path_1.default.normalize(__dirname + "/" + url) });
+                    var resolve = path_1.default.normalize(path_1.default.resolve("./resources/app", url));
+                    (0, electron_log_1.info)({ path: resolve });
+                    callback({ path: resolve });
                 });
                 return [4 /*yield*/, createWindow()];
             case 1:

@@ -69,7 +69,7 @@ var CXScript = /** @class */ (function (_super) {
     __extends(CXScript, _super);
     function CXScript() {
         var _this = _super !== null && _super.apply(this, arguments) || this;
-        _this.scriptEvent = new event_1.ScriptEvent(_this.name + '-event');
+        _this.scriptEvent = new event_1.ScriptEvent(_this.name);
         _this.islogin = false;
         return _this;
     }

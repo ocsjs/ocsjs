@@ -5,8 +5,7 @@
   "scripts": {
     "dev": "cd ./app && tsc && cd .. && set NODE_ENV=dev &&  concurrently vite \"ehmr -i app/**/*.js \" ",
     "build": "vue-tsc --noEmit && vite build",
-    "pack": "electron-builder --dir",
-    "dist": "electron-builder",
+    "pack": "cd app  && tsc && npm run pack --dir",
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js"
   },
