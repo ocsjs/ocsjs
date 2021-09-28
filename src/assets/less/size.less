@@ -1,0 +1,79 @@
+
+/** 尺寸设置 */
+
+@size:24;
+@position: left,right,top,bottom;
+
+// 外间距
+.margin(@px) when (@px <= @size){
+    .margin-@{px}{
+        margin:  @px+0px;
+    }
+    .margin(@px+2)
+}
+.margin(2);
+
+// 内间距
+.padding(@px) when (@px <= @size){
+    .padding-@{px}{
+        padding:  @px+0px;
+    }
+    .padding(@px+2)
+}
+.padding(2);
+
+
+// 高度
+.height(@px) when (@px <= @size){
+    .height-@{px}{
+        height:  @px+0px;
+    }
+    .height(@px+2)
+}
+.height(2);
+
+
+// 宽度
+.width(@px) when (@px <= @size){
+    .width-@{px}{
+        width: @px+0px;
+    }
+    .width(@px+2)
+}
+.width(2);
+
+// 间隔
+.space(@px) when (@px <= @size){
+    .space-@{px}{
+        & > *{
+            margin-left: @px+0px;
+        }
+        & > *:nth-child(1){
+            margin-left:0px;
+        }
+    }
+    
+    .space(@px+2)
+}
+.space(2);
+
+each(@position,{
+    .margin(@px) when (@px <= @size){
+        .margin-@{value}-@{px}{
+            margin-@{value}: @px+0px;
+        }
+        .margin(@px+2)
+    }
+    .margin(2);
+});
+
+each(@position,{
+    .padding(@px) when (@px <= @size){
+        .padding-@{value}-@{px}{
+            padding-@{value}: @px+0px;
+        }
+        .padding(@px+2)
+    }
+    .padding(2);
+});
+

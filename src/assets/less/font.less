@@ -1,0 +1,28 @@
+@import './ant.less';
+
+
+/** 
+
+字体 css
+
+*/
+
+@base-size: 15px;
+
+.font(font-v1, @base-size + 11, bold, @text-color);
+.font(font-v2, @base-size, 600, @text-color);
+.font(font-v3, @base-size - 1, 400, @text-color);
+.font(font-v4, @base-size - 3, 400, @text-color-secondary);
+.font(font-disable, @base-size - 2, 400, @disabled-color);
+
+.font(@class, @px, @weight, @color) {
+    .@{class} {
+        font-weight: @weight;
+        font-size: @px;
+        color: @color
+    }
+}
+
+.font-nowrap{
+    white-space:nowrap;
+}

@@ -1,0 +1,39 @@
+.flex {
+    display: flex;
+    width: 100%;
+}
+
+@wrap: nowrap, wrap;
+@align-content: flex-start, flex-end, center, space-between, space-around, stretch;
+@align-items: flex-start, flex-end, center, baseline, stretch;
+@justify-content: flex-start, flex-end, center, space-between, space-around;
+
+
+each(@wrap, {
+        .flex.@{value} {
+            flex-wrap: @value;
+        }
+    }
+);
+
+each(@align-content, {
+        .flex.ac-@{value} {
+            align-content: @value;
+        }
+    }
+);
+
+each(@align-items, {
+        .flex.ai-@{value} {
+            align-items: @value;
+        }
+    }
+);
+
+each(@justify-content, {
+        .flex.jc-@{value} {
+            justify-content: @value;
+        }
+    }
+);
+ 
