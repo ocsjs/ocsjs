@@ -47,7 +47,6 @@ var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
-var _a, _b;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CurrentWindow = void 0;
 var index_1 = require("./puppeteer/cx/index");
@@ -63,7 +62,7 @@ require('update-electron-app')({
     updateInterval: '10 minutes',
     logger: require('electron-log')
 });
-var mode = ((_b = (_a = process.env) === null || _a === void 0 ? void 0 : _a.NODE_ENV) === null || _b === void 0 ? void 0 : _b.startsWith("dev")) ? 'dev' : 'prod';
+var mode = electron_1.app.isPackaged ? 'prod' : 'dev';
 exports.CurrentWindow = undefined;
 electron_1.app.disableHardwareAcceleration();
 electron_1.app.whenReady().then(function () { return __awaiter(void 0, void 0, void 0, function () {
@@ -98,7 +97,9 @@ function createWindow() {
             var promise = mode === 'dev' ? win.loadURL('http://localhost:3000') : win.loadURL('app://./public/index.html');
             promise.then(function (result) {
                 win.show();
-                win.webContents.openDevTools();
+                if (mode.startsWith('dev')) {
+                    win.webContents.openDevTools();
+                }
                 // 拦截页面跳转
                 win.webContents.on('will-navigate', function (e, url) {
                     e.preventDefault();

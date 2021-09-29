@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "main": "./app/lib/main.js",
   "scripts": {
-    "dev": "cd ./app && tsc && cd .. && set NODE_ENV=dev &&  concurrently vite \"ehmr -i app/**/*.js \" ",
+    "dev": "cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
     "build": "vue-tsc --noEmit && vite build",
-    "pack": "cd app  && tsc && npm run pack --dir",
+    "pack": "cd app  && tsc && npm run pack",
+    "dist": "cd app  && tsc && npm run dist",
+    "pub":"npm run build && npm run dist",
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js"
   },

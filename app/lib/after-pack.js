@@ -7,14 +7,16 @@ var fs_1 = __importDefault(require("fs"));
 var archiver = require('archiver');
 // 打包文件
 function AfterPack(context) {
-    var output = fs_1.default.createWriteStream('./dist/ocs-win-x64.zip');
-    var archive = archiver('zip');
-    archive.on('error', function (err) {
-        throw err;
-    });
-    archive.pipe(output);
-    archive.directory('./dist/win-unpacked', false);
-    archive.finalize();
-    console.log("打包完毕!");
+    setTimeout(function () {
+        var output = fs_1.default.createWriteStream('./dist/ocs-win-x64.zip');
+        var archive = archiver('zip');
+        archive.on('error', function (err) {
+            throw err;
+        });
+        archive.pipe(output);
+        archive.directory('./dist/win-unpacked', false);
+        archive.finalize();
+        console.log("打包完毕!");
+    }, 10 * 1000);
 }
 exports.default = AfterPack;

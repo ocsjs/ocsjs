@@ -1,8 +1,8 @@
 
+import { app, BrowserWindowConstructorOptions } from 'electron';
+var mode = app.isPackaged ? 'prod' : 'dev'
 
-var mode = process.env?.NODE_ENV?.startsWith("dev") ? 'dev' : 'prod'
-
-export const BrowserConfig = {
+export const BrowserConfig: BrowserWindowConstructorOptions = {
     width: 800,
     height: 540,
 
@@ -11,7 +11,7 @@ export const BrowserConfig = {
 
     maximizable: false,
 
-
+    icon:'./public/favicon.ico',
     frame: false,
     center: true,
     autoHideMenuBar: true,

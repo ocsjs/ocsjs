@@ -34,26 +34,26 @@ var ScriptEvent = /** @class */ (function (_super) {
     ScriptEvent.prototype.info = function (status, msg) {
         if (msg === void 0) { msg = ''; }
         this.log.info({ status: status_types_1.Status[status], msg: msg });
-        this.emit('info', status, msg);
-        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('info', status, msg);
+        this.emit('info', status_types_1.Status[status], msg);
+        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('info', status_types_1.Status[status], msg);
     };
     ScriptEvent.prototype.success = function (status, msg) {
         if (msg === void 0) { msg = ''; }
         this.log.info({ status: status_types_1.Status[status], msg: msg });
-        this.emit('success', status, msg);
-        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('success', status, msg);
+        this.emit('success', status_types_1.Status[status], msg);
+        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('success', status_types_1.Status[status], msg);
     };
     ScriptEvent.prototype.error = function (status, msg) {
         if (msg === void 0) { msg = ''; }
         this.log.error({ status: status_types_1.Status[status], msg: msg });
-        this.emit('error', status, msg);
-        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('error', status, msg);
+        this.emit('error', status_types_1.Status[status], msg);
+        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('error', status_types_1.Status[status], msg);
     };
     ScriptEvent.prototype.warn = function (status, msg) {
         if (msg === void 0) { msg = ''; }
         this.log.warn({ status: status_types_1.Status[status], msg: msg });
-        this.emit('warning', status, msg);
-        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('warning', status, msg);
+        this.emit('warning', status_types_1.Status[status], msg);
+        main_1.CurrentWindow === null || main_1.CurrentWindow === void 0 ? void 0 : main_1.CurrentWindow.webContents.send('warning', status_types_1.Status[status], msg);
     };
     ScriptEvent.prototype.onInfo = function (listener) {
         this.on('info', listener);

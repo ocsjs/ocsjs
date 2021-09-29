@@ -15,6 +15,7 @@
     "dayjs": "^1.10.7",
     "electron-log": "^4.4.1",
     "electron-store": "^8.0.1",
+    "electron-updater": "^4.3.9",
     "gm": "^1.23.1",
     "node-tesseract-ocr": "^2.2.1",
     "puppeteer-core": "^10.4.0",
@@ -52,6 +53,12 @@
     "productName": "ocs",
     "asar": false,
     "copyright": "Copyright © 2021 ${author}",
-    "afterPack": "./lib/after-pack.js"
+    "afterPack": "./lib/after-pack.js",
+    "win":{
+      "icon":"public/favicon.ico"
+    },
+    "mac":{
+      "icon":"public/favicon.ico"
+    }
   }
 }

@@ -15,7 +15,7 @@ require('update-electron-app')({
 })
 
 
-var mode = process.env?.NODE_ENV?.startsWith("dev") ? 'dev' : 'prod'
+var mode = app.isPackaged ? 'prod' : 'dev'
 
 export let CurrentWindow: BW | undefined = undefined
 
@@ -58,7 +58,9 @@ async function createWindow() {
 
         promise.then((result: any) => {
             win.show()
-            win.webContents.openDevTools()
+            if(mode.startsWith('dev')){
+                win.webContents.openDevTools()
+            } 
             // 拦截页面跳转
             win.webContents.on('will-navigate', (e: { preventDefault: () => void; }, url: any) => {
                 e.preventDefault()
