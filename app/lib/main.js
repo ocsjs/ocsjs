@@ -35,14 +35,10 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
-    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
-        if (ar || !(i in from)) {
-            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
-            ar[i] = from[i];
-        }
-    }
-    return to.concat(ar || Array.prototype.slice.call(from));
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -68,16 +64,15 @@ electron_1.app.disableHardwareAcceleration();
 electron_1.app.whenReady().then(function () { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0:
+            case 0: return [4 /*yield*/, createWindow()];
+            case 1:
+                exports.CurrentWindow = _a.sent();
                 electron_1.protocol.registerFileProtocol('app', function (req, callback) {
                     var url = req.url.replace('app://', '');
                     var resolve = path_1.default.normalize(path_1.default.resolve("./resources/app", url));
-                    (0, electron_log_1.info)({ path: resolve });
+                    electron_log_1.info({ path: resolve });
                     callback({ path: resolve });
                 });
-                return [4 /*yield*/, createWindow()];
-            case 1:
-                exports.CurrentWindow = _a.sent();
                 electron_1.app.on('activate', function () {
                     if (electron_1.BrowserWindow.getAllWindows().length === 0)
                         createWindow();
@@ -112,7 +107,7 @@ function createWindow() {
                     };
                 });
                 electron_1.ipcMain.on('run-script', function () {
-                    (0, puppeteer_1.StartPuppeteer)({
+                    puppeteer_1.StartPuppeteer({
                         scripts: [index_1.CXScript],
                         callback: function (browser, pioneer) {
                             var _a;
@@ -155,7 +150,7 @@ function createWindow() {
                     event.returnValue = win[property] = value;
                 });
                 electron_1.ipcMain.on('call', function (event, arg) {
-                    var _a = __spreadArray([arg.shift()], arg, true), property = _a[0], value = _a.slice(1);
+                    var _a = __spreadArray([arg.shift()], arg), property = _a[0], value = _a.slice(1);
                     event.returnValue = win[property](value);
                 });
                 electron_1.ipcMain.on('on', function (event, eventName) {
@@ -165,7 +160,7 @@ function createWindow() {
                     win.once(eventName.split('-')[0], function () { return event.reply(eventName); });
                 });
             }).catch(function (err) {
-                (0, electron_log_1.error)(err);
+                electron_log_1.error(err);
                 setTimeout(function () {
                     load();
                 }, 2000);

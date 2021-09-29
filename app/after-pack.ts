@@ -6,7 +6,7 @@ const archiver = require('archiver');
 // 打包文件
 export default function AfterPack(context: any) {
     setTimeout(() => {
-        var output = fs.createWriteStream('./dist/ocs-win-x64.zip');
+        var output = fs.createWriteStream('./resource/ocs-app-resources.zip');
         var archive = archiver('zip');
 
         archive.on('error', function (err: any) {
@@ -14,7 +14,7 @@ export default function AfterPack(context: any) {
         });
 
         archive.pipe(output);
-        archive.directory('./dist/win-unpacked', false);
+        archive.directory('./dist/win-unpacked/resources/app/', false);
 
         archive.finalize();
 

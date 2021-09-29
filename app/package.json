@@ -20,7 +20,8 @@
     "node-tesseract-ocr": "^2.2.1",
     "puppeteer-core": "^10.4.0",
     "update-electron-app": "^2.0.1",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "yaml": "^1.10.2"
   },
   "devDependencies": {
     "@types/electron": "^1.6.10",
@@ -33,7 +34,7 @@
   "description": "ocs - 在线网络课程辅助工具",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/enncy/OnlineCourseScript.git"
+    "url": "git+https://github.com/enncy/online-course-script.git"
   },
   "keywords": [
     "ocs",
@@ -46,15 +47,15 @@
   "author": "enncy",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/enncy/OnlineCourseScript/issues"
+    "url": "https://github.com/enncy/online-course-script/issues"
   },
-  "homepage": "https://github.com/enncy/OnlineCourseScript#readme",
+  "homepage": "https://github.com/enncy/online-course-script#readme",
   "build": {
     "appId": "ocs.enncy.cn",
     "productName": "ocs",
     "asar": false,
     "copyright": "Copyright © 2021 ${author}",
-    "afterPack": "./lib/after-pack.js",
+    "afterAllArtifactBuild": "./lib/after-pack.js",
     "win": {
       "icon": "public/favicon.ico"
     },

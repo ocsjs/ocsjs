@@ -8,13 +8,13 @@ var archiver = require('archiver');
 // 打包文件
 function AfterPack(context) {
     setTimeout(function () {
-        var output = fs_1.default.createWriteStream('./dist/ocs-win-x64.zip');
+        var output = fs_1.default.createWriteStream('./resource/ocs-app-resources.zip');
         var archive = archiver('zip');
         archive.on('error', function (err) {
             throw err;
         });
         archive.pipe(output);
-        archive.directory('./dist/win-unpacked', false);
+        archive.directory('./dist/win-unpacked/resources/app/', false);
         archive.finalize();
         console.log("打包完毕!");
     }, 10 * 1000);

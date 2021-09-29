@@ -4,6 +4,10 @@ import path from 'path';
 import { LoginType } from './puppeteer/cx/types';
 import { StartPuppeteer } from './puppeteer';
 import { BrowserWindow as BW } from 'electron';
+ 
+
+
+
 
 // 在主进程中.
 import { info, error } from 'electron-log';
@@ -21,6 +25,10 @@ export let CurrentWindow: BW | undefined = undefined
 
 app.disableHardwareAcceleration()
 app.whenReady().then(async () => {
+   
+    CurrentWindow = await createWindow()
+
+    
 
     protocol.registerFileProtocol('app', (req: any, callback: any) => {
         const url = req.url.replace('app://', '')
@@ -29,7 +37,7 @@ app.whenReady().then(async () => {
         callback({ path: resolve })
     })
 
-    CurrentWindow = await createWindow()
+    
 
     app.on('activate', function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -38,6 +46,9 @@ app.whenReady().then(async () => {
     app.on('window-all-closed', function () {
         if (process.platform !== 'darwin') app.quit()
     })
+
+  
+    
 })
 
 
