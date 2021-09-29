@@ -24,6 +24,7 @@
   },
   "devDependencies": {
     "@types/electron": "^1.6.10",
+    "ansi-regex": "^5.0.1",
     "chalk": "^4.1.2",
     "electron": "^15.0.0",
     "electron-builder": "^22.11.7",
@@ -54,11 +55,11 @@
     "asar": false,
     "copyright": "Copyright © 2021 ${author}",
     "afterPack": "./lib/after-pack.js",
-    "win":{
-      "icon":"public/favicon.ico"
+    "win": {
+      "icon": "public/favicon.ico"
     },
-    "mac":{
-      "icon":"public/favicon.ico"
+    "mac": {
+      "icon": "public/favicon.ico"
     }
   }
 }
