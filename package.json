@@ -45,7 +45,7 @@
   "description": "ocs - 在线网络课程辅助工具",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/enncy/OnlineCourseScript.git"
+    "url": "git+https://github.com/enncy/online-course-script.git"
   },
   "keywords": [
     "ocs",
@@ -58,7 +58,7 @@
   "author": "enncy",
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/enncy/OnlineCourseScript/issues"
+    "url": "https://github.com/enncy/online-course-script/issues"
   },
-  "homepage": "https://github.com/enncy/OnlineCourseScript#readme"
+  "homepage": "https://github.com/enncy/online-course-script#readme"
 }

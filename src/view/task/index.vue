@@ -7,11 +7,12 @@
 
 <script setup lang="ts">
 const { ipcRenderer } = require("electron");
-
+ 
 function start() {
     console.log("run-script");
-    
+
     ipcRenderer.send("run-script")
+ 
 }
 </script>
 

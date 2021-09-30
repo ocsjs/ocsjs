@@ -21,24 +21,26 @@
 // Check out https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup
 
 import { nextTick, onMounted } from "@vue/runtime-core";
-import { Status } from "../app/puppeteer/common/status.types";
+ 
 import Navigation from "./components/Navigation.vue";
 
 const { shell, ipcRenderer } = require("electron");
 import { message } from "ant-design-vue";
 
-ipcRenderer.on("info", (e: any, status: Status, msg: string) => {
-    message.info(Status[status] + msg ? " : " + msg : "");
+ipcRenderer.on("info", (e: any,  msg: string[]) => {
+    message.info(msg);
 });
-ipcRenderer.on("warn", (e: any, status: Status, msg: string) => {
-    message.warn(Status[status] + msg ? " : " + msg : "");
+ipcRenderer.on("warn", (e: any,  msg: string[]) => {
+    message.warn(msg);
 });
-ipcRenderer.on("success", (e: any, status: Status, msg: string) => {
-    message.success(Status[status] + msg ? " : " + msg : "");
+ipcRenderer.on("success", (e: any,  msg: string[]) => {
+    message.success(msg);
 });
-ipcRenderer.on("error", (e: any, status: Status, msg: string) => {
-    message.error(Status[status] + msg ? " : " + msg : "");
+ipcRenderer.on("error", (e: any,  msg: string[]) => {
+    message.error(msg);
 });
+
+
 </script>
 
 <style lang="less">
