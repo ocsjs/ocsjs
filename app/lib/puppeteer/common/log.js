@@ -1,8 +1,12 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from) {
-    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-        to[j] = from[i];
-    return to;
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
@@ -23,21 +27,21 @@ var Logger = /** @class */ (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        this.save.apply(this, __spreadArray(['info'], args));
+        this.save.apply(this, __spreadArray(['info'], args, false));
     };
     Logger.prototype.warn = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        this.save.apply(this, __spreadArray(['warn'], args));
+        this.save.apply(this, __spreadArray(['warn'], args, false));
     };
     Logger.prototype.error = function () {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             args[_i] = arguments[_i];
         }
-        this.save.apply(this, __spreadArray(['error'], args));
+        this.save.apply(this, __spreadArray(['error'], args, false));
     };
     Logger.prototype.save = function (level) {
         var args = [];
@@ -46,8 +50,8 @@ var Logger = /** @class */ (function () {
         }
         var data = {
             script: this.scriptName,
-            localTime: dayjs_1.default().format('YYYY-MM-DD HH-mm-ss'),
-            data: __spreadArray([], args)
+            localTime: (0, dayjs_1.default)().format('YYYY-MM-DD HH-mm-ss'),
+            data: __spreadArray([], args, true)
         };
         var folder = path_1.default.resolve(this.path, "./logs/" + this.getFolderName() + "/");
         var file = path_1.default.resolve(folder, level + "-" + this.scriptName + ".json");
@@ -62,7 +66,7 @@ var Logger = /** @class */ (function () {
         }
     };
     Logger.prototype.getFolderName = function () {
-        return dayjs_1.default().format("YYYY-MM-DD");
+        return (0, dayjs_1.default)().format("YYYY-MM-DD");
     };
     Logger.prototype.mkdirs = function (url) {
         if (!fs_1.default.existsSync(url)) {

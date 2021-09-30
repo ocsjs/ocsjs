@@ -36,24 +36,40 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getReleases = void 0;
+exports.getResource = exports.getVersion = void 0;
 var axios_1 = require("./axios");
-var author = 'enncy';
 var repo = 'online-course-script';
-var reposBaseURL = "https://api.github.com/repos/" + author + "/" + repo;
-function getReleases() {
+var reposBaseURL = "https://cdn.jsdelivr.net/npm/" + repo;
+function getVersion() {
     return __awaiter(this, void 0, void 0, function () {
-        var res;
+        var data;
         return __generator(this, function (_a) {
             switch (_a.label) {
-                case 0: return [4 /*yield*/, axios_1.AxiosGet({
-                        url: reposBaseURL + '/releases'
+                case 0: return [4 /*yield*/, (0, axios_1.AxiosGet)({
+                        url: reposBaseURL + '/package.json'
                     })];
                 case 1:
-                    res = _a.sent();
-                    return [2 /*return*/, res.data];
+                    data = (_a.sent()).data;
+                    return [2 /*return*/, data.version];
             }
         });
     });
 }
-exports.getReleases = getReleases;
+exports.getVersion = getVersion;
+function getResource(version) {
+    return __awaiter(this, void 0, void 0, function () {
+        var data;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0: return [4 /*yield*/, (0, axios_1.AxiosGet)({
+                        url: reposBaseURL + (version ? '@' + version : '') + '/resource/ocs-app-resources.zip',
+                        responseType: 'stream'
+                    })];
+                case 1:
+                    data = (_a.sent()).data;
+                    return [2 /*return*/, data];
+            }
+        });
+    });
+}
+exports.getResource = getResource;

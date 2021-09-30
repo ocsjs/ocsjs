@@ -8,7 +8,7 @@ var archiver = require('archiver');
 // 打包文件
 function AfterPack(context) {
     setTimeout(function () {
-        var output = fs_1.default.createWriteStream('./resource/ocs-app-resources.zip');
+        var output = fs_1.default.createWriteStream('./dist/ocs-app-resource.zip');
         var archive = archiver('zip');
         archive.on('error', function (err) {
             throw err;

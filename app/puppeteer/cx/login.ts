@@ -3,8 +3,8 @@ import { InjectableScript, Utils, WaitForScript } from "@pioneerjs/core";
 import { OCROptions, OCR } from "../common/ocr";
 import { LoginConfigs } from "./types";
 import { HTTPRequest } from 'puppeteer-core';
-import { ScriptEvent } from '../common/event';
-import { Status } from "../common/status.types";
+import { ScriptEvent } from '../../electron/event';
+ 
 
 
 @Injectable()
@@ -21,7 +21,7 @@ export class CXLogin extends InjectableScript {
         // 登录次数
         const loginTimes: any = this.context.store.get('login-times')
         if (loginTimes > 3) {
-            scriptEvent.error(Status['自动登录运行超过限制次数'], '请自行输入账号密码登录！')
+            scriptEvent.error('自动登录运行超过限制次数', '请自行输入账号密码登录！')
             this.context.store.set('login-times', 0)
             return
         } else {
@@ -52,11 +52,11 @@ export class CXLogin extends InjectableScript {
             const errs = await checkPageError()
             if (errs.length !== 0) {
                 if (errs.some(e => /验证码/.test(e))) {
-                    scriptEvent.error(Status['验证码破解失败'], "即将重新破解验证码");
+                    scriptEvent.error('验证码破解失败', "即将重新破解验证码");
                     await waitFor.sleep(2000)
                     await this.login(scriptEvent, loginConfig, ocrOptions)
                 } else {
-                    scriptEvent.error(Status['登录失败'], errs + " , 请在页面上输入登录信息，并自行点击登录")
+                    scriptEvent.error('登录失败', errs + " , 请在页面上输入登录信息，并自行点击登录")
                     await this.waitForLogin()
                 }
 
@@ -64,7 +64,7 @@ export class CXLogin extends InjectableScript {
                 if (!await this.islogin()) {
                     await this.waitForLogin()
                 }
-                scriptEvent.success(Status['登录成功'])
+                scriptEvent.success('登录成功')
             }
         }
 
@@ -77,7 +77,7 @@ export class CXLogin extends InjectableScript {
             await check()
         } else if (loginConfig.type === 2) {
             await utils.value('#phone', loginConfig.phone)
-            scriptEvent.warn(Status['等待用户自行登录中'], '请在页面上输入您的手机验证码，并自行点击登录')
+            scriptEvent.warn('等待用户自行登录中', '请在页面上输入您的手机验证码，并自行点击登录')
             await this.waitForLogin()
 
         } else if (loginConfig.type === 3) {
@@ -88,12 +88,12 @@ export class CXLogin extends InjectableScript {
                 if (await breakCode(ocrOptions)) {
                     await check()
                 } else {
-                    scriptEvent.error(Status['等待用户自行登录中'], '验证码破解失败！请在页面上输入验证码，并自行点击登录')
+                    scriptEvent.error('等待用户自行登录中', '验证码破解失败！请在页面上输入验证码，并自行点击登录')
                     await this.waitForLogin()
                 }
             } else {
                 await this.waitForLogin()
-                scriptEvent.warn(Status['等待用户自行登录中'], '请在页面上输入验证码，并自行点击登录')
+                scriptEvent.warn('等待用户自行登录中', '请在页面上输入验证码，并自行点击登录')
             }
 
         }

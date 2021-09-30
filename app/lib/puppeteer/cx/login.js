@@ -285,7 +285,7 @@ var CXLogin = /** @class */ (function (_super) {
         });
     };
     CXLogin = __decorate([
-        common_1.Injectable()
+        (0, common_1.Injectable)()
     ], CXLogin);
     return CXLogin;
 }(core_1.InjectableScript));

@@ -5,7 +5,7 @@ import { Runnable, Inject } from '@pioneerjs/common';
 import { ChapterTestScript, CourseScript, StudyScript } from "../common";
 import { LoginConfigs, LoginType } from './types';
 import { CXLogin } from './login';
-import { ScriptEvent } from '../common/event';
+import { ScriptEvent } from '../../electron/event';
 
 @Runnable({ name: 'cx' })
 export class CXScript extends RunnableScript implements CourseScript, StudyScript, ChapterTestScript, ExamScript, DataCollector {
@@ -40,7 +40,7 @@ export class CXScript extends RunnableScript implements CourseScript, StudyScrip
     }
 
     async login<K extends keyof LoginConfigs>(loginConfig: LoginConfigs[K], ocrOptions?: OCROptions) {
-        this.scriptEvent.onSuccess((v, s) => {
+        this.scriptEvent.onSuccess((s) => {
             this.islogin = true
         })
 

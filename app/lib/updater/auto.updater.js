@@ -40,65 +40,57 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AutoUpdater = void 0;
-var axios_1 = require("./axios");
-var yaml_1 = __importDefault(require("yaml"));
 var api_1 = require("./api");
+var fs_1 = __importDefault(require("fs"));
 var electron_1 = require("electron");
 var AutoUpdater = /** @class */ (function () {
     function AutoUpdater() {
     }
     AutoUpdater.checkUpdate = function () {
-        var _this = this;
-        return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
-            var releases, first, yml, resource;
+        return __awaiter(this, void 0, void 0, function () {
+            var newversion, err_1;
             return __generator(this, function (_a) {
                 switch (_a.label) {
-                    case 0: return [4 /*yield*/, api_1.getReleases()];
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, (0, api_1.getVersion)()];
                     case 1:
-                        releases = _a.sent();
-                        first = releases === null || releases === void 0 ? void 0 : releases.shift();
-                        yml = first === null || first === void 0 ? void 0 : first.assets.find(function (asset) { return asset.name === 'latest.yml'; });
-                        resource = first === null || first === void 0 ? void 0 : first.assets.find(function (asset) { return asset.name === 'ocs-app-resources.zip'; });
-                        if (yml && resource) {
-                            // 查找版本文件
-                            axios_1.AxiosGet({
-                                url: yml.browser_download_url
-                            }).then(function (_a) {
-                                var data = _a.data;
-                                // 比对版本
-                                var newversion = yaml_1.default.parse(data).version.replace('v', '');
-                                if (compareVersions(newversion, electron_1.app.getVersion()) === newversion) {
-                                    axios_1.AxiosGet({
-                                        url: resource === null || resource === void 0 ? void 0 : resource.browser_download_url,
-                                        headers: {
-                                            "Content-Type": "application/x-www-form-urlencoded"
-                                        },
-                                        responseType: 'blob'
-                                    }).then(function (_a) {
-                                        var data = _a.data;
-                                        console.log(data);
-                                        resolve({
-                                            updated: true,
-                                            msg: '更新成功!'
-                                        });
-                                    }).catch(function (err) {
-                                        reject('网络错误,或者更新失败! ' + err);
-                                    });
-                                }
-                                else {
-                                    resolve({
-                                        updated: true,
-                                        msg: '已经是最新版本!'
-                                    });
-                                }
-                            }).catch(function (err) {
-                                reject('网络错误,或者更新失败! ' + err);
-                            });
-                        }
-                        else {
-                            reject('资源不存在!');
-                        }
-                        return [2 /*return*/];
+                        newversion = (_a.sent()).replace('v', '');
+                        return [2 /*return*/, {
+                                needUpdate: compareVersions(newversion, electron_1.app.getVersion()) === newversion,
+                                version: newversion
+                            }];
+                    case 2:
+                        err_1 = _a.sent();
+                        return [2 /*return*/, {
+                                err: '网络错误!'
+                            }];
+                    case 3: return [2 /*return*/];
+                }
+            });
+        });
+    };
+    AutoUpdater.update = function (path, version) {
+        var _this = this;
+        return new Promise(function (resolve, reject) { return __awaiter(_this, void 0, void 0, function () {
+            var resource, _1;
+            return __generator(this, function (_a) {
+                switch (_a.label) {
+                    case 0:
+                        _a.trys.push([0, 2, , 3]);
+                        return [4 /*yield*/, (0, api_1.getResource)(version)];
+                    case 1:
+                        resource = _a.sent();
+                        resource.pipe(fs_1.default.createWriteStream(path))
+                            .on("close", function () {
+                            resolve(true);
+                        });
+                        return [3 /*break*/, 3];
+                    case 2:
+                        _1 = _a.sent();
+                        reject(false);
+                        return [3 /*break*/, 3];
+                    case 3: return [2 /*return*/];
                 }
             });
         }); });

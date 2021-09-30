@@ -35,42 +35,37 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-var __spreadArray = (this && this.__spreadArray) || function (to, from) {
-    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-        to[j] = from[i];
-    return to;
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
 };
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CurrentWindow = void 0;
-var index_1 = require("./puppeteer/cx/index");
 var config_1 = require("./config");
 var path_1 = __importDefault(require("path"));
-var types_1 = require("./puppeteer/cx/types");
-var puppeteer_1 = require("./puppeteer");
 // 在主进程中.
 var electron_log_1 = require("electron-log");
 var electron_1 = require("electron");
-require('update-electron-app')({
-    repo: 'enncy/online-course-script',
-    updateInterval: '10 minutes',
-    logger: require('electron-log')
-});
 var mode = electron_1.app.isPackaged ? 'prod' : 'dev';
 exports.CurrentWindow = undefined;
 electron_1.app.disableHardwareAcceleration();
 electron_1.app.whenReady().then(function () { return __awaiter(void 0, void 0, void 0, function () {
     return __generator(this, function (_a) {
         switch (_a.label) {
-            case 0: return [4 /*yield*/, createWindow()];
-            case 1:
-                exports.CurrentWindow = _a.sent();
+            case 0:
+                // 注册协议
                 electron_1.protocol.registerFileProtocol('app', function (req, callback) {
                     var url = req.url.replace('app://', '');
                     var resolve = path_1.default.normalize(path_1.default.resolve("./resources/app", url));
-                    electron_log_1.info({ path: resolve });
+                    (0, electron_log_1.info)({ path: resolve });
                     callback({ path: resolve });
                 });
                 electron_1.app.on('activate', function () {
@@ -81,6 +76,13 @@ electron_1.app.whenReady().then(function () { return __awaiter(void 0, void 0, v
                     if (process.platform !== 'darwin')
                         electron_1.app.quit();
                 });
+                return [4 /*yield*/, createWindow()
+                    // setTimeout(async () => {
+                    //     await AutoUpdate()
+                    // }, 10 * 1000);
+                ];
+            case 1:
+                exports.CurrentWindow = _a.sent();
                 return [2 /*return*/];
         }
     });
@@ -107,39 +109,6 @@ function createWindow() {
                     };
                 });
                 electron_1.ipcMain.on('run-script', function () {
-                    puppeteer_1.StartPuppeteer({
-                        scripts: [index_1.CXScript],
-                        callback: function (browser, pioneer) {
-                            var _a;
-                            return __awaiter(this, void 0, void 0, function () {
-                                var s, cx;
-                                return __generator(this, function (_b) {
-                                    switch (_b.label) {
-                                        case 0:
-                                            s = (_a = pioneer.runnableScripts) === null || _a === void 0 ? void 0 : _a.find(function (s) { return s.name === 'cx'; });
-                                            if (!s) return [3 /*break*/, 3];
-                                            cx = s;
-                                            return [4 /*yield*/, cx.index(types_1.LoginType['机构账号登录'])];
-                                        case 1:
-                                            _b.sent();
-                                            return [4 /*yield*/, cx.login({
-                                                    type: 3,
-                                                    unitname: "广西大学行健文理学院",
-                                                    uname: '18275719980',
-                                                    password: 'skeleton132525'
-                                                }, {
-                                                    username: 'enncy',
-                                                    password: '132525'
-                                                })];
-                                        case 2:
-                                            _b.sent();
-                                            _b.label = 3;
-                                        case 3: return [2 /*return*/];
-                                    }
-                                });
-                            });
-                        }
-                    });
                 });
                 electron_1.ipcMain.on('get', function (event, arg) {
                     var property = arg[0];
@@ -150,7 +119,7 @@ function createWindow() {
                     event.returnValue = win[property] = value;
                 });
                 electron_1.ipcMain.on('call', function (event, arg) {
-                    var _a = __spreadArray([arg.shift()], arg), property = _a[0], value = _a.slice(1);
+                    var _a = __spreadArray([arg.shift()], arg, true), property = _a[0], value = _a.slice(1);
                     event.returnValue = win[property](value);
                 });
                 electron_1.ipcMain.on('on', function (event, eventName) {
@@ -160,7 +129,7 @@ function createWindow() {
                     win.once(eventName.split('-')[0], function () { return event.reply(eventName); });
                 });
             }).catch(function (err) {
-                electron_log_1.error(err);
+                (0, electron_log_1.error)(err);
                 setTimeout(function () {
                     load();
                 }, 2000);

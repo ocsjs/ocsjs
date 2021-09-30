@@ -22,7 +22,7 @@ exports.ScriptEvent = void 0;
 var status_types_1 = require("./status.types");
 var events_1 = __importDefault(require("events"));
 var log_1 = require("./log");
-var main_1 = require("../../main");
+var main_1 = require("../../electron/main");
 var ScriptEvent = /** @class */ (function (_super) {
     __extends(ScriptEvent, _super);
     function ScriptEvent(name) {

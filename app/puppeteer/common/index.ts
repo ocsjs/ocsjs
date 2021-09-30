@@ -1,4 +1,4 @@
-import { ScriptEvent } from './event';
+import { ScriptEvent } from '../../electron/event';
 
 
 

@@ -158,15 +158,15 @@ var CXScript = /** @class */ (function (_super) {
         });
     };
     __decorate([
-        common_1.Inject(),
+        (0, common_1.Inject)(),
         __metadata("design:type", core_1.WaitForScript)
     ], CXScript.prototype, "waitFor", void 0);
     __decorate([
-        common_1.Inject(),
+        (0, common_1.Inject)(),
         __metadata("design:type", login_1.CXLogin)
     ], CXScript.prototype, "loginScript", void 0);
     CXScript = __decorate([
-        common_1.Runnable({ name: 'cx' })
+        (0, common_1.Runnable)({ name: 'cx' })
     ], CXScript);
     return CXScript;
 }(core_1.RunnableScript));

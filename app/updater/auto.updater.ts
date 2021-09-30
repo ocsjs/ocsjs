@@ -1,60 +1,92 @@
-import { AxiosGet } from './axios';
 
-import yaml from 'yaml'
-import { Assets, getReleases } from './api'
- 
+import { getResource, getVersion } from './api'
+
+import fs from 'fs';
 
 import { app } from 'electron';
+import { Octokit } from '@octokit/rest';
+import { AxiosGet } from './axios';
+import yaml from 'yaml';
 
+
+const { rest } = new Octokit();
+const owner = 'enncy'
+const repo = 'online-course-script';
+
+interface CheckUpdateParam {
+    /**   是否需要更新 */
+    needUpdate?: boolean,
+    /** 最新版本 */
+    latestVersion?: string,
+    /** 是否错误 */
+    err?: string
+}
 export class AutoUpdater {
 
-    static checkUpdate(): Promise<{ updated: boolean, msg: string }> {
-        return new Promise(async (resolve, reject) => {
-            const releases = await getReleases()
-            const first = releases?.shift()
-            let yml: Assets | undefined = first?.assets.find(asset => asset.name === 'latest.yml')
-            let resource: Assets | undefined = first?.assets.find(asset => asset.name === 'ocs-app-resources.zip')
-            if (yml && resource) {
-                // 查找版本文件
-                AxiosGet({
-                    url: yml.browser_download_url
-                }).then(({ data }) => {
-                    // 比对版本
-                    const newversion = yaml.parse(data).version.replace('v', '')
-                    if (compareVersions(newversion, app.getVersion()) === newversion) {
-                        AxiosGet({
-                            url: resource?.browser_download_url,
-                            headers: {
-                                "Content-Type": "application/x-www-form-urlencoded"
-                            },
-                            responseType: 'blob'
-                        }).then(({ data }) => {
-                            console.log(data);
-                            resolve({
-                                updated:true,
-                                msg:'更新成功!'
-                            })
-                        }).catch((err) => {
-                            reject('网络错误,或者更新失败! ' + err)
-                        });
-                    } else {
-                        resolve({
-                            updated:true,
-                            msg:'已经是最新版本!'
-                        })
-                    }
-                }).catch((err) => {
-                    reject('网络错误,或者更新失败! ' + err)
+    /**
+     * 查看是否需要更新
+     * @returns 
+     */
+    static async checkUpdate(): Promise<CheckUpdateParam> {
+        try {
+            let release = await rest.repos.getLatestRelease({
+                owner, repo,
+            })
+
+            const { data } = await rest.repos.listReleaseAssets({
+                owner, repo,
+                release_id: release.data.id
+            })
+            const asset_id = data.find(a => a.name === 'latest.yml')?.id
+            if (asset_id) {
+                const asset = await rest.repos.getReleaseAsset({
+                    owner, repo,
+                    asset_id,
+                })
+
+                const latest = await AxiosGet({
+                    url: asset.data.browser_download_url,
                 });
 
 
-            } else {
-                reject('资源不存在!')
+                const newversion = yaml.parse(latest.data).version.replace('v', '')
+                const result = compareVersions(newversion, app.getVersion())
+                return {
+                    // 匹配当前版本和远程版本
+                    needUpdate: result === newversion,
+                    latestVersion: result
+                }
             }
 
 
+        } catch (__) {
+            
+        }
 
+        return {
+            err: '网络错误!'
+        }
+    }
+
+    /**
+     * 
+     * @param path  最新文件的保存路径
+     * @param version 根据版本更新
+     * @returns 
+     */
+    static update(path: string, version?: string): Promise<boolean> {
+        return new Promise(async (resolve, reject) => {
+            try {
+                const resource = await getResource(version)
+                resource.pipe(fs.createWriteStream(path))
+                    .on("close", function () {
+                        resolve(true)
+                    });
+            } catch (_) {
+                reject(false)
+            }
         });
+
     }
 }
 
