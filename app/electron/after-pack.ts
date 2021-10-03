@@ -6,7 +6,7 @@ const archiver = require('archiver');
 
 // 打包文件
 export default function AfterAllPack() {
-    var output = fs.createWriteStream(path.resolve('./resource/ocs-app-resource.zip'));
+    var output = fs.createWriteStream(path.resolve('../resource/ocs-app-resource.zip'));
     var archive = archiver('zip');
 
     archive.on('error', function (err: any) {
@@ -17,7 +17,7 @@ export default function AfterAllPack() {
     archive.finalize();
  
     if (fs.existsSync(path.resolve('./dist/latest.yml'))) {
-        fs.copyFileSync(path.resolve('./dist/latest.yml'), path.resolve('./resource/latest.yml'))
+        fs.copyFileSync(path.resolve('./dist/latest.yml'), path.resolve('../resource/latest.yml'))
     }
 
 
