@@ -1,14 +1,9 @@
  
 
 import axios from 'axios';
-import fs from 'fs';
+import { OCROptions } from '.';
 const apiUrl = 'http://api.ttshitu.com/predict';
 
-export interface OCROptions {
-    username: string,
-    password: string,
-    typeid?: string
-}
 
 /**
     1 : 纯数字

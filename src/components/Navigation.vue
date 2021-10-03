@@ -1,5 +1,5 @@
 <template>
-    <a-row >
+    <a-row>
         <a-col :span="20" class="font-v3">
             <a-menu theme="light" mode="horizontal">
                 <a-menu-item key="1" @click="$router.push('/task')">
@@ -40,20 +40,7 @@
 <script setup lang="ts">
 import { ref, watch } from "vue";
 import { Remote } from "../utils/remote";
-
-// const max = ref(false);
-
-// Remote.on("maximize", () => {
-//     max.value = true;
-// });
-
-// Remote.on("unmaximize", () => {
-//     max.value = false;
-// });
-
-// Remote.on("minimize", () => {
-//     max.value = false;
-// });
+console.log("Remote", Remote);
 </script>
 
 <style scope lang="less">

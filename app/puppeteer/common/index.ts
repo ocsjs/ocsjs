@@ -1,31 +1,11 @@
-import { ScriptEvent } from '../../electron/event';
-
-
+ 
 
 export interface CourseScript {
-
-    scriptEvent: ScriptEvent
-
+ 
     index(...args: any[]): any
 
     login(...args: any[]): any
-
-    run(...args: any[]): any
-
-    logout(...args: any[]): any
-
-}
-
-export interface StudyScript {
-    intoStudyPage(...args: any[]): any
-}
-
-export interface ChapterTestScript {
-    intoChapterTestPage(...args: any[]): any
-}
-
-export interface ExamScript {
-    intoEaxmPage(...args: any[]): any
+ 
 }
  
 export interface Script {
@@ -35,11 +15,7 @@ export interface Script {
     execute(...args: any[]): any
 
 }
-
-export interface DataCollector {
-    getCourseList(...args: any[]): any
-}
-
+ 
 
 export interface VideoScript extends Script {
     title: string
@@ -65,4 +41,12 @@ export interface QAScript extends Script {
     options: string[]
     getAnswer(...args: any[]): any
     answer(...args: any[]): any
+}
+
+
+
+export interface OCROptions {
+    username: string,
+    password: string,
+    typeid?: string
 }

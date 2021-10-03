@@ -1,7 +1,7 @@
 {
   "name": "online-course-script",
   "version": "1.0.0",
-  "main": "./lib/main.js",
+  "main": "./lib/electron/main.js",
   "scripts": {
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
@@ -11,18 +11,13 @@
     "@octokit/rest": "^18.11.3",
     "@pioneerjs/common": "^1.0.2",
     "@pioneerjs/core": "^1.0.5",
-    "@types/gm": "^1.18.10",
     "archiver": "^5.3.0",
     "axios": "^0.21.4",
     "compressing": "^1.5.1",
     "dayjs": "^1.10.7",
     "electron-log": "^4.4.1",
     "electron-store": "^8.0.1",
-    "electron-updater": "^4.3.9",
-    "gm": "^1.23.1",
-    "node-tesseract-ocr": "^2.2.1",
     "puppeteer-core": "^10.4.0",
-    "update-electron-app": "^2.0.1",
     "uuid": "^8.3.2",
     "yaml": "^1.10.2"
   },
@@ -59,7 +54,7 @@
     "productName": "ocs",
     "asar": false,
     "copyright": "Copyright © 2021 ${author}",
-    "afterAllArtifactBuild": "./lib/after-pack.js",
+    "afterAllArtifactBuild": "./lib/electron/after-pack.js",
     "win": {
       "icon": "public/favicon.ico"
     },

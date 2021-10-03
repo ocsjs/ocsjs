@@ -1,29 +1,28 @@
 
+import { BrowserWindow } from 'electron';
 
-
-
-const { ipcRenderer } = require("electron");
+const { ipcRenderer } = require('electron')
 const uuid = require('uuid');
-
-
+import {IPCEventTypes} from 'app/electron/events/index';
+ 
 export const Remote = {
-    get(property: string) {
-        return ipcRenderer.sendSync('get', [property])
+    get(property: keyof BrowserWindow) {
+        return ipcRenderer.sendSync(IPCEventTypes.REMOTE_GET, [property])
     },
-    set(property: string, value: any) {
-        return ipcRenderer.sendSync('set', [property, value])
+    set(property: keyof BrowserWindow, value: any) {
+        return ipcRenderer.sendSync(IPCEventTypes.REMOTE_SET, [property, value])
     },
-    call(property: string, ...args: any[]) {
-        return ipcRenderer.sendSync('call', [property, ...args])
+    call(property: keyof BrowserWindow, ...args: any[]) {
+        return ipcRenderer.sendSync(IPCEventTypes.REMOTE_CALL, [property, ...args])
     },
-    on(event: string, handler: () => void) {
+    on(event: keyof BrowserWindow, handler: () => void) {
         const _eventName = event + "-" + uuid.v4().replace(/-/g, '')
-        ipcRenderer.send('on', _eventName)
+        ipcRenderer.send(IPCEventTypes.REMOTE_ON, _eventName)
         ipcRenderer.on(_eventName, handler)
     },
-    once(event: string, handler: () => void) {
+    once(event: keyof BrowserWindow, handler: () => void) {
         const _eventName = event + "-" + uuid.v4().replace(/-/g, '')
-        ipcRenderer.send('once', _eventName)
+        ipcRenderer.send(IPCEventTypes.REMOTE_ONCE, _eventName)
         ipcRenderer.once(_eventName, handler)
     },
 

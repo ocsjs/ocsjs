@@ -1,23 +1,25 @@
 
 
 import fs from 'fs';
+import path from 'path';
 const archiver = require('archiver');
 
 // 打包文件
-export default function AfterPack(context: any) {
-    setTimeout(() => {
-        var output = fs.createWriteStream('./dist/ocs-app-resource.zip');
-        var archive = archiver('zip');
+export default function AfterAllPack() {
+    var output = fs.createWriteStream(path.resolve('./resource/ocs-app-resource.zip'));
+    var archive = archiver('zip');
 
-        archive.on('error', function (err: any) {
-            throw err;
-        });
+    archive.on('error', function (err: any) {
+        throw err;
+    });
+    archive.directory(path.resolve('./dist/win-unpacked/resources/app/'), false);
+    archive.pipe(output);
+    archive.finalize();
+ 
+    if (fs.existsSync(path.resolve('./dist/latest.yml'))) {
+        fs.copyFileSync(path.resolve('./dist/latest.yml'), path.resolve('./resource/latest.yml'))
+    }
 
-        archive.pipe(output);
-        archive.directory('./dist/win-unpacked/resources/app/', false);
 
-        archive.finalize();
-
-        console.log("打包完毕!");
-    }, 10 * 1000);
+    console.log("打包完毕!");
 }
