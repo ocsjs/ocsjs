@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
     "build": "vue-tsc --noEmit && vite build",
-    "pack": "npm run build && cd app  && tsc && npm run pack",
-    "dist": "npm run build && cd app  && tsc && npm run dist",
-    "pub": "npm run build && npm run dist",
+    "pack": "  cd app  && tsc && npm run pack",
+    "dist": "  cd app  && tsc && npm run dist",
+    "bp":"npm run build && npm run pack",
+    "bd":"npm run build && npm run dist",
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js"
   },

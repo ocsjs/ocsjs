@@ -1,0 +1,8 @@
+version: 1.0.0
+files:
+  - url: ocs-Setup-1.0.0.exe
+    sha512: S6EiowMegj73tQKJ2fqwh5oN06F5mugWHcHZJthPnzdRlLqgC1W4gvuCgS4cidJZYoqL5nQl/1rLqe5BzEJdEQ==
+    size: 65131506
+path: ocs-Setup-1.0.0.exe
+sha512: S6EiowMegj73tQKJ2fqwh5oN06F5mugWHcHZJthPnzdRlLqgC1W4gvuCgS4cidJZYoqL5nQl/1rLqe5BzEJdEQ==
+releaseDate: '2021-10-03T03:36:12.045Z'

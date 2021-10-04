@@ -54,8 +54,8 @@ ipcRenderer.on(OCSEventTypes.NOTIFY, (e: any, notify: Notify) => {
         notification[notify.type](
             Object.assign(commonConfig, {
                 onClose: () => {
-                    notification.close(notify.name);
                     ipcRenderer.send(IPCEventTypes.CANCEL_APP_UPDATE);
+                    notification.close(notify.name);
                 },
             })
         );

@@ -26,7 +26,7 @@ export class Logger {
         const data = {
             name: this.eventName,
             localTime: dayjs().format('YYYY-MM-DD HH-mm-ss'),
-            data: [...args]
+            data: args
         }
         // 保存的文件夹
         const folder = p.resolve(this.path, `./logs/${this.getFolderName()}/${this.eventName}/`)
