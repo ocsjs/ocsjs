@@ -2,11 +2,11 @@
 
 import fs from 'fs';
 import semver, { SemVer } from 'semver';
-
-import { IPCEventTypes } from '../events';
+ 
 import { OCSNotify } from '../events/ocs.event';
 import { app } from 'electron';
-import request from 'request';
+const request = require('request');
+import { IPCEventTypes } from '../../types';
 
 /**
  * 更新类

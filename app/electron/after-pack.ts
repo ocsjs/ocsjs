@@ -2,7 +2,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import archiver from 'archiver';
+const archiver = require('archiver');
 
 // 打包文件
 export default function AfterAllPack() {

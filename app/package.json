@@ -2,6 +2,7 @@
   "name": "online-course-script",
   "version": "1.0.0",
   "main": "./lib/electron/main.js",
+  "types": "./lib/types.d.ts",
   "scripts": {
     "pack": "tsc && electron-builder --dir",
     "dist": "tsc && electron-builder",

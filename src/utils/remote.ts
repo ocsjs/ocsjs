@@ -12,22 +12,22 @@ function registerRemote<T>(eventName: string) {
 
     return {
         get(property: keyof T) {
-            return ipcRenderer.sendSync(events.GET, [property])
+            return ipcRenderer.sendSync(events.get, [property])
         },
         set(property: keyof T, value: any) {
-            return ipcRenderer.sendSync(events.SET, [property, value])
+            return ipcRenderer.sendSync(events.set, [property, value])
         },
         call(property: keyof T, ...args: any[]) {
-            return ipcRenderer.sendSync(events.CALL, [property, ...args])
+            return ipcRenderer.sendSync(events.call, [property, ...args])
         },
         on(event: keyof T, handler: () => void) {
             const _eventName = event + "-" + uuid.v4().replace(/-/g, '')
-            ipcRenderer.send(events.ON, _eventName)
+            ipcRenderer.send(events.on, _eventName)
             ipcRenderer.on(_eventName, handler)
         },
         once(event: keyof T, handler: () => void) {
             const _eventName = event + "-" + uuid.v4().replace(/-/g, '')
-            ipcRenderer.send(events.ONCE, _eventName)
+            ipcRenderer.send(events.once, _eventName)
             ipcRenderer.once(_eventName, handler)
         },
     }

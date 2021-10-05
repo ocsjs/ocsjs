@@ -1,15 +1,11 @@
 import { JSDelivrUpdater } from './../updater/jsdelivr.updater';
-
-
-import { OCSEvent } from './../events/ocs.event';
-import { GitHubUpdater } from './../updater/github.updater';
-
+ 
 
 import { IpcMain } from "electron";
-import path from "path";
-
-import { IPCEventTypes } from "../events";
+ 
 import { Updater } from '../updater';
+import path from 'path';
+import { IPCEventTypes } from '../../types';
 
 const _path = path.resolve('./resources/resource.zip')
 

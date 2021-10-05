@@ -9,7 +9,10 @@ import { app, BrowserWindow, ipcMain, shell, protocol } from 'electron';
 import { RemoteRouter } from './router/remote';
 import { ScriptsRouter } from './router/scripts';
 import { UpdateRouter } from './router/update';
+import { SystemSetting } from '../types';
+const Store = require('electron-store');
 
+const store = new Store()
 // 判断开发环境
 var mode = app.isPackaged ? 'prod' : 'dev'
 
@@ -39,7 +42,7 @@ app.whenReady().then(async () => {
 
 
     CurrentWindow = await createWindow()
- 
+
 })
 
 
@@ -53,10 +56,10 @@ async function createWindow() {
     load()
 
     function load() {
-        
+
         // Load a remote URL  
         const promise = mode === 'dev' ? win.loadURL('http://localhost:3000') : win.loadURL('app://./public/index.html')
- 
+
 
         promise.then((result: any) => {
             win.show()
@@ -73,11 +76,11 @@ async function createWindow() {
                     action: 'deny'
                 }
             })
-            info("register router");
+
             UpdateRouter(ipcMain)
             ScriptsRouter(ipcMain)
             RemoteRouter(ipcMain)
-
+            initSetting()
         }).catch((err: any) => {
             error(err);
             setTimeout(() => {
@@ -89,6 +92,23 @@ async function createWindow() {
 
     return win
 
+}
+
+
+function initSetting() {
+    const setting: SystemSetting = store.get('setting')
+    if (setting) {
+        const { path, win } = setting
+        if(path){
+            for (const key in path) {
+                app.setPath(key,(path as any)[key])
+            }
+        }
+
+        if(win){
+            CurrentWindow?.setAlwaysOnTop(win.isAlwaysOnTop)
+        }
+    }
 }
 
 

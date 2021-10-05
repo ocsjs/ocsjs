@@ -1,11 +1,11 @@
-import { OCSEventTypes } from './index';
+ 
 
 import EventEmitter from "events";
 
 import { Logger } from './logger'
-// import { CurrentWindow } from '../main'
-import { OCSEvents } from ".";
+ 
 import { CurrentWindow } from '../main';
+import { OCSEventTypes, OCSEvents } from "../../types";
 
 
 /**

@@ -16,7 +16,7 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
     center: true,
     autoHideMenuBar: true,
     show: false,
-    alwaysOnTop: mode === 'dev',
+    alwaysOnTop: true,
     webPreferences: {
         webSecurity: false,
         // 开启node

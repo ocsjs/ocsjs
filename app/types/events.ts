@@ -32,24 +32,27 @@ export enum OCSEventTypes {
     SUCCESS = 'success',
     ERROR = 'error',
     NOTIFY = 'notify',
- 
+
 
 }
 
 export enum IPCEventTypes {
-    // remote
 
-    REMOTE_GET = 'remote-get',
-    REMOTE_SET = 'remote-set',
-    REMOTE_CALL = 'remote-call',
-    REMOTE_ON = 'remote-on',
-    REMOTE_ONCE = 'remote-once',
-
-    // other
 
     APP_UPDATE = 'app-update',
     CANCEL_APP_UPDATE = 'cancel-app-update',
 
     IS_NEED_UPDATE = 'is-need-update',
     SCRIPT_LOGIN = 'script-login',
+}
+
+
+export function registerRemoteEventNames(name: string) {
+    return {
+        get: name + '-get',
+        set: name + '-set',
+        call: name + '-call',
+        on: name + '-on',
+        once: name + '-once'
+    }
 }

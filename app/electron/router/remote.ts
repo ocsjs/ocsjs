@@ -1,30 +1,43 @@
-import { IPCEventTypes } from './../events/index';
 
-import { IpcMain } from "electron";
+
+
+import { app, dialog, IpcMain } from "electron";
+import {   registerRemoteEventNames } from "../../types";
 import { CurrentWindow } from "../main";
+import { ipcMain } from 'electron';
 
+
+export function registerRemoteEvent(name: string, target: any) {
+    const events = registerRemoteEventNames(name)
+
+    ipcMain
+        .on(events.get, (event: any, arg: any[]) => {
+            const property = arg[0]
+            event.returnValue = target[property]
+
+        }).on(events.set, (event: any, arg: any[]) => {
+            const [property, value] = [arg[0], arg[1]]
+            event.returnValue = target[property] = value
+
+        }).on(events.call, (event: any, arg: any[]) => {
+            const [property, ...value] = [arg.shift(), ...arg]
+            event.returnValue = target[property](...value)
+
+        }).on(events.on, (event: any, eventName: string) => {
+            target.on(eventName.split('-')[0], () => event.reply(eventName))
+
+        }).on(events.once, (event: any, eventName: string) => {
+            target.once(eventName.split('-')[0], () => event.reply(eventName))
+        })
+}
 
 export function RemoteRouter(ipcMain: IpcMain) {
     const win: any = CurrentWindow
-    ipcMain
-        .on(IPCEventTypes.REMOTE_GET, (event: any, arg: any[]) => {
-            const property = arg[0]
-            event.returnValue = win[property]
+    const _app: any = app
 
-        }).on(IPCEventTypes.REMOTE_SET, (event: any, arg: any[]) => {
-            const [property, value] = [arg[0], arg[1]]
-            event.returnValue = win[property] = value
-
-        }).on(IPCEventTypes.REMOTE_CALL, (event: any, arg: any[]) => {
-            const [property, ...value] = [arg.shift(), ...arg]
-            event.returnValue = win[property](value)
-
-        }).on(IPCEventTypes.REMOTE_ON, (event: any, eventName: string) => {
-            win.on(eventName.split('-')[0], () => event.reply(eventName))
-            
-        }).on(IPCEventTypes.REMOTE_ONCE, (event: any, eventName: string) => {
-            win.once(eventName.split('-')[0], () => event.reply(eventName))
-        })
+    registerRemoteEvent('app',_app)
+    registerRemoteEvent('win',win)
+    registerRemoteEvent('dialog',dialog)
 }
 
 

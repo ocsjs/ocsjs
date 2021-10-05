@@ -2,19 +2,11 @@ import fs from 'fs';
 import p from 'path';
 import dayjs from 'dayjs';
 import { app } from 'electron';
-
-
-export interface LogType {
-    script: string,
-    time: number,
-    localTime: string,
-    data: any
-}
-
+ 
 export class Logger {
     path: string
     constructor(private eventName: string) {
-        this.path = app.getPath('userData')
+        this.path = app.getPath('logs')
     }
 
     /**
@@ -29,7 +21,7 @@ export class Logger {
             data: args
         }
         // 保存的文件夹
-        const folder = p.resolve(this.path, `./logs/${this.getFolderName()}/${this.eventName}/`)
+        const folder = p.resolve(this.path, `/${this.getFolderName()}/${this.eventName}/`)
         // 文件
         const file = p.resolve(folder, `${eventName}.json`)
         // 如果有则追加到集合中，否则创建集合

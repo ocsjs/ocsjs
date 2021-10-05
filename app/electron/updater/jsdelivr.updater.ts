@@ -1,6 +1,9 @@
+import { AxiosGet } from './axios';
 import { PathLike } from "fs";
 import path from "path";
-import { Updater } from ".";
+import { Updater, Version } from ".";
+import yaml from 'yaml';
+import { app } from 'electron';
 
 export class JSDelivrUpdater extends Updater {
 
@@ -12,10 +15,17 @@ export class JSDelivrUpdater extends Updater {
     async update() {
         this.APP_UPDATE.info('开始更新,更新源: jsdelivr')
         let chunks = ''
-        super.update((chunk) => {
-            chunks += chunk.toString()
-            this.APP_UPDATE.info("下载中:" + JSDelivrUpdater.showFomatSize(chunks.length))
-        })
+        const data = await super.update()
+        if (data) {
+            data.on('data', (chunk: any) => {
+                chunks += chunk.toString()
+                this.APP_UPDATE.info("下载中:" + JSDelivrUpdater.showFomatSize(chunks.length))
+            })
+
+            data.on('end', () => {
+                this.APP_UPDATE.success('更新完毕！')
+            })
+        }
 
     }
 
@@ -23,11 +33,15 @@ export class JSDelivrUpdater extends Updater {
         return path.resolve(this.path)
     }
     async resolveResource(): Promise<URL | undefined> {
-        return new URL('https://cdn.jsdelivr.net/gh/enncy/online-course-script@1.0.2-beta/resource/ocs-app-resource.zip')
+        return new URL('https://cdn.jsdelivr.net/npm/online-course-script/resource/ocs-app-resource.zip')
     }
 
     async needUpdate(): Promise<boolean> {
-        return true
+        const { data } = await AxiosGet({
+            url: "https://cdn.jsdelivr.net/npm/online-course-script/resource/latest.yml"
+        })
+        const v = yaml.parse(data).version
+        return !!v && new Version(v).greaterThan(new Version(this.tag || app.getVersion()))
     }
 
 
