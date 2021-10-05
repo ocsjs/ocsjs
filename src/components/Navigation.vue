@@ -8,7 +8,7 @@
                 <a-menu-item key="2" @click="$router.push('/users')">
                     <UsergroupAddOutlined class="icon" /> 账号管理
                 </a-menu-item>
-                <a-menu-item key="3" @click="$router.push('/setting')">
+                <a-menu-item key="3" @click="$router.push('/setting/common')">
                     <SettingOutlined class="icon" /> 设置
                 </a-menu-item>
             </a-menu>
@@ -21,15 +21,29 @@
                 class="flex jc-flex-end"
                 :selectable="false"
             >
-                <a-menu-item @click="Remote.call('minimize')">
+                <a-menu-item
+                    @click="
+                        systemSetting.win.isAlwaysOnTop = !systemSetting.win.isAlwaysOnTop
+                    "
+                >
+                    <IconFont
+                        title="置顶"
+                        type="icon-relieve-full"
+                        v-if="systemSetting.win.isAlwaysOnTop"
+                    />
+                    <IconFont title="取消置顶" type="icon-relieve" v-else />
+                </a-menu-item>
+
+                <a-menu-item @click="Remote.win.call('minimize')" title="最小化">
                     <MinusOutlined />
                 </a-menu-item>
+
                 <!-- <a-menu-item @click="Remote.call(max ? 'unmaximize' : 'maximize')">
                     <BorderOutlined v-if="!max" />
                     <MinusSquareOutlined v-else />
                 </a-menu-item> -->
 
-                <a-menu-item @click="Remote.call('close')">
+                <a-menu-item @click="Remote.win.call('close')" title="最大化">
                     <CloseOutlined />
                 </a-menu-item>
             </a-menu>
@@ -38,9 +52,9 @@
 </template>
 
 <script setup lang="ts">
+import { systemSetting } from "@/view/setting/setting";
 import { ref, watch } from "vue";
 import { Remote } from "../utils/remote";
-console.log("Remote", Remote);
 </script>
 
 <style scope lang="less">

@@ -5,9 +5,11 @@
         </a-layout-header>
         <a-layout-content id="layout-content">
             <transition name="fade">
-                <keep-alive>
-                    <router-view></router-view>
-                </keep-alive>
+                <router-view v-slot="{ Component }">
+                    <keep-alive>
+                        <component :is="Component" />
+                    </keep-alive>
+                </router-view>
             </transition>
         </a-layout-content>
         <a-layout-footer id="layout-footer">
@@ -24,9 +26,11 @@ import Navigation from "./components/Navigation.vue";
 
 const { ipcRenderer } = require("electron");
 import { message, notification } from "ant-design-vue";
-
-import { OCSEventTypes, IPCEventTypes, Notify } from "app/electron/events/index";
+ 
 import { NotificationArgsProps } from "ant-design-vue/lib/notification";
+import { OCSEventTypes, Notify, IPCEventTypes } from "app/types";
+
+
 
 ipcRenderer.on(OCSEventTypes.INFO, (e: any, msg: string[]) => {
     message.info(msg);
@@ -42,28 +46,31 @@ ipcRenderer.on(OCSEventTypes.ERROR, (e: any, msg: string[]) => {
 });
 
 ipcRenderer.on(OCSEventTypes.NOTIFY, (e: any, notify: Notify) => {
+    console.log(notify);
+    const isUpdate = notify.name === IPCEventTypes.APP_UPDATE;
     const commonConfig: Omit<NotificationArgsProps, "type"> = {
-        duration: notify.name === IPCEventTypes.APP_UPDATE ? 0 : 5,
+        duration: isUpdate && notify.type === "info" ? 0 : 5,
         placement: "bottomRight",
         key: notify.name,
         message: notify.title,
         description: notify.message,
+        style: {
+            padding: "12px",
+        },
+        class: "notification-message",
+        onClose: () => {
+            if (isUpdate) {
+                ipcRenderer.send(IPCEventTypes.CANCEL_APP_UPDATE);
+            }
+            notification.close(notify.name);
+        },
     };
     // 如果是更新通知
-    if (notify.name === IPCEventTypes.APP_UPDATE) {
-        notification[notify.type](
-            Object.assign(commonConfig, {
-                onClose: () => {
-                    ipcRenderer.send(IPCEventTypes.CANCEL_APP_UPDATE);
-                    notification.close(notify.name);
-                },
-            })
-        );
-        if (notify.type === "success") {
-            setTimeout(() => {
-                notification.close(notify.name);
-            }, 5000);
-        }
+    if (isUpdate && notify.type === "success") {
+        notification[notify.type](commonConfig);
+        setTimeout(() => {
+            notification.close(notify.name);
+        }, 5000);
     } else {
         // 其他通知
         notification[notify.type](commonConfig);

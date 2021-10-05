@@ -1,19 +1,17 @@
 <template>
-    <h1>task</h1>
     <div>
+        <h1>task</h1>
         <a-button type="primary" @click="start">start</a-button>
         <a-button type="primary" @click="update">update</a-button>
     </div>
 </template>
 
 <script setup lang="ts">
+import { ScriptLoginOptions, LoginType, IPCEventTypes } from "app/types";
+
 const { ipcRenderer } = require("electron");
-import { LoginType } from "app/puppeteer/cx/types";
-import { IPCEventTypes } from "app/electron/events/index";
-import { ScriptLoginOptions } from "app/electron/router/scripts";
 
 function start() {
- 
     const options: ScriptLoginOptions = {
         script: "cx",
         type: LoginType["用户登录"],
@@ -23,11 +21,11 @@ function start() {
             password: "skeleton132525",
         },
         ocrOptions: {
-            username:'enncy',
-            password:'132525'
+            username: "enncy",
+            password: "132525",
         },
     };
-    ipcRenderer.send(IPCEventTypes.SCRIPT_LOGIN,options);
+    ipcRenderer.send(IPCEventTypes.SCRIPT_LOGIN, options);
 }
 
 function update() {

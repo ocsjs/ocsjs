@@ -1,6 +1,11 @@
 
 <template>
-    脚本设置
+    <div>
+        脚本设置
+
+
+
+    </div>
 </template>
 
 <script setup lang='ts'>

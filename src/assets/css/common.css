@@ -161,6 +161,9 @@ html,
 #app .background-color {
   color: #f0f2f5;
 }
+#app .notification-message {
+  font-weight: bold;
+}
 #app .font-v1 {
   font-weight: bold;
   font-size: 26px;
@@ -716,7 +719,6 @@ html,
   -webkit-app-region: no-drag;
 }
 #layout-content {
-  padding: 50px;
   height: 100%;
   background-color: white;
   overflow: auto;
