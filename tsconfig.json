@@ -1,7 +1,6 @@
 {
   "compilerOptions": {
     "experimentalDecorators": true,
-   
     "target": "esnext",
     "useDefineForClassFields": true,
     "module": "esnext",
@@ -12,14 +11,34 @@
     // "declaration": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["esnext", "dom"],
+    "lib": [
+      "esnext",
+      "dom"
+    ],
     "outDir": "./lib",
     "paths": {
-      "@/*": ["./src/*"],
-      "app/*": ["./app/*"],
-      "root/*": ["./*"],
+      "@/*": [
+        "./src/*"
+      ],
+      "app/*": [
+        "./app/*"
+      ],
+      
+      "root/*": [
+        "./*"
+      ],
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"],
-  "exclude": ["dist/**/*","app/public/**/*","node_modules/**/*","electron/**/*","puppeteer/**/*"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "app/types.ts"
+  ],
+  "exclude": [
+    "dist/**/*",
+    "node_modules/**/*",
+    "app/**/*"
+  ]
 }
