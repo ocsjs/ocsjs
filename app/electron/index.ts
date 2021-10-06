@@ -1,19 +1,17 @@
+
 import { info, log, error } from "console";
-import { app, protocol, BrowserWindow,BrowserWindow as BW, shell, ipcMain } from "electron";
+import { app, protocol, BrowserWindow, BrowserWindow as BW, shell, ipcMain } from "electron";
 import path from "path";
-import { SystemSetting } from "types/setting";
- 
- 
+import { getChromePath } from "../puppeteer";
+import { Setting, SystemSetting } from "../types";
+
+
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { ScriptsRouter } from "./router/scripts";
 import { UpdateRouter } from "./router/update";
+import { store, StoreGet } from "./setting";
 
- 
-
-const Store = require('electron-store');
-
-const store = new Store()
 // 判断开发环境
 var mode = app.isPackaged ? 'prod' : 'dev'
 
@@ -41,7 +39,7 @@ app.whenReady().then(async () => {
         if (process.platform !== 'darwin') app.quit()
     })
 
-
+    initSetting()
     CurrentWindow = await createWindow()
 
 })
@@ -83,7 +81,7 @@ async function createWindow() {
             UpdateRouter(ipcMain)
             ScriptsRouter(ipcMain)
             RemoteRouter(ipcMain)
-            initSetting()
+
         }).catch((err: any) => {
 
             setTimeout(() => {
@@ -101,9 +99,57 @@ async function createWindow() {
 
 
 function initSetting() {
-    const setting: SystemSetting = store.get('setting')
+    const initSetting: Setting = {
+        update: {
+            autoUpdate: true,
+            hour: 1,
+            lastTime: 0
+        },
+        common: {
+            task: {
+                maxTasks: 4,
+            },
+
+        },
+        script: {
+            // 启动设置
+            launch: {
+                // 浏览器执行路径
+                binaryPath: getChromePath() || '',
+            },
+            // 脚本设置
+            script: {
+                // 看视频
+                video: true,
+                // 做题
+                qa: true
+            },
+            // 信息设置
+            account: {
+                // 查题码
+                queryToken: '',
+                // ocr 设置
+                ocr: {
+                    username: '',
+                    password: ''
+                }
+            }
+        },
+        system: {
+            win: {
+                isAlwaysOnTop: CurrentWindow?.isAlwaysOnTop() || true,
+            },
+            path: {
+                userData: app.getPath("userData"),
+                logs: app.getPath("logs"),
+            },
+        }
+    }
+
+
+    const setting: Setting = StoreGet('setting')
     if (setting) {
-        const { path, win } = setting
+        const { path, win } = setting.system
         if (path) {
             for (const key in path) {
                 app.setPath(key, (path as any)[key])
@@ -113,6 +159,8 @@ function initSetting() {
         if (win) {
             CurrentWindow?.setAlwaysOnTop(win.isAlwaysOnTop)
         }
+    } else {
+        store.set('setting', initSetting)
     }
 }
 

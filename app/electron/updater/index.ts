@@ -1,12 +1,12 @@
 import { app } from "electron";
-import { request } from "http";
+import { ClientRequest, request } from "http";
 import { SemVer } from "semver";
 import semver from "semver";
-  
+
 import fs from 'fs';
-import { IPCEventTypes } from "types/events";
-import { OCSNotify } from "~electron/events/ocs.event";
- 
+import { IPCEventTypes } from "../../types";
+import { OCSNotify } from "../events/ocs.event";
+
 /**
  * 更新类
  */
@@ -19,38 +19,34 @@ export abstract class Updater {
     async init(): Promise<void> { }
 
     //更新
-    public async update(callback?: (chunk: any) => void): Promise<any> {
+    public async update(callback?: (chunk: any) => void): Promise<ClientRequest | undefined> {
         if (app.isPackaged) {
-            if (await this.needUpdate()) {
-                await this.init();
-                // 写入数据
-                const url = await this.resolveResource()
-                this.APP_UPDATE.info('开始下载远程更新文件', url)
-                const file = this.resolvePath()
-                this.APP_UPDATE.info('创建本地更新文件', file)
-                if (url) {
-                    try {
-                        const data = request(url.href)
-                       
-                        // 获取本地写入流
-                        const output = fs.createWriteStream(file)
-                        this.APP_UPDATE.once(IPCEventTypes.CANCEL_APP_UPDATE, () => {
-                            data.destroy()
-                        })
-                        data.pipe(output)
-                        data.on('data', (chunk: any) => {
-                            callback?.(chunk)
-                        });
+            await this.init();
+            // 写入数据
+            const url = await this.resolveResource()
+            this.APP_UPDATE.info('开始下载远程更新文件', url)
+            const file = this.resolvePath()
+            this.APP_UPDATE.info('创建本地更新文件', file)
+            if (url) {
+                try {
+                    const data = request(url.href)
 
-                        return data
-                    } catch (err) {
-                        this.APP_UPDATE.error('更新失败', err)
-                    }
-                } else {
-                    this.APP_UPDATE.error('更新路径解析失败')
+                    // 获取本地写入流
+                    const output = fs.createWriteStream(file)
+                    this.APP_UPDATE.once(IPCEventTypes.CANCEL_APP_UPDATE, () => {
+                        data.destroy()
+                    })
+                    data.pipe(output)
+                    data.on('data', (chunk: any) => {
+                        callback?.(chunk)
+                    });
+
+                    return data
+                } catch (err) {
+                    this.APP_UPDATE.error('更新失败', err)
                 }
             } else {
-                this.APP_UPDATE.warn('已经是最新版本，不需要更新')
+                this.APP_UPDATE.error('更新路径解析失败')
             }
         } else {
             this.APP_UPDATE.warn('当前不是生产模式，不能进行更新操作')

@@ -8,7 +8,7 @@
                 <a-menu-item key="2" @click="$router.push('/users')">
                     <UsergroupAddOutlined class="icon" /> 账号管理
                 </a-menu-item>
-                <a-menu-item key="3" @click="$router.push('/setting/common')">
+                <a-menu-item key="3" @click="$router.push('/setting/script')">
                     <SettingOutlined class="icon" /> 设置
                 </a-menu-item>
             </a-menu>
@@ -23,13 +23,13 @@
             >
                 <a-menu-item
                     @click="
-                        systemSetting.win.isAlwaysOnTop = !systemSetting.win.isAlwaysOnTop
+                        system.win.isAlwaysOnTop = !system.win.isAlwaysOnTop
                     "
                 >
                     <IconFont
                         title="置顶"
                         type="icon-relieve-full"
-                        v-if="systemSetting.win.isAlwaysOnTop"
+                        v-if="system.win.isAlwaysOnTop"
                     />
                     <IconFont title="取消置顶" type="icon-relieve" v-else />
                 </a-menu-item>
@@ -52,9 +52,11 @@
 </template>
 
 <script setup lang="ts">
-import { systemSetting } from "@/view/setting/setting";
-import { ref, watch } from "vue";
-import { Remote } from "../utils/remote";
+import { setting } from "@/view/setting/setting";
+ 
+import { Remote } from "../../utils/remote";
+
+const { system } = setting;
 </script>
 
 <style scope lang="less">

@@ -1,9 +1,11 @@
 <template>
     <div>
-        <Card :bordered="false" color="blue" style="text-align: right;">
-            <template #title>系统设置</template>
+        <Card :bordered="false" color="blue" style="text-align: right" title="更新设置">
             <template #body>
-                <a-descriptions :column="1" :labelStyle="{ fontWeight: 'bold' }">
+                <a-descriptions
+                    :column="1"
+                    :labelStyle="{ fontWeight: 'bold', height: '32px' }"
+                >
                     <a-descriptions-item label="当前版本">
                         <span class="space-10 flex">
                             <span>{{ Remote.app.call("getVersion") }} </span>
@@ -16,9 +18,33 @@
                             </div>
                         </span>
                     </a-descriptions-item>
+                    <a-descriptions-item label="上次检测时间">
+                        {{ new Date(update.lastTime).toLocaleString() }}
+                    </a-descriptions-item>
+                    <a-descriptions-item label="自动更新">
+                        <a-switch v-model:checked="update.autoUpdate" />
+                    </a-descriptions-item>
+                    <a-descriptions-item label="自动更新间隔">
+                        <div class="space-10">
+                            <a-input-number
+                                size="small"
+                                :min="1"
+                                :max="24"
+                                :default-value="1"
+                                v-model:value="update.hour"
+                                :disabled="!update.autoUpdate"
+                            />
+                            <span>小时</span>
+                        </div>
+                    </a-descriptions-item>
                 </a-descriptions>
 
-                <a-button type="primary" @click="checkUpdate">更新检测</a-button>
+                <div class="space-10">
+                    <a-button type="primary" @click="checkUpdate">更新检测</a-button>
+                    <a-button type="primary" @click="onUpdate" v-if="needUpdate === 1"
+                        >点击更新</a-button
+                    >
+                </div>
             </template>
         </Card>
     </div>
@@ -26,24 +52,26 @@
 
 <script setup lang="ts">
 import { Remote } from "@/utils/remote";
- 
- 
+
 import { onMounted, ref } from "vue";
 import { IPCEventTypes } from "app/types";
- 
+import { message } from "ant-design-vue";
+import { setting } from "./setting";
+const { update } = setting;
 const { ipcRenderer } = require("electron");
 
 const needUpdate = ref(-1);
 function checkUpdate() {
-    console.log("checkUpdate");
-    
     needUpdate.value = -1;
     needUpdate.value = ipcRenderer.sendSync(IPCEventTypes.IS_NEED_UPDATE) ? 1 : 0;
-    console.log(needUpdate.value);
-    
+ 
+}
+
+function onUpdate() {
+    ipcRenderer.send(IPCEventTypes.APP_UPDATE);
 }
 onMounted(() => {
-    checkUpdate()
+    checkUpdate();
 });
 </script>
 

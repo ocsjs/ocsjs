@@ -1,18 +1,20 @@
-import { OCR } from "~puppeteer/common/ocr"
 import { Injectable } from "@pioneerjs/common"
 import { InjectableScript, Utils, WaitForScript } from "@pioneerjs/core"
 import { HTTPRequest } from "puppeteer-core"
-import { LoginConfigs, OCROptions } from "types/scripts"
-import { OCSEvent } from "~electron/events/ocs.event"
+import { OCSEvent } from "../../electron/events/ocs.event"
+import { AllLoginTypes, OCROptions } from "../../types"
+import { OCR } from "../common/ocr"
 
- 
- 
- 
+
+
+
+
+
 @Injectable()
 export class CXLogin extends InjectableScript {
 
 
-    async login<K extends keyof LoginConfigs>(event: OCSEvent, loginConfig: LoginConfigs[K], ocrOptions?: OCROptions) {
+    async login(event: OCSEvent, loginConfig: AllLoginTypes[keyof AllLoginTypes], ocrOptions?: OCROptions) {
 
 
         const { page } = this

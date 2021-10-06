@@ -1,14 +1,7 @@
 <template>
     <a-layout style="background: #fff; height: 100%">
         <a-layout-sider style="background: #fff" :collapsed="true">
-            <a-menu mode="inline" style="height: 100%"  v-model:selectedKeys="current">
-                <a-menu-item
-                    key="common"
-                    class="space-12"
-                    @click="$router.push('/setting/common')"
-                >
-                    <AppstoreOutlined /> <span> 通用设置</span>
-                </a-menu-item>
+            <a-menu mode="inline" style="height: 100%" v-model:selectedKeys="current">
                 <a-menu-item
                     key="script"
                     class="space-12"
@@ -16,6 +9,14 @@
                 >
                     <BugOutlined /> <span> 脚本设置</span>
                 </a-menu-item>
+                <a-menu-item
+                    key="common"
+                    class="space-12"
+                    @click="$router.push('/setting/common')"
+                >
+                    <AppstoreOutlined /> <span> 通用设置</span>
+                </a-menu-item>
+
                 <a-menu-item
                     key="system"
                     class="space-12"
@@ -47,11 +48,12 @@
 <script setup lang="ts">
 import { ref } from "@vue/reactivity";
 
-const current = ref(["common"]);
+const current = ref(["script"]);
 </script>
 
 <style scope lang="less">
 #setting-content {
+    overflow: auto;
     padding: 20px;
     background-color: rgb(248, 248, 248);
 }

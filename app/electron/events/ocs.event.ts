@@ -1,7 +1,8 @@
  
 import EventEmitter from "events";
-import { OCSEventTypes, OCSEvents } from "types/events";
+ 
 import { CurrentWindow } from "..";
+import { OCSEventTypes, OCSEvents } from "../../types";
 import { Logger } from "./logger";
  
  
@@ -112,8 +113,7 @@ export class OCSNotify extends OCSEvent {
 
     constructor(public name: string, private title: string) {
         super(name);
-        console.log("OCSNotify init", this);
-
+  
     }
 
     notify({ type, message }: {

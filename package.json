@@ -1,20 +1,21 @@
 {
   "name": "online-course-script",
   "version": "1.0.0",
-  "main": "./app/lib/app/electron/index.js",
+  "main": "./app/lib/electron/index.js",
   "scripts": {
-    "dev": "node clearn.js &&  cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
+    "dev": "node clearn.js && cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
     "build": "vue-tsc --noEmit && vite build",
     "pack": "  cd app  && tsc && npm run pack",
     "dist": "  cd app  && tsc && npm run dist",
-    "bp":"npm run build && npm run pack",
-    "bd":"npm run build && npm run dist",
+    "bp": "npm run build && npm run pack",
+    "bd": "npm run build && npm run dist",
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.0.1",
     "ant-design-vue": "^2.2.8",
+    "axios": "^0.22.0",
     "electron-store": "^8.0.1",
     "mark-ui": "^1.1.6",
     "uuid": "^8.3.2",

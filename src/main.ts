@@ -10,7 +10,7 @@ import { message } from 'ant-design-vue';
 
 import { createFromIconfontCN } from "@ant-design/icons-vue";
 const IconFont = createFromIconfontCN({
-    scriptUrl: "//at.alicdn.com/t/font_2849771_9ym27ock1za.js",
+    scriptUrl: "//at.alicdn.com/t/font_2849771_3az41crtc9.js",
 });
 
 message.config({

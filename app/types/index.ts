@@ -1,3 +1,6 @@
 export * from './events'
 export * from './scripts'
-export * from './setting'
+export * from './store'
+export * from './script/index'
+export * from './script/cx.login'
+export * from './script/zhs.login'

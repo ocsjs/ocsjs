@@ -1,20 +1,18 @@
-import { Remote } from "@/utils/remote";
-import { ref, watch } from "vue";
-import store from "@/utils/store";
-import { SystemSetting } from "app/types";
- 
- 
 
-export const systemSetting = ref<SystemSetting>({
-    win: {
-        isAlwaysOnTop: Remote.win.call("isAlwaysOnTop"),
-    },
-    path: {
-        userData: Remote.app.call("getPath", "userData"),
-        logs: Remote.app.call("getPath", "logs"),
-    },
-});
+import { reactive, watch } from "vue";
+import { store } from "@/utils/store";
+import { Setting } from "app/types";
 
-watch(systemSetting.value, () => {
-    store.set("setting", systemSetting.value);
+
+
+const localSetting = store.get("setting");
+
+
+export const setting = reactive<Setting>(localSetting);
+
+
+watch(setting, () => {
+    console.log("setting change", setting);
+
+    store.set("setting", setting);
 });

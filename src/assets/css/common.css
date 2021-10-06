@@ -164,6 +164,9 @@ html,
 #app .notification-message {
   font-weight: bold;
 }
+#app .ant-popover-content {
+  max-width: 300px;
+}
 #app .font-v1 {
   font-weight: bold;
   font-size: 26px;
@@ -766,4 +769,7 @@ html,
   /* Opera私有属性 */
   user-select: none;
   /* CSS3属性 */
+}
+.ant-popover-content {
+  max-width: 300px;
 }

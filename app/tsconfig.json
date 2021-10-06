@@ -61,22 +61,12 @@
     /* Advanced Options */
     "skipLibCheck": true, /* Skip type checking of declaration files. */
     "forceConsistentCasingInFileNames": true, /* Disallow inconsistently-cased references to the same file. */
-    "paths": {
-      "types/*": [
-        "./types/*"
-      ],
-      "~electron/*":[
-        "./electron/*"
-      ],
-      "~puppeteer/*":[
-        "./puppeteer/*"
-      ]
-    }
+ 
   },
   "include": [
     "puppeteer/**/*.ts",
     "electron/**/*.ts",
-    "types/index.ts"
+    "types/**/*.ts"
   ],
   "exclude": [
     "node_modules/**/*",

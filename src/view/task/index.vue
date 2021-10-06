@@ -7,16 +7,15 @@
 </template>
 
 <script setup lang="ts">
-import { ScriptLoginOptions, LoginType, IPCEventTypes } from "app/types";
+import { ScriptLoginOptions, IPCEventTypes } from "app/types";
 
 const { ipcRenderer } = require("electron");
 
 function start() {
     const options: ScriptLoginOptions = {
         script: "cx",
-        type: LoginType["用户登录"],
         loginConfig: {
-            type: LoginType["用户登录"],
+            type: 1,
             phone: "18275719980",
             password: "skeleton132525",
         },

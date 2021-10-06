@@ -2,6 +2,7 @@ import { ScriptConstructor, RunnableScript, Pioneer } from "@pioneerjs/core";
 import path from "path";
 import puppeteer, { Browser } from "puppeteer-core";
 import fs from 'fs';
+import { StoreGet } from "../electron/setting";
 
 // 获取 chrome 路径
 export function getChromePath() {
@@ -17,7 +18,7 @@ export function getChromePath() {
 
 
 export function StartPuppeteer({ scripts, callback }: { scripts: ScriptConstructor<RunnableScript>[], callback: (browser: Browser, pioneer: Pioneer) => void }) {
-    let chromePath = getChromePath()
+    let chromePath = StoreGet('setting').script.launch.binaryPath
     if (chromePath) {
         puppeteer.launch({
             // your chrome path

@@ -1,16 +1,16 @@
 <template>
     <div >
-        <Card :bordered="false" color="blue">
-            <template #title>系统设置</template>
+        <Card :bordered="false" color="blue" title="系统设置">
+     
             <template #body>
                 <a-descriptions :column="1" :labelStyle="{ fontWeight: 'bold' }">
                     <a-descriptions-item label="窗口置顶">
                         <a-switch
-                            v-model:checked="systemSetting.win.isAlwaysOnTop"
+                            v-model:checked="system.win.isAlwaysOnTop"
                             @change="
                                 Remote.win.call(
                                     'setAlwaysOnTop',
-                                    systemSetting.win.isAlwaysOnTop
+                                    system.win.isAlwaysOnTop
                                 )
                             "
                         />
@@ -20,8 +20,8 @@
         </Card>
  
 
-        <Card :bordered="false" color="blue">
-            <template #title>路径设置</template>
+        <Card :bordered="false" color="blue" title="路径设置">
+   
             <template #body>
                 <a-descriptions :column="1" :labelStyle="{ fontWeight: 'bold' }">
                     <a-descriptions-item label="软件路径">
@@ -36,8 +36,8 @@
                         <div class="space-10 flex ai-center">
                             <span
                                 class="path"
-                                @click="shell.openPath(systemSetting.path.userData)"
-                                >{{ systemSetting.path.userData }}
+                                @click="shell.openPath(system.path.userData)"
+                                >{{ system.path.userData }}
                             </span>
                             <FolderTwoTone @click="settingPath('userData')" />
                         </div>
@@ -46,9 +46,9 @@
                         <div class="space-10 flex ai-center">
                             <span
                                 class="path"
-                                @click="shell.openPath(systemSetting.path.logs)"
+                                @click="shell.openPath(system.path.logs)"
                             >
-                                {{ systemSetting.path.logs }}
+                                {{ system.path.logs }}
                             </span>
              
                             <FolderTwoTone @click="settingPath('logs')" />
@@ -61,23 +61,21 @@
 </template>
 
 <script setup lang="ts">
-import Card from "@/components/Card.vue";
+import Card from "@/components/common/Card.vue";
 import { Remote } from "@/utils/remote";
-import { PathSetting } from "app/types";
+import { SystemSetting } from "app/types";
+import { setting } from "./setting";
+
  
- 
-import { systemSetting } from "./setting";
- 
- 
- 
+const system = setting.system
 const { shell } = require("electron");
 
-function settingPath(name: keyof PathSetting) {
-    systemSetting.value.path[name] = Remote.dialog
+function settingPath(name: keyof SystemSetting['path']) {
+    setting.system.path[name] = Remote.dialog
         .call("showOpenDialogSync", {
             properties: ["openDirectory"],
             multiSelections: false,
-            defaultPath: systemSetting.value.path[name],
+            defaultPath: setting.system.path[name],
         })
         .pop();
 }

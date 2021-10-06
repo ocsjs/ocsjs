@@ -3,7 +3,7 @@
         <div class="title font-v2 flex ai-center">
             <a-badge :color="color" />
 
-            <slot name="title"></slot>
+            <slot name="title">{{ title }}</slot>
         </div>
         <div class="body">
             <slot name="body"></slot>
@@ -14,25 +14,26 @@
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
 interface Color {
-    pink:string
-    red:string
-    yellow:string
-    orange:string
-    cyan:string
-    green:string
-    blue:string
-    purple:string
-    geekblue:string
-    magenta:string
-    volcano:string
-    gold:string
-    lime:string
+    pink: string;
+    red: string;
+    yellow: string;
+    orange: string;
+    cyan: string;
+    green: string;
+    blue: string;
+    purple: string;
+    geekblue: string;
+    magenta: string;
+    volcano: string;
+    gold: string;
+    lime: string;
 }
 const props = defineProps<{
     color: keyof Color;
+    title?: string;
 }>();
 
-const { color } = toRefs(props);
+const { color, title } = toRefs(props);
 </script>
 
 <style scope lang="less">
@@ -47,7 +48,7 @@ const { color } = toRefs(props);
     }
 
     .body {
-        padding: 4px 18px;
+        padding: 8px 18px;
     }
 }
 

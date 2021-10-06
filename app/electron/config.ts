@@ -18,6 +18,8 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
     show: false,
     alwaysOnTop: true,
     webPreferences: {
+        // 关闭拼写矫正
+        spellcheck: false,
         webSecurity: false,
         // 开启node
         nodeIntegration: true,

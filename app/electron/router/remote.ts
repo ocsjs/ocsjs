@@ -1,7 +1,7 @@
 import { ipcMain, IpcMain, app, dialog } from "electron"
-import { registerRemoteEventNames } from "types/events"
  
 import { CurrentWindow } from ".."
+import { registerRemoteEventNames } from "../../types"
  
 
 

@@ -1,7 +1,7 @@
 {
   "name": "online-course-script",
   "version": "1.0.0",
-  "main": "./lib/app/electron/index.js",
+  "main": "./lib/electron/index.js",
   "scripts": {
     "pack": "tsc && electron-builder --dir",
     "dist": "tsc && electron-builder",
