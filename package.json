@@ -1,7 +1,7 @@
 {
   "name": "online-course-script",
   "version": "1.0.0",
-  "main": "./app/lib/electron/main.js",
+  "main": "./app/lib/app/electron/index.js",
   "scripts": {
     "dev": "cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
     "build": "vue-tsc --noEmit && vite build",

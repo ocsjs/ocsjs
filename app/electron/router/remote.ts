@@ -1,10 +1,9 @@
+import { ipcMain, IpcMain, app, dialog } from "electron"
+ 
+import { CurrentWindow } from ".."
+import { registerRemoteEventNames } from "../../../types"
 
-
-
-import { app, dialog, IpcMain } from "electron";
-import {   registerRemoteEventNames } from "../../types";
-import { CurrentWindow } from "../main";
-import { ipcMain } from 'electron';
+ 
 
 
 export function registerRemoteEvent(name: string, target: any) {

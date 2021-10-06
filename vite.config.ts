@@ -15,7 +15,8 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-    exclude: ['electron']
+   
+    exclude:['electron']
   },
   resolve: {
 

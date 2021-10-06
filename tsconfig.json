@@ -20,10 +20,7 @@
       "@/*": [
         "./src/*"
       ],
-      "app/*": [
-        "./app/*"
-      ],
-      
+ 
       "root/*": [
         "./*"
       ],
@@ -34,7 +31,7 @@
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "app/types.ts"
+    "types/**/*.ts"
   ],
   "exclude": [
     "dist/**/*",

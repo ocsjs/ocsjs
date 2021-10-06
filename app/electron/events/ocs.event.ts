@@ -1,13 +1,11 @@
  
-
 import EventEmitter from "events";
-
-import { Logger } from './logger'
  
-import { CurrentWindow } from '../main';
-import { OCSEventTypes, OCSEvents } from "../../types";
+import { CurrentWindow } from "..";
+import { OCSEventTypes, OCSEvents } from "../../../types";
+import { Logger } from "./logger";
 
-
+ 
 /**
  * ocs公用事件处理器
  * 可以通过一个方法同时输出到本地 

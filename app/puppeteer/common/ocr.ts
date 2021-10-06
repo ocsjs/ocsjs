@@ -1,7 +1,8 @@
  
 
 import axios from 'axios';
-import { OCROptions } from '.';
+import { OCROptions } from '../../../types';
+ 
 const apiUrl = 'http://api.ttshitu.com/predict';
 
 

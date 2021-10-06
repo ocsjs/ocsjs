@@ -1,10 +1,7 @@
-import { Pioneer, RunnableScript, ScriptConstructor } from '@pioneerjs/core';
+import { ScriptConstructor, RunnableScript, Pioneer } from "@pioneerjs/core";
+import path from "path";
 import puppeteer, { Browser } from "puppeteer-core";
-
-
-import path from 'path';
 import fs from 'fs';
-
 
 // 获取 chrome 路径
 export function getChromePath() {

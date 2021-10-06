@@ -1,13 +1,13 @@
-import { Injectable } from "@pioneerjs/common";
-import { InjectableScript, Utils, WaitForScript } from "@pioneerjs/core";
-import { OCROptions  } from "../common/index";
-import { LoginConfigs } from "./types";
-import { HTTPRequest } from 'puppeteer-core';
-import { OCSEvent } from '../../electron/events/ocs.event';
-import { OCR } from "../common/ocr";
+import { Injectable } from "@pioneerjs/common"
+import { InjectableScript, Utils, WaitForScript } from "@pioneerjs/core"
  
-
-
+import { HTTPRequest } from "puppeteer-core"
+import { LoginConfigs, OCROptions } from "../../../types"
+import { OCSEvent } from "../../electron/events/ocs.event"
+ 
+import { OCR } from "../common/ocr"
+ 
+ 
 @Injectable()
 export class CXLogin extends InjectableScript {
 

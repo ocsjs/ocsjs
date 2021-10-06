@@ -26,9 +26,11 @@
 
 <script setup lang="ts">
 import { Remote } from "@/utils/remote";
-import { IPCEventTypes } from "app/types";
+ 
+ 
 import { onMounted, ref } from "vue";
-
+import { IPCEventTypes } from "root/types";
+ 
 const { ipcRenderer } = require("electron");
 
 const needUpdate = ref(-1);

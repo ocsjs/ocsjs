@@ -1,15 +1,13 @@
+import { Pioneer } from "@pioneerjs/core";
  
-import { Browser } from 'puppeteer-core';
-import { Pioneer } from '@pioneerjs/core';
 import { IpcMain } from "electron";
+import { Browser } from "puppeteer-core";
+import { IPCEventTypes, ScriptLoginOptions } from "../../../types";
 import { StartPuppeteer } from "../../puppeteer";
+import { CXScript } from "../../puppeteer/cx";
+  
+
  
-import {info} from 'electron-log';
-import { CXScript } from '../../puppeteer/cx';
-import { ScriptLoginOptions } from '../../types/scripts';
-import { IPCEventTypes } from '../../types/events';
-
-
 
 export function ScriptsRouter(ipcMain: IpcMain) {
     

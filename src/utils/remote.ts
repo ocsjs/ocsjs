@@ -1,10 +1,11 @@
 
 
 import { BrowserWindow, App, Dialog } from 'electron';
-
+import { registerRemoteEventNames } from 'root/types';
+ 
 const { ipcRenderer } = require('electron')
 const uuid = require('uuid');
-import { registerRemoteEventNames } from 'app/types';
+ 
 
 function registerRemote<T>(eventName: string) {
 
@@ -59,3 +60,4 @@ export const Remote = {
     // },
 
 }
+ 

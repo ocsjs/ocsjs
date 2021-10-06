@@ -1,15 +1,15 @@
+import { info, log, error } from "console";
+import { app, protocol, BrowserWindow,BrowserWindow as BW, shell, ipcMain } from "electron";
+import path from "path";
+import { SystemSetting } from "../../types";
+ 
+import { BrowserConfig } from "./config";
+import { RemoteRouter } from "./router/remote";
+import { ScriptsRouter } from "./router/scripts";
+import { UpdateRouter } from "./router/update";
 
-import { BrowserConfig } from '../electron/config';
-import path from 'path';
-import { BrowserWindow as BW } from 'electron';
+ 
 
-// 在主进程中.
-import { info, error } from 'electron-log';
-import { app, BrowserWindow, ipcMain, shell, protocol } from 'electron';
-import { RemoteRouter } from './router/remote';
-import { ScriptsRouter } from './router/scripts';
-import { UpdateRouter } from './router/update';
-import { SystemSetting } from '../types';
 const Store = require('electron-store');
 
 const store = new Store()
@@ -52,19 +52,18 @@ app.whenReady().then(async () => {
 
 async function createWindow() {
     const win: any = new BrowserWindow(BrowserConfig)
+    win.show()
 
+    win.webContents.openDevTools()
     load()
-
+    log('loading!')
     function load() {
 
         // Load a remote URL  
         const promise = mode === 'dev' ? win.loadURL('http://localhost:3000') : win.loadURL('app://./public/index.html')
 
-
         promise.then((result: any) => {
-            win.show()
-            info("show");
-            win.webContents.openDevTools()
+
             // 拦截页面跳转
             win.webContents.on('will-navigate', (e: { preventDefault: () => void; }, url: any) => {
                 e.preventDefault()
@@ -82,10 +81,12 @@ async function createWindow() {
             RemoteRouter(ipcMain)
             initSetting()
         }).catch((err: any) => {
-            error(err);
+
             setTimeout(() => {
+                log('reloading!')
                 load()
             }, 2000);
+            error(err);
         });
     }
 
@@ -99,13 +100,13 @@ function initSetting() {
     const setting: SystemSetting = store.get('setting')
     if (setting) {
         const { path, win } = setting
-        if(path){
+        if (path) {
             for (const key in path) {
-                app.setPath(key,(path as any)[key])
+                app.setPath(key, (path as any)[key])
             }
         }
 
-        if(win){
+        if (win) {
             CurrentWindow?.setAlwaysOnTop(win.isAlwaysOnTop)
         }
     }

@@ -4,6 +4,7 @@ import path from "path";
 import { Updater, Version } from ".";
 import yaml from 'yaml';
 import { app } from 'electron';
+import { log } from 'electron-log';
 
 export class JSDelivrUpdater extends Updater {
 
@@ -40,6 +41,7 @@ export class JSDelivrUpdater extends Updater {
         const { data } = await AxiosGet({
             url: "https://cdn.jsdelivr.net/npm/online-course-script/resource/latest.yml"
         })
+        log("data",data)
         const v = yaml.parse(data).version
         return !!v && new Version(v).greaterThan(new Version(this.tag || app.getVersion()))
     }

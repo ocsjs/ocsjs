@@ -63,8 +63,11 @@
 <script setup lang="ts">
 import Card from "@/components/Card.vue";
 import { Remote } from "@/utils/remote";
-import { PathSetting } from "app/types";
+import { PathSetting } from "root/types";
+ 
+ 
 import { systemSetting } from "./setting";
+ 
  
  
 const { shell } = require("electron");

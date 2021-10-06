@@ -1,13 +1,12 @@
-
-
+import { app } from "electron";
+import { request } from "http";
+import { SemVer } from "semver";
+import semver from "semver";
+  
 import fs from 'fs';
-import semver, { SemVer } from 'semver';
+import { OCSNotify } from "../events/ocs.event";
+import { IPCEventTypes } from "../../../types";
  
-import { OCSNotify } from '../events/ocs.event';
-import { app } from 'electron';
-const request = require('request');
-import { IPCEventTypes } from '../../types';
-
 /**
  * 更新类
  */

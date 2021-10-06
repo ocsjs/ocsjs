@@ -7,7 +7,7 @@
 </template>
 
 <script setup lang="ts">
-import { ScriptLoginOptions, LoginType, IPCEventTypes } from "app/types";
+import { ScriptLoginOptions, LoginType, IPCEventTypes } from "root/types";
 
 const { ipcRenderer } = require("electron");
 

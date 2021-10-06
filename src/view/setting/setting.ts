@@ -1,8 +1,9 @@
 import { Remote } from "@/utils/remote";
 import { ref, watch } from "vue";
 import store from "@/utils/store";
-import { SystemSetting } from "app/types";
-
+import { SystemSetting } from "root/types";
+ 
+ 
 
 export const systemSetting = ref<SystemSetting>({
     win: {
