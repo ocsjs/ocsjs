@@ -1,7 +1,7 @@
 
 
 import { BrowserWindow, App, Dialog } from 'electron';
-import { registerRemoteEventNames } from 'root/types';
+import { registerRemoteEventNames } from 'app/types';
  
 const { ipcRenderer } = require('electron')
 const uuid = require('uuid');

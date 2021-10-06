@@ -1,11 +1,11 @@
+import { OCR } from "~puppeteer/common/ocr"
 import { Injectable } from "@pioneerjs/common"
 import { InjectableScript, Utils, WaitForScript } from "@pioneerjs/core"
- 
 import { HTTPRequest } from "puppeteer-core"
-import { LoginConfigs, OCROptions } from "../../../types"
-import { OCSEvent } from "../../electron/events/ocs.event"
+import { LoginConfigs, OCROptions } from "types/scripts"
+import { OCSEvent } from "~electron/events/ocs.event"
+
  
-import { OCR } from "../common/ocr"
  
  
 @Injectable()

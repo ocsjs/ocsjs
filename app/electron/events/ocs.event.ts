@@ -1,10 +1,10 @@
  
 import EventEmitter from "events";
- 
+import { OCSEventTypes, OCSEvents } from "types/events";
 import { CurrentWindow } from "..";
-import { OCSEventTypes, OCSEvents } from "../../../types";
 import { Logger } from "./logger";
-
+ 
+ 
  
 /**
  * ocs公用事件处理器

@@ -4,8 +4,8 @@ import { SemVer } from "semver";
 import semver from "semver";
   
 import fs from 'fs';
-import { OCSNotify } from "../events/ocs.event";
-import { IPCEventTypes } from "../../../types";
+import { IPCEventTypes } from "types/events";
+import { OCSNotify } from "~electron/events/ocs.event";
  
 /**
  * 更新类

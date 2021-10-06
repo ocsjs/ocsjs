@@ -28,7 +28,8 @@ const { ipcRenderer } = require("electron");
 import { message, notification } from "ant-design-vue";
  
 import { NotificationArgsProps } from "ant-design-vue/lib/notification";
-import { OCSEventTypes, Notify, IPCEventTypes } from "root/types";
+import { OCSEventTypes, Notify, IPCEventTypes } from "app/types";
+ 
  
 
 ipcRenderer.on(OCSEventTypes.INFO, (e: any, msg: string[]) => {

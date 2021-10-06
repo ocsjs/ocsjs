@@ -1,7 +1,7 @@
 import { Remote } from "@/utils/remote";
 import { ref, watch } from "vue";
 import store from "@/utils/store";
-import { SystemSetting } from "root/types";
+import { SystemSetting } from "app/types";
  
  
 

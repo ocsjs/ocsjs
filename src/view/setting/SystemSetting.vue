@@ -63,7 +63,7 @@
 <script setup lang="ts">
 import Card from "@/components/Card.vue";
 import { Remote } from "@/utils/remote";
-import { PathSetting } from "root/types";
+import { PathSetting } from "app/types";
  
  
 import { systemSetting } from "./setting";

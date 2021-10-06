@@ -6,7 +6,9 @@ import path from 'path';
 
 // https://vitejs.dev/config/
 export default defineConfig({
-
+  server: {
+    force: false,
+  },
   build: {
     outDir: './app/public',
     rollupOptions: {
@@ -15,8 +17,7 @@ export default defineConfig({
     }
   },
   optimizeDeps: {
-   
-    exclude:['electron']
+    exclude: ['electron']
   },
   resolve: {
 

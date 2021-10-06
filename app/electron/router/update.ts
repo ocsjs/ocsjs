@@ -1,12 +1,10 @@
 import { IpcMain } from "electron"
 import path from "path"
-import { IPCEventTypes } from "../../../types"
-  
-import { Updater } from "../updater"
-import { JSDelivrUpdater } from "../updater/jsdelivr.updater"
+import { IPCEventTypes } from "types/events"
+import { Updater } from "~electron/updater"
+import { JSDelivrUpdater } from "~electron/updater/jsdelivr.updater"
 
  
-
 const _path = path.resolve('./resources/resource.zip')
 
 export async function UpdateRouter(ipcMain: IpcMain) {

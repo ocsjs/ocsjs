@@ -1,7 +1,8 @@
 import { info, log, error } from "console";
 import { app, protocol, BrowserWindow,BrowserWindow as BW, shell, ipcMain } from "electron";
 import path from "path";
-import { SystemSetting } from "../../types";
+import { SystemSetting } from "types/setting";
+ 
  
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
@@ -54,9 +55,12 @@ async function createWindow() {
     const win: any = new BrowserWindow(BrowserConfig)
     win.show()
 
-    win.webContents.openDevTools()
-    load()
-    log('loading!')
+    setTimeout(() => {
+        log('loading!')
+        load()
+        win.webContents.openDevTools()
+    }, 5000);
+
     function load() {
 
         // Load a remote URL  

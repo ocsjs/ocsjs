@@ -29,7 +29,7 @@ import { Remote } from "@/utils/remote";
  
  
 import { onMounted, ref } from "vue";
-import { IPCEventTypes } from "root/types";
+import { IPCEventTypes } from "app/types";
  
 const { ipcRenderer } = require("electron");
 

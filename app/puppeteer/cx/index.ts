@@ -1,10 +1,11 @@
 import { Runnable, Inject } from "@pioneerjs/common";
 import { RunnableScript, WaitForScript } from "@pioneerjs/core";
-import { CourseScript, OCSEventTypes, LoginType, LoginConfigs, OCROptions } from "../../../types";
-import { OCSEvent, OCSMessage } from "../../electron/events/ocs.event";
- 
+import { OCSEventTypes } from "types/events";
+import { CourseScript, LoginType, LoginConfigs, OCROptions } from "types/scripts";
+import { OCSEvent, OCSMessage } from "~electron/events/ocs.event";
 import { CXLogin } from "./login";
 
+ 
  
 @Runnable({ name: 'cx' })
 export class CXScript extends RunnableScript implements CourseScript  {

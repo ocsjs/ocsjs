@@ -1,11 +1,10 @@
+import { StartPuppeteer } from "~puppeteer/index";
+import { CXScript } from "~puppeteer/cx";
 import { Pioneer } from "@pioneerjs/core";
- 
 import { IpcMain } from "electron";
 import { Browser } from "puppeteer-core";
-import { IPCEventTypes, ScriptLoginOptions } from "../../../types";
-import { StartPuppeteer } from "../../puppeteer";
-import { CXScript } from "../../puppeteer/cx";
-  
+import { IPCEventTypes } from "types/events";
+import { ScriptLoginOptions } from "types/scripts";
 
  
 
