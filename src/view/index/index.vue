@@ -31,7 +31,7 @@
                         {{ json.name }}
                     </a-descriptions-item>
                     <a-descriptions-item label="版本">
-                        v{{ json.version }}
+                        v{{Remote.app.call('getVersion')}}
                     </a-descriptions-item>
                     <a-descriptions-item label="作者">
                         {{ json.author }}
@@ -62,8 +62,7 @@
 
 <script setup lang="ts">
 import json from "root/package.json";
-
-import { message } from "ant-design-vue";
+import { Remote } from "@/utils/remote";
 </script>
 
 <style scope lang="less">

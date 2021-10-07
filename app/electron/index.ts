@@ -3,14 +3,14 @@ import { info, log, error } from "console";
 import { app, protocol, BrowserWindow, BrowserWindow as BW, shell, ipcMain } from "electron";
 import path from "path";
 import { getChromePath } from "../puppeteer";
-import { Setting, SystemSetting } from "../types";
+import { Setting } from "../types";
 
 
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { ScriptsRouter } from "./router/scripts";
 import { UpdateRouter } from "./router/update";
-import { store, StoreGet, StoreSet } from "./setting";
+import { StoreGet, StoreSet } from "./setting";
 
 // 判断开发环境
 var mode = app.isPackaged ? 'prod' : 'dev'
@@ -40,7 +40,12 @@ app.whenReady().then(async () => {
     })
 
     initSetting()
+
+
     CurrentWindow = await createWindow()
+    UpdateRouter(ipcMain)
+    ScriptsRouter(ipcMain)
+    RemoteRouter(ipcMain)
 
 })
 
@@ -77,10 +82,6 @@ async function createWindow() {
                     action: 'deny'
                 }
             })
-
-            UpdateRouter(ipcMain)
-            ScriptsRouter(ipcMain)
-            RemoteRouter(ipcMain)
 
         }).catch((err: any) => {
 
@@ -151,8 +152,11 @@ function initSetting() {
     if (setting) {
         const { path, win } = setting.system
         if (path) {
+
             for (const key in path) {
+                log('设置路径:' + key, (path as any)[key])
                 app.setPath(key, (path as any)[key])
+
             }
         }
 

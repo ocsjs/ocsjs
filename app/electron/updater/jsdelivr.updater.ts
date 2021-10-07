@@ -24,7 +24,7 @@ export class JSDelivrUpdater extends Updater {
                 this.APP_UPDATE.info("下载中:" + JSDelivrUpdater.showFomatSize(chunks.length))
             })
             data.on('close', () => {
-                this.APP_UPDATE.success('更新完毕！')
+                this.APP_UPDATE.info('更新完毕！')
             })
             data.on('error', (e) => {
                 this.APP_UPDATE.error('未知错误:', e)
