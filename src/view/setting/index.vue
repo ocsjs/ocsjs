@@ -55,6 +55,6 @@ const current = ref(["script"]);
 #setting-content {
     overflow: auto;
     padding: 20px;
-    background-color: rgb(248, 248, 248);
+    background-color: #f8f8f8;
 }
 </style>

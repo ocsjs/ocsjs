@@ -41,9 +41,9 @@
 
                 <div class="space-10">
                     <a-button type="primary" @click="checkUpdate">更新检测</a-button>
-                    <a-button type="primary" @click="onUpdate" v-if="needUpdate === 1"
-                        >点击更新</a-button
-                    >
+                    <a-button type="primary" @click="onUpdate" >
+                        更新
+                    </a-button>
                 </div>
             </template>
         </Card>
@@ -61,17 +61,22 @@ const { update } = setting;
 const { ipcRenderer } = require("electron");
 
 const needUpdate = ref(-1);
+
 function checkUpdate() {
     needUpdate.value = -1;
     needUpdate.value = ipcRenderer.sendSync(IPCEventTypes.IS_NEED_UPDATE) ? 1 : 0;
- 
+    if (needUpdate.value === 1) {
+        message.warn("需要更新");
+    } else {
+        message.success("已经是最新版本");
+    }
 }
 
 function onUpdate() {
     ipcRenderer.send(IPCEventTypes.APP_UPDATE);
 }
 onMounted(() => {
-    checkUpdate();
+    needUpdate.value = ipcRenderer.sendSync(IPCEventTypes.IS_NEED_UPDATE) ? 1 : 0;
 });
 </script>
 

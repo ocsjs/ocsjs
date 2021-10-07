@@ -10,7 +10,7 @@ import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { ScriptsRouter } from "./router/scripts";
 import { UpdateRouter } from "./router/update";
-import { store, StoreGet } from "./setting";
+import { store, StoreGet, StoreSet } from "./setting";
 
 // 判断开发环境
 var mode = app.isPackaged ? 'prod' : 'dev'
@@ -160,7 +160,14 @@ function initSetting() {
             CurrentWindow?.setAlwaysOnTop(win.isAlwaysOnTop)
         }
     } else {
-        store.set('setting', initSetting)
+        StoreSet('setting', initSetting)
+    }
+
+    if (!StoreGet('task')) {
+        StoreSet('task', [])
+    }
+    if (!StoreGet('users')) {
+        StoreSet('users', [])
     }
 }
 

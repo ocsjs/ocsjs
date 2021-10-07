@@ -1,4 +1,4 @@
-import { AllLoginTypes } from './script/index';
+import { AllLoginTypes, Task } from './script/index';
  
 // 系统设置
 export interface SystemSetting {
@@ -78,6 +78,7 @@ export interface User{
 
 
 export interface StoreSchema {
-    setting: Setting,
+    setting: Setting
     users: User[]
+    task:Task[]
 }

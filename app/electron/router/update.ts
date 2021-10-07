@@ -7,16 +7,14 @@ import { StoreGet, StoreSet } from "../setting"
 import { Updater } from "../updater"
 import { JSDelivrUpdater } from "../updater/jsdelivr.updater"
 
-
-const _path = path.resolve('./resources/resource.zip')
-
-let interval: number
-
+ 
+let interval: NodeJS.Timeout
+const updater: Updater = new JSDelivrUpdater(path.resolve('./resources/resource.zip'))
 export async function UpdateRouter(ipcMain: IpcMain) {
     const setting = StoreGet('setting')
     if (setting.update) {
-        const updater: Updater = new JSDelivrUpdater(_path)
-        start(updater)
+    
+        start()
         // 注册服务
         ipcMain
             .on(IPCEventTypes.APP_UPDATE, async (e: Electron.IpcMainEvent, tag?: string) => {
@@ -40,17 +38,17 @@ export async function UpdateRouter(ipcMain: IpcMain) {
 
     }
     // 开启自动更新
-    function start(updater: Updater) {
+    function start() {
         const ms = setting.update.hour * 60 * 60 * 1000
         // 如果已经到达需要启动更新的时间
         if (Date.now() - setting.update.lastTime > ms) {
-            check(updater)
+            check()
         }
         // 开始轮询更新
         interval = setInterval(check, ms)
     }
 
-    async function check(updater: Updater) {
+    async function check() {
         const setting = StoreGet('setting')
         if (setting.update.autoUpdate) {
             if (await updater.needUpdate()) {

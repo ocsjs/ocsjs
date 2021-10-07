@@ -1,5 +1,5 @@
 
-import { OCROptions } from "..";
+import { OCROptions, User } from "..";
 import { CXUserLogin, CXPhoneLogin, CXOrganizationLogin, CXOtherLogin } from "./cx.login";
 import { ZHSOtherLogin, ZHSPhoneLogin, ZHSStudentIDLogin } from "./zhs.login";
 
@@ -22,12 +22,39 @@ export interface ZHSLoginTypes {
     "智慧树手动登录": ZHSOtherLogin,
 }
 
-export type AllLoginTypes = CXLoginTypes & ZHSLoginTypes
 
-export interface ScriptLoginOptions {
-    script: keyof SupportLoginPlatform,
-    loginConfig: AllLoginTypes[keyof AllLoginTypes],
-    ocrOptions?: OCROptions
+
+export interface OtherLoginTypes {
+    "手动登录": { type: -1 },
 }
 
+export type AllLoginTypes = CXLoginTypes & ZHSLoginTypes & OtherLoginTypes
 
+
+export interface TaskStatus {
+    startTime:number,
+    url:string,
+    scriptName:string,
+    videos:number,
+    qa:number
+}
+
+export interface Task {
+    name: string,
+    script: keyof SupportLoginPlatform,
+    user: User,
+    ocrOptions?: OCROptions
+    // 是否暂停
+    pasue: boolean
+
+    // 状态
+    status?: TaskStatus
+}
+
+export function typeToPlatform(type: number): keyof SupportLoginPlatform | undefined {
+    if ([1, 2, 3, 4].includes(type)) {
+        return "cx";
+    } else if ([5, 6, 7].includes(type)) {
+        return "zhs";
+    }
+}
