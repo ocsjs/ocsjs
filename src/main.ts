@@ -6,11 +6,9 @@ import { router } from './router'
 import { message } from 'ant-design-vue';
 
 
-
-
 import { createFromIconfontCN } from "@ant-design/icons-vue";
 const IconFont = createFromIconfontCN({
-    scriptUrl: "//at.alicdn.com/t/font_2849771_3az41crtc9.js",
+    scriptUrl: "https://at.alicdn.com/t/font_2849771_3az41crtc9.js",
 });
 
 message.config({

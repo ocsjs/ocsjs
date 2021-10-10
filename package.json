@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "./app/lib/electron/index.js",
   "scripts": {
-    "dev": "node clearn.js && cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
+    "dev": "cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
     "build": "vue-tsc --noEmit && vite build",
     "pack": "  cd app  && tsc && npm run pack",
     "dist": "  cd app  && tsc && npm run dist",

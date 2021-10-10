@@ -3,6 +3,7 @@
         <a-form-item label="名字/备注">
             <a-input v-model:value="tempUser.name" />
         </a-form-item>
+
         <a-form-item label="登录类型">
             <a-select v-model:value="tempUser.loginInfo.type">
                 <a-select-option :value="1">超星账号登录</a-select-option>

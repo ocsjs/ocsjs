@@ -85,9 +85,11 @@ function modify() {
 
 function start() {
     const u = user.value;
-    const script = typeToPlatform(u.loginInfo.type);
-    const id = script + "-" + u.loginInfo.type + "-" + u.uid;
+    const script = typeToPlatform(u.loginInfo?.type || -1);
+
     if (script) {
+        const id =
+            script + u.loginInfo?.type ? "-" + u.loginInfo?.type : "" + "-" + u.uid;
         if (tasks.find((t) => t.name === id)) {
             message.warn("该账号已经启动!");
         } else {
@@ -100,7 +102,7 @@ function start() {
             };
             tasks.push(task);
             console.log(toRaw(task));
-            
+
             ipcRenderer.send(IPCEventTypes.SCRIPT_LOGIN, toRaw(task));
             message.success("已添加至任务列表!");
         }

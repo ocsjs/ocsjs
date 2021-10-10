@@ -1,13 +1,13 @@
 import { OCSMessage } from './../events/ocs.event';
 import { Pioneer } from "@pioneerjs/core";
-import { IpcMain } from "electron";
+import { ipcMain, IpcMain } from "electron";
 import { Browser } from "puppeteer-core";
 import { StartPuppeteer } from "../../puppeteer";
 import { CXScript } from "../../puppeteer/cx";
 import { IPCEventTypes, Task } from "../../types";
 
 
-export function ScriptsRouter(ipcMain: IpcMain) {
+export function ScriptsRouter() {
 
     ipcMain
         .on(IPCEventTypes.SCRIPT_LOGIN, (e: any, { name, script, user, ocrOptions }: Task) => {

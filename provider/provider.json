@@ -1,0 +1,13 @@
+{
+    "author":"enncy",
+    "description":"OCS脚本映射文件",
+    "scripts":[
+        {
+            "id":"cx-login",
+            "name":"超星登录脚本"
+
+        }
+
+    ]
+ 
+}

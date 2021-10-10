@@ -1,0 +1,1 @@
+import{s}from"./index.247909bd.js";import{g as e,h as r,a1 as a}from"./vendor.b84abdcd.js";const o=s.get("tasks");o||s.set("tasks",[]);const t=e(o||[]);r(t,()=>{console.log(a(t)),s.set("tasks",a(t))});export{t};

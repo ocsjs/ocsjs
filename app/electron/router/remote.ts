@@ -29,7 +29,7 @@ export function registerRemoteEvent(name: string, target: any) {
         })
 }
 
-export function RemoteRouter(ipcMain: IpcMain) {
+export function RemoteRouter() {
     const win: any = CurrentWindow
     const _app: any = app
 

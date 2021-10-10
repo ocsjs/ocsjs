@@ -1,5 +1,5 @@
 import { AllLoginTypes, Task } from './script/index';
- 
+
 // 系统设置
 export interface SystemSetting {
     win: {
@@ -59,10 +59,10 @@ export interface Setting {
 
 
 
-export interface User{
+export interface User {
     uid: string
-    // 登录类型
-   
+ 
+    // 自动登录类型
     loginInfo: AllLoginTypes[keyof AllLoginTypes]
     // 用户名
     name: string
@@ -74,11 +74,12 @@ export interface User{
     updateTime: number
     // 逻辑删除
     delete: boolean
+
 }
 
 
 export interface StoreSchema {
     setting: Setting
     users: User[]
-    task:Task[]
+    task: Task[]
 }

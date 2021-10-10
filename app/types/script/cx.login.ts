@@ -1,16 +1,20 @@
- 
-export interface CXUserLogin {
+import { LoginTypes } from './index';
+
+import { BaseLoginType } from ".";
+
+
+export interface CXUserLogin extends BaseLoginType {
     type:1,
     phone: string,
     password: string
 }
 
-export interface CXPhoneLogin {
+export interface CXPhoneLogin extends BaseLoginType  {
     type:2,
     phone: string,
 }
 
-export interface CXOrganizationLogin {
+export interface CXOrganizationLogin extends BaseLoginType  {
     type:3,
     // 学校/单位
     unitname: string,
@@ -19,9 +23,9 @@ export interface CXOrganizationLogin {
     password: string
 }
 
-export interface CXOtherLogin{
+export interface CXOtherLogin extends BaseLoginType  {
     type:4,
 }
 
- 
+
 

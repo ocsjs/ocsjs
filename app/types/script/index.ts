@@ -9,6 +9,20 @@ export interface SupportLoginPlatform {
     zhs: ZHSLoginTypes
 }
 
+export interface BaseLoginType {
+    type: LoginTypes
+}
+
+export enum LoginTypes {
+    "超星用户登录" = 1,
+    "超星手机验证码登录" = 2,
+    "超星机构账号登录" = 3,
+    "超星机手动登录" = 4,
+    "智慧树手机号登录" = 5,
+    "智慧树学号登录" = 6,
+    "智慧树手动登录" = 7,
+}
+
 export interface CXLoginTypes {
     "超星用户登录": CXUserLogin,
     "超星手机验证码登录": CXPhoneLogin,
@@ -23,20 +37,15 @@ export interface ZHSLoginTypes {
 }
 
 
-
-export interface OtherLoginTypes {
-    "手动登录": { type: -1 },
-}
-
-export type AllLoginTypes = CXLoginTypes & ZHSLoginTypes & OtherLoginTypes
+export type AllLoginTypes = CXLoginTypes & ZHSLoginTypes
 
 
 export interface TaskStatus {
-    startTime:number,
-    url:string,
-    scriptName:string,
-    videos:number,
-    qa:number
+    startTime: number,
+    url: string,
+    scriptName: string,
+    videos: number,
+    qa: number
 }
 
 export interface Task {

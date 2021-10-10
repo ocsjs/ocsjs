@@ -1,4 +1,4 @@
-import { IpcMain } from "electron"
+import { ipcMain, IpcMain } from "electron"
 import { log } from "electron-log"
 import path from "path"
 
@@ -10,7 +10,7 @@ import { JSDelivrUpdater } from "../updater/jsdelivr.updater"
  
 let interval: NodeJS.Timeout
 const updater: Updater = new JSDelivrUpdater(path.resolve('./resources/resource.zip'))
-export async function UpdateRouter(ipcMain: IpcMain) {
+export async function UpdateRouter() {
     const setting = StoreGet('setting')
     if (setting.update) {
     
