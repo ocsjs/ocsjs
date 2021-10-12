@@ -3,7 +3,8 @@ import { log } from "electron-log"
 import path from "path"
 
 import { IPCEventTypes } from "../../types"
-import { StoreGet, StoreSet } from "../setting"
+import { StoreGet, StoreSet } from "../../types/setting"
+ 
 import { Updater } from "../updater"
 import { JSDelivrUpdater } from "../updater/jsdelivr.updater"
 

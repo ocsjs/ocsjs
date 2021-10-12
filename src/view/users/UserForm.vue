@@ -1,90 +1,170 @@
 <template>
-    <a-form :model="tempUser" :label-col="{ span: 6 }" :wrapper-col="{ span: 14 }">
-        <a-form-item label="名字/备注">
-            <a-input v-model:value="tempUser.name" />
-        </a-form-item>
+    <div id="user-form">
+        <a-form>
+            <a-form-item label="用户名字/备注">
+                <a-input v-model:value="tempUser.name" />
+            </a-form-item>
+            <a-form-item label="平台类型">
+                <a-radio-group
+                    default-value="cx"
+                    @change="(e:any)=>tempUser.platform=e.target.value"
+                >
+                    <a-radio-button value="cx" @click="tempUser.params = 'userLogin'">
+                        超星
+                    </a-radio-button>
+                    <a-radio-button value="zhs" @click="tempUser.params = 'phoneLogin'">
+                        智慧树
+                    </a-radio-button>
+                </a-radio-group>
+            </a-form-item>
+            <a-form-item label="登录类型">
+                <a-radio-group
+                    v-if="tempUser.platform === 'cx'"
+                    :default-value="FromScriptName('cx-user-login')"
+                    @change="(e:any)=>tempUser.params=e.target.value"
+                >
+                    <a-radio-button :value="FromScriptName('cx-user-login')">
+                        用户登录
+                    </a-radio-button>
+                    <a-radio-button :value="FromScriptName('cx-phone-login')">
+                        手机验证码登录
+                    </a-radio-button>
+                    <a-radio-button :value="FromScriptName('cx-unit-login')">
+                        机构单位登录
+                    </a-radio-button>
+                </a-radio-group>
+                <!-- <a-radio-group
+                    v-else
+                    default-value="phoneLogin"
+                    @change="(e:any)=>tempUser.params=e.target.value"
+                >
+                    <a-radio-button value="phoneLogin"> 手机登录 </a-radio-button>
+                    <a-radio-button value="studentIdLogin"> 学号登录 </a-radio-button>
+                </a-radio-group> -->
+            </a-form-item>
+            <template v-if="tempUser.platform === 'cx'">
+                <template v-if="tempUser.loginScript === 'cx-user-login'">
+                    <a-form-item label="账号">
+                        <a-input v-model:value="tempUser.loginInfo.cx.userLogin.phone" />
+                    </a-form-item>
+                    <a-form-item label="密码">
+                        <a-input
+                            v-model:value="tempUser.loginInfo.cx.userLogin.password"
+                        />
+                    </a-form-item>
+                </template>
+                <template v-else-if="tempUser.loginScript === 'cx-phone-login'">
+                    <a-form-item label="手机号">
+                        <a-input v-model:value="tempUser.loginInfo.cx.phoneLogin.phone" />
+                    </a-form-item>
+                </template>
+                <template v-else-if="tempUser.loginScript === 'cx-unit-login'">
+                    <a-form-item label="学校/单位">
+                        <a-input
+                            v-model:value="tempUser.loginInfo.cx.unitLogin.unitname"
+                        />
+                    </a-form-item>
+                    <a-form-item label="工号/学号">
+                        <a-input v-model:value="tempUser.loginInfo.cx.unitLogin.uname" />
+                    </a-form-item>
+                    <a-form-item label="密码">
+                        <a-input
+                            v-model:value="tempUser.loginInfo.cx.unitLogin.password"
+                        />
+                    </a-form-item>
+                </template>
+            </template>
+            <!-- <template v-if="tempUser.platform === 'zhs'">
+                <template v-if="tempUser.params === 'phoneLogin'">
+                    <a-form-item label="手机号">
+                        <a-input
+                            v-model:value="tempUser.loginInfo.zhs.phoneLogin.phone"
+                        />
+                    </a-form-item>
+                    <a-form-item label="密码">
+                        <a-input
+                            v-model:value="tempUser.loginInfo.zhs.phoneLogin.password"
+                        />
+                    </a-form-item>
+                </template>
+                <template v-else-if="tempUser.params === 'studentIdLogin'">
+                    <a-form-item label="学校名">
+                        <a-input
+                            v-model:value="tempUser.loginInfo.zhs.studentIdLogin.school"
+                        />
+                    </a-form-item>
+                    <a-form-item label="学号">
+                        <a-input
+                            v-model:value="
+                                tempUser.loginInfo.zhs.studentIdLogin.studentId
+                            "
+                        />
+                    </a-form-item>
+                    <a-form-item label="密码">
+                        <a-input
+                            v-model:value="tempUser.loginInfo.zhs.studentIdLogin.password"
+                        />
+                    </a-form-item>
+                </template>
+            </template> -->
+            <a-form-item :wrapper-col="{ span: 12, offset: 12 }">
+                <div class="space-10 flex">
+                    <a-button
+                        v-if="mode === 'create'"
+                        type="primary"
+                        @click="getCourseList('cx-user-login')"
+                    >
+                        获取课程列表
+                    </a-button>
 
-        <a-form-item label="登录类型">
-            <a-select v-model:value="tempUser.loginInfo.type">
-                <a-select-option :value="1">超星账号登录</a-select-option>
-                <a-select-option :value="2">超星手机号码登录</a-select-option>
-                <a-select-option :value="3">超星机构登录</a-select-option>
-                <a-select-option :value="4">超星手动登录</a-select-option>
-                <a-select-option :value="5">智慧树手机号登录</a-select-option>
-                <a-select-option :value="6">智慧树学号登录</a-select-option>
-                <a-select-option :value="7">智慧树手动登录</a-select-option>
-            </a-select>
-        </a-form-item>
-        <template v-if="tempUser.loginInfo.type === 1">
-            <a-form-item label="账号">
-                <a-input v-model:value="tempUser.loginInfo.phone" />
+                    <template v-if="tempUser.course.length === 0">
+                        <a-popover content="请先获取课程列表，之后才能添加 ">
+                            <a-button type="primary" :disabled="true">
+                                {{ btnText }}
+                            </a-button>
+                        </a-popover>
+                    </template>
+                    <template v-else>
+                        <a-button type="primary" @click="emits('ok', tempUser)">
+                            {{ btnText }}
+                        </a-button>
+                    </template>
+                </div>
             </a-form-item>
-            <a-form-item label="密码">
-                <a-input v-model:value="tempUser.loginInfo.password" />
-            </a-form-item>
-        </template>
-        <template v-else-if="tempUser.loginInfo.type === 2">
-            <a-form-item label="手机号">
-                <a-input v-model:value="tempUser.loginInfo.phone" />
-            </a-form-item>
-        </template>
-        <template v-else-if="tempUser.loginInfo.type === 3">
-            <a-form-item label="学校/单位">
-                <a-input v-model:value="tempUser.loginInfo.unitname" />
-            </a-form-item>
-            <a-form-item label="工号/学号">
-                <a-input v-model:value="tempUser.loginInfo.uname" />
-            </a-form-item>
-            <a-form-item label="密码">
-                <a-input v-model:value="tempUser.loginInfo.password" />
-            </a-form-item>
-        </template>
-        <template v-else-if="tempUser.loginInfo.type === 4"> </template>
-        <template v-else-if="tempUser.loginInfo.type === 5">
-            <a-form-item label="手机号">
-                <a-input v-model:value="tempUser.loginInfo.phone" />
-            </a-form-item>
-            <a-form-item label="密码">
-                <a-input v-model:value="tempUser.loginInfo.password" />
-            </a-form-item>
-        </template>
-        <template v-else-if="tempUser.loginInfo.type === 6">
-            <a-form-item label="学校名">
-                <a-input v-model:value="tempUser.loginInfo.school" />
-            </a-form-item>
-            <a-form-item label="学号">
-                <a-input v-model:value="tempUser.loginInfo.studentId" />
-            </a-form-item>
-            <a-form-item label="密码">
-                <a-input v-model:value="tempUser.loginInfo.password" />
-            </a-form-item>
-        </template>
-        <template v-else-if="tempUser.loginInfo.type === 7"> </template>
-        <template v-else> 暂无这种登录方式 </template>
-        <a-form-item :wrapper-col="{ span: 4, offset: 16 }">
-            <a-button type="primary" @click="emits('ok', tempUser)">{{
-                btnText
-            }}</a-button>
-        </a-form-item>
-    </a-form>
+        </a-form>
+    </div>
 </template>
 
 <script setup lang="ts">
-import { reactive, toRefs } from "@vue/reactivity";
-import { User } from "app/types";
+import { reactive, toRaw, toRefs } from "@vue/reactivity";
+import { StartPuppeteer } from "app/lib/types/index";
+import { AllScriptObjects, FromScriptName } from "app/lib/types/index";
+import { LoginScript } from "app/lib/types/index";
+import { User } from "app/lib/types/index";
 const uuid = require("uuid");
 
 const props = defineProps<{
     btnText: string;
     user?: User;
+    mode: "modify" | "create";
 }>();
-const { btnText, user } = toRefs(props);
+const { btnText, user, mode } = toRefs(props);
 
 const emits = defineEmits<{
     (e: "ok", value: User): void;
 }>();
 
+// 临时变量
 const tempUser = reactive<User>(user?.value || createUser());
+
+function getCourseList(scriptName: keyof AllScriptObjects) {
+    StartPuppeteer<any>(scriptName, (script) => {
+        const s: LoginScript = script;
+        console.log("LoginScript",s);
+        
+        s?.login(toRaw(tempUser));
+    });
+}
 
 // 用户模板
 function createUser(): User {
@@ -95,13 +175,43 @@ function createUser(): User {
         delete: false,
         updateTime: Date.now(),
         createTime: Date.now(),
+        platform: "cx",
+        params: "userLogin",
+        loginScript: "cx-user-login",
+        course: [],
         loginInfo: {
-            type: 1,
-            phone: "",
-            password: "",
+            cx: {
+                phoneLogin: {
+                    phone: "",
+                },
+                unitLogin: {
+                    password: "",
+                    uname: "",
+                    unitname: "",
+                },
+                userLogin: {
+                    password: "",
+                    phone: "",
+                },
+            },
+            zhs: {
+                phoneLogin: {
+                    password: "",
+                    phone: "",
+                },
+                studentIdLogin: {
+                    password: "",
+                    school: "",
+                    studentId: "",
+                },
+            },
         },
     };
 }
 </script>
 
-<style scope lang="less"></style>
+<style scope lang="less">
+#user-form {
+    overflow: auto;
+}
+</style>

@@ -44,23 +44,19 @@
             v-model:visible="visible"
             title="修改用户"
             :footer="null"
-            width="400px"
             :destroyOnClose="true"
         >
-            <UserForm @ok="ok" btnText="修改" :user="user"></UserForm>
+            <UserForm @ok="ok" btnText="修改" :user="user" mode="modify"></UserForm>
         </a-modal>
     </a-card>
 </template>
 
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
-import { message } from "ant-design-vue";
-import { IPCEventTypes, Task, typeToPlatform, User } from "app/types";
-const { ipcRenderer } = require("electron");
-import { ref, toRaw } from "vue";
-import { setting } from "../setting/setting";
-import { tasks } from "../task/task";
+import { User } from "app/lib/types/index";
+import { ref } from "vue";
 import UserForm from "./UserForm.vue";
+
 
 const props = defineProps<{
     user: User;
@@ -84,31 +80,42 @@ function modify() {
 }
 
 function start() {
-    const u = user.value;
-    const script = typeToPlatform(u.loginInfo?.type || -1);
+    const core = require("puppeteer-core");
 
-    if (script) {
-        const id =
-            script + u.loginInfo?.type ? "-" + u.loginInfo?.type : "" + "-" + u.uid;
-        if (tasks.find((t) => t.name === id)) {
-            message.warn("该账号已经启动!");
-        } else {
-            const task: Task = {
-                name: id,
-                script,
-                user: toRaw(u),
-                ocrOptions: toRaw(setting.script.account.ocr),
-                pasue: false,
-            };
-            tasks.push(task);
-            console.log(toRaw(task));
+    console.log(
+        "core",
+        core.launch({
+            // your chrome path
+            executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+            defaultViewport: null,
+            headless: false,
+        })
+    );
+    // const u = user.value;
+    // const script = typeToPlatform(u.loginInfo?.type || -1);
 
-            ipcRenderer.send(IPCEventTypes.SCRIPT_LOGIN, toRaw(task));
-            message.success("已添加至任务列表!");
-        }
-    } else {
-        message.error("任务启动失败, 未知的登录类型");
-    }
+    // if (script) {
+    //     const id =
+    //         script + u.loginInfo?.type ? "-" + u.loginInfo?.type : "" + "-" + u.uid;
+    //     if (tasks.find((t) => t.name === id)) {
+    //         message.warn("该账号已经启动!");
+    //     } else {
+    //         const task: Task = {
+    //             name: id,
+    //             script,
+    //             user: toRaw(u),
+    //             ocrOptions: toRaw(setting.script.account.ocr),
+    //             pasue: false,
+    //         };
+    //         tasks.push(task);
+    //         console.log(toRaw(task));
+
+    //         ipcRenderer.send(IPCEventTypes.SCRIPT_LOGIN, toRaw(task));
+    //         message.success("已添加至任务列表!");
+    //     }
+    // } else {
+    //     message.error("任务启动失败, 未知的登录类型");
+    // }
 }
 </script>
 

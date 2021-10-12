@@ -1,4 +1,9 @@
-import { AllLoginTypes, Task } from './script/index';
+import { AllScriptObjects } from '../puppeteer/common/types';
+import { ZHSLoginParams } from './script/zhs.login';
+ 
+import {   CXLoginParams } from './script/cx.login';
+import { Course } from './script/course';
+
 
 // 系统设置
 export interface SystemSetting {
@@ -61,9 +66,18 @@ export interface Setting {
 
 export interface User {
     uid: string
- 
+    // 登录平台
+    platform: keyof User['loginInfo'],
+    // 登录参数
+    params: keyof CXLoginParams | keyof ZHSLoginParams
+    // 需求启动的登录程序
+    loginScript: keyof AllScriptObjects
     // 自动登录类型
-    loginInfo: AllLoginTypes[keyof AllLoginTypes]
+    loginInfo: {
+        cx: CXLoginParams,
+        zhs: ZHSLoginParams
+    }
+    course: Course[],
     // 用户名
     name: string
     // 上次登录时间
@@ -81,5 +95,5 @@ export interface User {
 export interface StoreSchema {
     setting: Setting
     users: User[]
-    task: Task[]
+    task: any[]
 }

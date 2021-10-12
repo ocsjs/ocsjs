@@ -1,13 +1,38 @@
 {
     "author":"enncy",
     "description":"OCS脚本映射文件",
-    "scripts":[
-        {
-            "id":"cx-login",
-            "name":"超星登录脚本"
-
-        }
-
-    ]
+    "provider":{
+        "login":[
+            {
+                "id":"cx",
+                "name":"超星登录程序配置",
+                "script":[
+                    {
+                        "type":"user-login",
+                        "selector":{
+                            "phone":"#phone",
+                            "password":"#pwd",
+                            "loginButton":"#loginBtn"
+                        }
+                    },
+                    {
+                        "type":"phone-login",
+                        "selector":{
+                            "phone":"#phone"
+                        }
+                    },
+                    {
+                        "type":"unit-login",
+                        "selector":{
+                            "unitName":"#inputunitname",
+                            "uname":"#uname",
+                            "password":"#password"
+                        }
+                    }
+                    
+                ]
+            }
+        ]
+    }
  
 }

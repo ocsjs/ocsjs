@@ -2,8 +2,8 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import ViteComponents, { AntDesignVueResolver } from 'vite-plugin-components';
 import path from 'path';
-
-
+import commonjs from '@rollup/plugin-commonjs';
+import resolve from '@rollup/plugin-node-resolve';
 // https://vitejs.dev/config/
 export default defineConfig({
    
@@ -23,11 +23,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, './src'),
       "root": path.resolve(__dirname),
       "app": path.resolve(__dirname, './app'),
+      
     }
   },
   plugins: [
     vue(),
-
+    commonjs(),
+    resolve(),
     {
       name: 'html-transform',
       transformIndexHtml(html) {

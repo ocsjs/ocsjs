@@ -46,29 +46,27 @@
             v-model:visible="visible"
             title="添加用户"
             :footer="null"
-            width="400px"
             :destroyOnClose="true"
         >
-            <UserForm @ok="onAddUser" btnText="添加"></UserForm>
+            <UserForm @ok="onAddUser" btnText="添加" mode="create"></UserForm>
         </a-modal>
     </div>
 </template>
 
 <script setup lang="ts">
-import { store } from "@/utils/store";
+import { config } from "@/utils/store";
 import { reactive, ref, toRaw } from "@vue/reactivity";
 import { watch } from "@vue/runtime-core";
 import { message } from "ant-design-vue";
-import { User } from "app/types";
+import { User } from "app/lib/types/index";
 import UserCard from "./UserCard.vue";
 import UserForm from "./UserForm.vue";
 
-const us = store.get("users");
-if (!us) {
-    store.set("users", []);
+if (config.users) {
+    config.users = [];
 }
 
-const users = reactive<User[]>(us || []);
+const users:User[] = config.users
 
 // 是否显示添加框
 const visible = ref<boolean>(false);
@@ -118,11 +116,7 @@ function onModifyUser(user: User) {
 function initUser() {
     visible.value = true;
 }
-
-watch(users, () => {
-    console.log(toRaw(users));
-    store.set("users", toRaw(users));
-});
+ 
 </script>
 
 <style scope lang="less">

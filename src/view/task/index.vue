@@ -138,7 +138,7 @@
 import { tasks } from "./task";
 import Card from "@/components/common/Card.vue";
 import { ref } from "@vue/reactivity";
-import { Task } from "app/types/script";
+ 
 
 // 当前 hover 的卡片组件
 const hoverId = ref("");
@@ -147,9 +147,9 @@ const hoverId = ref("");
 const visible = ref(false);
 
 // 展示详情的临时task变量
-const showTask = ref<Task | undefined>(undefined);
+const showTask = ref<any | undefined>(undefined);
 
-function showDetail(task: Task) {
+function showDetail(task: any) {
     showTask.value = task;
     visible.value = true;
 }

@@ -1,21 +1,22 @@
 
 
 
-export interface ZHSPhoneLogin {
-    type: 5,
+export interface ZHSPhoneLoginParams {
+
     phone: string,
     password: string
 }
 
 // 学号登录
-export interface ZHSStudentIDLogin {
-    type: 6,
+export interface ZHSStudentIDLoginParams {
+
     school: string,
     studentId: string,
     password: string
 }
 
 
-export interface ZHSOtherLogin {
-    type: 7,
+export interface ZHSLoginParams {
+    phoneLogin: ZHSPhoneLoginParams,
+    studentIdLogin: ZHSStudentIDLoginParams
 }

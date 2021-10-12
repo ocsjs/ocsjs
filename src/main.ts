@@ -1,9 +1,11 @@
+ 
 import { createApp } from 'vue'
 
 import App from './App.vue'
 import { router } from './router'
 
 import { message } from 'ant-design-vue';
+
 
 
 import { createFromIconfontCN } from "@ant-design/icons-vue";
@@ -19,7 +21,7 @@ message.config({
 
 createApp(App)
     .use(router)
-    .component('IconFont',IconFont)
+    .component('IconFont', IconFont)
     .mount('#app')
 
 

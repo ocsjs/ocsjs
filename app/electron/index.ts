@@ -2,15 +2,13 @@
 import { info, log, error } from "console";
 import { app, protocol, BrowserWindow, BrowserWindow as BW, shell, ipcMain } from "electron";
 import path from "path";
-import { getChromePath } from "../puppeteer";
-import { Setting } from "../types";
-
-
+import { Setting, StartPuppeteer } from "../types";
+import fs from 'fs';
+ 
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
-import { ScriptsRouter } from "./router/scripts";
 import { UpdateRouter } from "./router/update";
-import { StoreGet, StoreSet } from "./setting";
+import { StoreGet, StoreSet } from "../types/setting";
 
 const t = Date.now()
 
@@ -46,9 +44,13 @@ app.whenReady().then(async () => {
     CurrentWindow = await createWindow()
 
     UpdateRouter()
-    ScriptsRouter()
     RemoteRouter()
 
+
+
+    // StartPuppeteer('cx-user-login', (script) => {
+    //     console.log("StartPuppeteer",script);
+    // })
 })
 
 
@@ -177,5 +179,13 @@ function initSetting() {
 }
 
 
+// 获取 chrome 路径
+export function getChromePath() {
+    let paths = [process.env.ProgramFiles, process.env['ProgramFiles(x86)'], "C:\\Program Files", "C:\\Program Files (x86)"]
+    let chromePath = paths
+        .map(p => path.join(p || '', '\\Google\\Chrome\\Application\\chrome.exe'))
+        .find(p => fs.existsSync(p))
+    return chromePath
+}
 
 

@@ -1,7 +1,7 @@
- 
+
 
 import axios from 'axios';
-import { OCROptions } from '../../types';
+import { OCROptions } from './types';
  
 const apiUrl = 'http://api.ttshitu.com/predict';
 
@@ -22,7 +22,7 @@ export class OCR {
 
         try {
             let base64data = buffer.toString('base64');
-            const response = await axios.post(apiUrl, {
+            const response: any = await axios.post(apiUrl, {
                 username,//用户名
                 password,//密码
                 typeid,

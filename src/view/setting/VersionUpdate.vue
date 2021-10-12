@@ -54,7 +54,7 @@
 import { Remote } from "@/utils/remote";
 
 import { onMounted, ref } from "vue";
-import { IPCEventTypes } from "app/types";
+import { IPCEventTypes } from "app/lib/types/index";
 import { message } from "ant-design-vue";
 import { setting } from "./setting";
 const { update } = setting;

@@ -1,52 +1,40 @@
-import { ScriptConstructor, RunnableScript, Pioneer } from "@pioneerjs/core";
-import path from "path";
-import puppeteer, { Browser } from "puppeteer-core";
-import fs from 'fs';
-import { StoreGet } from "../electron/setting";
 
-// 获取 chrome 路径
-export function getChromePath() {
-    let paths = [process.env.ProgramFiles, process.env['ProgramFiles(x86)'], "C:\\Program Files", "C:\\Program Files (x86)"]
-    let chromePath = paths
-        .map(p => path.join(p || '', '\\Google\\Chrome\\Application\\chrome.exe'))
-        .find(p => fs.existsSync(p))
+import { Pioneer } from '@pioneerjs/core';
+
+import puppeteer from 'puppeteer-core';
 
 
-    return chromePath
-}
+import { CXUserLoginScript } from "./login/cx.user.login";
+import { CXPhoneLoginScript } from "./login/cx.phone.login";
+import { CXUnitLoginScript } from "./login/cx.unit.login";
+import { AllScriptObjects, FromScriptName } from "./common/types";
+import { RunnableScript, InjectableScript } from "@pioneerjs/core";
+import { Inject, Injectable, Runnable } from '@pioneerjs/common';
+import { StoreGet } from "../types/setting";
+import { LoginScript } from './login';
 
+export { CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, AllScriptObjects, RunnableScript, InjectableScript, FromScriptName, Inject, Injectable, Runnable, LoginScript }
 
-
-export function StartPuppeteer({ scripts, callback }: { scripts: ScriptConstructor<RunnableScript>[], callback: (browser: Browser, pioneer: Pioneer) => void }) {
+export async function StartPuppeteer<S extends RunnableScript>(name: keyof AllScriptObjects, handler: (script: S | undefined) => void) {
     let chromePath = StoreGet('setting').script.launch.binaryPath
     if (chromePath) {
-        puppeteer.launch({
+        const browser = await puppeteer.launch({
             // your chrome path
             executablePath: chromePath,
             defaultViewport: null,
             headless: false,
-        }).then(async browser => {
+        })
 
-            const pioneer = Pioneer.create(browser)
+        const pioneer = Pioneer.create(browser)
 
+        await pioneer.startup({
+            scripts: [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript],
+            events: ['request', "response"],
+        })
 
+        handler((pioneer.runnableScripts?.find((s: any) => s.name === name) as unknown as S))
 
-            await pioneer.startup({
-                scripts,
-                events: ['request', "response"],
-                // methodProxy: {
-                //     page: {
-                //         keys: ['type'],
-                //         handler(target: any, key: any, receiver: any) {
-                //             console.log(`target method-${key}() is called`)
-                //             // target method-goto() is called
-                //             return Reflect.get(target, key, receiver);
-                //         }
-                //     }
-                // }
-            })
-            callback(browser, pioneer)
-        });
+        return pioneer
     } else {
         console.error('找不到 chrome 路径!!!');
     }

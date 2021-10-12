@@ -1,5 +1,5 @@
 
-import { Setting, StoreSchema, User } from "../types";
+import { Setting, StoreSchema, User } from "."
 
 
 const Store = require('electron-store');

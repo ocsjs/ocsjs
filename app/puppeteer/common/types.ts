@@ -1,11 +1,18 @@
- 
-export interface ScriptTypes {
-    cx: string,
-    zhs: string
+
+import { CXPhoneLoginScript } from "../login/cx.phone.login";
+import { CXUnitLoginScript } from "../login/cx.unit.login";
+import { CXUserLoginScript } from "../login/cx.user.login";
+
+
+export interface AllScriptObjects {
+    "cx-user-login": CXUserLoginScript
+    "cx-phone-login": CXPhoneLoginScript
+    "cx-unit-login": CXUnitLoginScript,
 }
 
-
-
+export  function FromScriptName(script: keyof AllScriptObjects) {
+    return script;
+}
 
 
 export interface CourseScript {
