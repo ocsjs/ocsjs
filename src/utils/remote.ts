@@ -1,7 +1,7 @@
-
-
+ 
+import { registerRemoteEventNames, ScriptRemoteType } from 'app/types';
 import { BrowserWindow, App, Dialog } from 'electron';
-import { registerRemoteEventNames } from "app/lib/types/index";
+ 
  
 const { ipcRenderer } = require('electron')
 const uuid = require('uuid');
@@ -38,6 +38,7 @@ export const Remote = {
     win: registerRemote<BrowserWindow>('win'),
     app: registerRemote<App>('app'),
     dialog: registerRemote<Dialog>('dialog'),
+    script: registerRemote<ScriptRemoteType>('script'),
 
     // get(property: keyof BrowserWindow) {
     //     return ipcRenderer.sendSync(IPCEventTypes.REMOTE_GET, [property])

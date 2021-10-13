@@ -136,11 +136,11 @@
 </template>
 
 <script setup lang="ts">
+import { Remote } from "@/utils/remote";
 import { reactive, toRaw, toRefs } from "@vue/reactivity";
-import { StartPuppeteer } from "app/lib/types/index";
-import { AllScriptObjects, FromScriptName } from "app/lib/types/index";
-import { LoginScript } from "app/lib/types/index";
-import { User } from "app/lib/types/index";
+import { message } from "ant-design-vue";
+import { AllScriptObjects, User, FromScriptName } from "app/types";
+
 const uuid = require("uuid");
 
 const props = defineProps<{
@@ -157,13 +157,14 @@ const emits = defineEmits<{
 // 临时变量
 const tempUser = reactive<User>(user?.value || createUser());
 
-function getCourseList(scriptName: keyof AllScriptObjects) {
-    StartPuppeteer<any>(scriptName, (script) => {
-        const s: LoginScript = script;
-        console.log("LoginScript",s);
-        
-        s?.login(toRaw(tempUser));
-    });
+async function getCourseList(scriptName: keyof AllScriptObjects) {
+    console.log("getCourseList", scriptName);
+
+    tempUser.course = Remote.script.call("login", "cx-user-login", toRaw(tempUser));
+    if (tempUser.course) {
+        console.log("tempUser.course", tempUser.course);
+        message.success("课程列表获取成功!");
+    }
 }
 
 // 用户模板

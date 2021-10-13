@@ -1,8 +1,9 @@
 import { ipcMain, IpcMain, app, dialog } from "electron"
- 
+
 import { CurrentWindow } from ".."
 import { registerRemoteEventNames } from "../../types"
- 
+import { ScriptRemote } from "./scripts"
+
 
 
 export function registerRemoteEvent(name: string, target: any) {
@@ -17,9 +18,9 @@ export function registerRemoteEvent(name: string, target: any) {
             const [property, value] = [arg[0], arg[1]]
             event.returnValue = target[property] = value
 
-        }).on(events.call, (event: any, arg: any[]) => {
+        }).on(events.call, async (event: any, arg: any[]) => {
             const [property, ...value] = [arg.shift(), ...arg]
-            event.returnValue = target[property](...value)
+            event.returnValue = await target[property](...value)
 
         }).on(events.on, (event: any, eventName: string) => {
             target.on(eventName.split('-')[0], () => event.reply(eventName))
@@ -31,11 +32,13 @@ export function registerRemoteEvent(name: string, target: any) {
 
 export function RemoteRouter() {
     const win: any = CurrentWindow
+    const script = ScriptRemote
     const _app: any = app
-
-    registerRemoteEvent('app',_app)
-    registerRemoteEvent('win',win)
-    registerRemoteEvent('dialog',dialog)
+    registerRemoteEvent('script', script)
+    registerRemoteEvent('app', _app)
+    registerRemoteEvent('win', win)
+    registerRemoteEvent('dialog', dialog)
+    registerRemoteEvent('dialog', dialog)
 }
 
 

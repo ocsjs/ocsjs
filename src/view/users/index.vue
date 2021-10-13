@@ -55,10 +55,10 @@
 
 <script setup lang="ts">
 import { config } from "@/utils/store";
-import { reactive, ref, toRaw } from "@vue/reactivity";
-import { watch } from "@vue/runtime-core";
+import { ref } from "@vue/reactivity";
+ 
 import { message } from "ant-design-vue";
-import { User } from "app/lib/types/index";
+import { User } from "app/types";
 import UserCard from "./UserCard.vue";
 import UserForm from "./UserForm.vue";
 

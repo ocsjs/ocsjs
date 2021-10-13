@@ -1,19 +1,15 @@
+import { CXCourseScript } from './cx/get.course';
 
+import { RunnableScript } from "@pioneerjs/core"
+import { StoreGet } from "../types/setting";
 import { Pioneer } from '@pioneerjs/core';
 
+import { AllScriptObjects } from "./common/types"
+import { CXPhoneLoginScript } from "./login/cx.phone.login"
+import { CXUnitLoginScript } from "./login/cx.unit.login"
+import { CXUserLoginScript } from "./login/cx.user.login"
+
 import puppeteer from 'puppeteer-core';
-
-
-import { CXUserLoginScript } from "./login/cx.user.login";
-import { CXPhoneLoginScript } from "./login/cx.phone.login";
-import { CXUnitLoginScript } from "./login/cx.unit.login";
-import { AllScriptObjects, FromScriptName } from "./common/types";
-import { RunnableScript, InjectableScript } from "@pioneerjs/core";
-import { Inject, Injectable, Runnable } from '@pioneerjs/common';
-import { StoreGet } from "../types/setting";
-import { LoginScript } from './login';
-
-export { CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, AllScriptObjects, RunnableScript, InjectableScript, FromScriptName, Inject, Injectable, Runnable, LoginScript }
 
 export async function StartPuppeteer<S extends RunnableScript>(name: keyof AllScriptObjects, handler: (script: S | undefined) => void) {
     let chromePath = StoreGet('setting').script.launch.binaryPath
@@ -38,4 +34,8 @@ export async function StartPuppeteer<S extends RunnableScript>(name: keyof AllSc
     } else {
         console.error('找不到 chrome 路径!!!');
     }
+}
+
+export async function getCourse<S extends RunnableScript>(script: S) {
+    return new CXCourseScript(script).getCourseList()
 }

@@ -1,5 +1,6 @@
 import { toRaw } from '@vue/reactivity';
-import { StoreSchema } from "app/lib/types/index";
+import { StoreSchema } from 'app/types';
+ 
 import { reactive, watch } from 'vue';
 
 const Store = require('electron-store');

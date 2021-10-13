@@ -1,10 +1,10 @@
 
 import { info, log, error } from "console";
-import { app, protocol, BrowserWindow, BrowserWindow as BW, shell, ipcMain } from "electron";
+import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
 import path from "path";
-import { Setting, StartPuppeteer } from "../types";
+import { Setting } from "../types";
 import fs from 'fs';
- 
+
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { UpdateRouter } from "./router/update";
@@ -46,11 +46,6 @@ app.whenReady().then(async () => {
     UpdateRouter()
     RemoteRouter()
 
-
-
-    // StartPuppeteer('cx-user-login', (script) => {
-    //     console.log("StartPuppeteer",script);
-    // })
 })
 
 
@@ -62,8 +57,6 @@ async function createWindow() {
     const win: any = new BrowserWindow(BrowserConfig)
 
     load()
-
-
     function load() {
 
         // Load a remote URL  

@@ -4,7 +4,7 @@ import path from "path";
 import { Updater, Version } from ".";
 import yaml from 'yaml';
 import { app } from 'electron';
-import { log } from 'electron-log';
+ 
 import { ClientRequest } from 'http';
 
 export class JSDelivrUpdater extends Updater {

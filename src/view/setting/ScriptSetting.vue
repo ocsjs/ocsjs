@@ -143,7 +143,6 @@ import { setting } from "./setting";
 import { Remote } from "@/utils/remote";
 import { AxiosGet } from "@/utils/request";
 import { message } from "ant-design-vue";
-import common from "electron/common";
 import { ref, onMounted } from "vue";
 
 const { shell } = require("electron");

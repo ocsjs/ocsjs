@@ -69,7 +69,8 @@
 <script setup lang="ts">
 import Card from "@/components/common/Card.vue";
 import { Remote } from "@/utils/remote";
-import { SystemSetting } from "app/lib/types/index";
+import { SystemSetting } from "app/types";
+ 
 import { setting } from "./setting";
 const path = require("path");
 const system = setting.system;

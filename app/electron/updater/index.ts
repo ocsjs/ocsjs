@@ -1,5 +1,5 @@
 import { AxiosGet } from './axios';
-import { log } from 'electron-log';
+
 import { app } from "electron";
 import { ClientRequest } from "http";
 import { SemVer } from "semver";
@@ -32,19 +32,19 @@ export abstract class Updater {
             if (url) {
                 try {
                     const { data } = await AxiosGet({ url: url.href, responseType: 'stream' })// request(url.href)
-
+                    const res: any = data
                     // 获取本地写入流
                     const output = fs.createWriteStream(file)
                     this.APP_UPDATE.info('创建本地写入流', file)
                     this.APP_UPDATE.once(IPCEventTypes.CANCEL_APP_UPDATE, () => {
-                        data.destroy()
+                        res.destroy()
                     })
-                    data.pipe(output)
-                    data.on('data', (chunk: any) => {
+                    res.pipe(output)
+                    res.on('data', (chunk: any) => {
                         callback?.(chunk)
                     });
 
-                    data.on('close', () => {
+                    res.on('close', () => {
                         this.APP_UPDATE.info('正在解压更新文件')
                         compressing.zip.uncompress(file.toString(), path.resolve(path.join(file.toString(), '../app/')))
                             .then((result) => {
@@ -53,7 +53,7 @@ export abstract class Updater {
                                 this.APP_UPDATE.info('更新失败', err.stack)
                             });
                     })
-                    return data
+                    return res
                 } catch (err: any) {
                     this.APP_UPDATE.error('更新失败', err.stack)
                 }

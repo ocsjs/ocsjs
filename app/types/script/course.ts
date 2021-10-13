@@ -6,8 +6,7 @@ export interface Course {
     img: string,
     // 简介
     profile: string,
-    // 是否结课
-    isClose: boolean
+ 
 }
 
 

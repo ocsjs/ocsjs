@@ -53,7 +53,7 @@
 
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
-import { User } from "app/lib/types/index";
+import { User } from "app/types";
 import { ref } from "vue";
 import UserForm from "./UserForm.vue";
 

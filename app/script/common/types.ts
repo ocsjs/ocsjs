@@ -1,8 +1,13 @@
 
+
+import { User } from "../../types";
 import { CXPhoneLoginScript } from "../login/cx.phone.login";
 import { CXUnitLoginScript } from "../login/cx.unit.login";
 import { CXUserLoginScript } from "../login/cx.user.login";
 
+export interface LoginScriptType {
+    login(user: User): Promise<void>
+}
 
 export interface AllScriptObjects {
     "cx-user-login": CXUserLoginScript
@@ -10,7 +15,7 @@ export interface AllScriptObjects {
     "cx-unit-login": CXUnitLoginScript,
 }
 
-export  function FromScriptName(script: keyof AllScriptObjects) {
+export function FromScriptName(script: keyof AllScriptObjects) {
     return script;
 }
 
