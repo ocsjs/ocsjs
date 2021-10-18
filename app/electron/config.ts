@@ -1,6 +1,6 @@
-
-import { app, BrowserWindowConstructorOptions } from 'electron';
-var mode = app.isPackaged ? 'prod' : 'dev'
+import { app, BrowserWindowConstructorOptions } from "electron";
+import { StoreGet } from "../types/setting";
+var mode = app.isPackaged ? "prod" : "dev";
 
 export const BrowserConfig: BrowserWindowConstructorOptions = {
     width: 800,
@@ -11,12 +11,12 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
 
     maximizable: false,
 
-    icon:'./public/favicon.ico',
+    icon: "./public/favicon.ico",
     frame: false,
     center: true,
     autoHideMenuBar: true,
     show: false,
-    alwaysOnTop: true,
+    alwaysOnTop: !!StoreGet("setting").system.win.isAlwaysOnTop,
     webPreferences: {
         // 关闭拼写矫正
         spellcheck: false,
@@ -24,7 +24,5 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
         // 开启node
         nodeIntegration: true,
         contextIsolation: false,
-      
     },
-
-}
+};

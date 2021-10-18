@@ -1,3 +1,4 @@
+import { AllScriptObjects } from './../script/common/types';
  
 import { ZHSLoginParams } from './script/zhs.login';
  
@@ -71,7 +72,7 @@ export interface User {
     // 登录参数
     params: keyof CXLoginParams | keyof ZHSLoginParams
     // 需求启动的登录程序
-    loginScript: string
+    loginScript: keyof AllScriptObjects
     // 自动登录类型
     loginInfo: {
         cx: CXLoginParams,

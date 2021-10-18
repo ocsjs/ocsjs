@@ -1,18 +1,19 @@
-import { toRaw } from '@vue/reactivity';
-import { StoreSchema } from 'app/types';
- 
-import { reactive, watch } from 'vue';
+import { toRaw } from "@vue/reactivity";
+import { StoreSchema } from "app/types";
 
-const Store = require('electron-store');
+import { reactive, watch } from "vue";
 
+const Store = require("electron-store");
 
-const store = new Store()
+const store = new Store();
 
+/**
+ * 本地config配置
+ */
 export const config: StoreSchema = reactive<StoreSchema>(store.store);
-
 
 watch(config, () => {
     console.log("config change", config);
-    config.setting
-    store.store = toRaw(config)
+    config.setting;
+    store.store = toRaw(config);
 });

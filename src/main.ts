@@ -1,18 +1,17 @@
- 
-import { createApp } from 'vue'
+import { createApp } from "vue";
 
-import App from './App.vue'
-import { router } from './router'
+import App from "./App.vue";
+import { router } from "./router";
 
-import { message } from 'ant-design-vue';
+import { message } from "ant-design-vue";
 
-
-
+// antdv IconFont 远程阿里图标库ICON
 import { createFromIconfontCN } from "@ant-design/icons-vue";
 const IconFont = createFromIconfontCN({
     scriptUrl: "https://at.alicdn.com/t/font_2849771_3az41crtc9.js",
 });
 
+// antdv message 全局配置
 message.config({
     top: `74px`,
     duration: 2,
@@ -21,8 +20,6 @@ message.config({
 
 createApp(App)
     .use(router)
-    .component('IconFont', IconFont)
-    .mount('#app')
-
-
-
+    // 注册远程ICON
+    .component("IconFont", IconFont)
+    .mount("#app");

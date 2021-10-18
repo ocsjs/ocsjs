@@ -3,12 +3,12 @@
         <div class="flex nowrap space-10 jc-flex-start ai-center">
             <li>{{ json.name }} - v{{ json.version }}</li>
             <!-- 路由信息 -->
-            <!-- <li class="space-4">
+            <li class="space-4">
                 <span v-for="(info, i) of routesInfo" class="space-4">
                     <span v-if="i !== 0"> / </span>
                     <span>{{ info }}</span>
                 </span>
-            </li> -->
+            </li>
         </div>
 
         <div class="flex nowrap space-10 jc-flex-end ai-center ac-center">
@@ -21,7 +21,12 @@
             </span>
         </div>
 
-        <a-modal v-model:visible="visible" title="使用须知" @ok="handleOk" :footer="false">
+        <a-modal
+            v-model:visible="visible"
+            title="使用须知"
+            @ok="handleOk"
+            :footer="false"
+        >
             <p>
                 <md-render
                     codeStyle="github-dark"
@@ -47,14 +52,16 @@
 import { ref } from "@vue/reactivity";
 import { message } from "ant-design-vue";
 import json from "root/package.json";
- 
-import { MdRender } from "mark-ui";
 
-// const router = useRouter();
-// const routesInfo = ref<any[]>([]);
-// router.beforeEach((to, from) => {
-//     routesInfo.value = to.matched.map((route) => route.meta.desc);
-// });
+import { MdRender } from "mark-ui";
+import { useRouter } from "vue-router";
+
+// 路由遍历
+const router = useRouter();
+const routesInfo = ref<any[]>([]);
+router.beforeEach((to, from) => {
+    routesInfo.value = to.matched.map((route) => route.meta.desc);
+});
 
 function onCopy() {
     message.success("复制成功!");

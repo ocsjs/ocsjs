@@ -1,5 +1,4 @@
 <template>
-     
     <a-layout class="layout" style="height: 100%">
         <a-layout-header id="layout-header">
             <Navigation />
@@ -27,14 +26,13 @@ import Navigation from "./components/layout/Navigation.vue";
 
 const { ipcRenderer } = require("electron");
 import { message, notification } from "ant-design-vue";
- 
+
 import { NotificationArgsProps } from "ant-design-vue/lib/notification";
 import { OCSEventTypes, Notify, IPCEventTypes } from "app/types";
- 
- 
- 
- 
 
+/**
+ * 注册 remote 消息
+ */
 ipcRenderer.on(OCSEventTypes.INFO, (e: any, msg: string[]) => {
     message.info(msg);
 });
@@ -48,10 +46,13 @@ ipcRenderer.on(OCSEventTypes.ERROR, (e: any, msg: string[]) => {
     message.error(msg);
 });
 
+// 注册 remote notify 消息
 ipcRenderer.on(OCSEventTypes.NOTIFY, (e: any, notify: Notify) => {
     console.log(notify);
+    // 是否为更新消息
     const isUpdate = notify.name === IPCEventTypes.APP_UPDATE;
     const commonConfig: Omit<NotificationArgsProps, "type"> = {
+        // 如果是更新消息，则不消失，duration 为0，等待更新完成后手动关闭
         duration: isUpdate && notify.type === "info" ? 0 : 5,
         placement: "bottomRight",
         key: notify.name,
@@ -62,6 +63,7 @@ ipcRenderer.on(OCSEventTypes.NOTIFY, (e: any, notify: Notify) => {
         },
         class: "notification-message",
         onClose: () => {
+            // 如果是更新状态，则通知 electron 关闭更新程序
             if (isUpdate) {
                 ipcRenderer.send(IPCEventTypes.CANCEL_APP_UPDATE);
             }

@@ -57,7 +57,6 @@ import { User } from "app/types";
 import { ref } from "vue";
 import UserForm from "./UserForm.vue";
 
-
 const props = defineProps<{
     user: User;
 }>();
@@ -80,20 +79,8 @@ function modify() {
 }
 
 function start() {
-    const core = require("puppeteer-core");
-
-    console.log(
-        "core",
-        core.launch({
-            // your chrome path
-            executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-            defaultViewport: null,
-            headless: false,
-        })
-    );
     // const u = user.value;
     // const script = typeToPlatform(u.loginInfo?.type || -1);
-
     // if (script) {
     //     const id =
     //         script + u.loginInfo?.type ? "-" + u.loginInfo?.type : "" + "-" + u.uid;
@@ -109,7 +96,6 @@ function start() {
     //         };
     //         tasks.push(task);
     //         console.log(toRaw(task));
-
     //         ipcRenderer.send(IPCEventTypes.SCRIPT_LOGIN, toRaw(task));
     //         message.success("已添加至任务列表!");
     //     }

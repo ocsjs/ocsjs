@@ -1,6 +1,3 @@
- 
 import { config } from "@/utils/store";
- 
 
- 
-export const setting = config.setting
+export const setting = config.setting;

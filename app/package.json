@@ -1,6 +1,6 @@
 {
   "name": "online-course-script",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "main": "./lib/electron/index.js",
   "types": "./lib/types/index.d.ts",
   "scripts": {

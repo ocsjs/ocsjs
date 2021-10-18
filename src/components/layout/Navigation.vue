@@ -1,14 +1,14 @@
 <template>
     <a-row>
         <a-col :span="20" class="font-v3">
-            <a-menu theme="light" mode="horizontal"  v-model:selectedKeys="keys" >
+            <a-menu theme="light" mode="horizontal" v-model:selectedKeys="keys">
                 <a-menu-item key="1" @click="$router.push('/users')">
                     <UsergroupAddOutlined class="icon" /> 账号管理
                 </a-menu-item>
                 <a-menu-item key="2" @click="$router.push('/task')">
                     <UnorderedListOutlined class="icon" /> 任务列表
                 </a-menu-item>
-                <a-menu-item key="3" @click="$router.push('/setting/script')">
+                <a-menu-item key="3" @click="$router.push('/setting/common')">
                     <SettingOutlined class="icon" /> 设置
                 </a-menu-item>
             </a-menu>
@@ -21,9 +21,7 @@
                 class="flex jc-flex-end"
                 :selectable="false"
             >
-                <a-menu-item
-                    @click="system.win.isAlwaysOnTop = !system.win.isAlwaysOnTop"
-                >
+                <a-menu-item @click="top">
                     <IconFont
                         title="置顶"
                         type="icon-relieve-full"
@@ -55,9 +53,18 @@ import { ref } from "@vue/reactivity";
 
 import { Remote } from "../../utils/remote";
 
-const keys = ref(['1'])
+const keys = ref(["1"]);
 
 const { system } = setting;
+
+// 置顶
+function top() {
+    system.win.isAlwaysOnTop = !system.win.isAlwaysOnTop;
+    console.log(
+        "setAlwaysOnTop",
+        Remote.win.call("setAlwaysOnTop", system.win.isAlwaysOnTop)
+    );
+}
 </script>
 
 <style scope lang="less">

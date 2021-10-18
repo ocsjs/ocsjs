@@ -16,6 +16,7 @@
     "@ant-design/icons-vue": "^6.0.1",
     "@rollup/plugin-commonjs": "^21.0.0",
     "@rollup/plugin-node-resolve": "^13.0.5",
+    "@types/axios": "^0.14.0",
     "ant-design-vue": "^2.2.8",
     "axios": "^0.22.0",
     "electron-store": "^8.0.1",

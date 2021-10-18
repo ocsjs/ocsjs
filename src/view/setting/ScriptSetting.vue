@@ -139,14 +139,15 @@
 </template>
 
 <script setup lang="ts">
-import { setting } from "./setting";
 import { Remote } from "@/utils/remote";
 import { AxiosGet } from "@/utils/request";
+
 import { message } from "ant-design-vue";
 import { ref, onMounted } from "vue";
+import { config } from "@/utils/store";
 
+const script = config.setting.script;
 const { shell } = require("electron");
-const { script } = setting;
 
 // 加载状态
 const loading = ref(true);
@@ -158,13 +159,17 @@ let tokenInfo = ref({
     success_times: 0,
     msg: "",
 });
-
 onMounted(() => {
     checkToken();
 });
 function checkToken() {
     loading.value = true;
-    AxiosGet({ url: "http://wk.enncy.cn/query/chatiId/" + script.account.queryToken })
+
+    AxiosGet({
+        url:
+            "http://wk.enncy.cn/query/chatiId/" +
+            config.setting.script.account.queryToken,
+    })
         .then((res: any) => {
             if (res.data.code === 1) {
                 tokenInfo.value = res.data.data;
@@ -173,7 +178,9 @@ function checkToken() {
             }
             loading.value = false;
         })
-        .catch((err) => {
+        .catch((err: any) => {
+            console.error(err);
+
             message.error("获取查题次数失败");
         });
 }

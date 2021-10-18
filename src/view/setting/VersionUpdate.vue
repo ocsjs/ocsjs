@@ -41,9 +41,7 @@
 
                 <div class="space-10">
                     <a-button type="primary" @click="checkUpdate">更新检测</a-button>
-                    <a-button type="primary" @click="onUpdate" >
-                        更新
-                    </a-button>
+                    <a-button type="primary" @click="onUpdate"> 更新 </a-button>
                 </div>
             </template>
         </Card>
@@ -54,7 +52,7 @@
 import { Remote } from "@/utils/remote";
 
 import { onMounted, ref } from "vue";
- 
+
 import { message } from "ant-design-vue";
 import { setting } from "./setting";
 import { IPCEventTypes } from "app/types";

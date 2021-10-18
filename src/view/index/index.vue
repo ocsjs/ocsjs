@@ -1,6 +1,6 @@
 <template>
     <div>
-        <p class="font-v1 " style="font-size: 42px; padding: 0px; margin: 24px 0px">
+        <p class="font-v1" style="font-size: 42px; padding: 0px; margin: 24px 0px">
             OCS <span class="font-v1">{{ json.name }} </span>
         </p>
         <p>
@@ -31,7 +31,7 @@
                         {{ json.name }}
                     </a-descriptions-item>
                     <a-descriptions-item label="版本">
-                        v{{Remote.app.call('getVersion')}}
+                        v{{ Remote.app.call("getVersion") }}
                     </a-descriptions-item>
                     <a-descriptions-item label="作者">
                         {{ json.author }}

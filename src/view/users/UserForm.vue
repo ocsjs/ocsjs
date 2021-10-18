@@ -33,14 +33,6 @@
                         机构单位登录
                     </a-radio-button>
                 </a-radio-group>
-                <!-- <a-radio-group
-                    v-else
-                    default-value="phoneLogin"
-                    @change="(e:any)=>tempUser.params=e.target.value"
-                >
-                    <a-radio-button value="phoneLogin"> 手机登录 </a-radio-button>
-                    <a-radio-button value="studentIdLogin"> 学号登录 </a-radio-button>
-                </a-radio-group> -->
             </a-form-item>
             <template v-if="tempUser.platform === 'cx'">
                 <template v-if="tempUser.loginScript === 'cx-user-login'">
@@ -74,45 +66,13 @@
                     </a-form-item>
                 </template>
             </template>
-            <!-- <template v-if="tempUser.platform === 'zhs'">
-                <template v-if="tempUser.params === 'phoneLogin'">
-                    <a-form-item label="手机号">
-                        <a-input
-                            v-model:value="tempUser.loginInfo.zhs.phoneLogin.phone"
-                        />
-                    </a-form-item>
-                    <a-form-item label="密码">
-                        <a-input
-                            v-model:value="tempUser.loginInfo.zhs.phoneLogin.password"
-                        />
-                    </a-form-item>
-                </template>
-                <template v-else-if="tempUser.params === 'studentIdLogin'">
-                    <a-form-item label="学校名">
-                        <a-input
-                            v-model:value="tempUser.loginInfo.zhs.studentIdLogin.school"
-                        />
-                    </a-form-item>
-                    <a-form-item label="学号">
-                        <a-input
-                            v-model:value="
-                                tempUser.loginInfo.zhs.studentIdLogin.studentId
-                            "
-                        />
-                    </a-form-item>
-                    <a-form-item label="密码">
-                        <a-input
-                            v-model:value="tempUser.loginInfo.zhs.studentIdLogin.password"
-                        />
-                    </a-form-item>
-                </template>
-            </template> -->
+
             <a-form-item :wrapper-col="{ span: 12, offset: 12 }">
                 <div class="space-10 flex">
                     <a-button
                         v-if="mode === 'create'"
                         type="primary"
-                        @click="getCourseList('cx-user-login')"
+                        @click="getCourseList()"
                     >
                         获取课程列表
                     </a-button>
@@ -144,8 +104,11 @@ import { AllScriptObjects, User, FromScriptName } from "app/types";
 const uuid = require("uuid");
 
 const props = defineProps<{
+    // 按钮文字
     btnText: string;
+    // 默认绑定的 user，如果没有默认user，则新创建 createUser
     user?: User;
+    // 模式, 修改 | 创建
     mode: "modify" | "create";
 }>();
 const { btnText, user, mode } = toRefs(props);
@@ -157,13 +120,19 @@ const emits = defineEmits<{
 // 临时变量
 const tempUser = reactive<User>(user?.value || createUser());
 
-async function getCourseList(scriptName: keyof AllScriptObjects) {
-    console.log("getCourseList", scriptName);
-
-    tempUser.course = Remote.script.call("login", "cx-user-login", toRaw(tempUser));
+// 获取课程列表
+async function getCourseList() {
+    //
+    tempUser.course = await Remote.script.call(
+        "login",
+        tempUser.loginScript,
+        toRaw(tempUser)
+    );
     if (tempUser.course) {
         console.log("tempUser.course", tempUser.course);
         message.success("课程列表获取成功!");
+    } else {
+        message.error("课程列表获取失败 , 请重新获取!");
     }
 }
 

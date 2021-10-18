@@ -23,15 +23,11 @@
                 </a-descriptions>
             </template>
         </Card>
-        
     </div>
 </template>
 
 <script setup lang="ts">
- 
 import { setting } from "./setting";
-
-
 
 const { common } = setting;
 </script>

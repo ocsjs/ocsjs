@@ -70,14 +70,16 @@
 import Card from "@/components/common/Card.vue";
 import { Remote } from "@/utils/remote";
 import { SystemSetting } from "app/types";
- 
+
 import { setting } from "./setting";
 const path = require("path");
 const system = setting.system;
 const { shell } = require("electron");
 
 const appPath = Remote.app.call("getAppPath");
+
 const exePath = Remote.app.call("getPath", "exe");
+
 const configPath = path.resolve(path.join(system.path.userData, "./config.json"));
 
 function settingPath(name: keyof SystemSetting["path"]) {

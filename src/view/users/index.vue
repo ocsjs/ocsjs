@@ -56,7 +56,7 @@
 <script setup lang="ts">
 import { config } from "@/utils/store";
 import { ref } from "@vue/reactivity";
- 
+
 import { message } from "ant-design-vue";
 import { User } from "app/types";
 import UserCard from "./UserCard.vue";
@@ -66,7 +66,7 @@ if (config.users) {
     config.users = [];
 }
 
-const users:User[] = config.users
+const users: User[] = config.users;
 
 // 是否显示添加框
 const visible = ref<boolean>(false);
@@ -82,6 +82,7 @@ const onAddUser = (user: User) => {
     message.success("创建成功!");
 };
 
+// 查询用户
 function filter(users: User[]) {
     const res = users.filter((u) => {
         if (u.name.indexOf(search.value) !== -1) {
@@ -116,7 +117,6 @@ function onModifyUser(user: User) {
 function initUser() {
     visible.value = true;
 }
- 
 </script>
 
 <style scope lang="less">
