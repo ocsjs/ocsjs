@@ -92,14 +92,37 @@
                 </div>
             </a-form-item>
         </a-form>
+
+        <!-- 显示任务步骤 -->
+        <a-modal
+            v-model:visible="visible"
+            :footer="null"
+            centered
+            title=""
+            :maskClosable="false"
+            :keyboard="false"
+        >
+            <a-steps style="padding: 20px 12px 0px 12px">
+                <a-step
+                    v-for="(task, index) in tasks"
+                    :key="index"
+                    :title="task.name"
+                    :status="task.status"
+                    description=""
+                ></a-step>
+            </a-steps>
+        </a-modal>
     </div>
 </template>
 
 <script setup lang="ts">
 import { Remote } from "@/utils/remote";
-import { reactive, toRaw, toRefs } from "@vue/reactivity";
+import { LoadingOutlined } from "@ant-design/icons-vue";
+import { reactive, ref, toRaw, toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
-import { AllScriptObjects, User, FromScriptName } from "app/types";
+
+import { User, FromScriptName, TaskType } from "app/types";
+import { h, watch } from "vue";
 
 const uuid = require("uuid");
 
@@ -120,21 +143,47 @@ const emits = defineEmits<{
 // 临时变量
 const tempUser = reactive<User>(user?.value || createUser());
 
+// 模态框显示
+const visible = ref(false);
+
+//
+const tasks: any[] = reactive<TaskType[]>([]);
+
 // 获取课程列表
 async function getCourseList() {
-    //
-    tempUser.course = await Remote.script.call(
-        "login",
-        tempUser.loginScript,
-        toRaw(tempUser)
+    visible.value = true;
+    // 开启脚本，并获取任务列表
+    Object.assign(
+        tasks,
+        Remote.script.call("login", tempUser.loginScript, toRaw(tempUser))
     );
-    if (tempUser.course) {
-        console.log("tempUser.course", tempUser.course);
-        message.success("课程列表获取成功!");
-    } else {
-        message.error("课程列表获取失败 , 请重新获取!");
-    }
+    // 遍历监听任务变化，并显示出步骤条到页面
+    tasks.forEach((task: any) => {
+        Remote.task(task.id).process(() => {
+            task.status = "process";
+        });
+        Remote.task(task.id).finish((e: any, value: any) => {
+            task.status = "finish";
+            // 获取完成时的返回值
+            tempUser.course = value;
+        });
+        Remote.task(task.id).error(() => {
+            task.status = "error";
+        });
+    });
 }
+
+// 监听任务变化
+watch(tasks, () => {
+    if (tasks[tasks.length - 1].status === "finish") {
+        if (tempUser.course.length !== 0) {
+            console.log("tempUser.course", tempUser.course);
+            message.success("课程列表获取成功!");
+        } else {
+            message.error("课程列表获取失败 , 请重新获取!");
+        }
+    }
+});
 
 // 用户模板
 function createUser(): User {
@@ -178,10 +227,18 @@ function createUser(): User {
         },
     };
 }
+
+const indicator = h(LoadingOutlined, {
+    style: {
+        fontSize: "24px",
+    },
+    spin: true,
+});
 </script>
 
 <style scope lang="less">
 #user-form {
     overflow: auto;
+    max-height: 300px;
 }
 </style>

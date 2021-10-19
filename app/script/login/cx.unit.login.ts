@@ -14,9 +14,10 @@ import { StoreGet } from "../../types/setting";
 import { RunnableScript } from "@pioneerjs/core";
 import { User } from "../../types";
 
+import { Task } from "../../electron/task";
+
 export const CX_UNIT_LOGIN_NAME = "cx-user-login";
-export const CX_UNIT_LOGIN_URL =
-    "https://passport2.chaoxing.com/login?loginType=3&newversion=true";
+export const CX_UNIT_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType=3&newversion=true";
 
 /**
  * 超星机构单位登录脚本
@@ -24,7 +25,7 @@ export const CX_UNIT_LOGIN_URL =
 @Runnable({
     name: CX_UNIT_LOGIN_NAME,
 })
-export class CXUnitLoginScript extends LoginScript {
+export class CXUnitLoginScript extends LoginScript<void> {
     @Inject()
     waitFor!: WaitForScript;
 
@@ -63,8 +64,7 @@ export class CXUnitLoginScript extends LoginScript {
         return await this.page.evaluate((selector: any) => {
             const target = document.querySelector(selector);
             if (target) {
-                let { x, y, width, height } =
-                    target.getBoundingClientRect() || {};
+                let { x, y, width, height } = target.getBoundingClientRect() || {};
                 return { x, y, width, height };
             }
         }, selector);
@@ -89,4 +89,6 @@ export class CXUnitLoginScript extends LoginScript {
         }
         return false;
     }
+
+    
 }

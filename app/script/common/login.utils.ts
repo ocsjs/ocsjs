@@ -20,15 +20,10 @@ export class CXLoginUtils extends InjectableScript {
     }
 
     isLogin() {
-        return this.page
-            .url()
-            .startsWith("http://i.mooc.chaoxing.com/space/index");
+        return this.page.url().startsWith("http://i.mooc.chaoxing.com/space/index");
     }
 
     async login() {
-        await Promise.all([
-            this.waitForCXLogin(),
-            this.page.click("#loginBtn"),
-        ]);
+        await Promise.all([this.waitForCXLogin(), this.page.click("#loginBtn")]);
     }
 }

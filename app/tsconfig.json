@@ -65,7 +65,7 @@
   },
   "include": [
     "electron/**/*.ts",
-    "puppeteer/**/*.ts",
+    "script/**/*.ts",
     "types/**/*.ts"
   ],
   "exclude": [

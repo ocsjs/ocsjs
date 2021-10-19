@@ -128,9 +128,6 @@ export class OCSNotify extends OCSEvent {
  * @param eventName 事件名
  * @param event 具体参数
  */
-export function sendToRender<T extends keyof OCSEvents>(
-    eventName: T,
-    event: OCSEvents[T]
-) {
+export function sendToRender<T extends keyof OCSEvents>(eventName: T, event: OCSEvents[T]) {
     CurrentWindow?.webContents.send(eventName, event);
 }

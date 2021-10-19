@@ -1,9 +1,11 @@
+ 
 import { AllScriptObjects } from './../script/common/types';
  
 import { ZHSLoginParams } from './script/zhs.login';
  
 import {   CXLoginParams } from './script/cx.login';
 import { Course } from './script/course';
+import { Task } from '../electron/task';
 
 
 // 系统设置
@@ -92,9 +94,10 @@ export interface User {
 
 }
 
+export type TaskType = typeof Task
 
 export interface StoreSchema {
     setting: Setting
     users: User[]
-    task: any[]
+    task: Task<any>[]
 }

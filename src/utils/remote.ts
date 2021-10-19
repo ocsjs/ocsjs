@@ -1,4 +1,4 @@
-import { registerRemoteEventNames, ScriptRemoteType } from "app/types";
+import { registerRemoteEventNames, ScriptRemoteType, TaskType } from "app/types";
 import { BrowserWindow, App, Dialog } from "electron";
 
 const { ipcRenderer } = require("electron");
@@ -51,4 +51,18 @@ export const Remote = {
     dialog: registerRemote<Dialog>("dialog"),
     // 注册 脚本 通信
     script: registerRemote<ScriptRemoteType>("script"),
+
+    task(id: string) {
+        return {
+            finish(handler: (e:any,value:any) => void){
+                ipcRenderer.once("task-finish-"+id, handler);
+            },
+            process(handler: () => void){
+                ipcRenderer.once("task-process-"+id, handler);
+            },
+            error(handler: () => void){
+                ipcRenderer.once("task-error-"+id, handler);
+            }
+        }
+    },
 };

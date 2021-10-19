@@ -1,10 +1,13 @@
+import { RunnableScript } from "@pioneerjs/core";
+import { type } from "os";
+import { Task } from "../../electron/task";
 import { User } from "../../types";
 import { CXPhoneLoginScript } from "../login/cx.phone.login";
 import { CXUnitLoginScript } from "../login/cx.unit.login";
 import { CXUserLoginScript } from "../login/cx.user.login";
 
 export interface LoginScriptType {
-    login(user: User): Promise<void>;
+    login(user: User): Promise<any>;
 }
 
 export interface AllScriptObjects {

@@ -80,16 +80,7 @@ export function initSetting() {
 
 // 获取 chrome 路径
 export function getChromePath() {
-    let paths = [
-        process.env.ProgramFiles,
-        process.env["ProgramFiles(x86)"],
-        "C:\\Program Files",
-        "C:\\Program Files (x86)",
-    ];
-    let chromePath = paths
-        .map((p) =>
-            path.join(p || "", "\\Google\\Chrome\\Application\\chrome.exe")
-        )
-        .find((p) => fs.existsSync(p));
+    let paths = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"], "C:\\Program Files", "C:\\Program Files (x86)"];
+    let chromePath = paths.map((p) => path.join(p || "", "\\Google\\Chrome\\Application\\chrome.exe")).find((p) => fs.existsSync(p));
     return chromePath;
 }

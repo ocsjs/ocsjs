@@ -4,11 +4,11 @@ import { Runnable, Inject } from "@pioneerjs/common";
 import { CXLoginUtils } from "../common/login.utils";
 
 export const CX_PHONE_LOGIN_NAME = "cx-phone-login";
-export const CX_PHONE_LOGIN_URL =
-    "https://passport2.chaoxing.com/login?loginType=2&newversion=true";
+export const CX_PHONE_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType=2&newversion=true";
 
 import { User } from "../../types";
 import { LoginScript } from "./types";
+import { Task } from "../../electron/task";
 
 /**
  * 超星手机登录脚本
@@ -16,7 +16,8 @@ import { LoginScript } from "./types";
 @Runnable({
     name: CX_PHONE_LOGIN_NAME,
 })
-export class CXPhoneLoginScript extends LoginScript {
+export class CXPhoneLoginScript extends LoginScript<void> {
+
     @Inject()
     waitFor!: WaitForScript;
 
@@ -38,4 +39,7 @@ export class CXPhoneLoginScript extends LoginScript {
         // message.info('请手动输入验证码并点击登陆')
         await loginUtils.waitForCXLogin();
     }
+
+    
+    
 }

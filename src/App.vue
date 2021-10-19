@@ -1,4 +1,5 @@
 <template>
+     
     <a-layout class="layout" style="height: 100%">
         <a-layout-header id="layout-header">
             <Navigation />
@@ -26,10 +27,12 @@ import Navigation from "./components/layout/Navigation.vue";
 
 const { ipcRenderer } = require("electron");
 import { message, notification } from "ant-design-vue";
-
+ 
 import { NotificationArgsProps } from "ant-design-vue/lib/notification";
 import { OCSEventTypes, Notify, IPCEventTypes } from "app/types";
-
+ 
+ 
+ 
 /**
  * 注册 remote 消息
  */

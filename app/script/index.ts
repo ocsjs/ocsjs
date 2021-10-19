@@ -1,12 +1,9 @@
-import { CXCourseScript } from "./cx/get.course";
-
+ 
 import { RunnableScript } from "@pioneerjs/core";
 import { StoreGet } from "../types/setting";
 import { Pioneer } from "@pioneerjs/core";
 
 import { AllScriptObjects } from "./common/types";
-import { CXPhoneLoginScript } from "./login/cx.phone.login";
-import { CXUnitLoginScript } from "./login/cx.unit.login";
 import { CXUserLoginScript } from "./login/cx.user.login";
 
 import puppeteer from "puppeteer-core";
@@ -30,13 +27,16 @@ export async function StartPuppeteer<S extends RunnableScript>(
             headless: false,
         });
 
+        // 创建 pioneer
         const pioneer = Pioneer.create(browser);
 
+        // 启动装配
         await pioneer.startup({
-            scripts: [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript],
+            scripts: [CXUserLoginScript ],
             events: ["request", "response"],
         });
 
+        // 回调
         handler(
             pioneer.runnableScripts?.find(
                 (s: any) => s.name === name
@@ -48,12 +48,5 @@ export async function StartPuppeteer<S extends RunnableScript>(
         console.error("找不到 chrome 路径!!!");
     }
 }
-
-/**
- * 获取课程列表
- * @param script 需要执行的脚本类
- * @returns
- */
-export async function getCXCourse<S extends RunnableScript>(script: S) {
-    return new CXCourseScript(script).getCourseList();
-}
+ 
+ 

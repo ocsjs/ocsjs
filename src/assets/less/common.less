@@ -1,8 +1,13 @@
-@import './flex.less';
-@import './ant.less';
-@import './font.less';
-@import './layout.less';
-@import './size.less';
+
+
+body{
+    @import (multiple) './flex.less';
+    @import (multiple) './ant.less';
+    @import (multiple) './font.less';
+    @import (multiple) './layout.less';
+    @import (multiple) './size.less';
+     
+}
 
 body,
 html,
@@ -12,7 +17,7 @@ html,
     margin: 0px;
     padding: 0px;
 
-
+ 
 }
 
 #app {
@@ -22,12 +27,12 @@ html,
     text-align: center;
     color: #2c3e50;
     background-color: white;
-
-    @import './flex.less';
-    @import './ant.less';
-    @import './font.less';
-    @import './layout.less';
-    @import './size.less';
+ 
+    @import (multiple) './flex.less';
+    @import (multiple) './ant.less';
+    @import (multiple) './font.less';
+    @import (multiple) './layout.less';
+    @import (multiple) './size.less';
 }
 
 #layout-header {

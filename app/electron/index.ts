@@ -1,11 +1,5 @@
 import { info, log, error } from "console";
-import {
-    app,
-    protocol,
-    BrowserWindow,
-    BrowserWindow as BW,
-    shell,
-} from "electron";
+import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
 import path from "path";
 import { Setting } from "../types";
 import fs from "fs";
@@ -31,9 +25,7 @@ app.whenReady().then(async () => {
     // 注册协议
     protocol.registerFileProtocol("app", (req: any, callback: any) => {
         const url = req.url.replace("app://", "");
-        const resolve = path.normalize(
-            path.resolve(`./resources/app/public`, url)
-        );
+        const resolve = path.normalize(path.resolve(`./resources/app/public`, url));
         info({ path: resolve });
         callback({ path: resolve });
     });
@@ -63,10 +55,7 @@ async function createWindow() {
     load();
     function load() {
         // Load a remote URL
-        const promise =
-            mode === "dev"
-                ? win.loadURL("http://localhost:3000")
-                : win.loadURL("app://./index.html");
+        const promise = mode === "dev" ? win.loadURL("http://localhost:3000") : win.loadURL("app://./index.html");
 
         promise
             .then((result: any) => {
@@ -74,13 +63,10 @@ async function createWindow() {
                 win.webContents.openDevTools();
                 log("启动用时:" + (Date.now() - t));
                 // 拦截页面跳转
-                win.webContents.on(
-                    "will-navigate",
-                    (e: { preventDefault: () => void }, url: any) => {
-                        e.preventDefault();
-                        shell.openExternal(url);
-                    }
-                );
+                win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {
+                    e.preventDefault();
+                    shell.openExternal(url);
+                });
                 win.webContents.setWindowOpenHandler((data: { url: any }) => {
                     shell.openExternal(data.url);
                     return {

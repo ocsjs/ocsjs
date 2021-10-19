@@ -54,5 +54,5 @@ export function RemoteRouter() {
     registerRemoteEvent("app", _app);
     registerRemoteEvent("win", win);
     registerRemoteEvent("dialog", dialog);
-    registerRemoteEvent("dialog", dialog);
+   
 }

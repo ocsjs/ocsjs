@@ -23,9 +23,7 @@ export class Logger {
             data: args,
         };
         // 保存的文件夹
-        const folder = p.resolve(
-            p.join(this.path, `/${this.getFolderName()}/${this.eventName}/`)
-        );
+        const folder = p.resolve(p.join(this.path, `/${this.getFolderName()}/${this.eventName}/`));
 
         // 文件
         const file = p.resolve(folder, `${eventName}.json`);

@@ -12,9 +12,7 @@ import { JSDelivrUpdater } from "../updater/jsdelivr.updater";
 let interval: NodeJS.Timeout;
 
 // 更新程序
-const updater: Updater = new JSDelivrUpdater(
-    path.resolve("./resources/resource.zip")
-);
+const updater: Updater = new JSDelivrUpdater(path.resolve("./resources/resource.zip"));
 
 // 注册更新
 export async function UpdateRouter() {
@@ -24,27 +22,21 @@ export async function UpdateRouter() {
         // 注册服务
         ipcMain
             // 更新程序
-            .on(
-                IPCEventTypes.APP_UPDATE,
-                async (e: Electron.IpcMainEvent, tag?: string) => {
-                    const need = await updater.needUpdate();
-                    log("APP_UPDATE", "needUpdate : " + need);
-                    if (need) {
-                        updater.tag = tag;
-                        await updater.update();
-                    } else {
-                        updater.APP_UPDATE.warn("已经是最新版本无需更新");
-                    }
-                }
-            )
-            // 是否需要更新
-            .on(
-                IPCEventTypes.IS_NEED_UPDATE,
-                async (e: Electron.IpcMainEvent, tag?: string) => {
+            .on(IPCEventTypes.APP_UPDATE, async (e: Electron.IpcMainEvent, tag?: string) => {
+                const need = await updater.needUpdate();
+                log("APP_UPDATE", "needUpdate : " + need);
+                if (need) {
                     updater.tag = tag;
-                    e.returnValue = await updater.needUpdate();
+                    await updater.update();
+                } else {
+                    updater.APP_UPDATE.warn("已经是最新版本无需更新");
                 }
-            )
+            })
+            // 是否需要更新
+            .on(IPCEventTypes.IS_NEED_UPDATE, async (e: Electron.IpcMainEvent, tag?: string) => {
+                updater.tag = tag;
+                e.returnValue = await updater.needUpdate();
+            })
             // 取消更新
             .on(IPCEventTypes.CANCEL_APP_UPDATE, (e: Electron.IpcMainEvent) => {
                 updater.APP_UPDATE.emit(IPCEventTypes.CANCEL_APP_UPDATE);
