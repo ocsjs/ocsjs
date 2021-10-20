@@ -62,7 +62,7 @@ import { User } from "app/types";
 import UserCard from "./UserCard.vue";
 import UserForm from "./UserForm.vue";
 
-if (config.users) {
+if (!!config.users && config.users.length===0) {
     config.users = [];
 }
 

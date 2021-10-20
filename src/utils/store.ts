@@ -14,6 +14,5 @@ export const config: StoreSchema = reactive<StoreSchema>(store.store);
 
 watch(config, () => {
     console.log("config change", config);
-    config.setting;
     store.store = toRaw(config);
 });

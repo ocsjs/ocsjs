@@ -79,29 +79,9 @@ function modify() {
 }
 
 function start() {
-    // const u = user.value;
-    // const script = typeToPlatform(u.loginInfo?.type || -1);
-    // if (script) {
-    //     const id =
-    //         script + u.loginInfo?.type ? "-" + u.loginInfo?.type : "" + "-" + u.uid;
-    //     if (tasks.find((t) => t.name === id)) {
-    //         message.warn("该账号已经启动!");
-    //     } else {
-    //         const task: Task = {
-    //             name: id,
-    //             script,
-    //             user: toRaw(u),
-    //             ocrOptions: toRaw(setting.script.account.ocr),
-    //             pasue: false,
-    //         };
-    //         tasks.push(task);
-    //         console.log(toRaw(task));
-    //         ipcRenderer.send(IPCEventTypes.SCRIPT_LOGIN, toRaw(task));
-    //         message.success("已添加至任务列表!");
-    //     }
-    // } else {
-    //     message.error("任务启动失败, 未知的登录类型");
-    // }
+    const u = user.value;
+    console.log(u);
+    
 }
 </script>
 

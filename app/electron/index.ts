@@ -1,15 +1,11 @@
 import { info, log, error } from "console";
 import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
 import path from "path";
-import { Setting } from "../types";
-import fs from "fs";
 
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { UpdateRouter } from "./router/update";
-import { StoreGet, StoreSet } from "../types/setting";
 import { initSetting } from "./setting";
-const Store = require("electron-store");
 const t = Date.now();
 
 // 判断开发环境
@@ -58,7 +54,7 @@ async function createWindow() {
         const promise = mode === "dev" ? win.loadURL("http://localhost:3000") : win.loadURL("app://./index.html");
 
         promise
-            .then((result: any) => {
+            .then(() => {
                 win.show();
                 win.webContents.openDevTools();
                 log("启动用时:" + (Date.now() - t));

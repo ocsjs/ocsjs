@@ -26,9 +26,11 @@ export function registerRemoteEvent(name: string, target: any) {
             event.returnValue = await target[property](...value);
         })
         .on(events.on, (event: any, eventName: string) => {
+            // eventName 格式为 : 监听事件-UUID，uuid 是为了区分渲染进程中的监听事件，防止渲染进程中一次监听被多次调用
             target.on(eventName.split("-")[0], () => event.reply(eventName));
         })
         .on(events.once, (event: any, eventName: string) => {
+            // eventName 格式为 : 监听事件-UUID，uuid 是为了区分渲染进程中的监听事件，防止渲染进程中一次监听被多次调用
             target.once(eventName.split("-")[0], () => event.reply(eventName));
         });
 }
@@ -54,5 +56,4 @@ export function RemoteRouter() {
     registerRemoteEvent("app", _app);
     registerRemoteEvent("win", win);
     registerRemoteEvent("dialog", dialog);
-   
 }

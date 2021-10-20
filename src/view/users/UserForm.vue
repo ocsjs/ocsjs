@@ -67,6 +67,27 @@
                 </template>
             </template>
 
+            <a-form-item v-if="tempUser.course.length !== 0" label="课程列表">
+                <a-list item-layout="horizontal" :data-source="tempUser.course">
+                    <template #renderItem="{ item }">
+                        <a-list-item>
+                            <a-list-item-meta
+                                :description="item.url"
+                            >
+                                <template #title>
+                                    <a >{{item.profile.replace(/\n+/,"-") }}</a>
+                                </template>
+                                <template #avatar>
+                                    <a-avatar
+                                        :src="item.img"
+                                    />
+                                </template>
+                            </a-list-item-meta>
+                        </a-list-item>
+                    </template>
+                </a-list>
+            </a-form-item>
+
             <a-form-item :wrapper-col="{ span: 12, offset: 12 }">
                 <div class="space-10 flex">
                     <a-button
@@ -108,8 +129,24 @@
                     :key="index"
                     :title="task.name"
                     :status="task.status"
-                    description=""
-                ></a-step>
+                >
+                    <template #description>
+                        <span
+                            v-text="
+                                task.status === 'wait'
+                                    ? '等待中'
+                                    : task.status === 'process'
+                                    ? '正在运行'
+                                    : task.status === 'finish'
+                                    ? '已完成'
+                                    : '错误'
+                            "
+                        ></span>
+                    </template>
+                    <template v-if="task.status === 'process'" #icon>
+                        <LoadingOutlined />
+                    </template>
+                </a-step>
             </a-steps>
         </a-modal>
     </div>
@@ -122,7 +159,6 @@ import { reactive, ref, toRaw, toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
 
 import { User, FromScriptName, TaskType } from "app/types";
-import { h, watch } from "vue";
 
 const uuid = require("uuid");
 
@@ -160,32 +196,34 @@ async function getCourseList() {
     // 遍历监听任务变化，并显示出步骤条到页面
     tasks.forEach((task: any) => {
         Remote.task(task.id).process(() => {
+            console.log("process", task);
             task.status = "process";
         });
         Remote.task(task.id).finish((e: any, value: any) => {
+            console.log("finish", task);
             task.status = "finish";
-            // 获取完成时的返回值
-            tempUser.course = value;
+            if (tasks[tasks.length - 1].status === "finish") {
+                if (value.length !== 0) {
+                    // 获取完成时的返回值
+                    tempUser.course = value;
+                    console.log("tempUser.course", tempUser.course);
+                    message.success("课程列表获取成功!");
+                    setTimeout(() => {
+                        visible.value = false;
+                    }, 2000);
+                } else {
+                    message.error("课程列表获取失败 , 请重新获取!");
+                }
+            }
         });
         Remote.task(task.id).error(() => {
+            message.error("课程列表获取失败 , 请重新获取!");
             task.status = "error";
         });
     });
 }
 
-// 监听任务变化
-watch(tasks, () => {
-    if (tasks[tasks.length - 1].status === "finish") {
-        if (tempUser.course.length !== 0) {
-            console.log("tempUser.course", tempUser.course);
-            message.success("课程列表获取成功!");
-        } else {
-            message.error("课程列表获取失败 , 请重新获取!");
-        }
-    }
-});
-
-// 用户模板
+// 默认用户模板
 function createUser(): User {
     return {
         uid: uuid.v4().replace(/-/g, ""),
@@ -227,13 +265,6 @@ function createUser(): User {
         },
     };
 }
-
-const indicator = h(LoadingOutlined, {
-    style: {
-        fontSize: "24px",
-    },
-    spin: true,
-});
 </script>
 
 <style scope lang="less">

@@ -1,10 +1,10 @@
 import { CurrentWindow } from "..";
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
- 
-import { User } from "../../types";
-import { ScriptOptions } from "@pioneerjs/core";
 
+import { EventFormat, User } from "../../types";
+import { ScriptOptions } from "@pioneerjs/core";
+ 
 export interface TaskTrasnform<T> {
     asTask(): Task<T>;
 }
@@ -18,7 +18,6 @@ export interface TaskTargetOptions {
 }
 
 export type TaskTargetType<T> = (scripts: ScriptOptions, ...args: any[]) => Promise<T>;
-
 
 /**
  * 任务
@@ -108,22 +107,22 @@ export class Task<T> extends EventEmitter {
         this.on("error", listener);
     }
 
-    finish(value:any) {
-        CurrentWindow?.webContents.send("task-finish-" + this.id,value);
+    finish(value: any) {
+        CurrentWindow?.webContents.send(EventFormat("task", "finish", this.id),value);
         this.emit("finish");
     }
 
     process() {
-        CurrentWindow?.webContents.send("task-process" + this.id);
+        CurrentWindow?.webContents.send(EventFormat("task", "process", this.id));
         this.emit("process");
     }
 
     error() {
-        CurrentWindow?.webContents.send("task-error" + this.id);
+        CurrentWindow?.webContents.send(EventFormat("task", "error", this.id));
         this.emit("error");
     }
 
-    message(str:string){
+    message(str: string) {
         this.emit("message");
     }
 

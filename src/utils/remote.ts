@@ -1,9 +1,9 @@
-import { registerRemoteEventNames, ScriptRemoteType, TaskType } from "app/types";
+import { EventFormat, registerRemoteEventNames, ScriptRemoteType, TaskType } from "app/types";
 import { BrowserWindow, App, Dialog } from "electron";
 
 const { ipcRenderer } = require("electron");
 const uuid = require("uuid");
-
+const randomUUID = () => uuid.v4().replace(/-/g, "");
 /**
  * 注册渲染进程远程通信
  * @param eventName
@@ -28,14 +28,14 @@ function registerRemote<T>(eventName: string) {
         // 监听远程事件
         on(event: keyof T, handler: () => void) {
             // 指定事件ID
-            const _eventName = event + "-" + uuid.v4().replace(/-/g, "");
+            const _eventName = EventFormat(event, randomUUID());
             ipcRenderer.send(events.on, _eventName);
             ipcRenderer.on(_eventName, handler);
         },
         // 监听一次远程事件
         once(event: keyof T, handler: () => void) {
             // 指定事件ID
-            const _eventName = event + "-" + uuid.v4().replace(/-/g, "");
+            const _eventName = EventFormat(event, randomUUID());
             ipcRenderer.send(events.once, _eventName);
             ipcRenderer.once(_eventName, handler);
         },
@@ -54,15 +54,16 @@ export const Remote = {
 
     task(id: string) {
         return {
-            finish(handler: (e:any,value:any) => void){
-                ipcRenderer.once("task-finish-"+id, handler);
+            finish(handler: (e: any, value: any) => void) {
+                ipcRenderer.once(EventFormat("task", "finish", id), handler);
             },
-            process(handler: () => void){
-                ipcRenderer.once("task-process-"+id, handler);
+            process(handler: () => void) {
+                ipcRenderer.once(EventFormat("task", "process", id), handler);
             },
-            error(handler: () => void){
-                ipcRenderer.once("task-error-"+id, handler);
-            }
-        }
+            error(handler: () => void) {
+                ipcRenderer.once(EventFormat("task", "error", id), handler);
+            },
+        };
     },
 };
+ 
