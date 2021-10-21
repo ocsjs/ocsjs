@@ -16,6 +16,8 @@ export interface SystemSetting {
     path: {
         userData: string
         logs: string
+        // 课程图片缓存
+        courseImg:string
     }
 }
 // 自动更新设置
@@ -59,6 +61,7 @@ export interface ScriptSetting {
 
 }
 export interface Setting {
+    version:string
     system: SystemSetting
     update: UpdateSetting
     common: CommonSetting
@@ -71,8 +74,7 @@ export interface User {
     uid: string
     // 登录平台
     platform: keyof User['loginInfo'],
-    // 登录参数
-    params: keyof CXLoginParams | keyof ZHSLoginParams
+ 
     // 需求启动的登录程序
     loginScript: keyof AllScriptObjects
     // 自动登录类型
@@ -80,7 +82,7 @@ export interface User {
         cx: CXLoginParams,
         zhs: ZHSLoginParams
     }
-    course: Course[],
+    courses: Course[],
     // 用户名
     name: string
     // 上次登录时间

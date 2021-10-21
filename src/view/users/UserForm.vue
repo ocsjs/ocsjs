@@ -1,18 +1,24 @@
 <template>
     <div id="user-form">
-        <a-form>
+        <a-form :label-col="{ span: 4 }" :wrapper-col="{ span: 19 }">
             <a-form-item label="用户名字/备注">
                 <a-input v-model:value="tempUser.name" />
             </a-form-item>
             <a-form-item label="平台类型">
                 <a-radio-group
-                    default-value="cx"
+                    :default-value="tempUser.platform || 'cx'"
                     @change="(e:any)=>tempUser.platform=e.target.value"
                 >
-                    <a-radio-button value="cx" @click="tempUser.params = 'userLogin'">
+                    <a-radio-button
+                        value="cx"
+                        @click="tempUser.loginScript = FromScriptName('cx-user-login')"
+                    >
                         超星
                     </a-radio-button>
-                    <a-radio-button value="zhs" @click="tempUser.params = 'phoneLogin'">
+                    <a-radio-button
+                        value="zhs"
+                        @click="tempUser.loginScript = FromScriptName('cx-phone-login')"
+                    >
                         智慧树
                     </a-radio-button>
                 </a-radio-group>
@@ -20,8 +26,10 @@
             <a-form-item label="登录类型">
                 <a-radio-group
                     v-if="tempUser.platform === 'cx'"
-                    :default-value="FromScriptName('cx-user-login')"
-                    @change="(e:any)=>tempUser.params=e.target.value"
+                    :default-value="
+                        tempUser.loginScript || FromScriptName('cx-user-login')
+                    "
+                    @change="(e:any)=>tempUser.loginScript=e.target.value"
                 >
                     <a-radio-button :value="FromScriptName('cx-user-login')">
                         用户登录
@@ -37,58 +45,54 @@
             <template v-if="tempUser.platform === 'cx'">
                 <template v-if="tempUser.loginScript === 'cx-user-login'">
                     <a-form-item label="账号">
-                        <a-input v-model:value="tempUser.loginInfo.cx.userLogin.phone" />
+                        <a-input
+                            v-model:value.trim="tempUser.loginInfo.cx.userLogin.phone"
+                        />
                     </a-form-item>
                     <a-form-item label="密码">
                         <a-input
-                            v-model:value="tempUser.loginInfo.cx.userLogin.password"
+                            v-model:value.trim="tempUser.loginInfo.cx.userLogin.password"
                         />
                     </a-form-item>
                 </template>
                 <template v-else-if="tempUser.loginScript === 'cx-phone-login'">
                     <a-form-item label="手机号">
-                        <a-input v-model:value="tempUser.loginInfo.cx.phoneLogin.phone" />
+                        <a-input
+                            v-model:value.trim="tempUser.loginInfo.cx.phoneLogin.phone"
+                        />
                     </a-form-item>
                 </template>
                 <template v-else-if="tempUser.loginScript === 'cx-unit-login'">
                     <a-form-item label="学校/单位">
                         <a-input
-                            v-model:value="tempUser.loginInfo.cx.unitLogin.unitname"
+                            v-model:value.trim="tempUser.loginInfo.cx.unitLogin.unitname"
                         />
                     </a-form-item>
                     <a-form-item label="工号/学号">
-                        <a-input v-model:value="tempUser.loginInfo.cx.unitLogin.uname" />
+                        <a-input
+                            v-model:value.trim="tempUser.loginInfo.cx.unitLogin.uname"
+                        />
                     </a-form-item>
                     <a-form-item label="密码">
                         <a-input
-                            v-model:value="tempUser.loginInfo.cx.unitLogin.password"
+                            v-model:value.trim="tempUser.loginInfo.cx.unitLogin.password"
                         />
                     </a-form-item>
                 </template>
             </template>
-
-            <a-form-item v-if="tempUser.course.length !== 0" label="课程列表">
-                <a-list item-layout="horizontal" :data-source="tempUser.course">
-                    <template #renderItem="{ item }">
-                        <a-list-item>
-                            <a-list-item-meta
-                                :description="item.url"
-                            >
-                                <template #title>
-                                    <a >{{item.profile.replace(/\n+/,"-") }}</a>
-                                </template>
-                                <template #avatar>
-                                    <a-avatar
-                                        :src="item.img"
-                                    />
-                                </template>
-                            </a-list-item-meta>
-                        </a-list-item>
-                    </template>
-                </a-list>
+             
+            <a-form-item
+                v-if="mode === 'create' && tempUser.courses.length !== 0"
+                 label="课程列表"
+            >
+                <CourseList :user="tempUser" detail show-img/>
             </a-form-item>
 
-            <a-form-item :wrapper-col="{ span: 12, offset: 12 }">
+            <a-form-item
+                :wrapper-col="
+                    mode === 'create' ? { span: 4, offset: 16 } : { span: 4, offset: 20 }
+                "
+            >
                 <div class="space-10 flex">
                     <a-button
                         v-if="mode === 'create'"
@@ -98,7 +102,7 @@
                         获取课程列表
                     </a-button>
 
-                    <template v-if="tempUser.course.length === 0">
+                    <template v-if="tempUser.courses.length === 0">
                         <a-popover content="请先获取课程列表，之后才能添加 ">
                             <a-button type="primary" :disabled="true">
                                 {{ btnText }}
@@ -159,6 +163,7 @@ import { reactive, ref, toRaw, toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
 
 import { User, FromScriptName, TaskType } from "app/types";
+import CourseList from "./CourseList.vue";
 
 const uuid = require("uuid");
 
@@ -205,8 +210,8 @@ async function getCourseList() {
             if (tasks[tasks.length - 1].status === "finish") {
                 if (value.length !== 0) {
                     // 获取完成时的返回值
-                    tempUser.course = value;
-                    console.log("tempUser.course", tempUser.course);
+                    tempUser.courses = value;
+                    console.log("tempUser.course", tempUser.courses);
                     message.success("课程列表获取成功!");
                     setTimeout(() => {
                         visible.value = false;
@@ -233,9 +238,8 @@ function createUser(): User {
         updateTime: Date.now(),
         createTime: Date.now(),
         platform: "cx",
-        params: "userLogin",
         loginScript: "cx-user-login",
-        course: [],
+        courses: [],
         loginInfo: {
             cx: {
                 phoneLogin: {
@@ -270,6 +274,6 @@ function createUser(): User {
 <style scope lang="less">
 #user-form {
     overflow: auto;
-    max-height: 300px;
+    max-height: 340px;
 }
 </style>

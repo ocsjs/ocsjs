@@ -45,6 +45,8 @@
         <a-modal
             v-model:visible="visible"
             title="添加用户"
+            :width="740"
+            :style="{ top: '42px' }"
             :footer="null"
             :destroyOnClose="true"
         >
@@ -62,7 +64,7 @@ import { User } from "app/types";
 import UserCard from "./UserCard.vue";
 import UserForm from "./UserForm.vue";
 
-if (!!config.users && config.users.length===0) {
+if (!!config.users && config.users.length === 0) {
     config.users = [];
 }
 

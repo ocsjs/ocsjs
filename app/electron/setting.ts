@@ -1,19 +1,31 @@
-import { log } from "console";
+ 
 import { app } from "electron";
 import path from "path";
 import { CurrentWindow } from ".";
 import { Setting } from "../types";
 import { StoreGet, StoreSet } from "../types/setting";
 import fs from "fs";
+import { Version } from "./updater";
+import { log } from "electron-log";
 
 export function initSetting() {
     const setting: Setting = StoreGet("setting");
-    if (setting) {
+    // 版本比较，如果当前版本不比本地版本高，则不更新
+    const update = new Version(app.getVersion()).greaterThan(new Version(setting.version));
+    if (setting && !update) {
         const { path, win } = setting.system;
         if (path) {
             for (const key in path) {
-                log("设置路径:" + key, (path as any)[key]);
-                app.setPath(key, (path as any)[key]);
+                const p = (path as any)[key];
+                log("设置路径:" + key, p);
+                // 如果文件夹不存在则创建
+                if (!fs.existsSync(p)) {
+                    log("mkdirs",p)
+                    mkdirs(p);
+                }
+                try{
+                    app.setPath(key, p);
+                }catch{}
             }
         }
 
@@ -22,6 +34,7 @@ export function initSetting() {
         }
     } else {
         const initSetting: Setting = {
+            version: app.getVersion(),
             update: {
                 autoUpdate: true,
                 hour: 1,
@@ -63,11 +76,13 @@ export function initSetting() {
                 path: {
                     userData: app.getPath("userData"),
                     logs: app.getPath("logs"),
+                    courseImg: path.resolve(path.join(app.getPath("userData"), "./course-img/")),
                 },
             },
         };
 
-        StoreSet("setting", initSetting);
+        // 合并设置
+        StoreSet("setting", Object.assign(initSetting, StoreGet("setting")));
     }
 
     if (!StoreGet("task")) {
@@ -83,4 +98,11 @@ export function getChromePath() {
     let paths = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"], "C:\\Program Files", "C:\\Program Files (x86)"];
     let chromePath = paths.map((p) => path.join(p || "", "\\Google\\Chrome\\Application\\chrome.exe")).find((p) => fs.existsSync(p));
     return chromePath;
+}
+
+export function mkdirs(url: string) {
+    if (!fs.existsSync(url)) {
+        mkdirs(path.resolve(url, "../"));
+        fs.mkdirSync(url);
+    }
 }

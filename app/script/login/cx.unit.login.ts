@@ -1,5 +1,5 @@
 import { CXLoginUtils } from "../common/login.utils";
-
+import { getElementClip } from "../common/utils";
 import { OCROptions } from "../common/types";
 
 import { Utils, WaitForScript } from "@pioneerjs/core";
@@ -59,21 +59,12 @@ export class CXUnitLoginScript extends LoginScript<void> {
         }
     }
 
-    // 获取元素的位置信息
-    private async getElementClip(selector: string) {
-        return await this.page.evaluate((selector: any) => {
-            const target = document.querySelector(selector);
-            if (target) {
-                let { x, y, width, height } = target.getBoundingClientRect() || {};
-                return { x, y, width, height };
-            }
-        }, selector);
-    }
+
 
     // 截屏保存图片进行验证码破解
     async breakCode(ocrOptions: OCROptions) {
         const { utils, waitFor, page } = this;
-        let clip = await this.getElementClip("#numVerCode");
+        let clip = await getElementClip(this.page,"#numVerCode");
 
         if (clip) {
             const buffer = await this.page.screenshot({ clip });

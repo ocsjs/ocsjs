@@ -3,11 +3,11 @@ import { StoreGet } from "../types/setting";
 var mode = app.isPackaged ? "prod" : "dev";
 
 export const BrowserConfig: BrowserWindowConstructorOptions = {
-    width: 800,
-    height: 540,
+    width: 900,
+    height: 640,
 
-    minWidth: 800,
-    minHeight: 540,
+    minWidth: 900,
+    minHeight: 640,
 
     maximizable: false,
 

@@ -43,27 +43,45 @@
         <a-modal
             v-model:visible="visible"
             title="修改用户"
+            :width="740"
+            :style="{ top: '42px' }"
             :footer="null"
             :destroyOnClose="true"
         >
             <UserForm @ok="ok" btnText="修改" :user="user" mode="modify"></UserForm>
+        </a-modal>
+
+        <a-modal
+            v-model:visible="starting"
+            title="选择启动课程"
+            :width="740"
+            :style="{ top: '42px' }"
+            :footer="null"
+            :destroyOnClose="true"
+        >
+              
+                 <CourseList :user="user" detail show-img/>
         </a-modal>
     </a-card>
 </template>
 
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
+import { message } from "ant-design-vue";
 import { User } from "app/types";
 import { ref } from "vue";
 import UserForm from "./UserForm.vue";
+import CourseList from "./CourseList.vue";
 
 const props = defineProps<{
     user: User;
 }>();
 const { user } = toRefs(props);
 
+// 修改框显示
 const visible = ref(false);
-
+// 是否启动
+const starting = ref(false);
 const emits = defineEmits<{
     (e: "delete", user: User): void;
     (e: "modify", user: User): void;
@@ -71,6 +89,7 @@ const emits = defineEmits<{
 
 function ok() {
     visible.value = false;
+    message.success("修改成功！");
     emits("modify", user.value);
 }
 
@@ -80,8 +99,8 @@ function modify() {
 
 function start() {
     const u = user.value;
+    starting.value = true
     console.log(u);
-    
 }
 </script>
 
