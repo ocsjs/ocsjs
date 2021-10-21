@@ -57,10 +57,10 @@ export const Remote = {
             finish(handler: (e: any, value: any) => void) {
                 ipcRenderer.once(EventFormat("task", "finish", id), handler);
             },
-            process(handler: () => void) {
+            process(handler: (e: any, value: any) => void) {
                 ipcRenderer.once(EventFormat("task", "process", id), handler);
             },
-            error(handler: () => void) {
+            error(handler: (e: any, value: any) => void) {
                 ipcRenderer.once(EventFormat("task", "error", id), handler);
             },
         };

@@ -1,4 +1,3 @@
- 
 import { RunnableScript } from "@pioneerjs/core";
 import { StoreGet } from "../types/setting";
 import { Pioneer } from "@pioneerjs/core";
@@ -7,6 +6,11 @@ import { AllScriptObjects } from "./common/types";
 import { CXUserLoginScript } from "./login/cx.user.login";
 
 import puppeteer from "puppeteer-core";
+import { CXPhoneLoginScript } from "./login/cx.phone.login";
+import { CXUnitLoginScript } from "./login/cx.unit.login";
+import { ZHSPhoneLoginScript } from "./login/zhs.phone.login";
+import { ZHSStudentIdLoginScript } from "./login/zhs.studentId.login";
+import { log } from "electron-log";
 
 /**
  * 运行脚本
@@ -14,10 +18,7 @@ import puppeteer from "puppeteer-core";
  * @param handler 回调函数
  * @returns
  */
-export async function StartPuppeteer<S extends RunnableScript>(
-    name: keyof AllScriptObjects,
-    handler: (script: S | undefined) => void
-) {
+export async function StartPuppeteer<S extends RunnableScript>(name: keyof AllScriptObjects, handler: (script: S | undefined) => void) {
     let chromePath = StoreGet("setting").script.launch.binaryPath;
     if (chromePath) {
         const browser = await puppeteer.launch({
@@ -29,24 +30,20 @@ export async function StartPuppeteer<S extends RunnableScript>(
 
         // 创建 pioneer
         const pioneer = Pioneer.create(browser);
-
-        // 启动装配
-        await pioneer.startup({
-            scripts: [CXUserLoginScript ],
-            events: ["request", "response"],
-        });
-
-        // 回调
-        handler(
-            pioneer.runnableScripts?.find(
-                (s: any) => s.name === name
-            ) as unknown as S
+        const script = [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, ZHSPhoneLoginScript, ZHSStudentIdLoginScript].find(
+            (s) => s.scriptName === name
         );
-
+        if (script) {
+            // 启动装配
+            await pioneer.startup({
+                scripts: [script],
+                events: ["request", "response"],
+            });
+        }
+        // 回调
+        handler(pioneer.runnableScripts?.find((s: any) => s.name === name) as unknown as S);
         return pioneer;
     } else {
         console.error("找不到 chrome 路径!!!");
     }
 }
- 
- 

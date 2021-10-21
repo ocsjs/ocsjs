@@ -11,10 +11,8 @@ import { Runnable, Inject } from "@pioneerjs/common";
 
 import { StoreGet } from "../../types/setting";
 
-import { RunnableScript } from "@pioneerjs/core";
 import { User } from "../../types";
 
-import { Task } from "../../electron/task";
 
 export const CX_UNIT_LOGIN_NAME = "cx-user-login";
 export const CX_UNIT_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType=3&newversion=true";
@@ -26,6 +24,8 @@ export const CX_UNIT_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType
     name: CX_UNIT_LOGIN_NAME,
 })
 export class CXUnitLoginScript extends LoginScript<void> {
+    static scriptName:string = CX_UNIT_LOGIN_NAME
+
     @Inject()
     waitFor!: WaitForScript;
 
@@ -51,11 +51,11 @@ export class CXUnitLoginScript extends LoginScript<void> {
                 await loginUtils.login();
             } else {
                 // message.info('验证码破解失败，请手动输入并点击登陆')
-                await loginUtils.waitForCXLogin();
+                await loginUtils.waitForLogin();
             }
         } else {
             // message.info('您暂未配置OCR，所以不能自动获取验证码，请手动输入并点击登陆')
-            await loginUtils.waitForCXLogin();
+            await loginUtils.waitForLogin();
         }
     }
 

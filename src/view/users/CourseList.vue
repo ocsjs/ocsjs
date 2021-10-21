@@ -1,6 +1,7 @@
 <template>
-    <div style="height: 460px">
+    <div>
         <div
+            v-if="!showOnly"
             class="space-10 margin-left-10 padding-right-10 margin-bottom-10 flex nowrap"
         >
             <span style="white-space: nowrap">
@@ -25,17 +26,27 @@
                 </transition-group>
             </span>
         </div>
+        <!-- 展示指定平台的课程列表 -->
+        <a-empty
+            v-if="user.courses.filter((c) => c.platform === user.platform).length === 0"
+            description="此平台暂无课程，请点击下方按钮获取"
+        >
+        </a-empty>
         <a-list
+            v-else
             class="course-list"
             style="overflow: auto"
             item-layout="horizontal"
-            :data-source="user.courses"
+            :data-source="user.courses.filter((c) => c.platform === user.platform)"
         >
             <template #renderItem="{ item }">
                 <a-list-item
-                    class="course-list-item"
                     @click="courseClick(item)"
-                    :class="selectItems.some((c) => c.id === item.id) ? 'selected' : ''"
+                    :class="
+                        !showOnly && selectItems.some((c) => c.id === item.id)
+                            ? 'course-list-item selected'
+                            : 'course-list-item'
+                    "
                 >
                     <a-list-item-meta
                         :description="
@@ -66,7 +77,7 @@
                 </a-list-item>
             </template>
         </a-list>
-        <div class="padding-top-24 margin-right-10-10 flex jc-flex-end">
+        <div v-if="!showOnly" class="padding-top-24 margin-right-10-10 flex jc-flex-end">
             <a-button type="primary" @click="start">开始刷课</a-button>
         </div>
     </div>
@@ -83,9 +94,11 @@ const props = defineProps<{
     user: User;
     detail?: boolean;
     showImg?: boolean;
+    // 只展示列表，不显示其他组件
+    showOnly?: boolean;
 }>();
 
-const { user, detail, showImg } = toRefs(props);
+const { user, detail, showImg, showOnly } = toRefs(props);
 
 // 选中的课程 id
 const selectItems = ref<Course[]>([]);
@@ -104,7 +117,13 @@ function removeSelectedCourse(item: Course) {
 
 function start() {
     if (selectItems.value.length > config.setting.common.task.maxTasks) {
-        message.warn("请不要超出最大任务数量，如需修改请到通用设置里配置!");
+        message.warn(
+            "请不要超出最大任务数量(" +
+                config.setting.common.task.maxTasks +
+                ") 当前 " +
+                selectItems.value.length +
+                "，如需修改请到通用设置里配置!"
+        );
     } else {
         console.log(selectItems.value);
     }
@@ -114,11 +133,6 @@ function start() {
 <style scope lang="less">
 @import "@/assets/less/ant.less";
 
-.course-list {
-    max-height: 340px;
-    height: 340px;
-    overflow: auto;
-}
 .course-list-item {
     padding: 12px;
     margin: 12px;

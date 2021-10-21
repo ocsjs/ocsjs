@@ -1,7 +1,7 @@
 <template>
     <a-card
         hoverable
-        style="width: 210px; margin: 8px"
+        style="width: 260px; margin: 8px"
         :bodyStyle="{
             padding: '12px',
             display: 'flex',
@@ -24,12 +24,43 @@
         </template>
         <a-card-meta>
             <template #title>
-                <span class="user-info">
-                    {{ user.name }}
-                    <span class="font-v4">
-                        {{ (user.loginInfo as any).phone || (user.loginInfo as any).uname  ||  (user.loginInfo as any).studentId }}
-                    </span>
-                </span>
+                <a-popover title="详情信息">
+                    <template #content>
+                        <div class="font-v3" style="white-space: nowrap; overflow: auto">
+                            <div><span class="font-v2">备注</span> : {{ user.name }}</div>
+                            <div><span class="font-v2">uid</span> : {{ user.uid }}</div>
+                            <div>
+                                <span class="font-v2">创建时间</span> :
+                                {{ new Date(user.createTime).toLocaleString() }}
+                            </div>
+                            <div>
+                                <span class="font-v2">更新时间</span> :
+                                {{ new Date(user.updateTime).toLocaleString() }}
+                            </div>
+                            <div>
+                                <span class="font-v2">最近登录</span> :
+                                {{ user.loginTime?new Date(user.loginTime).toLocaleString():'无' }}
+                            </div>
+                            <div>
+                                <span class="font-v2">课程数</span> : 共有
+                                {{
+                                    user.courses.filter(
+                                        (c) => c.platform === user.platform
+                                    ).length
+                                }}
+                                门课程
+                            </div>
+                        </div>
+                    </template>
+                    <div class="user-info">
+                        <div class="flex ai-baseline space-10">
+                            <span>{{ user.name }}</span>
+                            <span class="font-v4">
+                                {{ AllScriptAlias[user.loginScript] }}
+                            </span>
+                        </div>
+                    </div>
+                </a-popover>
             </template>
             <template #avatar>
                 <a-avatar>
@@ -59,8 +90,7 @@
             :footer="null"
             :destroyOnClose="true"
         >
-              
-                 <CourseList :user="user" detail show-img/>
+            <CourseList :user="user" detail show-img />
         </a-modal>
     </a-card>
 </template>
@@ -68,7 +98,7 @@
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
-import { User } from "app/types";
+import { AllScriptAlias, User } from "app/types";
 import { ref } from "vue";
 import UserForm from "./UserForm.vue";
 import CourseList from "./CourseList.vue";
@@ -99,7 +129,7 @@ function modify() {
 
 function start() {
     const u = user.value;
-    starting.value = true
+    starting.value = true;
     console.log(u);
 }
 </script>

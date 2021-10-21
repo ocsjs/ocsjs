@@ -1,158 +1,221 @@
 <template>
-    <div id="user-form">
-        <a-form :label-col="{ span: 4 }" :wrapper-col="{ span: 19 }">
-            <a-form-item label="用户名字/备注">
-                <a-input v-model:value="tempUser.name" />
-            </a-form-item>
-            <a-form-item label="平台类型">
-                <a-radio-group
-                    :default-value="tempUser.platform || 'cx'"
-                    @change="(e:any)=>tempUser.platform=e.target.value"
-                >
-                    <a-radio-button
-                        value="cx"
-                        @click="tempUser.loginScript = FromScriptName('cx-user-login')"
+    <div>
+        <div id="user-form">
+            <a-form :label-col="{ span: 4 }" :wrapper-col="{ span: 19 }">
+                <a-form-item label="用户名字/备注">
+                    <a-input v-model:value="tempUser.name" />
+                </a-form-item>
+                <a-form-item label="平台类型">
+                    <a-radio-group
+                        :default-value="tempUser.platform || 'cx'"
+                        @change="(e:any)=>{
+                        tempUser.platform=e.target.value
+                    }"
                     >
-                        超星
-                    </a-radio-button>
-                    <a-radio-button
-                        value="zhs"
-                        @click="tempUser.loginScript = FromScriptName('cx-phone-login')"
-                    >
-                        智慧树
-                    </a-radio-button>
-                </a-radio-group>
-            </a-form-item>
-            <a-form-item label="登录类型">
-                <a-radio-group
-                    v-if="tempUser.platform === 'cx'"
-                    :default-value="
-                        tempUser.loginScript || FromScriptName('cx-user-login')
-                    "
-                    @change="(e:any)=>tempUser.loginScript=e.target.value"
-                >
-                    <a-radio-button :value="FromScriptName('cx-user-login')">
-                        用户登录
-                    </a-radio-button>
-                    <a-radio-button :value="FromScriptName('cx-phone-login')">
-                        手机验证码登录
-                    </a-radio-button>
-                    <a-radio-button :value="FromScriptName('cx-unit-login')">
-                        机构单位登录
-                    </a-radio-button>
-                </a-radio-group>
-            </a-form-item>
-            <template v-if="tempUser.platform === 'cx'">
-                <template v-if="tempUser.loginScript === 'cx-user-login'">
-                    <a-form-item label="账号">
-                        <a-input
-                            v-model:value.trim="tempUser.loginInfo.cx.userLogin.phone"
-                        />
-                    </a-form-item>
-                    <a-form-item label="密码">
-                        <a-input
-                            v-model:value.trim="tempUser.loginInfo.cx.userLogin.password"
-                        />
-                    </a-form-item>
-                </template>
-                <template v-else-if="tempUser.loginScript === 'cx-phone-login'">
-                    <a-form-item label="手机号">
-                        <a-input
-                            v-model:value.trim="tempUser.loginInfo.cx.phoneLogin.phone"
-                        />
-                    </a-form-item>
-                </template>
-                <template v-else-if="tempUser.loginScript === 'cx-unit-login'">
-                    <a-form-item label="学校/单位">
-                        <a-input
-                            v-model:value.trim="tempUser.loginInfo.cx.unitLogin.unitname"
-                        />
-                    </a-form-item>
-                    <a-form-item label="工号/学号">
-                        <a-input
-                            v-model:value.trim="tempUser.loginInfo.cx.unitLogin.uname"
-                        />
-                    </a-form-item>
-                    <a-form-item label="密码">
-                        <a-input
-                            v-model:value.trim="tempUser.loginInfo.cx.unitLogin.password"
-                        />
-                    </a-form-item>
-                </template>
-            </template>
-             
-            <a-form-item
-                v-if="mode === 'create' && tempUser.courses.length !== 0"
-                 label="课程列表"
-            >
-                <CourseList :user="tempUser" detail show-img/>
-            </a-form-item>
-
-            <a-form-item
-                :wrapper-col="
-                    mode === 'create' ? { span: 4, offset: 16 } : { span: 4, offset: 20 }
-                "
-            >
-                <div class="space-10 flex">
-                    <a-button
-                        v-if="mode === 'create'"
-                        type="primary"
-                        @click="getCourseList()"
-                    >
-                        获取课程列表
-                    </a-button>
-
-                    <template v-if="tempUser.courses.length === 0">
-                        <a-popover content="请先获取课程列表，之后才能添加 ">
-                            <a-button type="primary" :disabled="true">
-                                {{ btnText }}
-                            </a-button>
-                        </a-popover>
-                    </template>
-                    <template v-else>
-                        <a-button type="primary" @click="emits('ok', tempUser)">
-                            {{ btnText }}
-                        </a-button>
-                    </template>
-                </div>
-            </a-form-item>
-        </a-form>
-
-        <!-- 显示任务步骤 -->
-        <a-modal
-            v-model:visible="visible"
-            :footer="null"
-            centered
-            title=""
-            :maskClosable="false"
-            :keyboard="false"
-        >
-            <a-steps style="padding: 20px 12px 0px 12px">
-                <a-step
-                    v-for="(task, index) in tasks"
-                    :key="index"
-                    :title="task.name"
-                    :status="task.status"
-                >
-                    <template #description>
-                        <span
-                            v-text="
-                                task.status === 'wait'
-                                    ? '等待中'
-                                    : task.status === 'process'
-                                    ? '正在运行'
-                                    : task.status === 'finish'
-                                    ? '已完成'
-                                    : '错误'
+                        <a-radio-button
+                            value="cx"
+                            @click="
+                                tempUser.loginScript = FromScriptName('cx-user-login')
                             "
-                        ></span>
+                        >
+                            {{ PlatformAlias["cx"] }}
+                        </a-radio-button>
+                        <a-radio-button
+                            value="zhs"
+                            @click="
+                                tempUser.loginScript = FromScriptName('zhs-phone-login')
+                            "
+                        >
+                            {{ PlatformAlias["zhs"] }}
+                        </a-radio-button>
+                    </a-radio-group>
+                </a-form-item>
+                <a-form-item label="登录类型">
+                    <a-radio-group
+                        v-if="tempUser.platform === 'cx'"
+                        :default-value="tempUser.loginScript"
+                        @change="(e:any)=>tempUser.loginScript=e.target.value"
+                    >
+                        <a-radio-button :value="FromScriptName('cx-user-login')">
+                            {{ showLoginScriptName("cx-user-login") }}
+                        </a-radio-button>
+                        <a-radio-button :value="FromScriptName('cx-phone-login')">
+                            {{ showLoginScriptName("cx-phone-login") }}
+                        </a-radio-button>
+                        <a-radio-button :value="FromScriptName('cx-unit-login')">
+                            {{ showLoginScriptName("cx-unit-login") }}
+                        </a-radio-button>
+                    </a-radio-group>
+                    <a-radio-group
+                        v-else-if="tempUser.platform === 'zhs'"
+                        :default-value="tempUser.loginScript"
+                        @change="(e:any)=>tempUser.loginScript=e.target.value"
+                    >
+                        <a-radio-button :value="FromScriptName('zhs-phone-login')">
+                            {{ showLoginScriptName("zhs-phone-login") }}
+                        </a-radio-button>
+                        <a-radio-button :value="FromScriptName('zhs-studentId-login')">
+                            {{ showLoginScriptName("zhs-studentId-login") }}
+                        </a-radio-button>
+                    </a-radio-group>
+                </a-form-item>
+                <template v-if="tempUser.platform === 'cx'">
+                    <template v-if="tempUser.loginScript === 'cx-user-login'">
+                        <a-form-item label="账号">
+                            <a-input
+                                v-model:value.trim="tempUser.loginInfo.cx.userLogin.phone"
+                            />
+                        </a-form-item>
+                        <a-form-item label="密码">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.cx.userLogin.password
+                                "
+                            />
+                        </a-form-item>
                     </template>
-                    <template v-if="task.status === 'process'" #icon>
-                        <LoadingOutlined />
+                    <template v-else-if="tempUser.loginScript === 'cx-phone-login'">
+                        <a-form-item label="手机号">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.cx.phoneLogin.phone
+                                "
+                            />
+                        </a-form-item>
                     </template>
-                </a-step>
-            </a-steps>
-        </a-modal>
+                    <template v-else-if="tempUser.loginScript === 'cx-unit-login'">
+                        <a-form-item label="学校/单位">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.cx.unitLogin.unitname
+                                "
+                            />
+                        </a-form-item>
+                        <a-form-item label="工号/学号">
+                            <a-input
+                                v-model:value.trim="tempUser.loginInfo.cx.unitLogin.uname"
+                            />
+                        </a-form-item>
+                        <a-form-item label="密码">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.cx.unitLogin.password
+                                "
+                            />
+                        </a-form-item>
+                    </template>
+                </template>
+                <template v-else-if="tempUser.platform === 'zhs'">
+                    <template v-if="tempUser.loginScript === 'zhs-phone-login'">
+                        <a-form-item label="手机号">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.zhs.phoneLogin.phone
+                                "
+                            />
+                        </a-form-item>
+                        <a-form-item label="密码">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.zhs.phoneLogin.password
+                                "
+                            />
+                        </a-form-item>
+                    </template>
+                    <template v-else-if="tempUser.loginScript === 'zhs-studentId-login'">
+                        <a-form-item label="学校名 ">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.zhs.studentIdLogin.school
+                                "
+                            />
+                        </a-form-item>
+                        <a-form-item label="大学学号">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.zhs.studentIdLogin.studentId
+                                "
+                            />
+                        </a-form-item>
+                        <a-form-item label="密码">
+                            <a-input
+                                v-model:value.trim="
+                                    tempUser.loginInfo.zhs.studentIdLogin.password
+                                "
+                            />
+                        </a-form-item>
+                    </template>
+                </template>
+
+                <a-form-item v-if="tempUser.courses.length !== 0" label="课程">
+                    <CourseList :user="tempUser" detail show-img :show-only="true" />
+                </a-form-item>
+            </a-form>
+
+            <!-- 显示任务步骤 -->
+            <a-modal
+                v-model:visible="visible"
+                :footer="null"
+                centered
+                title=""
+                :width="700"
+                :maskClosable="false"
+                :keyboard="false"
+                :closable="
+                    tasks?.[tasks?.length - 1]?.status === 'finish' ||
+                    tasks?.some((t) => t.status === 'error')
+                "
+                :destroyOnClose="true"
+            >
+                <a-steps style="padding: 20px 12px 0px 12px">
+                    <a-step
+                        v-for="(task, index) in tasks"
+                        :key="index"
+                        :title="task.name"
+                        :status="task.status"
+                    >
+                        <template #description>
+                            <span
+                                style="white-space: nowrap"
+                                v-text="
+                                    task.msg
+                                        ? task.msg
+                                        : task.status === 'wait'
+                                        ? '等待中'
+                                        : task.status === 'process'
+                                        ? '正在运行'
+                                        : task.status === 'finish'
+                                        ? '已完成'
+                                        : '错误'
+                                "
+                            ></span>
+                        </template>
+                        <template v-if="task.status === 'process'" #icon>
+                            <LoadingOutlined />
+                        </template>
+                    </a-step>
+                </a-steps>
+            </a-modal>
+        </div>
+
+        <div class="space-10 flex jc-flex-end margin-top-8">
+            <a-button type="primary" @click="getCourseList()">
+                {{ mode === "create" ? "获取课程列表" : "重新获取课程列表" }}
+            </a-button>
+
+            <template v-if="tempUser.courses.length === 0">
+                <a-popover content="请先获取课程列表，之后才能添加 ">
+                    <a-button type="primary" :disabled="true">
+                        {{ btnText }}
+                    </a-button>
+                </a-popover>
+            </template>
+            <template v-else>
+                <a-button type="primary" @click="ok">
+                    {{ btnText }}
+                </a-button>
+            </template>
+        </div>
     </div>
 </template>
 
@@ -162,7 +225,14 @@ import { LoadingOutlined } from "@ant-design/icons-vue";
 import { reactive, ref, toRaw, toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
 
-import { User, FromScriptName, TaskType } from "app/types";
+import {
+    User,
+    FromScriptName,
+    TaskType,
+    PlatformAlias,
+    AllScriptAlias,
+    AllScriptObjects,
+} from "app/types";
 import CourseList from "./CourseList.vue";
 
 const uuid = require("uuid");
@@ -187,12 +257,22 @@ const tempUser = reactive<User>(user?.value || createUser());
 // 模态框显示
 const visible = ref(false);
 
-//
+// 登录任务
 const tasks: any[] = reactive<TaskType[]>([]);
+
+function ok(){
+    console.log("mode.value",mode.value);
+    
+    if(mode.value === 'modify'){
+        tempUser.updateTime = Date.now()
+    }
+    emits('ok', tempUser)
+}
 
 // 获取课程列表
 async function getCourseList() {
     visible.value = true;
+
     // 开启脚本，并获取任务列表
     Object.assign(
         tasks,
@@ -200,18 +280,24 @@ async function getCourseList() {
     );
     // 遍历监听任务变化，并显示出步骤条到页面
     tasks.forEach((task: any) => {
-        Remote.task(task.id).process(() => {
-            console.log("process", task);
+        Remote.task(task.id).process((e: any, value: any) => {
+            tempUser.loginTime = Date.now()
+            task.msg = value;
             task.status = "process";
         });
         Remote.task(task.id).finish((e: any, value: any) => {
-            console.log("finish", task);
             task.status = "finish";
             if (tasks[tasks.length - 1].status === "finish") {
                 if (value.length !== 0) {
-                    // 获取完成时的返回值
-                    tempUser.courses = value;
-                    console.log("tempUser.course", tempUser.courses);
+                    // 设置课程
+                    // 1. 删除指定平台的课程信息
+                    // 2. 再填充最新的课程信息
+                    Object.assign(
+                        tempUser.courses,
+                        tempUser.courses
+                            .filter((c) => c.platform !== tempUser.platform)
+                            .concat(value)
+                    );
                     message.success("课程列表获取成功!");
                     setTimeout(() => {
                         visible.value = false;
@@ -221,8 +307,9 @@ async function getCourseList() {
                 }
             }
         });
-        Remote.task(task.id).error(() => {
+        Remote.task(task.id).error((e: any, value: any) => {
             message.error("课程列表获取失败 , 请重新获取!");
+            task.msg = value;
             task.status = "error";
         });
     });
@@ -268,6 +355,11 @@ function createUser(): User {
             },
         },
     };
+}
+
+// 去掉前缀平台名
+function showLoginScriptName(alias: keyof AllScriptObjects) {
+    return AllScriptAlias[alias].split("-").slice(1).join("-");
 }
 </script>
 

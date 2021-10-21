@@ -1,7 +1,7 @@
 <template>
     <a-row>
         <a-col :span="20" class="font-v3">
-            <a-menu theme="light" mode="horizontal" v-model:selectedKeys="keys">
+            <a-menu theme="light" mode="horizontal" >
                 <a-menu-item key="1" @click="$router.push('/users')">
                     <UsergroupAddOutlined class="icon" /> 账号管理
                 </a-menu-item>
@@ -49,11 +49,8 @@
 
 <script setup lang="ts">
 import { setting } from "@/view/setting/setting";
-import { ref } from "@vue/reactivity";
-
+ 
 import { Remote } from "../../utils/remote";
-
-const keys = ref(["1"]);
 
 const { system } = setting;
 
