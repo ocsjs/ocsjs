@@ -85,9 +85,8 @@ export function initSetting() {
         StoreSet("setting", Object.assign(initSetting, StoreGet("setting")));
     }
 
-    if (!StoreGet("task")) {
-        StoreSet("task", []);
-    }
+    // 清空任务列表
+    StoreSet("tasks", []);
     if (!StoreGet("users")) {
         StoreSet("users", []);
     }

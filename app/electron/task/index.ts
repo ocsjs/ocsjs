@@ -2,67 +2,37 @@ import { CurrentWindow } from "..";
 import { randomUUID } from "crypto";
 import EventEmitter from "events";
 
-import { EventFormat, User } from "../../types";
-import { ScriptOptions } from "@pioneerjs/core";
+import { EventFormat } from "../../types";
 
-export interface TaskType<T> {
-    // 任务名称
-    name: string;
-    // 任务载体
-    target: TaskTargetType<T>;
-
-    // 是否需要阻塞，为 true 时，队列里的脚本需要等待当前脚本执行完成
-    needBlock?: boolean;
-    // 任务id
-    id?: string;
-    // 超时时间
-    timeout?: number;
-    // 任务状态
-    status?: TaskStatus;
-    // 任务信息
-    msg?: string;
-    // 子任务
-    children?: Task<T>[];
-}
-export interface TaskTrasnform<T> {
-    asTask(): Task<T>;
-}
-
-export interface TaskDispatcher<T> {
-    tasks: Task<T>[];
-}
-
-export interface TaskTargetOptions {
-    user?: User;
-}
-
-export type TaskTargetType<T> = (scripts: ScriptOptions, ...args: any[]) => Promise<T>;
+import { LoginScript } from "../../script/login/types";
+import { StoreGet, StoreSet } from "../../types/setting";
+import { BaseTask, TaskStatus, TaskTargetType, TaskType } from "./types";
 
 /**
  * 任务
  */
-export class Task<T> extends EventEmitter implements TaskType<T> {
+export class Task<T> extends EventEmitter implements BaseTask<T> {
     id: string;
     name: string;
     target: TaskTargetType<T>;
     status: TaskStatus;
     needBlock: boolean;
     msg: string;
-    children: Task<T>[];
+    children: BaseTask<T> | undefined;
     timeout: number;
+    createTime: number;
 
-    constructor({ name, target, needBlock, children, id, status, msg, timeout }: TaskType<T>) {
-        super({
-            captureRejections: false,
-        });
+    constructor({ name, target, needBlock, children, id, status, msg, timeout, createTime }: TaskType<T>) {
+        super();
         this.id = id || randomUUID().replace(/-/g, "");
         this.target = target;
         this.needBlock = needBlock || false;
         this.status = status || "wait";
         this.name = name;
         this.msg = msg || "";
-        this.children = children || [];
+        this.children = children;
         this.timeout = timeout || 0;
+        this.createTime = createTime || Date.now();
     }
 
     /**
@@ -98,44 +68,148 @@ export class Task<T> extends EventEmitter implements TaskType<T> {
         this.on("error", listener);
     }
 
-    eventFormat(status:TaskStatus,...str:string[]){
-        return  EventFormat("task", status, ...str);
+    eventFormat(status: TaskStatus, ...str: string[]) {
+        return EventFormat("task", status, ...str);
     }
 
-    finish(value: any) {
+    finish(value?: any) {
         this.status = "finish";
-         
-        CurrentWindow?.webContents.send(this.eventFormat("finish",this.id), value);
+        CurrentWindow?.webContents.send(this.eventFormat("finish", this.id), value);
         this.emit(this.eventFormat("finish"));
     }
 
     process() {
         this.status = "process";
-        CurrentWindow?.webContents.send(this.eventFormat("process",this.id), this.msg||'');
+        CurrentWindow?.webContents.send(this.eventFormat("process", this.id), this.msg || "");
         this.emit(this.eventFormat("process"));
     }
 
     error() {
         this.status = "error";
-        CurrentWindow?.webContents.send(this.eventFormat("error",this.id), this.msg||'');
+        CurrentWindow?.webContents.send(this.eventFormat("error", this.id), this.msg || "");
         this.emit(this.eventFormat("error"));
     }
 
-    message(str: string) {
+    message(msg: string) {
+        this.msg = msg;
+        CurrentWindow?.webContents.send(EventFormat("task", "message", this.id), this.msg || "");
         this.emit("message");
     }
 
-    toString(): any {
-        function str(children: Task<T>): any {
-            if (children.children && children.children.length !== 0) {
-                return (children.children = children.children.map((c) => str(c)));
-            } else {
-                const { id, name, needBlock, status } = children;
-                return { id, name, needBlock, status };
+    update() {
+        let localTasks = StoreGet("tasks");
+        localTasks.splice(
+            localTasks.findIndex((t) => t.id === this.id),
+            1,
+            this.toRaw()
+        );
+        StoreSet("tasks", localTasks);
+    }
+
+    remove() {
+        let localTasks = StoreGet("tasks");
+        localTasks.splice(
+            localTasks.findIndex((t) => t.id === this.id),
+            1
+        );
+        StoreSet("tasks", localTasks);
+    }
+
+    // 格式化此对象，可序列化
+    toRaw(): any {
+        let task: BaseTask<any> = Object.assign({}, this);
+
+        function str(task: BaseTask<any>): any {
+            let { id, name, status, msg, needBlock, timeout, createTime, children } = task;
+            if (children) {
+                children = str(children);
             }
+            return { id, name, status, msg, needBlock, timeout, createTime, children };
         }
-        return str(this);
+        return str(task);
+    }
+
+
+    /**
+     * 链接任务组, 成为一个任务链表 ， 返回第一个任务
+     * @param tasks 任务组
+     * @returns 第一个任务
+     */
+    static linkTasks<T>(...tasks: Task<T>[]) {
+        return tasks.reduceRight((a, b) => {
+            b.children = a;
+            return b;
+        });
+    }
+
+    // 执行任务
+    static exec(launchTask: BaseTask<LoginScript<void>>): BaseTask<any> {
+        (async () => {
+            let pass = true;
+            launchTask.process();
+            const script = await launchTask.target(launchTask);
+
+            if (script) {
+                launchTask.finish();
+                // 监听任务结束
+                script.page.on("close", () => {
+                    pass = false;
+                    launchTask.remove();
+                });
+                if (launchTask.children) {
+                    // 执行任务
+                    await execTask(launchTask.children);
+                }
+            } else {
+                launchTask.message("脚本启动失败，请重试！");
+                launchTask.error();
+            }
+
+            async function execTask(task: BaseTask<any>): Promise<void> {
+                if (pass) {
+                    if (task.timeout) {
+                        setTimeout(() => {
+                            if (task.status !== "finish") {
+                                task.message("任务执行超时！请重试！");
+                                task.error();
+                                pass = false;
+                            }
+                        }, task.timeout);
+                    }
+
+                    // 如果是阻塞任务
+                    if (task.needBlock) {
+                        try {
+                            task.process();
+                            const value = await task.target(task, script);
+                            task.finish(value);
+                            if (task.children) await execTask(task.children);
+                        } catch (error) {
+                            task.message(error as any);
+                            task.error();
+                        }
+                    }
+                    // 如果是非阻塞任务
+                    else {
+                        task.process();
+                        task.target(task, script)
+                            .then((result) => {
+                                task.finish(result);
+                                if (task.children) execTask(task.children);
+                            })
+                            .catch((err) => {
+                                task.message(err);
+                                task.error();
+                            });
+                    }
+                }
+            }
+        })();
+
+        // 保存任务
+        let localTasks = StoreGet("tasks");
+        localTasks.push(launchTask.toRaw());
+        StoreSet("tasks", localTasks);
+        return launchTask.toRaw();
     }
 }
-
-export type TaskStatus = "wait" | "process" | "finish" | "error";

@@ -18,7 +18,7 @@ import { log } from "electron-log";
  * @param handler 回调函数
  * @returns
  */
-export async function StartPuppeteer<S extends RunnableScript>(name: keyof AllScriptObjects, handler: (script: S | undefined) => void) {
+export async function StartScript<S extends RunnableScript>(name: keyof AllScriptObjects): Promise<S | undefined> {
     let chromePath = StoreGet("setting").script.launch.binaryPath;
     if (chromePath) {
         const browser = await puppeteer.launch({
@@ -40,9 +40,8 @@ export async function StartPuppeteer<S extends RunnableScript>(name: keyof AllSc
                 events: ["request", "response"],
             });
         }
-        // 回调
-        handler(pioneer.runnableScripts?.find((s: any) => s.name === name) as unknown as S);
-        return pioneer;
+
+        return pioneer.runnableScripts?.find((s: any) => s.name === name) as unknown as S;
     } else {
         console.error("找不到 chrome 路径!!!");
     }

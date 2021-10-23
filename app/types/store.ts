@@ -1,10 +1,8 @@
 import { AllScriptObjects, Platform } from "./../script/common/types";
-
-import { ZHSLoginParams } from "./script/zhs.login";
-
-import { CXLoginParams } from "./script/cx.login";
+ 
 import { Course } from "./script/course";
 import { Task } from "../electron/task";
+import { BaseTask } from "../electron/task/types";
 
 // 系统设置
 export interface SystemSetting {
@@ -84,11 +82,9 @@ export interface User {
     // 逻辑删除
     delete: boolean;
 }
-
-export type TaskType = typeof Task;
-
+ 
 export interface StoreSchema {
     setting: Setting;
     users: User[];
-    task: Task<any>[];
+    tasks:  BaseTask<any>[] ;
 }

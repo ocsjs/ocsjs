@@ -20,7 +20,7 @@
                 </a-popconfirm>
             </a-popover>
             <a-popover content="修改"><EditOutlined @click="modify" /></a-popover>
-            <a-popover content="启动"><PlayCircleOutlined @click="start" /></a-popover>
+            <a-popover content="启动"><PlayCircleOutlined @click="showList" /></a-popover>
         </template>
         <a-card-meta>
             <template #title>
@@ -39,7 +39,11 @@
                             </div>
                             <div>
                                 <span class="font-v2">最近登录</span> :
-                                {{ user.loginTime?new Date(user.loginTime).toLocaleString():'无' }}
+                                {{
+                                    user.loginTime
+                                        ? new Date(user.loginTime).toLocaleString()
+                                        : "无"
+                                }}
                             </div>
                             <div>
                                 <span class="font-v2">课程数</span> : 共有
@@ -90,19 +94,59 @@
             :footer="null"
             :destroyOnClose="true"
         >
-            <CourseList :user="user" detail show-img />
+            <div class="space-10 margin-bottom-10 flex nowrap">
+                <span style="white-space: nowrap">
+                    已选课程:{{ selectItems.length !== 0 ? "" : "暂无" }}
+                </span>
+                <span
+                    v-if="selectItems.length !== 0"
+                    class="flex nowrap"
+                    style="overflow-x: auto"
+                >
+                    <transition-group name="fade">
+                        <a-tag
+                            class="margin-top-2"
+                            color="#2db7f5"
+                            v-for="item of selectItems"
+                            :key="item.id"
+                        >
+                            {{ item.name }}
+                        </a-tag>
+                    </transition-group>
+                </span>
+            </div>
+            <!-- 展示指定平台的课程列表 -->
+            <a-empty
+                v-if="
+                    user.courses.filter((c) => c.platform === user.platform).length === 0
+                "
+                description="此平台暂无课程，请点击下方按钮获取"
+            >
+            </a-empty>
+            <div v-else style="max-height: 340px; overflow: auto">
+                <CourseList :user="user" detail show-img @update="update" />
+            </div>
+            <div class="padding-top-24 flex jc-flex-end">
+                <a-button class="margin-right-24" type="primary" @click="start"
+                    >开始刷课</a-button
+                >
+            </div>
         </a-modal>
     </a-card>
 </template>
 
 <script setup lang="ts">
-import { toRefs } from "@vue/reactivity";
+import { reactive, toRaw, toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
-import { AllScriptAlias, User } from "app/types";
+import { AllScriptAlias, BaseTask, User } from "app/types";
 import { ref } from "vue";
 import UserForm from "./UserForm.vue";
 import CourseList from "./CourseList.vue";
-
+import { Remote } from "@/utils/remote";
+import { Course } from "app/types/script/course";
+import { AddCourseTask, tasks, TaskToList, TaskUpdater } from "../task/task";
+import { useRouter } from "vue-router";
+const router = useRouter();
 const props = defineProps<{
     user: User;
 }>();
@@ -117,6 +161,9 @@ const emits = defineEmits<{
     (e: "modify", user: User): void;
 }>();
 
+// 选中的课程
+const selectItems = ref<Course[]>([]);
+
 function ok() {
     visible.value = false;
     message.success("修改成功！");
@@ -127,10 +174,36 @@ function modify() {
     visible.value = true;
 }
 
-function start() {
-    const u = user.value;
+function update(courses: Course[]) {
+    selectItems.value = courses;
+}
+
+function showList() {
     starting.value = true;
-    console.log(u);
+}
+
+function start() {
+    for (const course of selectItems.value) {
+        const task: BaseTask<any> = reactive(
+            Remote.script.call(
+                "start",
+                user.value.loginScript,
+                toRaw(user.value),
+                toRaw(course)
+            )
+        );
+
+        AddCourseTask({
+            target: task,
+            course,
+            user: user.value,
+        });
+        message.success(course.name + " 启动成功！");
+    }
+    setTimeout(() => {
+        starting.value  = false;
+        router.push("/task");
+    }, 500);
 }
 </script>
 

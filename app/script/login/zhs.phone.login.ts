@@ -5,6 +5,7 @@ import { Runnable, Inject } from "@pioneerjs/common";
 
 import { User } from "../../types";
 import { LoginScript } from "./types";
+import { Task } from "../../electron/task";
 
 export const ZHS_PHONE_LOGIN_NAME = "zhs-phone-login";
 export const ZHS_PHONE_LOGIN_URL = "https://passport.zhihuishu.com/login?service=https://onlineservice.zhihuishu.com/login/gologin#signin";
@@ -29,7 +30,7 @@ export class ZHSPhoneLoginScript extends LoginScript<void> {
 
     async run(): Promise<void> {}
 
-    async login(user: User): Promise<void> {
+    async login(task:Task<void>,user: User): Promise<void> {
         await this.page.goto(ZHS_PHONE_LOGIN_URL);
         const { utils, loginUtils, waitFor } = this;
         await waitFor.documentReady();

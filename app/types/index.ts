@@ -5,7 +5,7 @@ export * from './store'
 export * from './script/cx.login'
 export * from './script/zhs.login'
 export * from '../script/types'
- 
+export * from "../electron/task/types"
 
 
 export type ScriptRemoteType = typeof ScriptRemote

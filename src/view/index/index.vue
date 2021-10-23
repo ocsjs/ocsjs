@@ -9,19 +9,19 @@
         <p class="space-8">
             <img
                 alt="GitHub Repo stars"
-                src="https://img.shields.io/github/stars/enncy/OnlineCourseScript"
+                src="https://img.shields.io/github/stars/enncy/online-course-script"
             />
             <img
                 alt="GitHub"
-                src="https://img.shields.io/github/license/enncy/onlinecoursescript"
+                src="https://img.shields.io/github/license/enncy/online-course-script"
             />
             <img
                 alt="GitHub package.json version (branch)"
-                src="https://img.shields.io/github/package-json/v/enncy/onlinecoursescript/v1.0"
+                src="https://img.shields.io/github/package-json/v/enncy/online-course-script/v1.0"
             />
             <img
                 alt="GitHub repo size"
-                src="https://img.shields.io/github/repo-size/enncy/OnlineCourseScript"
+                src="https://img.shields.io/github/repo-size/enncy/online-course-script"
             />
         </p>
         <div style="width: 100%; text-align: left">

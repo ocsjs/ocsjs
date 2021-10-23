@@ -6,6 +6,7 @@ import { User } from "../../types";
 import { CXLoginUtils } from "../common/login.utils";
 
 import { LoginScript } from "./types";
+import { Task } from "../../electron/task";
 
 export const CX_USER_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType=1&newversion=true";
 export const CX_USER_LOGIN_NAME = "cx-user-login";
@@ -30,7 +31,8 @@ export class CXUserLoginScript extends LoginScript<void> {
 
     async run(): Promise<void> {}
 
-    async login(user: User): Promise<void> {
+    async login(task:Task<void>,user: User): Promise<void> {
+ 
         const { utils, loginUtils, waitFor } = this;
         await this.page.goto(CX_USER_LOGIN_URL);
         await waitFor.documentReady();

@@ -11,39 +11,28 @@
         <template v-else>
             <div v-for="task of tasks">
                 <Card
+                    v-if="task.target && task.course && task.user"
                     color="blue"
-                    @mousemove="hoverId = task.name"
+                    @mousemove="hoverId = task.course.id"
                     @mouseleave="hoverId = ''"
                 >
                     <template #title>
                         <a-row class="flex">
                             <a-col :span="8">
                                 <span class="flex jc-flex-start ai-baseline space-10">
-                                    <span>{{ task.user.name }}</span>
-                                    <span class="font-v4">
-                                        {{ (task.user.loginInfo as any).phone || (task.user.loginInfo as any).uname  ||  (task.user.loginInfo as any).studentId }}
-                                    </span>
+                                    <span
+                                        >{{ task.user.name }} -
+                                        {{ task.course.name }}</span
+                                    >
                                 </span>
                             </a-col>
+
                             <a-col :span="16">
                                 <transition name="fade">
                                     <span
-                                        v-show="hoverId === task.name"
+                                        v-show="hoverId === task.course.id"
                                         class="flex jc-flex-end ai-center ac-center space-10"
                                     >
-                                        <a-popover v-if="task.pasue" content="开始">
-                                            <PlayCircleFilled
-                                                :style="{ fontSize: '22px' }"
-                                                @click="task.pasue = !task.pasue"
-                                            />
-                                        </a-popover>
-                                        <a-popover v-else content="暂停">
-                                            <PauseCircleFilled
-                                                :style="{ fontSize: '24px' }"
-                                                @click="task.pasue = !task.pasue"
-                                            />
-                                        </a-popover>
-
                                         <a-popover content="任务置顶">
                                             <a-button
                                                 type="primary"
@@ -61,7 +50,7 @@
                                                 type="primary"
                                                 shape="circle"
                                                 size="small"
-                                                @click="showDetail(task)"
+                                                @click="showDetail(task.target)"
                                             >
                                                 <template #icon>
                                                     <BarsOutlined />
@@ -74,17 +63,6 @@
                                                 shape="circle"
                                                 danger
                                                 size="small"
-                                                @click="
-                                                    () => {
-                                                        tasks.splice(
-                                                            tasks.findIndex(
-                                                                (t) =>
-                                                                    t.name === task.name
-                                                            ),
-                                                            1
-                                                        );
-                                                    }
-                                                "
                                             >
                                                 <template #icon>
                                                     <CloseOutlined />
@@ -96,6 +74,49 @@
                             </a-col>
                         </a-row>
                     </template>
+
+                    <template #body>
+                        <a-collapse :bordered="false" style="text-align: left">
+                            <a-collapse-panel
+                                style="
+                                    background: #f7f7f7;
+                                    border-radius: 4px;
+
+                                    border: 0;
+                                    overflow: hidden;
+                                "
+                                :header="
+                                    `[${processTask(task)?.name}] : ` +
+                                    (processTask(task)?.msg ||
+                                        formatTaskStatus(task.target) ||
+                                        '')
+                                "
+                            >
+                                <a-steps direction="vertical" size="small">
+                                    <a-step
+                                        v-for="(task, index) in TaskToList(task.target)"
+                                        :key="index"
+                                        :title="task.name"
+                                        :status="task.status"
+                                        :sub-title="
+                                            task.createTime
+                                                ? new Date(
+                                                      task.createTime
+                                                  ).toLocaleString()
+                                                : ''
+                                        "
+                                    >
+                                        <template #description>
+                                            <div v-text="formatTaskStatus(task)"></div>
+                                        </template>
+                                        <template v-if="task.status === 'process'" #icon>
+                                            <LoadingOutlined />
+                                        </template>
+                                    </a-step>
+                                </a-steps>
+                            </a-collapse-panel>
+                        </a-collapse>
+                    </template>
                 </Card>
             </div>
         </template>
@@ -106,28 +127,17 @@
                 :column="1"
                 :labelStyle="{ fontWeight: 'bold' }"
             >
-                <a-descriptions-item label="执行的脚本名">
-                    {{ showTask.script }}
+                <a-descriptions-item label="当前任务名">
+                    {{ showTask.name }}
                 </a-descriptions-item>
                 <a-descriptions-item label="运行状态">
-                    {{ showTask.pasue ? "暂停中" : "运行中" }}
+                    {{ formatTaskStatus(showTask)  }}
                 </a-descriptions-item>
-                <template v-if="showTask.status">
-                    <a-descriptions-item label="开始时间">
-                        {{ showTask.status.startTime }}
-                    </a-descriptions-item>
-                    <a-descriptions-item label="当前网址">
-                        {{ showTask.status.url }}
-                    </a-descriptions-item>
-                    <a-descriptions-item label="当前视频任务点">
-                        {{ showTask.status.videos }} 个
-                    </a-descriptions-item>
-                    <a-descriptions-item label="当前答题任务点">
-                        {{ showTask.status.qa }} 个
-                    </a-descriptions-item>
-                </template>
+                <a-descriptions-item label="开始时间">
+                    {{ new Date(showTask.createTime).toLocaleString() }}
+                </a-descriptions-item>
                 <a-descriptions-item label="任务编号">
-                    {{ showTask.name }}
+                    {{ showTask.id }}
                 </a-descriptions-item>
             </a-descriptions>
         </a-modal>
@@ -135,9 +145,10 @@
 </template>
 
 <script setup lang="ts">
-import { tasks } from "./task";
+import { CourseTask, tasks, TaskToList } from "./task";
 import Card from "@/components/common/Card.vue";
 import { ref } from "@vue/reactivity";
+import { BaseTask } from "app/types";
 
 // 当前 hover 的卡片组件
 const hoverId = ref("");
@@ -148,9 +159,25 @@ const visible = ref(false);
 // 展示详情的临时task变量
 const showTask = ref<any | undefined>(undefined);
 
+function processTask(task: CourseTask) {
+    const process = TaskToList(task.target).filter((t) => t.status === "process");
+    return process[process.length - 1];
+}
+
 function showDetail(task: any) {
     showTask.value = task;
     visible.value = true;
+}
+function formatTaskStatus(task: BaseTask<any>) {
+    return task.msg
+        ? task.msg
+        : task.status === "wait"
+        ? "等待中"
+        : task.status === "process"
+        ? "正在运行"
+        : task.status === "finish"
+        ? "已完成"
+        : "错误";
 }
 </script>
 
@@ -161,5 +188,17 @@ function showDetail(task: any) {
     padding: 24px 50px;
     background-color: #f8f8f8;
     overflow: auto;
+}
+
+#app {
+    .ant-steps-item-content {
+        white-space: nowrap;
+        width: fit-content;
+    }
+
+    .ant-steps-item-description {
+        text-align: left;
+        white-space: nowrap;
+    }
 }
 </style>

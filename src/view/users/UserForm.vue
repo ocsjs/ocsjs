@@ -161,10 +161,7 @@
                 :width="700"
                 :maskClosable="false"
                 :keyboard="false"
-                :closable="
-                    tasks?.[tasks?.length - 1]?.status === 'finish' ||
-                    tasks?.some((t) => t.status === 'error')
-                "
+                :closable="isLoginClose()"
                 :destroyOnClose="true"
             >
                 <a-steps style="padding: 20px 12px 0px 12px">
@@ -199,9 +196,17 @@
         </div>
 
         <div class="space-10 flex jc-flex-end margin-top-8">
-            <a-button type="primary" @click="getCourseList()">
-                {{ mode === "create" ? "获取课程列表" : "重新获取课程列表" }}
-            </a-button>
+            <a-popconfirm
+                placement="top"
+                ok-text="确认"
+                cancel-text="取消"
+                title="你确定要重新获取课程吗"
+                @confirm="getCourseList()"
+            >
+                <a-button type="primary">
+                    {{ mode === "create" ? "获取课程列表" : "重新获取课程列表" }}
+                </a-button>
+            </a-popconfirm>
 
             <template v-if="tempUser.courses.length === 0">
                 <a-popover content="请先获取课程列表，之后才能添加 ">
@@ -228,11 +233,12 @@ import { message } from "ant-design-vue";
 import {
     User,
     FromScriptName,
-    TaskType,
     PlatformAlias,
     AllScriptAlias,
     AllScriptObjects,
+    BaseTask,
 } from "app/types";
+import { TaskUpdater, TaskToList } from "../task/task";
 import CourseList from "./CourseList.vue";
 
 const uuid = require("uuid");
@@ -258,61 +264,69 @@ const tempUser = reactive<User>(user?.value || createUser());
 const visible = ref(false);
 
 // 登录任务
-const tasks: any[] = reactive<TaskType[]>([]);
+const tasks: BaseTask<any>[] = reactive<BaseTask<any>[]>([]);
 
-function ok(){
-    console.log("mode.value",mode.value);
-    
-    if(mode.value === 'modify'){
-        tempUser.updateTime = Date.now()
+function ok() {
+    console.log("mode.value", mode.value);
+
+    if (mode.value === "modify") {
+        tempUser.updateTime = Date.now();
     }
-    emits('ok', tempUser)
+    emits("ok", tempUser);
+}
+
+function isLoginClose() {
+    if (tasks.length !== 0) {
+        return (
+            tasks[tasks?.length - 1].status === "finish" ||
+            tasks?.some((t) => t.status === "error")
+        );
+    }
+
+    return false;
 }
 
 // 获取课程列表
 async function getCourseList() {
     visible.value = true;
-
     // 开启脚本，并获取任务列表
-    Object.assign(
-        tasks,
-        Remote.script.call("login", tempUser.loginScript, toRaw(tempUser))
+    const task = Remote.script.call(
+        "getCourseList",
+        tempUser.loginScript,
+        toRaw(tempUser)
     );
-    // 遍历监听任务变化，并显示出步骤条到页面
-    tasks.forEach((task: any) => {
-        Remote.task(task.id).process((e: any, value: any) => {
-            tempUser.loginTime = Date.now()
-            task.msg = value;
-            task.status = "process";
-        });
-        Remote.task(task.id).finish((e: any, value: any) => {
-            task.status = "finish";
-            if (tasks[tasks.length - 1].status === "finish") {
-                if (value.length !== 0) {
-                    // 设置课程
-                    // 1. 删除指定平台的课程信息
-                    // 2. 再填充最新的课程信息
-                    Object.assign(
-                        tempUser.courses,
-                        tempUser.courses
-                            .filter((c) => c.platform !== tempUser.platform)
-                            .concat(value)
-                    );
-                    message.success("课程列表获取成功!");
-                    setTimeout(() => {
-                        visible.value = false;
-                    }, 2000);
-                } else {
-                    message.error("课程列表获取失败 , 请重新获取!");
+
+    if (task) {
+        Object.assign(tasks, TaskToList(task));
+        TaskUpdater({
+            baseTasks:tasks,
+            finish(e, value) {
+                if (tasks?.[tasks.length - 1].status === "finish") {
+                    if (value.length !== 0) {
+                        // 设置课程
+                        // 1. 删除指定平台的课程信息
+                        // 2. 再填充最新的课程信息
+                        Object.assign(
+                            tempUser.courses,
+                            tempUser.courses
+                                .filter((c) => c.platform !== tempUser.platform)
+                                .concat(value)
+                        );
+                        message.success("课程列表获取成功!");
+                        setTimeout(() => {
+                            visible.value = false;
+                        }, 2000);
+                    } else {
+                        message.error("课程列表获取失败 , 请重新获取!");
+                    }
                 }
-            }
+            },
+            error(e, value) {
+                message.error("课程列表获取失败 , 请重新获取!");
+            },
         });
-        Remote.task(task.id).error((e: any, value: any) => {
-            message.error("课程列表获取失败 , 请重新获取!");
-            task.msg = value;
-            task.status = "error";
-        });
-    });
+        // 遍历监听任务变化，并显示出步骤条到页面
+    }
 }
 
 // 默认用户模板

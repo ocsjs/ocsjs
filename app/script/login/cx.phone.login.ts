@@ -5,6 +5,7 @@ import { CXLoginUtils } from "../common/login.utils";
 
 import { User } from "../../types";
 import { LoginScript } from "./types";
+import { Task } from "../../electron/task";
 
 export const CX_PHONE_LOGIN_NAME = "cx-phone-login";
 export const CX_PHONE_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType=2&newversion=true";
@@ -28,14 +29,14 @@ export class CXPhoneLoginScript extends LoginScript<void> {
 
     async run(): Promise<void> {}
 
-    async login(user: User): Promise<void> {
+    async login(task:Task<void>,user: User): Promise<void> {
         await this.page.goto(CX_PHONE_LOGIN_URL);
         const { utils, loginUtils, waitFor } = this;
         await waitFor.documentReady();
         const { phone } = user.loginInfo.cx.phoneLogin;
 
         await utils.value("#phone", phone);
-        // message.info('请手动输入验证码并点击登陆')
+        task.message('请手动输入验证码并点击登陆');
         await loginUtils.waitForLogin();
     }
 }

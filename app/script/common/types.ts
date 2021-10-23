@@ -4,9 +4,11 @@ import { CXLoginParams, User, ZHSLoginParams } from "../../types";
 import { CXPhoneLoginScript } from "../login/cx.phone.login";
 import { CXUnitLoginScript } from "../login/cx.unit.login";
 import { CXUserLoginScript } from "../login/cx.user.login";
+import { TaskType } from "../../electron/task/types";
+ 
 
-export interface LoginScriptType {
-    login(user: User): Promise<any>;
+export interface LoginScriptType<T> {
+    login(task:TaskType<any>,user: User): Promise<any>;
 }
 
 

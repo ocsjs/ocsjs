@@ -1,14 +1,17 @@
 <template>
     <a-row>
         <a-col :span="20" class="font-v3">
-            <a-menu theme="light" mode="horizontal" >
-                <a-menu-item key="1" @click="$router.push('/users')">
+            <a-menu theme="light" mode="horizontal"  >
+                <a-menu-item key="users" @click="$router.push('/users')">
                     <UsergroupAddOutlined class="icon" /> 账号管理
                 </a-menu-item>
-                <a-menu-item key="2" @click="$router.push('/task')">
+                <a-menu-item key="task" @click="$router.push('/task')">
                     <UnorderedListOutlined class="icon" /> 任务列表
                 </a-menu-item>
-                <a-menu-item key="3" @click="$router.push('/setting/common')">
+                <a-menu-item
+                    key="setting-common"
+                    @click="$router.push('/setting/common')"
+                >
                     <SettingOutlined class="icon" /> 设置
                 </a-menu-item>
             </a-menu>
@@ -49,10 +52,15 @@
 
 <script setup lang="ts">
 import { setting } from "@/view/setting/setting";
- 
+import { ref } from "@vue/reactivity";
+import { useRouter } from "vue-router";
+
 import { Remote } from "../../utils/remote";
 
+const router = useRouter();
 const { system } = setting;
+
+const current = ref(["users"]);
 
 // 置顶
 function top() {

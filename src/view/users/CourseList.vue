@@ -1,41 +1,7 @@
 <template>
     <div>
-        <div
-            v-if="!showOnly"
-            class="space-10 margin-left-10 padding-right-10 margin-bottom-10 flex nowrap"
-        >
-            <span style="white-space: nowrap">
-                已选课程:{{ selectItems.length !== 0 ? "" : "暂无" }}
-            </span>
-            <span
-                v-if="selectItems.length !== 0"
-                class="flex nowrap"
-                style="overflow-x: auto"
-            >
-                <transition-group name="fade">
-                    <a-tag
-                        class="margin-top-2"
-                        color="#2db7f5"
-                        v-for="item of selectItems"
-                        closable
-                        @close="removeSelectedCourse(item)"
-                        :key="item.id"
-                    >
-                        {{ item.profile.replace(/\n+/, "-").split("-")[0] }}
-                    </a-tag>
-                </transition-group>
-            </span>
-        </div>
-        <!-- 展示指定平台的课程列表 -->
-        <a-empty
-            v-if="user.courses.filter((c) => c.platform === user.platform).length === 0"
-            description="此平台暂无课程，请点击下方按钮获取"
-        >
-        </a-empty>
         <a-list
-            v-else
             class="course-list"
-            style="overflow: auto"
             item-layout="horizontal"
             :data-source="user.courses.filter((c) => c.platform === user.platform)"
         >
@@ -48,22 +14,10 @@
                             : 'course-list-item'
                     "
                 >
-                    <a-list-item-meta
-                        :description="
-                            detail
-                                ? String(item.profile)
-                                      .replace(/\n+/, '-')
-                                      .split('-')
-                                      .splice(1)
-                                      .join(' ')
-                                : ''
-                        "
-                    >
+                    <a-list-item-meta :description="detail ? item.profile : ''">
                         <template #title>
                             <a class="space-10">
-                                <span class="font-v2">{{
-                                    String(item.profile).replace(/\n+/, "-").split("-")[0]
-                                }}</span>
+                                <span class="font-v2">{{ item.name }}</span>
                             </a>
                         </template>
                         <template v-if="showImg" #avatar>
@@ -77,9 +31,6 @@
                 </a-list-item>
             </template>
         </a-list>
-        <div v-if="!showOnly" class="padding-top-24 margin-right-10-10 flex jc-flex-end">
-            <a-button type="primary" @click="start">开始刷课</a-button>
-        </div>
     </div>
 </template>
 
@@ -100,33 +51,32 @@ const props = defineProps<{
 
 const { user, detail, showImg, showOnly } = toRefs(props);
 
+const emits = defineEmits<{
+    (e: "update", courses: Course[]): void;
+}>();
+
 // 选中的课程 id
 const selectItems = ref<Course[]>([]);
 function courseClick(item: Course) {
-    // 如果已经存在，则删除，否则添加
-    if (selectItems.value.some((c) => c.id === item.id)) {
-        removeSelectedCourse(item);
-    } else {
-        selectItems.value.push(item);
-    }
-}
-
-function removeSelectedCourse(item: Course) {
-    selectItems.value = selectItems.value.filter((i) => i.id !== item.id);
-}
-
-function start() {
-    if (selectItems.value.length > config.setting.common.task.maxTasks) {
+    if (selectItems.value.length >= config.setting.common.task.maxTasks) {
         message.warn(
-            "请不要超出最大任务数量(" +
+            "请不要超出最大任务数量: " +
                 config.setting.common.task.maxTasks +
-                ") 当前 " +
-                selectItems.value.length +
-                "，如需修改请到通用设置里配置!"
+                " ，可以到通用设置里配置!"
         );
     } else {
-        console.log(selectItems.value);
+        // 如果已经存在，则删除，否则添加
+        if (selectItems.value.some((c) => c.id === item.id)) {
+            selectItems.value = selectItems.value.filter((i) => i.id !== item.id);
+        } else {
+            selectItems.value.push(item);
+        }
+        update();
     }
+}
+
+function update() {
+    emits("update", selectItems.value);
 }
 </script>
 

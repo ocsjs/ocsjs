@@ -12,7 +12,7 @@ import { Runnable, Inject } from "@pioneerjs/common";
 import { StoreGet } from "../../types/setting";
 
 import { User } from "../../types";
-
+import { Task } from "../../electron/task";
 
 export const CX_UNIT_LOGIN_NAME = "cx-user-login";
 export const CX_UNIT_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType=3&newversion=true";
@@ -24,7 +24,7 @@ export const CX_UNIT_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType
     name: CX_UNIT_LOGIN_NAME,
 })
 export class CXUnitLoginScript extends LoginScript<void> {
-    static scriptName:string = CX_UNIT_LOGIN_NAME
+    static scriptName: string = CX_UNIT_LOGIN_NAME;
 
     @Inject()
     waitFor!: WaitForScript;
@@ -37,7 +37,7 @@ export class CXUnitLoginScript extends LoginScript<void> {
 
     async run(): Promise<void> {}
 
-    async login(user: User): Promise<void> {
+    async login(task: Task<void>, user: User): Promise<void> {
         await this.page.goto(CX_UNIT_LOGIN_URL);
         const { utils, loginUtils, waitFor } = this;
         await waitFor.documentReady();
@@ -50,21 +50,21 @@ export class CXUnitLoginScript extends LoginScript<void> {
             if (await this.breakCode(StoreGet("setting").script.account.ocr)) {
                 await loginUtils.login();
             } else {
-                // message.info('验证码破解失败，请手动输入并点击登陆')
+                task.message("验证码破解失败，请手动输入并点击登陆");
+
                 await loginUtils.waitForLogin();
             }
         } else {
-            // message.info('您暂未配置OCR，所以不能自动获取验证码，请手动输入并点击登陆')
+            task.message("您暂未配置OCR，所以不能自动获取验证码，请手动输入并点击登陆");
+
             await loginUtils.waitForLogin();
         }
     }
 
-
-
     // 截屏保存图片进行验证码破解
     async breakCode(ocrOptions: OCROptions) {
         const { utils, waitFor, page } = this;
-        let clip = await getElementClip(this.page,"#numVerCode");
+        let clip = await getElementClip(this.page, "#numVerCode");
 
         if (clip) {
             const buffer = await this.page.screenshot({ clip });
@@ -80,6 +80,4 @@ export class CXUnitLoginScript extends LoginScript<void> {
         }
         return false;
     }
-
-    
 }

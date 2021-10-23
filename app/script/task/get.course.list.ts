@@ -1,4 +1,3 @@
- 
 import { createHash } from "crypto";
 import { ScriptOptions, WaitForScript } from "@pioneerjs/core";
 import { Task } from "../../electron/task";
@@ -16,37 +15,40 @@ import { log } from "electron-log";
  * @param script 脚本上下文
  * @returns
  */
-export function getCXCourseList(script: ScriptOptions, uid: string): Task<Course[]> {
+export function getCXCourseList(uid: string): Task<Course[]> {
     return Task.createBlockTask({
         name: "获取超星课程列表",
         timeout: 60 * 1000,
-        target: async () =>
+        target: async (task, script) =>
             new Promise(async (resolve, reject) => {
-                // 等待页面加载
-                await new WaitForScript(script).documentReady();
+                if (script) {
+                    // 等待页面加载
+                    await new WaitForScript(script).documentReady();
 
-                await script.page.goto("http://mooc1-1.chaoxing.com/visit/interaction");
-                const waitFor = new WaitForScript(script);
-                // 等待页面所有请求结束
-                waitFor.nextTick("request", async () => {
-                    const courses = await script.page.evaluate(() => {
-                        // 获取课程信息
-                        return Array.from(document.querySelectorAll("li[id*=course]"))
-                            .filter((el) => !el.querySelector(".not-open-tip"))
-                            .map(
-                                (el: any) =>
-                                    ({
-                                        id: "",
-                                        uid: "",
-                                        platform: "cx",
-                                        img: el.querySelector(".course-cover > a > img").src,
-                                        url: el.querySelector(".course-cover > a").href,
-                                        profile: el.querySelector(".course-info").innerText,
-                                    } as Course)
-                            );
+                    await script.page.goto("http://mooc1-1.chaoxing.com/visit/interaction");
+                    const waitFor = new WaitForScript(script);
+                    // 等待页面所有请求结束
+                    waitFor.nextTick("request", async () => {
+                        const courses = await script.page.evaluate(() => {
+                            // 获取课程信息
+                            return Array.from(document.querySelectorAll("li[id*=course]"))
+                                .filter((el) => !el.querySelector(".not-open-tip"))
+                                .map(
+                                    (el: any) =>
+                                        ({
+                                            id: "",
+                                            uid: "",
+                                            platform: "cx",
+                                            img: el.querySelector(".course-cover > a > img").src,
+                                            url: el.querySelector(".course-cover > a").href,
+                                            profile: el.querySelector(".course-info").innerText.split(/\n+/).splice(1).join(" "),
+                                            name: el.querySelector(".course-info").innerText.split(/\n+/)[0],
+                                        } as Course)
+                                );
+                        });
+                        resolve(await initCourses({ script, courses, uid, platform: "cx" }));
                     });
-                    resolve(await initCourses({ script, courses, uid, platform: "cx" }));
-                });
+                }
             }),
     });
 }
@@ -56,42 +58,47 @@ export function getCXCourseList(script: ScriptOptions, uid: string): Task<Course
  * @param script 脚本上下文
  * @returns
  */
-export function getZHSCourseList(script: ScriptOptions, uid: string): Task<Course[]> {
+export function getZHSCourseList(uid: string): Task<Course[]> {
     return Task.createBlockTask({
         name: "获取智慧树课程列表",
         timeout: 60 * 1000,
-        target: async () =>
+        target: async (task, script) =>
             new Promise(async (resolve, reject) => {
-                // 等待页面加载
-                await new WaitForScript(script).documentReady();
-                log(script.page.url());
-                // 等待页面所有请求结束
-                const courses = await script.page.evaluate(() => {
-                    // 获取课程信息
-                    const cs = Array.from(document.querySelectorAll("dl:not(.pos-rel)")).map(
-                        (c: any) =>
-                            ({
-                                id: "",
-                                uid: "",
-                                platform: "zhs",
-                                selector: `[src="${c.querySelector("img").src}"]`,
-                                img: c.querySelector("img").src,
-                                profile: c.querySelector(".courseName").innerText + "\n" + c.querySelector(".teacherName").innerText.split("\n").join("●"),
-                            } as Course)
-                    );
-                    console.log("cs",cs)
-                    return cs;  
-                });
-                resolve(await initCourses({ script, courses, uid, platform: "zhs" }));
+                if (script) {
+                    // 等待页面加载
+                    await new WaitForScript(script).documentReady();
+                    log(script.page.url());
+                    // 等待页面所有请求结束
+                    const courses = await script.page.evaluate(() => {
+                        // 获取课程信息
+                        const cs = Array.from(document.querySelectorAll("dl:not(.pos-rel)")).map(
+                            (c: any) =>
+                                ({
+                                    id: "",
+                                    uid: "",
+                                    platform: "zhs",
+                                    selector: `[src="${c.querySelector("img").src}"]`,
+                                    img: c.querySelector("img").src,
+                                    name: c.querySelector(".courseName").innerText,
+                                    profile: c.querySelector(".teacherName").innerText.split("\n").join("●"),
+                                } as Course)
+                        );
+                        console.log("cs", cs);
+                        return cs;
+                    });
+                    resolve(await initCourses({ script, courses, uid, platform: "zhs" }));
+                }
             }),
     });
 }
 
 // 初始化课程数据
-export async function initCourses({ script, courses, uid, platform }: { script: ScriptOptions; courses: Course[]; uid: string; platform:keyof Platform }) {
+export async function initCourses({ script, courses, uid, platform }: { script: ScriptOptions; courses: Course[]; uid: string; platform: keyof Platform }) {
     for (const course of courses) {
-        // 使用 img 路径地址作为加密信息来生成 hex id 值
-        course.id = createHash("md5").update(course.img).digest("hex");
+        // 使用 url 或者 selector  作为加密信息来生成 hex id 值
+        course.id = createHash("md5")
+            .update(`${uid}-${platform}-${course.url || course.selector || Date.now()}-${course.profile}`)
+            .digest("hex");
         // 账号id
         course.uid = uid;
         // 课程
@@ -104,14 +111,16 @@ export async function initCourses({ script, courses, uid, platform }: { script: 
             course.img = p;
         }
     }
-    log("courses",courses)
+    log("courses", courses);
     return courses;
 }
 
-export function getCourseList(script: ScriptOptions, user: User) {
+export function GetCourseList(user: User) {
     if (user.platform === "cx") {
-        return getCXCourseList(script, user.uid);
+        return getCXCourseList(user.uid);
     } else if (user.platform === "zhs") {
-        return getZHSCourseList(script, user.uid);
+        return getZHSCourseList(user.uid);
+    } else {
+        throw new Error("课程列表获取失败，请重试！ platform(" + user.platform + ") is not support");
     }
 }

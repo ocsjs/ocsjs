@@ -63,6 +63,9 @@ export const Remote = {
             error(handler: (e: any, value: any) => void) {
                 ipcRenderer.once(EventFormat("task", "error", id), handler);
             },
+            message(handler: (e: any, value: any) => void){
+                ipcRenderer.on(EventFormat("task", "message", id), handler);
+            }
         };
     },
 };
