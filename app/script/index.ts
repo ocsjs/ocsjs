@@ -26,6 +26,11 @@ export async function StartScript<S extends RunnableScript>(name: keyof AllScrip
             executablePath: chromePath,
             defaultViewport: null,
             headless: false,
+            // 关闭同源策略
+            args: [
+                "--disable-web-security",
+                "--disable-features=IsolateOrigins,site-per-process", // 很关键...
+            ],
         });
 
         // 创建 pioneer

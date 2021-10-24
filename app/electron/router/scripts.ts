@@ -8,7 +8,9 @@ import { Task } from "../task";
 import { log } from "electron-log";
 import { StoreGet, StoreSet } from "../../types/setting";
 import { Course } from "../../types/script/course";
-import { CXScript } from "../../script/task/start/cx.script";
+import { CXScript } from "../../script/task/cx/cx.script";
+import { CXWork } from "../../script/task/cx/cx.work";
+import { CXExam } from "../../script/task/cx/cx.exam";
 
 /**
  * 脚本映射实现，使用此类当做 typeof 类型并且远程映射到渲染进程。具体看 remote.ts
@@ -41,19 +43,20 @@ export const ScriptRemote = {
      */
     login(name: keyof AllScriptObjects, user: User, ...task: Task<any>[]) {
         log("[脚本启动]:", { name, user: user.uid });
-        const t = Task.linkTasks(
-            this.createLaunchTask(name),
-            Task.createBlockTask<any>({
-                name: "脚本登录",
-                target: async function (task, script) {
-                    return await (script as LoginScript<any>).login(task, user);
-                },
-                timeout: 60 * 1000,
-            }),
-            ...task
+
+        return Task.exec(
+            Task.linkTasks(
+                this.createLaunchTask(name),
+                Task.createBlockTask<any>({
+                    name: "脚本登录",
+                    target: async function (task, script) {
+                        return await (script as LoginScript<any>).login(task, user);
+                    },
+                    timeout: 60 * 1000,
+                }),
+                ...task
+            )
         );
-        log("login script",t)
-        return Task.exec(t);
     },
 
     /**
@@ -73,6 +76,6 @@ export const ScriptRemote = {
      * @param course 课程
      */
     start(name: keyof AllScriptObjects, user: User, course: Course) {
-        return this.login(name, user, CXScript(course));
+        return this.login(name, user, CXScript(course) );
     },
 };

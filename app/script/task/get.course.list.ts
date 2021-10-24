@@ -28,26 +28,26 @@ export function getCXCourseList(uid: string): Task<Course[]> {
                     await script.page.goto("http://mooc1-1.chaoxing.com/visit/interaction");
                     const waitFor = new WaitForScript(script);
                     // 等待页面所有请求结束
-                    waitFor.nextTick("request", async () => {
-                        const courses = await script.page.evaluate(() => {
-                            // 获取课程信息
-                            return Array.from(document.querySelectorAll("li[id*=course]"))
-                                .filter((el) => !el.querySelector(".not-open-tip"))
-                                .map(
-                                    (el: any) =>
-                                        ({
-                                            id: "",
-                                            uid: "",
-                                            platform: "cx",
-                                            img: el.querySelector(".course-cover > a > img").src,
-                                            url: el.querySelector(".course-cover > a").href,
-                                            profile: el.querySelector(".course-info").innerText.split(/\n+/).splice(1).join(" "),
-                                            name: el.querySelector(".course-info").innerText.split(/\n+/)[0],
-                                        } as Course)
-                                );
-                        });
-                        resolve(await initCourses({ script, courses, uid, platform: "cx" }));
+                    await waitFor.nextTick("request");
+
+                    const courses = await script.page.evaluate(() => {
+                        // 获取课程信息
+                        return Array.from(document.querySelectorAll("li[id*=course]"))
+                            .filter((el) => !el.querySelector(".not-open-tip"))
+                            .map(
+                                (el: any) =>
+                                    ({
+                                        id: "",
+                                        uid: "",
+                                        platform: "cx",
+                                        img: el.querySelector(".course-cover > a > img").src,
+                                        url: el.querySelector(".course-cover > a").href,
+                                        profile: el.querySelector(".course-info").innerText.split(/\n+/).splice(1).join(" "),
+                                        name: el.querySelector(".course-info").innerText.split(/\n+/)[0],
+                                    } as Course)
+                            );
                     });
+                    resolve(await initCourses({ script, courses, uid, platform: "cx" }));
                 }
             }),
     });

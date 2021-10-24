@@ -6,8 +6,8 @@ export interface BaseTask<T> extends TaskType<T> {
     onError(listener: (...args: any[]) => void): void;
     eventFormat(status: TaskStatus, ...str: string[]): void;
     finish(value?: any): void;
-    process(): void;
-    error(): void;
+    process(msg?:string): void;
+    error(msg?:string): void;
     message(msg: string): void;
     update(): void;
     remove(): void;

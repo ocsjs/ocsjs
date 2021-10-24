@@ -85,12 +85,7 @@
                                     border: 0;
                                     overflow: hidden;
                                 "
-                                :header="
-                                    `[${processTask(task)?.name}] : ` +
-                                    (processTask(task)?.msg ||
-                                        formatTaskStatus(task.target) ||
-                                        '')
-                                "
+                                :header="currentMsg(task) || `任务全部完成！`"
                             >
                                 <a-steps direction="vertical" size="small">
                                     <a-step
@@ -107,7 +102,11 @@
                                         "
                                     >
                                         <template #description>
-                                            <div v-text="formatTaskStatus(task)"></div>
+                                            <div
+                                                v-text="
+                                                    task.msg || formatTaskStatus(task)
+                                                "
+                                            ></div>
                                         </template>
                                         <template v-if="task.status === 'process'" #icon>
                                             <LoadingOutlined />
@@ -131,7 +130,7 @@
                     {{ showTask.name }}
                 </a-descriptions-item>
                 <a-descriptions-item label="运行状态">
-                    {{ formatTaskStatus(showTask)  }}
+                    {{ formatTaskStatus(showTask) }}
                 </a-descriptions-item>
                 <a-descriptions-item label="开始时间">
                     {{ new Date(showTask.createTime).toLocaleString() }}
@@ -159,9 +158,14 @@ const visible = ref(false);
 // 展示详情的临时task变量
 const showTask = ref<any | undefined>(undefined);
 
-function processTask(task: CourseTask) {
-    const process = TaskToList(task.target).filter((t) => t.status === "process");
-    return process[process.length - 1];
+function currentMsg(task: CourseTask) {
+    const all = TaskToList(task.target);
+    const process = all.filter((t) => t.status === "process");
+
+    if (process && process.length !== 0) {
+        const t = process[process.length - 1];
+        return `[${t?.name}] : ` + (t?.msg || formatTaskStatus(t) || "");
+    }
 }
 
 function showDetail(task: any) {

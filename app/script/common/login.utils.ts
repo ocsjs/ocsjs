@@ -4,17 +4,16 @@ import { HTTPRequest } from "puppeteer-core";
 
 export abstract class LoginUtils extends InjectableScript {
     async waitForLogin(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            new WaitForScript(this).nextTick("requestfinished", async () => {
-                if (await this.isLogin()) {
-                    await this.page.waitForSelector(await this.waitForSelector());
-                    setTimeout(() => {
-                        resolve();
-                    }, 3000);
-                } else {
-                    reject("登录失败！请重试！");
-                }
-            });
+        return new Promise(async (resolve, reject) => {
+            await new WaitForScript(this).nextTick("requestfinished");
+            if (await this.isLogin()) {
+                await this.page.waitForSelector(await this.waitForSelector());
+                setTimeout(() => {
+                    resolve();
+                }, 3000);
+            } else {
+                reject("登录失败！请重试！");
+            }
         });
     }
 
