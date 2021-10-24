@@ -6,10 +6,10 @@ function  startChaoxingSK(params) {
        if(videojs && Ext){
            console.log("videojs.hook")
            videojs.hook('beforesetup', function(videoEl, options) {
-           console.log(options)
-           options.playbackRates=[1, 1.25, 1.5, 2,4,6,8,10,12,14,16]
+              options.playbackRates=[1, 1.25, 1.5, 2,4,6,8,10,12,14,16]
            return options;
            });
+           console.log("破解倍速限制")
            Ext.define("ans.VideoJs",{
                override:"ans.VideoJs",
                constructor: function (b) {
