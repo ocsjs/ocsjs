@@ -8,10 +8,9 @@
                             <span
                                 class="path"
                                 @click="
-                                    script.launch.binaryPath &&
-                                        shell.openPath(script.launch.binaryPath)
+                                    launch.binaryPath && shell.openPath(launch.binaryPath)
                                 "
-                                >{{ script.launch.binaryPath || "未设置" }}
+                                >{{ launch.binaryPath || "未设置" }}
                             </span>
                             <FolderTwoTone @click="setBinaryPath()" />
                         </div>
@@ -25,19 +24,94 @@
                 </a-descriptions>
             </template>
         </Card>
+
         <Card :bordered="false" color="blue" title="脚本设置">
-            <template #body>
+            <Card :bordered="false" color="gray" title="全局设置" size="small">
                 <a-descriptions :column="1" :labelStyle="{ fontWeight: 'bold' }">
-                    <a-descriptions-item label="功能启用">
-                        <a-checkbox v-model:checked="script.script.video"
-                            >自动播放视频</a-checkbox
-                        >
-                        <a-checkbox v-model:checked="script.script.video"
-                            >自动答题</a-checkbox
-                        >
+                    <a-descriptions-item label="任务运行间隔时间">
+                        <div class="space-10">
+                            <a-input-number
+                                size="small"
+                                v-model:value="script.taskPeriod"
+                                :min="3"
+                                :max="60"
+                            >
+                            </a-input-number>
+                            <span>秒</span>
+                        </div>
                     </a-descriptions-item>
                 </a-descriptions>
-            </template>
+            </Card>
+            <Card :bordered="false" color="gray" title="超星设置" size="small">
+                <a-descriptions :column="1" :labelStyle="{ fontWeight: 'bold' }">
+                    <a-descriptions-item label="自动播放视频">
+                        <a-switch v-model:checked="script.cx.media.enable" />
+                    </a-descriptions-item>
+                    <a-descriptions-item label="" v-if="script.cx.media.enable">
+                        <Card size="small" :close-collapse="true">
+                            <a-descriptions :column="1">
+                                <a-descriptions-item label="静音">
+                                    <a-switch v-model:checked="script.cx.media.mute" />
+                                </a-descriptions-item>
+                                <a-descriptions-item label="倍速">
+                                    <a-input-number
+                                        size="small"
+                                        v-model:value="script.cx.media.playbackRate"
+                                        :min="1"
+                                        :max="16"
+                                    ></a-input-number>
+                                </a-descriptions-item>
+                            </a-descriptions>
+                        </Card>
+                    </a-descriptions-item>
+                    <a-descriptions-item label="自动播放PPT">
+                        <a-switch v-model:checked="script.cx.ppt" />
+                    </a-descriptions-item>
+                    <a-descriptions-item label="自动翻阅图书">
+                        <a-switch v-model:checked="script.cx.book" />
+                    </a-descriptions-item>
+                    <a-descriptions-item label="自动做章节测验">
+                        <a-switch v-model:checked="script.cx.qa.enable" />
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="script.cx.qa.enable">
+                        <Card size="small" :close-collapse="true">
+                            <a-descriptions :column="1">
+                                <a-descriptions-item label="章节测验自动提交">
+                                    <a-switch v-model:checked="script.cx.qa.autoReport" />
+                                </a-descriptions-item>
+                            </a-descriptions>
+                        </Card>
+                    </a-descriptions-item>
+                    <a-descriptions-item label="自动做作业">
+                        <a-switch v-model:checked="script.cx.work.enable" />
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="script.cx.work.enable">
+                        <Card size="small" :close-collapse="true">
+                            <a-descriptions :column="1">
+                                <a-descriptions-item label="作业自动提交">
+                                    <a-switch
+                                        v-model:checked="script.cx.work.autoReport"
+                                    />
+                                </a-descriptions-item>
+                            </a-descriptions>
+                        </Card>
+                    </a-descriptions-item>
+                    <a-descriptions-item label="自动考试">
+                        <a-switch v-model:checked="script.cx.exam.enable" />
+                    </a-descriptions-item>
+                    <a-descriptions-item v-if="script.cx.exam.enable">
+                        <Card size="small" :close-collapse="true">
+                            <a-descriptions :column="1">
+                                <a-descriptions-item label="考试自动提交">
+                                    <a-switch
+                                        v-model:checked="script.cx.exam.autoReport"
+                                    />
+                                </a-descriptions-item>
+                            </a-descriptions>
+                        </Card>
+                    </a-descriptions-item>
+                </a-descriptions>
+            </Card>
         </Card>
 
         <Card :bordered="false" color="blue" title="查题设置">
@@ -50,7 +124,7 @@
                                     type="text"
                                     size="small"
                                     style="width: 300px"
-                                    v-model:value="script.account.queryToken"
+                                    v-model:value="account.queryToken"
                                     @blur="checkToken"
                                 />
                             </span>
@@ -111,7 +185,7 @@
                     <a-descriptions-item label="账号">
                         <span class="space-10">
                             <a-input
-                                v-model:value="script.account.ocr.username"
+                                v-model:value="account.ocr.username"
                                 type="text"
                                 size="small"
                                 style="width: 200px"
@@ -121,7 +195,7 @@
                     <a-descriptions-item label="密码">
                         <span class="space-10">
                             <a-input-password
-                                v-model:value="script.account.ocr.password"
+                                v-model:value="account.ocr.password"
                                 size="small"
                                 style="width: 200px"
                             />
@@ -145,8 +219,9 @@ import { AxiosGet } from "@/utils/request";
 import { message } from "ant-design-vue";
 import { ref, onMounted } from "vue";
 import { config } from "@/utils/store";
+import Card from "@/components/common/Card.vue";
 
-const script = config.setting.script;
+const { launch, script, account } = config.setting.script;
 const { shell } = require("electron");
 
 // 加载状态
@@ -187,14 +262,18 @@ function checkToken() {
 
 // 设置路径
 function setBinaryPath() {
-    script.launch.binaryPath = Remote.dialog
+    launch.binaryPath = Remote.dialog
         .call("showOpenDialogSync", {
             properties: ["openFile"],
             multiSelections: false,
-            defaultPath: script.launch.binaryPath,
+            defaultPath: launch.binaryPath,
         })
         .pop();
 }
 </script>
 
-<style scope lang="less"></style>
+<style scope lang="less">
+#app .ant-descriptions-row > td {
+    padding-bottom: 6px;
+}
+</style>

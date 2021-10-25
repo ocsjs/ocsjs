@@ -1,4 +1,3 @@
- 
 import { app } from "electron";
 import path from "path";
 import { CurrentWindow } from ".";
@@ -12,6 +11,8 @@ export function initSetting() {
     const setting: Setting = StoreGet("setting");
     // 版本比较，如果当前版本不比本地版本高，则不更新
     const update = new Version(app.getVersion()).greaterThan(new Version(setting.version));
+    log(update ? "检测到设置版本需要更新!" : "本地设置无需更新");
+
     if (setting && !update) {
         const { path, win } = setting.system;
         if (path) {
@@ -20,12 +21,12 @@ export function initSetting() {
                 log("设置路径:" + key, p);
                 // 如果文件夹不存在则创建
                 if (!fs.existsSync(p)) {
-                    log("mkdirs",p)
+                    log("mkdirs", p);
                     mkdirs(p);
                 }
-                try{
+                try {
                     app.setPath(key, p);
-                }catch{}
+                } catch {}
             }
         }
 
@@ -53,10 +54,52 @@ export function initSetting() {
                 },
                 // 脚本设置
                 script: {
-                    // 看视频
-                    video: true,
-                    // 做题
-                    qa: true,
+                    // 任务间隔3秒
+                    taskPeriod: 3 * 1000,
+                    cx: {
+                        media: {
+                            enable: true,
+                            playbackRate: 2,
+                            mute: true,
+                        },
+                        ppt: true,
+                        book: true,
+                        qa: {
+                            enable: true,
+                            autoReport: true,
+                        },
+                        work: {
+
+                            enable: true,
+                            autoReport: true,
+                        },
+                        exam: {
+                            enable: true,
+                            autoReport: true,
+                        },
+                    },
+                    zhs: {
+                        // 一个小时自动停止
+                        autoStop: 60 * 60 * 1000,
+            
+                        video: {
+                            enable: true,
+                            playbackRate: 2,
+                            mute: true,
+                        },
+                        qa: {
+                            enable: true,
+                            autoReport: true,
+                        },
+                        work: {
+                            enable: true,
+                            autoReport: true,
+                        },
+                        exam: {
+                            enable: true,
+                            autoReport: true,
+                        },
+                    },
                 },
                 // 信息设置
                 account: {
@@ -80,9 +123,11 @@ export function initSetting() {
                 },
             },
         };
-
+        log(initSetting);
+        const s = StoreGet("setting");
+        log(s);
         // 合并设置
-        StoreSet("setting", Object.assign(initSetting, StoreGet("setting")));
+        StoreSet("setting", Object.assign({}, s, initSetting));
     }
 
     // 清空任务列表
