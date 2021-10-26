@@ -3,10 +3,12 @@ import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electr
 import path from "path";
 
 import { BrowserConfig } from "./config";
+import { OCSNotify } from "./events/ocs.event";
 import { RemoteRouter } from "./router/remote";
 import { UpdateRouter } from "./router/update";
 import { initSetting } from "./setting";
 const t = Date.now();
+
 
 // 判断开发环境
 var mode = app.isPackaged ? "prod" : "dev";

@@ -9,6 +9,7 @@
                     <a-descriptions-item label="当前版本">
                         <span class="space-10 flex">
                             <span>{{ Remote.app.call("getVersion") }} </span>
+
                             <LoadingOutlined v-if="needUpdate === -1" />
                             <div v-else-if="needUpdate === 1">
                                 <a-tag color="#f50">需要更新</a-tag>
@@ -51,7 +52,7 @@
 <script setup lang="ts">
 import { Remote } from "@/utils/remote";
 
-import { onMounted, ref } from "vue";
+import { nextTick, onMounted, ref } from "vue";
 
 import { message } from "ant-design-vue";
 import { setting } from "./setting";
@@ -63,19 +64,23 @@ const needUpdate = ref(-1);
 
 function checkUpdate() {
     needUpdate.value = -1;
-    needUpdate.value = ipcRenderer.sendSync(IPCEventTypes.IS_NEED_UPDATE) ? 1 : 0;
-    if (needUpdate.value === 1) {
-        message.warn("需要更新");
-    } else {
-        message.success("已经是最新版本");
-    }
+    ipcRenderer.send(IPCEventTypes.IS_NEED_UPDATE);
+    ipcRenderer.on(IPCEventTypes.IS_NEED_UPDATE, (e, v) => {
+        needUpdate.value = v ? 1 : 0;
+
+        if (needUpdate.value === 1) {
+            message.warn("需要更新");
+        } else {
+            message.success("已经是最新版本");
+        }
+    });
 }
 
 function onUpdate() {
     ipcRenderer.send(IPCEventTypes.APP_UPDATE);
 }
 onMounted(() => {
-    needUpdate.value = ipcRenderer.sendSync(IPCEventTypes.IS_NEED_UPDATE) ? 1 : 0;
+    checkUpdate()
 });
 </script>
 

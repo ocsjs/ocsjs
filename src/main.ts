@@ -1,4 +1,4 @@
-import { createApp } from "vue";
+import {  createApp  } from "vue";
 
 import App from "./App.vue";
 import { router } from "./router";
@@ -18,8 +18,9 @@ message.config({
     maxCount: 3,
 });
 
-createApp(App)
-    .use(router)
+const app = createApp(App);
+app.use(router)
     // 注册远程ICON
     .component("IconFont", IconFont)
     .mount("#app");
+ 

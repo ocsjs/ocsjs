@@ -35,7 +35,7 @@ export async function UpdateRouter() {
             // 是否需要更新
             .on(IPCEventTypes.IS_NEED_UPDATE, async (e: Electron.IpcMainEvent, tag?: string) => {
                 updater.tag = tag;
-                e.returnValue = await updater.needUpdate();
+                e.reply(IPCEventTypes.IS_NEED_UPDATE,await updater.needUpdate())
             })
             // 取消更新
             .on(IPCEventTypes.CANCEL_APP_UPDATE, (e: Electron.IpcMainEvent) => {

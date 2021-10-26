@@ -1,12 +1,9 @@
-
-
-body{
-    @import (multiple) './flex.less';
-    @import (multiple) './ant.less';
-    @import (multiple) './font.less';
-    @import (multiple) './layout.less';
-    @import (multiple) './size.less';
-     
+body {
+    @import (multiple) "./flex.less";
+    @import (multiple) "./ant.less";
+    @import (multiple) "./font.less";
+    @import (multiple) "./layout.less";
+    @import (multiple) "./size.less";
 }
 
 body,
@@ -16,23 +13,21 @@ html,
     height: 100%;
     margin: 0px;
     padding: 0px;
-
- 
 }
 
 #app {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
     background-color: white;
- 
-    @import (multiple) './flex.less';
-    @import (multiple) './ant.less';
-    @import (multiple) './font.less';
-    @import (multiple) './layout.less';
-    @import (multiple) './size.less';
+
+    @import (multiple) "./flex.less";
+    @import (multiple) "./ant.less";
+    @import (multiple) "./font.less";
+    @import (multiple) "./layout.less";
+    @import (multiple) "./size.less";
 }
 
 #layout-header {
@@ -46,17 +41,14 @@ html,
         -webkit-app-region: no-drag;
     }
 
-    .un-select()
+    .un-select();
 }
 
-
 #layout-content {
-
     height: 100%;
     background-color: white;
     overflow: auto;
     .un-select();
-
 }
 
 #layout-footer {
@@ -64,10 +56,8 @@ html,
     text-align: left;
     box-shadow: 0px 0px 4px rgba(0, 0, 0, 0.056);
     background-color: rgb(230, 230, 230);
-    .un-select()
+    .un-select();
 }
-
-
 
 .un-select {
     -moz-user-select: none;
@@ -86,4 +76,20 @@ html,
 
 .ant-popover-content {
     max-width: 300px;
+}
+
+/* 设置滚动条的样式 */
+::-webkit-scrollbar {
+    width: 12px;
+}
+/* 滚动槽 */
+::-webkit-scrollbar-track {
+     box-shadow: inset006pxrgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+}
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.1);
+    box-shadow: inset006pxrgba(0, 0, 0, 0.3);
 }

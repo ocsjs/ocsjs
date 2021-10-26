@@ -1,4 +1,18 @@
 import axios from "axios";
+import { OCSNotify } from "../events/ocs.event";
+const notify = new OCSNotify("system", "系统通知");
+import { log, error } from "electron-log";
+process.on("uncaughtException", function (err) {
+    error(err.message);
+    notify.error("未知错误！");
+}); //监听未捕获的异常
+
+process.on("unhandledRejection", function (err, promise) {
+    notify.error("网络错误！");
+    promise.catch((err) => {
+        error(err);
+    });
+}); //监听Promise没有被捕获的失败函数
 
 // 添加请求拦截器
 axios.interceptors.request.use(
@@ -31,5 +45,9 @@ export const AxiosGet = axios.create({
 
 export const AxiosPost = axios.create({
     method: "post",
+    timeout: 5 * 60 * 1000,
+});
+
+export const request = axios.create({
     timeout: 5 * 60 * 1000,
 });

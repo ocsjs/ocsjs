@@ -35,3 +35,6 @@ export const AxiosPost = axios.create({
     method: "post",
     timeout: 5 * 60 * 1000,
 });
+export const request = axios.create({
+    timeout: 5 * 60 * 1000,
+});

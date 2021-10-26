@@ -30,6 +30,11 @@
             <slot name="title">
                 {{ title }}
             </slot>
+
+            <a-popover v-if="description" placement="rightTop" :content="description">
+                <QuestionCircleOutlined />
+            </a-popover>
+
             <template v-if="!closeCollapse">
                 <CaretDownOutlined v-if="collapse" />
                 <CaretUpOutlined v-else />
@@ -48,36 +53,23 @@
         </transition>
     </div>
 </template>
-
+ 
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
 import { ref } from "vue";
+import { Color } from ".";
 
-interface Color {
-    pink: string;
-    red: string;
-    yellow: string;
-    orange: string;
-    cyan: string;
-    green: string;
-    blue: string;
-    purple: string;
-    geekblue: string;
-    magenta: string;
-    volcano: string;
-    gold: string;
-    lime: string;
-    gray: string;
-}
 const props = defineProps<{
     color?: keyof Color;
     title?: string;
+    // 详情描述
+    description?: string;
     size?: "small" | "default" | "large";
     // 是否开启折叠效果，优先级比 collapse 高
     closeCollapse?: boolean;
 }>();
 
-let { color, title, size, closeCollapse } = toRefs(props);
+let { color, title, size, closeCollapse, description } = toRefs(props);
 
 const collapse = ref(true);
 

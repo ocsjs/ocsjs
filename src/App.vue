@@ -1,5 +1,4 @@
 <template>
-     
     <a-layout class="layout" style="height: 100%">
         <a-layout-header id="layout-header">
             <Navigation />
@@ -26,13 +25,37 @@
 import Navigation from "./components/layout/Navigation.vue";
 
 const { ipcRenderer } = require("electron");
-import { message, notification } from "ant-design-vue";
- 
+import { message, Modal, notification } from "ant-design-vue";
+
 import { NotificationArgsProps } from "ant-design-vue/lib/notification";
 import { OCSEventTypes, Notify, IPCEventTypes } from "app/types";
  
- 
- 
+import { onMounted } from "@vue/runtime-core";
+import { request } from "./utils/request";
+
+function isOnline() {
+    request({
+        method: "OPTIONS",
+        url: "https://baidu.com",
+    })
+        .then(() => {
+            setTimeout(() => {
+                isOnline();
+            }, 10 * 1000);
+        })
+        .catch((err:any) => {
+            Modal.error({
+                title: "网络错误",
+                content:
+                    "检测到当前的网络已经断开，为了正常使用本软件，请您重新联网或者使用热点。",
+            });
+        });
+}
+
+onMounted(()=>{
+    isOnline() 
+})
+
 /**
  * 注册 remote 消息
  */

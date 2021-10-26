@@ -879,7 +879,7 @@ html,
   padding: 0px;
 }
 #app {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
@@ -1829,4 +1829,19 @@ html,
 }
 .ant-popover-content {
   max-width: 300px;
+}
+/* 设置滚动条的样式 */
+::-webkit-scrollbar {
+  width: 12px;
+}
+/* 滚动槽 */
+::-webkit-scrollbar-track {
+  box-shadow: inset006pxrgba(0, 0, 0, 0.3);
+  border-radius: 10px;
+}
+/* 滚动条滑块 */
+::-webkit-scrollbar-thumb {
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.1);
+  box-shadow: inset006pxrgba(0, 0, 0, 0.3);
 }
