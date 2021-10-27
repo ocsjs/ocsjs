@@ -146,6 +146,7 @@ import { Remote } from "@/utils/remote";
 import { Course } from "app/types/script/course";
 import { AddCourseTask, tasks, TaskToList, TaskUpdater } from "../task/task";
 import { useRouter } from "vue-router";
+import { NetWorkCheck } from "@/utils/request";
 const router = useRouter();
 const props = defineProps<{
     user: User;
@@ -182,28 +183,30 @@ function showList() {
     starting.value = true;
 }
 
-function start() {
-    for (const course of selectItems.value) {
-        const task: BaseTask<any> = reactive(
-            Remote.script.call(
-                "start",
-                user.value.loginScript,
-                toRaw(user.value),
-                toRaw(course)
-            )
-        );
+async function start() {
+    if (await NetWorkCheck()) {
+        for (const course of selectItems.value) {
+            const task: BaseTask<any> = reactive(
+                Remote.script.call(
+                    "start",
+                    user.value.loginScript,
+                    toRaw(user.value),
+                    toRaw(course)
+                )
+            );
 
-        AddCourseTask({
-            target: task,
-            course,
-            user: user.value,
-        });
-        message.success(course.name + " 启动成功！");
+            AddCourseTask({
+                target: task,
+                course,
+                user: user.value,
+            });
+            message.success(course.name + " 启动成功！");
+        }
+        setTimeout(() => {
+            starting.value = false;
+            router.push("/task");
+        }, 500);
     }
-    setTimeout(() => {
-        starting.value  = false;
-        router.push("/task");
-    }, 500);
 }
 </script>
 

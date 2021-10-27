@@ -1,4 +1,4 @@
-import { Modal } from "ant-design-vue";
+import { message, Modal } from "ant-design-vue";
 
 const axios = require("axios");
 
@@ -30,6 +30,12 @@ axios.interceptors.request.use(
         return config;
     },
     function (error: any) {
+        console.log(error);
+        
+        Modal.error({
+            title: "网络错误",
+            content: error,
+        });
         // 对请求错误做些什么
         return Promise.reject(error);
     }
@@ -42,6 +48,12 @@ axios.interceptors.response.use(
         return response;
     },
     function (error: any) {
+        console.log(error);
+        Modal.error({
+            title: "网络错误",
+            content: error,
+        });
+         
         // 对响应错误做点什么
         return Promise.reject(error);
     }
@@ -49,13 +61,13 @@ axios.interceptors.response.use(
 
 export const AxiosGet = axios.create({
     method: "get",
-    timeout: 5 * 60 * 1000,
+    timeout: 2 * 60 * 1000,
 });
 
 export const AxiosPost = axios.create({
     method: "post",
-    timeout: 5 * 60 * 1000,
+    timeout: 2 * 60 * 1000,
 });
 export const request = axios.create({
-    timeout: 5 * 60 * 1000,
+    timeout: 1 * 60 * 1000,
 });
