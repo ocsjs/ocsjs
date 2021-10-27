@@ -57,30 +57,35 @@ import { nextTick, onMounted, ref } from "vue";
 import { message } from "ant-design-vue";
 import { setting } from "./setting";
 import { IPCEventTypes } from "app/types";
+import { NetWorkCheck } from "@/utils/request";
 const { update } = setting;
 const { ipcRenderer } = require("electron");
 
 const needUpdate = ref(-1);
 
-function checkUpdate() {
-    needUpdate.value = -1;
-    ipcRenderer.send(IPCEventTypes.IS_NEED_UPDATE);
-    ipcRenderer.on(IPCEventTypes.IS_NEED_UPDATE, (e, v) => {
-        needUpdate.value = v ? 1 : 0;
+async function checkUpdate() {
+    if (await NetWorkCheck()) {
+        needUpdate.value = -1;
+        ipcRenderer.send(IPCEventTypes.IS_NEED_UPDATE);
+        ipcRenderer.on(IPCEventTypes.IS_NEED_UPDATE, (e, v) => {
+            needUpdate.value = v ? 1 : 0;
 
-        if (needUpdate.value === 1) {
-            message.warn("需要更新");
-        } else {
-            message.success("已经是最新版本");
-        }
-    });
+            if (needUpdate.value === 1) {
+                message.warn("需要更新");
+            } else {
+                message.success("已经是最新版本");
+            }
+        });
+    }
 }
 
-function onUpdate() {
-    ipcRenderer.send(IPCEventTypes.APP_UPDATE);
+async function onUpdate() {
+    if (await NetWorkCheck()) {
+        ipcRenderer.send(IPCEventTypes.APP_UPDATE);
+    }
 }
-onMounted(() => {
-    checkUpdate()
+onMounted(async () => {
+    await checkUpdate();
 });
 </script>
 

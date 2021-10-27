@@ -1,6 +1,27 @@
+import { Modal } from "ant-design-vue";
+
 const axios = require("axios");
 
-console.log(axios);
+export async function NetWorkCheck() {
+    return new Promise<boolean>((resolve, reject) => {
+        request({
+            method: "OPTIONS",
+            url: "https://baidu.com",
+        })
+            .then(() => {
+                resolve(true);
+            })
+            .catch((err: any) => {
+                console.log(err);
+
+                Modal.error({
+                    title: "网络错误",
+                    content: "检测到当前的网络已经断开，为了正常使用本软件，请您重新联网或者使用热点。",
+                });
+                resolve(false);
+            });
+    });
+}
 
 // 添加请求拦截器
 axios.interceptors.request.use(

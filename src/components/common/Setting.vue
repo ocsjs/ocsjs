@@ -1,12 +1,18 @@
 <template>
-    <div style="text-align: left" class="margin-top-4" >
-        <span class="space-10 ai-center">
-            <span> <slot name="befor"></slot> </span>
-            <span>
-                <span :style="fontBold ? { fontWeight: 'bold' } : {}">{{ label }} : </span>
-                <slot>{{ text }} </slot>
+    <div style="text-align: left" class="margin-top-8">
+        <span class="space-10 ai-center flex">
+            <slot name="befor"></slot>
+            <span class="flex nowrap space-10" style="width: fit-content">
+                <span :style="fontBold ? { fontWeight: 'bold' } : {}"
+                    >{{ label }} :
+                </span>
+                <span class="flex" style="width: fit-content">
+                    <slot>{{ text }} </slot>
+                </span>
             </span>
-            <span> <slot name="after"></slot> </span>
+            <span class="flex" style="width: fit-content"
+                ><slot name="after"></slot
+            ></span>
             <a-popover v-if="description" placement="rightTop" :content="description">
                 <QuestionCircleOutlined />
             </a-popover>

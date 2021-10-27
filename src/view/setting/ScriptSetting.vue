@@ -10,7 +10,8 @@
                     @click="launch.binaryPath && shell.openPath(launch.binaryPath)"
                     >{{ launch.binaryPath || "未设置" }}
                 </span>
-                <FolderTwoTone slot="after" @click="setBinaryPath()" />
+                <template #after><FolderTwoTone  @click="setBinaryPath()" /></template>
+                
             </setting>
         </setting-card>
 
@@ -24,7 +25,7 @@
                         :max="60"
                     >
                     </a-input-number>
-                    <span slot="after">秒</span>
+                    <template  #after>秒</template>
                 </setting>
             </setting-card>
             <setting-card :bordered="false" color="gray" title="超星设置" size="small">
@@ -92,7 +93,6 @@
                         :step="0.5"
                         :formatter="(v:any)=>v+' 小时'"
                     ></a-input-number>
-            
                 </setting>
 
                 <setting label="自动播放视频">
@@ -208,7 +208,7 @@
 
 <script setup lang="ts">
 import { Remote } from "@/utils/remote";
-import { AxiosGet } from "@/utils/request";
+import { AxiosGet, NetWorkCheck } from "@/utils/request";
 
 import { message } from "ant-design-vue";
 import { ref, onMounted, h } from "vue";
@@ -232,30 +232,32 @@ let tokenInfo = ref({
     success_times: 0,
     msg: "",
 });
-onMounted(() => {
-    checkToken();
+onMounted(async () => {
+    await checkToken();
 });
-function checkToken() {
-    loading.value = true;
-
-    AxiosGet({
-        url:
-            "http://wk.enncy.cn/query/chatiId/" +
-            config.setting.script.account.queryToken,
-    })
-        .then((res: any) => {
-            if (res.data.code === 1) {
-                tokenInfo.value = res.data.data;
-            } else {
-                tokenInfo.value.msg = "查题码无效，请重新填写";
-            }
-            loading.value = false;
+async function checkToken() {
+    if (await NetWorkCheck()) {
+        loading.value = true;
+        AxiosGet({
+            url:
+                "http://wk.enncy.cn/query/chatiId/" +
+                config.setting.script.account.queryToken,
         })
-        .catch((err: any) => {
-            console.error(err);
+            .then((res: any) => {
+                if (res.data.code === 1) {
+                    tokenInfo.value = res.data.data;
+                } else {
+                    tokenInfo.value.msg = "查题码无效，请重新填写";
+                }
+                loading.value = false;
+            })
+            .catch((err: any) => {
+                console.error(err);
 
-            message.error("获取查题次数失败,可能为网络错误！");
-        });
+                message.error("获取查题次数失败,可能为网络错误！");
+            });
+    } else {
+    }
 }
 
 // 设置路径
