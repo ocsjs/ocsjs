@@ -114,7 +114,7 @@ async function listVersion() {
     desc.value = "正在获取版本列表";
     if (await NetWorkCheck()) {
         const { data: res } = await AxiosGet(
-            "https://data.jsdelivr.com/v1/package/npm/online-course-script"
+            "https://gitee.com/api/v5/repos/enncy/online-course-script/tags"
         );
         desc.value = "获取成功";
         Object.assign(updateInfo, res);

@@ -1,6 +1,6 @@
 import { message, Modal } from "ant-design-vue";
 
-const axios = require("axios");
+import axios from "axios";
 
 export async function NetWorkCheck() {
     return new Promise<boolean>((resolve, reject) => {
@@ -58,6 +58,7 @@ axios.interceptors.response.use(
         return Promise.reject(error);
     }
 );
+ 
 
 export const AxiosGet = axios.create({
     method: "get",

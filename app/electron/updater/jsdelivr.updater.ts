@@ -1,11 +1,12 @@
 import { AxiosGet } from "./axios";
 import { PathLike } from "fs";
 import path from "path";
-import { Updater, Version } from ".";
+import { Updater } from ".";
 import yaml from "yaml";
 import { app } from "electron";
 
 import { ClientRequest } from "http";
+import { Version } from "../../types/version";
 
 export class JSDelivrUpdater extends Updater {
     constructor(private path: string) {

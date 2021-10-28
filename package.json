@@ -11,7 +11,7 @@
     "bd": "npm run build && npm run dist",
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js",
-    "push":"git push origin && git push gitee"
+    "push": "git push origin && git push gitee"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.0.1",
@@ -20,12 +20,14 @@
     "@types/axios": "^0.14.0",
     "ant-design-vue": "^2.2.8",
     "axios": "^0.22.0",
+    "compressing": "^1.5.1",
     "electron-store": "^8.0.1",
     "mark-ui": "^1.1.6",
     "puppeteer-core": "^10.4.0",
     "uuid": "^8.3.2",
     "vue": "^3.2.6",
-    "vue-router": "^4.0.11"
+    "vue-router": "^4.0.11",
+    "yaml": "^1.10.2"
   },
   "devDependencies": {
     "@types/electron": "^1.6.10",

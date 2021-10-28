@@ -2,8 +2,7 @@ import { AxiosGet } from "./axios";
 
 import { app } from "electron";
 import { ClientRequest } from "http";
-import { SemVer } from "semver";
-import semver from "semver";
+
 import path from "path";
 import fs from "fs";
 import { IPCEventTypes } from "../../types";
@@ -76,34 +75,5 @@ export abstract class Updater {
 
     static showFomatSize(size: number) {
         return size > 1024 ? (size > 1024 * 1024 ? (size / (1024 * 1024)).toFixed(2) + "MB" : (size / 1024).toFixed(2) + "KB") : size + "Byte";
-    }
-}
-
-/**
- * 版本号类
- */
-export class Version {
-    private _value: SemVer;
-
-    public get value(): SemVer {
-        return this._value;
-    }
-    public set value(value: SemVer) {
-        this._value = value;
-    }
-
-    constructor(version?: string) {
-        const v = version || app.getVersion();
-        this._value = new SemVer(semver.valid(semver.coerce(semver.clean(v, { loose: true }))) || v);
-    }
-    lessThan(v: Version) {
-        return semver.lt(this.value, v.value);
-    }
-    greaterThan(v: Version) {
-        return semver.gt(this.value, v.value);
-    }
-
-    toString() {
-        return this.value.raw;
     }
 }
