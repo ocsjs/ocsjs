@@ -1,7 +1,7 @@
 <template>
     <div>
         <setting-card :bordered="false" color="blue" title="启动设置">
-            <setting
+            <item
                 label="浏览器路径"
                 description="软件会自动检测您的谷歌浏览器路径，当路径未设置，或者你需要设置其他浏览器进行脚本操作，你可以点击蓝色的图片进行浏览器的路径设置"
             >
@@ -12,12 +12,12 @@
                 </span>
                 <template #after><FolderTwoTone  @click="setBinaryPath()" /></template>
                 
-            </setting>
+            </item>
         </setting-card>
 
         <setting-card :bordered="false" color="blue" title="脚本设置">
-            <setting-card :bordered="false" color="gray" title="全局设置" size="small">
-                <setting label="任务运行间隔时间">
+            <setting-card close-collapse :bordered="false" color="gray" title="全局设置" size="small">
+                <item label="任务运行间隔时间">
                     <a-input-number
                         size="small"
                         v-model:value="script.taskPeriod"
@@ -26,64 +26,64 @@
                     >
                     </a-input-number>
                     <template  #after>秒</template>
-                </setting>
+                </item>
             </setting-card>
-            <setting-card :bordered="false" color="gray" title="超星设置" size="small">
-                <setting label="自动播放音视频">
+            <setting-card close-collapse :bordered="false" color="gray" title="超星设置" size="small">
+                <item label="自动播放音视频">
                     <a-switch v-model:checked="script.cx.media.enable" />
-                </setting>
+                </item>
                 <template v-if="script.cx.media.enable">
                     <setting-card close-collapse size="small">
-                        <setting label="静音">
+                        <item label="静音">
                             <a-switch v-model:checked="script.cx.media.mute" />
-                        </setting>
-                        <setting label="倍速">
+                        </item>
+                        <item label="倍速">
                             <a-input-number
                                 size="small"
                                 v-model:value="script.cx.media.playbackRate"
                                 :min="1"
                                 :max="16"
                             ></a-input-number>
-                        </setting>
+                        </item>
                     </setting-card>
                 </template>
 
-                <setting label="自动播放PPT">
+                <item label="自动播放PPT">
                     <a-switch v-model:checked="script.cx.ppt" />
-                </setting>
-                <setting label="自动翻阅图书">
+                </item>
+                <item label="自动翻阅图书">
                     <a-switch v-model:checked="script.cx.book" />
-                </setting>
-                <setting label="自动做章节测验">
+                </item>
+                <item label="自动做章节测验">
                     <a-switch v-model:checked="script.cx.qa.enable" />
-                </setting>
+                </item>
                 <setting-card v-if="script.cx.qa.enable" size="small" close-collapse>
-                    <setting label="章节测验自动提交">
+                    <item label="章节测验自动提交">
                         <a-switch v-model:checked="script.cx.qa.autoReport" />
-                    </setting>
+                    </item>
                 </setting-card>
-                <setting label="自动做作业">
+                <item label="自动做作业">
                     <a-switch v-model:checked="script.cx.work.enable" />
-                </setting>
+                </item>
                 <setting-card v-if="script.cx.work.enable" size="small" close-collapse>
-                    <setting label="作业自动提交">
+                    <item label="作业自动提交">
                         <a-switch
                             size="small"
                             v-model:checked="script.cx.work.autoReport"
                         />
-                    </setting>
+                    </item>
                 </setting-card>
-                <setting label="自动考试">
+                <item label="自动考试">
                     <a-switch v-model:checked="script.cx.exam.enable" />
-                </setting>
+                </item>
                 <setting-card v-if="script.cx.exam.enable" size="small" close-collapse>
-                    <setting label="考试自动提交">
+                    <item label="考试自动提交">
                         <a-switch v-model:checked="script.cx.exam.autoReport" />
-                    </setting>
+                    </item>
                 </setting-card>
             </setting-card>
-            <setting-card :bordered="false" color="gray" size="small" title="智慧树设置">
-                <setting label="自动播放视频">
+            <setting-card close-collapse :bordered="false" color="gray" size="small" title="智慧树设置">
+                <item label="自动播放视频">
                     <a-input-number
                         size="small"
                         v-model:value="script.zhs.autoStop"
@@ -93,58 +93,58 @@
                         :step="0.5"
                         :formatter="(v:any)=>v+' 小时'"
                     ></a-input-number>
-                </setting>
+                </item>
 
-                <setting label="自动播放视频">
+                <item label="自动播放视频">
                     <a-switch v-model:checked="script.zhs.video.enable" />
-                </setting>
+                </item>
                 <template v-if="script.zhs.video.enable">
                     <setting-card close-collapse size="small">
-                        <setting label="静音">
+                        <item label="静音">
                             <a-switch v-model:checked="script.cx.media.mute" />
-                        </setting>
-                        <setting label="倍速">
+                        </item>
+                        <item label="倍速">
                             <a-input-number
                                 size="small"
                                 v-model:value="script.cx.media.playbackRate"
                                 :min="1"
                                 :max="16"
                             ></a-input-number>
-                        </setting>
+                        </item>
                     </setting-card>
                 </template>
-                <setting label="自动做章节测验">
+                <item label="自动做章节测验">
                     <a-switch v-model:checked="script.zhs.qa.enable" />
-                </setting>
+                </item>
                 <setting-card v-if="script.zhs.qa.enable" size="small" close-collapse>
-                    <setting label="章节测验自动提交">
+                    <item label="章节测验自动提交">
                         <a-switch v-model:checked="script.zhs.qa.autoReport" />
-                    </setting>
+                    </item>
                 </setting-card>
-                <setting label="自动做作业">
+                <item label="自动做作业">
                     <a-switch v-model:checked="script.zhs.work.enable" />
-                </setting>
+                </item>
                 <setting-card v-if="script.zhs.work.enable" size="small" close-collapse>
-                    <setting label="作业自动提交">
+                    <item label="作业自动提交">
                         <a-switch
                             size="small"
                             v-model:checked="script.zhs.work.autoReport"
                         />
-                    </setting>
+                    </item>
                 </setting-card>
-                <setting label="自动考试">
+                <item label="自动考试">
                     <a-switch v-model:checked="script.zhs.exam.enable" />
-                </setting>
+                </item>
                 <setting-card v-if="script.zhs.exam.enable" size="small" close-collapse>
-                    <setting label="考试自动提交">
+                    <item label="考试自动提交">
                         <a-switch v-model:checked="script.zhs.exam.autoReport" />
-                    </setting>
+                    </item>
                 </setting-card>
             </setting-card>
         </setting-card>
 
         <setting-card :bordered="false" color="blue" title="查题设置">
-            <setting description="必须配置查题码才能使用自动答题" label="查题码">
+            <item description="必须配置查题码才能使用自动答题" label="查题码">
                 <a-input
                     type="text"
                     size="small"
@@ -152,27 +152,27 @@
                     v-model:value="account.queryToken"
                     @blur="checkToken"
                 />
-            </setting>
+            </item>
 
             <template v-if="loading">
-                <setting label="提示">
+                <item label="提示">
                     <span>正在加载查题信息 <LoadingOutlined /></span>
-                </setting>
+                </item>
             </template>
             <template v-else-if="tokenInfo.msg">
-                <setting label="提示">
+                <item label="提示">
                     <a-alert
                         show-icon
                         :message="tokenInfo.msg"
                         type="error"
                         style="height: 24px"
                     />
-                </setting>
+                </item>
             </template>
             <template v-else>
-                <setting :text="tokenInfo.query_times" label="剩余次数" />
-                <setting :text="tokenInfo.success_times" label="成功次数" />
-                <setting :text="tokenInfo.all_times" label="总查询次数" />
+                <item :text="tokenInfo.query_times" label="剩余次数" />
+                <item :text="tokenInfo.success_times" label="成功次数" />
+                <item :text="tokenInfo.all_times" label="总查询次数" />
             </template>
         </setting-card>
 
@@ -182,26 +182,26 @@
             title="图形验证码破解(OCR)设置"
             description="当脚本遇到验证码的时候必须设置，否则需手动输入验证码验证"
         >
-            <setting label="账号">
+            <item label="账号">
                 <a-input
                     v-model:value="account.ocr.username"
                     type="text"
                     size="small"
                     style="width: 200px"
                 />
-            </setting>
-            <setting label="密码">
+            </item>
+            <item label="密码">
                 <a-input-password
                     v-model:value="account.ocr.password"
                     size="small"
                     style="width: 200px"
                 />
-            </setting>
-            <setting label="账号注册">
+            </item>
+            <item label="账号注册">
                 <a href="http://www.ttshitu.com/login.html"
                     >http://www.ttshitu.com/login.html</a
                 >
-            </setting>
+            </item>
         </setting-card>
     </div>
 </template>
@@ -216,7 +216,7 @@ import { config } from "@/utils/store";
 import Card from "@/components/common/Card.vue";
 
 import { FolderTwoTone } from "@ant-design/icons-vue/lib/icons";
-import Setting from "@/components/common/Setting.vue";
+import item from "@/components/common/item.vue";
 import SettingCard from "@/components/common/SettingCard.vue";
 
 const { launch, script, account } = config.setting.script;

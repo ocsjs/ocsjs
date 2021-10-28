@@ -25,16 +25,16 @@
 import Navigation from "./components/layout/Navigation.vue";
 
 const { ipcRenderer } = require("electron");
-import { message, Modal, notification } from "ant-design-vue";
+import { message, notification } from "ant-design-vue";
 
 import { NotificationArgsProps } from "ant-design-vue/lib/notification";
-import { OCSEventTypes, Notify, IPCEventTypes } from "app/types";
+import { OCSEventTypes, Notify } from "app/types";
 
 import { onMounted } from "@vue/runtime-core";
-import { NetWorkCheck, request } from "./utils/request";
+import { NetWorkCheck } from "./utils/request";
 
 // 网络检测
-onMounted(async() => {
+onMounted(async () => {
     await NetWorkCheck();
 });
 
@@ -57,11 +57,8 @@ ipcRenderer.on(OCSEventTypes.ERROR, (e: any, msg: string[]) => {
 // 注册 remote notify 消息
 ipcRenderer.on(OCSEventTypes.NOTIFY, (e: any, notify: Notify) => {
     console.log(notify);
-    // 是否为更新消息
-    const isUpdate = notify.name === IPCEventTypes.APP_UPDATE;
     const commonConfig: Omit<NotificationArgsProps, "type"> = {
-        // 如果是更新消息，则不消失，duration 为0，等待更新完成后手动关闭
-        duration: isUpdate && notify.type === "info" ? 0 : 5,
+        duration: 5,
         placement: "bottomRight",
         key: notify.name,
         message: notify.title,
@@ -71,29 +68,18 @@ ipcRenderer.on(OCSEventTypes.NOTIFY, (e: any, notify: Notify) => {
         },
         class: "notification-message",
         onClose: () => {
-            // 如果是更新状态，则通知 electron 关闭更新程序
-            if (isUpdate) {
-                ipcRenderer.send(IPCEventTypes.CANCEL_APP_UPDATE);
-            }
             notification.close(notify.name);
         },
     };
-    // 如果是更新通知
-    if (isUpdate && notify.type === "success") {
-        notification[notify.type](commonConfig);
-        setTimeout(() => {
-            notification.close(notify.name);
-        }, 5000);
-    } else {
-        // 其他通知
-        notification[notify.type](commonConfig);
-    }
+    // 调用通知
+    notification[notify.type](commonConfig);
 });
 </script>
 
 <style lang="less">
 @import "@/assets/css/common.css";
 
+// 隐藏过渡效果
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 0.5s ease;
@@ -101,6 +87,20 @@ ipcRenderer.on(OCSEventTypes.NOTIFY, (e: any, notify: Notify) => {
 
 .fade-enter-from,
 .fade-leave-to {
+    opacity: 0;
+}
+
+// 折叠加隐藏过渡效果
+.collapse-enter-active,
+.collapse-leave-active {
+    transition: all 0.25s ease-in-out;
+    overflow: hidden;
+}
+
+.collapse-enter-from,
+.collapse-leave-to {
+    padding: 0px 18px !important;
+    height: 0px !important;
     opacity: 0;
 }
 </style>

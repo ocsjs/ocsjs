@@ -19,11 +19,7 @@
         <div
             class="font-v2 flex ai-center space-10"
             :class="`${title ? 'title' : ''} ${closeCollapse ? '' : 'pointer'}`"
-            @click="
-                () => {
-                    if (!closeCollapse) collapse = !collapse;
-                }
-            "
+            @click="openCollapse"
         >
             <!-- 如果没有标题则不显示 -->
             <a-badge v-if="color" :color="color || 'gray'" />
@@ -40,25 +36,28 @@
                 <CaretUpOutlined v-else />
             </template>
         </div>
-        <transition name="fade">
-            <div
-                class="body"
-                :style="size === 'small' ? { padding: '0px 18px' } : {}"
-                v-show="closeCollapse ? true : collapse"
-            >
-                <slot name="body">
-                    <slot></slot>
-                </slot>
-            </div>
+        <transition name="collapse">
+            <keep-alive>
+                <div
+                    ref="cardBody"
+                    class="body"
+                    :style="size === 'small' ? { padding: '0px 18px' } : {}"
+                    v-show="closeCollapse ? true : collapse"
+                >
+                    <slot name="body">
+                        <slot></slot>
+                    </slot>
+                </div>
+            </keep-alive>
         </transition>
     </div>
 </template>
- 
+
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
-import { ref } from "vue";
+import { nextTick, onMounted, ref, watch } from "vue";
 import { Color } from ".";
-
+ 
 const props = defineProps<{
     color?: keyof Color;
     title?: string;
@@ -71,7 +70,10 @@ const props = defineProps<{
 
 let { color, title, size, closeCollapse, description } = toRefs(props);
 
+// 计算卡片的高度值，然后才能进行折叠
 const collapse = ref(true);
+const height = ref<number>(0);
+const cardBody = ref<any>(null);
 
 const largeStyle = {
     margin: "8px",
@@ -87,16 +89,25 @@ const smallStyle = {
     margin: "0px",
     padding: "0px",
 };
+
+function openCollapse() {
+ 
+    // 计算高度
+    if (!height.value) {
+        height.value = cardBody.value.offsetHeight;
+        cardBody.value.style.height = height.value + "px";
+        console.log("height.value", height.value);
+    }
+    // 折叠
+    if (!closeCollapse?.value) collapse.value = !collapse.value;
+}
 </script>
 
 <style scope lang="less">
 .card {
+    height: fit-content;
     border-radius: 4px;
     background-color: white;
-
-    .title {
-        padding: 4px;
-    }
 
     .body {
         padding: 8px 18px;
@@ -110,15 +121,5 @@ const smallStyle = {
 
 .pointer {
     cursor: pointer;
-}
-
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.25s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
 }
 </style>

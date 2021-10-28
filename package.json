@@ -22,6 +22,7 @@
     "axios": "^0.22.0",
     "compressing": "^1.5.1",
     "electron-store": "^8.0.1",
+    "lodash": "^4.17.21",
     "mark-ui": "^1.1.6",
     "puppeteer-core": "^10.4.0",
     "uuid": "^8.3.2",

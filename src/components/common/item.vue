@@ -1,12 +1,14 @@
 <template>
-    <div style="text-align: left" class="margin-top-8">
+    <div style="text-align: left" class="padding-top-6">
         <span class="space-10 ai-center flex">
             <slot name="befor"></slot>
             <span class="flex nowrap space-10" style="width: fit-content">
-                <span :style="fontBold ? { fontWeight: 'bold' } : {}"
+                <slot name="label">
+                    <span :style="fontBold ? { fontWeight: 'bold' } : {}"
                     >{{ label ? label + " :" : "" }}
                 </span>
-                <span class="flex" style="width: fit-content">
+                </slot>
+                <span class="flex" style="width: fit-content;text-align: left;">
                     <slot>{{ text }} </slot>
                 </span>
             </span>

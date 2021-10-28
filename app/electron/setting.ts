@@ -4,8 +4,9 @@ import { CurrentWindow } from ".";
 import { Setting } from "../types";
 import { StoreGet, StoreSet } from "../types/setting";
 import fs from "fs";
-import { Version } from "./updater";
+ 
 import { log } from "electron-log";
+import { Version } from "../types/version";
 
 export function initSetting() {
     const setting: Setting = StoreGet("setting");
