@@ -1,4 +1,6 @@
+ 
 const { valid, coerce, clean, lt, gt, SemVer } = require("semver");
+ 
 /**
  * 版本号类
  */
@@ -13,6 +15,7 @@ export class Version {
     }
 
     constructor(version: string) {
+ 
         this._value = new SemVer(valid(coerce(clean(version, { loose: true }))) || "0.0.0");
     }
     lessThan(v: Version): boolean {
@@ -28,5 +31,9 @@ export class Version {
 
     static from(version: string): any {
         return new Version(version);
+    }
+
+    static sort(versions: string[]) {
+        return versions.sort((a, b) => (Version.from(a).greaterThan(Version.from(b)) ? 1 : -1));
     }
 }

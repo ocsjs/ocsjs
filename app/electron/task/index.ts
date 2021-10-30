@@ -7,7 +7,8 @@ import { EventFormat } from "../../types";
 import { LoginScript } from "../../script/login/types";
 import { StoreGet, StoreSet } from "../../types/setting";
 import { BaseTask, TaskStatus, TaskTargetType, TaskType } from "./types";
-
+import { logger } from "../../types/logger"
+const { info, error,success } = logger("task");
 /**
  * 任务
  */
@@ -76,24 +77,28 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
         this.status = "finish";
         CurrentWindow?.webContents.send(this.eventFormat("finish", this.id), value);
         this.emit(this.eventFormat("finish"));
+        success("finish", this.toRaw(false));
     }
 
     process() {
         this.status = "process";
         CurrentWindow?.webContents.send(this.eventFormat("process", this.id), this.msg || "");
         this.emit(this.eventFormat("process"));
+        info("process", this.toRaw(false));
     }
 
     error() {
         this.status = "error";
         CurrentWindow?.webContents.send(this.eventFormat("error", this.id), this.msg || "");
         this.emit(this.eventFormat("error"));
+        error("error", this.toRaw(false));
     }
 
     message(msg: string) {
         this.msg = msg;
         CurrentWindow?.webContents.send(EventFormat("task", "message", this.id), this.msg || "");
         this.emit("message");
+        info("message", this.toRaw(false));
     }
 
     update() {
@@ -104,6 +109,7 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
             this.toRaw()
         );
         StoreSet("tasks", localTasks);
+        info("task更新", this.toRaw());
     }
 
     remove() {
@@ -113,10 +119,11 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
             1
         );
         StoreSet("tasks", localTasks);
+        info("task移除", this.toRaw());
     }
 
     // 格式化此对象，可序列化
-    toRaw(): any {
+    toRaw(withChildren: boolean = true): any {
         let task: BaseTask<any> = Object.assign({}, this);
 
         function str(task: BaseTask<any>): any {
@@ -124,11 +131,14 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
             if (children) {
                 children = str(children);
             }
-            return { id, name, status, msg, needBlock, timeout, createTime, children };
+            if (withChildren) {
+                return { id, name, status, msg, needBlock, timeout, createTime, children };
+            } else {
+                return { id, name, status, msg, needBlock, timeout, createTime };
+            }
         }
         return str(task);
     }
-
 
     /**
      * 链接任务组, 成为一个任务链表 ， 返回第一个任务
@@ -144,6 +154,7 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
 
     // 执行任务
     static exec(launchTask: BaseTask<LoginScript<void>>): BaseTask<any> {
+        info("脚本任务启动:", launchTask.toRaw());
         (async () => {
             let pass = true;
             launchTask.process();
@@ -166,6 +177,7 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
             }
 
             async function execTask(task: BaseTask<any>): Promise<void> {
+                info("脚本任务执行:", task.toRaw(false));
                 if (pass) {
                     if (task.timeout) {
                         setTimeout(() => {

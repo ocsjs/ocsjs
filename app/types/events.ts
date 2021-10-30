@@ -1,3 +1,5 @@
+import { VNode } from "vue";
+
  
 export interface OCSEvents {
     info: string;
@@ -10,7 +12,7 @@ export interface Notify {
     type: keyof OCSEvents;
     name: string;
     title: string;
-    message: string;
+    message: string|VNode;
 }
 
 export enum OCSEventTypes {

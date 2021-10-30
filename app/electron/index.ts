@@ -1,14 +1,23 @@
-import { info, log, error } from "console";
 import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
 import path from "path";
-
+import { logger } from "../types/logger"
+import { log } from "electron-log";
 import { BrowserConfig } from "./config";
-import { OCSNotify } from "./events/ocs.event";
 import { RemoteRouter } from "./router/remote";
-import { UpdateRouter } from "./router/update";
 import { initSetting } from "./setting";
 const t = Date.now();
 
+const { info, error, success, warn } = logger("system");
+ 
+// process.on("uncaughtException", (err) => {
+//     log("uncaughtException",err);
+//     error("uncaughtException", err);
+// });
+
+// process.on("unhandledRejection", (err) => {
+//     log("unhandledRejection",err);
+//     error("unhandledRejection", err);
+// });
 
 // 判断开发环境
 var mode = app.isPackaged ? "prod" : "dev";
@@ -24,7 +33,7 @@ app.whenReady().then(async () => {
     protocol.registerFileProtocol("app", (req: any, callback: any) => {
         const url = req.url.replace("app://", "");
         const resolve = path.normalize(path.resolve(`./resources/app/public`, url));
-        info({ path: resolve });
+        // info("app协议模式:", { path: resolve });
         callback({ path: resolve });
     });
 
@@ -40,9 +49,6 @@ app.whenReady().then(async () => {
     // 初始化配置
     initSetting();
     CurrentWindow = await createWindow();
-
-    // 初始化更新程序
-    UpdateRouter();
     // 初始化远程通信
     RemoteRouter();
 });
@@ -59,7 +65,7 @@ async function createWindow() {
             .then(() => {
                 win.show();
                 win.webContents.openDevTools();
-                log("启动用时:" + (Date.now() - t));
+                info("启动用时:" + (Date.now() - t));
                 // 拦截页面跳转
                 win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {
                     e.preventDefault();
@@ -74,9 +80,9 @@ async function createWindow() {
             })
             .catch((err: any) => {
                 setTimeout(() => {
-                    log("reloading!");
+                    info("正在重新加载中!");
                     load();
-                }, 2000);
+                }, 3000);
                 error(err);
             });
     }

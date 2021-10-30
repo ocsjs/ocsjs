@@ -6,5 +6,9 @@ dist-ssr
 lib/
 .vscode/
  
+# dist
 app/public/
 app/dist/
+
+# rollup visual
+stats.html

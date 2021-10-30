@@ -12,7 +12,7 @@ export interface BaseTask<T> extends TaskType<T> {
     update(): void;
     remove(): void;
  
-    toRaw(): BaseTask<T>;
+    toRaw(withChildren?:boolean): BaseTask<T>;
 }
  
 

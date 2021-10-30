@@ -16,14 +16,7 @@ export interface SystemSetting {
         courseImg: string;
     };
 }
-// 自动更新设置
-export interface UpdateSetting {
-    autoUpdate: boolean;
-    hour: number;
-    // 上一次检测更新时间
-    lastTime: number;
-}
-
+ 
 export interface CommonSetting {
     // 最大任务数量
     task: {
@@ -109,7 +102,6 @@ export interface ScriptSetting {
 export interface Setting {
     version: string;
     system: SystemSetting;
-    update: UpdateSetting;
     common: CommonSetting;
     script: ScriptSetting;
 }

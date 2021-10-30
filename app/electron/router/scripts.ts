@@ -6,11 +6,8 @@ import { GetCourseList } from "../../script/task/get.course.list";
 
 import { Task } from "../task";
 import { log } from "electron-log";
-import { StoreGet, StoreSet } from "../../types/setting";
 import { Course } from "../../types/script/course";
 import { CXScript } from "../../script/task/cx/cx.script";
-import { CXWork } from "../../script/task/cx/cx.work";
-import { CXExam } from "../../script/task/cx/cx.exam";
 
 /**
  * 脚本映射实现，使用此类当做 typeof 类型并且远程映射到渲染进程。具体看 remote.ts

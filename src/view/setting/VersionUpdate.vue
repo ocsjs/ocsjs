@@ -1,17 +1,19 @@
 <template>
     <div>
-        <setting-card title="版本列表" color="blue" close-collapse>
-            <template v-if="loading">
-                <a-skeleton />
+        <setting-card class="tag-list" title="更新列表" color="blue" close-collapse>
+            <template v-if="fetchingInfo">
+                <a-skeleton active />
             </template>
-            <a-empty
-                :image="simpleImg"
-                v-else-if="updateTags.length === 0"
-                :description="desc"
-            ></a-empty>
+            <template v-else-if="!LatestInfo">
+                <a-empty description="当前暂无版本" :image="simpleImg" />
+            </template>
 
-            <div class="aaa" v-for="(item, index) in updateTags">
-                <div @mouseenter="mouseEnter(index)" @mouseleave="mouseLeave">
+            <div v-else v-for="(item, index) in RepositoryTags.slice(0, tagSize)">
+                <div
+                    class="padding-4"
+                    @mouseenter="mouseEnter(index)"
+                    @mouseleave="mouseLeave"
+                >
                     <item>
                         <template #label>
                             <a-tag><TagFilled />{{ item.name }}</a-tag>
@@ -24,7 +26,7 @@
                                     style="line-height: 10px; height: 10px"
                                     @click="
                                         () => {
-                                            gitee.update(item);
+                                            GiteeUpdater.update(item);
                                         }
                                     "
                                     >切换到此版本</a-button
@@ -38,7 +40,7 @@
                             v-show="currentItem === index"
                             close-collapse
                             size="small"
-                            style="text-align: left; height: 84px"
+                            style="text-align: left; height: 100px"
                         >
                             <item font-bold label="描述">
                                 {{ item.message || "无" }}
@@ -46,21 +48,40 @@
                             <item font-bold v-if="item.size" label="大小">
                                 {{ showFomatSize(item.size) }}
                             </item>
-                            <item font-bold v-if="item.resourse" label="源码">
-                                <a :href="item.resourse">{{ item.resourse }}</a>
+                            <item font-bold v-if="item.resourse" label="手动下载地址">
+                                <div>
+                                    <a :href="item.resourse">{{ item.resourse }}</a>
+                                </div>
                             </item>
                         </setting-card>
                     </transition>
                 </div>
             </div>
         </setting-card>
-        <setting-card title="更新设置" color="blue">
+        <setting-card title="手动更新" color="blue" close-collapse>
+            <a-upload-dragger
+                v-model:fileList="fileList"
+                name="update"
+                :multiple="false"
+                :customRequest="customRequest"
+                :show-upload-list="false"
+            >
+                <p class="ant-upload-drag-icon">
+                    <inbox-outlined></inbox-outlined>
+                </p>
+                <p class="ant-upload-text">拖到压缩安装包到此处</p>
+                <p class="ant-upload-hint">
+                    请在更新列表中手动下载您想要的版本，然后将您下载的压缩文件拖入上方的区域中
+                </p>
+            </a-upload-dragger>
+        </setting-card>
+
+        <setting-card title="版本信息" color="blue">
             <item label="当前版本" font-bold>
                 <span class="space-10 flex">
                     <span>{{ Remote.app.call("getVersion") }} </span>
-
-                    <LoadingOutlined v-if="needUpdate === -1" />
-                    <div v-else-if="needUpdate === 1">
+                    <LoadingOutlined v-if="fetchingInfo" />
+                    <div v-else-if="needUpdate">
                         <a-tag color="#f50">需要更新</a-tag>
                     </div>
                     <div v-else>
@@ -68,37 +89,16 @@
                     </div>
                 </span>
             </item>
-            <item font-bold label="上次检测时间">
-                {{ new Date(update.lastTime).toLocaleString() }}
-            </item>
-            <item font-bold label="自动更新">
-                <a-switch v-model:checked="update.autoUpdate" />
-            </item>
-            <item font-bold label="自动更新间隔">
-                <div class="space-10">
-                    <a-input-number
-                        size="small"
-                        :min="1"
-                        :max="24"
-                        :default-value="1"
-                        v-model:value="update.hour"
-                        :disabled="!update.autoUpdate"
-                    />
-                    <span>小时</span>
-                </div>
-            </item>
+            <item font-bold label="发布日期"> </item>
             <item font-bold label="操作">
                 <div class="space-10">
                     <a-button
                         type="primary"
-                        :disabled="needUpdate === -1"
-                        @click="checkUpdate"
+                        :disabled="fetchingInfo"
+                        @click="refreshUpdateInfo"
                         size="small"
-                        >更新检测</a-button
+                        >检测更新</a-button
                     >
-                    <!-- <a-button type="primary" @click="onUpdate()" size="small">
-                        更新
-                    </a-button> -->
                 </div>
             </item>
         </setting-card>
@@ -107,71 +107,36 @@
 
 <script setup lang="ts">
 import { Remote } from "@/utils/remote";
-
-import { onMounted, ref, toRaw } from "vue";
-import { message } from "ant-design-vue";
-import { setting } from "./setting";
-import { NetWorkCheck } from "@/utils/request";
+import { ref } from "vue";
 import SettingCard from "@/components/common/SettingCard.vue";
 import Item from "@/components/common/item.vue";
 import { Empty } from "ant-design-vue";
-import { Gitee, showFomatSize, Tag } from "./updater";
+import {
+    fetchingInfo,
+    GiteeUpdater,
+    LatestInfo,
+    needUpdate,
+    refreshUpdateInfo,
+    RepositoryTags,
+} from "./updater";
+import { showFomatSize, UpdateNotify, upzipResource } from "./updater/types";
+const path = require("path");
 
 const simpleImg = Empty.PRESENTED_IMAGE_SIMPLE;
-const { update } = setting;
 
 // 版本列表展示的当前值
 const currentItem = ref(0);
 // 需要展示的标签数量
 const tagSize = ref(3);
 
-// 描述
-const desc = ref("");
-// 版本号信息
-const updateTags = ref<Tag[]>([]);
-// 是否需要更新, -1 正在加载, 1 需要 , 0 不需要
-const needUpdate = ref(-1);
-// 更新程序
-const gitee = new Gitee();
-// 正在加载
-const loading = ref(false);
-async function listVersion() {
-    loading.value = true;
-    desc.value = "正在获取版本列表";
-    if (await NetWorkCheck()) {
-        const tags = await gitee.listTags();
+const fileList = ref<File[]>([]);
 
-        if (tags.length === 0) {
-            desc.value = "暂无版本";
-        } else {
-            desc.value = "获取成功";
-            updateTags.value = tags;
-        }
-
-        console.log("tags", tags);
+function customRequest(info: any) {
+    const ispack = Remote.app.get("isPackaged");
+    if (ispack) {
+        upzipResource(info.file.path, path.resolve("./resources/app"));
     } else {
-        desc.value = "网络错误，获取失败";
-    }
-    loading.value = false;
-}
-
-async function checkUpdate() {
-    if (await NetWorkCheck()) {
-        needUpdate.value = -1;
-        const need = await gitee.needUpdate(toRaw(updateTags.value.reverse()[0]));
-        needUpdate.value = need ? 1 : 0;
-
-        if (needUpdate.value === 1) {
-            message.warn("需要更新");
-        } else {
-            message.success("已经是最新版本");
-        }
-    }
-}
-
-async function onUpdate(tag: Tag) {
-    if (await NetWorkCheck()) {
-        await gitee.update(tag);
+        UpdateNotify("error", "当前不是生产模式，不能进行更新操作");
     }
 }
 
@@ -181,10 +146,6 @@ function mouseEnter(index: number) {
 function mouseLeave() {
     currentItem.value = -1;
 }
-onMounted(async () => {
-    await listVersion();
-    await checkUpdate();
-});
 </script>
 
 <style scope lang="less">
@@ -200,5 +161,10 @@ onMounted(async () => {
     padding: 0px !important;
     height: 0px !important;
     opacity: 0;
+}
+
+.tag-list {
+    max-height: 800px;
+    overflow: auto;
 }
 </style>

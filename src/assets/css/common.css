@@ -200,8 +200,12 @@ body .error-color {
 body .background-color {
   color: #f0f2f5;
 }
-body .notification-message {
+body .ant-notification-notice-message {
   font-weight: bold;
+}
+body .ant-notification-notice-btn {
+  float: right;
+  margin-top: 0px;
 }
 body .ant-popover-content {
   max-width: 300px;
@@ -332,8 +336,12 @@ body .error-color {
 body .background-color {
   color: #f0f2f5;
 }
-body .notification-message {
+body .ant-notification-notice-message {
   font-weight: bold;
+}
+body .ant-notification-notice-btn {
+  float: right;
+  margin-top: 0px;
 }
 body .ant-popover-content {
   max-width: 300px;
@@ -1086,8 +1094,12 @@ html,
 #app .background-color {
   color: #f0f2f5;
 }
-#app .notification-message {
+#app .ant-notification-notice-message {
   font-weight: bold;
+}
+#app .ant-notification-notice-btn {
+  float: right;
+  margin-top: 0px;
 }
 #app .ant-popover-content {
   max-width: 300px;
@@ -1218,8 +1230,12 @@ html,
 #app .background-color {
   color: #f0f2f5;
 }
-#app .notification-message {
+#app .ant-notification-notice-message {
   font-weight: bold;
+}
+#app .ant-notification-notice-btn {
+  float: right;
+  margin-top: 0px;
 }
 #app .ant-popover-content {
   max-width: 300px;

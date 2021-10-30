@@ -1,8 +1,8 @@
-import { AxiosGet } from "./../../../electron/updater/axios";
-import { ScriptOptions } from "vm";
+ 
 import { WaitForScript } from "@pioneerjs/core";
 import { log } from "electron-log";
 import { Frame, Page } from "puppeteer-core";
+import { AxiosGet } from "../../../electron/axios";
 import { Task } from "../../../electron/task";
 import { Course } from "../../../types/script/course";
 import { LoginScript } from "../../login/types";

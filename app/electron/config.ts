@@ -1,6 +1,5 @@
 import { app, BrowserWindowConstructorOptions } from "electron";
 import { StoreGet } from "../types/setting";
-var mode = app.isPackaged ? "prod" : "dev";
 
 export const BrowserConfig: BrowserWindowConstructorOptions = {
     width: 900,

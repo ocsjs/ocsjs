@@ -20,8 +20,8 @@
     "@types/axios": "^0.14.0",
     "ant-design-vue": "^2.2.8",
     "axios": "^0.22.0",
-    "compressing": "^1.5.1",
     "electron-store": "^8.0.1",
+    "jszip": "^3.7.1",
     "lodash": "^4.17.21",
     "mark-ui": "^1.1.6",
     "puppeteer-core": "^10.4.0",
@@ -32,6 +32,7 @@
   },
   "devDependencies": {
     "@types/electron": "^1.6.10",
+    "@types/minizlib": "^2.1.2",
     "@types/node": "^16.9.1",
     "@vitejs/plugin-vue": "^1.9.3",
     "@vue/cli-plugin-router": "~4.5.0",

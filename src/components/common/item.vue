@@ -4,7 +4,7 @@
             <slot name="befor"></slot>
             <span class="flex nowrap space-10" style="width: fit-content">
                 <slot name="label">
-                    <span :style="fontBold ? { fontWeight: 'bold' } : {}"
+                    <span style="white-space: nowrap;" :style="fontBold ? { fontWeight: 'bold' } : {}"
                     >{{ label ? label + " :" : "" }}
                 </span>
                 </slot>
