@@ -1,6 +1,6 @@
-import { message, Modal } from "ant-design-vue";
+import { Modal } from "ant-design-vue";
 
-import axios from "axios";
+const axios = require("axios");
 
 export async function NetWorkCheck() {
     return new Promise<boolean>((resolve, reject) => {
@@ -31,7 +31,7 @@ axios.interceptors.request.use(
     },
     function (error: any) {
         console.log(error);
-        
+
         Modal.error({
             title: "网络错误",
             content: error,
@@ -53,12 +53,11 @@ axios.interceptors.response.use(
             title: "网络错误",
             content: error,
         });
-         
+
         // 对响应错误做点什么
         return Promise.reject(error);
     }
 );
- 
 
 export const AxiosGet = axios.create({
     method: "get",

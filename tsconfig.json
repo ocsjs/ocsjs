@@ -1,39 +1,27 @@
 {
-  "compilerOptions": {
-    "target": "esnext",
-    "useDefineForClassFields": true,
-    "module": "esnext",
-    "moduleResolution": "node",
-    "strict": true,
-    "jsx": "preserve",
-    // "sourceMap": true,
-    // "declaration": true,
-    "resolveJsonModule": true,
-    "esModuleInterop": true,
-    "experimentalDecorators": true, /* Enables experimental support for ES7 decorators. */
-    "emitDecoratorMetadata": true, /* Enables experimental support for emitting type metadata for decorators. */
-    "lib": [
-      "esnext",
-      "dom"
-    ],
-    "outDir": "./lib",
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "app/*": [
-        "./app/*"
-      ],
-    
-      "root/*": [
-        "./*"
-      ],
-    }
-  },
-  "include": [
-    "src/**/*.ts",
-    "src/**/*.d.ts",
-    "src/**/*.tsx",
-    "src/**/*.vue",
-  ]
+    "compilerOptions": {
+        "target": "esnext",
+        "useDefineForClassFields": true,
+        "module": "esnext",
+        "moduleResolution": "node",
+        "strict": true,
+        "jsx": "preserve",
+        // "sourceMap": true,
+        // "declaration": true,
+        "resolveJsonModule": true,
+        "esModuleInterop": true,
+        "experimentalDecorators": true /* Enables experimental support for ES7 decorators. */,
+        "emitDecoratorMetadata": true /* Enables experimental support for emitting type metadata for decorators. */,
+        "skipLibCheck": true,
+        "lib": ["esnext", "dom"],
+        "outDir": "./lib",
+        "paths": {
+            "@/*": ["./src/*"],
+            "app/*": ["./app/*"],
+
+            "root/*": ["./*"]
+        }
+    },
+
+    "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue"]
 }

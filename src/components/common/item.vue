@@ -23,7 +23,7 @@
 </template>
 
 <script setup lang="ts">
-import { QuestionCircleOutlined } from "@ant-design/icons-vue";
+ 
 
 defineProps<{
     label?: string;

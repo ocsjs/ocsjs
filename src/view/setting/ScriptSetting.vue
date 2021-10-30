@@ -10,13 +10,18 @@
                     @click="launch.binaryPath && shell.openPath(launch.binaryPath)"
                     >{{ launch.binaryPath || "未设置" }}
                 </span>
-                <template #after><FolderTwoTone  @click="setBinaryPath()" /></template>
-                
+                <template #after><FolderTwoTone @click="setBinaryPath()" /></template>
             </item>
         </setting-card>
 
         <setting-card :bordered="false" color="blue" title="脚本设置">
-            <setting-card close-collapse :bordered="false" color="gray" title="全局设置" size="small">
+            <setting-card
+                close-collapse
+                :bordered="false"
+                color="gray"
+                title="全局设置"
+                size="small"
+            >
                 <item label="任务运行间隔时间">
                     <a-input-number
                         size="small"
@@ -25,10 +30,16 @@
                         :max="60"
                     >
                     </a-input-number>
-                    <template  #after>秒</template>
+                    <template #after>秒</template>
                 </item>
             </setting-card>
-            <setting-card close-collapse :bordered="false" color="gray" title="超星设置" size="small">
+            <setting-card
+                close-collapse
+                :bordered="false"
+                color="gray"
+                title="超星设置"
+                size="small"
+            >
                 <item label="自动播放音视频">
                     <a-switch v-model:checked="script.cx.media.enable" />
                 </item>
@@ -82,7 +93,13 @@
                     </item>
                 </setting-card>
             </setting-card>
-            <setting-card close-collapse :bordered="false" color="gray" size="small" title="智慧树设置">
+            <setting-card
+                close-collapse
+                :bordered="false"
+                color="gray"
+                size="small"
+                title="智慧树设置"
+            >
                 <item label="自动播放视频">
                     <a-input-number
                         size="small"
@@ -211,11 +228,9 @@ import { Remote } from "@/utils/remote";
 import { AxiosGet, NetWorkCheck } from "@/utils/request";
 
 import { message } from "ant-design-vue";
-import { ref, onMounted, h } from "vue";
+import { ref, onMounted } from "vue";
 import { config } from "@/utils/store";
-import Card from "@/components/common/Card.vue";
 
-import { FolderTwoTone } from "@ant-design/icons-vue/lib/icons";
 import item from "@/components/common/item.vue";
 import SettingCard from "@/components/common/SettingCard.vue";
 

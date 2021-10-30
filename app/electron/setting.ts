@@ -41,6 +41,7 @@ export function initSetting() {
                 autoUpdate: true,
                 hour: 1,
                 lastTime: 0,
+ 
             },
             common: {
                 task: {

@@ -36,6 +36,7 @@ import { NetWorkCheck } from "./utils/request";
 // 网络检测
 onMounted(async () => {
     await NetWorkCheck();
+  
 });
 
 /**

@@ -1,64 +1,58 @@
 <template>
     <div>
         <setting-card title="版本列表" color="blue" close-collapse>
-            <transition name="fade" mode="out-in">
-                <keep-alive>
-                    <template v-if="loading">
-                        <a-skeleton />
-                    </template>
-                    <a-empty
-                        :image="simpleImg"
-                        v-else-if="updateTags.length === 0"
-                        :description="desc"
-                    ></a-empty>
+            <template v-if="loading">
+                <a-skeleton />
+            </template>
+            <a-empty
+                :image="simpleImg"
+                v-else-if="updateTags.length === 0"
+                :description="desc"
+            ></a-empty>
 
-                    <template
-                        v-else
-                        v-for="(item, index) in updateTags.reverse().slice(0, tagSize)"
-                        :key="index"
-                    >
-                        <div @mouseenter="mouseEnter(index)" @mouseleave="mouseLeave">
-                            <item>
-                                <template #label>
-                                    <a-tag><TagFilled />{{ item.name }}</a-tag>
-                                </template>
-                                <transition name="fade" mode="out-in" :duration="100">
-                                    <span v-if="currentItem === index">
-                                        <a-button
-                                            type="link"
-                                            size="small"
-                                            style="line-height: 10px; height: 10px"
-                                            @click="()=>{
-                                                gitee.update(item)
-                                            }"
-                                            >切换到此版本</a-button
-                                        >
-                                    </span>
-                                    <span v-else> - {{ showFomatSize(item.size) }} </span>
-                                </transition>
-                            </item>
-                            <transition name="collapse">
-                                <setting-card
-                                    v-show="currentItem === index"
-                                    close-collapse
+            <div class="aaa" v-for="(item, index) in updateTags">
+                <div @mouseenter="mouseEnter(index)" @mouseleave="mouseLeave">
+                    <item>
+                        <template #label>
+                            <a-tag><TagFilled />{{ item.name }}</a-tag>
+                        </template>
+                        <transition name="fade" mode="out-in" :duration="100">
+                            <span v-if="currentItem === index">
+                                <a-button
+                                    type="link"
                                     size="small"
-                                    style="text-align: left; height: 84px"
+                                    style="line-height: 10px; height: 10px"
+                                    @click="
+                                        () => {
+                                            gitee.update(item);
+                                        }
+                                    "
+                                    >切换到此版本</a-button
                                 >
-                                    <item font-bold label="描述">
-                                        {{ item.message || "无" }}
-                                    </item>
-                                    <item font-bold v-if="item.size" label="大小">
-                                        {{ showFomatSize(item.size) }}
-                                    </item>
-                                    <item font-bold v-if="item.resourse" label="源码">
-                                        <a :href="item.resourse">{{ item.resourse }}</a>
-                                    </item>
-                                </setting-card>
-                            </transition>
-                        </div>
-                    </template>
-                </keep-alive>
-            </transition>
+                            </span>
+                            <span v-else> - {{ showFomatSize(item.size) }} </span>
+                        </transition>
+                    </item>
+                    <transition name="collapse">
+                        <setting-card
+                            v-show="currentItem === index"
+                            close-collapse
+                            size="small"
+                            style="text-align: left; height: 84px"
+                        >
+                            <item font-bold label="描述">
+                                {{ item.message || "无" }}
+                            </item>
+                            <item font-bold v-if="item.size" label="大小">
+                                {{ showFomatSize(item.size) }}
+                            </item>
+                            <item font-bold v-if="item.resourse" label="源码">
+                                <a :href="item.resourse">{{ item.resourse }}</a>
+                            </item>
+                        </setting-card>
+                    </transition>
+                </div>
+            </div>
         </setting-card>
         <setting-card title="更新设置" color="blue">
             <item label="当前版本" font-bold>
@@ -95,12 +89,16 @@
             </item>
             <item font-bold label="操作">
                 <div class="space-10">
-                    <a-button type="primary" :disabled="needUpdate === -1" @click="checkUpdate" size="small"
+                    <a-button
+                        type="primary"
+                        :disabled="needUpdate === -1"
+                        @click="checkUpdate"
+                        size="small"
                         >更新检测</a-button
                     >
-                    <a-button type="primary" @click="onUpdate" size="small">
+                    <!-- <a-button type="primary" @click="onUpdate()" size="small">
                         更新
-                    </a-button>
+                    </a-button> -->
                 </div>
             </item>
         </setting-card>
@@ -110,21 +108,17 @@
 <script setup lang="ts">
 import { Remote } from "@/utils/remote";
 
-import { onMounted, ref } from "vue";
+import { onMounted, ref, toRaw } from "vue";
 import { message } from "ant-design-vue";
 import { setting } from "./setting";
-import { IPCEventTypes } from "app/types";
 import { NetWorkCheck } from "@/utils/request";
 import SettingCard from "@/components/common/SettingCard.vue";
-import item from "@/components/common/item.vue";
+import Item from "@/components/common/item.vue";
 import { Empty } from "ant-design-vue";
 import { Gitee, showFomatSize, Tag } from "./updater";
 
-import { debounce } from "lodash";
-
 const simpleImg = Empty.PRESENTED_IMAGE_SIMPLE;
 const { update } = setting;
-const { ipcRenderer } = require("electron");
 
 // 版本列表展示的当前值
 const currentItem = ref(0);
@@ -150,6 +144,7 @@ async function listVersion() {
         if (tags.length === 0) {
             desc.value = "暂无版本";
         } else {
+            desc.value = "获取成功";
             updateTags.value = tags;
         }
 
@@ -163,22 +158,20 @@ async function listVersion() {
 async function checkUpdate() {
     if (await NetWorkCheck()) {
         needUpdate.value = -1;
-        ipcRenderer.send(IPCEventTypes.IS_NEED_UPDATE);
-        ipcRenderer.on(IPCEventTypes.IS_NEED_UPDATE, (e, v) => {
-            needUpdate.value = v ? 1 : 0;
+        const need = await gitee.needUpdate(toRaw(updateTags.value.reverse()[0]));
+        needUpdate.value = need ? 1 : 0;
 
-            if (needUpdate.value === 1) {
-                message.warn("需要更新");
-            } else {
-                message.success("已经是最新版本");
-            }
-        });
+        if (needUpdate.value === 1) {
+            message.warn("需要更新");
+        } else {
+            message.success("已经是最新版本");
+        }
     }
 }
 
-async function onUpdate() {
+async function onUpdate(tag: Tag) {
     if (await NetWorkCheck()) {
-        ipcRenderer.send(IPCEventTypes.APP_UPDATE);
+        await gitee.update(tag);
     }
 }
 
