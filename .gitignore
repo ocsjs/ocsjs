@@ -6,3 +6,5 @@ dist-ssr
 lib/
 .vscode/
  
+app/public/
+app/dist/
