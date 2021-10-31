@@ -7,8 +7,8 @@ import { EventFormat } from "../../types";
 import { LoginScript } from "../../script/login/types";
 import { StoreGet, StoreSet } from "../../types/setting";
 import { BaseTask, TaskStatus, TaskTargetType, TaskType } from "./types";
-import { logger } from "../../types/logger"
-const { info, error,success } = logger("task");
+import { logger } from "../../types/logger";
+const { info, error, success, warn } = logger("task");
 /**
  * 任务
  */
@@ -74,31 +74,36 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
     }
 
     finish(value?: any) {
+        success(this.name, value);
         this.status = "finish";
         CurrentWindow?.webContents.send(this.eventFormat("finish", this.id), value);
         this.emit(this.eventFormat("finish"));
         success("finish", this.toRaw(false));
     }
 
-    process() {
-        this.status = "process";
-        CurrentWindow?.webContents.send(this.eventFormat("process", this.id), this.msg || "");
-        this.emit(this.eventFormat("process"));
-        info("process", this.toRaw(false));
+    process(msg: string) {
+        info(this.name, msg);
+        this.change("process", msg);
     }
 
-    error() {
-        this.status = "error";
-        CurrentWindow?.webContents.send(this.eventFormat("error", this.id), this.msg || "");
-        this.emit(this.eventFormat("error"));
-        error("error", this.toRaw(false));
+    error(msg: string) {
+        error(this.name, msg);
+        this.change("error", msg);
     }
 
-    message(msg: string) {
+    warn(msg: string) {
+        warn(this.name, msg);
+        this.change("warn", msg);
+    }
+
+    change(status: TaskStatus, msg: string) {
+        console.log(status, msg);
+
+        this.status = status;
         this.msg = msg;
-        CurrentWindow?.webContents.send(EventFormat("task", "message", this.id), this.msg || "");
-        this.emit("message");
-        info("message", this.toRaw(false));
+        CurrentWindow?.webContents.send(this.eventFormat(status, this.id), msg || "");
+        this.emit(this.eventFormat(status));
+        error(status, this.toRaw(false));
     }
 
     update() {
@@ -172,8 +177,7 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
                     await execTask(launchTask.children);
                 }
             } else {
-                launchTask.message("脚本启动失败，请重试！");
-                launchTask.error();
+                launchTask.error("脚本启动失败，请重试！");
             }
 
             async function execTask(task: BaseTask<any>): Promise<void> {
@@ -182,8 +186,7 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
                     if (task.timeout) {
                         setTimeout(() => {
                             if (task.status !== "finish") {
-                                task.message("任务执行超时！请重试！");
-                                task.error();
+                                task.error("任务执行超时！请重试！");
                                 pass = false;
                             }
                         }, task.timeout);
@@ -197,8 +200,7 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
                             task.finish(value);
                             if (task.children) await execTask(task.children);
                         } catch (error) {
-                            task.message(error as any);
-                            task.error();
+                            task.error(error as any);
                         }
                     }
                     // 如果是非阻塞任务
@@ -210,8 +212,7 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
                                 if (task.children) execTask(task.children);
                             })
                             .catch((err) => {
-                                task.message(err);
-                                task.error();
+                                task.error(err);
                             });
                     }
                 }

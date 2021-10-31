@@ -72,6 +72,11 @@ export const ScriptRemote = {
      * @param course 课程
      */
     start(name: keyof AllScriptObjects, user: User, course: Course) {
-        return this.login(name, user, CXScript(course));
+        if(user.platform==='cx'){
+            return this.login(name, user, CXScript(course));
+        }else{
+            throw new Error("暂时不支持此平台脚本！");
+        }
+        
     },
 };

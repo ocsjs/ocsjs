@@ -238,7 +238,7 @@ import {
     AllScriptObjects,
     BaseTask,
 } from "app/types";
-import { TaskUpdater, TaskToList } from "../task/task";
+import { ListeningTaskChange, TaskToList } from "../task/task";
 import CourseList from "./CourseList.vue";
 
 const uuid = require("uuid");
@@ -298,33 +298,37 @@ async function getCourseList() {
 
     if (task) {
         Object.assign(tasks, TaskToList(task));
-        TaskUpdater({
-            baseTasks:tasks,
-            finish(e, value) {
-                if (tasks?.[tasks.length - 1].status === "finish") {
-                    if (value.length !== 0) {
-                        // 设置课程
-                        // 1. 删除指定平台的课程信息
-                        // 2. 再填充最新的课程信息
-                        Object.assign(
-                            tempUser.courses,
-                            tempUser.courses
-                                .filter((c) => c.platform !== tempUser.platform)
-                                .concat(value)
-                        );
-                        message.success("课程列表获取成功!");
-                        setTimeout(() => {
-                            visible.value = false;
-                        }, 2000);
-                    } else {
-                        message.error("课程列表获取失败 , 请重新获取!");
+        console.log("get course list ", tasks);
+
+        for (const t of tasks) {
+            ListeningTaskChange(t, {
+                finish(e, value) {
+                    if (tasks?.[tasks.length - 1].status === "finish") {
+                        if (value.length !== 0) {
+                            // 设置课程
+                            // 1. 删除指定平台的课程信息
+                            // 2. 再填充最新的课程信息
+                            Object.assign(
+                                tempUser.courses,
+                                tempUser.courses
+                                    .filter((c) => c.platform !== tempUser.platform)
+                                    .concat(value)
+                            );
+                            message.success("课程列表获取成功!");
+                            setTimeout(() => {
+                                visible.value = false;
+                            }, 2000);
+                        } else {
+                            message.error("课程列表获取失败 , 请重新获取!");
+                        }
                     }
-                }
-            },
-            error(e, value) {
-                message.error("课程列表获取失败 , 请重新获取!");
-            },
-        });
+                },
+                error(e, value) {
+                    message.error("课程列表获取失败 , 请重新获取!");
+                },
+            });
+        }
+
         // 遍历监听任务变化，并显示出步骤条到页面
     }
 }

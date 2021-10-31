@@ -1,68 +1,47 @@
 <template>
     <div>
-        <Card :bordered="false" color="blue" title="系统设置">
-            <template #body>
-                <a-descriptions :column="1" :labelStyle="{ fontWeight: 'bold' }">
-                    <a-descriptions-item label="窗口置顶">
-                        <a-switch
-                            v-model:checked="system.win.isAlwaysOnTop"
-                            @change="
-                                Remote.win.call(
-                                    'setAlwaysOnTop',
-                                    system.win.isAlwaysOnTop
-                                )
-                            "
-                        />
-                    </a-descriptions-item>
-                </a-descriptions>
-            </template>
-        </Card>
+        <card title="系统设置">
+            <item label="窗口置顶" font-bold>
+                <a-switch
+                    v-model:checked="system.win.isAlwaysOnTop"
+                    @change="Remote.win.call('setAlwaysOnTop', system.win.isAlwaysOnTop)"
+                />
+            </item>
+        </card>
+        <card title="路径设置">
+            <item label="软件路径" font-bold>
+                <span class="path" @click="shell.openPath(appPath)">
+                    {{ appPath }}
+                </span>
+            </item>
+            <item label="可执行文件" font-bold>
+                <span class="path" @click="shell.showItemInFolder(exePath)">
+                    {{ exePath }}
+                </span>
+            </item>
+            <item label="配置文件" font-bold @click="shell.showItemInFolder(configPath)">
+                <span class="path"> {{ configPath }}</span>
+            </item>
 
-        <Card :bordered="false" color="blue" title="路径设置">
-            <template #body>
-                <a-descriptions :column="1" :labelStyle="{ fontWeight: 'bold' }">
-                    <a-descriptions-item label="软件路径">
-                        <span class="path" @click="shell.openPath(appPath)">
-                            {{ appPath }}
-                        </span>
-                    </a-descriptions-item>
+            <item label="用户数据" font-bold>
+                <span class="flex ai-center space-10">
+                    <span class="path" @click="shell.openPath(system.path.userData)">
+                        {{ system.path.userData }}
+                    </span>
+                    <FolderTwoTone @click="settingPath('userData')" />
+                </span>
+            </item>
 
-                    <a-descriptions-item label="可执行文件">
-                        <span class="path" @click="shell.showItemInFolder(exePath)">
-                            {{ exePath }}
-                        </span>
-                    </a-descriptions-item>
-                    <a-descriptions-item
-                        label="配置文件"
-                        @click="shell.showItemInFolder(configPath)"
-                    >
-                        <span class="path"> {{ configPath }}</span>
-                    </a-descriptions-item>
+            <item label="日志存储" font-bold>
+                <span class="flex ai-center space-10">
+                    <span class="path" @click="shell.openPath(system.path.logs)">
+                        {{ system.path.logs }}
+                    </span>
 
-                    <a-descriptions-item label="用户数据">
-                        <div class="space-10 flex ai-center">
-                            <span
-                                class="path"
-                                @click="shell.openPath(system.path.userData)"
-                            >
-                                {{ system.path.userData }}
-                            </span>
-                            <FolderTwoTone @click="settingPath('userData')" />
-                        </div>
-                    </a-descriptions-item>
-
-                    <a-descriptions-item label="日志存储">
-                        <div class="space-10 flex ai-center">
-                            <span class="path" @click="shell.openPath(system.path.logs)">
-                                {{ system.path.logs }}
-                            </span>
-
-                            <FolderTwoTone @click="settingPath('logs')" />
-                        </div>
-                    </a-descriptions-item>
-                </a-descriptions>
-            </template>
-        </Card>
+                    <FolderTwoTone @click="settingPath('logs')" />
+                </span>
+            </item>
+        </card>
     </div>
 </template>
 
@@ -72,6 +51,7 @@ import { Remote } from "@/utils/remote";
 import { SystemSetting } from "app/types";
 
 import { setting } from "./setting";
+import Item from "@/components/common/item.vue";
 const path = require("path");
 const system = setting.system;
 const { shell } = require("electron");

@@ -55,6 +55,8 @@ export function initSetting() {
                         // 任务间隔3秒
                         taskPeriod: 3 * 1000,
                         cx: {
+                            // 是否形成队列
+                            queue: false,
                             media: {
                                 enable: true,
                                 playbackRate: 2,

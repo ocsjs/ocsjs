@@ -12,7 +12,7 @@ export interface CourseTask {
     user: User;
 }
 
-export const tasks = reactive<CourseTask[]>([]);
+export const tasks = ref<CourseTask[]>([]);
 
 export function TaskToList(task: BaseTask<any>) {
     let list: BaseTask<any>[] = [];
@@ -27,51 +27,51 @@ export function TaskToList(task: BaseTask<any>) {
     return list;
 }
 
-export function TaskUpdater({
-    baseTasks,
-    finish,
-    process,
-    error,
-    message,
-}: {
-    baseTasks?: BaseTask<any>[];
-    finish?: (task: CourseTask, value: any) => void;
-    process?: (task: CourseTask, value: any) => void;
-    error?: (task: CourseTask, value: any) => void;
-    message?: (task: CourseTask, value: any) => void;
-}) {
-    (baseTasks || tasks).forEach((task: any) => {
+export function AddCourseTask(ct: CourseTask) {
+    tasks.value.push(ct);
+    for (const t of TaskToList(ct.target)) {
+        ListeningTaskChange(t, {});
+    }
+}
+
+export function ListeningTaskChange(
+    task: BaseTask<any>,
+    {
+        finish,
+        process,
+        error,
+        warn,
+    }: {
+        finish?: (task: BaseTask<any>, value: any) => void;
+        process?: (task: BaseTask<any>, value: any) => void;
+        error?: (task: BaseTask<any>, value: any) => void;
+        warn?: (task: BaseTask<any>, value: any) => void;
+    }
+) {
+    if (task.id) {
         const target = Remote.task(task.id);
         target.process((e: any, value: any) => {
             task.msg = value;
             task.status = "process";
             process?.(task, value);
-            console.log("process",task.name);
+            console.log("process", task.name, value);
         });
         target.finish((e: any, value: any) => {
             task.status = "finish";
             finish?.(task, value);
-            console.log("finish",task.name);
+            console.log("finish", task.name);
         });
         target.error((e: any, value: any) => {
             error?.(task, value);
             task.msg = value;
             task.status = "error";
-            console.log("error",task.name);
+            console.log("error", task.name);
         });
-        target.message((e: any, value: any) => {
-            message?.(task, value);
+        target.warn((e: any, value: any) => {
+            warn?.(task, value);
             task.msg = value;
-            task.status = "error";
-            console.log("message",task.name);
+            task.status = "warn";
+            console.log("warn", task.name);
         });
-    });
-}
-
-export function AddCourseTask(ct: CourseTask) {
-    tasks.push(ct);
-    const ts = TaskToList(ct.target);
-    TaskUpdater({
-        baseTasks: ts,
-    });
+    }
 }

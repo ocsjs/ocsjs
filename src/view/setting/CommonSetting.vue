@@ -1,7 +1,7 @@
 <template>
     <div>
-        <setting-card :bordered="false" color="blue" title="任务设置">
-            <item size="small" label="最大任务数量">
+        <card title="任务设置">
+            <item label="最大任务数量" font-bold>
                 <span class="space-10">
                     <a-input-number
                         size="small"
@@ -18,14 +18,13 @@
                     </a-popover>
                 </span>
             </item>
-        </setting-card>
-        
+        </card>
     </div>
 </template>
 
 <script setup lang="ts">
 import { setting } from "./setting";
-import SettingCard from "@/components/common/SettingCard.vue";
+import Card from "@/components/common/Card.vue";
 import Item from "@/components/common/item.vue";
 
 const { common } = setting;

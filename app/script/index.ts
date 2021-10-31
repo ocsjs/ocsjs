@@ -35,14 +35,12 @@ export async function StartScript<S extends RunnableScript>(name: keyof AllScrip
 
         // 创建 pioneer
         const pioneer = Pioneer.create(browser);
-        const script = [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, ZHSPhoneLoginScript, ZHSStudentIdLoginScript].find(
-            (s) => s.scriptName === name
-        );
+        const script = [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, ZHSPhoneLoginScript, ZHSStudentIdLoginScript].find((s) => s.scriptName === name);
         if (script) {
             // 启动装配
             await pioneer.startup({
                 scripts: [script],
-                events: ["request", "response"],
+                events: ["request", "response", "frameattached", "framedetached", "framenavigated"],
             });
         }
 

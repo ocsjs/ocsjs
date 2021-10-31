@@ -10,7 +10,7 @@
                 </a-menu-item>
                 <a-menu-item
                     key="setting-common"
-                    @click="$router.push('/setting/common')"
+                    @click="$router.push('/setting/script')"
                 >
                     <SettingOutlined class="icon" /> 设置
                 </a-menu-item>

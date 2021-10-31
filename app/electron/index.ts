@@ -5,16 +5,21 @@ import { log } from "electron-log";
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { initSetting } from "./setting";
+import { OCSNotify } from "./events/ocs.event";
 const t = Date.now();
 
 const { info, error, task } = logger("system");
+const notify = new OCSNotify("system", "系统通知");
 
 process.on("uncaughtException", (err) => {
     log("uncaughtException", err);
     error("uncaughtException", err);
 });
 
-process.on("unhandledRejection", (err) => {
+process.on("unhandledRejection", (err: any) => {
+    if (err.toString().indexOf("Most likely the page has been closed") !== -1) {
+        notify.error("某个页面运行错误，很可能是您将浏览器关闭了。");
+    }
     log("unhandledRejection", err);
     error("unhandledRejection", err);
 });

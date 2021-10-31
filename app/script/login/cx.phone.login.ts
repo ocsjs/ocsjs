@@ -36,7 +36,7 @@ export class CXPhoneLoginScript extends LoginScript<void> {
         const { phone } = user.loginInfo.cx.phoneLogin;
 
         await utils.value("#phone", phone);
-        task.message('请手动输入验证码并点击登陆');
+        task.warn('请手动输入验证码并点击登陆');
         await loginUtils.waitForLogin();
     }
 }

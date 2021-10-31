@@ -144,7 +144,7 @@ import UserForm from "./UserForm.vue";
 import CourseList from "./CourseList.vue";
 import { Remote } from "@/utils/remote";
 import { Course } from "app/types/script/course";
-import { AddCourseTask, tasks, TaskToList, TaskUpdater } from "../task/task";
+import { AddCourseTask } from "../task/task";
 import { useRouter } from "vue-router";
 import { NetWorkCheck } from "@/utils/request";
 const router = useRouter();

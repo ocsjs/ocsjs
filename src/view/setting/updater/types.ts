@@ -2,7 +2,7 @@ import { AxiosGet, AxiosPost } from "@/utils/request";
 import { Version } from "app/types/version";
 const yaml = require("yaml");
 import { Button, notification, Progress } from "ant-design-vue";
-import { Remote } from "@/utils/remote";
+import { ElectronVersion, Remote } from "@/utils/remote";
 
 import { IconType, NotificationArgsProps } from "ant-design-vue/lib/notification";
 import { unzip } from "@/utils/zip";
@@ -57,7 +57,7 @@ export abstract class UpdaterImpl implements Updater {
     }
 
     async isNeedUpdate(latest: LatestType): Promise<boolean> {
-        return Version.from(latest.version).greaterThan(Version.from(Remote.app.call("getVersion")));
+        return Version.from(latest.version).greaterThan(Version.from(ElectronVersion));
     }
 
     resolvePath(tag: Tag): string {

@@ -6,15 +6,14 @@ export interface BaseTask<T> extends TaskType<T> {
     onError(listener: (...args: any[]) => void): void;
     eventFormat(status: TaskStatus, ...str: string[]): void;
     finish(value?: any): void;
-    process(msg?:string): void;
-    error(msg?:string): void;
-    message(msg: string): void;
+    process(msg?: string): void;
+    error(msg?: string): void;
+    warn(msg?: string):void
     update(): void;
     remove(): void;
- 
-    toRaw(withChildren?:boolean): BaseTask<T>;
+
+    toRaw(withChildren?: boolean): BaseTask<T>;
 }
- 
 
 export interface TaskType<T> {
     // 任务名称
@@ -47,4 +46,4 @@ export interface TaskDispatcher<T> {
 
 export type TaskTargetType<T> = (task: BaseTask<T>, scripts?: LoginScript<void>, ...args: any[]) => Promise<T>;
 
-export type TaskStatus = "wait" | "process" | "finish" | "error";
+export type TaskStatus = "wait" | "process" | "finish" | "error" | "warn";

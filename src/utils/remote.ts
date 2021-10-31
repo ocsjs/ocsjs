@@ -58,15 +58,16 @@ export const Remote = {
                 ipcRenderer.once(EventFormat("task", "finish", id), handler);
             },
             process(handler: (e: any, value: any) => void) {
-                ipcRenderer.once(EventFormat("task", "process", id), handler);
+                ipcRenderer.on(EventFormat("task", "process", id), handler);
             },
             error(handler: (e: any, value: any) => void) {
                 ipcRenderer.once(EventFormat("task", "error", id), handler);
             },
-            message(handler: (e: any, value: any) => void){
-                ipcRenderer.on(EventFormat("task", "message", id), handler);
-            }
+            warn(handler: (e: any, value: any) => void) {
+                ipcRenderer.on(EventFormat("task", "warn", id), handler);
+            },
         };
     },
 };
- 
+
+export const ElectronVersion = Remote.app.call("getVersion");

@@ -1,8 +1,8 @@
-import {  createApp  } from "vue";
+import { createApp } from "vue";
 
 import App from "./App.vue";
 import { router } from "./router";
- 
+
 import { message } from "ant-design-vue";
 import "ant-design-vue/dist/antd.css";
 // antdv IconFont 远程阿里图标库ICON
@@ -20,7 +20,7 @@ message.config({
 
 const app = createApp(App);
 app.use(router)
+
     // 注册远程ICON
     .component("IconFont", IconFont)
     .mount("#app");
- 

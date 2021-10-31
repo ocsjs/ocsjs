@@ -9,112 +9,93 @@
         </div>
 
         <template v-else>
+            <span>当前有 {{ tasks.length }} 个任务运行中</span>
+
             <div v-for="task of tasks">
                 <Card
                     v-if="task.target && task.course && task.user"
-                    color="blue"
+                    @click="collapse = !collapse"
                     @mousemove="hoverId = task.course.id"
                     @mouseleave="hoverId = ''"
                 >
                     <template #title>
-                        <a-row class="flex">
-                            <a-col :span="8">
-                                <span class="flex jc-flex-start ai-baseline space-10">
-                                    <span
-                                        >{{ task.user.name }} -
-                                        {{ task.course.name }}</span
-                                    >
-                                </span>
-                            </a-col>
+                        <span
+                            >{{ task.user.name }} -
+                            {{ PlatformAlias[task.user.platform].split("-")[0] }} -
+                            {{ task.course.name }}</span
+                        >
+                    </template>
 
-                            <a-col :span="16">
-                                <transition name="fade">
-                                    <span
-                                        v-show="hoverId === task.course.id"
-                                        class="flex jc-flex-end ai-center ac-center space-10"
-                                    >
-                                        <a-popover content="任务置顶">
-                                            <a-button
-                                                type="primary"
-                                                shape="circle"
-                                                size="small"
-                                            >
-                                                <template #icon>
-                                                    <ToTopOutlined />
-                                                </template>
-                                            </a-button>
-                                        </a-popover>
+                    <template #description>
+                        <span v-show="collapse" class="font-v3">
+                            <a-badge :status="statusDot(task.target)" />
+                            {{ currentMsg(task) }}
+                        </span>
+                        <transition name="fade">
+                            <span
+                                v-show="hoverId === task.course.id"
+                                class="flex jc-flex-end ai-center ac-center space-10"
+                                style="height: 0px"
+                            >
+                                <a-popover content="任务置顶">
+                                    <a-button type="primary" shape="circle" size="small">
+                                        <template #icon>
+                                            <ToTopOutlined />
+                                        </template>
+                                    </a-button>
+                                </a-popover>
 
-                                        <a-popover content="详情">
-                                            <a-button
-                                                type="primary"
-                                                shape="circle"
-                                                size="small"
-                                                @click="showDetail(task.target)"
-                                            >
-                                                <template #icon>
-                                                    <BarsOutlined />
-                                                </template>
-                                            </a-button>
-                                        </a-popover>
-                                        <a-popover content="关闭任务">
-                                            <a-button
-                                                type="primary"
-                                                shape="circle"
-                                                danger
-                                                size="small"
-                                            >
-                                                <template #icon>
-                                                    <CloseOutlined />
-                                                </template>
-                                            </a-button>
-                                        </a-popover>
-                                    </span>
-                                </transition>
-                            </a-col>
-                        </a-row>
+                                <a-popover content="详情">
+                                    <a-button
+                                        type="primary"
+                                        shape="circle"
+                                        size="small"
+                                        @click="showDetail(task)"
+                                    >
+                                        <template #icon>
+                                            <BarsOutlined />
+                                        </template>
+                                    </a-button>
+                                </a-popover>
+                                <a-popover content="关闭任务">
+                                    <a-button
+                                        type="primary"
+                                        shape="circle"
+                                        danger
+                                        size="small"
+                                    >
+                                        <template #icon>
+                                            <CloseOutlined />
+                                        </template>
+                                    </a-button>
+                                </a-popover>
+                            </span>
+                        </transition>
                     </template>
 
                     <template #body>
-                        <a-collapse :bordered="false" style="text-align: left">
-                            <a-collapse-panel
-                                style="
-                                    background: #f7f7f7;
-                                    border-radius: 4px;
-
-                                    border: 0;
-                                    overflow: hidden;
-                                "
-                                :header="currentMsg(task) || `任务全部完成！`"
-                            >
-                                <a-steps direction="vertical" size="small">
-                                    <a-step
-                                        v-for="(task, index) in TaskToList(task.target)"
-                                        :key="index"
-                                        :title="task.name"
-                                        :status="task.status"
-                                        :sub-title="
-                                            task.createTime
-                                                ? new Date(
-                                                      task.createTime
-                                                  ).toLocaleString()
-                                                : ''
-                                        "
-                                    >
-                                        <template #description>
-                                            <div
-                                                v-text="
-                                                    task.msg || formatTaskStatus(task)
-                                                "
-                                            ></div>
-                                        </template>
-                                        <template v-if="task.status === 'process'" #icon>
-                                            <LoadingOutlined />
-                                        </template>
-                                    </a-step>
-                                </a-steps>
-                            </a-collapse-panel>
-                        </a-collapse>
+                        <div class="padding-12">
+                            <a-steps direction="vertical" size="small">
+                                <a-step
+                                    v-for="(task, index) in TaskToList(task.target)"
+                                    :key="index"
+                                    :title="task.name"
+                                    :status="task.status"
+                                    :sub-title="
+                                        task.createTime
+                                            ? new Date(task.createTime).toLocaleString()
+                                            : ''
+                                    "
+                                >
+                                    <template #description>
+                                        <div v-text="formatTaskStatus(task)"></div>
+                                    </template>
+                                    <template v-if="task.status === 'process'" #icon>
+                                        <LoadingOutlined />
+                                    </template>
+                                </a-step>
+                            </a-steps>
+                        </div>
                     </template>
                 </Card>
             </div>
@@ -126,17 +107,36 @@
                 :column="1"
                 :labelStyle="{ fontWeight: 'bold' }"
             >
+                <a-descriptions-item label="账号">
+                    {{ showTask.user.name }}
+                </a-descriptions-item>
+                <a-descriptions-item label="运行平台">
+                    {{ showTask.course.platform }}
+                </a-descriptions-item>
+                <a-descriptions-item label="课程名">
+                    {{ showTask.course.name }}
+                </a-descriptions-item>
+                <a-descriptions-item label="课程简介">
+                    {{ showTask.course.profile }}
+                </a-descriptions-item>
+                <a-descriptions-item label="账号">
+                    {{ showTask.user.name }}
+                </a-descriptions-item>
                 <a-descriptions-item label="当前任务名">
-                    {{ showTask.name }}
+                    {{ showTask.target.name }}
                 </a-descriptions-item>
                 <a-descriptions-item label="运行状态">
-                    {{ formatTaskStatus(showTask) }}
+                    {{ formatTaskStatus(showTask.target) }}
                 </a-descriptions-item>
                 <a-descriptions-item label="开始时间">
-                    {{ new Date(showTask.createTime).toLocaleString() }}
+                    {{
+                        showTask.target.createTime
+                            ? new Date(showTask.target.createTime).toLocaleString()
+                            : "未知"
+                    }}
                 </a-descriptions-item>
                 <a-descriptions-item label="任务编号">
-                    {{ showTask.id }}
+                    {{ showTask.target.id }}
                 </a-descriptions-item>
             </a-descriptions>
         </a-modal>
@@ -147,7 +147,7 @@
 import { CourseTask, tasks, TaskToList } from "./task";
 import Card from "@/components/common/Card.vue";
 import { ref } from "@vue/reactivity";
-import { BaseTask } from "app/types";
+import { PlatformAlias, BaseTask } from "app/types";
 
 // 当前 hover 的卡片组件
 const hoverId = ref("");
@@ -155,20 +155,38 @@ const hoverId = ref("");
 // 详情框
 const visible = ref(false);
 
+const collapse = ref(false);
+
 // 展示详情的临时task变量
-const showTask = ref<any | undefined>(undefined);
+const showTask = ref<CourseTask | undefined>(undefined);
 
 function currentMsg(task: CourseTask) {
     const all = TaskToList(task.target);
-    const process = all.filter((t) => t.status === "process");
-
-    if (process && process.length !== 0) {
-        const t = process[process.length - 1];
-        return `[${t?.name}] : ` + (t?.msg || formatTaskStatus(t) || "");
+    let process =
+        all.filter((t) => t.status === "process").pop() ||
+        all.filter((t) => t.status === "finish").pop() ||
+        all[0];
+    if (process) {
+        const t = process;
+        return `[${t?.name || "未知任务名"}] : ` + formatTaskStatus(t);
+    } else {
+        return "任务全部完成";
     }
 }
 
-function showDetail(task: any) {
+function statusDot(task: BaseTask<any>) {
+    task.status === "process"
+        ? "processing"
+        : task.status === "finish"
+        ? "success"
+        : task.status === "wait"
+        ? "default"
+        : task.status === "warn"
+        ? "warning"
+        : "error";
+}
+
+function showDetail(task: CourseTask) {
     showTask.value = task;
     visible.value = true;
 }

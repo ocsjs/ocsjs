@@ -1,4 +1,4 @@
-import { Remote } from "@/utils/remote";
+import { ElectronVersion, Remote } from "@/utils/remote";
 import { Version } from "app/types/version";
 import { ref } from "vue";
 import { Gitee, LatestType, Tag } from "./types";
@@ -15,15 +15,23 @@ export const LatestInfo = ref<LatestType | undefined>(undefined);
 export const LatestTag = ref<Tag | undefined>(undefined);
 // 是否需要更新
 export const needUpdate = ref(false);
- 
+// 当前的远程版本信息
+export const CurrentLatestInfo = ref<LatestType | undefined>(undefined);
+
 export async function refreshUpdateInfo() {
     fetchingInfo.value = true;
     // 获取版本列表
     RepositoryTags.value = await GiteeUpdater.listTags();
- 
+
     // 寻找最新的版本
     const sortTagVersions = Version.sort(RepositoryTags.value.map((t) => t.name));
     LatestTag.value = RepositoryTags.value.find((t) => t.name === sortTagVersions[0]);
+
+    const currentTag = RepositoryTags.value.find((t) => t.name === ElectronVersion);
+    if (currentTag) {
+        CurrentLatestInfo.value = await GiteeUpdater.getLatestInfo(currentTag);
+    }
+
     if (LatestTag.value) {
         // 获取版本信息
         LatestInfo.value = await GiteeUpdater.getLatestInfo(LatestTag.value);

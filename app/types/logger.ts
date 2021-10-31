@@ -63,6 +63,8 @@ export function mkdirs(url: string): void {
  * @param args 参数
  */
 export function log(eventName: string, level: LoggerLevel, ...msg: any[]) {
+    // console.log({level,eventName,msg});
+    
     const path = app.getPath("logs");
     const data = {
         name: eventName,

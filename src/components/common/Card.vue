@@ -9,69 +9,105 @@
     <div
         class="card"
         :style="
-            !size || size === 'large'
-                ? largeStyle
-                : size === 'small'
-                ? smallStyle
-                : defaultStyle
+            size === 'large' ? largeStyle : size === 'small' ? smallStyle : defaultStyle
         "
     >
         <div
             class="font-v2 flex ai-center space-10"
-            :class="`${title ? 'title' : ''} ${closeCollapse ? '' : 'pointer'}`"
-            @click="openCollapse"
+            style="white-space: nowrap"
+            :class="`${title ? 'title' : ''} ${openCollapse ? 'pointer' : ''}`"
+            @click="onCollapse"
         >
             <!-- 如果没有标题则不显示 -->
             <a-badge v-if="color" :color="color || 'gray'" />
+            <!-- 标题 -->
             <slot name="title">
                 {{ title }}
             </slot>
-
-            <a-popover v-if="description" placement="rightTop" :content="description">
-                <QuestionCircleOutlined />
-            </a-popover>
-
-            <template v-if="!closeCollapse">
+            <!-- 折叠效果图标 -->
+            <template v-if="openCollapse">
                 <CaretDownOutlined v-if="collapse" />
                 <CaretUpOutlined v-else />
             </template>
+            <!-- 描述插槽 -->
+            <slot name="description">
+                <a-popover v-if="description" placement="rightTop">
+                    <template #content>
+                        <!-- 是否开启 markdown ? -->
+                        <div v-if="md">
+                            <MdRender :content="description" />
+                        </div>
+                        <div v-else>{{ description }}</div>
+                    </template>
+                    <QuestionCircleOutlined />
+                </a-popover>
+            </slot>
         </div>
-        <transition name="collapse">
-            <keep-alive>
-                <div
-                    ref="cardBody"
-                    class="body"
-                    :style="size === 'small' ? { padding: '0px 18px' } : {}"
-                    v-show="closeCollapse ? true : collapse"
-                >
-                    <slot name="body">
-                        <slot></slot>
-                    </slot>
-                </div>
-            </keep-alive>
-        </transition>
+
+        <!-- 是否开启折叠效果 -->
+        <template v-if="openCollapse === false">
+            <div class="body">
+                <slot name="body">
+                    <slot></slot>
+                </slot>
+            </div>
+        </template>
+        <template v-else>
+            <transition name="collapse">
+                <keep-alive>
+                    <div
+                        ref="cardBody"
+                        class="body"
+                        :style="size === 'small' ? { padding: '0px 18px' } : {}"
+                        v-show="openCollapse ? collapse : false"
+                    >
+                        <slot name="body">
+                            <slot></slot>
+                        </slot>
+                    </div>
+                </keep-alive>
+            </transition>
+        </template>
     </div>
 </template>
 
 <script setup lang="ts">
 import { toRefs } from "@vue/reactivity";
-import { nextTick, onMounted, ref, watch } from "vue";
+import { MdRender } from "mark-ui";
+import { ref } from "vue";
 import { Color } from ".";
- 
-const props = defineProps<{
-    color?: keyof Color;
+
+interface CardProps {
+    color?: keyof Color | boolean;
     title?: string;
     // 详情描述
     description?: string;
+    // 是否开启 markdown 功能
+    md?: boolean;
     size?: "small" | "default" | "large";
     // 是否开启折叠效果，优先级比 collapse 高
-    closeCollapse?: boolean;
+    openCollapse?: boolean;
+    collapse?: boolean;
+}
+
+const props = withDefaults(defineProps<CardProps>(), {
+    color: "blue",
+    title: "",
+    description: "",
+    size: "large",
+    openCollapse: true,
+    collapse: true,
+    md: false,
+});
+
+const emits = defineEmits<{
+    (e: "update:collapse", collapse: boolean): void;
 }>();
 
-let { color, title, size, closeCollapse, description } = toRefs(props);
+let { color, title, size, openCollapse, description, collapse, md } = toRefs(props);
 
 // 计算卡片的高度值，然后才能进行折叠
-const collapse = ref(true);
+
 const height = ref<number>(0);
 const cardBody = ref<any>(null);
 
@@ -90,8 +126,7 @@ const smallStyle = {
     padding: "0px",
 };
 
-function openCollapse() {
- 
+function onCollapse() {
     // 计算高度
     if (!height.value) {
         height.value = cardBody.value.offsetHeight;
@@ -99,7 +134,12 @@ function openCollapse() {
         console.log("height.value", height.value);
     }
     // 折叠
-    if (!closeCollapse?.value) collapse.value = !collapse.value;
+    if (openCollapse.value) {
+        if (collapse) {
+            collapse.value = !collapse.value;
+            emits("update:collapse", collapse.value);
+        }
+    }
 }
 </script>
 

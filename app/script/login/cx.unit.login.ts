@@ -50,12 +50,12 @@ export class CXUnitLoginScript extends LoginScript<void> {
             if (await this.breakCode(StoreGet("setting").script.account.ocr)) {
                 await loginUtils.login();
             } else {
-                task.message("验证码破解失败，请手动输入并点击登陆");
+                task.warn("验证码破解失败，请手动输入并点击登陆");
 
                 await loginUtils.waitForLogin();
             }
         } else {
-            task.message("您暂未配置OCR，所以不能自动获取验证码，请手动输入并点击登陆");
+            task.warn("您暂未配置OCR，所以不能自动获取验证码，请手动输入并点击登陆");
 
             await loginUtils.waitForLogin();
         }

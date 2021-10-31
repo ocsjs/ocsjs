@@ -31,7 +31,7 @@
                         {{ json.name }}
                     </a-descriptions-item>
                     <a-descriptions-item label="版本">
-                        v{{ Remote.app.call("getVersion") }}
+                        v{{ ElectronVersion }}
                     </a-descriptions-item>
                     <a-descriptions-item label="作者">
                         {{ json.author }}
@@ -62,7 +62,7 @@
 
 <script setup lang="ts">
 import json from "root/package.json";
-import { Remote } from "@/utils/remote";
+import { Remote,ElectronVersion } from "@/utils/remote";
 </script>
 
 <style scope lang="less">

@@ -1,7 +1,7 @@
-import { createWriteStream, existsSync, mkdirSync, writeFileSync, readFileSync, rmSync, unlinkSync } from "fs";
+import { createWriteStream, existsSync, mkdirSync, writeFileSync, readFileSync, rmSync, unlinkSync, statSync } from "fs";
 import { join, resolve } from "path";
-const yaml = require("yaml");
 const archiver = require("archiver");
+const { app } = require("electron");
 
 // 打包文件
 export default function AfterAllPack() {
@@ -9,7 +9,6 @@ export default function AfterAllPack() {
     const resourcePath = resolve(join(root, "ocs-app-resource.zip"));
     const latestPath = resolve(join(root, "latest.json"));
     const resourceDistPath = resolve("./dist/win-unpacked/resources/app/");
-    const latestDistPath = resolve("./dist/latest.yml");
 
     if (!existsSync(root)) {
         mkdirSync(root);
@@ -20,22 +19,6 @@ export default function AfterAllPack() {
             unlinkSync(resourcePath);
         }
     }
-    const latest = readFileSync(latestDistPath).toString();
-    const { version, files } = yaml.parse(latest);
-
-    writeFileSync(
-        resolve(latestPath),
-        JSON.stringify(
-            {
-                version,
-                size: files[0].size,
-                date: Date.now(),
-                message: "无",
-            },
-            null,
-            4
-        )
-    );
 
     var output = createWriteStream(resourcePath);
     var archive = archiver("zip");
@@ -47,5 +30,21 @@ export default function AfterAllPack() {
     archive.pipe(output);
     archive.finalize();
 
-    console.log("打包完毕!");
+    output.on("close", function () {
+        console.log("打包完毕!");
+        const stat = statSync(resourcePath);
+        writeFileSync(
+            resolve(latestPath),
+            JSON.stringify(
+                {
+                    version: app.getVersion(),
+                    size: stat.size,
+                    date: Date.now(),
+                    message: "无",
+                },
+                null,
+                4
+            )
+        );
+    });
 }
