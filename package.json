@@ -11,7 +11,8 @@
     "vbed": "npm run v:build && npm run e:dist",
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js",
-    "push": "git push origin && git push gitee"
+    "push": "git push origin && git push gitee",
+    "push:tags": "git push origin v1.0 --tags && git push gitee v1.0 --tags"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.0.1",
