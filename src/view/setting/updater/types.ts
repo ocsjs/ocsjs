@@ -1,7 +1,7 @@
 import { AxiosGet, AxiosPost } from "@/utils/request";
 import { Version } from "app/types/version";
 const yaml = require("yaml");
-import { notification, Progress } from "ant-design-vue";
+import { Button, notification, Progress } from "ant-design-vue";
 import { Remote } from "@/utils/remote";
 
 import { IconType, NotificationArgsProps } from "ant-design-vue/lib/notification";
@@ -53,9 +53,7 @@ export abstract class UpdaterImpl implements Updater {
     async getLatestInfo(tag: Tag): Promise<LatestType> {
         const url = await this.resolveLatestUrl(tag);
         const { data } = await AxiosGet(url);
-        var buffer = Buffer.from(data.content, "base64");
-
-        return yaml.parse(buffer.toString());
+        return JSON.parse(Buffer.from(data.content, "base64").toString());
     }
 
     async isNeedUpdate(latest: LatestType): Promise<boolean> {
@@ -69,20 +67,20 @@ export abstract class UpdaterImpl implements Updater {
     //更新
     public async update(tag: Tag): Promise<void> {
         const ispack = Remote.app.get("isPackaged");
-
+        UpdateNotify("info", "开始更新:" + tag.name);
         if (ispack) {
             // 写入数据
             const url = await this.resolveResourseUrl(tag);
 
             const file = this.resolvePath(tag);
-            UpdateNotify("info", "创建本地更新文件:" + file);
             if (url) {
                 try {
-                    UpdateNotify("info", "开始下载远程更新文件:" + url);
-                    const { data } = await AxiosGet({
+                    AxiosGet({
                         url,
                         // 对原生进度事件的处理
                         onDownloadProgress: function (evt: ProgressEvent) {
+                            console.log("evt", evt);
+
                             UpdateNotify(
                                 "info",
                                 h("span", [
@@ -93,14 +91,19 @@ export abstract class UpdaterImpl implements Updater {
                                 ])
                             );
                         },
-                    });
-                    var buffer = Buffer.from(data.content, "base64");
-                    UpdateNotify("info", "创建本地写入流:" + file);
-                    writeFileSync(file, buffer);
-                    UpdateNotify("info", "正在解压更新文件");
-                    upzipResource(file, resolve(join(file, "../app/")));
+                    })
+                        .then((res: any) => {
+                            var buffer = Buffer.from(res.data.content, "base64");
+                            UpdateNotify("info", "保存压缩包中");
+                            writeFileSync(file, buffer);
+                            UpdateNotify("info", "正在解压更新文件");
+                            upzipResource(file, resolve(join(file, "../app/")));
+                        })
+                        .catch((err: any) => {
+                            UpdateNotify("error", "更新失败,压缩包下载失败！ " + err.message);
+                        });
                 } catch (err: any) {
-                    UpdateNotify("error", "更新失败:" + err.stack);
+                    UpdateNotify("error", "更新失败 " + err.message);
                 }
             } else {
                 UpdateNotify("error", "更新路径解析失败");
@@ -125,7 +128,7 @@ export class Gitee extends UpdaterImpl {
             const { data: trees } = await AxiosGet(`https://gitee.com/api/v5/repos/enncy/online-course-script/git/trees/${commit.sha}?recursive=1&access_token=` + access_token);
             let resourse = "",
                 raw = "",
-                yml = "",
+                latest = "",
                 _size = 0;
 
             // 在资源树中寻找文件
@@ -135,16 +138,16 @@ export class Gitee extends UpdaterImpl {
                     raw = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}?access_token=${access_token}`;
                     _size = size;
                 }
-                if (/latest\.(yml|yaml)/.test(path)) {
-                    yml = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}?access_token=${access_token}`;
+                if (/latest\.json/.test(path)) {
+                    latest = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}?access_token=${access_token}`;
                 }
 
-                if (resourse && yml) {
+                if (resourse && latest) {
                     break;
                 }
             }
-            if (resourse && raw && yml) {
-                tags.push({ name, message, latest: yml, resourse, size: _size, raw });
+            if (resourse && raw && latest) {
+                tags.push({ name, message, latest, resourse, size: _size, raw });
                 break;
             }
         }
@@ -159,24 +162,27 @@ export class Gitee extends UpdaterImpl {
     }
 }
 
-export function UpdateNotify(type: IconType, msg: VNodeTypes) {
+export function UpdateNotify(type: IconType, msg: VNodeTypes, options?: Omit<NotificationArgsProps, "type" | "message">) {
     console.log(msg);
 
     const key = "update-notify";
-    const commonConfig: Omit<NotificationArgsProps, "type"> = {
-        duration: 0,
-        placement: "bottomRight",
-        key,
-        message: "更新程序",
-        description: msg,
-        style: {
-            padding: "12px",
+    const commonConfig: Omit<NotificationArgsProps, "type"> = Object.assign(
+        {
+            duration: 0,
+            placement: "bottomRight",
+            key,
+            message: "更新程序",
+            description: msg,
+            style: {
+                padding: "12px",
+            },
+            class: "notification-message",
+            onClose: () => {
+                notification.close(key);
+            },
         },
-        class: "notification-message",
-        onClose: () => {
-            notification.close(key);
-        },
-    };
+        options
+    );
 
     // 调用通知
     notification[type](commonConfig);
@@ -199,7 +205,20 @@ export function upzipResource(filePath: string, dist: string) {
         );
     })
         .then((result) => {
-            UpdateNotify("success", "更新完毕,请重启软件!");
+            UpdateNotify("success", "更新完毕,请重启软件!", {
+                btn: h(
+                    Button,
+                    {
+                        type: "primary",
+                        size: "small",
+                        onClick: () => {
+                            Remote.app.call("relaunch");
+                            Remote.app.call("quit");
+                        },
+                    },
+                    "重启"
+                ),
+            });
         })
         .catch((err) => {
             UpdateNotify("error", "解压缩失败，请重式!");

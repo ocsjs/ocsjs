@@ -3,12 +3,11 @@ import { LoginScript } from "../../script/login/types";
 import { AllScriptObjects } from "../../script/types";
 import { User } from "../../types";
 import { GetCourseList } from "../../script/task/get.course.list";
-
 import { Task } from "../task";
-import { log } from "electron-log";
 import { Course } from "../../types/script/course";
 import { CXScript } from "../../script/task/cx/cx.script";
-
+import { logger } from "../../types/logger";
+const { info } = logger("script");
 /**
  * 脚本映射实现，使用此类当做 typeof 类型并且远程映射到渲染进程。具体看 remote.ts
  */
@@ -39,7 +38,7 @@ export const ScriptRemote = {
      * @returns
      */
     login(name: keyof AllScriptObjects, user: User, ...task: Task<any>[]) {
-        log("[脚本启动]:", { name, user: user.uid });
+        info("[脚本启动]:", { name, user: user.uid });
 
         return Task.exec(
             Task.linkTasks(
@@ -73,6 +72,6 @@ export const ScriptRemote = {
      * @param course 课程
      */
     start(name: keyof AllScriptObjects, user: User, course: Course) {
-        return this.login(name, user, CXScript(course) );
+        return this.login(name, user, CXScript(course));
     },
 };

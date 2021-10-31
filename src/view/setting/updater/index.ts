@@ -15,16 +15,12 @@ export const LatestInfo = ref<LatestType | undefined>(undefined);
 export const LatestTag = ref<Tag | undefined>(undefined);
 // 是否需要更新
 export const needUpdate = ref(false);
-// 当前版本
-export const currentTag = ref<Tag | undefined>(undefined);
-
+ 
 export async function refreshUpdateInfo() {
     fetchingInfo.value = true;
     // 获取版本列表
     RepositoryTags.value = await GiteeUpdater.listTags();
-    // 获取当前版本i西南西
-    currentTag.value = RepositoryTags.value.find((t) => t.name === Remote.app.call("getVersion"));
-
+ 
     // 寻找最新的版本
     const sortTagVersions = Version.sort(RepositoryTags.value.map((t) => t.name));
     LatestTag.value = RepositoryTags.value.find((t) => t.name === sortTagVersions[0]);

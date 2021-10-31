@@ -4,11 +4,11 @@
   "main": "./app/lib/electron/index.js",
   "scripts": {
     "dev": "cd ./app && tsc && cd .. &&   concurrently vite \"ehmr -i app/**/*.js \" ",
-    "build": "vue-tsc --noEmit && vite build",
-    "pack": "  cd app  && tsc && npm run pack",
-    "dist": "  cd app  && tsc && npm run dist",
-    "bp": "npm run build && npm run pack",
-    "bd": "npm run build && npm run dist",
+    "v:build": "vue-tsc --noEmit && vite build",
+    "e:pack": "  cd app  && tsc && npm run pack",
+    "e:dist": "  cd app  && tsc && npm run dist",
+    "vbep": "npm run v:build && npm run e:pack",
+    "vbed": "npm run v:build && npm run e:dist",
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js",
     "push": "git push origin && git push gitee"

@@ -3,19 +3,17 @@ const p = require("path");
 const dayjs = require("dayjs");
 const { app } = require("electron");
 
-const { log: electronLog } = require("electron-log");
-
-export type LoggerLevel = "info" | "error" | "warn" | "success" | "notify";
+export type LoggerLevel = "info" | "error" | "warn" | "success" | "notify" | "task";
 export interface Logger {
     info(...msg: any[]): void;
     error(...msg: any[]): void;
     warn(...msg: any[]): void;
     success(...msg: any[]): void;
+    task(description: string, handler: () => Promise<any>): Promise<any>
     log(level: LoggerLevel, ...msg: any[]): void;
 }
 
 export function logger(eventName: string): Logger {
-    electronLog("logger init", eventName, "path:" + app.getPath("logs"));
     return {
         info(...msg: any[]): void {
             return log(eventName, "info", msg);
@@ -31,6 +29,18 @@ export function logger(eventName: string): Logger {
         },
         log(level: LoggerLevel, ...msg: any[]): void {
             return log(eventName, level, msg);
+        },
+        task(description: string, handler: () => Promise<any>): Promise<any> {
+            return new Promise(async (resolve, reject) => {
+                try {
+                    const t = Date.now();
+                    log("system", "task", description);
+                    resolve(await handler());
+                    log("system", "task", description + "成功,耗时:" + (Date.now() - t));
+                } catch (err) {
+                    reject(err);
+                }
+            });
         },
     };
 }

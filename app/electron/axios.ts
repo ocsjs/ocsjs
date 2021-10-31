@@ -1,5 +1,5 @@
 import axios from "axios";
-import { logger } from "../types/logger"
+import { logger } from "../types/logger";
 const { info, error } = logger("request");
 
 // 添加请求拦截器
@@ -9,10 +9,10 @@ axios.interceptors.request.use(
         info("网络请求:", config);
         return config;
     },
-    function (error: any) {
+    function (err: any) {
         // 对请求错误做些什么
-        error("网络失败:", error);
-        return Promise.reject(error);
+        error("网络失败:", err);
+        return Promise.reject(err);
     }
 );
 
@@ -23,10 +23,10 @@ axios.interceptors.response.use(
         // 对响应数据做点什么
         return response;
     },
-    function (error: any) {
-        info("网络响应错误:", error);
+    function (err: any) {
+        error("网络响应错误:", err);
         // 对响应错误做点什么
-        return Promise.reject(error);
+        return Promise.reject(err);
     }
 );
 

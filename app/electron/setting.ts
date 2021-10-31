@@ -1,13 +1,12 @@
 import { app } from "electron";
-import path from "path";
 import { CurrentWindow } from ".";
 import { Setting } from "../types";
 import { StoreGet, StoreSet } from "../types/setting";
-import fs from "fs";
 import { Version } from "../types/version";
 import { logger } from "../types/logger";
- 
-const { info, error } = logger("setting");
+import { join, resolve } from "path";
+import { existsSync, mkdirSync } from "fs";
+const { info } = logger("setting");
 
 export function initSetting() {
     const setting: Setting = StoreGet("setting");
@@ -24,7 +23,7 @@ export function initSetting() {
                     const p = (path as any)[key];
                     info("设置路径:" + key, p);
                     // 如果文件夹不存在则创建
-                    if (!fs.existsSync(p)) {
+                    if (!existsSync(p)) {
                         info("mkdirs", p);
                         mkdirs(p);
                     }
@@ -117,7 +116,7 @@ export function initSetting() {
                     path: {
                         userData: app.getPath("userData"),
                         logs: app.getPath("logs"),
-                        courseImg: path.resolve(path.join(app.getPath("userData"), "./course-img/")),
+                        courseImg: resolve(join(app.getPath("userData"), "./course-img/")),
                     },
                 },
             };
@@ -141,14 +140,14 @@ export function initSetting() {
 // 获取 chrome 路径
 export function getChromePath() {
     let paths = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"], "C:\\Program Files", "C:\\Program Files (x86)"];
-    let chromePath = paths.map((p) => path.join(p || "", "\\Google\\Chrome\\Application\\chrome.exe")).find((p) => fs.existsSync(p));
+    let chromePath = paths.map((p) => join(p || "", "\\Google\\Chrome\\Application\\chrome.exe")).find((p) => existsSync(p));
     info("获取本地chrome浏览器路径:", chromePath);
     return chromePath;
 }
 
 export function mkdirs(url: string) {
-    if (!fs.existsSync(url)) {
-        mkdirs(path.resolve(url, "../"));
-        fs.mkdirSync(url);
+    if (!existsSync(url)) {
+        mkdirs(resolve(url, "../"));
+        mkdirSync(url);
     }
 }

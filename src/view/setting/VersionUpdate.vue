@@ -89,7 +89,7 @@
                     </div>
                 </span>
             </item>
-            <item font-bold label="发布日期"> </item>
+
             <item font-bold label="操作">
                 <div class="space-10">
                     <a-button
@@ -120,6 +120,7 @@ import {
     RepositoryTags,
 } from "./updater";
 import { showFomatSize, UpdateNotify, upzipResource } from "./updater/types";
+
 const path = require("path");
 
 const simpleImg = Empty.PRESENTED_IMAGE_SIMPLE;

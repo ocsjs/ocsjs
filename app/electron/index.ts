@@ -1,23 +1,23 @@
 import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
-import path from "path";
-import { logger } from "../types/logger"
+import { normalize, resolve } from "path";
+import { logger } from "../types/logger";
 import { log } from "electron-log";
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { initSetting } from "./setting";
 const t = Date.now();
 
-const { info, error, success, warn } = logger("system");
- 
-// process.on("uncaughtException", (err) => {
-//     log("uncaughtException",err);
-//     error("uncaughtException", err);
-// });
+const { info, error, task } = logger("system");
 
-// process.on("unhandledRejection", (err) => {
-//     log("unhandledRejection",err);
-//     error("unhandledRejection", err);
-// });
+process.on("uncaughtException", (err) => {
+    log("uncaughtException", err);
+    error("uncaughtException", err);
+});
+
+process.on("unhandledRejection", (err) => {
+    log("unhandledRejection", err);
+    error("unhandledRejection", err);
+});
 
 // 判断开发环境
 var mode = app.isPackaged ? "prod" : "dev";
@@ -30,11 +30,23 @@ app.disableHardwareAcceleration();
 
 app.whenReady().then(async () => {
     // 注册协议
-    protocol.registerFileProtocol("app", (req: any, callback: any) => {
-        const url = req.url.replace("app://", "");
-        const resolve = path.normalize(path.resolve(`./resources/app/public`, url));
-        // info("app协议模式:", { path: resolve });
-        callback({ path: resolve });
+    await task("注册协议", async () => {
+        return protocol.registerFileProtocol("app", (req: any, callback: any) => {
+            const url = req.url.replace("app://", "");
+            const _path = normalize(resolve(`./resources/app/public`, url));
+            // info("app协议模式:", { path: resolve });
+            callback({ path: _path });
+        });
+    });
+
+    // 渲染进程崩溃
+    app.on("render-process-gone", (e, w, detail) => {
+        error("render-process-gone", detail);
+    });
+
+    // 子进程崩溃
+    app.on("child-process-gone", (e, detail) => {
+        error("child-process-gone", detail);
     });
 
     app.on("activate", function () {
@@ -47,10 +59,15 @@ app.whenReady().then(async () => {
 
     // 以下顺序不能更换！
     // 初始化配置
-    initSetting();
-    CurrentWindow = await createWindow();
-    // 初始化远程通信
-    RemoteRouter();
+    await task("初始化系统设置", async () => {
+        return initSetting();
+    });
+    await task("渲染进程启动", async () => {
+        CurrentWindow = await createWindow();
+    });
+    await task("初始化远程通信", async () => {
+        RemoteRouter();
+    });
 });
 
 async function createWindow() {
@@ -64,7 +81,7 @@ async function createWindow() {
         promise
             .then(() => {
                 win.show();
-                win.webContents.openDevTools();
+                if (mode === "dev") win.webContents.openDevTools();
                 info("启动用时:" + (Date.now() - t));
                 // 拦截页面跳转
                 win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {
@@ -82,7 +99,7 @@ async function createWindow() {
                 setTimeout(() => {
                     info("正在重新加载中!");
                     load();
-                }, 3000);
+                }, 2000);
                 error(err);
             });
     }

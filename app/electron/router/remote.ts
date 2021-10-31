@@ -1,11 +1,9 @@
-import { ipcMain,  app, dialog } from "electron";
-
+import { ipcMain, app, dialog } from "electron";
 import { CurrentWindow } from "..";
 import { registerRemoteEventNames } from "../../types";
-import { logger } from "../../types/logger"
- 
+import { logger } from "../../types/logger";
 import { ScriptRemote } from "./scripts";
-const { info, error } = logger("remote");
+const { info } = logger("remote");
 /**
  * 注册主进程远程通信事件
  * @param name 事件前缀名称，需要传递到 {@link registerRemoteEventNames}
