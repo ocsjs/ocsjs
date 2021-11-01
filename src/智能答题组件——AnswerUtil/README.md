@@ -9,7 +9,7 @@
 var a = new AnswerUtil('题目',回答Array[],选项Array[]);
 a.getAnswer();//获得匹配的选项的下标索引。
 ```
-动态引入url提供：[http://c.ykhulian.com:81/resourse/src/AnswerUtil-1.0.0.js](http://c.ykhulian.com:81/resourse/src/AnswerUtil-1.0.0.js)
+ 
 ## 运行实例：
 ###  一（复杂判断）：
 ```javascript
