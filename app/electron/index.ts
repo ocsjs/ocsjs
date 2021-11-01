@@ -17,9 +17,6 @@ process.on("uncaughtException", (err) => {
 });
 
 process.on("unhandledRejection", (err: any) => {
-    if (err.toString().indexOf("Most likely the page has been closed") !== -1) {
-        notify.error("某个页面运行错误，很可能是您将浏览器关闭了。");
-    }
     log("unhandledRejection", err);
     error("unhandledRejection", err);
 });

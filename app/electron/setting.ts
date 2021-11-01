@@ -57,6 +57,8 @@ export function initSetting() {
                         cx: {
                             // 是否形成队列
                             queue: false,
+                            // 复习模式
+                            review:true,
                             media: {
                                 enable: true,
                                 playbackRate: 2,

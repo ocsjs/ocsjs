@@ -43,6 +43,9 @@
                 >
                     <a-switch v-model:checked="script.cx.queue" />
                 </item>
+                <item label="复习模式" md  description="`重新刷已经完成的章节`，可以手动点击指定的章节，脚本会自动下一章">
+                    <a-switch v-model:checked="script.cx.review" />
+                </item>
                 <item label="自动播放音视频">
                     <a-switch v-model:checked="script.cx.media.enable" />
                 </item>
@@ -51,7 +54,7 @@
                         <item label="静音">
                             <a-switch v-model:checked="script.cx.media.mute" />
                         </item>
-                        <item label="倍速">
+                        <item label="倍速" description="`倍速可能会导致挂科`，观看时长后台可以看到，实际观看时间`不等于`播放时间！，如果课程严格请谨慎选择倍速，否则`后果自负`！" md>
                             <a-input-number
                                 size="small"
                                 v-model:value="script.cx.media.playbackRate"
@@ -99,7 +102,11 @@
                 </div>
             </card>
             <card color="gray" size="small" title="智慧树设置" :open-collapse="false">
-                <item label="自动暂停" description="智慧树如需获取`平时分`，每天都会有`限制`的时长，如果`超出则不能累积平时分`，请根据需求进行配置">
+                <item
+                    label="自动暂停"
+                    md
+                    description="智慧树如需获取`平时分`，每天都会有`限制`的时长，如果`超出则不能累积平时分`，请根据需求进行配置"
+                >
                     <a-input-number
                         size="small"
                         v-model:value="script.zhs.autoStop"
@@ -116,14 +123,15 @@
                 </item>
                 <div v-if="script.zhs.video.enable" class="margin-left-24">
                     <item label="静音">
-                        <a-switch v-model:checked="script.cx.media.mute" />
+                        <a-switch v-model:checked="script.zhs.video.mute" />
                     </item>
-                    <item label="倍速">
+                    <item label="倍速" md description="智慧树只能1-1.5倍速，否则会导致`封号`！">
                         <a-input-number
                             size="small"
-                            v-model:value="script.cx.media.playbackRate"
+                            v-model:value="script.zhs.video.playbackRate"
                             :min="1"
-                            :max="16"
+                            :max="1.5"
+                            :step="0.5"
                         ></a-input-number>
                     </item>
                 </div>
@@ -162,7 +170,7 @@
         </card>
 
         <card title="查题设置">
-            <item description="必须配置查题码才能使用`自动答题`" label="查题码" font-bold>
+            <item description="必须配置查题码才能使用`自动答题`" label="查题码" md font-bold>
                 <a-input
                     type="text"
                     size="small"

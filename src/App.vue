@@ -154,7 +154,7 @@ async function checkUpdate() {
 
 function openNotify(notify: Notify) {
     const commonConfig: Omit<NotificationArgsProps, "type"> = {
-        duration: 5,
+        duration: notify.type === "error" ? 0 : 5,
         placement: "bottomRight",
         key: notify.name,
         message: notify.title,

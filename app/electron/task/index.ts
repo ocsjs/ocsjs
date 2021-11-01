@@ -8,7 +8,10 @@ import { LoginScript } from "../../script/login/types";
 import { StoreGet, StoreSet } from "../../types/setting";
 import { BaseTask, TaskStatus, TaskTargetType, TaskType } from "./types";
 import { logger } from "../../types/logger";
+import { OCSNotify } from "../events/ocs.event";
 const { info, error, success, warn } = logger("task");
+
+const notify = new OCSNotify("task", "任务系统");
 /**
  * 任务
  */
@@ -160,6 +163,18 @@ export class Task<T> extends EventEmitter implements BaseTask<T> {
     // 执行任务
     static exec(launchTask: BaseTask<LoginScript<void>>): BaseTask<any> {
         info("脚本任务启动:", launchTask.toRaw());
+
+        process.on("uncaughtException", (err) => {
+            error(launchTask.name + " 任务出错！ uncaughtException", err);
+        });
+
+        process.on("unhandledRejection", (err: any) => {
+            if (err.toString().indexOf("Most likely the page has been closed") !== -1) {
+                notify.error(launchTask.name + " 任务运行错误，很可能是您将浏览器关闭了，或者浏览器访问页面时出错。");
+            }
+            error(launchTask.name + " 任务出错！ unhandledRejection", err);
+        });
+
         (async () => {
             let pass = true;
             launchTask.process();

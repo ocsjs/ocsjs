@@ -1,14 +1,17 @@
 import { WaitForScript } from "@pioneerjs/core";
 import { log } from "electron-log";
-import { Frame, Page } from "puppeteer-core";
-import { AxiosGet } from "../../../electron/axios";
+import { Frame, JSHandle, Page, SerializableOrJSHandle } from "puppeteer-core";
+import { AxiosGet, AxiosPost } from "../../../electron/axios";
 import { Task } from "../../../electron/task";
 import { BaseTask, ScriptSetting } from "../../../types";
 import { Course } from "../../../types/script/course";
 import { StoreGet } from "../../../types/setting";
 import { sleep } from "../../common/utils";
 import { LoginScript } from "../../login/types";
+import https from "https";
+import similarity from "string-similarity";
 
+similarity;
 /**
  * 超星刷课任务
  * @param script 脚本上下文
@@ -100,8 +103,7 @@ export function CXScript(course: Course): Task<void> {
                 );
                 log(jobs);
                 if (jobs.length === 0) {
-                    task.finish("刷课任务已经完成，即将跳转到作业界面");
-                    // await intoCourseIndex();
+                    task.finish("刷课任务已经完成");
                     resolve();
                 } else {
                     task.process("刷课中...");
@@ -111,12 +113,10 @@ export function CXScript(course: Course): Task<void> {
 
                     // 当 iframe 时，加载到任务队列
                     script.page.on("frameattached", (frame) => {
-                        console.log("frameattached:", frame._id);
                         queue.push(frame);
                     });
                     // 当 iframe 移除时移除任务
                     script.page.on("framedetached", (frame) => {
-                        console.log("framedetached:", frame._id);
                         queue = queue.filter((q) => q._id !== frame._id);
                     });
 
@@ -133,8 +133,15 @@ export function CXScript(course: Course): Task<void> {
                         const job = jobs.shift();
 
                         if (job && script) {
-                            // 进入需要刷课的章节
-                            await script.page.evaluate(job);
+                            const cxSetting = StoreGet("setting").script.script.cx;
+
+                            if (cxSetting.review) {
+                                // 如果是复习模式，则从当前页面一直下一章
+                            } else {
+                                // 进入需要刷课的章节，然后一直下一章
+                                await script.page.evaluate(job);
+                            }
+
                             await waitFor.nextTick("request");
                             await runScript();
                             async function runScript() {
@@ -150,6 +157,7 @@ export function CXScript(course: Course): Task<void> {
                                             const frame = queue.shift();
                                             // 如果队列存在继续执行，否则运行下个任务
                                             if (frame) {
+                                                const cxSetting = StoreGet("setting").script.script.cx;
                                                 await JobScript(cxSetting, task, frame);
                                                 await execQueue();
                                             }
@@ -160,7 +168,7 @@ export function CXScript(course: Course): Task<void> {
                                     }
                                     const onclick = await script.page.evaluate(() => (document.querySelector(".next") as any).getAttribute("onclick"));
                                     if (onclick) {
-                                        await script.page.evaluate(() => (document.querySelector(".next") as any).click());
+                                        await script.page.evaluate(() => (document.querySelector(".next") as any)?.click());
                                         await sleep(3000);
                                         await runScript();
                                     } else {
@@ -206,7 +214,7 @@ async function waitForFrameReady(frame: Frame): Promise<void> {
 
 async function JobScript(cxSetting: ScriptSetting["script"]["cx"], task: BaseTask<any>, frame: Frame) {
     await waitForFrameReady(frame);
-    if (cxSetting.media) {
+    if (cxSetting.media.enable) {
         await MediaScript("video", task, frame, cxSetting.media);
         await MediaScript("audio", task, frame, cxSetting.media);
     }
@@ -216,7 +224,7 @@ async function JobScript(cxSetting: ScriptSetting["script"]["cx"], task: BaseTas
     if (cxSetting.book) {
         await ReadBookScript(task, frame, cxSetting.book);
     }
-    if (cxSetting.qa) {
+    if (cxSetting.qa.enable) {
         await WorkScript(task, frame, cxSetting.qa);
     }
 }
@@ -230,10 +238,13 @@ async function MediaScript(selector: "video" | "audio", task: BaseTask<any>, fra
         task.process(`正在播放${name}`);
         await frame.evaluate(
             async (video: HTMLVideoElement, playbackRate) => {
-                function playVideo(video: HTMLVideoElement) {
+                function playVideo(video: HTMLVideoElement, playbackRate: number) {
                     return new Promise<void>((resolve, reject) => {
                         video.play();
+                        video.playbackRate = playbackRate;
                         video.onratechange = function () {
+                            console.log("onratechange", playbackRate);
+
                             video.playbackRate = playbackRate;
                         };
                         video.onpause = function () {
@@ -247,7 +258,9 @@ async function MediaScript(selector: "video" | "audio", task: BaseTask<any>, fra
                         };
                     });
                 }
-                return await playVideo(video);
+                console.log(video, playbackRate);
+
+                return await playVideo(video, playbackRate);
             },
             video,
             setting.playbackRate
@@ -256,13 +269,115 @@ async function MediaScript(selector: "video" | "audio", task: BaseTask<any>, fra
     }
 }
 
-// 作业播放脚本
+// 题目类型
+interface Question {
+    // 头部
+    head: SerializableOrJSHandle;
+    // 题目
+    title: string;
+    // 选择题
+    choice: SerializableOrJSHandle;
+    // 判断题
+    judgment: SerializableOrJSHandle;
+    // 填空题
+    completion: SerializableOrJSHandle;
+}
+
+// 自动答题脚本
 async function WorkScript(task: BaseTask<any>, frame: Frame, setting: ScriptSetting["script"]["cx"]["work"]) {
-    return "";
-    // Array.from(document.querySelectorAll(".TiMu")).map((timu) => ({
-    //     head: timu.querySelector(".Zy_TItle"),
-    //     body: timu.querySelector(".Zy_ulTop,.Zy_ulTk,.Zy_ulBottom"),
-    // }));
+    const TiMus = await frame.$$(".TiMu");
+    if (TiMus.length !== 0) {
+        task.process(`正在自动答题,一共${TiMus.length}个题目`);
+    }
+
+    for (const TiMu of TiMus) {
+        // 获取题目
+        const infos: JSHandle<Question> = await TiMu.evaluateHandle((timu) => {
+            return {
+                head: timu.querySelector(".Zy_TItle"),
+                title: (timu.querySelector(".Zy_TItle span") as any).innerText,
+                choice: timu.querySelector(".Zy_ulTop"),
+                judgment: timu.querySelector(".Zy_ulBottom"),
+                completion: timu.querySelector(".Zy_ulTk"),
+            } as Question;
+        }, TiMu);
+
+        // 查题
+        const agent = new https.Agent({
+            rejectUnauthorized: false,
+        });
+        const { data: res } = await AxiosPost({
+            url: "https://wk.enncy.cn/chati",
+            httpsAgent: agent,
+            data: {
+                chatiId: StoreGet("setting").script.account.queryToken,
+                question: (await infos.jsonValue<Question>()).title,
+            },
+        });
+        // 匹配答案
+        if (res.success) {
+            const { question, answer } = res;
+            const que = await infos.jsonValue<Question>();
+            if (que.choice) {
+                // 获取选项
+                const options = await TiMu.evaluate((timu) => {
+                    return Array.from(timu.querySelectorAll("li")).map((li) => li.innerText);
+                }, TiMu);
+                // 查找答案
+                const index = similarity.findBestMatch(answer, options).bestMatchIndex;
+                // 选择答案
+                await TiMu.evaluate(
+                    (timu, index) => {
+                        timu.querySelectorAll("input")[index]?.click();
+                        return;
+                    },
+                    TiMu,
+                    index
+                );
+                console.log("选择题:" + question + "的答案为:" + options[index]);
+            } else if (que.judgment) {
+                // 查找答案
+                const rightWord = "是|对|正确|√|对的|是的|正确的";
+                const wrongWord = "否|错|错误|×|错的|不正确的|不正确|不是|不是的";
+                const { target } = similarity.findBestMatch(answer, rightWord.split("|").concat(wrongWord.split("|"))).bestMatch;
+                if (RegExp(rightWord).test(target)) {
+                    await TiMu.evaluate((timu) => {
+                        timu.querySelectorAll("input")[0]?.click();
+                    }, TiMu);
+                } else if (RegExp(wrongWord).test(target)) {
+                    await TiMu.evaluate((timu) => {
+                        timu.querySelectorAll("input")[1]?.click();
+                    }, TiMu);
+                }
+                console.log("判断题:" + question + "的答案为:", target);
+            } else if (que.completion) {
+                // 找到填空串
+                function findCompletion(str: string) {
+                    let spl = str.split(/ |\s|=|#|&|;/).filter((s) => !!s);
+                    if (spl.length > 4) {
+                        return [];
+                    } else {
+                        return spl;
+                    }
+                }
+                // 自动填空
+                const ans = findCompletion(answer);
+                await TiMu.evaluate(
+                    (timu, answers) => {
+                        const textareas = Array.from(timu.querySelectorAll("textarea"));
+                        for (let i = 0; i < textareas.length; i++) {
+                            textareas[i].value = answers[i] || "";
+                        }
+                    },
+                    TiMu,
+                    ans
+                );
+                console.log("填空题:" + question + "的答案为:", ans);
+            } else {
+                console.log("不支持的题目类型");
+            }
+        }
+    }
 }
 
 // PPT播放脚本
@@ -270,7 +385,10 @@ async function PPTScript(task: BaseTask<any>, frame: Frame, setting: ScriptSetti
     const imglook = await frame.$("#img.imglook");
     if (imglook) {
         task.process("正在播放PPT");
-        await imglook.evaluate("finishJob()");
+        await imglook.evaluate(() => {
+            const finishJob = (window as any).finishJob;
+            if (finishJob) finishJob();
+        });
         await new Promise((r) => setTimeout(r, 3000));
         task.process("PPT播放完毕");
     }

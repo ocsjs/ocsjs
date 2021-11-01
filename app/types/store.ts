@@ -58,6 +58,8 @@ export interface ScriptSetting {
         cx: {
             // 是否排队运行。否则当前页面的全部任务一起运行
             queue:boolean
+            // 复习模式
+            review:boolean,
             // 视频，音频
             media: ScriptMediaSetting;
 

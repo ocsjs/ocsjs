@@ -18,6 +18,7 @@
     "electron-store": "^8.0.1",
     "puppeteer-core": "^10.4.0",
     "semver": "^7.3.5",
+    "string-similarity": "^4.0.4",
     "uuid": "^8.3.2",
     "yaml": "^1.10.2"
   },
