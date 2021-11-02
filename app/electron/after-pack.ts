@@ -1,7 +1,6 @@
 import { createWriteStream, existsSync, mkdirSync, writeFileSync, readFileSync, rmSync, unlinkSync, statSync } from "fs";
 import { join, resolve } from "path";
 const archiver = require("archiver");
-const { app } = require("electron");
 
 // 打包文件
 export default function AfterAllPack() {
@@ -37,7 +36,7 @@ export default function AfterAllPack() {
             resolve(latestPath),
             JSON.stringify(
                 {
-                    version: app.getVersion(),
+                    version: "",
                     size: stat.size,
                     date: Date.now(),
                     message: "无",

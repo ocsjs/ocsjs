@@ -1,6 +1,6 @@
 {
   "name": "online-course-script",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "./app/lib/electron/index.js",
   "scripts": {
     "dev": "cd ./app && tsc && cd .. &&   concurrently \"vite --mode production\" \"ehmr -i app/**/*.js \" ",
@@ -12,7 +12,10 @@
     "serve": "vite preview",
     "pup:test": "cd ./app && tsc && node lib/test.js",
     "push": "git push origin && git push gitee",
-    "push:tags": "git push origin v1.0 --tags && git push gitee v1.0 --tags"
+    "push:tags": "git push origin v1.0 --tags && git push gitee v1.0 --tags",
+    "v:patch":"npm version patch && cd app && npm version patch && npm run vbed",
+    "v:minor":"npm version minor && cd app && npm version minor && npm run vbed",
+    "v:major":"npm version major && cd app && npm version major && npm run vbed"
   },
   "dependencies": {
     "@ant-design/icons-vue": "^6.0.1",
