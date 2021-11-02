@@ -47,7 +47,7 @@ export class ZHSLoginUtils extends LoginUtils {
         return ".datalist";
     }
     async isLogin() {
-        return this.page.url().startsWith("https://onlineh5.zhihuishu.com/onlineWeb.html");
+        return this.page.url().startsWith("https://onlineweb.zhihuishu.com/onlinestuh5");
     }
     async login() {
         await Promise.all([this.waitForLogin(), this.page.click(".wall-sub-btn")]);

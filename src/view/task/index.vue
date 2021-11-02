@@ -14,13 +14,12 @@
             <div v-for="task of tasks">
                 <Card
                     v-if="task.target && task.course && task.user"
-                    @click="collapse = !collapse"
                     @mousemove="hoverId = task.course.id"
                     @mouseleave="hoverId = ''"
                 >
                     <template #title>
-                        <span
-                            >{{ task.user.name }} -
+                        <span @click="collapse = !collapse">
+                            {{ task.user.name }} -
                             {{ PlatformAlias[task.user.platform].split("-")[0] }} -
                             {{ task.course.name }}</span
                         >
@@ -37,14 +36,6 @@
                                 class="flex jc-flex-end ai-center ac-center space-10"
                                 style="height: 0px"
                             >
-                                <a-popover content="任务置顶">
-                                    <a-button type="primary" shape="circle" size="small">
-                                        <template #icon>
-                                            <ToTopOutlined />
-                                        </template>
-                                    </a-button>
-                                </a-popover>
-
                                 <a-popover content="详情">
                                     <a-button
                                         type="primary"
@@ -54,18 +45,6 @@
                                     >
                                         <template #icon>
                                             <BarsOutlined />
-                                        </template>
-                                    </a-button>
-                                </a-popover>
-                                <a-popover content="关闭任务">
-                                    <a-button
-                                        type="primary"
-                                        shape="circle"
-                                        danger
-                                        size="small"
-                                    >
-                                        <template #icon>
-                                            <CloseOutlined />
                                         </template>
                                     </a-button>
                                 </a-popover>
@@ -148,6 +127,7 @@ import { CourseTask, tasks, TaskToList } from "./task";
 import Card from "@/components/common/Card.vue";
 import { ref } from "@vue/reactivity";
 import { PlatformAlias, BaseTask } from "app/types";
+import { Task } from "app/electron/task";
 
 // 当前 hover 的卡片组件
 const hoverId = ref("");
@@ -174,7 +154,7 @@ function currentMsg(task: CourseTask) {
     }
 }
 
-function statusDot(task: BaseTask<any>) {
+function statusDot(task: Task) {
     task.status === "process"
         ? "processing"
         : task.status === "finish"
@@ -190,7 +170,7 @@ function showDetail(task: CourseTask) {
     showTask.value = task;
     visible.value = true;
 }
-function formatTaskStatus(task: BaseTask<any>) {
+function formatTaskStatus(task: Task) {
     return task.msg
         ? task.msg
         : task.status === "wait"

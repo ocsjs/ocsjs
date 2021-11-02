@@ -1,6 +1,7 @@
  
 import { log } from "electron-log";
-import { Task } from "../../../electron/task";
+import { ScriptTask } from "../../../electron/task/script.task";
+ 
 import { Course } from "../../../types/script/course";
  
 /**
@@ -8,10 +9,10 @@ import { Course } from "../../../types/script/course";
  * @param script 脚本上下文
  * @returns
  */
-export function CXExam(course: Course): Task<void> {
-    return Task.createBlockTask({
+export function CXExam(course: Course): ScriptTask<void> {
+    return ScriptTask.createScript({
         name: "超星考试任务",
-        target: async function (task, script) {
+        target: async function ({task, script}) {
             return new Promise(async (resolve, reject) => {
                 if (script) {
                     log("即将跳转:",script.page.url().replace(/pageHeader=\d+/,"pageHeader=8"))

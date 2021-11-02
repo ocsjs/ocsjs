@@ -43,7 +43,11 @@
                 >
                     <a-switch v-model:checked="script.cx.queue" />
                 </item>
-                <item label="复习模式" md  description="`重新刷已经完成的章节`，可以手动点击指定的章节，脚本会自动下一章">
+                <item
+                    label="复习模式"
+                    md
+                    description="`开启`:`重新刷已经完成的章节`，并且可以手动点击指定的章节，脚本会自动下一章<br>`关闭`:脚本将自动跳转到需要刷课的章节开始刷课"
+                >
                     <a-switch v-model:checked="script.cx.review" />
                 </item>
                 <item label="自动播放音视频">
@@ -54,7 +58,11 @@
                         <item label="静音">
                             <a-switch v-model:checked="script.cx.media.mute" />
                         </item>
-                        <item label="倍速" description="`倍速可能会导致挂科`，观看时长后台可以看到，实际观看时间`不等于`播放时间！，如果课程严格请谨慎选择倍速，否则`后果自负`！" md>
+                        <item
+                            label="倍速"
+                            description="`倍速可能会导致挂科`，观看时长后台可以看到，实际观看时间`不等于`播放时间！，如果课程严格请谨慎选择倍速，否则`后果自负`！"
+                            md
+                        >
                             <a-input-number
                                 size="small"
                                 v-model:value="script.cx.media.playbackRate"
@@ -77,6 +85,20 @@
                 <div v-if="script.cx.qa.enable" class="margin-left-24">
                     <item label="章节测验自动提交">
                         <a-switch v-model:checked="script.cx.qa.autoReport" />
+                    </item>
+                    <item
+                        label="根据搜题成功率自动提交"
+                        md
+                        description="`默认为60%`，意思就是如果有`10`个题目，脚本成功搜索的题目:<br>`大于等于6题`则`自动提交`<br>`小于6题` 则`暂时保存`"
+                    >
+                        <a-input-number
+                            size="small"
+                            v-model:value="script.cx.qa.passRate"
+                            :min="0"
+                            :max="100"
+                            :step="10"
+                            :formatter="(v:any)=>v+' %'"
+                        ></a-input-number>
                     </item>
                 </div>
 
@@ -125,7 +147,11 @@
                     <item label="静音">
                         <a-switch v-model:checked="script.zhs.video.mute" />
                     </item>
-                    <item label="倍速" md description="智慧树只能1-1.5倍速，否则会导致`封号`！">
+                    <item
+                        label="倍速"
+                        md
+                        description="智慧树只能1-1.5倍速，否则会导致`封号`！"
+                    >
                         <a-input-number
                             size="small"
                             v-model:value="script.zhs.video.playbackRate"
@@ -170,7 +196,12 @@
         </card>
 
         <card title="查题设置">
-            <item description="必须配置查题码才能使用`自动答题`" label="查题码" md font-bold>
+            <item
+                description="必须配置查题码才能使用`自动答题`"
+                label="查题码"
+                md
+                font-bold
+            >
                 <a-input
                     type="text"
                     size="small"

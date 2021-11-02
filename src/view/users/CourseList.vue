@@ -24,7 +24,7 @@
                             <a-avatar
                                 :src="item.img"
                                 shape="square"
-                                :style="{ width: '86px', height: '100%' }"
+                                :style="{ width: '86px', height: '100%',marginLeft:'20px' }"
                             />
                         </template>
                     </a-list-item-meta>

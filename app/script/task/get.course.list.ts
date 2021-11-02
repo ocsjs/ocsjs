@@ -9,46 +9,47 @@ import { getElementClip } from "../common/utils";
 import { StoreGet } from "../../types/setting";
 import { Platform, User } from "../../types";
 import { log } from "electron-log";
+import { RunnableTask } from "../../electron/task/runnable.task";
+import { ScriptTask } from "../../electron/task/script.task";
 
 /**
  * 获取超星课程列表
  * @param script 脚本上下文
  * @returns
  */
-export function getCXCourseList(uid: string): Task<Course[]> {
-    return Task.createBlockTask({
+export function getCXCourseList(uid: string): ScriptTask<Course[]> {
+    return ScriptTask.createScript({
         name: "获取超星课程列表",
         timeout: 60 * 1000,
-        target: async (task, script) =>
+        target: async ({ task, script }) =>
             new Promise(async (resolve, reject) => {
-                if (script) {
-                    // 等待页面加载
-                    await new WaitForScript(script).documentReady();
+                // 等待页面加载
+                await new WaitForScript(script).documentReady();
 
-                    await script.page.goto("http://mooc1-1.chaoxing.com/visit/interaction");
-                    const waitFor = new WaitForScript(script);
-                    // 等待页面所有请求结束
-                    await waitFor.nextTick("request");
+                await script.page.goto("http://mooc1-1.chaoxing.com/visit/interaction");
+                const waitFor = new WaitForScript(script);
+                // 等待页面所有请求结束
+                await waitFor.nextTick("request");
 
-                    const courses = await script.page.evaluate(() => {
-                        // 获取课程信息
-                        return Array.from(document.querySelectorAll("li[id*=course]"))
-                            .filter((el) => !el.querySelector(".not-open-tip"))
-                            .map(
-                                (el: any) =>
-                                    ({
-                                        id: "",
-                                        uid: "",
-                                        platform: "cx",
-                                        img: el.querySelector(".course-cover > a > img").src,
-                                        url: el.querySelector(".course-cover > a").href,
-                                        profile: el.querySelector(".course-info").innerText.split(/\n+/).splice(1).join(" "),
-                                        name: el.querySelector(".course-info").innerText.split(/\n+/)[0],
-                                    } as Course)
-                            );
-                    });
-                    resolve(await initCourses({ script, courses, uid, platform: "cx" }));
-                }
+                const courses = await script.page.evaluate(() => {
+                    // 获取课程信息
+                    return Array.from(document.querySelectorAll("li[id*=course]"))
+                        .filter((el) => !el.querySelector(".not-open-tip"))
+                        .map(
+                            (el: any) =>
+                                ({
+                                    id: "",
+                                    uid: "",
+                                    platform: "cx",
+                                    img: el.querySelector(".course-cover > a > img").src,
+                                    url: el.querySelector(".course-cover > a").href,
+                                    profile: el.querySelector(".course-info").innerText.split(/\n+/).splice(1).join(" "),
+                                    name: el.querySelector(".course-info").innerText.split(/\n+/)[0],
+                                } as Course)
+                        );
+                });
+                resolve(await initCourses({ script, courses, uid, platform: "cx" }));
+                await script.page.close();
             }),
     });
 }
@@ -58,36 +59,35 @@ export function getCXCourseList(uid: string): Task<Course[]> {
  * @param script 脚本上下文
  * @returns
  */
-export function getZHSCourseList(uid: string): Task<Course[]> {
-    return Task.createBlockTask({
+export function getZHSCourseList(uid: string): ScriptTask<Course[]> {
+    return ScriptTask.createScript({
         name: "获取智慧树课程列表",
         timeout: 60 * 1000,
-        target: async (task, script) =>
+        target: async ({ task, script }) =>
             new Promise(async (resolve, reject) => {
-                if (script) {
-                    // 等待页面加载
-                    await new WaitForScript(script).documentReady();
-                    log(script.page.url());
-                    // 等待页面所有请求结束
-                    const courses = await script.page.evaluate(() => {
-                        // 获取课程信息
-                        const cs = Array.from(document.querySelectorAll("dl:not(.pos-rel)")).map(
-                            (c: any) =>
-                                ({
-                                    id: "",
-                                    uid: "",
-                                    platform: "zhs",
-                                    selector: `[src="${c.querySelector("img").src}"]`,
-                                    img: c.querySelector("img").src,
-                                    name: c.querySelector(".courseName").innerText,
-                                    profile: c.querySelector(".teacherName").innerText.split("\n").join("●"),
-                                } as Course)
-                        );
-                        console.log("cs", cs);
-                        return cs;
-                    });
-                    resolve(await initCourses({ script, courses, uid, platform: "zhs" }));
-                }
+                // 等待页面加载
+                await new WaitForScript(script).documentReady();
+                log(script.page.url());
+                // 等待页面所有请求结束
+                const courses = await script.page.evaluate(() => {
+                    // 获取课程信息
+                    const cs = Array.from(document.querySelectorAll("dl:not(.pos-rel)")).map(
+                        (c: any) =>
+                            ({
+                                id: "",
+                                uid: "",
+                                platform: "zhs",
+                                selector: `[src="${c.querySelector("img").src}"]`,
+                                img: c.querySelector("img").src,
+                                name: c.querySelector(".courseName").innerText,
+                                profile: c.querySelector(".teacherName").innerText.split("\n").join("●"),
+                            } as Course)
+                    );
+                    console.log("cs", cs);
+                    return cs;
+                });
+                resolve(await initCourses({ script, courses, uid, platform: "zhs" }));
+                await script.page.close();
             }),
     });
 }
@@ -115,7 +115,7 @@ export async function initCourses({ script, courses, uid, platform }: { script: 
     return courses;
 }
 
-export function GetCourseList(user: User) {
+export function GetCourseList(user: User): ScriptTask<Course[]> {
     if (user.platform === "cx") {
         return getCXCourseList(user.uid);
     } else if (user.platform === "zhs") {

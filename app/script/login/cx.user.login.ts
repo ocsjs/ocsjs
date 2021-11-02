@@ -17,7 +17,7 @@ export const CX_USER_LOGIN_NAME = "cx-user-login";
 @Runnable({
     name: CX_USER_LOGIN_NAME,
 })
-export class CXUserLoginScript extends LoginScript<void> {
+export class CXUserLoginScript extends LoginScript  {
     static scriptName:string = CX_USER_LOGIN_NAME
  
     @Inject()
@@ -31,7 +31,7 @@ export class CXUserLoginScript extends LoginScript<void> {
 
     async run(): Promise<void> {}
 
-    async login(task:Task<void>,user: User): Promise<void> {
+    async login(task:Task ,user: User): Promise<void> {
  
         const { utils, loginUtils, waitFor } = this;
         await this.page.goto(CX_USER_LOGIN_URL);

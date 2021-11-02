@@ -1,5 +1,6 @@
 import { Remote } from "@/utils/remote";
 import { config } from "@/utils/store";
+import { Task } from "app/electron/task";
 import { BaseTask, User } from "app/types";
 import { Course } from "app/types/script/course";
 
@@ -7,15 +8,15 @@ import { Course } from "app/types/script/course";
 import { reactive, ref } from "vue";
 
 export interface CourseTask {
-    target: BaseTask<any>;
+    target: Task;
     course: Course;
     user: User;
 }
 
 export const tasks = ref<CourseTask[]>([]);
 
-export function TaskToList(task: BaseTask<any>) {
-    let list: BaseTask<any>[] = [];
+export function TaskToList(task: Task) {
+    let list: Task[] = [];
     while (task) {
         if (task.children) {
             list.push(task.children);
@@ -35,17 +36,17 @@ export function AddCourseTask(ct: CourseTask) {
 }
 
 export function ListeningTaskChange(
-    task: BaseTask<any>,
+    task: Task,
     {
         finish,
         process,
         error,
         warn,
     }: {
-        finish?: (task: BaseTask<any>, value: any) => void;
-        process?: (task: BaseTask<any>, value: any) => void;
-        error?: (task: BaseTask<any>, value: any) => void;
-        warn?: (task: BaseTask<any>, value: any) => void;
+        finish?: (task: Task, value: any) => void;
+        process?: (task: Task, value: any) => void;
+        error?: (task: Task, value: any) => void;
+        warn?: (task: Task, value: any) => void;
     }
 ) {
     if (task.id) {

@@ -94,25 +94,33 @@
             :footer="null"
             :destroyOnClose="true"
         >
+            <item
+                font-bold
+                label="登录方式"
+                description="如需修改，请到账号管理中点击修改按钮进行信息修改！"
+            >
+                {{ AllScriptAlias[user.loginScript] }}
+            </item>
+
             <div class="space-10 margin-bottom-10 flex nowrap">
-                <span style="white-space: nowrap">
-                    已选课程:{{ selectItems.length !== 0 ? "" : "暂无" }}
+                <span style="white-space: nowrap;font-weight: bold;">
+                    已选课程 : {{ selectItems.length !== 0 ? "" : "暂无" }}
                 </span>
                 <span
                     v-if="selectItems.length !== 0"
                     class="flex nowrap"
-                    style="overflow-x: auto"
+                    style="overflow: auto; padding: 2px"
                 >
-                    <transition-group name="fade">
-                        <a-tag
-                            class="margin-top-2"
-                            color="#2db7f5"
-                            v-for="item of selectItems"
-                            :key="item.id"
-                        >
-                            {{ item.name }}
-                        </a-tag>
-                    </transition-group>
+                    <a-tag
+                        class="margin-top-2"
+                        color="#2db7f5"
+                        v-for="item of selectItems.filter(
+                            (c) => c.platform === user.platform
+                        )"
+                        :key="item.id"
+                    >
+                        {{ item.name }}
+                    </a-tag>
                 </span>
             </div>
             <!-- 展示指定平台的课程列表 -->
@@ -138,7 +146,7 @@
 <script setup lang="ts">
 import { reactive, toRaw, toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
-import { AllScriptAlias, BaseTask, User } from "app/types";
+import { AllScriptAlias, BaseTask, PlatformAlias, User } from "app/types";
 import { ref } from "vue";
 import UserForm from "./UserForm.vue";
 import CourseList from "./CourseList.vue";
@@ -147,6 +155,9 @@ import { Course } from "app/types/script/course";
 import { AddCourseTask } from "../task/task";
 import { useRouter } from "vue-router";
 import { NetWorkCheck } from "@/utils/request";
+import { Task } from "app/electron/task";
+import Item from "@/components/common/item.vue";
+
 const router = useRouter();
 const props = defineProps<{
     user: User;
@@ -185,8 +196,10 @@ function showList() {
 
 async function start() {
     if (await NetWorkCheck()) {
-        for (const course of selectItems.value) {
-            const task: BaseTask<any> = reactive(
+        for (const course of selectItems.value.filter(
+            (c) => c.platform === user.value.platform
+        )) {
+            const task: Task = reactive(
                 Remote.script.call(
                     "start",
                     user.value.loginScript,
@@ -210,4 +223,15 @@ async function start() {
 }
 </script>
 
-<style scope lang="less"></style>
+<style scope lang="less">
+// 隐藏过渡效果
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+</style>

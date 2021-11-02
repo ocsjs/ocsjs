@@ -23,7 +23,7 @@ export const CX_UNIT_LOGIN_URL = "https://passport2.chaoxing.com/login?loginType
 @Runnable({
     name: CX_UNIT_LOGIN_NAME,
 })
-export class CXUnitLoginScript extends LoginScript<void> {
+export class CXUnitLoginScript extends LoginScript  {
     static scriptName: string = CX_UNIT_LOGIN_NAME;
 
     @Inject()
@@ -37,7 +37,7 @@ export class CXUnitLoginScript extends LoginScript<void> {
 
     async run(): Promise<void> {}
 
-    async login(task: Task<void>, user: User): Promise<void> {
+    async login(task: Task , user: User): Promise<void> {
         await this.page.goto(CX_UNIT_LOGIN_URL);
         const { utils, loginUtils, waitFor } = this;
         await waitFor.documentReady();

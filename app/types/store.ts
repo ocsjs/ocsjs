@@ -8,6 +8,8 @@ import { BaseTask } from "../electron/task/types";
 export interface SystemSetting {
     win: {
         isAlwaysOnTop: boolean;
+        // 开机自启
+        autoStart:boolean
     };
     path: {
         userData: string;
@@ -69,7 +71,10 @@ export interface ScriptSetting {
             book: boolean;
 
             // 自动答题, QA 就是 Question and Answer
-            qa: ScriptQASetting;
+            qa: ScriptQASetting & {
+                // 自动提交的条件，需要达到百分之几提交
+                passRate:number
+            };
             // 自动做作业
             work: ScriptQASetting;
             // 自动考试
@@ -135,5 +140,5 @@ export interface User {
 export interface StoreSchema {
     setting: Setting;
     users: User[];
-    tasks: BaseTask<any>[];
+    tasks: Task[];
 }

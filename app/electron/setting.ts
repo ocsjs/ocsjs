@@ -58,7 +58,7 @@ export function initSetting() {
                             // 是否形成队列
                             queue: false,
                             // 复习模式
-                            review:true,
+                            review: true,
                             media: {
                                 enable: true,
                                 playbackRate: 2,
@@ -69,6 +69,7 @@ export function initSetting() {
                             qa: {
                                 enable: true,
                                 autoReport: true,
+                                passRate: 60,
                             },
                             work: {
                                 enable: true,
@@ -80,8 +81,8 @@ export function initSetting() {
                             },
                         },
                         zhs: {
-                            // 一个小时自动停止
-                            autoStop: 60 * 60 * 1000,
+                            // 半个小时自动停止
+                            autoStop: 0.5,
 
                             video: {
                                 enable: true,
@@ -116,6 +117,7 @@ export function initSetting() {
                 system: {
                     win: {
                         isAlwaysOnTop: CurrentWindow?.isAlwaysOnTop() || true,
+                        autoStart: false,
                     },
                     path: {
                         userData: app.getPath("userData"),
@@ -139,6 +141,11 @@ export function initSetting() {
     if (!StoreGet("users")) {
         StoreSet("users", []);
     }
+
+    // 设置开机自启
+    app.setLoginItemSettings({
+        openAtLogin: StoreGet("setting").system.win.autoStart,
+    });
 }
 
 // 获取 chrome 路径

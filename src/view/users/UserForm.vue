@@ -31,120 +31,135 @@
                     </a-radio-group>
                 </a-form-item>
                 <a-form-item label="登录类型">
-                    <a-radio-group
-                        v-if="tempUser.platform === 'cx'"
-                        :default-value="tempUser.loginScript"
-                        @change="(e:any)=>tempUser.loginScript=e.target.value"
-                    >
-                        <a-radio-button :value="FromScriptName('cx-user-login')">
-                            {{ showLoginScriptName("cx-user-login") }}
-                        </a-radio-button>
-                        <a-radio-button :value="FromScriptName('cx-phone-login')">
-                            {{ showLoginScriptName("cx-phone-login") }}
-                        </a-radio-button>
-                        <a-radio-button :value="FromScriptName('cx-unit-login')">
-                            {{ showLoginScriptName("cx-unit-login") }}
-                        </a-radio-button>
-                    </a-radio-group>
-                    <a-radio-group
-                        v-else-if="tempUser.platform === 'zhs'"
-                        :default-value="tempUser.loginScript"
-                        @change="(e:any)=>tempUser.loginScript=e.target.value"
-                    >
-                        <a-radio-button :value="FromScriptName('zhs-phone-login')">
-                            {{ showLoginScriptName("zhs-phone-login") }}
-                        </a-radio-button>
-                        <a-radio-button :value="FromScriptName('zhs-studentId-login')">
-                            {{ showLoginScriptName("zhs-studentId-login") }}
-                        </a-radio-button>
-                    </a-radio-group>
+                    <transition name="fade" mode="out-in" :duration="200">
+                        <a-radio-group
+                            v-if="tempUser.platform === 'cx'"
+                            :default-value="tempUser.loginScript"
+                            @change="(e:any)=>tempUser.loginScript=e.target.value"
+                        >
+                            <a-radio-button :value="FromScriptName('cx-user-login')">
+                                {{ showLoginScriptName("cx-user-login") }}
+                            </a-radio-button>
+                            <a-radio-button :value="FromScriptName('cx-phone-login')">
+                                {{ showLoginScriptName("cx-phone-login") }}
+                            </a-radio-button>
+                            <a-radio-button :value="FromScriptName('cx-unit-login')">
+                                {{ showLoginScriptName("cx-unit-login") }}
+                            </a-radio-button>
+                        </a-radio-group>
+                        <a-radio-group
+                            v-else-if="tempUser.platform === 'zhs'"
+                            :default-value="tempUser.loginScript"
+                            @change="(e:any)=>tempUser.loginScript=e.target.value"
+                        >
+                            <a-radio-button :value="FromScriptName('zhs-phone-login')">
+                                {{ showLoginScriptName("zhs-phone-login") }}
+                            </a-radio-button>
+                            <a-radio-button
+                                :value="FromScriptName('zhs-studentId-login')"
+                            >
+                                {{ showLoginScriptName("zhs-studentId-login") }}
+                            </a-radio-button>
+                        </a-radio-group>
+                    </transition>
                 </a-form-item>
                 <template v-if="tempUser.platform === 'cx'">
-                    <template v-if="tempUser.loginScript === 'cx-user-login'">
-                        <a-form-item label="账号">
-                            <a-input
-                                v-model:value.trim="tempUser.loginInfo.cx.userLogin.phone"
-                            />
-                        </a-form-item>
-                        <a-form-item label="密码">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.cx.userLogin.password
-                                "
-                            />
-                        </a-form-item>
-                    </template>
-                    <template v-else-if="tempUser.loginScript === 'cx-phone-login'">
-                        <a-form-item label="手机号">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.cx.phoneLogin.phone
-                                "
-                            />
-                        </a-form-item>
-                    </template>
-                    <template v-else-if="tempUser.loginScript === 'cx-unit-login'">
-                        <a-form-item label="学校/单位">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.cx.unitLogin.unitname
-                                "
-                            />
-                        </a-form-item>
-                        <a-form-item label="工号/学号">
-                            <a-input
-                                v-model:value.trim="tempUser.loginInfo.cx.unitLogin.uname"
-                            />
-                        </a-form-item>
-                        <a-form-item label="密码">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.cx.unitLogin.password
-                                "
-                            />
-                        </a-form-item>
-                    </template>
+                    <transition-group name="fade" mode="out-in" :duration="200">
+                        <template v-if="tempUser.loginScript === 'cx-user-login'">
+                            <a-form-item label="账号">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.cx.userLogin.phone
+                                    "
+                                />
+                            </a-form-item>
+                            <a-form-item label="密码">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.cx.userLogin.password
+                                    "
+                                />
+                            </a-form-item>
+                        </template>
+                        <template v-else-if="tempUser.loginScript === 'cx-phone-login'">
+                            <a-form-item label="手机号">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.cx.phoneLogin.phone
+                                    "
+                                />
+                            </a-form-item>
+                        </template>
+                        <template v-else-if="tempUser.loginScript === 'cx-unit-login'">
+                            <a-form-item label="学校/单位">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.cx.unitLogin.unitname
+                                    "
+                                />
+                            </a-form-item>
+                            <a-form-item label="工号/学号">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.cx.unitLogin.uname
+                                    "
+                                />
+                            </a-form-item>
+                            <a-form-item label="密码">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.cx.unitLogin.password
+                                    "
+                                />
+                            </a-form-item>
+                        </template>
+                        <template v-else> </template>
+                    </transition-group>
                 </template>
                 <template v-else-if="tempUser.platform === 'zhs'">
-                    <template v-if="tempUser.loginScript === 'zhs-phone-login'">
-                        <a-form-item label="手机号">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.zhs.phoneLogin.phone
-                                "
-                            />
-                        </a-form-item>
-                        <a-form-item label="密码">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.zhs.phoneLogin.password
-                                "
-                            />
-                        </a-form-item>
-                    </template>
-                    <template v-else-if="tempUser.loginScript === 'zhs-studentId-login'">
-                        <a-form-item label="学校名 ">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.zhs.studentIdLogin.school
-                                "
-                            />
-                        </a-form-item>
-                        <a-form-item label="大学学号">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.zhs.studentIdLogin.studentId
-                                "
-                            />
-                        </a-form-item>
-                        <a-form-item label="密码">
-                            <a-input
-                                v-model:value.trim="
-                                    tempUser.loginInfo.zhs.studentIdLogin.password
-                                "
-                            />
-                        </a-form-item>
-                    </template>
+                    <transition-group name="fade" mode="out-in" :duration="200">
+                        <template v-if="tempUser.loginScript === 'zhs-phone-login'">
+                            <a-form-item label="手机号">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.zhs.phoneLogin.phone
+                                    "
+                                />
+                            </a-form-item>
+                            <a-form-item label="密码">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.zhs.phoneLogin.password
+                                    "
+                                />
+                            </a-form-item>
+                        </template>
+                        <template
+                            v-else-if="tempUser.loginScript === 'zhs-studentId-login'"
+                        >
+                            <a-form-item label="学校名 ">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.zhs.studentIdLogin.school
+                                    "
+                                />
+                            </a-form-item>
+                            <a-form-item label="大学学号">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.zhs.studentIdLogin.studentId
+                                    "
+                                />
+                            </a-form-item>
+                            <a-form-item label="密码">
+                                <a-input
+                                    v-model:value.trim="
+                                        tempUser.loginInfo.zhs.studentIdLogin.password
+                                    "
+                                />
+                            </a-form-item>
+                        </template>
+                    </transition-group>
                 </template>
 
                 <a-form-item v-if="tempUser.courses.length !== 0" label="课程">
@@ -229,6 +244,7 @@ import { Remote } from "@/utils/remote";
 import { LoadingOutlined } from "@ant-design/icons-vue";
 import { reactive, ref, toRaw, toRefs } from "@vue/reactivity";
 import { message } from "ant-design-vue";
+import { Task } from "app/electron/task";
 
 import {
     User,
@@ -264,7 +280,7 @@ const tempUser = reactive<User>(user?.value || createUser());
 const visible = ref(false);
 
 // 登录任务
-const tasks: BaseTask<any>[] = reactive<BaseTask<any>[]>([]);
+const tasks: Task[] = reactive<Task[]>([]);
 
 function ok() {
     console.log("mode.value", mode.value);

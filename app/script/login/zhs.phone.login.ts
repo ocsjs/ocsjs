@@ -16,7 +16,7 @@ export const ZHS_PHONE_LOGIN_URL = "https://passport.zhihuishu.com/login?service
 @Runnable({
     name: ZHS_PHONE_LOGIN_NAME,
 })
-export class ZHSPhoneLoginScript extends LoginScript<void> {
+export class ZHSPhoneLoginScript extends LoginScript  {
     static scriptName:string = ZHS_PHONE_LOGIN_NAME
 
     @Inject()
@@ -30,7 +30,7 @@ export class ZHSPhoneLoginScript extends LoginScript<void> {
 
     async run(): Promise<void> {}
 
-    async login(task:Task<void>,user: User): Promise<void> {
+    async login(task:Task ,user: User): Promise<void> {
         await this.page.goto(ZHS_PHONE_LOGIN_URL);
         const { utils, loginUtils, waitFor } = this;
         await waitFor.documentReady();

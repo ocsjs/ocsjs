@@ -7,7 +7,12 @@ import { Task } from "../task";
 import { Course } from "../../types/script/course";
 import { CXScript } from "../../script/task/cx/cx.script";
 import { logger } from "../../types/logger";
+import { RunnableTask } from "../task/runnable.task";
+import { ScriptTask } from "../task/script.task";
+import { OCSNotify } from "../events/ocs.event";
+import { ZHSScript } from "../../script/task/zhs/zhs.script";
 const { info } = logger("script");
+const notify = new OCSNotify("script", "任务系统");
 /**
  * 脚本映射实现，使用此类当做 typeof 类型并且远程映射到渲染进程。具体看 remote.ts
  */
@@ -17,11 +22,11 @@ export const ScriptRemote = {
      * @param name 登录脚本名字
      * @returns 指定脚本
      */
-    createLaunchTask(name: keyof AllScriptObjects): Task<LoginScript<any>> {
-        return Task.createTask({
+    createLaunchTask(name: keyof AllScriptObjects): RunnableTask<LoginScript> {
+        return RunnableTask.createTask({
             name: "脚本启动",
             target: async () => {
-                const s = await StartScript<LoginScript<any>>(name);
+                const s = await StartScript<LoginScript>(name);
                 if (!s) {
                     throw new Error("脚本启动失败，请重试！");
                 }
@@ -37,16 +42,16 @@ export const ScriptRemote = {
      * @param user 需要运行的账号
      * @returns
      */
-    login(name: keyof AllScriptObjects, user: User, ...task: Task<any>[]) {
+    login(name: keyof AllScriptObjects, user: User, ...task: ScriptTask<any>[]) {
         info("[脚本启动]:", { name, user: user.uid });
-
-        return Task.exec(
-            Task.linkTasks(
+      
+        return RunnableTask.exec(
+            RunnableTask.linkTasks(
                 this.createLaunchTask(name),
-                Task.createBlockTask<any>({
+                ScriptTask.createScript<void>({
                     name: "脚本登录",
-                    target: async function (task, script) {
-                        return await (script as LoginScript<any>).login(task, user);
+                    target: async function ({ task, script }) {
+                        return await (script as LoginScript).login(task, user);
                     },
                     timeout: 60 * 1000,
                 }),
@@ -72,11 +77,12 @@ export const ScriptRemote = {
      * @param course 课程
      */
     start(name: keyof AllScriptObjects, user: User, course: Course) {
-        if(user.platform==='cx'){
+        if (user.platform === "cx") {
             return this.login(name, user, CXScript(course));
-        }else{
-            throw new Error("暂时不支持此平台脚本！");
+        } else if (user.platform === "zhs") {
+            return this.login(name, user, ZHSScript(course));
+        } else {
+            notify.error("暂时不支持此平台脚本！");
         }
-        
     },
 };

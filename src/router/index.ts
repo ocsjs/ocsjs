@@ -1,12 +1,19 @@
 import { createRouter, createWebHashHistory } from "vue-router";
-
+import index from "@/view/index/index.vue";
+import task from "@/view/task/index.vue";
+import setting from "@/view/setting/index.vue";
+import users from "@/view/users/index.vue";
+import CommonSetting from "@/view/setting/CommonSetting.vue";
+import ScriptSetting from "@/view/setting/ScriptSetting.vue";
+import SystemSetting from "@/view/setting/SystemSetting.vue";
+import VersionUpdate from "@/view/setting/VersionUpdate.vue";
 export const router = createRouter({
     history: createWebHashHistory(),
     routes: [
         {
             path: "/",
             name: "index",
-            component: () => import("@/view/index/index.vue"),
+            component:index,
             meta: {
                 desc: "关于",
             },
@@ -14,7 +21,7 @@ export const router = createRouter({
         {
             path: "/task",
             name: "task",
-            component: () => import("@/view/task/index.vue"),
+            component:task,
             meta: {
                 desc: "任务列表",
             },
@@ -22,12 +29,12 @@ export const router = createRouter({
         {
             path: "/setting",
             name: "setting",
-            component: () => import("@/view/setting/index.vue"),
+            component: setting,
             children: [
                 {
                     path: "common",
                     name: "setting-common",
-                    component: () => import("@/view/setting/CommonSetting.vue"),
+                    component:CommonSetting,
                     meta: {
                         desc: "通用设置",
                     },
@@ -35,7 +42,7 @@ export const router = createRouter({
                 {
                     path: "script",
                     name: "setting-script",
-                    component: () => import("@/view/setting/ScriptSetting.vue"),
+                    component:ScriptSetting,
                     meta: {
                         desc: "脚本设置",
                     },
@@ -43,7 +50,7 @@ export const router = createRouter({
                 {
                     path: "system",
                     name: "setting-system",
-                    component: () => import("@/view/setting/SystemSetting.vue"),
+                    component: SystemSetting,
                     meta: {
                         desc: "系统设置",
                     },
@@ -51,7 +58,7 @@ export const router = createRouter({
                 {
                     path: "version",
                     name: "setting-version-update",
-                    component: () => import("@/view/setting/VersionUpdate.vue"),
+                    component:VersionUpdate ,
                     meta: {
                         desc: "版本更新",
                     },
@@ -64,7 +71,7 @@ export const router = createRouter({
         {
             path: "/users",
             name: "users",
-            component: () => import("@/view/users/index.vue"),
+            component: users,
             meta: {
                 desc: "账号管理",
             },
