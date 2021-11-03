@@ -148,7 +148,6 @@ export class Gitee extends UpdaterImpl {
             }
             if (resourse && raw && latest) {
                 tags.push({ name, message, latest, resourse, size: _size, raw });
-                break;
             }
         }
         return tags;
