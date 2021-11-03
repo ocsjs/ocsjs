@@ -33,7 +33,8 @@ export class Version {
         return new Version(version);
     }
 
+    // 从大到小排序
     static sort(versions: string[]) {
-        return versions.sort((a, b) => (Version.from(a).greaterThan(Version.from(b)) ? 1 : -1));
+        return versions.sort((a, b) => (Version.from(a).greaterThan(Version.from(b)) ? -1 : 1));
     }
 }

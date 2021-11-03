@@ -26,7 +26,6 @@ export async function refreshUpdateInfo() {
     // 寻找最新的版本
     const sortTagVersions = Version.sort(RepositoryTags.value.map((t) => t.name));
     console.log("sortTagVersions",sortTagVersions);
-    
     LatestTag.value = RepositoryTags.value.find((t) => t.name === sortTagVersions[0]);
     console.log("LatestTag",LatestTag.value);
     const currentTag = RepositoryTags.value.find((t) => t.name === ElectronVersion);
