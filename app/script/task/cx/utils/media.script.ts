@@ -8,10 +8,22 @@ export async function MediaScript(selector: "video" | "audio", task: BaseTask, f
     if (video) {
         const name = selector === "video" ? "视频" : "音频";
         task.process(`正在播放${name}`);
+
         await frame.evaluate(
-            (video: HTMLVideoElement, playbackRate) => {
+            (video: HTMLVideoElement, playbackRate, mute) => {
                 return new Promise<void>((resolve, reject) => {
+                    window.scrollTo({
+                        top: video.offsetHeight,
+                        behavior: "smooth",
+                    });
+
                     video.playbackRate = playbackRate;
+                    video.muted = mute;
+                    video.onpause = function () {
+                        if (!video.ended) {
+                            video.play();
+                        }
+                    };
                     video.onended = function () {
                         resolve();
                     };
@@ -20,7 +32,8 @@ export async function MediaScript(selector: "video" | "audio", task: BaseTask, f
                 });
             },
             video,
-            setting.playbackRate
+            setting.playbackRate,
+            setting.mute
         );
         task.process(`${name}播放完毕`);
     }

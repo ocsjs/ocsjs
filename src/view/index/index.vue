@@ -57,12 +57,35 @@
                 </a-descriptions>
             </div>
         </div>
+
+        <a-modal :visible="visible"  :keyboard="false" :footer="null" :maskClosable="false" :closable="false" >
+            <h3>欢迎使用OCS,请完成您开始前的一些配置</h3>
+            <div class="padding-12">
+                <Guide @done="done"/>
+            </div>
+        </a-modal>
     </div>
 </template>
 
 <script setup lang="ts">
 import json from "root/package.json";
-import { Remote,ElectronVersion } from "@/utils/remote";
+import { ElectronVersion } from "@/utils/remote";
+import { config } from "@/utils/store";
+import { ref } from "@vue/reactivity";
+import Guide from "./guide.vue";
+import { message } from "ant-design-vue";
+
+const visible = ref(false);
+
+// 如果未初始化
+if (!config?.setting?.script?.account?.queryToken || !config?.setting?.script?.launch?.binaryPath) {
+    visible.value = true;
+}
+
+function done(){
+    visible.value = !visible.value
+    message.success('初始化配置完成！')
+}
 </script>
 
 <style scope lang="less">

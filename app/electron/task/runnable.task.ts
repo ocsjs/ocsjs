@@ -1,3 +1,4 @@
+import { shell } from 'electron';
 import { Task } from ".";
 import { LoginScript } from "../../script/login/types";
 import { logger } from "../../types/logger";
@@ -93,7 +94,10 @@ export class RunnableTask<R> extends Task {
                 // 监听任务结束
                 script.page.on("close", () => {
                     pass = false;
-                    currentTask.error('脚本已关闭')
+                    if(currentTask.status!=='finish'){
+                        currentTask.error('脚本已关闭')
+                    }
+        
                     launchTask.remove();
                 });
                 if (launchTask.children) {

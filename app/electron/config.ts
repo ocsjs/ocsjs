@@ -15,7 +15,7 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
     center: true,
     autoHideMenuBar: true,
     show: false,
-    alwaysOnTop: !!StoreGet("setting").system.win.isAlwaysOnTop,
+    alwaysOnTop: !!StoreGet("setting")?.system?.win?.isAlwaysOnTop,
     webPreferences: {
         // 关闭拼写矫正
         spellcheck: false,

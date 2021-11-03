@@ -5,7 +5,7 @@ import { User } from "../../types";
 import { GetCourseList } from "../../script/task/get.course.list";
 import { Task } from "../task";
 import { Course } from "../../types/script/course";
-import { CXScript } from "../../script/task/cx/cx.script";
+import { CXCourseEntry, CXScript } from "../../script/task/cx/cx.script";
 import { logger } from "../../types/logger";
 import { RunnableTask } from "../task/runnable.task";
 import { ScriptTask } from "../task/script.task";
@@ -78,7 +78,7 @@ export const ScriptRemote = {
      */
     start(name: keyof AllScriptObjects, user: User, course: Course) {
         if (user.platform === "cx") {
-            return this.login(name, user, CXScript(course));
+            return this.login(name, user,CXCourseEntry(course), CXScript());
         } else if (user.platform === "zhs") {
             return this.login(name, user, ZHSScript(course));
         } else {

@@ -37,6 +37,6 @@ export class CXPhoneLoginScript extends LoginScript {
 
         await utils.value("#phone", phone);
         task.warn('请手动输入验证码并点击登陆');
-        await loginUtils.waitForLogin();
+        await loginUtils.waitForLogin(5 * 60 * 1000);
     }
 }

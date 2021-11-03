@@ -35,6 +35,11 @@ export async function QAScript(task: BaseTask, frame: Frame, setting: ScriptSett
     for (const TiMu of TiMus) {
         // 获取题目
         const infos: JSHandle<Question> = await TiMu.evaluateHandle((timu) => {
+            window.scrollTo({
+                top: timu.offsetHeight,
+                behavior: "smooth",
+            });
+
             return {
                 head: timu.querySelector(".Zy_TItle"),
                 title: (timu.querySelector(".Zy_TItle span") as any).innerText,

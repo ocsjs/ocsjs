@@ -58,7 +58,7 @@ export function ZHSScript(course: Course): ScriptTask<void> {
 
                 // 暂时使用旧版本的刷课方法
                 await page.evaluate(
-                    (autoStop, playbackRate) => {
+                    (autoStop, playbackRate,mute) => {
                         return new Promise<void>((resolve, reject) => {
                             const $ = (window as any).$;
 
@@ -95,8 +95,8 @@ export function ZHSScript(course: Course): ScriptTask<void> {
                                 }
 
                                 function Player(video: HTMLVideoElement, callback: () => void) {
-                                    video.play();
                                     video.playbackRate = playbackRate;
+                                    video.muted = mute
                                     video.onpause = function () {
                                         if (!video.ended) {
                                             video.play();
@@ -105,6 +105,7 @@ export function ZHSScript(course: Course): ScriptTask<void> {
                                     video.onended = function () {
                                         callback();
                                     };
+                                    video.play();
                                 }
                                 //获取所有要播放的视频
                                 function getList() {
@@ -123,7 +124,8 @@ export function ZHSScript(course: Course): ScriptTask<void> {
                         });
                     },
                     zhsSetting.autoStop,
-                    zhsSetting.video.playbackRate
+                    zhsSetting.video.playbackRate,
+                    zhsSetting.video.mute
                 );
             });
 

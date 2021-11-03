@@ -12,7 +12,12 @@ import { BaseTask, ScriptSetting } from "../../../../types";
 
     if (readWeb) {
         task.process("正在翻阅书本:" + ((await frame.title()) || "未知书名"));
-        await readWeb.evaluate((readWeb) => {
+        await frame.evaluate((readWeb:HTMLDivElement) => {
+            window.scrollTo({
+                top: readWeb.offsetHeight,
+                behavior: "smooth",
+            });
+
             return new Promise(async (resolve, reject) => {
                 const imgs = Array.from(document.querySelectorAll("#Readweb .duxiuimg"));
                 let count = 0;

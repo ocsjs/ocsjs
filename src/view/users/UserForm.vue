@@ -211,17 +211,22 @@
         </div>
 
         <div class="space-10 flex jc-flex-end margin-top-8">
-            <a-popconfirm
-                placement="top"
-                ok-text="确认"
-                cancel-text="取消"
-                title="你确定要重新获取课程吗"
-                @confirm="getCourseList()"
-            >
-                <a-button type="primary">
-                    {{ mode === "create" ? "获取课程列表" : "重新获取课程列表" }}
+            <template v-if="mode === 'create'">
+                <a-button type="primary" @click="getCourseList()">
+                    获取课程列表
                 </a-button>
-            </a-popconfirm>
+            </template>
+            <template v-else>
+                <a-popconfirm
+                    placement="top"
+                    ok-text="确认"
+                    cancel-text="取消"
+                    title="你确定要重新获取课程吗"
+                    @confirm="getCourseList()"
+                >
+                    <a-button type="primary"> 重新获取课程列表</a-button>
+                </a-popconfirm>
+            </template>
 
             <template v-if="tempUser.courses.length === 0">
                 <a-popover content="请先获取课程列表，之后才能添加 ">

@@ -10,8 +10,9 @@ import { CXPhoneLoginScript } from "./login/cx.phone.login";
 import { CXUnitLoginScript } from "./login/cx.unit.login";
 import { ZHSPhoneLoginScript } from "./login/zhs.phone.login";
 import { ZHSStudentIdLoginScript } from "./login/zhs.studentId.login";
-import { log } from "electron-log";
-
+import { logger } from "../types/logger";
+const { info: requestInfo } = logger("pioneer-request");
+const { info: navigationInfo } = logger("pioneer-navigation");
 /**
  * 运行脚本
  * @param name 脚本名称
@@ -43,8 +44,24 @@ export async function StartScript<S extends RunnableScript>(name: keyof AllScrip
                 events: ["request", "response", "frameattached", "framedetached", "framenavigated"],
             });
         }
+        const s = pioneer.runnableScripts?.find((s: any) => s.name === name) as unknown as S;
+        s.page.on("request", (req) => {
+            if (["document",'xhr'].includes(req.resourceType())) {
+                requestInfo({
+                    url:req.url(),
+                    method:req.method(),
+                    type:req.resourceType(),
+                    postData:req.postData(),
+                });
+            }
+            
+        });
 
-        return pioneer.runnableScripts?.find((s: any) => s.name === name) as unknown as S;
+        s.page.on('load',()=>{
+            navigationInfo(s.page.url())
+        })
+
+        return s;
     } else {
         console.error("找不到 chrome 路径!!!");
     }

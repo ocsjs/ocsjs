@@ -4,7 +4,7 @@
             <item
                 font-bold
                 label="浏览器路径"
-                description="软件会`自动检测`您的谷歌`浏览器路径`<br>当路径未设置，或者你需要设置`其他浏览器`进行脚本操作，你可以点击`左侧图标`进行浏览器的路径设置"
+                description="软件会`自动检测`您的谷歌`浏览器路径`<br>指定的浏览器有：`谷歌` `火狐` `Microsoft Edge`<br>当路径未设置，或者你需要设置`其他浏览器`进行脚本操作，你可以点击`左侧图标`进行浏览器的路径设置"
                 md
             >
                 <span
@@ -211,26 +211,26 @@
                 />
             </item>
 
-            <template v-if="loading">
+            <template v-if="CheckLoading">
                 <item label="提示">
                     <span>正在加载查题信息 <LoadingOutlined /></span>
                 </item>
             </template>
-            <template v-else-if="tokenInfo.msg">
+            <template v-else-if="TokenInfo.msg">
                 <item label="提示">
                     <a-alert
                         show-icon
-                        :message="tokenInfo.msg"
+                        :message="TokenInfo.msg"
                         type="error"
                         style="height: 24px"
                     />
                 </item>
             </template>
             <template v-else>
-                <template v-if="account.queryToken && account.queryToken.length === 32">
-                    <item :text="tokenInfo.query_times" label="剩余次数" />
-                    <item :text="tokenInfo.success_times" label="成功次数" />
-                    <item :text="tokenInfo.all_times" label="总查询次数" />
+                <template v-if="account.queryToken && account.queryToken.length === 32 && TokenInfo.code===1">
+                    <item :text="TokenInfo.query_times" label="剩余次数" />
+                    <item :text="TokenInfo.success_times" label="成功次数" />
+                    <item :text="TokenInfo.all_times" label="总查询次数" />
                 </template>
             </template>
         </card>
@@ -274,7 +274,7 @@ import { AxiosGet, NetWorkCheck } from "@/utils/request";
 
 import { message } from "ant-design-vue";
 import { ref, onMounted, onUnmounted } from "vue";
-import { config } from "@/utils/store";
+import { checkToken,TokenInfo,CheckLoading, config, setBinaryPath } from "@/utils/store";
 
 import item from "@/components/common/item.vue";
 import Card from "@/components/common/Card.vue";
@@ -282,74 +282,17 @@ import { debounce } from "lodash";
 const { launch, script, account } = config.setting.script;
 const { shell } = require("electron");
 
-// 加载状态
-const loading = ref(false);
-
-// 查题剩余次数
-let tokenInfo = ref({
-    all_times: 0,
-    query_times: 0,
-    success_times: 0,
-    msg: "",
-});
-onMounted(async () => {
-    const queryToken = account.queryToken;
-    if (queryToken && queryToken.length === 32) {
-        await checkToken();
-    }
-});
 
 // loadsh 防抖
-const debouncedClick = debounce(checkToken, 500);
+const debouncedClick = debounce(()=>checkToken(account.queryToken), 500);
 onUnmounted(() => {
     // 移除组件时，取消定时器
     debouncedClick.cancel();
 });
 
-async function checkToken() {
-    const queryToken = account.queryToken;
-    if (queryToken === "") {
-        loading.value = false;
-        return;
-    }
-    if (queryToken && queryToken.length === 32) {
-        if (await NetWorkCheck()) {
-            loading.value = true;
-            AxiosGet({
-                url: "http://wk.enncy.cn/query/chatiId/" + queryToken,
-            })
-                .then((res: any) => {
-                    if (res.data.code === 1) {
-                        tokenInfo.value = res.data.data;
-                    } else {
-                        tokenInfo.value.msg = "查题码无效，请重新填写";
-                    }
-                    loading.value = false;
-                })
-                .catch((err: any) => {
-                    console.error(err);
-                    message.error("获取查题次数失败,可能为网络错误！");
-                    loading.value = false;
-                });
-        } else {
-            loading.value = false;
-        }
-    } else {
-        message.warn("请输入正确的查题码，一般为32个长度的字符串！");
-        loading.value = false;
-    }
-}
 
-// 设置路径
-function setBinaryPath() {
-    launch.binaryPath = Remote.dialog
-        .call("showOpenDialogSync", {
-            properties: ["openFile"],
-            multiSelections: false,
-            defaultPath: launch.binaryPath,
-        })
-        .pop();
-}
+
+
 </script>
 
 <style scope lang="less">

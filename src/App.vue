@@ -40,6 +40,7 @@ import {
     refreshUpdateInfo,
 } from "./view/setting/updater";
 import { showFomatSize } from "./view/setting/updater/types";
+import { checkToken, config, TokenInfo } from "./utils/store";
 
 // 网络检测
 onMounted(async () => {
@@ -75,7 +76,17 @@ onMounted(async () => {
             await checkUpdate();
         }
     }
+
+    // 检测查题码
+    const queryToken = config.setting.script.account.queryToken;
+    console.log("queryToken",queryToken);
+    
+    if(TokenInfo.value.code===0){
+        await checkToken(queryToken);
+    }
 });
+
+ 
 
 async function checkUpdate() {
     if (LatestInfo.value) {

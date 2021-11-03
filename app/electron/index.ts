@@ -4,8 +4,9 @@ import { logger } from "../types/logger";
 import { log } from "electron-log";
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
-import { initSetting } from "./setting";
+import { InitSetting } from "./setting";
 import { OCSNotify } from "./events/ocs.event";
+
 const t = Date.now();
 
 const { info, error, task } = logger("system");
@@ -61,9 +62,11 @@ app.whenReady().then(async () => {
 
     // 以下顺序不能更换！
     // 初始化配置
+
     await task("初始化系统设置", async () => {
-        return initSetting();
+        return InitSetting();
     });
+
     await task("渲染进程启动", async () => {
         CurrentWindow = await createWindow();
     });

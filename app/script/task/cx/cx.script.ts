@@ -14,6 +14,7 @@ import { LoginScript } from "../../login/types";
 import { RunnableTask } from "../../../electron/task/runnable.task";
 import { ScriptTask } from "../../../electron/task/script.task";
 import { waitForNavigation, waitForClickAndNavigation, waitForFrameReady } from "../utils";
+import { createHash } from "crypto";
 
 export function CXCourseEntry(course: Course): ScriptTask<void> {
     return ScriptTask.createScript({
@@ -36,7 +37,7 @@ export function CXCourseEntry(course: Course): ScriptTask<void> {
  * @param script 脚本上下文
  * @returns
  */
-export function CXScript(course: Course): ScriptTask<void> {
+export function CXScript(): ScriptTask<void> {
     return ScriptTask.createScript({
         name: "超星刷课任务",
         target: async function ({ task, script }) {
@@ -88,9 +89,10 @@ function start(task: RunnableTask<void>, script: LoginScript) {
             resolve();
         } else {
             task.process("刷课中...");
-
             // 任务队列
             let queue: Frame[] = [];
+
+            let currentTaskId = createHash("md5").update(Date.now().toString()).digest("hex");
 
             // 当 iframe 时，加载到任务队列
             script.page.on("frameattached", (frame) => {
@@ -103,62 +105,59 @@ function start(task: RunnableTask<void>, script: LoginScript) {
 
             script.page.on("framenavigated", (frame) => {});
 
-            script.page.on("load", async (e: any) => {
-                task.process("页面重新加载，重新刷课中...");
-                await waitFor.nextTick("request");
-                await runJob();
-            });
-            // 运行任务
-            await runJob();
-            async function runJob() {
-                const job = jobs.shift();
-
-                if (job && script) {
-                    const cxSetting = StoreGet("setting").script.script.cx;
-
-                    if (cxSetting.review) {
-                        // 如果是复习模式，则从当前页面一直下一章
-                    } else {
-                        // 进入需要刷课的章节，然后一直下一章
-                        await script.page.evaluate(job);
-                    }
-
-                    await waitFor.nextTick("request");
+            script.page.on("requestfinished", async (req) => {
+                if (RegExp("/mycourse/studentstudyAjax").test(req.url())) {
+                    currentTaskId = createHash("md5").update(Date.now().toString()).digest("hex");
+                    task.process("页面重新加载，重新刷课中...");
+                    await waitFor.nextTick("requestfinished");
+                    await waitFor.documentReady()
                     await runScript();
-                    async function runScript() {
-                        console.log("runScript queue :", queue.length);
+                }
+            });
 
-                        if (script) {
-                            const cxSetting = StoreGet("setting").script.script.cx;
-                            // 队列运行脚本
-                            if (cxSetting.queue) {
-                                // 执行队列
-                                await execQueue();
-                                async function execQueue() {
-                                    const frame = queue.shift();
-                                    // 如果队列存在继续执行，否则运行下个任务
-                                    if (frame) {
-                                        const cxSetting = StoreGet("setting").script.script.cx;
-                                        await JobScript(cxSetting, task, frame);
-                                        await execQueue();
-                                    }
+            const cxSetting = StoreGet("setting").script.script.cx;
+            if (cxSetting.review) {
+                // 如果是复习模式，则从当前页面一直下一章
+            } else {
+                // 进入需要刷课的章节，然后一直下一章
+                await script.page.evaluate(jobs[0]);
+            }
+
+            // 运行任务
+            await waitFor.nextTick("request");
+            await runScript();
+            async function runScript() {
+                let id = currentTaskId;
+                console.log("runScript queue :", queue.length);
+                if (script && id === currentTaskId) {
+                    const cxSetting = StoreGet("setting").script.script.cx;
+                    // 队列运行脚本
+                    if (id === currentTaskId) {
+                        if (cxSetting.queue) {
+                            // 执行队列
+                            await execQueue();
+                            async function execQueue() {
+                                const frame = queue.shift();
+                                // 如果队列存在继续执行，否则运行下个任务
+                                if (frame && id === currentTaskId) {
+                                    const cxSetting = StoreGet("setting").script.script.cx;
+                                    await JobScript(cxSetting, task, frame);
+                                    await execQueue();
                                 }
-                            } else {
-                                // 同时运行
-                                await Promise.all(queue.map((frame) => JobScript(cxSetting, task, frame)));
                             }
-                            const onclick = await script.page.evaluate(() => (document.querySelector(".next") as any).getAttribute("onclick"));
-                            if (onclick) {
-                                await script.page.evaluate(() => (document.querySelector(".next") as any)?.click());
-                                await sleep(3000);
-                                await runScript();
-                            } else {
-                                resolve();
-                            }
+                        } else {
+                            // 同时运行
+                            await Promise.all(queue.map((frame) => JobScript(cxSetting, task, frame)));
+                        }
+                        const onclick = await script.page.evaluate(() => (document.querySelector(".next") as any).getAttribute("onclick"));
+                        if (onclick) {
+                            await script.page.evaluate(() => (document.querySelector(".next") as any)?.click());
+                            await sleep(3000);
+                            await runScript();
+                        } else {
+                            resolve();
                         }
                     }
-                } else {
-                    resolve();
                 }
             }
         }

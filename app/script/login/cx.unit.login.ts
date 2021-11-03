@@ -57,7 +57,7 @@ export class CXUnitLoginScript extends LoginScript  {
         } else {
             task.warn("您暂未配置OCR，所以不能自动获取验证码，请手动输入并点击登陆");
 
-            await loginUtils.waitForLogin();
+            await loginUtils.waitForLogin(5 * 60 * 1000);
         }
     }
 
