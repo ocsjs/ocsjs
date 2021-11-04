@@ -16,6 +16,7 @@
     "dayjs": "^1.10.7",
     "electron-log": "^4.4.1",
     "electron-store": "^8.0.1",
+    "loadsh": "^0.0.4",
     "puppeteer-core": "^10.4.0",
     "semver": "^7.3.5",
     "string-similarity": "^4.0.4",

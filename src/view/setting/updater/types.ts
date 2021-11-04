@@ -10,7 +10,7 @@ import { h, VNodeTypes } from "vue";
 
 const { resolve, join } = require("path");
 const { writeFileSync } = require("fs");
-
+ 
 export interface Tag {
     name: string;
     message: string;
@@ -84,9 +84,9 @@ export abstract class UpdaterImpl implements Updater {
                             UpdateNotify(
                                 "info",
                                 h("span", [
-                                    h("span", "下载更新包中 "),
+                                    h("span", "下载更新包中 "+evt.loaded),
                                     h(Progress, {
-                                        percent: parseInt(Math.round((evt.total / evt.loaded) * 100).toFixed(0)),
+                                        percent: parseInt(Math.round((evt.loaded / evt.total) * 100).toFixed(0)),
                                     }),
                                 ])
                             );
@@ -175,10 +175,7 @@ export function UpdateNotify(type: IconType, msg: VNodeTypes, options?: Omit<Not
             style: {
                 padding: "12px",
             },
-            class: "notification-message",
-            onClose: () => {
-                notification.close(key);
-            },
+            class: "notification-message"
         },
         options
     );

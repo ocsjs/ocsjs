@@ -1,6 +1,6 @@
 import { WaitForScript } from "@pioneerjs/core";
 import { log } from "electron-log";
-import { Frame } from "puppeteer-core";
+import { Frame, HTTPRequest } from "puppeteer-core";
 import { ScriptSetting } from "../../../types";
 import { Course } from "../../../types/script/course";
 import { StoreGet } from "../../../types/setting";
@@ -15,6 +15,7 @@ import { RunnableTask } from "../../../electron/task/runnable.task";
 import { ScriptTask } from "../../../electron/task/script.task";
 import { waitForNavigation, waitForClickAndNavigation, waitForFrameReady } from "../utils";
 import { createHash } from "crypto";
+import { debounce } from "lodash";
 
 export function CXCourseEntry(course: Course): ScriptTask<void> {
     return ScriptTask.createScript({
@@ -67,15 +68,16 @@ function start(task: RunnableTask<void>, script: LoginScript) {
         // 点击第一个任务的链接 进入学习页面
         await waitForClickAndNavigation(script, ".chapter_item[onclick*='toOld']");
         const waitFor = new WaitForScript(script);
-        await waitFor.nextTick("request");
-        await waitFor.sleep(5000);
+        await waitFor.nextTick("requestfinished");
+        await waitFor.documentReady();
+
         // 获取章节
         const jobs: string[] = await script.page.evaluate(() =>
             Array.from(document.querySelectorAll('[onclick*="getTeacherAjax"]'))
                 // 切换回父节点
                 .map((el) => el.parentElement)
                 // 如果存在未完成的任务点
-                .filter((el) => !!el?.parentElement?.querySelector(".jobUnfinishCount"))
+                .filter((el) => !!el?.querySelector(".jobUnfinishCount"))
                 // 获取点击事件
                 .map((el) => el!.querySelector('[onclick*="getTeacherAjax"]') || "")
                 // 过滤掉空值
@@ -89,6 +91,14 @@ function start(task: RunnableTask<void>, script: LoginScript) {
             resolve();
         } else {
             task.process("刷课中...");
+            const cxSetting = StoreGet("setting").script.script.cx;
+            if (cxSetting.review) {
+                // 如果是复习模式，则从当前页面一直下一章
+            } else {
+                // 进入需要刷课的章节，然后一直下一章
+                await script.page.evaluate(jobs[0]);
+            }
+
             // 任务队列
             let queue: Frame[] = [];
 
@@ -105,27 +115,24 @@ function start(task: RunnableTask<void>, script: LoginScript) {
 
             script.page.on("framenavigated", (frame) => {});
 
-            script.page.on("requestfinished", async (req) => {
+            const debouncedScript = debounce(runScript, 5000, { maxWait: 5000 });
+
+            // 防抖
+            script.page.on("requestfinished", async function (req: HTTPRequest) {
                 if (RegExp("/mycourse/studentstudyAjax").test(req.url())) {
                     currentTaskId = createHash("md5").update(Date.now().toString()).digest("hex");
                     task.process("页面重新加载，重新刷课中...");
                     await waitFor.nextTick("requestfinished");
-                    await waitFor.documentReady()
-                    await runScript();
+                    await waitFor.documentReady();
+
+                    await debouncedScript();
                 }
             });
 
-            const cxSetting = StoreGet("setting").script.script.cx;
-            if (cxSetting.review) {
-                // 如果是复习模式，则从当前页面一直下一章
-            } else {
-                // 进入需要刷课的章节，然后一直下一章
-                await script.page.evaluate(jobs[0]);
-            }
-
             // 运行任务
-            await waitFor.nextTick("request");
-            await runScript();
+            await waitFor.nextTick("requestfinished");
+            await waitFor.documentReady();
+            await debouncedScript();
             async function runScript() {
                 let id = currentTaskId;
                 console.log("runScript queue :", queue.length);
@@ -149,12 +156,12 @@ function start(task: RunnableTask<void>, script: LoginScript) {
                             // 同时运行
                             await Promise.all(queue.map((frame) => JobScript(cxSetting, task, frame)));
                         }
-                        const onclick = await script.page.evaluate(() => (document.querySelector(".next") as any).getAttribute("onclick"));
+                        const onclick = await script.page.evaluate(() => (document.querySelector(".next") as any)?.getAttribute("onclick"));
                         if (onclick) {
                             await script.page.evaluate(() => (document.querySelector(".next") as any)?.click());
-                            await sleep(3000);
-                            await runScript();
+                            await debouncedScript();
                         } else {
+                            task.process("任务运行完毕");
                             resolve();
                         }
                     }

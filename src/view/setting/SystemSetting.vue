@@ -7,16 +7,6 @@
                     @change="Remote.win.call('setAlwaysOnTop', system.win.isAlwaysOnTop)"
                 />
             </item>
-            <item label="开机自启" font-bold>
-                <a-switch
-                    v-model:checked="system.win.autoStart"
-                    @change="
-                        Remote.app.call('setLoginItemSettings', {
-                            openAtLogin: system.win.autoStart,
-                        })
-                    "
-                />
-            </item>
         </card>
         <card title="路径设置">
             <item label="软件路径" font-bold>

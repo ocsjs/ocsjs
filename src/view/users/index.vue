@@ -32,7 +32,7 @@
                     @modify="onModifyUser"
                 />
                 <div
-                    style="width: 210px; height: 100px"
+                    style="width: 260px; height: 100px"
                     class="flex ac-center ai-center jc-center add-card"
                 >
                     <a-button type="primary" shape="circle" @click="initUser">

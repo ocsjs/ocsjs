@@ -38,7 +38,7 @@ export async function waitForNavigation(script: LoginScript, url: string) {
 export async function waitForFrameReady(frame: Frame): Promise<void> {
     let readyState: DocumentReadyState | undefined;
     while (readyState !== "complete") {
-        await sleep(2000);
+        await sleep(1000);
         try {
             const document = await frame.evaluateHandle("document");
             readyState = await frame.evaluate((document) => document.readyState, document);

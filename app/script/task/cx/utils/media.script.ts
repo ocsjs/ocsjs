@@ -24,9 +24,11 @@ export async function MediaScript(selector: "video" | "audio", task: BaseTask, f
                             video.play();
                         }
                     };
-                    video.onended = function () {
-                        resolve();
-                    };
+                    setTimeout(() => {
+                        video.onended = function () {
+                            resolve();
+                        };
+                    }, 3000);
 
                     video.play();
                 });

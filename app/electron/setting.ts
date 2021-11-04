@@ -1,10 +1,11 @@
 import { app } from "electron";
+import log from "electron-log";
 import { CurrentWindow } from ".";
 import { Setting, StoreSchema } from "../types";
 import { StoreGet, StoreSet } from "../types/setting";
 import { Version } from "../types/version";
 import { logger } from "../types/logger";
-import { join, resolve } from "path";
+import { basename, join, resolve } from "path";
 import { existsSync, mkdirSync } from "fs";
 const { info } = logger("setting");
 
@@ -43,9 +44,7 @@ export function InitSetting() {
     StoreSet("tasks", []);
 
     // 设置开机自启
-    app.setLoginItemSettings({
-        openAtLogin: StoreGet("setting").system.win.autoStart,
-    });
+ 
 }
 
 export function GetDefaultSetting() {
@@ -129,7 +128,7 @@ export function GetDefaultSetting() {
         system: {
             win: {
                 isAlwaysOnTop: CurrentWindow?.isAlwaysOnTop() || true,
-                autoStart: false,
+           
             },
             path: {
                 userData: app.getPath("userData"),

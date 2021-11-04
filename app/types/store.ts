@@ -8,8 +8,7 @@ import { BaseTask } from "../electron/task/types";
 export interface SystemSetting {
     win: {
         isAlwaysOnTop: boolean;
-        // 开机自启
-        autoStart:boolean
+    
     };
     path: {
         userData: string;

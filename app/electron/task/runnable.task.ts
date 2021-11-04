@@ -1,4 +1,4 @@
-import { shell } from 'electron';
+import { shell } from "electron";
 import { Task } from ".";
 import { LoginScript } from "../../script/login/types";
 import { logger } from "../../types/logger";
@@ -64,26 +64,26 @@ export class RunnableTask<R> extends Task {
     // 执行任务
     static exec<R extends LoginScript>(launchTask: RunnableTask<R>): RunnableTask<R> {
         info("脚本任务启动:", launchTask.toString());
-
+        // 当前的任务
+        let currentTask = launchTask;
         process.on("uncaughtException", (err) => {
-            error(launchTask.name + " 任务出错！ uncaughtException", err);
+            error(currentTask.name + " 任务出错！ uncaughtException", err);
         });
 
         process.on("unhandledRejection", (err: any, promise) => {
             promise.catch((err) => {
-                launchTask.error("任务启动失败，请重启");
+                currentTask.error("任务启动失败，请重启");
                 if (err.toString().indexOf("Most likely the page has been closed") !== -1) {
-                    notify.error(launchTask.name + " 任务运行错误，很可能是您将浏览器关闭了，或者浏览器访问页面时出错。");
+                    notify.error(currentTask.name + " 任务运行错误，很可能是您将浏览器关闭了，或者浏览器访问页面时出错。");
                 }
-                error(launchTask.name + " 任务出错！ unhandledRejection", err);
+                error(currentTask.name + " 任务出错！ unhandledRejection", err);
             });
         });
 
         (async () => {
             // 是否继续
             let pass = true;
-            // 当前的任务
-            let currentTask = launchTask;
+
             launchTask.process();
             const script = await launchTask.target({
                 task: launchTask,
@@ -94,10 +94,10 @@ export class RunnableTask<R> extends Task {
                 // 监听任务结束
                 script.page.on("close", () => {
                     pass = false;
-                    if(currentTask.status!=='finish'){
-                        currentTask.error('脚本已关闭')
+                    if (currentTask.status !== "finish") {
+                        currentTask.error("脚本已关闭");
                     }
-        
+
                     launchTask.remove();
                 });
                 if (launchTask.children) {
@@ -115,18 +115,18 @@ export class RunnableTask<R> extends Task {
 
                 process.on("uncaughtException", (err) => {
                     pass = false;
-                    launchTask.error("任务运行错误，请重启");
-                    error(launchTask.name + " 任务出错！ uncaughtException", err);
+                    task.error("任务运行错误，请重启");
+                    error(task.name + " 任务出错！ uncaughtException", err);
                 });
 
                 process.on("unhandledRejection", (err: any, promise) => {
                     pass = false;
                     promise.catch((err) => {
-                        launchTask.error("任务运行错误，请重启");
+                        task.error("任务运行错误，请重启");
                         if (err.toString().indexOf("Most likely the page has been closed") !== -1) {
-                            notify.error(launchTask.name + " 任务运行错误，很可能是您将浏览器关闭了，或者浏览器访问页面时出错。");
+                            notify.error(task.name + " 任务运行错误，很可能是您将浏览器关闭了，或者浏览器访问页面时出错。");
                         }
-                        error(launchTask.name + " 任务出错！ unhandledRejection", err);
+                        error(task.name + " 任务出错！ unhandledRejection", err);
                     });
                 });
 
