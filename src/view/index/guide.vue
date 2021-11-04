@@ -68,7 +68,7 @@
                         </template>
                     </a-input>
                     <div class="margin-top-18 flex">
-                        <a-button> 我暂时不想用这个功能 </a-button>
+                        <a-button @click="emit('done')"> 我暂时不想用这个功能  </a-button>
                         <div class="flex jc-flex-end">
                             <a-button
                                 type="primary"

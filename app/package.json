@@ -1,6 +1,6 @@
 {
   "name": "online-course-script",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "main": "./lib/electron/index.js",
   "types": "./lib/types/index.d.ts",
   "scripts": {
@@ -16,7 +16,7 @@
     "dayjs": "^1.10.7",
     "electron-log": "^4.4.1",
     "electron-store": "^8.0.1",
-    "loadsh": "^0.0.4",
+    "lodash": "^4.17.21",
     "puppeteer-core": "^10.4.0",
     "semver": "^7.3.5",
     "string-similarity": "^4.0.4",
