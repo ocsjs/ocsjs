@@ -153,7 +153,7 @@ export async function QAScript(task: BaseTask, frame: Frame, setting: ScriptSett
 
     // 如果超过通过率，则自动提交，否则暂时保存
     if (TiMus.length !== 0 && setting.autoReport) {
-        if ((TiMus.length / finishCount) * 100 >= setting.passRate) {
+        if ((finishCount / TiMus.length  ) * 100 >= setting.passRate) {
             await frame.evaluate(() => {
                 return new Promise<void>((resolve, reject) => {
                     let w = window as any;
