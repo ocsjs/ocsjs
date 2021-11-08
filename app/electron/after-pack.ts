@@ -36,10 +36,10 @@ export default function AfterAllPack() {
             resolve(latestPath),
             JSON.stringify(
                 {
-                    version: "",
+                    version: JSON.parse(readFileSync(resolve("/package.json")).toString()).version,
                     size: stat.size,
                     date: Date.now(),
-                    message: "无",
+                    message: ["无"],
                 },
                 null,
                 4

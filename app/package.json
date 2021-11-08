@@ -1,68 +1,76 @@
 {
-  "name": "online-course-script",
-  "version": "1.2.2",
-  "main": "./lib/electron/index.js",
-  "types": "./lib/types/index.d.ts",
-  "scripts": {
-    "pack": "tsc && electron-builder --dir",
-    "dist": "tsc && electron-builder",
-    "test": "tsc && node ./lib/test.js"
-  },
-  "dependencies": {
-    "@pioneerjs/common": "^1.0.2",
-    "@pioneerjs/core": "^1.0.7",
-    "archiver": "^5.3.0",
-    "axios": "^0.21.4",
-    "dayjs": "^1.10.7",
-    "electron-log": "^4.4.1",
-    "electron-store": "^8.0.1",
-    "lodash": "^4.17.21",
-    "puppeteer-core": "^10.4.0",
-    "semver": "^7.3.5",
-    "string-similarity": "^4.0.4",
-    "uuid": "^8.3.2",
-    "yaml": "^1.10.2"
-  },
-  "devDependencies": {
-    "@types/archiver": "^5.1.1",
-    "@types/electron": "^1.6.10",
-    "@types/semver": "^7.3.8",
-    "ansi-regex": "^5.0.1",
-    "chalk": "^4.1.2",
-    "electron": "^15.0.0",
-    "electron-builder": "^22.11.7",
-    "typescript": "^4.3.2"
-  },
-  "description": "ocs - 在线网络课程辅助工具",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/enncy/online-course-script.git"
-  },
-  "keywords": [
-    "ocs",
-    "script",
-    "puppeteer",
-    "electron",
-    "vue3",
-    "antdv"
-  ],
-  "author": "enncy",
-  "license": "Apache-2.0",
-  "bugs": {
-    "url": "https://github.com/enncy/online-course-script/issues"
-  },
-  "homepage": "https://github.com/enncy/online-course-script#readme",
-  "build": {
-    "appId": "ocs.enncy.cn",
-    "productName": "ocs",
-    "asar": false,
-    "copyright": "Copyright © 2021 ${author}",
-    "afterAllArtifactBuild": "./lib/electron/after-pack.js",
-    "win": {
-      "icon": "public/favicon.ico"
+    "name": "online-course-script",
+    "version": "1.2.3",
+    "main": "./lib/electron/index.js",
+    "types": "./lib/types/index.d.ts",
+    "scripts": {
+        "pack": "tsc && electron-builder --dir",
+        "dist": "tsc && electron-builder",
+        "test": "tsc && node ./lib/test.js"
     },
-    "mac": {
-      "icon": "public/favicon.ico"
+    "dependencies": {
+        "@pioneerjs/common": "^1.0.2",
+        "@pioneerjs/core": "^1.0.7",
+        "archiver": "^5.3.0",
+        "axios": "^0.21.4",
+        "dayjs": "^1.10.7",
+        "electron-log": "^4.4.1",
+        "electron-store": "^8.0.1",
+        "lodash": "^4.17.21",
+        "puppeteer-core": "^10.4.0",
+        "semver": "^7.3.5",
+        "string-similarity": "^4.0.4",
+        "uuid": "^8.3.2",
+        "yaml": "^1.10.2"
+    },
+    "devDependencies": {
+        "@types/archiver": "^5.1.1",
+        "@types/electron": "^1.6.10",
+        "@types/semver": "^7.3.8",
+        "ansi-regex": "^5.0.1",
+        "chalk": "^4.1.2",
+        "electron": "^15.0.0",
+        "electron-builder": "^22.11.7",
+        "typescript": "^4.3.2"
+    },
+    "description": "ocs - 在线网络课程辅助工具",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/enncy/online-course-script.git"
+    },
+    "keywords": [
+        "ocs",
+        "script",
+        "puppeteer",
+        "electron",
+        "vue3",
+        "antdv"
+    ],
+    "author": "enncy",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/enncy/online-course-script/issues"
+    },
+    "homepage": "https://github.com/enncy/online-course-script#readme",
+    "build": {
+        "appId": "ocs.enncy.cn",
+        "productName": "ocs",
+        "asar": false,
+        "copyright": "Copyright © 2021 ${author}",
+        "afterAllArtifactBuild": "./lib/electron/after-pack.js",
+        "win": {
+            "icon": "public/favicon.ico"
+        },
+        "mac": {
+            "icon": "public/favicon.ico"
+        },
+        "nsis": {
+            "oneClick": false,
+            "allowToChangeInstallationDirectory": true
+        },
+        "target": [
+            "nsis",
+            "zip"
+        ]
     }
-  }
 }
