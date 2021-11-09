@@ -1,19 +1,23 @@
 <template>
     <a-row>
         <a-col :span="20" class="font-v3">
-            <a-menu theme="light" mode="horizontal"  >
+            <a-menu theme="light" mode="horizontal">
+
                 <a-menu-item key="users" @click="$router.push('/users')">
                     <UsergroupAddOutlined class="icon" /> 账号管理
                 </a-menu-item>
+
                 <a-menu-item key="task" @click="$router.push('/task')">
                     <UnorderedListOutlined class="icon" /> 任务列表
                 </a-menu-item>
+            
                 <a-menu-item
                     key="setting-common"
                     @click="$router.push('/setting/script')"
                 >
                     <SettingOutlined class="icon" /> 设置
                 </a-menu-item>
+                
             </a-menu>
         </a-col>
         <a-col :span="4">

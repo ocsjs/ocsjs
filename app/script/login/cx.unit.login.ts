@@ -42,12 +42,14 @@ export class CXUnitLoginScript extends LoginScript  {
         const { utils, loginUtils, waitFor } = this;
         await waitFor.documentReady();
         const { unitname, uname, password } = user.loginInfo.cx.unitLogin;
+        const setting = StoreGet("setting")
+       
 
         await utils.value("#inputunitname", unitname);
         await utils.value("#uname", uname);
         await utils.value("#password", password);
-        if (StoreGet("setting").script.account.ocr.username !== "") {
-            if (await this.breakCode(StoreGet("setting").script.account.ocr)) {
+        if (setting && setting.script.account.ocr.username !== "") {
+            if (await this.breakCode(setting.script.account.ocr)) {
                 await loginUtils.login();
             } else {
                 task.warn("验证码破解失败，请手动输入并点击登陆");

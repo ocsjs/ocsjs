@@ -3,6 +3,7 @@ import index from "@/view/index/index.vue";
 import task from "@/view/task/index.vue";
 import setting from "@/view/setting/index.vue";
 import users from "@/view/users/index.vue";
+import webview from '@/view/webview/index.vue';
 import CommonSetting from "@/view/setting/CommonSetting.vue";
 import ScriptSetting from "@/view/setting/ScriptSetting.vue";
 import SystemSetting from "@/view/setting/SystemSetting.vue";
@@ -10,6 +11,7 @@ import VersionUpdate from "@/view/setting/VersionUpdate.vue";
 export const router = createRouter({
     history: createWebHashHistory(),
     routes: [
+      
         {
             path: "/",
             name: "index",
@@ -76,6 +78,7 @@ export const router = createRouter({
                 desc: "账号管理",
             },
         },
+        
         {
             path: "/:catchAll(.*)",
             name: "404",

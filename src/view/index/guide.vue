@@ -20,7 +20,7 @@
                             `火狐`: 打开火狐浏览器,输入链接 `about:support`  , 找到 `应用程序二进制文件` 这一栏复制粘贴即可         
                                 
 
-                            `Microsoft Edge`: 打开谷歌浏览器，输入链接 `edge://version/` , 找到 `可执行文件路径` 这一栏复制粘贴即可       
+                            `Microsoft Edge`: 打开Edge浏览器，输入链接 `edge://version/` , 找到 `可执行文件路径` 这一栏复制粘贴即可       
                         </pre>
                     </MdRender>
                     <a-input class="path" v-model:value="launch.binaryPath">
@@ -68,8 +68,14 @@
                         </template>
                     </a-input>
                     <div class="margin-top-18 flex">
-                        <a-button @click="emit('done')"> 我暂时不想用这个功能  </a-button>
+                        <a-button @click="emit('done')">稍后再设置</a-button>
                         <div class="flex jc-flex-end">
+                            <a-button
+                                type="primary"
+                                @click="prev"
+                            >
+                                上一步
+                            </a-button>
                             <a-button
                                 type="primary"
                                 :disabled="TokenInfo.code === 0"
@@ -89,7 +95,7 @@
 </template>
 
 <script setup lang="ts">
-import { checkToken, config,  TokenInfo } from "@/utils/store";
+import { checkToken, config, TokenInfo } from "@/utils/store";
 import { ref } from "@vue/reactivity";
 import { message } from "ant-design-vue";
 import { debounce } from "lodash";

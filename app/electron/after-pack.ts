@@ -36,7 +36,7 @@ export default function AfterAllPack() {
             resolve(latestPath),
             JSON.stringify(
                 {
-                    version: JSON.parse(readFileSync(resolve("/package.json")).toString()).version,
+                    version: JSON.parse(readFileSync(resolve("./package.json")).toString()).version,
                     size: stat.size,
                     date: Date.now(),
                     message: ["无"],

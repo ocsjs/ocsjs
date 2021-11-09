@@ -21,22 +21,30 @@ function run() {
         if (answer.toUpperCase() === "Y") {
             if (tag && message) {
                 console.log("\n\tgit commiting...");
-                const msgs = Array.from(message)
-                    .map((m) => ` -m "${m}" `)
-                    .join(" ");
-                out(child_process.spawn("git add . && git commit " + msgs, { shell: true }), () => {
-                    console.log("\n\tversion updating...");
-                    out(child_process.spawn("npm version " + tag, { shell: true }), () => {
-                        // 同时更新 app 进程版本
-                        out(child_process.spawn("npm version " + tag, { cwd: "./app/", shell: true }), () => {
-                            console.log("\n\tbuilding...");
-                            out(child_process.spawn("npm run vbed", { shell: true }), () => {
-                                console.log("\n\tchange latest message info...");
-                                let latest = JSON.parse(fs.readFileSync(path.resolve("/resource/latest.json")));
-                                latest.message = message;
-                                fs.writeFileSync(path.resolve("/resource/latest.json"), JSON.stringify(latest));
-                            });
-                        });
+
+                console.log("\n\tversion updating...");
+
+                // 更新版本
+
+                versionChange(path.resolve("./package.json"), tag);
+
+                versionChange(path.resolve("./app/package.json"), tag);
+
+                console.log("\n\tbuilding...");
+                out(child_process.spawn("npm run vbed", { shell: true }), () => {
+                    console.log("\n\tchange latest message info");
+                    // 设置更新包的描述
+                    let latest = JSON.parse(fs.readFileSync(path.resolve("./resource/latest.json")));
+                    latest.message = message;
+                    fs.writeFileSync(path.resolve("./resource/latest.json"), JSON.stringify(latest,null,4));
+
+                    //  git 描述参数
+                    const msgs = Array.from(message)
+                        .map((m) => ` -m "${m}" `)
+                        .join(" ");
+
+                    out(child_process.spawn("git add . && git commit " + msgs, { shell: true }), () => {
+                        console.log("\n\tbuild finish!!!");
                     });
                 });
             } else {
@@ -58,8 +66,13 @@ function out(spawn, callback) {
 
     spawn.stderr.on("data", (data) => {
         console.error(data.toString());
-        process.exit(0);
     });
     spawn.on("exit", callback);
     spawn.on("close", callback);
+}
+
+function versionChange(path, tag) {
+    let package = JSON.parse(fs.readFileSync(path));
+    package.version = tag;
+    fs.writeFileSync(path, JSON.stringify(package,null,4));
 }

@@ -23,5 +23,7 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
         // 开启node
         nodeIntegration: true,
         contextIsolation: false,
+        // webview
+        webviewTag:true
     },
 };

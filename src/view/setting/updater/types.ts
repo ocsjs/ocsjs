@@ -27,7 +27,7 @@ export interface LatestType {
     // 文件信息
     size: number;
     // 更新信息
-    message: string;
+    message: string[];
     // 发布日期
     date: number;
 }
@@ -47,19 +47,33 @@ export interface Updater {
 
 export abstract class UpdaterImpl implements Updater {
     abstract listTags(): Promise<Tag[]>;
+
+    // 获取资源项目路径
     abstract resolveResourseUrl(tag: Tag): Promise<string>;
+    // 获取资源压缩包下载路径
     abstract resolveLatestUrl(tag: Tag): Promise<string>;
 
+    // 获取 latest.json 信息
     async getLatestInfo(tag: Tag): Promise<LatestType> {
         const url = await this.resolveLatestUrl(tag);
         const { data } = await AxiosGet(url);
-        return JSON.parse(Buffer.from(data.content, "base64").toString());
+        let latest:LatestType = JSON.parse(Buffer.from(data.content, "base64").toString())
+        if(typeof latest.message === "string"){
+            latest.message = [latest.message]
+        }else if(typeof latest.message === "object"){
+            latest.message = latest.message.length===0?["暂无"]:[...latest.message]
+        }else{
+            latest.message = ["暂无"]
+        }
+        return latest;
     }
 
+    // 是否需要更新
     async isNeedUpdate(latest: LatestType): Promise<boolean> {
         return Version.from(latest.version).greaterThan(Version.from(ElectronVersion));
     }
 
+    // 设置亚索路径
     resolvePath(tag: Tag): string {
         return resolve(`./resources/app-${tag.name}.zip`);
     }
@@ -79,14 +93,13 @@ export abstract class UpdaterImpl implements Updater {
                         url,
                         // 对原生进度事件的处理
                         onDownloadProgress: function (evt: ProgressEvent) {
-                            console.log("evt", evt);
-
+                          
                             UpdateNotify(
                                 "info",
                                 h("span", [
-                                    h("span", "下载更新包中 "+evt.loaded),
+                                    h("span", "下载更新包中 " ),
                                     h(Progress, {
-                                        percent: parseInt(Math.round((evt.loaded / evt.total) * 100).toFixed(0)),
+                                        percent: parseInt(Math.round((evt.loaded / tag.size) * 100).toFixed(0)),
                                     }),
                                 ])
                             );
@@ -175,7 +188,8 @@ export function UpdateNotify(type: IconType, msg: VNodeTypes, options?: Omit<Not
             style: {
                 padding: "12px",
             },
-            class: "notification-message"
+            class: "notification-message",
+         
         },
         options
     );

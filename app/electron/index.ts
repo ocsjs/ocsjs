@@ -1,11 +1,11 @@
-import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
+import { app, protocol, BrowserWindow, BrowserWindow as BW, shell, BrowserView } from "electron";
 import { normalize, resolve } from "path";
 import { logger } from "../types/logger";
 import { log } from "electron-log";
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { InitSetting } from "./setting";
-import { OCSNotify } from "./events/ocs.event";
+import { OCSNotify } from "./events/ocs.event"; 
 
 const t = Date.now();
 
@@ -76,8 +76,10 @@ app.whenReady().then(async () => {
 });
 
 async function createWindow() {
-    const win: any = new BrowserWindow(BrowserConfig);
+    const win = new BrowserWindow(BrowserConfig);
 
+    
+ 
     load();
     function load() {
         // Load a remote URL
@@ -86,7 +88,8 @@ async function createWindow() {
         promise
             .then(() => {
                 win.show();
-                if (mode === "dev") win.webContents.openDevTools();
+                win.webContents.openDevTools();
+                if (mode === "dev")
                 info("启动用时:" + (Date.now() - t));
                 // 拦截页面跳转
                 win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {

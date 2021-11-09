@@ -8,7 +8,6 @@ import { BaseTask } from "../electron/task/types";
 export interface SystemSetting {
     win: {
         isAlwaysOnTop: boolean;
-    
     };
     path: {
         userData: string;
@@ -17,7 +16,7 @@ export interface SystemSetting {
         courseImg: string;
     };
 }
- 
+
 export interface CommonSetting {
     // 最大任务数量
     task: {
@@ -52,15 +51,16 @@ export interface ScriptSetting {
     };
     // 脚本设置
     script: {
-        // 任务间隔时间
-        taskPeriod: number;
+    
+        // 任务点超时检测   单位小时
+        taskTimeoutPeriod:number;
 
         // cx 脚本配置
         cx: {
             // 是否排队运行。否则当前页面的全部任务一起运行
-            queue:boolean
+            queue: boolean;
             // 复习模式
-            review:boolean,
+            review: boolean;
             // 视频，音频
             media: ScriptMediaSetting;
 
@@ -72,7 +72,7 @@ export interface ScriptSetting {
             // 自动答题, QA 就是 Question and Answer
             qa: ScriptQASetting & {
                 // 自动提交的条件，需要达到百分之几提交
-                passRate:number
+                passRate: number;
             };
             // 自动做作业
             work: ScriptQASetting;
@@ -107,11 +107,14 @@ export interface ScriptSetting {
         };
     };
 }
+ 
+
 export interface Setting {
     version: string;
     system: SystemSetting;
     common: CommonSetting;
     script: ScriptSetting;
+
 }
 
 export interface User {

@@ -1,11 +1,11 @@
-import { RunnableScript } from "@pioneerjs/core";
+import { PioneerFactory, RunnableScript } from "@pioneerjs/core";
 import { StoreGet } from "../types/setting";
 import { Pioneer } from "@pioneerjs/core";
 
+import puppeteer from "puppeteer-core";
 import { AllScriptObjects } from "./common/types";
 import { CXUserLoginScript } from "./login/cx.user.login";
 
-import puppeteer from "puppeteer-core";
 import { CXPhoneLoginScript } from "./login/cx.phone.login";
 import { CXUnitLoginScript } from "./login/cx.unit.login";
 import { ZHSPhoneLoginScript } from "./login/zhs.phone.login";
@@ -13,6 +13,9 @@ import { ZHSStudentIdLoginScript } from "./login/zhs.studentId.login";
 import { logger } from "../types/logger";
 const { info: requestInfo } = logger("pioneer-request");
 const { info: navigationInfo } = logger("pioneer-navigation");
+
+export const  SupportRunnableScript: any[]  = [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, ZHSPhoneLoginScript, ZHSStudentIdLoginScript]
+
 /**
  * 运行脚本
  * @param name 脚本名称
@@ -20,8 +23,13 @@ const { info: navigationInfo } = logger("pioneer-navigation");
  * @returns
  */
 export async function StartScript<S extends RunnableScript>(name: keyof AllScriptObjects): Promise<S | undefined> {
-    let chromePath = StoreGet("setting").script.launch.binaryPath;
+    const setting = StoreGet("setting")
+    if(!setting || !setting?.script?.launch?.binaryPath){
+        throw new Error("浏览器路径未设置！")
+    }
+    let chromePath = setting.script.launch.binaryPath
     if (chromePath) {
+         
         const browser = await puppeteer.launch({
             // your chrome path
             executablePath: chromePath,
@@ -30,13 +38,14 @@ export async function StartScript<S extends RunnableScript>(name: keyof AllScrip
             // 关闭同源策略
             args: [
                 "--disable-web-security",
-                "--disable-features=IsolateOrigins,site-per-process", // 很关键...
+                // 最小化渲染开启
+                "--disable-features=CalculateNativeWinOcclusion",
             ],
         });
 
         // 创建 pioneer
         const pioneer = Pioneer.create(browser);
-        const script = [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, ZHSPhoneLoginScript, ZHSStudentIdLoginScript].find((s) => s.scriptName === name);
+        const script = SupportRunnableScript.find((s) => s.scriptName === name);
         if (script) {
             // 启动装配
             await pioneer.startup({

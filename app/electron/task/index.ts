@@ -24,6 +24,7 @@ export class Task extends EventEmitter implements BaseTask {
     createTime: number;
     // 子任务
     children?: Task;
+    destroyed: boolean;
 
     constructor({ name, needBlock, id, status, msg, timeout, createTime }: TaskType) {
         super();
@@ -34,6 +35,7 @@ export class Task extends EventEmitter implements BaseTask {
         this.msg = msg || "";
         this.timeout = timeout || 0;
         this.createTime = createTime || Date.now();
+        this.destroyed = false;
     }
 
     onFinish(listener: (...args: any[]) => void) {
@@ -76,17 +78,18 @@ export class Task extends EventEmitter implements BaseTask {
     }
 
     change(status: TaskStatus, msg: string) {
-        console.log(status, msg);
-
-        this.status = status;
-        this.msg = msg;
-        CurrentWindow?.webContents.send(this.eventFormat(status, this.id), msg || "");
-        this.emit(this.eventFormat(status));
-        error(status, this.toString());
+        if (!this.destroyed) {
+            console.log(status, msg);
+            this.status = status;
+            this.msg = msg;
+            CurrentWindow?.webContents.send(this.eventFormat(status, this.id), msg || "");
+            this.emit(this.eventFormat(status));
+            error(status, this.toString());
+        }
     }
 
     update() {
-        let localTasks = StoreGet("tasks");
+        let localTasks = StoreGet("tasks")||[]
         localTasks.splice(
             localTasks.findIndex((t) => t.id === this.id),
             1,
@@ -96,8 +99,12 @@ export class Task extends EventEmitter implements BaseTask {
         info("task更新", this.toString());
     }
 
+    destory() {
+        this.destroyed = true;
+    }
+
     remove() {
-        let localTasks = StoreGet("tasks");
+        let localTasks = StoreGet("tasks")||[]
         localTasks.splice(
             localTasks.findIndex((t) => t.id === this.id),
             1

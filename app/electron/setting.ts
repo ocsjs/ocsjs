@@ -2,7 +2,7 @@ import { app } from "electron";
 import log from "electron-log";
 import { CurrentWindow } from ".";
 import { Setting, StoreSchema } from "../types";
-import { StoreGet, StoreSet } from "../types/setting";
+import { store, StoreGet, StoreSet } from "../types/setting";
 import { Version } from "../types/version";
 import { logger } from "../types/logger";
 import { basename, join, resolve } from "path";
@@ -10,7 +10,7 @@ import { existsSync, mkdirSync } from "fs";
 const { info } = logger("setting");
 
 export function InitSetting() {
-    const setting: Setting = StoreGet("setting");
+    let setting: Setting | undefined = store.get("setting");
     // 版本比较，如果当前版本不比本地版本高，则不更新
 
     if (setting && setting.version) {
@@ -18,33 +18,36 @@ export function InitSetting() {
         info(update ? "检测到设置版本需要更新!" : "本地设置无需更新");
 
         if (update) {
-            const s = StoreGet("setting");
             const defaultSetting = GetDefaultSetting();
-            info("本地设置:", s);
+            info("本地设置:", setting);
             info("更新设置值:", defaultSetting);
             // 合并设置
-            StoreSet("setting", Object.assign({}, s, defaultSetting));
-            info("合并后的设置值:", StoreGet("setting"));
+            const newValue = Object.assign({}, defaultSetting, setting);
+            StoreSet("setting", newValue);
+            info("合并后的设置值:", newValue);
+
+            // 更新赋值
+            setting = newValue;
         }
     } else {
         const defaultSetting = GetDefaultSetting();
+
         info("初始化设置值:", defaultSetting);
         // 初始化配置
         StoreSet("setting", defaultSetting);
         StoreSet("tasks", []);
         StoreSet("users", []);
         initPath(defaultSetting.system.path);
+        // 初始化赋值
+        setting = defaultSetting;
     }
 
-    const { path, win } = setting?.system;
+    const { path, win } = setting.system;
     if (path) initPath(path);
     if (win) CurrentWindow?.setAlwaysOnTop(win.isAlwaysOnTop);
 
     // 清空任务列表
     StoreSet("tasks", []);
-
-    // 设置开机自启
- 
 }
 
 export function GetDefaultSetting() {
@@ -63,8 +66,8 @@ export function GetDefaultSetting() {
             },
             // 脚本设置
             script: {
-                // 任务间隔3秒
-                taskPeriod: 3 * 1000,
+                // 任务点超时检测 单位小时
+                taskTimeoutPeriod: 1,
                 cx: {
                     // 是否形成队列
                     queue: true,
@@ -128,7 +131,6 @@ export function GetDefaultSetting() {
         system: {
             win: {
                 isAlwaysOnTop: CurrentWindow?.isAlwaysOnTop() || true,
-           
             },
             path: {
                 userData: app.getPath("userData"),

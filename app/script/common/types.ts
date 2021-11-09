@@ -1,3 +1,4 @@
+import { BaseTask } from './../../electron/task/types';
 import { ZHSStudentIdLoginScript } from "./../login/zhs.studentId.login";
 import { ZHSPhoneLoginScript } from "./../login/zhs.phone.login";
 import { CXLoginParams, User, ZHSLoginParams } from "../../types";
@@ -8,7 +9,7 @@ import { Task } from "../../electron/task";
  
 
 export interface LoginScriptType  {
-    login(task:Task,user: User): Promise<any>;
+    login(task: BaseTask,user: User): Promise<any>;
 }
 
 
@@ -91,4 +92,10 @@ export interface OCROptions {
     username: string;
     password: string;
     typeid?: string;
+}
+
+
+export enum ErrorTypes {
+    CONTEXT_DESTORY = "浏览器页面崩溃"
+    
 }

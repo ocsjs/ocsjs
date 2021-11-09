@@ -20,17 +20,19 @@
                         </template>
                         <transition name="fade" mode="out-in" :duration="100">
                             <span v-if="currentItem === index">
-                                <a-button
-                                    type="link"
-                                    size="small"
-                                    style="line-height: 10px; height: 10px"
-                                    @click="
-                                        () => {
-                                            GiteeUpdater.update(item);
-                                        }
-                                    "
-                                    >切换到此版本</a-button
+                                <a-popconfirm
+                                    title="确认更新到此版本吗"
+                                    ok-text="确认"
+                                    cancel-text="取消"
+                                    @confirm="GiteeUpdater.update(item)"
                                 >
+                                    <a-button
+                                        type="link"
+                                        size="small"
+                                        style="line-height: 10px; height: 10px"
+                                        >切换到此版本</a-button
+                                    >
+                                </a-popconfirm>
                             </span>
                             <span v-else> - {{ showFomatSize(item.size) }} </span>
                         </transition>
@@ -90,9 +92,19 @@
             </item>
             <template v-if="CurrentLatestInfo">
                 <item font-bold label="描述">
-                    <span style="height: 22px"
-                        ><md-render :content="CurrentLatestInfo.message"></md-render
-                    ></span>
+                    <a-popover title="详情">
+                        <template #content>
+                            <md-render
+                                :content="CurrentLatestInfo.message.join('<br>')"
+                            ></md-render>
+                        </template>
+                        <span style="height: 22px">
+                            {{ CurrentLatestInfo.message[0] }}
+                            <span class="font-v4">{{
+                                CurrentLatestInfo.message.length > 1 ? "...更多" : ""
+                            }}</span>
+                        </span>
+                    </a-popover>
                 </item>
                 <item font-bold label="大小">
                     {{ showFomatSize(CurrentLatestInfo.size) }}
@@ -100,6 +112,9 @@
                 <item font-bold label="发布日期">
                     {{ new Date(CurrentLatestInfo.date).toLocaleString() }}
                 </item>
+            </template>
+            <template v-else>
+                <span>版本信息获取失败，可能是远程文件丢失。</span>
             </template>
 
             <item font-bold label="操作">

@@ -1,7 +1,7 @@
 import { StartScript } from "../../script/index";
 import { LoginScript } from "../../script/login/types";
 import { AllScriptObjects } from "../../script/types";
-import { User } from "../../types";
+import { BaseTask, User } from "../../types";
 import { GetCourseList } from "../../script/task/get.course.list";
 import { Task } from "../task";
 import { Course } from "../../types/script/course";
@@ -11,6 +11,7 @@ import { RunnableTask } from "../task/runnable.task";
 import { ScriptTask } from "../task/script.task";
 import { OCSNotify } from "../events/ocs.event";
 import { ZHSScript } from "../../script/task/zhs/zhs.script";
+import { ExecuteContext } from "../task/execute.context";
 const { info } = logger("script");
 const notify = new OCSNotify("script", "任务系统");
 /**
@@ -25,7 +26,7 @@ export const ScriptRemote = {
     createLaunchTask(name: keyof AllScriptObjects): RunnableTask<LoginScript> {
         return RunnableTask.createTask({
             name: "脚本启动",
-            target: async () => {
+            target: async ({ task }) => {
                 const s = await StartScript<LoginScript>(name);
                 if (!s) {
                     throw new Error("脚本启动失败，请重试！");
@@ -44,20 +45,21 @@ export const ScriptRemote = {
      */
     login(name: keyof AllScriptObjects, user: User, ...task: ScriptTask<any>[]) {
         info("[脚本启动]:", { name, user: user.uid });
-      
-        return RunnableTask.exec(
+
+        const ctx = new ExecuteContext(
             RunnableTask.linkTasks(
                 this.createLaunchTask(name),
                 ScriptTask.createScript<void>({
                     name: "脚本登录",
                     target: async function ({ task, script }) {
-                        return await (script as LoginScript).login(task, user);
+                        return await (script as LoginScript).login(task,user);
                     },
                     timeout: 60 * 1000,
                 }),
                 ...task
             )
         );
+        return ctx.exec();
     },
 
     /**
@@ -78,7 +80,7 @@ export const ScriptRemote = {
      */
     start(name: keyof AllScriptObjects, user: User, course: Course) {
         if (user.platform === "cx") {
-            return this.login(name, user,CXCourseEntry(course), CXScript());
+            return this.login(name, user, CXCourseEntry(course), CXScript());
         } else if (user.platform === "zhs") {
             return this.login(name, user, ZHSScript(course));
         } else {

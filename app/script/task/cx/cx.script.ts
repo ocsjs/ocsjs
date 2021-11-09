@@ -91,7 +91,7 @@ function start(task: RunnableTask<void>, script: LoginScript) {
             resolve();
         } else {
             task.process("刷课中...");
-            const cxSetting = StoreGet("setting").script.script.cx;
+            const cxSetting = StoreGet("setting")?.script.script.cx;
             if (cxSetting.review) {
                 // 如果是复习模式，则从当前页面一直下一章
             } else {
@@ -119,7 +119,7 @@ function start(task: RunnableTask<void>, script: LoginScript) {
 
             // 防抖
             script.page.on("requestfinished", async function (req: HTTPRequest) {
-                if (RegExp("/mycourse/studentstudyAjax").test(req.url())) {
+                if (RegExp("/mycourse/studentstudyAjax").test(req.url()) || RegExp("/knowledge/cards").test(req.url())) {
                     currentTaskId = createHash("md5").update(Date.now().toString()).digest("hex");
                     task.process("页面重新加载，重新刷课中...");
                     await waitFor.nextTick("requestfinished");

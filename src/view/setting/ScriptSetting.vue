@@ -18,15 +18,17 @@
 
         <card title="脚本设置">
             <card color="gray" title="全局设置" size="small" :open-collapse="false">
-                <item label="任务运行间隔时间">
+                <item label="任务超时检测">
                     <a-input-number
                         size="small"
-                        v-model:value="script.taskPeriod"
-                        :min="3"
-                        :max="60"
+                        v-model:value="script.taskTimeoutPeriod"
+                        :min="0.5"
+                        :max="24"
+                        :step="0.5"
+                        :formatter="(v:any)=>v+' 小时/次'"
                     >
                     </a-input-number>
-                    <template #after>秒</template>
+                  
                 </item>
             </card>
             <card
@@ -227,7 +229,13 @@
                 </item>
             </template>
             <template v-else>
-                <template v-if="account.queryToken && account.queryToken.length === 32 && TokenInfo.code===1">
+                <template
+                    v-if="
+                        account.queryToken &&
+                        account.queryToken.length === 32 &&
+                        TokenInfo.code === 1
+                    "
+                >
                     <item :text="TokenInfo.query_times" label="剩余次数" />
                     <item :text="TokenInfo.success_times" label="成功次数" />
                     <item :text="TokenInfo.all_times" label="总查询次数" />
@@ -274,7 +282,13 @@ import { AxiosGet, NetWorkCheck } from "@/utils/request";
 
 import { message } from "ant-design-vue";
 import { ref, onMounted, onUnmounted } from "vue";
-import { checkToken,TokenInfo,CheckLoading, config, setBinaryPath } from "@/utils/store";
+import {
+    checkToken,
+    TokenInfo,
+    CheckLoading,
+    config,
+    setBinaryPath,
+} from "@/utils/store";
 
 import item from "@/components/common/item.vue";
 import Card from "@/components/common/Card.vue";
@@ -282,17 +296,12 @@ import { debounce } from "lodash";
 const { launch, script, account } = config.setting.script;
 const { shell } = require("electron");
 
-
 // loadsh 防抖
-const debouncedClick = debounce(()=>checkToken(account.queryToken), 500);
+const debouncedClick = debounce(() => checkToken(account.queryToken), 500);
 onUnmounted(() => {
     // 移除组件时，取消定时器
     debouncedClick.cancel();
 });
-
-
-
-
 </script>
 
 <style scope lang="less">
