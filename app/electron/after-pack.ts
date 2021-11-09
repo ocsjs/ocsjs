@@ -1,6 +1,7 @@
 import { createWriteStream, existsSync, mkdirSync, writeFileSync, readFileSync, rmSync, unlinkSync, statSync } from "fs";
 import { join, resolve } from "path";
 const archiver = require("archiver");
+ 
 
 // 打包文件
 export default function AfterAllPack() {
