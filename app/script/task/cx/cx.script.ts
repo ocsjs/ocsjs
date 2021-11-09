@@ -13,7 +13,7 @@ import { QAScript } from "./utils/qa.script";
 import { LoginScript } from "../../login/types";
 import { RunnableTask } from "../../../electron/task/runnable.task";
 import { ScriptTask } from "../../../electron/task/script.task";
-import { waitForNavigation, waitForClickAndNavigation, waitForFrameReady } from "../utils";
+import { waitForNavigation, waitForClickAndNavigation, waitForFrameReady, TimeoutTask } from "../utils";
 import { createHash } from "crypto";
 import { debounce } from "lodash";
 
@@ -148,7 +148,15 @@ function start(task: RunnableTask<void>, script: LoginScript) {
                                 // 如果队列存在继续执行，否则运行下个任务
                                 if (frame && id === currentTaskId) {
                                     const cxSetting = StoreGet("setting").script.script.cx;
-                                    await JobScript(cxSetting, task, frame);
+
+                                    await TimeoutTask(
+                                        StoreGet("setting").script.script.taskTimeoutPeriod * 60 * 60 * 1000,
+                                        () => JobScript(cxSetting, task, frame),
+                                        async () => {
+                                            task.error("任务超时，即将进行下一个任务。");
+                                        }
+                                    );
+
                                     await execQueue();
                                 }
                             }

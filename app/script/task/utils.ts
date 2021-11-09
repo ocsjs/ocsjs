@@ -7,7 +7,7 @@ import { LoginScript } from "../login/types";
  * 等待页面准备完毕
  * @param script
  */
- export async function waitForReady(script: LoginScript) {
+export async function waitForReady(script: LoginScript) {
     const waitFor = new WaitForScript(script);
     await waitFor.documentReady();
     await waitFor.nextTick("requestfinished");
@@ -45,4 +45,25 @@ export async function waitForFrameReady(frame: Frame): Promise<void> {
             // eslint-disable-next-line no-empty
         } catch {}
     }
+}
+
+export async function TimeoutTask(period: number, task: () => Promise<any>, timeout: () => Promise<void>) {
+    return await new Promise<any>(async (resolve, reject) => {
+        let resolved = false;
+       let to = setTimeout(async () => {
+            if (!resolved) {
+                resolved = true;
+                await timeout();
+                setTimeout(resolve, 3000);
+            }
+        }, period);
+
+        const v = await task();
+
+        if (!resolved) {
+            clearTimeout(to)
+            resolved = true;
+            resolve(v);
+        }
+    });
 }
