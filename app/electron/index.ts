@@ -5,7 +5,7 @@ import { log } from "electron-log";
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { InitSetting } from "./setting";
-import { OCSNotify } from "./events/ocs.event"; 
+import { OCSNotify } from "./events/ocs.event";
 
 const t = Date.now();
 
@@ -78,8 +78,6 @@ app.whenReady().then(async () => {
 async function createWindow() {
     const win = new BrowserWindow(BrowserConfig);
 
-    
- 
     load();
     function load() {
         // Load a remote URL
@@ -88,8 +86,8 @@ async function createWindow() {
         promise
             .then(() => {
                 win.show();
-                win.webContents.openDevTools();
-                if (mode === "dev")
+
+                if (mode === "dev") win.webContents.openDevTools();
                 info("启动用时:" + (Date.now() - t));
                 // 拦截页面跳转
                 win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {

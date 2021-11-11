@@ -38,8 +38,6 @@ export interface ScriptMediaSetting {
 export interface ScriptQASetting {
     // 是否开启
     enable: boolean;
-    // 自动提交
-    autoReport: boolean;
 }
 
 // 脚本设置
@@ -51,28 +49,32 @@ export interface ScriptSetting {
     };
     // 脚本设置
     script: {
-    
         // 任务点超时检测   单位小时
-        taskTimeoutPeriod:number;
+        taskTimeoutPeriod: number;
 
         // cx 脚本配置
         cx: {
-            // 是否排队运行。否则当前页面的全部任务一起运行
-            queue: boolean;
-            // 复习模式
-            review: boolean;
-            // 视频，音频
-            media: ScriptMediaSetting;
+            study: {
+                enable: boolean;
+                // 是否排队运行。否则当前页面的全部任务一起运行
+                queue: boolean;
+                // 复习模式
+                review: boolean;
+                // 视频，音频
+                media: ScriptMediaSetting;
 
-            // ppt, word
-            ppt: boolean;
-            // 书本
-            book: boolean;
+                // ppt, word
+                ppt: boolean;
+                // 书本
+                book: boolean;
 
-            // 自动答题, QA 就是 Question and Answer
-            qa: ScriptQASetting & {
-                // 自动提交的条件，需要达到百分之几提交
-                passRate: number;
+                // 自动答题, QA 就是 Question and Answer
+                qa: ScriptQASetting & {
+                    // 自动提交
+                    autoReport: boolean;
+                    // 自动提交的条件，需要达到百分之几提交
+                    passRate: number;
+                };
             };
             // 自动做作业
             work: ScriptQASetting;
@@ -88,8 +90,12 @@ export interface ScriptSetting {
             video: ScriptMediaSetting;
 
             // 自动答题, QA 就是 Question and Answer
-            qa: ScriptQASetting;
-
+            qa: ScriptQASetting & {
+                // 自动提交
+                autoReport: boolean;
+                // 自动提交的条件，需要达到百分之几提交
+                passRate: number;
+            };
             // 自动做作业
             work: ScriptQASetting;
             // 自动考试
@@ -107,14 +113,12 @@ export interface ScriptSetting {
         };
     };
 }
- 
 
 export interface Setting {
     version: string;
     system: SystemSetting;
     common: CommonSetting;
     script: ScriptSetting;
-
 }
 
 export interface User {

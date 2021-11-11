@@ -18,44 +18,15 @@
                         <template #label>
                             <a-tag><TagFilled /> {{ item.name }}</a-tag>
                         </template>
-                        <transition name="fade" mode="out-in" :duration="100">
-                            <span v-if="currentItem === index">
-                                <a-popconfirm
-                                    title="确认更新到此版本吗"
-                                    ok-text="确认"
-                                    cancel-text="取消"
-                                    @confirm="GiteeUpdater.update(item)"
-                                >
-                                    <a-button
-                                        type="link"
-                                        size="small"
-                                        style="line-height: 10px; height: 10px"
-                                        >切换到此版本</a-button
-                                    >
-                                </a-popconfirm>
-                            </span>
-                            <span v-else> - {{ showFomatSize(item.size) }} </span>
-                        </transition>
-                    </item>
-                    <transition name="collapse">
-                        <div
-                            class="margin-left-24"
-                            style="height: 100px"
-                            v-show="currentItem === index"
+                        <a-button
+                            type="link"
+                            size="small"
+                            style="line-height: 10px; height: 10px"
+                            @click="updateVersion(item)"
                         >
-                            <item font-bold label="描述">
-                                {{ item.message || "无" }}
-                            </item>
-                            <item font-bold v-if="item.size" label="大小">
-                                {{ showFomatSize(item.size) }}
-                            </item>
-                            <item font-bold v-if="item.resourse" label="手动下载地址">
-                                <div>
-                                    <a :href="item.resourse">{{ item.resourse }}</a>
-                                </div>
-                            </item>
-                        </div>
-                    </transition>
+                            <div>查看版本信息</div>
+                        </a-button>
+                    </item>
                 </div>
             </div>
         </card>
@@ -107,7 +78,7 @@
                     </a-popover>
                 </item>
                 <item font-bold label="大小">
-                    {{ showFomatSize(CurrentLatestInfo.size) }}
+                    {{ showFormatSize(CurrentLatestInfo.size) }}
                 </item>
                 <item font-bold label="发布日期">
                     {{ new Date(CurrentLatestInfo.date).toLocaleString() }}
@@ -129,6 +100,33 @@
                 </div>
             </item>
         </card>
+
+        <a-modal
+            title="版本更新"
+            v-model:visible="updating"
+            @ok="selectedTag && GiteeUpdater.update(selectedTag)"
+            okText="确认更新"
+            cancelText="取消"
+        >
+            <template v-if="selectedTag && updateLatestInfo">
+                <item font-bold label="版本"> {{ selectedTag.name }} </item>
+                <item font-bold label="大小">
+                    {{ showFormatSize(selectedTag.size) }}
+                </item>
+                <item font-bold label="发布时间">
+                    {{ new Date(updateLatestInfo.date).toLocaleString() }}
+                </item>
+                <item font-bold label="手动下载地址">
+                    <div>
+                        <a :href="selectedTag.resource">{{ selectedTag.resource }}</a>
+                    </div>
+                </item>
+
+                <item font-bold label="描述">
+                    <MdRender :content="updateLatestInfo.message.join('<br>')" />
+                </item>
+            </template>
+        </a-modal>
     </div>
 </template>
 
@@ -147,7 +145,13 @@ import {
     CurrentLatestInfo,
     RepositoryTags,
 } from "./updater";
-import { showFomatSize, UpdateNotify, upzipResource } from "./updater/types";
+import {
+    showFormatSize,
+    UpdateNotify,
+    unzipResource,
+    Tag,
+    LatestType,
+} from "./updater/types";
 import { MdRender } from "mark-ui";
 
 const path = require("path");
@@ -164,7 +168,7 @@ const fileList = ref<File[]>([]);
 function customRequest(info: any) {
     const ispack = Remote.app.get("isPackaged");
     if (ispack) {
-        upzipResource(info.file.path, path.resolve("./resources/app"));
+        unzipResource(info.file.path, path.resolve("./resources/app"));
     } else {
         UpdateNotify("error", "当前不是生产模式，不能进行更新操作");
     }
@@ -175,6 +179,19 @@ function mouseEnter(index: number) {
 }
 function mouseLeave() {
     currentItem.value = -1;
+}
+
+const selectedTag = ref<Tag>();
+
+// 是否显示更新框
+
+const updating = ref(false);
+const updateLatestInfo = ref<LatestType>();
+async function updateVersion(tag: Tag) {
+    console.log("update", tag);
+    updateLatestInfo.value = await GiteeUpdater.getLatestInfo(tag);
+    selectedTag.value = tag;
+    updating.value = !updating.value;
 }
 </script>
 

@@ -60,11 +60,7 @@
                                     :key="index"
                                     :title="task.name"
                                     :status="task.status"
-                                    :sub-title="
-                                        task.createTime
-                                            ? new Date(task.createTime).toLocaleString()
-                                            : ''
-                                    "
+                             
                                 >
                                     <template #description>
                                         <div v-text="formatTaskStatus(task)"></div>

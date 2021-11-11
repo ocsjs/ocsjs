@@ -70,28 +70,30 @@ export function GetDefaultSetting() {
                 taskTimeoutPeriod: 1,
                 cx: {
                     // 是否形成队列
-                    queue: true,
-                    // 复习模式
-                    review: false,
-                    media: {
+                    study: {
                         enable: true,
-                        playbackRate: 2,
-                        mute: true,
+                        queue: true,
+                        // 复习模式
+                        review: false,
+                        media: {
+                            enable: true,
+                            playbackRate: 2,
+                            mute: true,
+                        },
+                        ppt: true,
+                        book: true,
+                        qa: {
+                            enable: true,
+                            autoReport: true,
+                            passRate: 60,
+                        },
                     },
-                    ppt: true,
-                    book: true,
-                    qa: {
-                        enable: true,
-                        autoReport: true,
-                        passRate: 60,
-                    },
+
                     work: {
                         enable: true,
-                        autoReport: true,
                     },
                     exam: {
                         enable: true,
-                        autoReport: true,
                     },
                 },
                 zhs: {
@@ -106,14 +108,13 @@ export function GetDefaultSetting() {
                     qa: {
                         enable: true,
                         autoReport: true,
+                        passRate: 60,
                     },
                     work: {
                         enable: true,
-                        autoReport: true,
                     },
                     exam: {
                         enable: true,
-                        autoReport: true,
                     },
                 },
             },

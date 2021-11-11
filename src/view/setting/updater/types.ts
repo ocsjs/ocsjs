@@ -10,13 +10,13 @@ import { h, VNodeTypes } from "vue";
 
 const { resolve, join } = require("path");
 const { writeFileSync } = require("fs");
- 
+
 export interface Tag {
     name: string;
     message: string;
     size: number;
     latest: string;
-    resourse: string;
+    resource: string;
     raw: string;
 }
 
@@ -40,7 +40,7 @@ export interface TagInfo {
 
 export interface Updater {
     listTags(): Promise<Tag[]>;
-    resolveResourseUrl(tag: Tag): Promise<string>;
+    resolveResourceUrl(tag: Tag): Promise<string>;
     resolveLatestUrl(tag: Tag): Promise<string>;
     getLatestInfo(tag: Tag): Promise<LatestType>;
 }
@@ -49,7 +49,7 @@ export abstract class UpdaterImpl implements Updater {
     abstract listTags(): Promise<Tag[]>;
 
     // 获取资源项目路径
-    abstract resolveResourseUrl(tag: Tag): Promise<string>;
+    abstract resolveResourceUrl(tag: Tag): Promise<string>;
     // 获取资源压缩包下载路径
     abstract resolveLatestUrl(tag: Tag): Promise<string>;
 
@@ -57,13 +57,13 @@ export abstract class UpdaterImpl implements Updater {
     async getLatestInfo(tag: Tag): Promise<LatestType> {
         const url = await this.resolveLatestUrl(tag);
         const { data } = await AxiosGet(url);
-        let latest:LatestType = JSON.parse(Buffer.from(data.content, "base64").toString())
-        if(typeof latest.message === "string"){
-            latest.message = [latest.message]
-        }else if(typeof latest.message === "object"){
-            latest.message = latest.message.length===0?["暂无"]:[...latest.message]
-        }else{
-            latest.message = ["暂无"]
+        let latest: LatestType = JSON.parse(Buffer.from(data.content, "base64").toString());
+        if (typeof latest.message === "string") {
+            latest.message = [latest.message];
+        } else if (typeof latest.message === "object") {
+            latest.message = latest.message.length === 0 ? ["暂无"] : [...latest.message];
+        } else {
+            latest.message = ["暂无"];
         }
         return latest;
     }
@@ -80,11 +80,12 @@ export abstract class UpdaterImpl implements Updater {
 
     //更新
     public async update(tag: Tag): Promise<void> {
-        const ispack = Remote.app.get("isPackaged");
-        UpdateNotify("info", "开始更新:" + tag.name);
-        if (ispack) {
+        const isPack = Remote.app.get("isPackaged");
+
+        if (isPack) {
+            UpdateNotify("info", "开始更新:" + tag.name);
             // 写入数据
-            const url = await this.resolveResourseUrl(tag);
+            const url = await this.resolveResourceUrl(tag);
 
             const file = this.resolvePath(tag);
             if (url) {
@@ -93,11 +94,10 @@ export abstract class UpdaterImpl implements Updater {
                         url,
                         // 对原生进度事件的处理
                         onDownloadProgress: function (evt: ProgressEvent) {
-                          
                             UpdateNotify(
                                 "info",
                                 h("span", [
-                                    h("span", "下载更新包中 " ),
+                                    h("span", "下载更新包中 "),
                                     h(Progress, {
                                         percent: parseInt(Math.round((evt.loaded / tag.size) * 100).toFixed(0)),
                                     }),
@@ -110,7 +110,7 @@ export abstract class UpdaterImpl implements Updater {
                             UpdateNotify("info", "保存压缩包中");
                             writeFileSync(file, buffer);
                             UpdateNotify("info", "正在解压更新文件");
-                            upzipResource(file, resolve(join(file, "../app/")));
+                            unzipResource(file, resolve(join(file, "../app/")));
                         })
                         .catch((err: any) => {
                             UpdateNotify("error", "更新失败,压缩包下载失败！ " + err.message);
@@ -139,7 +139,7 @@ export class Gitee extends UpdaterImpl {
         for (const { name, message, commit } of res as any[]) {
             // 递归获取文件树
             const { data: trees } = await AxiosGet(`https://gitee.com/api/v5/repos/enncy/online-course-script/git/trees/${commit.sha}?recursive=1&access_token=` + access_token);
-            let resourse = "",
+            let resource = "",
                 raw = "",
                 latest = "",
                 _size = 0;
@@ -147,7 +147,7 @@ export class Gitee extends UpdaterImpl {
             // 在资源树中寻找文件
             for (const { path, size, sha } of (trees as any).tree) {
                 if (/ocs-app-resource\.zip/.test(path)) {
-                    resourse = `https://gitee.com/enncy/online-course-script/blob/${name}/${path}`;
+                    resource = `https://gitee.com/enncy/online-course-script/blob/${name}/${path}`;
                     raw = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}?access_token=${access_token}`;
                     _size = size;
                 }
@@ -155,17 +155,17 @@ export class Gitee extends UpdaterImpl {
                     latest = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}?access_token=${access_token}`;
                 }
 
-                if (resourse && latest) {
+                if (resource && latest) {
                     break;
                 }
             }
-            if (resourse && raw && latest) {
-                tags.push({ name, message, latest, resourse, size: _size, raw });
+            if (resource && raw && latest) {
+                tags.push({ name, message, latest, resource, size: _size, raw });
             }
         }
         return tags;
     }
-    async resolveResourseUrl(tag: Tag): Promise<string> {
+    async resolveResourceUrl(tag: Tag): Promise<string> {
         return tag.raw;
     }
 
@@ -189,7 +189,6 @@ export function UpdateNotify(type: IconType, msg: VNodeTypes, options?: Omit<Not
                 padding: "12px",
             },
             class: "notification-message",
-         
         },
         options
     );
@@ -197,11 +196,11 @@ export function UpdateNotify(type: IconType, msg: VNodeTypes, options?: Omit<Not
     // 调用通知
     notification[type](commonConfig);
 }
-export function showFomatSize(size: number) {
+export function showFormatSize(size: number) {
     return size > 1024 ? (size > 1024 * 1024 ? (size / (1024 * 1024)).toFixed(2) + "MB" : (size / 1024).toFixed(2) + "KB") : size + "Byte";
 }
 
-export function upzipResource(filePath: string, dist: string) {
+export function unzipResource(filePath: string, dist: string) {
     unzip(filePath, dist, (rate) => {
         console.log("rate", rate);
         UpdateNotify(

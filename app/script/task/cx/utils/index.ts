@@ -1,8 +1,10 @@
 import { WaitForScript } from "@pioneerjs/core";
+import { log } from "electron-log";
 import { Frame, HTTPRequest, Page } from "puppeteer-core";
 import { AxiosGet } from "../../../../electron/axios";
 import { sleep } from "../../../common/utils";
 import { LoginScript } from "../../../login/types";
+import { waitForNavigation } from "../../utils";
 
 // 超星脚本拦截
 export function CXRequestScriptHook(page: Page) {
@@ -37,8 +39,8 @@ export function CXRequestScriptHook(page: Page) {
  * @param transform 请求体转换函数
  */
 export async function requestHook(req: HTTPRequest, regexp: string | RegExp, transform: (body: string) => string): Promise<void> {
-    if(req.response()){
-        return
+    if (req.response()) {
+        return;
     }
     const url = req.url();
     if (RegExp(regexp).test(url)) {
@@ -53,3 +55,4 @@ export async function requestHook(req: HTTPRequest, regexp: string | RegExp, tra
         await req.continue();
     }
 }
+ 

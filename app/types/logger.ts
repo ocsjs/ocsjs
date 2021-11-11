@@ -2,6 +2,8 @@ const fs = require("fs");
 const p = require("path");
 const dayjs = require("dayjs");
 const { app } = require("electron");
+const{ info } = require("electron-log");
+ 
 
 export type LoggerLevel = "info" | "error" | "warn" | "success" | "notify" | "task";
 export interface Logger {
@@ -9,7 +11,7 @@ export interface Logger {
     error(...msg: any[]): void;
     warn(...msg: any[]): void;
     success(...msg: any[]): void;
-    task(description: string, handler: () => Promise<any>): Promise<any>
+    task(description: string, handler: () => Promise<any>): Promise<any>;
     log(level: LoggerLevel, ...msg: any[]): void;
 }
 
@@ -28,6 +30,8 @@ export function logger(eventName: string): Logger {
             return log(eventName, "success", msg);
         },
         log(level: LoggerLevel, ...msg: any[]): void {
+            info(level, msg);
+
             return log(eventName, level, msg);
         },
         task(description: string, handler: () => Promise<any>): Promise<any> {
@@ -64,7 +68,7 @@ export function mkdirs(url: string): void {
  */
 export function log(eventName: string, level: LoggerLevel, ...msg: any[]) {
     // console.log({level,eventName,msg});
-    
+
     const path = app.getPath("logs");
     const data = {
         name: eventName,

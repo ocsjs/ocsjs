@@ -2,7 +2,7 @@ import { Frame } from "puppeteer-core";
 import { BaseTask, ScriptSetting } from "../../../../types";
 
 // 媒体播放脚本
-export async function MediaScript(selector: "video" | "audio", task: BaseTask, frame: Frame, setting: ScriptSetting["script"]["cx"]["media"]) {
+export async function MediaScript(selector: "video" | "audio", task: BaseTask, frame: Frame, setting: ScriptSetting["script"]["cx"]['study']["media"]) {
     const video = await frame.$(selector);
 
     if (video) {
@@ -12,11 +12,6 @@ export async function MediaScript(selector: "video" | "audio", task: BaseTask, f
         await frame.evaluate(
             (video: HTMLVideoElement, playbackRate, mute) => {
                 return new Promise<void>((resolve, reject) => {
-                    window.scrollTo({
-                        top: video.offsetHeight,
-                        behavior: "smooth",
-                    });
-
                     video.playbackRate = playbackRate;
                     video.muted = mute;
                     video.onpause = function () {

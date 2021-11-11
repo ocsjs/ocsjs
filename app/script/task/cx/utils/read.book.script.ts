@@ -7,17 +7,12 @@ import { BaseTask, ScriptSetting } from "../../../../types";
  * @param frame 窗体
  * @param setting 设置
  */
- export async function ReadBookScript(task: BaseTask , frame: Frame, setting: ScriptSetting["script"]["cx"]["book"]) {
+export async function ReadBookScript(task: BaseTask, frame: Frame, setting: ScriptSetting["script"]["cx"]['study']["book"]) {
     const readWeb = await frame.$("#Readweb");
 
     if (readWeb) {
         task.process("正在翻阅书本:" + ((await frame.title()) || "未知书名"));
-        await frame.evaluate((readWeb:HTMLDivElement) => {
-            window.scrollTo({
-                top: readWeb.offsetHeight,
-                behavior: "smooth",
-            });
-
+        await frame.evaluate((readWeb: HTMLDivElement) => {
             return new Promise(async (resolve, reject) => {
                 const imgs = Array.from(document.querySelectorAll("#Readweb .duxiuimg"));
                 let count = 0;
