@@ -12,6 +12,8 @@ import { ScriptTask } from "../task/script.task";
 import { OCSNotify } from "../events/ocs.event";
 import { ZHSScript } from "../../script/task/zhs/zhs.script";
 import { ExecuteContext } from "../task/execute.context";
+import { CXWork } from "../../script/task/cx/cx.work";
+import { CXExam } from "../../script/task/cx/cx.exam";
 const { info } = logger("script");
 const notify = new OCSNotify("script", "任务系统");
 /**
@@ -80,7 +82,7 @@ export const ScriptRemote = {
      */
     start(name: keyof AllScriptObjects, user: User, course: Course) {
         if (user.platform === "cx") {
-            return this.login(name, user, CXCourseEntry(course), CXScript());
+            return this.login(name, user, CXCourseEntry(course), CXScript(),CXWork(course),CXExam(course));
         } else if (user.platform === "zhs") {
             return this.login(name, user, ZHSScript(course));
         } else {

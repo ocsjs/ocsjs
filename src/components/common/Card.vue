@@ -127,14 +127,14 @@ const smallStyle = {
 };
 
 function onCollapse() {
-    // 计算高度
-    if (!height.value) {
-        height.value = cardBody.value.offsetHeight;
-        cardBody.value.style.height = height.value + "px";
-        console.log("height.value", height.value);
-    }
     // 折叠
     if (openCollapse.value) {
+        // 计算高度
+        if (!height.value) {
+            height.value = cardBody.value.offsetHeight;
+            cardBody.value.style.height = height.value + "px";
+            console.log("height.value", height.value);
+        }
         if (collapse) {
             collapse.value = !collapse.value;
             emits("update:collapse", collapse.value);

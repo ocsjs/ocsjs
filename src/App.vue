@@ -39,7 +39,7 @@ import {
     needUpdate,
     refreshUpdateInfo,
 } from "./view/setting/updater";
-import { showFomatSize } from "./view/setting/updater/types";
+import { showFormatSize } from "./view/setting/updater/types";
 import { checkToken, config, TokenInfo } from "./utils/store";
 
 // 网络检测
@@ -105,7 +105,7 @@ async function checkUpdate() {
                         "li",
                         `大小 : ${
                             LatestInfo.value.size
-                                ? showFomatSize(LatestInfo.value.size)
+                                ? showFormatSize(LatestInfo.value.size)
                                 : "无"
                         }`
                     ),

@@ -7,19 +7,15 @@ import { BaseTask, ScriptSetting } from "../../../../types";
  * @param frame 窗体
  * @param setting 设置
  */
- export async function PPTScript(task: BaseTask , frame: Frame, setting: ScriptSetting["script"]["cx"]["ppt"]) {
+export async function PPTScript(task: BaseTask, frame: Frame, setting: ScriptSetting["script"]["cx"]['study']["ppt"]) {
     const imglook = await frame.$("#img.imglook");
     if (imglook) {
         task.process("正在播放PPT");
-        await frame.evaluate((imglook:HTMLDivElement) => {
-            window.scrollTo({
-                top: imglook.offsetHeight,
-                behavior: "smooth",
-            });
+        await frame.evaluate((imglook: HTMLDivElement) => {
             const finishJob = (window as any).finishJob;
             if (finishJob) finishJob();
-        },imglook);
-        await new Promise((r) => setTimeout(r, 3000));
+        }, imglook);
+        await new Promise((r) => setTimeout(r, 5000));
         task.process("PPT播放完毕");
     }
 }

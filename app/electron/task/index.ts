@@ -99,7 +99,7 @@ export class Task extends EventEmitter implements BaseTask {
         info("task更新", this.toString());
     }
 
-    destory() {
+    destroy() {
         this.destroyed = true;
     }
 

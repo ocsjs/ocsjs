@@ -102,10 +102,11 @@ export class ExecuteContext<R extends LoginScript> {
 
     scriptErrorHandler(err: any) {
         let errMsg = err.toString();
-        
+      
         if (err.toString().indexOf("Most likely the page has been closed") !== -1 || err.toString().indexOf("Target closed") !== -1) {
             errMsg = "任务运行错误，可能浏览器已关闭，或浏览器访问页面出错，请重启。";
-            this.currentTask.destory()
+            this.currentTask.error(errMsg);
+            this.currentTask.destroy();
         } else if (err.toString().indexOf("Execution context was destroyed") !== -1) {
             errMsg = "任务运行错误，可能是页面刷新导致，请刷新页面或者重启。";
         }

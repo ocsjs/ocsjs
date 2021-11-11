@@ -87,7 +87,7 @@
         </a-modal>
 
         <a-modal
-            v-model:visible="starting"
+            v-model:visible="startShow"
             title="选择启动课程"
             :width="740"
             :style="{ top: '42px' }"
@@ -103,7 +103,7 @@
             </item>
 
             <div class="space-10 margin-bottom-10 flex nowrap">
-                <span style="white-space: nowrap;font-weight: bold;">
+                <span style="white-space: nowrap; font-weight: bold">
                     已选课程 : {{ selectItems.length !== 0 ? "" : "暂无" }}
                 </span>
                 <span
@@ -135,7 +135,11 @@
                 <CourseList :user="user" detail show-img @update="update" />
             </div>
             <div class="padding-top-24 flex jc-flex-end">
-                <a-button class="margin-right-24" type="primary" @click="start"
+                <a-button
+                    class="margin-right-24"
+                    type="primary"
+                    @click="start"
+                    :disabled="starting"
                     >开始刷课</a-button
                 >
             </div>
@@ -166,8 +170,12 @@ const { user } = toRefs(props);
 
 // 修改框显示
 const visible = ref(false);
-// 是否启动
+// 启动显示
+const startShow = ref(false);
+
+// 是否启动中
 const starting = ref(false);
+
 const emits = defineEmits<{
     (e: "delete", user: User): void;
     (e: "modify", user: User): void;
@@ -191,10 +199,11 @@ function update(courses: Course[]) {
 }
 
 function showList() {
-    starting.value = true;
+    startShow.value = true;
 }
 
 async function start() {
+    starting.value = true;
     if (await NetWorkCheck()) {
         for (const course of selectItems.value.filter(
             (c) => c.platform === user.value.platform
@@ -217,8 +226,12 @@ async function start() {
         }
         setTimeout(() => {
             starting.value = false;
+            startShow.value = false;
             router.push("/task");
         }, 500);
+    } else {
+        starting.value = false;
+        startShow.value = false;
     }
 }
 </script>

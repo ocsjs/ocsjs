@@ -3,7 +3,7 @@
         <span class="space-10 ai-center flex">
             <!-- 前置插槽 -->
             <slot name="befor"></slot>
-            <span class="flex nowrap space-10" style="width: fit-content">
+            <span class="flex nowrap space-10 ai-baseline" style="width: fit-content">
                 <!-- 标签插槽 -->
                 <slot name="label">
                     <span

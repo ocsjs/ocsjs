@@ -31,26 +31,10 @@ export async function waitForNavigation(script: LoginScript, url: string) {
     await Promise.all([script.page.goto(url), waitForReady(script)]);
 }
 
-/**
- * 等待 iframe 加载完成
- * @param frame
- */
-export async function waitForFrameReady(frame: Frame): Promise<void> {
-    let readyState: DocumentReadyState | undefined;
-    while (readyState !== "complete") {
-        await sleep(1000);
-        try {
-            const document = await frame.evaluateHandle("document");
-            readyState = await frame.evaluate((document) => document.readyState, document);
-            // eslint-disable-next-line no-empty
-        } catch {}
-    }
-}
-
-export async function TimeoutTask(period: number, task: () => Promise<any>, timeout: () => Promise<void>) {
-    return await new Promise<any>(async (resolve, reject) => {
+export function TimeoutTask(period: number, task: () => Promise<any>, timeout: () => Promise<void>) {
+    return new Promise<any>(async (resolve, reject) => {
         let resolved = false;
-       let to = setTimeout(async () => {
+        let to = setTimeout(async () => {
             if (!resolved) {
                 resolved = true;
                 await timeout();
@@ -61,7 +45,7 @@ export async function TimeoutTask(period: number, task: () => Promise<any>, time
         const v = await task();
 
         if (!resolved) {
-            clearTimeout(to)
+            clearTimeout(to);
             resolved = true;
             resolve(v);
         }
