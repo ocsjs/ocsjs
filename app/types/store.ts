@@ -14,6 +14,7 @@ export interface SystemSetting {
         logs: string;
         // 课程图片缓存
         courseImg: string;
+ 
     };
 }
 

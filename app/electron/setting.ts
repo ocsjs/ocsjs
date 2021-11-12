@@ -21,8 +21,9 @@ export function InitSetting() {
             const defaultSetting = GetDefaultSetting();
             info("本地设置:", setting);
             info("更新设置值:", defaultSetting);
-            // 合并设置
-            const newValue = Object.assign({}, defaultSetting, setting);
+            // 合并设置，除了 version 字段 , 其他以原有设置为准，添加新的配置
+            setting.version = app.getVersion();
+            const newValue: Setting = deepMerge(defaultSetting, setting);
             StoreSet("setting", newValue);
             info("合并后的设置值:", newValue);
 
@@ -174,4 +175,14 @@ export function mkdirs(url: string) {
         mkdirs(resolve(url, "../"));
         mkdirSync(url);
     }
+}
+
+function deepMerge(obj1: any, obj2: any) {
+    let key;
+    for (key in obj2) {
+        // 如果target(也就是obj1[key])存在，且是对象的话再去调用deepMerge，否则就是obj1[key]里面没这个对象，需要与obj2[key]合并
+        // 如果obj2[key]没有值或者值不是对象，此时直接替换obj1[key]
+        obj1[key] = obj1[key] && obj1[key].toString() === "[object Object]" && obj2[key] && obj2[key].toString() === "[object Object]" ? deepMerge(obj1[key], obj2[key]) : (obj1[key] = obj2[key]);
+    }
+    return obj1;
 }

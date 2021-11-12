@@ -41,6 +41,16 @@
                     <FolderTwoTone @click="settingPath('logs')" />
                 </span>
             </item>
+
+            <item label="课程图片缓存" font-bold>
+                <span class="flex ai-center space-10">
+                    <span class="path" @click="shell.openPath(system.path.courseImg)">
+                        {{ system.path.courseImg }}
+                    </span>
+
+                    <FolderTwoTone @click="settingPath('courseImg')" />
+                </span>
+            </item>
         </card>
     </div>
 </template>

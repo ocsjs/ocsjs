@@ -109,6 +109,8 @@ export class ExecuteContext<R extends LoginScript> {
             this.currentTask.destroy();
         } else if (err.toString().indexOf("Execution context was destroyed") !== -1) {
             errMsg = "任务运行错误，可能是页面刷新导致，请刷新页面或者重启。";
+        }else if(err.toString().indexOf("Execution context is not available in detached frame") !== -1){
+            errMsg = "任务运行错误，可能是频繁切换页面导致。";
         }
         this.currentTask.error(errMsg);
         error(this.currentTask.name + " 任务异常 unhandledRejection", err);

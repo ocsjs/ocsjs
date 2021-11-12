@@ -11,10 +11,11 @@ import { CXUnitLoginScript } from "./login/cx.unit.login";
 import { ZHSPhoneLoginScript } from "./login/zhs.phone.login";
 import { ZHSStudentIdLoginScript } from "./login/zhs.studentId.login";
 import { logger } from "../types/logger";
+import { join, resolve } from "path";
 const { info: requestInfo } = logger("pioneer-request");
 const { info: navigationInfo } = logger("pioneer-navigation");
 
-export const  SupportRunnableScript: any[]  = [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, ZHSPhoneLoginScript, ZHSStudentIdLoginScript]
+export const SupportRunnableScript: any[] = [CXUserLoginScript, CXPhoneLoginScript, CXUnitLoginScript, ZHSPhoneLoginScript, ZHSStudentIdLoginScript];
 
 /**
  * 运行脚本
@@ -23,13 +24,12 @@ export const  SupportRunnableScript: any[]  = [CXUserLoginScript, CXPhoneLoginSc
  * @returns
  */
 export async function StartScript<S extends RunnableScript>(name: keyof AllScriptObjects): Promise<S | undefined> {
-    const setting = StoreGet("setting")
-    if(!setting || !setting?.script?.launch?.binaryPath){
-        throw new Error("浏览器路径未设置！")
+    const setting = StoreGet("setting");
+    if (!setting || !setting?.script?.launch?.binaryPath) {
+        throw new Error("浏览器路径未设置！");
     }
-    let chromePath = setting.script.launch.binaryPath
+    let chromePath = setting.script.launch.binaryPath;
     if (chromePath) {
-         
         const browser = await puppeteer.launch({
             // your chrome path
             executablePath: chromePath,
@@ -55,20 +55,19 @@ export async function StartScript<S extends RunnableScript>(name: keyof AllScrip
         }
         const s = pioneer.runnableScripts?.find((s: any) => s.name === name) as unknown as S;
         s.page.on("request", (req) => {
-            if (["document",'xhr'].includes(req.resourceType())) {
+            if (["document", "xhr"].includes(req.resourceType())) {
                 requestInfo({
-                    url:req.url(),
-                    method:req.method(),
-                    type:req.resourceType(),
-                    postData:req.postData(),
+                    url: req.url(),
+                    method: req.method(),
+                    type: req.resourceType(),
+                    postData: req.postData(),
                 });
             }
-            
         });
 
-        s.page.on('load',()=>{
-            navigationInfo(s.page.url())
-        })
+        s.page.on("load", () => {
+            navigationInfo(s.page.url());
+        });
 
         return s;
     } else {

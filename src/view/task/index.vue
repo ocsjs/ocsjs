@@ -60,7 +60,6 @@
                                     :key="index"
                                     :title="task.name"
                                     :status="task.status"
-                             
                                 >
                                     <template #description>
                                         <div v-text="formatTaskStatus(task)"></div>
@@ -190,13 +189,7 @@ function formatTaskStatus(task: Task) {
 
 #app {
     .ant-steps-item-content {
-        white-space: nowrap;
-        width: fit-content;
-    }
-
-    .ant-steps-item-description {
         text-align: left;
-        white-space: nowrap;
     }
 }
 </style>

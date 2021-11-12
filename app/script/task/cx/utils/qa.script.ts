@@ -22,7 +22,7 @@ export interface AnswerType {
  * @param frame 窗体
  * @param setting 设置
  */
-export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting["script"]["cx"]['study']["qa"]) {
+export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting["script"]["cx"]["study"]["qa"]) {
     if (!StoreGet("setting").script.account.queryToken) {
         task.error("未设置查题码，不能答题，即将跳转下个任务");
         await sleep(3000);
@@ -30,7 +30,7 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
     }
     const qaHandler = new CXQAHandler({
         questionDivSelector: ".TiMu",
-        titleDivSelector: ".Zy_TItle .clearfix span,.Zy_TItle .clearfix p,.Zy_TItle .clearfix div",
+        titleDivSelector: ".Zy_TItle > .clearfix > p > span",
         choice: {
             divSelector: ".Zy_ulTop",
             textSelector: "li",
@@ -44,7 +44,7 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
             divSelector: ".Zy_ulTk",
         },
         async onError() {
-            task.process("自动答题错误，即将切换下一题");
+            task.process("搜索不到答案，即将切换下一题");
         },
         async onSave() {
             await frame.evaluate("if(window.noSubmit)window.noSubmit()");
@@ -100,14 +100,17 @@ export interface QACallback {
 export async function ChoiceHandler(
     answerType: AnswerType,
     frame: Frame,
+    questionDiv: ElementHandle<Element>,
     { optionDivSelector, optionTextSelector, optionClickableSelector, success, error }: { optionDivSelector: string; optionTextSelector: string; optionClickableSelector: string } & QACallback
 ) {
     const { question, answer } = answerType;
 
-    const optionsDiv = await frame.$(optionDivSelector);
+    const optionsDiv = await questionDiv.$(optionDivSelector);
     // 获取选项
     const options = await frame.evaluate(
         (div: HTMLDivElement, optionSelector: string) => {
+            console.log({ div, optionSelector, li: div.querySelectorAll(optionSelector), res: Array.from(div.querySelectorAll(optionSelector)).map((li) => (li as any)?.innerText) });
+
             return Array.from(div.querySelectorAll(optionSelector)).map((li) => (li as any)?.innerText);
         },
         optionsDiv,
@@ -117,8 +120,7 @@ export async function ChoiceHandler(
     const answers = sliptAnswer(answer);
 
     const bestMatchIndexes = answers.map((a) => similarity.findBestMatch(a, options).bestMatchIndex);
-    console.log("选择题", { question, answer }, bestMatchIndexes);
-
+    console.log({ answerType, answers, options, bestMatchIndexes });
     if (bestMatchIndexes.length !== 0) {
         success?.();
         for (let i of bestMatchIndexes) {
@@ -134,20 +136,24 @@ export async function ChoiceHandler(
     } else {
         error?.();
     }
-    info({ type: "选择题", question, answer, bestMatchIndexes: bestMatchIndexes });
 }
 
 /**
  *
  * 判断题的处理器
  */
-export async function JudgmentHandler({ question, answer }: AnswerType, frame: Frame, { success, error, judgmentDivSelector, clickableSelector }: { judgmentDivSelector: string; clickableSelector: string } & QACallback) {
+export async function JudgmentHandler(
+    { question, answer }: AnswerType,
+    frame: Frame,
+    questionDiv: ElementHandle<Element>,
+    { success, error, judgmentDivSelector, clickableSelector }: { judgmentDivSelector: string; clickableSelector: string } & QACallback
+) {
     const rightWord = "是|对|正确|√|对的|是的|正确的";
     const wrongWord = "否|错|错误|×|错的|不正确的|不正确|不是|不是的";
     const { target } = similarity.findBestMatch(answer, rightWord.split("|").concat(wrongWord.split("|"))).bestMatch;
     console.log("判断题", { question, answer }, target);
 
-    const optionsDiv = await frame.$(judgmentDivSelector);
+    const optionsDiv = await questionDiv.$(judgmentDivSelector);
     // 开始选择
     if (RegExp(rightWord).test(target)) {
         await frame.evaluate(
@@ -179,12 +185,12 @@ export async function JudgmentHandler({ question, answer }: AnswerType, frame: F
  *
  * 填空处理器
  */
-export async function completionHandler({ question, answer }: AnswerType, frame: Frame, { completionDivSelector, success, error }: { completionDivSelector: string } & QACallback) {
+export async function completionHandler({ question, answer }: AnswerType, frame: Frame, questionDiv: ElementHandle<Element>, { completionDivSelector, success, error }: { completionDivSelector: string } & QACallback) {
     const ans = sliptAnswer(answer);
 
     console.log("填空题", { question, answer }, ans);
 
-    const completionDiv = await frame.$(completionDivSelector);
+    const completionDiv = await questionDiv.$(completionDivSelector);
 
     const finish = await frame.evaluate(
         (div: HTMLDivElement, answers) => {
@@ -227,6 +233,12 @@ export async function queryAnswer(question: string): Promise<AnswerType> {
             question,
         },
     });
+    console.log("queryAnswer", {
+        chatiId: StoreGet("setting").script.account.queryToken,
+        question,
+        res,
+    });
+
     const { success, question: q, answer } = res;
     return { success, question: q, answer };
 }
@@ -308,13 +320,11 @@ export class CXQAHandler implements CXQAHandlerType {
                     }
                     const answerType = await queryAnswer(title);
 
-                    console.log("answerType", answerType);
-
                     // 匹配答案
                     if (answerType.success) {
                         if (choiceDiv) {
                             const { divSelector, clickableSelector, textSelector } = this.choice;
-                            await ChoiceHandler(answerType, frame, {
+                            await ChoiceHandler(answerType, frame, question, {
                                 optionDivSelector: divSelector,
                                 optionClickableSelector: clickableSelector,
                                 optionTextSelector: textSelector,
@@ -324,7 +334,7 @@ export class CXQAHandler implements CXQAHandlerType {
                             });
                         } else if (judgmentDiv) {
                             const { divSelector, clickableSelector } = this.judgment;
-                            await JudgmentHandler(answerType, frame, {
+                            await JudgmentHandler(answerType, frame, question, {
                                 judgmentDivSelector: divSelector,
                                 clickableSelector: clickableSelector,
                                 success() {
@@ -333,7 +343,7 @@ export class CXQAHandler implements CXQAHandlerType {
                             });
                         } else if (completionDiv) {
                             const { divSelector } = this.completion;
-                            await completionHandler(answerType, frame, {
+                            await completionHandler(answerType, frame, question, {
                                 completionDivSelector: divSelector,
                                 success() {
                                     finishCount++;
@@ -347,6 +357,8 @@ export class CXQAHandler implements CXQAHandlerType {
                         task.error(answerType.answer);
                     }
                 } catch (err) {
+                    console.log(err);
+
                     this.onError();
                     error(err);
                 }
