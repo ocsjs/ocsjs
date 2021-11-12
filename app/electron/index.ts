@@ -10,8 +10,7 @@ import { OCSNotify } from "./events/ocs.event";
 const t = Date.now();
 
 const { info, error, task } = logger("system");
-const notify = new OCSNotify("system", "系统通知");
-
+ 
 process.on("uncaughtException", (err) => {
     log("uncaughtException", err);
     error("uncaughtException", err);

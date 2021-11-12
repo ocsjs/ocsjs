@@ -21,8 +21,9 @@ export function InitSetting() {
             const defaultSetting = GetDefaultSetting();
             info("本地设置:", setting);
             info("更新设置值:", defaultSetting);
-            // 合并设置
-            const newValue = Object.assign({}, defaultSetting, setting);
+            // 合并设置，除了 version 字段 , 其他以原有设置为准，添加新的配置
+            setting.version = app.getVersion()
+            const newValue: Setting = mergeJSON(defaultSetting, setting);
             StoreSet("setting", newValue);
             info("合并后的设置值:", newValue);
 
@@ -174,4 +175,30 @@ export function mkdirs(url: string) {
         mkdirs(resolve(url, "../"));
         mkdirSync(url);
     }
+}
+
+// 遇到相同元素级属性，以后者（main）为准
+// 不返还新Object，而是main改变
+function mergeJSON(minor: any, main: any) {
+    for (var key in minor) {
+        if (main[key] === undefined) {
+            // 不冲突的，直接赋值
+            main[key] = minor[key];
+            continue;
+        }
+
+        // 冲突了，如果是Object，看看有么有不冲突的属性
+        // 不是Object 则以main为主，忽略即可。故不需要else
+        if (isJSON(minor[key])) {
+            // arguments.callee 递归调用，并且与函数名解耦
+            arguments.callee(minor[key], main[key]);
+        }
+    }
+
+    return main;
+}
+
+// 附上工具
+function isJSON(target: any) {
+    return typeof target == "object" && target.constructor == Object;
 }
