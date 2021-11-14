@@ -32,16 +32,18 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
         questionDivSelector: ".TiMu",
         titleDivSelector: ".Zy_TItle > .clearfix > p > span",
         choice: {
-            divSelector: ".Zy_ulTop",
             textSelector: "li",
             clickableSelector: "li input",
         },
         judgment: {
-            divSelector: ".Zy_ulBottom",
             clickableSelector: "li input",
         },
-        completion: {
-            divSelector: ".Zy_ulTk",
+        completion: {},
+        typeResolver: async (question) => {
+            const choiceDiv = await frame.evaluate((div) => div.querySelector(".Zy_ulTop"), question);
+            const judgmentDiv = await frame.evaluate((div) => div.querySelector(".Zy_ulBottom"), question);
+            const completionDiv = await frame.evaluate((div) => div.querySelector(".Zy_ulTk"), question);
+            return choiceDiv ? "choice" : judgmentDiv ? "judgment" : completionDiv ? "completion" : undefined;
         },
         async onError() {
             task.process("搜索不到答案，即将切换下一题");
@@ -101,11 +103,10 @@ export async function ChoiceHandler(
     answerType: AnswerType,
     frame: Frame,
     questionDiv: ElementHandle<Element>,
-    { optionDivSelector, optionTextSelector, optionClickableSelector, success, error }: { optionDivSelector: string; optionTextSelector: string; optionClickableSelector: string } & QACallback
+    { optionTextSelector, optionClickableSelector, success, error }: { optionTextSelector: string; optionClickableSelector: string } & QACallback
 ) {
     const { question, answer } = answerType;
 
-    const optionsDiv = await questionDiv.$(optionDivSelector);
     // 获取选项
     const options = await frame.evaluate(
         (div: HTMLDivElement, optionSelector: string) => {
@@ -113,7 +114,7 @@ export async function ChoiceHandler(
 
             return Array.from(div.querySelectorAll(optionSelector)).map((li) => (li as any)?.innerText);
         },
-        optionsDiv,
+        questionDiv,
         optionTextSelector
     );
     // 分割答案
@@ -123,12 +124,13 @@ export async function ChoiceHandler(
     console.log({ answerType, answers, options, bestMatchIndexes });
     if (bestMatchIndexes.length !== 0) {
         success?.();
-        for (let i of bestMatchIndexes) {
+        for (let i of Array.from(new Set(bestMatchIndexes))) {
+            await sleep(1000);
             await frame.evaluate(
                 (div, clickable, index) => {
                     div.querySelectorAll(clickable)[parseInt(index)]?.click();
                 },
-                optionsDiv,
+                questionDiv,
                 optionClickableSelector,
                 i
             );
@@ -142,25 +144,19 @@ export async function ChoiceHandler(
  *
  * 判断题的处理器
  */
-export async function JudgmentHandler(
-    { question, answer }: AnswerType,
-    frame: Frame,
-    questionDiv: ElementHandle<Element>,
-    { success, error, judgmentDivSelector, clickableSelector }: { judgmentDivSelector: string; clickableSelector: string } & QACallback
-) {
+export async function JudgmentHandler({ question, answer }: AnswerType, frame: Frame, questionDiv: ElementHandle<Element>, { success, error, clickableSelector }: { clickableSelector: string } & QACallback) {
     const rightWord = "是|对|正确|√|对的|是的|正确的";
     const wrongWord = "否|错|错误|×|错的|不正确的|不正确|不是|不是的";
     const { target } = similarity.findBestMatch(answer, rightWord.split("|").concat(wrongWord.split("|"))).bestMatch;
     console.log("判断题", { question, answer }, target);
 
-    const optionsDiv = await questionDiv.$(judgmentDivSelector);
     // 开始选择
     if (RegExp(rightWord).test(target)) {
         await frame.evaluate(
             (div, clickable) => {
                 div.querySelectorAll(clickable)[0]?.click();
             },
-            optionsDiv,
+            questionDiv,
             clickableSelector
         );
     } else if (RegExp(wrongWord).test(target)) {
@@ -168,7 +164,7 @@ export async function JudgmentHandler(
             (div, clickable) => {
                 div.querySelectorAll(clickable)[1]?.click();
             },
-            optionsDiv,
+            questionDiv,
             clickableSelector
         );
     }
@@ -185,12 +181,10 @@ export async function JudgmentHandler(
  *
  * 填空处理器
  */
-export async function completionHandler({ question, answer }: AnswerType, frame: Frame, questionDiv: ElementHandle<Element>, { completionDivSelector, success, error }: { completionDivSelector: string } & QACallback) {
+export async function completionHandler({ question, answer }: AnswerType, frame: Frame, questionDiv: ElementHandle<Element>, { success, error }: QACallback) {
     const ans = sliptAnswer(answer);
 
     console.log("填空题", { question, answer }, ans);
-
-    const completionDiv = await questionDiv.$(completionDivSelector);
 
     const finish = await frame.evaluate(
         (div: HTMLDivElement, answers) => {
@@ -203,7 +197,7 @@ export async function completionHandler({ question, answer }: AnswerType, frame:
             }
             return false;
         },
-        completionDiv,
+        questionDiv,
         ans
     );
     if (finish) {
@@ -246,26 +240,22 @@ export async function queryAnswer(question: string): Promise<AnswerType> {
 export interface CXQAHandlerType {
     questionDivSelector: string;
     titleDivSelector: string;
-
+    typeResolver: (questionDiv: ElementHandle<HTMLDivElement>) => Promise<"choice" | "judgment" | "completion" | undefined>;
     choice: {
-        divSelector: string;
         clickableSelector: string;
         textSelector: string;
     };
 
     judgment: {
-        divSelector: string;
         clickableSelector: string;
     };
-    completion: {
-        divSelector: string;
-    };
+    completion: {};
     // 答题错误
     onError: () => Promise<void>;
     // 答题成功
-    onSuccess: () => Promise<void>;
+    onSuccess: (rate: number) => Promise<void>;
     // 保存答案
-    onSave: () => Promise<void>;
+    onSave: (rate: number) => Promise<void>;
 }
 
 export interface HandlerOptions {
@@ -278,17 +268,18 @@ export interface HandlerOptions {
 export class CXQAHandler implements CXQAHandlerType {
     questionDivSelector: string;
     titleDivSelector: string;
-    choice: { divSelector: string; clickableSelector: string; textSelector: string };
-    judgment: { divSelector: string; clickableSelector: string };
-    completion: { divSelector: string };
+    typeResolver: (questionDiv: ElementHandle<HTMLDivElement>) => Promise<"choice" | "judgment" | "completion" | undefined>;
+    choice: { clickableSelector: string; textSelector: string };
+    judgment: { clickableSelector: string };
+    completion: {};
     // 答题错误
     onError: () => Promise<void>;
     // 答题成功
-    onSuccess: () => Promise<void>;
+    onSuccess: (rate: number) => Promise<void>;
     // 保存答案
-    onSave: () => Promise<void>;
+    onSave: (rate: number) => Promise<void>;
 
-    constructor({ questionDivSelector, titleDivSelector, choice, judgment, completion, onError, onSave, onSuccess }: CXQAHandlerType) {
+    constructor({ questionDivSelector, titleDivSelector, choice, judgment, completion, onError, onSave, onSuccess, typeResolver }: CXQAHandlerType) {
         this.questionDivSelector = questionDivSelector;
         this.titleDivSelector = titleDivSelector;
         this.choice = choice;
@@ -297,10 +288,12 @@ export class CXQAHandler implements CXQAHandlerType {
         this.onError = onError;
         this.onSave = onSave;
         this.onSuccess = onSuccess;
+        this.typeResolver = typeResolver;
     }
 
     async handle({ task, frame, autoReport, passRate }: HandlerOptions) {
         const Questions = await frame.$$(this.questionDivSelector);
+        console.log("Questions :", Questions);
 
         if (Questions.length !== 0) {
             task.process(`正在自动答题,一共${Questions.length}个题目`);
@@ -311,40 +304,68 @@ export class CXQAHandler implements CXQAHandlerType {
             for (const question of Questions) {
                 try {
                     const title = await frame.evaluate((div, selector) => (div.querySelector(selector) as any)?.innerText || undefined, question, this.titleDivSelector);
-                    const choiceDiv = await frame.evaluate((div, selector) => div.querySelector(selector), question, this.choice.divSelector);
-                    const judgmentDiv = await frame.evaluate((div, selector) => div.querySelector(selector), question, this.judgment.divSelector);
-                    const completionDiv = await frame.evaluate((div, selector) => div.querySelector(selector), question, this.completion.divSelector);
+
+                    const type = await this.typeResolver(question);
 
                     if (!title) {
                         continue;
                     }
                     const answerType = await queryAnswer(title);
 
+                    // 页面上的输出样式
+                    let success = "background-color: #f6ffed; border: 1px solid #b7eb8f;padding:4px";
+                    let err = "background-color: #fff1f0;border: 1px solid #ffa39e;padding:4px";
+                    // 页面输出
+                    const PageAlert = async (style: string) => {
+                        await frame.evaluate(
+                            (div, selector, question, answer, style) => {
+                                let qaDiv = document.createElement("div");
+                                qaDiv.setAttribute("style", style);
+                                let q = document.createElement("span");
+                                q.innerHTML = "题目 ：" + question + "<br>";
+                                let a = document.createElement("span");
+                                a.innerHTML = "回答 ：" + answer + "<br>";
+                                let node = div.querySelector(selector);
+
+                                if (node) {
+                                    qaDiv.appendChild(q);
+                                    qaDiv.appendChild(a);
+                                    node.appendChild(qaDiv);
+                                }
+                            },
+                            question,
+                            this.titleDivSelector,
+                            answerType.question,
+                            answerType.answer,
+                            style
+                        );
+                    };
+
                     // 匹配答案
                     if (answerType.success) {
-                        if (choiceDiv) {
-                            const { divSelector, clickableSelector, textSelector } = this.choice;
+                        await PageAlert(success);
+                        // 选择题
+                        if (type === "choice") {
+                            const { clickableSelector, textSelector } = this.choice;
                             await ChoiceHandler(answerType, frame, question, {
-                                optionDivSelector: divSelector,
                                 optionClickableSelector: clickableSelector,
                                 optionTextSelector: textSelector,
                                 success() {
                                     finishCount++;
                                 },
                             });
-                        } else if (judgmentDiv) {
-                            const { divSelector, clickableSelector } = this.judgment;
+                        } else if (type === "judgment") {
+                            // 判断题
+                            const { clickableSelector } = this.judgment;
                             await JudgmentHandler(answerType, frame, question, {
-                                judgmentDivSelector: divSelector,
                                 clickableSelector: clickableSelector,
                                 success() {
                                     finishCount++;
                                 },
                             });
-                        } else if (completionDiv) {
-                            const { divSelector } = this.completion;
+                        } else if (type === "completion") {
+                            // 填空题
                             await completionHandler(answerType, frame, question, {
-                                completionDivSelector: divSelector,
                                 success() {
                                     finishCount++;
                                 },
@@ -353,12 +374,13 @@ export class CXQAHandler implements CXQAHandlerType {
                             info("不支持的题目类型");
                         }
                     } else {
+                        await PageAlert(err);
+                        console.log(answerType);
                         error(answerType);
                         task.error(answerType.answer);
                     }
                 } catch (err) {
                     console.log(err);
-
                     this.onError();
                     error(err);
                 }
@@ -368,12 +390,13 @@ export class CXQAHandler implements CXQAHandlerType {
 
             // 如果超过通过率，则自动提交，否则暂时保存
             if (Questions.length !== 0 && autoReport) {
-                info("通过率:", passRate, "结果:", (finishCount / Questions.length) * 100);
+                let rate = (finishCount / Questions.length) * 100;
+                info("通过率:", passRate, "结果:", rate);
 
-                if ((finishCount / Questions.length) * 100 >= passRate) {
-                    await this.onSuccess();
+                if (rate >= passRate) {
+                    await this.onSuccess(rate);
                 } else {
-                    await this.onSave();
+                    await this.onSave(rate);
                 }
             }
         }

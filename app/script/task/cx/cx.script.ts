@@ -14,10 +14,10 @@ import { LoginScript } from "../../login/types";
 import { RunnableTask } from "../../../electron/task/runnable.task";
 import { ScriptTask } from "../../../electron/task/script.task";
 import { waitForNavigation, waitForClickAndNavigation, TimeoutTask } from "../utils";
- 
+
 import { debounce } from "lodash";
 
-const debouncedScript = debounce(runScript, 5000, { maxWait: 5000 });
+const debouncedScript = debounce(runScript, 10000);
 
 export function CXCourseEntry(course: Course): ScriptTask<void> {
     return ScriptTask.createScript({
@@ -61,6 +61,9 @@ export function CXScript(): ScriptTask<void> {
 
                 log("进入任务页面成功，即将开始刷课");
                 task.process("进入任务页面成功，即将开始刷课");
+                await waitFor.nextTick("requestfinished");
+                await waitFor.documentReady();
+
                 // 进入 iframe
                 await waitForNavigation(script, script.page.frames()[1].url());
 
@@ -96,7 +99,8 @@ export function CXScript(): ScriptTask<void> {
                 });
                 log(jobs);
                 if (jobs.length === 0) {
-                    task.process("检测不到任务点");
+                    task.process("检测不到任务点,可能因为所有任务已经完成，即将跳转下一个任务。");
+                    resolve();
                 } else {
                     task.process("刷课中...");
 
@@ -131,7 +135,7 @@ export function CXScript(): ScriptTask<void> {
                         // 如果进入作业或者考试页面，自动下一个任务
                         // 问号不能删除，区别于 /mycourse/studentstudyAjax
                         if (RegExp("/mycourse/studentstudy\\?chapterId").test(req.url())) {
-                            task.process("已切换到学习界面，正在自动刷课 ");
+                            task.process("已切换到学习界面，即将开始自动刷课");
 
                             await debouncedScript(queue, task, script, callback);
                         } else if (RegExp("/mycourse/studentstudyAjax").test(req.url()) || RegExp("/knowledge/cards").test(req.url())) {
@@ -140,7 +144,7 @@ export function CXScript(): ScriptTask<void> {
                             await debouncedScript(queue, task, script, callback);
                         }
                     });
-
+                    task.process("即将开始自动刷课");
                     await debouncedScript(queue, task, script, callback);
                 }
             });
