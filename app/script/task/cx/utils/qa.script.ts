@@ -30,7 +30,7 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
     }
     const qaHandler = new CXQAHandler({
         questionDivSelector: ".TiMu",
-        titleDivSelector: ".Zy_TItle > .clearfix > p > span",
+        titleDivSelector: ".Zy_TItle > .clearfix",
         choice: {
             textSelector: "li",
             clickableSelector: "li input",
@@ -48,20 +48,26 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
         async onError() {
             task.process("搜索不到答案，即将切换下一题");
         },
-        async onSave() {
+        async onSave(rate: number) {
+            task.process("章节测验已完成,题目完成率(" + rate + "%)。暂时保存");
+            await sleep(3000);
             await frame.evaluate("if(window.noSubmit)window.noSubmit()");
         },
-        async onSuccess() {
-            await frame.evaluate(() => {
-                return new Promise<void>((resolve, reject) => {
-                    let w = window as any;
-                    if (w.btnBlueSubmit) w.btnBlueSubmit();
-                    setTimeout(() => {
-                        if (w.form1submit) w.form1submit();
-                        resolve();
-                    }, 3000);
+        async onSuccess(rate: number) {
+            task.process("章节测验已完成,题目完成率(" + rate + "%)。即将自动提交");
+            await sleep(3000);
+            try{
+                await frame.evaluate(() => {
+                    return new Promise<void>((resolve, reject) => {
+                        let w = window as any;
+                        if (w.btnBlueSubmit) w.btnBlueSubmit();
+                        setTimeout(() => {
+                            setTimeout(resolve, 3000);
+                            if (w.form1submit) w.form1submit();
+                        }, 3000);
+                    });
                 });
-            });
+            }catch{}
         },
     });
 
@@ -117,8 +123,15 @@ export async function ChoiceHandler(
         questionDiv,
         optionTextSelector
     );
-    // 分割答案
-    const answers = sliptAnswer(answer);
+
+    let answers;
+    if (/^[A-F]+$/.test(answer)) {
+        // 如果直接给出答案,例如 ADC，则答案为对应选择: A:xxx , D:xxx , C:xxx，再传入进行判断
+        answers = answer.split("").map((char) => options[char.charCodeAt(0) - "A".charCodeAt(0)]);
+    } else {
+        // 分割答案
+        answers = sliptAnswer(answer);
+    }
 
     const bestMatchIndexes = answers.map((a) => similarity.findBestMatch(a, options).bestMatchIndex);
     console.log({ answerType, answers, options, bestMatchIndexes });
@@ -145,8 +158,8 @@ export async function ChoiceHandler(
  * 判断题的处理器
  */
 export async function JudgmentHandler({ question, answer }: AnswerType, frame: Frame, questionDiv: ElementHandle<Element>, { success, error, clickableSelector }: { clickableSelector: string } & QACallback) {
-    const rightWord = "是|对|正确|√|对的|是的|正确的";
-    const wrongWord = "否|错|错误|×|错的|不正确的|不正确|不是|不是的";
+    const rightWord = "是|对|正确|√|对的|是的|正确的|true|yes|YES|Yes";
+    const wrongWord = "否|错|错误|×|错的|不正确的|不正确|不是|不是的|false|no|NO|No";
     const { target } = similarity.findBestMatch(answer, rightWord.split("|").concat(wrongWord.split("|"))).bestMatch;
     console.log("判断题", { question, answer }, target);
 
@@ -303,28 +316,30 @@ export class CXQAHandler implements CXQAHandlerType {
 
             for (const question of Questions) {
                 try {
-                    const title = await frame.evaluate((div, selector) => (div.querySelector(selector) as any)?.innerText || undefined, question, this.titleDivSelector);
-
+                    let title: string = await frame.evaluate((div, selector) => (div.querySelector(selector) as any)?.innerText || undefined, question, this.titleDivSelector);
+                    task.process("正在回答:" + title);
                     const type = await this.typeResolver(question);
 
                     if (!title) {
                         continue;
                     }
+                    // 去掉冗余字段
+                    title = title.replace(/【.*?题】/, "");
                     const answerType = await queryAnswer(title);
 
                     // 页面上的输出样式
-                    let success = "background-color: #f6ffed; border: 1px solid #b7eb8f;padding:4px";
-                    let err = "background-color: #fff1f0;border: 1px solid #ffa39e;padding:4px";
+                    let success = "background-color: #f6ffed; border: 1px solid #b7eb8f;";
+                    let err = "background-color: #fff1f0;border: 1px solid #ffa39e;";
                     // 页面输出
                     const PageAlert = async (style: string) => {
                         await frame.evaluate(
                             (div, selector, question, answer, style) => {
                                 let qaDiv = document.createElement("div");
-                                qaDiv.setAttribute("style", style);
-                                let q = document.createElement("span");
-                                q.innerHTML = "题目 ：" + question + "<br>";
-                                let a = document.createElement("span");
-                                a.innerHTML = "回答 ：" + answer + "<br>";
+                                qaDiv.setAttribute("style", style + ";padding:2px;font-size:12px;line-height: 16px;" );
+                                let q = document.createElement("div");
+                                q.innerHTML = "<span style='font-weight:bold'>题目</span> ：" + question;
+                                let a = document.createElement("div");
+                                a.innerHTML = "<span style='font-weight:bold'>回答</span> ：" + answer;
                                 let node = div.querySelector(selector);
 
                                 if (node) {
