@@ -84,7 +84,7 @@ export async function CXWorkScript(task: Task, script: LoginScript) {
     }
     const qaHandler = new CXQAHandler({
         questionDivSelector: ".questionLi",
-        titleDivSelector: "h3 > span:not(.colorShallow)",
+        titleDivSelector: "h3 span:not(.colorShallow)",
         choice: {
             textSelector: ".answer_p",
             clickableSelector: ".answerBg",
