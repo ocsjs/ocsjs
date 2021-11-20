@@ -84,7 +84,7 @@ export async function CXWorkScript(task: Task, script: LoginScript) {
     }
     const qaHandler = new CXQAHandler({
         questionDivSelector: ".questionLi",
-        titleDivSelector: "h3 span:not(.colorShallow)",
+        titleDivSelector: "h1,h2,h3,h4,h5,h6",
         choice: {
             textSelector: ".answer_p",
             clickableSelector: ".answerBg",
@@ -99,6 +99,9 @@ export async function CXWorkScript(task: Task, script: LoginScript) {
             const judgmentDiv = await frame.evaluate((div) => div.querySelector(`[qtype="3"]`), question);
             const completionDiv = await frame.evaluate((div) => div.querySelector(".textDIV"), question);
             return choiceDiv ? "choice" : judgmentDiv ? "judgment" : completionDiv ? "completion" : undefined;
+        },
+        titleTransform(title:string){
+            return title.replace(/\d*\./,"").replace(/\(.*?题, .*?分\)/,"").replace(/\n/g,"")
         },
         async onError() {
             task.process("搜索不到答案，即将切换下一题");
@@ -134,7 +137,7 @@ export async function CXExamScript(task: Task, script: LoginScript) {
     }
     const qaHandler = new CXQAHandler({
         questionDivSelector: ".questionLi",
-        titleDivSelector: "h3 span:not(.colorShallow)",
+        titleDivSelector: "h1,h2,h3,h4,h5,h6",
         choice: {
             textSelector: ".answer_p",
             clickableSelector: ".answerBg",
@@ -143,12 +146,16 @@ export async function CXExamScript(task: Task, script: LoginScript) {
             clickableSelector: ".answerBg",
         },
         completion: {},
+
         typeResolver: async (question) => {
             const frame = script.page.mainFrame();
             const choiceDiv = await frame.evaluate((div) => div.querySelector(`[value="多选题"],[value="单选题"]`), question);
             const judgmentDiv = await frame.evaluate((div) => div.querySelector(`[value="判断题"]`), question);
             const completionDiv = await frame.evaluate((div) => div.querySelector(`[value="填空题"]`), question);
             return choiceDiv ? "choice" : judgmentDiv ? "judgment" : completionDiv ? "completion" : undefined;
+        },
+        titleTransform(title:string){
+            return title.replace(/\d*\./,"").replace(/\(.*?题, .*?分\)/,"").replace(/\n/g,"")
         },
         async onError() {
             task.process("搜索不到答案，即将切换下一题");

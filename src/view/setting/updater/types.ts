@@ -175,8 +175,7 @@ export class Gitee extends UpdaterImpl {
 }
 
 export function UpdateNotify(type: IconType, msg: VNodeTypes, options?: Omit<NotificationArgsProps, "type" | "message">) {
-    console.log(msg);
-
+     
     const key = "update-notify";
     const commonConfig: Omit<NotificationArgsProps, "type"> = Object.assign(
         {
@@ -202,7 +201,6 @@ export function showFormatSize(size: number) {
 
 export function unzipResource(filePath: string, dist: string) {
     unzip(filePath, dist, (rate) => {
-        console.log("rate", rate);
         UpdateNotify(
             "info",
             h("span", [

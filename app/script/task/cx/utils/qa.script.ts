@@ -1,3 +1,4 @@
+ 
 import { ElementHandle, Frame, JSHandle, SerializableOrJSHandle } from "puppeteer-core";
 import { AxiosPost } from "../../../../electron/axios";
 import { BaseTask, ScriptSetting } from "../../../../types";
@@ -45,6 +46,9 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
             const completionDiv = await frame.evaluate((div) => div.querySelector(".Zy_ulTk"), question);
             return choiceDiv ? "choice" : judgmentDiv ? "judgment" : completionDiv ? "completion" : undefined;
         },
+        titleTransform(title: string) {
+            return title.replace(/【.*?题】/, "");
+        },
         async onError() {
             task.process("搜索不到答案，即将切换下一题");
         },
@@ -52,11 +56,12 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
             task.process("章节测验已完成,题目完成率(" + rate + "%)。暂时保存");
             await sleep(3000);
             await frame.evaluate("if(window.noSubmit)window.noSubmit()");
+            await sleep(1000);
         },
         async onSuccess(rate: number) {
             task.process("章节测验已完成,题目完成率(" + rate + "%)。即将自动提交");
             await sleep(3000);
-            try{
+            try {
                 await frame.evaluate(() => {
                     return new Promise<void>((resolve, reject) => {
                         let w = window as any;
@@ -67,7 +72,8 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
                         }, 3000);
                     });
                 });
-            }catch{}
+            } catch {}
+            await sleep(3000);
         },
     });
 
@@ -81,7 +87,7 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
 
 // 分割答案
 function sliptAnswer(str: string) {
-    let spl = str.split(/ |\s|===|---|#|&|;/).filter((s) => !!s);
+    let spl = str.split(/\n|\s|===|---|#|&|;/).filter((s) => !!s);
     if (spl.length > 4) {
         return [];
     } else {
@@ -201,10 +207,15 @@ export async function completionHandler({ question, answer }: AnswerType, frame:
 
     const finish = await frame.evaluate(
         (div: HTMLDivElement, answers) => {
-            let textareas = div.querySelectorAll("textarea");
+            let iframes = Array.from(div.querySelectorAll("iframe"));
+            let textareas = Array.from(div.querySelectorAll("textarea"));
             if (textareas.length === answers.length) {
                 for (let i = 0; i < textareas.length; i++) {
                     textareas[i].value = answers[i] || "不知道";
+                    let frame = iframes[i]
+                    if(frame && frame.contentWindow){
+                        frame.contentWindow.document.body.innerHTML = "<p>"+(answers[i] || "不知道")+"</p>"
+                    }
                 }
                 return true;
             }
@@ -254,6 +265,7 @@ export interface CXQAHandlerType {
     questionDivSelector: string;
     titleDivSelector: string;
     typeResolver: (questionDiv: ElementHandle<HTMLDivElement>) => Promise<"choice" | "judgment" | "completion" | undefined>;
+    titleTransform: (title: string) => string;
     choice: {
         clickableSelector: string;
         textSelector: string;
@@ -281,7 +293,10 @@ export interface HandlerOptions {
 export class CXQAHandler implements CXQAHandlerType {
     questionDivSelector: string;
     titleDivSelector: string;
+    // 题目类型处理器
     typeResolver: (questionDiv: ElementHandle<HTMLDivElement>) => Promise<"choice" | "judgment" | "completion" | undefined>;
+    // 标题处理器
+    titleTransform: (title: string) => string;
     choice: { clickableSelector: string; textSelector: string };
     judgment: { clickableSelector: string };
     completion: {};
@@ -292,7 +307,7 @@ export class CXQAHandler implements CXQAHandlerType {
     // 保存答案
     onSave: (rate: number) => Promise<void>;
 
-    constructor({ questionDivSelector, titleDivSelector, choice, judgment, completion, onError, onSave, onSuccess, typeResolver }: CXQAHandlerType) {
+    constructor({ questionDivSelector, titleDivSelector, choice, judgment, completion, onError, onSave, onSuccess, typeResolver, titleTransform }: CXQAHandlerType) {
         this.questionDivSelector = questionDivSelector;
         this.titleDivSelector = titleDivSelector;
         this.choice = choice;
@@ -302,12 +317,12 @@ export class CXQAHandler implements CXQAHandlerType {
         this.onSave = onSave;
         this.onSuccess = onSuccess;
         this.typeResolver = typeResolver;
+        this.titleTransform = titleTransform;
     }
 
     async handle({ task, frame, autoReport, passRate }: HandlerOptions) {
         const Questions = await frame.$$(this.questionDivSelector);
-        console.log("Questions :", Questions);
-
+   
         if (Questions.length !== 0) {
             task.process(`正在自动答题,一共${Questions.length}个题目`);
 
@@ -317,15 +332,17 @@ export class CXQAHandler implements CXQAHandlerType {
             for (const question of Questions) {
                 try {
                     let title: string = await frame.evaluate((div, selector) => (div.querySelector(selector) as any)?.innerText || undefined, question, this.titleDivSelector);
-                    task.process("正在回答:" + title);
                     const type = await this.typeResolver(question);
-
                     if (!title) {
                         continue;
                     }
                     // 去掉冗余字段
-                    title = title.replace(/【.*?题】/, "");
+
+                    title = this.titleTransform(title);
+                    task.process(`【${(type==="choice" ? "选择题" : type==="judgment" ? "判断题" : type ==="completion" ? "填空题" : "未知题型")}】:` + title);
+                    
                     const answerType = await queryAnswer(title);
+                     
 
                     // 页面上的输出样式
                     let success = "background-color: #f6ffed; border: 1px solid #b7eb8f;";
@@ -335,7 +352,7 @@ export class CXQAHandler implements CXQAHandlerType {
                         await frame.evaluate(
                             (div, selector, question, answer, style) => {
                                 let qaDiv = document.createElement("div");
-                                qaDiv.setAttribute("style", style + ";padding:2px;font-size:12px;line-height: 16px;" );
+                                qaDiv.setAttribute("style", style + ";padding:2px;font-size:12px;line-height: 16px;");
                                 let q = document.createElement("div");
                                 q.innerHTML = "<span style='font-weight:bold'>题目</span> ：" + question;
                                 let a = document.createElement("div");
@@ -358,6 +375,7 @@ export class CXQAHandler implements CXQAHandlerType {
 
                     // 匹配答案
                     if (answerType.success) {
+                        
                         await PageAlert(success);
                         // 选择题
                         if (type === "choice") {
@@ -382,8 +400,12 @@ export class CXQAHandler implements CXQAHandlerType {
                             // 填空题
                             await completionHandler(answerType, frame, question, {
                                 success() {
+                                    task.process("选择题完成")
                                     finishCount++;
                                 },
+                                error(){
+                                    task.error("选择题未能完成")
+                                }
                             });
                         } else {
                             info("不支持的题目类型");
