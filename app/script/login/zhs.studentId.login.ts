@@ -37,6 +37,12 @@ export class ZHSStudentIdLoginScript extends LoginScript  {
         const { school, studentId, password } = user.loginInfo.zhs.studentIdLogin;
 
         await utils.value("#quickSearch", school);
+        // 显示学校列表
+        await this.page.evaluate("userindex.selectSchoolByName();")
+        // 等待学校搜索
+        await waitFor.nextTick("requestfinished");
+        // 单击第一个匹配的学校
+        await this.page.click("#schoolListCode li")
         await utils.value("#clCode", studentId);
         await utils.value("#clPassword", password);
  

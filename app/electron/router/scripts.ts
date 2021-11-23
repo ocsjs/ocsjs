@@ -13,6 +13,7 @@ import { OCSNotify } from "../events/ocs.event";
 import { ZHSScript } from "../../script/task/zhs/zhs.script";
 import { ExecuteContext } from "../task/execute.context";
 import { CXWork } from "../../script/task/cx/cx.work";
+import { ZHSWork } from "../../script/task/zhs/zhs.work";
 
 const { info } = logger("script");
 const notify = new OCSNotify("script", "任务系统");
@@ -84,7 +85,7 @@ export const ScriptRemote = {
         if (user.platform === "cx") {
             return this.login(name, user, CXCourseEntry(course), CXScript(), CXWork(course));
         } else if (user.platform === "zhs") {
-            return this.login(name, user, ZHSScript(course));
+            return this.login(name, user, ZHSScript(course), ZHSWork(course));
         } else {
             notify.error("暂时不支持此平台脚本！");
         }

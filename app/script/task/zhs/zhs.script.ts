@@ -17,8 +17,10 @@ export function ZHSScript(course: Course): ScriptTask<void> {
                 const { page } = script;
 
                 const waitFor = new WaitForScript(script);
+                
+                await waitFor.nextTick("requestfinished");
                 await waitFor.documentReady();
-                console.log(course);
+
                 // 确认，切换身份按钮，一般需要点2次
                 await page.evaluate(() => {
                     (document.querySelector(".next-btn") as HTMLDivElement)?.click();
@@ -33,6 +35,7 @@ export function ZHSScript(course: Course): ScriptTask<void> {
                     throw new Error("脚本运行失败: 课程链接或课程元素为空，请重新获取课程!");
                 }
 
+                await waitFor.nextTick("requestfinished");
                 // 取消弹窗
                 await page.evaluate(() => {
                     (document.querySelector(".v-modal") as HTMLDivElement).remove();
@@ -43,22 +46,33 @@ export function ZHSScript(course: Course): ScriptTask<void> {
                 await waitFor.sleep(5000);
 
                 const zhsSetting = StoreGet("setting").script.script.zhs;
-                // 如果不刷视频直接推出此任务，进行下一个
+                // 如果不刷视频直接退出此任务，进行下一个
                 if (!zhsSetting.video.enable) {
                     resolve();
                     return;
+                } else {
+                    const li = await page.evaluate(() => {
+                        return Array.from(document.querySelectorAll("li.clearfix.video")).filter((el) => el.querySelector(".time_icofinish") === null) as HTMLLIElement[];
+                    });
+                    if (li.length === 0) {
+             
+                        resolve();
+                        task.process("无任务点，即将跳转下个任务");
+                        return;
+                    }
                 }
 
                 // 定时关闭 autoStop 是小时为单位
                 setTimeout(() => {
                     resolve();
+                    task.process("定时关闭已完成");
                 }, zhsSetting.autoStop * 60 * 60 * 1000);
 
                 task.process("正在自动播放视频");
 
                 // 暂时使用旧版本的刷课方法
                 await page.evaluate(
-                    (autoStop, playbackRate,mute) => {
+                    (autoStop, playbackRate, mute) => {
                         return new Promise<void>((resolve, reject) => {
                             const $ = (window as any).$;
 
@@ -96,7 +110,7 @@ export function ZHSScript(course: Course): ScriptTask<void> {
 
                                 function Player(video: HTMLVideoElement, callback: () => void) {
                                     video.playbackRate = playbackRate;
-                                    video.muted = mute
+                                    video.muted = mute;
                                     video.onpause = function () {
                                         if (!video.ended) {
                                             video.play();

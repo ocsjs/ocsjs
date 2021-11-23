@@ -1,6 +1,6 @@
 {
     "name": "online-course-script",
-    "version": "1.2.9",
+    "version": "1.2.10",
     "main": "./app/lib/electron/index.js",
     "scripts": {
         "dev": "cd ./app && tsc && cd .. &&   concurrently \"vite --mode production\" \"ehmr -i app/**/*.js \" ",

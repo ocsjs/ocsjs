@@ -9,11 +9,9 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
     minHeight: 640,
 
     maximizable: false,
-
-    icon: "./public/favicon.ico",
+ 
     frame: false,
     center: true,
-    autoHideMenuBar: true,
     show: false,
     alwaysOnTop: !!StoreGet("setting")?.system?.win?.isAlwaysOnTop,
     webPreferences: {
@@ -23,7 +21,5 @@ export const BrowserConfig: BrowserWindowConstructorOptions = {
         // 开启node
         nodeIntegration: true,
         contextIsolation: false,
-        // webview
-        webviewTag:true
     },
 };

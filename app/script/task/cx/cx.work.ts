@@ -9,9 +9,10 @@ import { Course } from "../../../types/script/course";
 import { StoreGet } from "../../../types/setting";
 import { sleep } from "../../common/utils";
 import { LoginScript } from "../../login/types";
+import { QAHandler } from "../qa.handler";
+ 
 import { waitForNavigation, waitForClickAndNavigation } from "../utils";
-import { CXQAHandler } from "./utils/qa.script";
-
+ 
 const debouncedWork = debounce(CXWorkScript, 10000);
 const debouncedExam = debounce(CXExamScript, 10000);
 
@@ -82,7 +83,7 @@ export async function CXWorkScript(task: Task, script: LoginScript) {
         await sleep(3000);
         return;
     }
-    const qaHandler = new CXQAHandler({
+    const qaHandler = new   QAHandler({
         questionDivSelector: ".questionLi",
         titleDivSelector: "h1,h2,h3,h4,h5,h6",
         choice: {
@@ -135,7 +136,7 @@ export async function CXExamScript(task: Task, script: LoginScript) {
         await sleep(3000);
         return;
     }
-    const qaHandler = new CXQAHandler({
+    const qaHandler = new  QAHandler({
         questionDivSelector: ".questionLi",
         titleDivSelector: "h1,h2,h3,h4,h5,h6",
         choice: {

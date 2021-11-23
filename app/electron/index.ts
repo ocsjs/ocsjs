@@ -1,16 +1,17 @@
-import { app, protocol, BrowserWindow, BrowserWindow as BW, shell, BrowserView } from "electron";
+import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
 import { normalize, resolve } from "path";
 import { logger } from "../types/logger";
 import { log } from "electron-log";
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { InitSetting } from "./setting";
-import { OCSNotify } from "./events/ocs.event";
+
+
 
 const t = Date.now();
 
 const { info, error, task } = logger("system");
- 
+
 process.on("uncaughtException", (err) => {
     log("uncaughtException", err);
     error("uncaughtException", err);
@@ -31,6 +32,7 @@ export let CurrentWindow: BW | undefined = undefined;
 app.disableHardwareAcceleration();
 
 app.whenReady().then(async () => {
+    
     // 注册协议
     await task("注册协议", async () => {
         return protocol.registerFileProtocol("app", (req: any, callback: any) => {
@@ -41,6 +43,27 @@ app.whenReady().then(async () => {
         });
     });
 
+    
+    const logo = new BrowserWindow({
+        width: 200,
+        height: 200,
+    
+        minWidth:200,
+        minHeight:200,
+    
+        maximizable: false,
+        frame:false,
+        center: true,
+        alwaysOnTop: true,
+        transparent: true,
+        webPreferences: {
+             
+            // 开启node
+            nodeIntegration: true,
+        },
+    });
+    logo.loadURL("app://./logo.html")
+ 
     // 渲染进程崩溃
     app.on("render-process-gone", (e, w, detail) => {
         error("render-process-gone", detail);
@@ -52,7 +75,7 @@ app.whenReady().then(async () => {
     });
 
     app.on("activate", function () {
-        if (BrowserWindow.getAllWindows().length === 0) createWindow();
+        if (BrowserWindow.getAllWindows().length === 0) createWindow(logo);
     });
 
     app.on("window-all-closed", function () {
@@ -67,14 +90,14 @@ app.whenReady().then(async () => {
     });
 
     await task("渲染进程启动", async () => {
-        CurrentWindow = await createWindow();
+        CurrentWindow = await createWindow(logo);
     });
     await task("初始化远程通信", async () => {
         RemoteRouter();
     });
 });
 
-async function createWindow() {
+async function createWindow(logo:BW) {
     const win = new BrowserWindow(BrowserConfig);
 
     load();
@@ -84,6 +107,7 @@ async function createWindow() {
 
         promise
             .then(() => {
+                logo.close()
                 win.show();
 
                 if (mode === "dev") win.webContents.openDevTools();
