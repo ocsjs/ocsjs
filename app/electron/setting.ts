@@ -1,11 +1,11 @@
 import { app } from "electron";
-import log from "electron-log";
+ 
 import { CurrentWindow } from ".";
 import { Setting, StoreSchema } from "../types";
-import { store, StoreGet, StoreSet } from "../types/setting";
+import { store,  StoreSet } from "../types/setting";
 import { Version } from "../types/version";
 import { logger } from "../types/logger";
-import { basename, join, resolve } from "path";
+import {  join, resolve } from "path";
 import { existsSync, mkdirSync } from "fs";
 const { info } = logger("setting");
 

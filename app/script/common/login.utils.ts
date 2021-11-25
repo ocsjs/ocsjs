@@ -1,7 +1,6 @@
 import { Injectable } from "@pioneerjs/common";
 import { InjectableScript, WaitForScript } from "@pioneerjs/core";
-import { HTTPRequest } from "puppeteer-core";
-
+ 
 // 登录工具类
 export abstract class LoginUtils extends InjectableScript {
     async waitForLogin(timeout?: number): Promise<void> {

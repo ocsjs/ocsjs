@@ -33,17 +33,6 @@ app.disableHardwareAcceleration();
 
 app.whenReady().then(async () => {
     
-    // 注册协议
-    await task("注册协议", async () => {
-        return protocol.registerFileProtocol("app", (req: any, callback: any) => {
-            const url = req.url.replace("app://", "");
-            const _path = normalize(resolve(`./resources/app/public`, url));
-            // info("app协议模式:", { path: resolve });
-            callback({ path: _path });
-        });
-    });
-
-    
     const logo = new BrowserWindow({
         width: 200,
         height: 200,
@@ -62,7 +51,7 @@ app.whenReady().then(async () => {
             nodeIntegration: true,
         },
     });
-    logo.loadURL("app://./logo.html")
+    logo.loadFile(resolve(`./resources/app/public/logo.html`))
  
     // 渲染进程崩溃
     app.on("render-process-gone", (e, w, detail) => {
@@ -103,7 +92,7 @@ async function createWindow(logo:BW) {
     load();
     function load() {
         // Load a remote URL
-        const promise = mode === "dev" ? win.loadURL("http://localhost:3000") : win.loadURL("app://./index.html");
+        const promise = mode === "dev" ? win.loadURL("http://localhost:3000") : win.loadFile(resolve(`./resources/app/public/index.html`));
 
         promise
             .then(() => {

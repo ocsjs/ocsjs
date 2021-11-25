@@ -1,9 +1,9 @@
 import { StartScript } from "../../script/index";
 import { LoginScript } from "../../script/login/types";
 import { AllScriptObjects } from "../../script/types";
-import { BaseTask, User } from "../../types";
+import { User } from "../../types";
 import { GetCourseList } from "../../script/task/get.course.list";
-import { Task } from "../task";
+ 
 import { Course } from "../../types/script/course";
 import { CXCourseEntry, CXScript } from "../../script/task/cx/cx.script";
 import { logger } from "../../types/logger";
