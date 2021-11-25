@@ -130,40 +130,42 @@ export abstract class UpdaterImpl implements Updater {
 // gitee 码云 更新服务器
 export class Gitee extends UpdaterImpl {
     async listTags(): Promise<Tag[]> {
-        // 获取授权码
-        const { data: auth } = await AxiosGet("https://auth.enncy.cn/token");
-        const access_token = auth.access_token;
-        // 获取所有 tag 标签
-        const { data: res } = await AxiosGet("https://gitee.com/api/v5/repos/enncy/online-course-script/tags?access_token=" + access_token);
-        const tags: Tag[] = [];
-        for (const { name, message, commit } of res as any[]) {
-            // 递归获取文件树
-            const { data: trees } = await AxiosGet(`https://gitee.com/api/v5/repos/enncy/online-course-script/git/trees/${commit.sha}?recursive=1&access_token=` + access_token);
-            let resource = "",
-                raw = "",
-                latest = "",
-                _size = 0;
+        try{
+            // 获取所有 tag 标签
+            const { data: res } = await AxiosGet("https://gitee.com/api/v5/repos/enncy/online-course-script/tags");
+            const tags: Tag[] = [];
+            for (const { name, message, commit } of res as any[]) {
+                // 递归获取文件树
+                const { data: trees } = await AxiosGet(`https://gitee.com/api/v5/repos/enncy/online-course-script/git/trees/${commit.sha}?recursive=1`);
+                let resource = "",
+                    raw = "",
+                    latest = "",
+                    _size = 0;
 
-            // 在资源树中寻找文件
-            for (const { path, size, sha } of (trees as any).tree) {
-                if (/ocs-app-resource\.zip/.test(path)) {
-                    resource = `https://gitee.com/enncy/online-course-script/blob/${name}/${path}`;
-                    raw = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}?access_token=${access_token}`;
-                    _size = size;
-                }
-                if (/latest\.json/.test(path)) {
-                    latest = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}?access_token=${access_token}`;
-                }
+                // 在资源树中寻找文件
+                for (const { path, size, sha } of (trees as any).tree) {
+                    if (/ocs-app-resource\.zip/.test(path)) {
+                        resource = `https://gitee.com/enncy/online-course-script/blob/${name}/${path}`;
+                        raw = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}`;
+                        _size = size;
+                    }
+                    if (/latest\.json/.test(path)) {
+                        latest = `https://gitee.com/api/v5/repos/enncy/online-course-script/git/blobs/${sha}`;
+                    }
 
-                if (resource && latest) {
-                    break;
+                    if (resource && latest) {
+                        break;
+                    }
+                }
+                if (resource && raw && latest) {
+                    tags.push({ name, message, latest, resource, size: _size, raw });
                 }
             }
-            if (resource && raw && latest) {
-                tags.push({ name, message, latest, resource, size: _size, raw });
-            }
+            return tags;
+        }catch(err:any){
+            UpdateNotify("error", "更新失败,可能是网络出错,或者更新太频繁，请稍后手动检测更新 : " + err.message);
+            return [];
         }
-        return tags;
     }
     async resolveResourceUrl(tag: Tag): Promise<string> {
         return tag.raw;
