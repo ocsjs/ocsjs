@@ -1,4 +1,4 @@
-import { app, BrowserWindowConstructorOptions } from "electron";
+import {  BrowserWindowConstructorOptions } from "electron";
 import { StoreGet } from "../types/setting";
 
 export const BrowserConfig: BrowserWindowConstructorOptions = {

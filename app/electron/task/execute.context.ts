@@ -1,5 +1,5 @@
 import { error } from "electron-log";
-import { Page, TimeoutError } from "puppeteer-core";
+import { Page } from "puppeteer-core";
 import { LoginScript } from "../../script/login/types";
 import { StoreGet, StoreSet } from "../../types/setting";
 import { RunnableTask } from "./runnable.task";

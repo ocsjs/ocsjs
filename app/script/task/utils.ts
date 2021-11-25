@@ -1,6 +1,4 @@
 import { WaitForScript } from "@pioneerjs/core";
-import { Frame } from "puppeteer-core";
-import { sleep } from "../common/utils";
 import { LoginScript } from "../login/types";
 
 /**

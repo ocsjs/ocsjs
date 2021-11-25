@@ -1,17 +1,9 @@
-import { shell } from "electron";
-import { errors, TimeoutError } from "puppeteer-core";
+ 
 import { Task } from ".";
-import { LoginScript } from "../../script/login/types";
-import { logger } from "../../types/logger";
-import { StoreGet, StoreSet } from "../../types/setting";
-import { OCSNotify } from "../events/ocs.event";
-import { ScriptTarget, ScriptTask } from "./script.task";
-import { BaseTask, TaskType } from "./types";
-
-const { info, error, success, warn } = logger("task");
-
-const notify = new OCSNotify("task", "任务系统");
-
+  
+import { ScriptTarget } from "./script.task";
+import {  TaskType } from "./types";
+  
 export type Target<T> = (...args: any[]) => Promise<T>;
 export type RunnableTaskOptions<R> = { target: ScriptTarget<R>; children?: RunnableTask<R> } & TaskType;
 
