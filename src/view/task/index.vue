@@ -9,7 +9,29 @@
         </div>
 
         <template v-else>
-            <span>当前有 {{ tasks.length }} 个任务运行中</span>
+            <div>
+                <span>当前有 {{ tasks.length }} 个任务运行中</span>
+
+                <a-popconfirm
+                    title="确定关闭所有任务吗？浏览器也会一同关闭"
+                    ok-text="确定"
+                    cancel-text="取消"
+                    @confirm="closeAllTask"
+                >
+                    <a-button
+                        class="margin-left-24"
+                        type="primary"
+                        shape="round"
+                        size="small"
+                        danger
+                    >
+                        <template #icon>
+                            <DeleteOutlined />
+                            关闭所有
+                        </template>
+                    </a-button>
+                </a-popconfirm>
+            </div>
 
             <div v-for="task of tasks">
                 <Card
@@ -36,6 +58,20 @@
                                 class="flex jc-flex-end ai-center ac-center space-10"
                                 style="height: 0px"
                             >
+                                <a-popover content="关闭任务">
+                                    <a-button
+                                        type="primary"
+                                        shape="circle"
+                                        size="small"
+                                        @click="closeTask(task.target)"
+                                        danger
+                                    >
+                                        <template #icon>
+                                            <DeleteOutlined />
+                                        </template>
+                                    </a-button>
+                                </a-popover>
+
                                 <a-popover content="详情">
                                     <a-button
                                         type="primary"
@@ -123,6 +159,7 @@ import Card from "@/components/common/Card.vue";
 import { ref } from "@vue/reactivity";
 import { PlatformAlias, BaseTask } from "app/types";
 import { Task } from "app/electron/task";
+import { Remote } from "@/utils/remote";
 
 // 当前 hover 的卡片组件
 const hoverId = ref("");
@@ -175,6 +212,18 @@ function formatTaskStatus(task: Task) {
         : task.status === "finish"
         ? "已完成"
         : "错误";
+}
+
+function closeTask(task: Task) {
+    tasks.value = tasks.value.filter((t) => t.target.id !== task.id);
+    Remote.script.call("close", task.id);
+}
+
+function closeAllTask() {
+    tasks.value.forEach((task) => {
+        Remote.script.call("close", task.target.id);
+    });
+    tasks.value = [];
 }
 </script>
 

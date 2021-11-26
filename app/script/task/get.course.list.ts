@@ -41,10 +41,10 @@ export function getCXCourseList(uid: string): ScriptTask<Course[]> {
                                     id: "",
                                     uid: "",
                                     platform: "cx",
-                                    img: el.querySelector(".course-cover > a > img").src,
-                                    url: el.querySelector(".course-cover > a").href,
-                                    profile: el.querySelector(".course-info").innerText.split(/\n+/).splice(1).join(" "),
-                                    name: el.querySelector(".course-info").innerText.split(/\n+/)[0],
+                                    img: el.querySelector(".course-cover > a > img")?.src,
+                                    url: el.querySelector(".course-cover > a")?.href,
+                                    profile: el.querySelector(".course-info")?.innerText.split(/\n+/).splice(1).join(" "),
+                                    name: el.querySelector(".course-info")?.innerText.split(/\n+/)[0],
                                 } as Course)
                         );
                 });
@@ -77,10 +77,10 @@ export function getZHSCourseList(uid: string): ScriptTask<Course[]> {
                                 id: "",
                                 uid: "",
                                 platform: "zhs",
-                                selector: `[src="${c.querySelector("img").src}"]`,
-                                img: c.querySelector("img").src,
-                                name: c.querySelector(".courseName").innerText,
-                                profile: c.querySelector(".teacherName").innerText.split("\n").join("●"),
+                                selector: `[src="${c.querySelector("img")?.src}"]`,
+                                img: c.querySelector("img")?.src,
+                                name: c.querySelector(".courseName")?.innerText,
+                                profile: c.querySelector(".teacherName")?.innerText.split("\n").join("●"),
                             } as Course)
                     );
                     console.log("cs", cs);

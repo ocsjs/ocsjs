@@ -38,9 +38,9 @@ export function ZHSScript(course: Course): ScriptTask<void> {
                 await waitFor.nextTick("requestfinished");
                 // 取消弹窗
                 await page.evaluate(() => {
-                    (document.querySelector(".v-modal") as HTMLDivElement).remove();
+                    (document.querySelector(".v-modal") as HTMLDivElement)?.remove();
                     (Array.from(document.querySelectorAll(".el-dialog__wrapper,.dialog")) as HTMLDivElement[]).forEach((e) => {
-                        e.remove();
+                        e?.remove();
                     });
                 });
                 await waitFor.sleep(5000);
@@ -78,7 +78,8 @@ export function ZHSScript(course: Course): ScriptTask<void> {
 
                             // 自动关闭
                             setTimeout(function () {
-                                window.history.back();
+                                window.location.href = "https://onlineweb.zhihuishu.com/";
+                                resolve()
                             }, autoStop * 60 * 60 * 1000);
 
                             setTimeout(() => {

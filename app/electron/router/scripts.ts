@@ -11,7 +11,7 @@ import { RunnableTask } from "../task/runnable.task";
 import { ScriptTask } from "../task/script.task";
 import { OCSNotify } from "../events/ocs.event";
 import { ZHSScript } from "../../script/task/zhs/zhs.script";
-import { ExecuteContext } from "../task/execute.context";
+import { ExecutableScriptPool, ExecuteContext } from "../task/execute.context";
 import { CXWork } from "../../script/task/cx/cx.work";
 import { ZHSWork } from "../../script/task/zhs/zhs.work";
 
@@ -90,4 +90,13 @@ export const ScriptRemote = {
             notify.error("暂时不支持此平台脚本！");
         }
     },
+
+    close(id:string){
+        for(let es of ExecutableScriptPool){
+            if(es.task.id === id){
+                es.script.browser.close()
+                es.script.browser.disconnect()
+            }
+        }
+    }
 };

@@ -22,11 +22,7 @@ export function ZHSWork(course: Course): ScriptTask<void> {
             return new Promise(async (resolve, reject) => {
                 const waitFor = new WaitForScript(script);
                 const { page } = script;
-
-                await waitFor.nextTick("requestfinished");
-                // 自动进入作业考试界面
-                await script.page.click("#app > div > div.box-content > div.box-right > ul > li:nth-child(2)");
-
+ 
                 await waitFor.nextTick("requestfinished");
                 // // 进入章节列表
 

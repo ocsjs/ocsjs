@@ -4,6 +4,9 @@ import { LoginScript } from "../../script/login/types";
 import { StoreGet, StoreSet } from "../../types/setting";
 import { RunnableTask } from "./runnable.task";
 
+// 执行中的任务池
+export let ExecutableScriptPool: { task: RunnableTask<any>; script: LoginScript }[] = [];
+
 export class ExecuteContext<R extends LoginScript> {
     // 当前的任务
     currentTask: RunnableTask<R>;
@@ -24,7 +27,7 @@ export class ExecuteContext<R extends LoginScript> {
     public exec(): RunnableTask<R> {
         new Promise(async (resolve, reject) => {
             process.on("uncaughtException", (err) => this.scriptErrorHandler(err));
-
+            
             process.on("unhandledRejection", (err: any, promise) => {
                 promise.catch((err) => this.scriptErrorHandler(err));
             });
@@ -34,6 +37,17 @@ export class ExecuteContext<R extends LoginScript> {
                 task: this.launchTask,
             });
 
+            // 关闭监听
+            script.browser.once('disconnected',()=>{
+                this.isContinue = false;
+                this.currentTask.error("浏览器已关闭")
+                ExecutableScriptPool = ExecutableScriptPool.filter((es) => es.task.id !== this.launchTask.id);
+            }) 
+            // 添加到可执行池
+            ExecutableScriptPool.push({
+                task: this.launchTask,
+                script,
+            });
             if (this.launchTask.children) {
                 // 执行任务
                 this.execChildTask(this.launchTask.children, script);
@@ -100,19 +114,22 @@ export class ExecuteContext<R extends LoginScript> {
         });
     }
 
-    scriptErrorHandler(err: any) {
-        let errMsg = err.toString();
-      
-        if (err.toString().indexOf("Most likely the page has been closed") !== -1 || err.toString().indexOf("Target closed") !== -1) {
-            errMsg = "任务运行错误，可能浏览器已关闭，或浏览器访问页面出错，请重启。";
+    scriptErrorHandler(err: any ) {
+        if(this.isContinue){
+            let errMsg = err.toString();
+
+            if (err.toString().indexOf("Most likely the page has been closed") !== -1 || err.toString().indexOf("Target closed") !== -1) {
+                errMsg = "任务运行错误，可能浏览器已关闭，或浏览器访问页面出错，请重启。";
+                this.currentTask.error(errMsg);
+                this.currentTask.destroy();
+            } else if (err.toString().indexOf("Execution context was destroyed") !== -1) {
+                errMsg = "任务运行错误，可能是页面刷新导致，请刷新页面或者重启。";
+            } else if (err.toString().indexOf("Execution context is not available in detached frame") !== -1) {
+                errMsg = "任务运行错误，可能是频繁切换页面导致。";
+            }
             this.currentTask.error(errMsg);
-            this.currentTask.destroy();
-        } else if (err.toString().indexOf("Execution context was destroyed") !== -1) {
-            errMsg = "任务运行错误，可能是页面刷新导致，请刷新页面或者重启。";
-        }else if(err.toString().indexOf("Execution context is not available in detached frame") !== -1){
-            errMsg = "任务运行错误，可能是频繁切换页面导致。";
+            error(this.currentTask.name + " 任务异常 unhandledRejection", err);
         }
-        this.currentTask.error(errMsg);
-        error(this.currentTask.name + " 任务异常 unhandledRejection", err);
+
     }
 }
