@@ -1,13 +1,10 @@
- 
 import { Frame } from "puppeteer-core";
 import { ScriptSetting } from "../../../../types";
 import { StoreGet } from "../../../../types/setting";
 
 import { sleep } from "../../../common/utils";
-import { logger } from "../../../../types/logger";
 import { Task } from "../../../../electron/task";
 import { QAHandler } from "../../qa.handler";
-const { info, error } = logger("qa");
 
 /**
  * 自动答题脚本
@@ -21,7 +18,7 @@ export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting[
         await sleep(3000);
         return;
     }
-    const qaHandler = new  QAHandler({
+    const qaHandler = new QAHandler({
         questionDivSelector: ".TiMu",
         titleDivSelector: ".Zy_TItle > .clearfix",
         choice: {

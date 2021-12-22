@@ -2,7 +2,7 @@ import EventEmitter from "events";
 
 import { CurrentWindow } from "..";
 import { OCSEventTypes, OCSEvents } from "../../types";
-import { Logger,logger} from "../../types/logger"
+import { Logger  } from "../logger";
 
 /**
  * ocs公用事件处理器
@@ -14,7 +14,7 @@ export class OCSEvent extends EventEmitter {
 
     constructor(name: string) {
         super();
-        this.logger = logger(name);
+        this.logger = Logger.of(name);
     }
 
     info(...msg: any[]) {

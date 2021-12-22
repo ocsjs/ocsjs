@@ -4,11 +4,11 @@
             <template v-if="fetchingInfo">
                 <a-skeleton active />
             </template>
-            <template v-else-if="!LatestInfo">
+            <template v-else-if="!updateInfos.latestInfo">
                 <a-empty description="当前暂无版本" :image="simpleImg" />
             </template>
 
-            <div v-else v-for="(item, index) in RepositoryTags.slice(0, tagSize)">
+            <div v-else v-for="(item, index) in updateInfos.tags.slice(0, tagSize)">
                 <div
                     class="padding-4"
                     @mouseenter="mouseEnter(index)"
@@ -48,12 +48,35 @@
             </a-upload-dragger>
         </card>
 
+        <card title="更新设置">
+            <item font-bold label="自动检测更新" description="每次启动软件自动检测更新">
+                <a-switch
+                    checked-children="开"
+                    un-checked-children="关"
+                    v-model:checked="updateInfos.autoUpdate"
+                />
+                <br />
+            </item>
+            <item
+                font-bold
+                label="更新源"
+                md
+                description="软件更新服务器<br>`腾讯云` : 腾讯云 对象存储 更新服务器<br>`JsDelivr`: 文件加速网站，偶尔会访问错误<br>`Gitee`: 码云，国内平台，存在更新限制（1-2次） "
+            >
+                <a-radio-group size="small" v-model:value="updateInfos.updateSource">
+                    <a-radio-button value="TencentCloud"> 腾讯云 (默认) </a-radio-button>
+                    <a-radio-button value="JsDelivr"> JsDelivr </a-radio-button>
+                    <a-radio-button value="Gitee"> Gitee </a-radio-button>
+                </a-radio-group>
+            </item>
+        </card>
+
         <card title="当前版本信息">
             <item label="当前版本" font-bold>
                 <span class="space-10 flex">
-                    <span>{{ ElectronVersion }} </span>
+                    <span>{{ json.version }} </span>
                     <LoadingOutlined v-if="fetchingInfo" />
-                    <div v-else-if="needUpdate">
+                    <div v-else-if="updateInfos.needUpdate">
                         <a-tag color="#f50">需要更新</a-tag>
                     </div>
                     <div v-else>
@@ -61,31 +84,39 @@
                     </div>
                 </span>
             </item>
-            <template v-if="CurrentLatestInfo">
+
+            <template v-if="updateInfos.currentLatestInfo">
                 <item font-bold label="描述">
                     <a-popover title="详情">
                         <template #content>
                             <md-render
-                                :content="CurrentLatestInfo.message.join('<br>')"
+                                :content="
+                                    updateInfos.currentLatestInfo.message.join('<br>')
+                                "
                             ></md-render>
                         </template>
                         <span style="height: 22px">
-                            {{ CurrentLatestInfo.message[0] }}
+                            {{ updateInfos.currentLatestInfo.message[0] }}
                             <span class="font-v4">{{
-                                CurrentLatestInfo.message.length > 1 ? "...更多" : ""
+                                updateInfos.currentLatestInfo.message.length > 1
+                                    ? "...更多"
+                                    : ""
                             }}</span>
                         </span>
                     </a-popover>
                 </item>
                 <item font-bold label="大小">
-                    {{ showFormatSize(CurrentLatestInfo.size) }}
+                    {{ showFormatSize(updateInfos.currentLatestInfo.size) }}
                 </item>
                 <item font-bold label="发布日期">
-                    {{ new Date(CurrentLatestInfo.date).toLocaleString() }}
+                    {{ new Date(updateInfos.currentLatestInfo.date).toLocaleString() }}
                 </item>
             </template>
+
             <template v-else>
-                <span>版本信息获取失败，可能是远程文件丢失。</span>
+                <item font-bold label="详情">
+                    <span>版本信息获取失败，可能是远程文件丢失。</span>
+                </item>
             </template>
 
             <item font-bold label="操作">
@@ -104,14 +135,14 @@
         <a-modal
             title="版本更新"
             v-model:visible="updating"
-            @ok="selectedTag && GiteeUpdater.update(selectedTag)"
-            okText="确认更新"
+            @ok="update"
+            okText="切换到此版本"
             cancelText="取消"
         >
             <template v-if="selectedTag && updateLatestInfo">
                 <item font-bold label="版本"> {{ selectedTag.name }} </item>
                 <item font-bold label="大小">
-                    {{ showFormatSize(selectedTag.size) }}
+                    {{ showFormatSize(updateLatestInfo.size) }}
                 </item>
                 <item font-bold label="发布时间">
                     {{ new Date(updateLatestInfo.date).toLocaleString() }}
@@ -131,20 +162,13 @@
 </template>
 
 <script setup lang="ts">
-import { Remote, ElectronVersion } from "@/utils/remote";
+import json from "root/package.json";
+import { Remote } from "@/utils/remote";
 import { ref } from "vue";
 import Card from "@/components/common/Card.vue";
 import Item from "@/components/common/item.vue";
 import { Empty } from "ant-design-vue";
-import {
-    fetchingInfo,
-    GiteeUpdater,
-    LatestInfo,
-    needUpdate,
-    refreshUpdateInfo,
-    CurrentLatestInfo,
-    RepositoryTags,
-} from "./updater";
+import { fetchingInfo, Updater, updateInfos, refreshUpdateInfo } from "./updater";
 import {
     showFormatSize,
     UpdateNotify,
@@ -187,11 +211,20 @@ const selectedTag = ref<Tag>();
 
 const updating = ref(false);
 const updateLatestInfo = ref<LatestType>();
+
 async function updateVersion(tag: Tag) {
     console.log("update", tag);
-    updateLatestInfo.value = await GiteeUpdater.getLatestInfo(tag);
+    updateLatestInfo.value = await Updater.getLatestInfo(tag);
     selectedTag.value = tag;
     updating.value = !updating.value;
+}
+
+function update() {
+    if (selectedTag.value && updateLatestInfo.value) {
+        Updater.update(selectedTag.value, updateLatestInfo.value);
+    } else {
+        UpdateNotify("error", "未选择更新版本，请重新选择");
+    }
 }
 </script>
 

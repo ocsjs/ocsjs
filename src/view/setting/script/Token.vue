@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { TokenInfo, CheckLoading, checkToken, config } from "@/utils/store";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 import { onUnmounted } from "vue";
 const account = config.setting.script.account;
 // loadsh 防抖

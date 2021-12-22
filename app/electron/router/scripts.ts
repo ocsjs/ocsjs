@@ -3,10 +3,10 @@ import { LoginScript } from "../../script/login/types";
 import { AllScriptObjects } from "../../script/types";
 import { User } from "../../types";
 import { GetCourseList } from "../../script/task/get.course.list";
- 
+
 import { Course } from "../../types/script/course";
 import { CXCourseEntry, CXScript } from "../../script/task/cx/cx.script";
-import { logger } from "../../types/logger";
+import { Logger } from "../logger";
 import { RunnableTask } from "../task/runnable.task";
 import { ScriptTask } from "../task/script.task";
 import { OCSNotify } from "../events/ocs.event";
@@ -15,7 +15,7 @@ import { ExecutableScriptPool, ExecuteContext } from "../task/execute.context";
 import { CXWork } from "../../script/task/cx/cx.work";
 import { ZHSWork } from "../../script/task/zhs/zhs.work";
 
-const { info } = logger("script");
+const logger = Logger.of("script");
 const notify = new OCSNotify("script", "任务系统");
 /**
  * 脚本映射实现，使用此类当做 typeof 类型并且远程映射到渲染进程。具体看 remote.ts
@@ -47,7 +47,7 @@ export const ScriptRemote = {
      * @returns
      */
     login(name: keyof AllScriptObjects, user: User, ...task: ScriptTask<any>[]) {
-        info("[脚本启动]:", { name, user: user.uid });
+        logger.info("[脚本启动]:", JSON.stringify({ name, user: user.uid }));
 
         const ctx = new ExecuteContext(
             RunnableTask.linkTasks(
@@ -91,12 +91,12 @@ export const ScriptRemote = {
         }
     },
 
-    close(id:string){
-        for(let es of ExecutableScriptPool){
-            if(es.task.id === id){
-                es.script.browser.close()
-                es.script.browser.disconnect()
+    close(id: string) {
+        for (let es of ExecutableScriptPool) {
+            if (es.task.id === id) {
+                es.script.browser.close();
+                es.script.browser.disconnect();
             }
         }
-    }
+    },
 };

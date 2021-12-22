@@ -72,6 +72,7 @@
                         <div class="flex jc-flex-end">
                             <a-button
                                 type="primary"
+                                class="margin-right-12"
                                 @click="prev"
                             >
                                 上一步
@@ -97,11 +98,9 @@
 <script setup lang="ts">
 import { checkToken, config, TokenInfo } from "@/utils/store";
 import { ref } from "@vue/reactivity";
-import { message } from "ant-design-vue";
-import { debounce } from "lodash";
+import debounce from "lodash/debounce";
 import { MdRender } from "mark-ui";
 import { onUnmounted } from "vue";
-const { shell } = require("electron");
 const { launch, account } = config.setting.script;
 const fs = require("fs");
 

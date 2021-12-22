@@ -1,5 +1,5 @@
 import { EventFormat, registerRemoteEventNames, ScriptRemoteType, TaskType } from "app/types";
-import { BrowserWindow, App, Dialog } from "electron";
+import { BrowserWindow, App, Dialog, WebContents } from "electron";
 
 const { ipcRenderer } = require("electron");
 const uuid = require("uuid");
@@ -45,6 +45,8 @@ function registerRemote<T>(eventName: string) {
 export const Remote = {
     // 注册 window 通信
     win: registerRemote<BrowserWindow>("win"),
+    // 注册 window 通信
+    webContents: registerRemote<WebContents>("webContents"),
     // 注册 app 通信
     app: registerRemote<App>("app"),
     // 注册 dialog 通信
@@ -69,5 +71,4 @@ export const Remote = {
         };
     },
 };
-
-export const ElectronVersion = Remote.app.call("getVersion");
+ 

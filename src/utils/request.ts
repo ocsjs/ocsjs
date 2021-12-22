@@ -30,7 +30,7 @@ axios.interceptors.request.use(
         return config;
     },
     function (error: any) {
-        console.log(error);
+        console.log("网络错误",error);
 
         Modal.error({
             title: "网络错误",
@@ -48,7 +48,7 @@ axios.interceptors.response.use(
         return response;
     },
     function (error: any) {
-        console.log(error);
+        console.log("网络错误",error);
         Modal.error({
             title: "网络错误",
             content: error,
@@ -61,12 +61,12 @@ axios.interceptors.response.use(
 
 export const AxiosGet = axios.create({
     method: "get",
-    timeout: 2 * 60 * 1000,
+    timeout: 3 * 60 * 1000,
 });
 
 export const AxiosPost = axios.create({
     method: "post",
-    timeout: 2 * 60 * 1000,
+    timeout: 3 * 60 * 1000,
 });
 export const request = axios.create({
     timeout: 1 * 60 * 1000,

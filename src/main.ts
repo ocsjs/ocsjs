@@ -1,12 +1,15 @@
 import { createApp } from "vue";
 
 import App from "./App.vue";
+
 import { router } from "./router";
+// import { dynamicImportRouter } from "./router/dynamic.import.router";
 
 import { message } from "ant-design-vue";
-import "ant-design-vue/dist/antd.css";
+// import "ant-design-vue/dist/antd.css";
 // antdv IconFont 远程阿里图标库ICON
 import { createFromIconfontCN } from "@ant-design/icons-vue";
+
 const IconFont = createFromIconfontCN({
     scriptUrl: "https://at.alicdn.com/t/font_2849771_3az41crtc9.js",
 });

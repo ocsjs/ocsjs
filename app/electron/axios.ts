@@ -1,17 +1,17 @@
 import axios from "axios";
-import { logger } from "../types/logger";
-const { info, error } = logger("request");
+import { Logger } from "./logger";
+const logger = Logger.of("request");
 
 // 添加请求拦截器
 axios.interceptors.request.use(
     function (config: any) {
         // 在发送请求之前做些什么
-        info("网络请求:", config);
+        logger.info("网络请求:", JSON.stringify(config));
         return config;
     },
     function (err: any) {
         // 对请求错误做些什么
-        error("网络失败:", err);
+        logger.error("网络失败:", err);
         return Promise.reject(err);
     }
 );
@@ -19,12 +19,12 @@ axios.interceptors.request.use(
 // 添加响应拦截器
 axios.interceptors.response.use(
     function (response: any) {
-        info("网络响应成功:", response);
+        logger.info("网络响应成功:", JSON.stringify(response));
         // 对响应数据做点什么
         return response;
     },
     function (err: any) {
-        error("网络响应错误:", err);
+        logger.error("网络响应错误:", err);
         // 对响应错误做点什么
         return Promise.reject(err);
     }

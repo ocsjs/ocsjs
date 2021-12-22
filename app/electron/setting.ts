@@ -1,13 +1,13 @@
 import { app } from "electron";
- 
+
 import { CurrentWindow } from ".";
 import { Setting, StoreSchema } from "../types";
-import { store,  StoreSet } from "../types/setting";
+import { store, StoreSet } from "../types/setting";
 import { Version } from "../types/version";
-import { logger } from "../types/logger";
-import {  join, resolve } from "path";
+import { Logger } from "./logger";
+import { join, resolve } from "path";
 import { existsSync, mkdirSync } from "fs";
-const { info } = logger("setting");
+const logger = Logger.of("setting");
 
 export function InitSetting() {
     let setting: Setting | undefined = store.get("setting");
@@ -15,17 +15,17 @@ export function InitSetting() {
 
     if (setting && setting.version) {
         const update = new Version(app.getVersion()).greaterThan(new Version(setting.version));
-        info(update ? "检测到设置版本需要更新!" : "本地设置无需更新");
+        logger.info(update ? "检测到设置版本需要更新!" : "本地设置无需更新");
 
         if (update) {
             const defaultSetting = GetDefaultSetting();
-            info("本地设置:", setting);
-            info("更新设置值:", defaultSetting);
+            logger.info("本地设置:", JSON.stringify(setting));
+            logger.info("更新设置值:", JSON.stringify(defaultSetting));
             // 合并设置，除了 version 字段 , 其他以原有设置为准，添加新的配置
             setting.version = app.getVersion();
             const newValue: Setting = deepMerge(defaultSetting, setting);
             StoreSet("setting", newValue);
-            info("合并后的设置值:", newValue);
+            logger.info("合并后的设置值:", JSON.stringify(newValue));
 
             // 更新赋值
             setting = newValue;
@@ -33,7 +33,7 @@ export function InitSetting() {
     } else {
         const defaultSetting = GetDefaultSetting();
 
-        info("初始化设置值:", defaultSetting);
+        logger.info("初始化设置值:", JSON.stringify(defaultSetting));
         // 初始化配置
         StoreSet("setting", defaultSetting);
         StoreSet("tasks", []);
@@ -149,10 +149,10 @@ function initPath(path: StoreSchema["setting"]["system"]["path"]) {
     if (path) {
         for (const key in path) {
             const p = (path as any)[key];
-            info("设置路径:" + key, p);
+            logger.info("设置路径:" + key, p);
             // 如果文件夹不存在则创建
             if (!existsSync(p)) {
-                info("mkdirs", p);
+                logger.info("mkdirs", p);
                 mkdirs(p);
             }
             try {
@@ -166,7 +166,7 @@ function initPath(path: StoreSchema["setting"]["system"]["path"]) {
 export function getChromePath() {
     let paths = [process.env.ProgramFiles, process.env["ProgramFiles(x86)"], "C:\\Program Files", "C:\\Program Files (x86)"];
     let chromePath = paths.map((p) => join(p || "", "\\Google\\Chrome\\Application\\chrome.exe")).find((p) => existsSync(p));
-    info("获取本地chrome浏览器路径:", chromePath);
+    logger.info("获取本地chrome浏览器路径:", chromePath);
     return chromePath;
 }
 

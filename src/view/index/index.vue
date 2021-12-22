@@ -31,7 +31,7 @@
                         {{ json.name }}
                     </a-descriptions-item>
                     <a-descriptions-item label="版本">
-                        v{{ ElectronVersion }}
+                        v{{ json.version }}
                     </a-descriptions-item>
                     <a-descriptions-item label="作者">
                         {{ json.author }}
@@ -69,7 +69,7 @@
 
 <script setup lang="ts">
 import json from "root/package.json";
-import { ElectronVersion } from "@/utils/remote";
+ 
 import { config } from "@/utils/store";
 import { ref } from "@vue/reactivity";
 import Guide from "./guide.vue";

@@ -6,9 +6,10 @@ import { EventFormat } from "../../types";
 
 import { StoreGet, StoreSet } from "../../types/setting";
 import { BaseTask, TaskStatus, TaskType } from "./types";
-import { logger } from "../../types/logger";
+import { Logger } from "../logger";
 import { OCSNotify } from "../events/ocs.event";
-const { info, error, success, warn } = logger("task");
+
+const logger = Logger.of("task");
 
 const notify = new OCSNotify("task", "任务系统");
 /**
@@ -55,25 +56,25 @@ export class Task extends EventEmitter implements BaseTask {
     }
 
     finish(value?: any) {
-        success(this.name, value);
+        logger.success(this.name, value);
         this.status = "finish";
         CurrentWindow?.webContents.send(this.eventFormat("finish", this.id), value);
         this.emit(this.eventFormat("finish"));
-        success("finish", this.toString());
+        logger.success("finish", this.toString());
     }
 
     process(msg?: string) {
-        info(this.name, msg || "");
+        logger.info(this.name, msg || "");
         this.change("process", msg || "");
     }
 
     error(msg?: string) {
-        error(this.name, msg || "");
+        logger.error(this.name, msg || "");
         this.change("error", msg || "");
     }
 
     warn(msg?: string) {
-        warn(this.name, msg || "");
+        logger.warn(this.name, msg || "");
         this.change("warn", msg || "");
     }
 
@@ -84,19 +85,19 @@ export class Task extends EventEmitter implements BaseTask {
             this.msg = msg;
             CurrentWindow?.webContents.send(this.eventFormat(status, this.id), msg || "");
             this.emit(this.eventFormat(status));
-            error(status, this.toString());
+            logger.error(status, this.toString());
         }
     }
 
     update() {
-        let localTasks = StoreGet("tasks")||[]
+        let localTasks = StoreGet("tasks") || [];
         localTasks.splice(
             localTasks.findIndex((t) => t.id === this.id),
             1,
             this.toString()
         );
         StoreSet("tasks", localTasks);
-        info("task更新", this.toString());
+        logger.info("task更新", this.toString());
     }
 
     destroy() {
@@ -104,13 +105,13 @@ export class Task extends EventEmitter implements BaseTask {
     }
 
     remove() {
-        let localTasks = StoreGet("tasks")||[]
+        let localTasks = StoreGet("tasks") || [];
         localTasks.splice(
             localTasks.findIndex((t) => t.id === this.id),
             1
         );
         StoreSet("tasks", localTasks);
-        info("task移除", this.toString());
+        logger.info("task移除", this.toString());
     }
 
     // 格式化此对象，可序列化

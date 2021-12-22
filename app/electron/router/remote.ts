@@ -1,9 +1,9 @@
 import { ipcMain, app, dialog } from "electron";
 import { CurrentWindow } from "..";
 import { registerRemoteEventNames } from "../../types";
-import { logger } from "../../types/logger";
+import { Logger } from "../logger";
 import { ScriptRemote } from "./scripts";
-const { info } = logger("remote");
+const logger = Logger.of("remote");
 /**
  * 注册主进程远程通信事件
  * @param name 事件前缀名称，需要传递到 {@link registerRemoteEventNames}
@@ -11,7 +11,7 @@ const { info } = logger("remote");
  */
 export function registerRemoteEvent(name: string, target: any) {
     const events = registerRemoteEventNames(name);
-    info("remote事件注册", name);
+    logger.info("remote事件注册", name);
     ipcMain
         .on(events.get, (event: any, arg: any[]) => {
             // info(events.get, arg);
@@ -59,5 +59,7 @@ export function RemoteRouter() {
     registerRemoteEvent("script", script);
     registerRemoteEvent("app", app);
     registerRemoteEvent("win", win);
+    registerRemoteEvent("webContents", CurrentWindow?.webContents);
+
     registerRemoteEvent("dialog", dialog);
 }

@@ -1,14 +1,12 @@
- 
-import { info, error } from "electron-log";
 import { ElementHandle, Frame } from "puppeteer-core";
 import { AxiosPost } from "../../electron/axios";
 import { StoreGet } from "../../types/setting";
 import { sleep } from "../common/utils";
 import similarity from "string-similarity";
-import https from 'https';
+import https from "https";
 import { Task } from "../../electron/task";
-
-
+import { Logger } from "../../electron/logger";
+const logger = Logger.of("qa");
 
 export interface AnswerType {
     success: number;
@@ -31,13 +29,12 @@ export interface QACallback {
     error?: () => any;
 }
 
-
 /**
  * 查题
  * @param question 题目
  * @returns
  */
- export async function queryAnswer(question: string): Promise<AnswerType> {
+export async function queryAnswer(question: string): Promise<AnswerType> {
     // 查题
     const agent = new https.Agent({
         rejectUnauthorized: false,
@@ -61,7 +58,7 @@ export interface QACallback {
     return { success, question: q, answer };
 }
 
-export interface  QAHandlerType {
+export interface QAHandlerType {
     questionDivSelector: string;
     titleDivSelector: string;
     typeResolver: (questionDiv: ElementHandle<HTMLDivElement>) => Promise<"choice" | "judgment" | "completion" | undefined>;
@@ -90,7 +87,7 @@ export interface HandlerOptions {
     passRate: number;
 }
 
-export class  QAHandler implements  QAHandlerType {
+export class QAHandler implements QAHandlerType {
     questionDivSelector: string;
     titleDivSelector: string;
     // 题目类型处理器
@@ -107,7 +104,7 @@ export class  QAHandler implements  QAHandlerType {
     // 保存答案
     onSave: (rate: number) => Promise<void>;
 
-    constructor({ questionDivSelector, titleDivSelector, choice, judgment, completion, onError, onSave, onSuccess, typeResolver, titleTransform }:  QAHandlerType) {
+    constructor({ questionDivSelector, titleDivSelector, choice, judgment, completion, onError, onSave, onSuccess, typeResolver, titleTransform }: QAHandlerType) {
         this.questionDivSelector = questionDivSelector;
         this.titleDivSelector = titleDivSelector;
         this.choice = choice;
@@ -122,7 +119,7 @@ export class  QAHandler implements  QAHandlerType {
 
     async handle({ task, frame, autoReport, passRate }: HandlerOptions) {
         const Questions = await frame.$$(this.questionDivSelector);
-      
+
         if (Questions.length !== 0) {
             task.process(`正在自动答题,一共${Questions.length}个题目`);
 
@@ -139,10 +136,9 @@ export class  QAHandler implements  QAHandlerType {
                     // 去掉冗余字段
 
                     title = this.titleTransform(title);
-                    task.process(`【${(type==="choice" ? "选择题" : type==="judgment" ? "判断题" : type ==="completion" ? "填空题" : "未知题型")}】:` + title);
-                    
+                    task.process(`【${type === "choice" ? "选择题" : type === "judgment" ? "判断题" : type === "completion" ? "填空题" : "未知题型"}】:` + title);
+
                     const answerType = await queryAnswer(title);
-                     
 
                     // 页面上的输出样式
                     let success = "background-color: #f6ffed; border: 1px solid #b7eb8f;";
@@ -175,7 +171,6 @@ export class  QAHandler implements  QAHandlerType {
 
                     // 匹配答案
                     if (answerType.success) {
-                        
                         await PageAlert(success);
                         // 选择题
                         if (type === "choice") {
@@ -200,26 +195,26 @@ export class  QAHandler implements  QAHandlerType {
                             // 填空题
                             await completionHandler(answerType, frame, question, {
                                 success() {
-                                    task.process("选择题完成")
+                                    task.process("选择题完成");
                                     finishCount++;
                                 },
-                                error(){
-                                    task.error("选择题未能完成")
-                                }
+                                error() {
+                                    task.error("选择题未能完成");
+                                },
                             });
                         } else {
-                            info("不支持的题目类型");
+                            logger.info("不支持的题目类型");
                         }
                     } else {
                         await PageAlert(err);
                         console.log(answerType);
-                        error(answerType);
+                        logger.error(answerType);
                         task.error(answerType.answer);
                     }
                 } catch (err) {
                     console.log(err);
                     this.onError();
-                    error(err);
+                    logger.error(err);
                 }
 
                 await sleep(3000);
@@ -228,7 +223,7 @@ export class  QAHandler implements  QAHandlerType {
             // 如果超过通过率，则自动提交，否则暂时保存
             if (Questions.length !== 0 && autoReport) {
                 let rate = (finishCount / Questions.length) * 100;
-                info("通过率:", passRate, "结果:", rate);
+                logger.info("通过率:", passRate, "结果:", rate);
 
                 if (rate >= passRate) {
                     await this.onSuccess(parseInt(rate.toFixed(2)));
@@ -239,7 +234,6 @@ export class  QAHandler implements  QAHandlerType {
         }
     }
 }
-
 
 /**
  * 选择题处理器
@@ -334,7 +328,7 @@ export async function JudgmentHandler({ question, answer }: AnswerType, frame: F
         error?.();
     }
 
-    info({ type: "判断题", question, answer, ratings: target });
+    logger.info(JSON.stringify({ type: "判断题", question, answer, ratings: target }));
 }
 
 /**
@@ -353,9 +347,9 @@ export async function completionHandler({ question, answer }: AnswerType, frame:
             if (textareas.length === answers.length) {
                 for (let i = 0; i < textareas.length; i++) {
                     textareas[i].value = answers[i] || "不知道";
-                    let frame = iframes[i]
-                    if(frame && frame.contentWindow){
-                        frame.contentWindow.document.body.innerHTML = "<p>"+(answers[i] || "不知道")+"</p>"
+                    let frame = iframes[i];
+                    if (frame && frame.contentWindow) {
+                        frame.contentWindow.document.body.innerHTML = "<p>" + (answers[i] || "不知道") + "</p>";
                     }
                 }
                 return true;
@@ -370,5 +364,5 @@ export async function completionHandler({ question, answer }: AnswerType, frame:
     } else {
         error?.();
     }
-    info({ type: "填空题", question, answer, completions: ans });
+    logger.info(JSON.stringify({ type: "填空题", question, answer, completions: ans }));
 }

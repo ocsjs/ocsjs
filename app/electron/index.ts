@@ -1,67 +1,63 @@
-import { app, protocol, BrowserWindow, BrowserWindow as BW, shell } from "electron";
+import { app, dialog, BrowserWindow, BrowserWindow as BW, shell, protocol } from "electron";
 import { normalize, resolve } from "path";
-import { logger } from "../types/logger";
-import { log } from "electron-log";
+import { Logger } from "./logger";
 import { BrowserConfig } from "./config";
 import { RemoteRouter } from "./router/remote";
 import { InitSetting } from "./setting";
 
-
-
 const t = Date.now();
 
-const { info, error, task } = logger("system");
+let logger: Logger;
 
 process.on("uncaughtException", (err) => {
-    log("uncaughtException", err);
-    error("uncaughtException", err);
+    logger?.error("uncaughtException", err);
+    dialog.showErrorBox("系统错误", err.stack || err.toString());
 });
 
 process.on("unhandledRejection", (err: any) => {
-    log("unhandledRejection", err);
-    error("unhandledRejection", err);
+    logger?.error("unhandledRejection", err);
+    dialog.showErrorBox("系统错误", err.stack || err.toString());
 });
 
 // 判断开发环境
 var mode = app.isPackaged ? "prod" : "dev";
 
-info("开发环境:" + mode);
-
 export let CurrentWindow: BW | undefined = undefined;
 
-app.disableHardwareAcceleration();
+// 禁用 GPU 加速
+// app.disableHardwareAcceleration();
 
 app.whenReady().then(async () => {
-    
+    logger = Logger.of("system");
+    logger.info("开发环境:" + mode);
+    logger.info("ready 启动用时:" + (Date.now() - t));
+
+    // 加载 logo
     const logo = new BrowserWindow({
-        width: 200,
-        height: 200,
-    
-        minWidth:200,
-        minHeight:200,
-    
+        width: 120,
+        height: 120,
+        minWidth: 120,
+        minHeight: 120,
         maximizable: false,
-        frame:false,
+        frame: false,
         center: true,
         alwaysOnTop: true,
         transparent: true,
         webPreferences: {
-             
             // 开启node
             nodeIntegration: true,
         },
     });
-    logo.loadFile(resolve(`./resources/app/public/logo.html`))
- 
-    // 渲染进程崩溃
-    app.on("render-process-gone", (e, w, detail) => {
-        error("render-process-gone", detail);
+
+    await logger.task("注册协议", async () => {
+        return protocol.registerFileProtocol("app", (req: any, callback: any) => {
+            const url = req.url.replace("app://", "");
+            const _path = normalize(resolve(`./resources/app/public`, url));
+            callback({ path: _path });
+        });
     });
 
-    // 子进程崩溃
-    app.on("child-process-gone", (e, detail) => {
-        error("child-process-gone", detail);
-    });
+    logo.loadURL("app://./logo.html");
 
     app.on("activate", function () {
         if (BrowserWindow.getAllWindows().length === 0) createWindow(logo);
@@ -73,34 +69,35 @@ app.whenReady().then(async () => {
 
     // 以下顺序不能更换！
     // 初始化配置
-
-    await task("初始化系统设置", async () => {
+    logger.task("初始化系统设置", async () => {
         return InitSetting();
     });
-
-    await task("渲染进程启动", async () => {
-        CurrentWindow = await createWindow(logo);
+    logger.task("渲染进程启动", async () => {
+        return createWindow(logo);
     });
-    await task("初始化远程通信", async () => {
-        RemoteRouter();
+    logger.task("初始化远程通信", async () => {
+        return RemoteRouter();
     });
 });
 
-async function createWindow(logo:BW) {
-    const win = new BrowserWindow(BrowserConfig);
+async function createWindow(logo: BW) {
+    const t2 = Date.now();
 
-    load();
-    function load() {
+    CurrentWindow = new BrowserWindow(BrowserConfig);
+
+    load(CurrentWindow);
+    function load(win: BW) {
         // Load a remote URL
-        const promise = mode === "dev" ? win.loadURL("http://localhost:3000") : win.loadFile(resolve(`./resources/app/public/index.html`));
+        const promise = mode === "dev" ? win.loadURL("http://localhost:3000") : win.loadURL("app://./index.html");
 
         promise
             .then(() => {
-                logo.close()
+                logo.close();
                 win.show();
 
                 if (mode === "dev") win.webContents.openDevTools();
-                info("启动用时:" + (Date.now() - t));
+
+                logger.info("show 软件渲染用时:" + (Date.now() - t2));
                 // 拦截页面跳转
                 win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {
                     e.preventDefault();
@@ -114,13 +111,15 @@ async function createWindow(logo:BW) {
                 });
             })
             .catch((err: any) => {
-                setTimeout(() => {
-                    info("正在重新加载中!");
-                    load();
-                }, 2000);
-                error(err);
+                if (mode === "dev") {
+                    setTimeout(() => {
+                        logger.info("正在重新加载中!");
+                        load(win);
+                    }, 2000);
+                    logger.error(err);
+                } else {
+                    dialog.showErrorBox("启动失败", err);
+                }
             });
     }
-
-    return win;
 }
