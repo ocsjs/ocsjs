@@ -1,6 +1,6 @@
 import { Injectable } from "@pioneerjs/common";
 import { InjectableScript, WaitForScript } from "@pioneerjs/core";
- 
+
 // 登录工具类
 export abstract class LoginUtils extends InjectableScript {
     async waitForLogin(timeout?: number): Promise<void> {
@@ -12,7 +12,6 @@ export abstract class LoginUtils extends InjectableScript {
                     if (RegExp(await this.indexUrl()).test(req.url())) {
                         await waitFor.nextTick("requestfinished");
                         await waitFor.documentReady();
-                        await this.page.waitForSelector(await this.waitForSelector());
                         resolve();
                     }
                 });
@@ -23,7 +22,6 @@ export abstract class LoginUtils extends InjectableScript {
                 await waitFor.nextTick("requestfinished");
                 await waitFor.documentReady();
                 if (RegExp(await this.indexUrl()).test(this.page.url())) {
-                    await this.page.waitForSelector(await this.waitForSelector());
                     resolve();
                 } else {
                     reject("登录失败,请重试！");
@@ -34,7 +32,6 @@ export abstract class LoginUtils extends InjectableScript {
 
     abstract indexUrl(): Promise<string>;
     abstract login(): Promise<void>;
-    abstract waitForSelector(): Promise<string>;
 }
 
 /**
@@ -42,9 +39,6 @@ export abstract class LoginUtils extends InjectableScript {
  */
 @Injectable()
 export class CXLoginUtils extends LoginUtils {
-    async waitForSelector() {
-        return "#to_top";
-    }
     async indexUrl() {
         return "space/index";
     }
@@ -58,9 +52,6 @@ export class CXLoginUtils extends LoginUtils {
  */
 @Injectable()
 export class ZHSLoginUtils extends LoginUtils {
-    async waitForSelector() {
-        return ".datalist";
-    }
     async indexUrl() {
         return "onlinestuh5";
     }

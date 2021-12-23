@@ -62,6 +62,7 @@ export abstract class UpdaterImpl implements Updater {
                 try {
                     AxiosGet({
                         url,
+                        responseType: "arraybuffer",
                         // 对原生进度事件的处理
                         onDownloadProgress: function (evt: ProgressEvent) {
                             UpdateNotify(
@@ -76,16 +77,19 @@ export abstract class UpdaterImpl implements Updater {
                         },
                     })
                         .then((res: any) => {
-                            var buffer = Buffer.from(res.data.content, "base64");
+                            console.log("AxiosGet", res);
                             UpdateNotify("info", "保存压缩包中");
-                            writeFileSync(file, buffer);
+                            console.log("path ", file, "=>", resolve(join(file, "../app/")));
+                            writeFileSync(file, Buffer.from(res.data));
                             UpdateNotify("info", "正在解压更新文件");
                             unzipResource(file, resolve(join(file, "../app/")));
                         })
                         .catch((err: any) => {
+                            console.error(err);
                             UpdateNotify("error", "更新失败,压缩包下载失败！ " + err.message);
                         });
                 } catch (err: any) {
+                    console.error(err);
                     UpdateNotify("error", "更新失败 " + err.message);
                 }
             } else {

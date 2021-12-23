@@ -1,11 +1,13 @@
 import { Version } from "app/types/version";
-import { reactive, ref, toRaw, watch } from "vue";
+import { h, reactive, ref, toRaw, watch } from "vue";
 import { createUpdater, UpdateInfos, UpdateNotify } from "./types";
 import json from "root/package.json";
 import { store } from "app/types/setting";
 import { UpdaterImpl } from "./updater";
+import { Button, message } from "ant-design-vue";
+import { Remote } from "@/utils/remote";
 
-const local = store.get("updateInfos");
+let local = store.get("updateInfos");
 console.log("local", local);
 
 export const updateInfos: UpdateInfos = reactive(
@@ -23,12 +25,17 @@ export const updateInfos: UpdateInfos = reactive(
           }
 );
 // 实时更新
-watch(updateInfos, () => {
-    console.log("updateInfos change", updateInfos);
+watch(updateInfos, async (newU) => {
+    if (local !== undefined && JSON.parse(local).updateSource !== newU.updateSource) {
+        local = JSON.stringify(toRaw(updateInfos));
+        Updater = createUpdater(newU.updateSource);
+        await refreshUpdateInfo();
+    }
+
     store.set("updateInfos", JSON.stringify(toRaw(updateInfos)));
 });
 
-export const Updater: UpdaterImpl = createUpdater(updateInfos.updateSource);
+export let Updater: UpdaterImpl = createUpdater(updateInfos.updateSource);
 console.log("Updater ", Updater);
 // 是否正在获取数据
 export const fetchingInfo = ref(false);

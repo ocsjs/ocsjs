@@ -93,10 +93,7 @@ async function createWindow(logo: BW) {
         promise
             .then(() => {
                 logo.close();
-                win.show();
-
-                if (mode === "dev") win.webContents.openDevTools();
-
+                win.show(); 
                 logger.info("show 软件渲染用时:" + (Date.now() - t2));
                 // 拦截页面跳转
                 win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {

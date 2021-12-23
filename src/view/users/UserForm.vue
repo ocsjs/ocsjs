@@ -6,12 +6,7 @@
                     <a-input v-model:value="tempUser.name" />
                 </a-form-item>
                 <a-form-item label="平台类型">
-                    <a-radio-group
-                        :default-value="tempUser.platform || 'cx'"
-                        @change="(e:any)=>{
-                        tempUser.platform=e.target.value
-                    }"
-                    >
+                    <a-radio-group v-model:value="tempUser.platform">
                         <a-radio-button
                             value="cx"
                             @click="
@@ -34,8 +29,7 @@
                     <transition name="fade" mode="out-in" :duration="200">
                         <a-radio-group
                             v-if="tempUser.platform === 'cx'"
-                            :default-value="tempUser.loginScript"
-                            @change="(e:any)=>tempUser.loginScript=e.target.value"
+                            v-model:value="tempUser.loginScript"
                         >
                             <a-radio-button :value="FromScriptName('cx-user-login')">
                                 {{ showLoginScriptName("cx-user-login") }}
@@ -49,8 +43,7 @@
                         </a-radio-group>
                         <a-radio-group
                             v-else-if="tempUser.platform === 'zhs'"
-                            :default-value="tempUser.loginScript"
-                            @change="(e:any)=>tempUser.loginScript=e.target.value"
+                            v-model:value="tempUser.loginScript"
                         >
                             <a-radio-button :value="FromScriptName('zhs-phone-login')">
                                 {{ showLoginScriptName("zhs-phone-login") }}
@@ -162,8 +155,8 @@
                     </transition-group>
                 </template>
 
-                <a-form-item v-if="tempUser.courses.length !== 0" label="课程">
-                    <CourseList :user="tempUser" detail show-img :show-only="true" />
+                <a-form-item label="课程">
+                    <CourseList :user="tempUser" detail show-img :show-only="false" />
                 </a-form-item>
             </a-form>
 
@@ -213,7 +206,7 @@
         <div class="space-10 flex jc-flex-end margin-top-8">
             <template v-if="mode === 'create'">
                 <a-button type="primary" @click="getCourseList()">
-                    获取课程列表
+                    自动获取课程列表
                 </a-button>
             </template>
             <template v-else>
@@ -229,7 +222,9 @@
             </template>
 
             <template v-if="tempUser.courses.length === 0">
-                <a-popover content="请先获取课程列表，之后才能添加 ">
+                <a-popover
+                    content="课程为空时不能添加账号，必须自动获取，或者手动添加后才能创建账号。"
+                >
                     <a-button type="primary" :disabled="true">
                         {{ btnText }}
                     </a-button>
@@ -259,10 +254,11 @@ import {
     AllScriptObjects,
     BaseTask,
 } from "app/types";
+
 import { ListeningTaskChange, TaskToList } from "../task/task";
 import CourseList from "./CourseList.vue";
 
-const uuid = require("uuid");
+const { randomUUID } = require("crypto");
 
 const props = defineProps<{
     // 按钮文字
@@ -329,12 +325,10 @@ async function getCourseList() {
                             // 设置课程
                             // 1. 删除指定平台的课程信息
                             // 2. 再填充最新的课程信息
-                            Object.assign(
-                                tempUser.courses,
-                                tempUser.courses
-                                    .filter((c) => c.platform !== tempUser.platform)
-                                    .concat(value)
-                            );
+                            tempUser.courses = tempUser.courses
+                                .filter((c) => c.platform !== tempUser.platform)
+                                .concat(value);
+
                             message.success("课程列表获取成功!");
                             setTimeout(() => {
                                 visible.value = false;
@@ -343,9 +337,6 @@ async function getCourseList() {
                             message.error("课程列表获取失败 , 请重新获取!");
                         }
                     }
-                },
-                error(e, value) {
-                    message.error("课程列表获取失败 , 请重新获取!");
                 },
             });
         }
@@ -357,7 +348,7 @@ async function getCourseList() {
 // 默认用户模板
 function createUser(): User {
     return {
-        uid: uuid.v4().replace(/-/g, ""),
+        uid: randomUUID().toString().replace(/-/g, ""),
         name: "",
         loginTime: 0,
         delete: false,
@@ -395,7 +386,6 @@ function createUser(): User {
         },
     };
 }
-
 // 去掉前缀平台名
 function showLoginScriptName(alias: keyof AllScriptObjects) {
     return AllScriptAlias[alias].split("-").slice(1).join("-");

@@ -132,7 +132,7 @@
             >
             </a-empty>
             <div v-else style="max-height: 340px; overflow: auto">
-                <CourseList :user="user" detail show-img @update="update" />
+                <CourseList :user="user" detail show-img @update="update"  :show-only="true" />
             </div>
             <div class="padding-top-24 flex jc-flex-end">
                 <a-button

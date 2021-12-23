@@ -2,11 +2,11 @@ import { createApp } from "vue";
 
 import App from "./App.vue";
 
-import { router } from "./router";
-// import { dynamicImportRouter } from "./router/dynamic.import.router";
+// import { router } from "./router";
+import { dynamicImportRouter } from "./router/dynamic.import.router";
 
 import { message } from "ant-design-vue";
-// import "ant-design-vue/dist/antd.css";
+import "ant-design-vue/dist/antd.css";
 // antdv IconFont 远程阿里图标库ICON
 import { createFromIconfontCN } from "@ant-design/icons-vue";
 
@@ -22,7 +22,7 @@ message.config({
 });
 
 const app = createApp(App);
-app.use(router)
+app.use(dynamicImportRouter)
 
     // 注册远程ICON
     .component("IconFont", IconFont)

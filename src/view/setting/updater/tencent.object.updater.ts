@@ -1,5 +1,5 @@
 import COS from "cos-js-sdk-v5";
-import { LatestType, Tag } from "./types";
+import { LatestType, Tag, UpdateNotify } from "./types";
 import { UpdaterImpl } from "./updater";
 
 var Bucket = "ocs-1301696006"; /* 存储桶 */
@@ -27,6 +27,7 @@ export class TencentObjectUpdater extends UpdaterImpl {
                         console.error("getAuthorization err", e);
                     }
                     if (!data || !credentials) {
+                        UpdateNotify("error", "更新服务器发生错误，请稍后重试 credentials invalid");
                         return console.error("credentials invalid:\n" + JSON.stringify(data, null, 2));
                     }
                     callback({
@@ -69,8 +70,8 @@ export class TencentObjectUpdater extends UpdaterImpl {
         let tags: Tag[] = [];
         const tagNames = await this.listTagNames();
         for (const version of tagNames) {
-            let baseUrl = "https://cdn.ocs.enncy.cn/tags/" + version;
-            tags.push({ name: version, latest: baseUrl + "/latest.json", resource: baseUrl, raw: baseUrl + "/ocs-app-resource.zip" });
+            let baseUrl = "https://cdn.ocs.enncy.cn/tags/" + version + "/";
+            tags.push({ name: version, latest: baseUrl + "latest.json", resource: baseUrl + "ocs-app-resource.zip", raw: baseUrl + "ocs-app-resource.zip" });
         }
         return tags;
     }
