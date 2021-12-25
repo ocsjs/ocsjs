@@ -121,6 +121,13 @@ export class QAHandler implements QAHandlerType {
         const Questions = await frame.$$(this.questionDivSelector);
 
         if (Questions.length !== 0) {
+
+            if (!StoreGet("setting").script.account.queryToken) {
+                task.error("未设置查题码，不能答题，即将跳转下个任务");
+                await sleep(3000);
+                return;
+            }
+
             task.process(`正在自动答题,一共${Questions.length}个题目`);
 
             // 完成的题目数量

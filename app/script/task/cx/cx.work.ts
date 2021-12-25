@@ -77,12 +77,7 @@ export async function CXWorkScript(task: Task, script: LoginScript) {
     const waitFor = new WaitForScript(script);
 
     await waitFor.nextTick("requestfinished");
-
-    if (!StoreGet("setting").script.account.queryToken) {
-        task.error("未设置查题码，不能答题，即将跳转下个任务");
-        await sleep(3000);
-        return;
-    }
+ 
     const qaHandler = new   QAHandler({
         questionDivSelector: ".questionLi",
         titleDivSelector: "h1,h2,h3,h4,h5,h6",
@@ -130,12 +125,7 @@ export async function CXExamScript(task: Task, script: LoginScript) {
     await waitFor.nextTick("requestfinished");
     await script.page.evaluate("topreview();");
     await waitFor.nextTick("requestfinished");
-
-    if (!StoreGet("setting").script.account.queryToken) {
-        task.error("未设置查题码，不能答题，即将跳转下个任务");
-        await sleep(3000);
-        return;
-    }
+ 
     const qaHandler = new  QAHandler({
         questionDivSelector: ".questionLi",
         titleDivSelector: "h1,h2,h3,h4,h5,h6",

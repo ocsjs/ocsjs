@@ -30,7 +30,9 @@
             <a-form-item label="进入链接" required>
                 <a-input v-model:value="course.url">
                     <template #suffix>
-                        <a-tooltip title="课程链接，1.自己在其他浏览器里面登录到超星 2.然后选中任意课程点进去 3.把浏览器链接复制粘贴到这里">
+                        <a-tooltip
+                            title="课程链接，1.自己在其他浏览器里面登录到超星 2.然后选中任意课程点进去 3.把浏览器链接复制粘贴到这里"
+                        >
                             <QuestionCircleOutlined />
                         </a-tooltip>
                     </template>
@@ -40,7 +42,10 @@
                 <a-input v-model:value="course.img" />
             </a-form-item>
             <a-form-item label="平台">
-                <a-input disabled v-model:value="course.platform" />
+                <a-radio-group v-model:value="course.platform">
+                    <a-radio-button value="cx"> 超星 </a-radio-button>
+                    <a-radio-button value="zhs"> 智慧树 </a-radio-button>
+                </a-radio-group>
             </a-form-item>
             <a-form-item label="所属账号id">
                 <a-input disabled v-model:value="course.uid" />
