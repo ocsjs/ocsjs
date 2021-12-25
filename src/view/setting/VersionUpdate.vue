@@ -61,7 +61,7 @@
                 font-bold
                 label="更新服务器"
                 md
-                description="软件更新服务器<br>`腾讯云` : 腾讯云 对象存储 更新服务器<br>`JsDelivr`: 文件加速网站，偶尔会访问错误<br>`Gitee`: 码云，国内平台，存在更新限制（1-2次） "
+                description="软件更新服务器<br>`腾讯云` : 腾讯云 对象存储 更新服务器<br>`JsDelivr`: 文件加速网站，偶尔会访问错误<br>`Gitee`: 码云，国内平台，存在更新限制（1-2次,暂时不开放） "
             >
                 <a-radio-group size="small" v-model:value="updateInfos.updateSource">
                     <a-radio-button :disabled="fetchingInfo" value="TencentCloud">
@@ -70,7 +70,7 @@
                     <a-radio-button :disabled="fetchingInfo" value="JsDelivr">
                         JsDelivr
                     </a-radio-button>
-                    <a-radio-button :disabled="fetchingInfo" value="Gitee">
+                    <a-radio-button :disabled="true" value="Gitee">
                         Gitee
                     </a-radio-button>
                 </a-radio-group>

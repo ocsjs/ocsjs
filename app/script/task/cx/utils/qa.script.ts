@@ -13,11 +13,7 @@ import { QAHandler } from "../../qa.handler";
  * @param setting 设置
  */
 export async function QAScript(task: Task, frame: Frame, setting: ScriptSetting["script"]["cx"]["study"]["qa"]) {
-    if (!StoreGet("setting").script.account.queryToken) {
-        task.error("未设置查题码，不能答题，即将跳转下个任务");
-        await sleep(3000);
-        return;
-    }
+
     const qaHandler = new QAHandler({
         questionDivSelector: ".TiMu",
         titleDivSelector: ".Zy_TItle > .clearfix",

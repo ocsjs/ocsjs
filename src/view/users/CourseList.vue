@@ -1,7 +1,8 @@
 <template>
     <div>
-        
-        <template v-if="user.courses.filter((c) => c.platform === user.platform).length === 0">
+        <template
+            v-if="user.courses.filter((c) => c.platform === user.platform).length === 0"
+        >
             <div style="text-align: center" v-if="!showOnly">
                 <a-button type="primary" shape="round" @click="visible = !visible">
                     <PlusOutlined /> 手动添加
@@ -17,9 +18,9 @@
             >
                 <template #renderItem="{ item }">
                     <a-list-item
-                        @click="courseClick(item)"
+                        @click="showOnly && courseClick(item)"
                         :class="
-                             !showOnly && selectItems.some((c) => c.id === item.id)
+                            showOnly && selectItems.some((c) => c.id === item.id)
                                 ? 'course-list-item selected'
                                 : 'course-list-item'
                         "

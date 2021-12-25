@@ -1,5 +1,4 @@
 import { WaitForScript } from "@pioneerjs/core";
-import { log } from "electron-log";
 import { Frame, HTTPRequest } from "puppeteer-core";
 import { ScriptSetting } from "../../../types";
 import { Course } from "../../../types/script/course";
@@ -16,6 +15,9 @@ import { ScriptTask } from "../../../electron/task/script.task";
 import { waitForNavigation, waitForClickAndNavigation, TimeoutTask } from "../utils";
 
 import { debounce } from "lodash";
+import { Logger } from "../../../electron/logger";
+
+const logger = Logger.of("cx-script");
 
 const debouncedScript = debounce(runScript, 10000);
 
@@ -57,9 +59,11 @@ export function CXScript(): ScriptTask<void> {
                 // 脚本拦截
                 CXRequestScriptHook(script.page);
 
-                await script.page.goto(script.page.url().replace(/pageHeader=\d+/, "pageHeader=1"));
+                const chapterUrl = script.page.url().replace(/pageHeader=\d+/, "pageHeader=1");
 
-                log("进入任务页面成功，即将开始刷课");
+                await script.page.goto(chapterUrl);
+
+                logger.info("进入任务页面成功，即将开始刷课");
                 task.process("进入任务页面成功，即将开始刷课");
                 await waitFor.nextTick("requestfinished");
                 await waitFor.documentReady();
@@ -80,13 +84,12 @@ export function CXScript(): ScriptTask<void> {
                 await waitFor.documentReady();
 
                 // 获取章节
-                const jobs: string[] = await script.page.evaluate(() => {
-                    console.log("document", document);
+                const jobs: string[] = await script.page.evaluate((review) => {
                     const res = Array.from(document.querySelectorAll('[onclick*="getTeacherAjax"]'))
                         // 切换回父节点
                         .map((el) => el.parentElement)
-                        // 如果存在未完成的任务点
-                        .filter((el) => !!el?.querySelector(".jobUnfinishCount"))
+                        // 如果存在未完成的任务点，或者是复习模式
+                        .filter((el) => review || !!el?.querySelector(".jobUnfinishCount"))
                         // 获取点击事件
                         .map((el) => el!.querySelector('[onclick*="getTeacherAjax"]') || "")
                         // 过滤掉空值
@@ -96,8 +99,8 @@ export function CXScript(): ScriptTask<void> {
                     console.log("res", res);
 
                     return res;
-                });
-                log(jobs);
+                }, StoreGet("setting")?.script?.script?.cx?.study?.review);
+                logger.info(jobs);
                 if (jobs.length === 0) {
                     task.process("检测不到任务点,可能因为所有任务已经完成，即将跳转下一个任务。");
                     resolve();

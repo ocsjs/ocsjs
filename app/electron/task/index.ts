@@ -85,7 +85,7 @@ export class Task extends EventEmitter implements BaseTask {
             this.msg = msg;
             CurrentWindow?.webContents.send(this.eventFormat(status, this.id), msg || "");
             this.emit(this.eventFormat(status));
-            logger.error(status, this.toString());
+            logger.info(status, this.toString());
         }
     }
 

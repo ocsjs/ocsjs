@@ -204,6 +204,10 @@
         </div>
 
         <div class="space-10 flex jc-flex-end margin-top-8">
+            <span
+                ><InfoCircleOutlined />当自动获取课程遇到问题的时候，你可以使用手动添加课程</span
+            >
+
             <template v-if="mode === 'create'">
                 <a-button type="primary" @click="getCourseList()">
                     自动获取课程列表
