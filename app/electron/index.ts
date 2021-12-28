@@ -8,15 +8,14 @@ import { InitSetting } from "./setting";
 const t = Date.now();
 
 let logger: Logger;
+ 
 
 process.on("uncaughtException", (err) => {
     logger?.error("uncaughtException", err);
-    dialog.showErrorBox("系统错误", err.stack || err.toString());
 });
 
 process.on("unhandledRejection", (err: any) => {
     logger?.error("unhandledRejection", err);
-    dialog.showErrorBox("系统错误", err.stack || err.toString());
 });
 
 // 判断开发环境
