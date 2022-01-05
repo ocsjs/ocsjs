@@ -1,7 +1,7 @@
 <template>
     <div>
         <div id="user-form">
-            <a-form :label-col="{ span: 4 }" :wrapper-col="{ span: 19 }">
+            <a-form :label-col="{ span: 3 }" :wrapper-col="{ span: 19 }">
                 <a-form-item label="用户名字/备注">
                     <a-input v-model:value="tempUser.name" />
                 </a-form-item>
@@ -203,7 +203,7 @@
             </a-modal>
         </div>
 
-        <div class="space-10 flex jc-flex-end margin-top-8">
+        <div class="space-10 flex jc-flex-end margin-top-24">
             <span
                 ><InfoCircleOutlined />当自动获取课程遇到问题的时候，你可以使用手动添加课程</span
             >
@@ -225,10 +225,8 @@
                 </a-popconfirm>
             </template>
 
-            <template v-if="tempUser.courses.length === 0">
-                <a-popover
-                    content="课程为空时不能添加账号，必须自动获取，或者手动添加后才能创建账号。"
-                >
+            <template v-if="tempUser.name === ''">
+                <a-popover content="必须填写备注">
                     <a-button type="primary" :disabled="true">
                         {{ btnText }}
                     </a-button>
@@ -399,6 +397,6 @@ function showLoginScriptName(alias: keyof AllScriptObjects) {
 <style scope lang="less">
 #user-form {
     overflow: auto;
-    max-height: 340px;
+    height: calc(70vh);
 }
 </style>

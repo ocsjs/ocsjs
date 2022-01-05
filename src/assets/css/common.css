@@ -1863,3 +1863,18 @@ html,
   background: rgba(0, 0, 0, 0.1);
   box-shadow: inset006pxrgba(0, 0, 0, 0.3);
 }
+.full-modal .ant-modal {
+  max-width: 100%;
+  top: 0;
+  padding-bottom: 0;
+  margin: 0 auto;
+}
+.full-modal .ant-modal-content {
+  display: flex;
+  flex-direction: column;
+  height: calc(96vh);
+  top: calc(2vh);
+}
+.full-modal .ant-modal-body {
+  flex: 1;
+}

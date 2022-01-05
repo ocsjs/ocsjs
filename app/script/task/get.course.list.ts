@@ -34,19 +34,18 @@ export function getCXCourseList(uid: string): ScriptTask<Course[]> {
                 const courses = await script.page.evaluate(() => {
                     // 获取课程信息
                     return Array.from(document.querySelectorAll("li[id*=course]"))
-                        .filter((el) => !el.querySelector(".not-open-tip"))
-                        .map(
-                            (el: any) =>
-                                ({
-                                    id: "",
-                                    uid: "",
-                                    platform: "cx",
-                                    img: el.querySelector(".course-cover > a > img")?.src,
-                                    url: el.querySelector(".course-cover > a")?.href,
-                                    profile: el.querySelector(".course-info")?.innerText.split(/\n+/).splice(1).join(" "),
-                                    name: el.querySelector(".course-info")?.innerText.split(/\n+/)[0],
-                                } as Course)
-                        );
+                    .map(
+                        (el: any) =>
+                            ({
+                                id: "",
+                                uid: "",
+                                platform: "cx",
+                                img: el.querySelector(".course-cover > a > img")?.src,
+                                url: el.querySelector(".course-cover > a")?.href,
+                                profile: el.querySelector(".course-info")?.innerText.split(/\n+/).splice(1).join(" "),
+                                name: el.querySelector(".course-info")?.innerText.split(/\n+/)[0],
+                            } as Course)
+                    );
                 });
                 resolve(await initCourses({ script, courses, uid, platform: "cx" }));
                 await script.page.close();
@@ -94,8 +93,8 @@ export function getZHSCourseList(uid: string): ScriptTask<Course[]> {
 
 // 初始化课程数据
 export async function initCourses({ script, courses, uid, platform }: { script: ScriptOptions; courses: Course[]; uid: string; platform: keyof Platform }) {
-    log("img path:"+StoreGet("setting")?.system?.path?.courseImg)
-    if(StoreGet("setting")?.system?.path?.courseImg){
+    log("img path:" + StoreGet("setting")?.system?.path?.courseImg);
+    if (StoreGet("setting")?.system?.path?.courseImg) {
         for (const course of courses) {
             // 使用 url 或者 selector  作为加密信息来生成 hex id 值
             course.id = createHash("md5")
@@ -108,17 +107,16 @@ export async function initCourses({ script, courses, uid, platform }: { script: 
             // 保存课程图片
             let clip = await getElementClip(script.page, `img[src="${course.img}"]`);
             if (clip) {
-                const p = path.resolve(path.join(StoreGet("setting")?.system?.path?.courseImg , `${course.id}.png`));
+                const p = path.resolve(path.join(StoreGet("setting")?.system?.path?.courseImg, `${course.id}.png`));
                 await script.page.screenshot({ clip, path: p });
                 course.img = p;
             }
         }
         log("courses", courses);
         return courses;
-    }else{
-        throw new Error("获取课程失败，图片文件夹路径未设置！")
+    } else {
+        throw new Error("获取课程失败，图片文件夹路径未设置！");
     }
-    
 }
 
 export function GetCourseList(user: User): ScriptTask<Course[]> {

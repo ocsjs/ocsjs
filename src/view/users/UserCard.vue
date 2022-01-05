@@ -78,10 +78,10 @@
         <a-modal
             v-model:visible="visible"
             title="修改用户"
-            :width="740"
-            :style="{ top: '42px' }"
             :footer="null"
             :destroyOnClose="true"
+            width="90%"
+            wrapClassName="full-modal"
         >
             <UserForm @ok="ok" btnText="修改" :user="user" mode="modify"></UserForm>
         </a-modal>
@@ -132,7 +132,13 @@
             >
             </a-empty>
             <div v-else style="max-height: 340px; overflow: auto">
-                <CourseList :user="user" detail show-img @update="update"  :show-only="true" />
+                <CourseList
+                    :user="user"
+                    detail
+                    show-img
+                    @update="update"
+                    :show-only="true"
+                />
             </div>
             <div class="padding-top-24 flex jc-flex-end">
                 <a-button

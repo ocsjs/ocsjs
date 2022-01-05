@@ -45,10 +45,10 @@
         <a-modal
             v-model:visible="visible"
             title="添加用户"
-            :width="740"
-            :style="{ top: '42px' }"
             :footer="null"
             :destroyOnClose="true"
+            width="90%"
+            wrapClassName="full-modal"
         >
             <UserForm @ok="onAddUser" btnText="添加" mode="create"></UserForm>
         </a-modal>
@@ -63,7 +63,6 @@ import { message } from "ant-design-vue";
 import { User } from "app/types";
 import UserCard from "./UserCard.vue";
 import UserForm from "./UserForm.vue";
- 
 
 const users: User[] = config.users;
 
@@ -124,4 +123,5 @@ function initUser() {
     border-radius: 4px;
     border: dashed #ebebeb;
 }
+
 </style>

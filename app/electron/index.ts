@@ -94,6 +94,7 @@ async function createWindow(logo: BW) {
                 logo.close();
                 win.show(); 
                 logger.info("show 软件渲染用时:" + (Date.now() - t2));
+                if( mode === "dev") win.webContents.openDevTools()
                 // 拦截页面跳转
                 win.webContents.on("will-navigate", (e: { preventDefault: () => void }, url: any) => {
                     e.preventDefault();

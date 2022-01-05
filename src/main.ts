@@ -2,8 +2,8 @@ import { createApp } from "vue";
 
 import App from "./App.vue";
 
-// import { router } from "./router";
-import { dynamicImportRouter } from "./router/dynamic.import.router";
+import { router } from "./router";
+// import { dynamicImportRouter } from "./router/dynamic.import.router";
 
 import { message } from "ant-design-vue";
 import "ant-design-vue/dist/antd.css";
@@ -21,8 +21,13 @@ message.config({
     maxCount: 3,
 });
 
+export const isProd = import.meta.env.MODE === "production";
+
+console.log("mode",import.meta.env.MODE);
+
+
 const app = createApp(App);
-app.use(dynamicImportRouter)
+app.use(router)
 
     // 注册远程ICON
     .component("IconFont", IconFont)

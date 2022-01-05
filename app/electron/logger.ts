@@ -70,9 +70,11 @@ export function mkdirs(url: string): void {
 /**
  * 输出信息到文件中
  * @param eventName 事件名称
- * @param args 参数
+ * @param args 参数                                                       
  */
 export function log(path: string, eventName: string, level: LoggerLevel, ...msg: any[]) {
+    let datetime = dayjs().format("YYYY-MM-DD HH:mm:ss")
+    console.log(`${datetime}`,`[${eventName}-${level}]`,...msg);
     // 保存的文件夹
     const folder = p.resolve(p.join(path, `/${getLogsFolderName()}/`));
 
@@ -81,10 +83,10 @@ export function log(path: string, eventName: string, level: LoggerLevel, ...msg:
     // 如果有则追加到集合中，否则创建集合
     try {
         if (fs.existsSync(file)) {
-            fs.appendFileSync(file, `[${dayjs().format("YYYY-MM-DD HH:mm:ss")}] [${level}] : ${msg.map((m) => m?.toString()).join(" ")} \n`);
+            fs.appendFileSync(file, `[${datetime}] [${level}] : ${msg.map((m) => m?.toString()).join(" ")} \n`);
         } else {
             mkdirs(folder);
-            fs.writeFileSync(file, `[${dayjs().format("YYYY-MM-DD HH:mm:ss")}] [${level}] :  ${msg.map((m) => m?.toString()).join(" ")} \n`);
+            fs.writeFileSync(file, `[${datetime}] [${level}] :  ${msg.map((m) => m?.toString()).join(" ")} \n`);
         }
     } catch (e) {
         error("logger 输出错误", e);
