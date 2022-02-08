@@ -1,0 +1,39 @@
+{
+    "name": "online-course-script",
+    "version": "3.0.0-beta",
+    "description": "ocs - 在线网络课程辅助工具",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/enncy/online-course-script.git"
+    },
+    "keywords": [
+        "ocs",
+        "script",
+        "puppeteer",
+        "electron",
+        "vue3",
+        "antdv",
+        "typescript"
+    ],
+    "author": "enncy",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/enncy/online-course-script/issues"
+    },
+    "homepage": "https://github.com/enncy/online-course-script#readme",
+    "dependencies": {
+        "puppeteer-core": "^13.2.0"
+    },
+    "devDependencies": {
+        "cz-conventional-changelog": "^3.3.0"
+    },
+    "config": {
+        "commitizen": {
+            "path": "./node_modules/cz-conventional-changelog"
+        }
+    }
+}
