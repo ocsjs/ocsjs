@@ -27,11 +27,13 @@
     },
     "homepage": "https://github.com/enncy/online-course-script#readme",
     "dependencies": {
+        "electron-store": "^8.0.1",
         "puppeteer-core": "^13.2.0"
     },
     "devDependencies": {
         "@types/node": "^17.0.16",
         "cz-conventional-changelog": "^3.3.0",
+        "electron": "^17.0.0",
         "follow-redirects": "1.14.7",
         "json-schema": "0.4.0",
         "markdown-it": "12.3.2",

@@ -3,6 +3,13 @@
 pnpm-lock.yaml
 package-lock.json
 
+# vue build
+
+public
+
+# electron build
+
+dist
 
 # Logs
 logs

@@ -1,0 +1,11 @@
+{
+    "name": "ocs-app",
+    "version": "1.0.0",
+    "description": "app package of ocs",
+    "main": "index.js",
+    "scripts": {
+        "dev": "electron ."
+    },
+    "author": "enncy",
+    "license": "MIT"
+}
