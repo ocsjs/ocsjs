@@ -1,9 +1,14 @@
 <template>
     <div class="home">
         <Title></Title>
-        <div class="container">
-            <h1>Hello OCS</h1>
-        </div>
+
+        <transition name="fade">
+            <router-view v-slot="{ Component }">
+                <keep-alive>
+                    <component :is="Component" />
+                </keep-alive>
+            </router-view>
+        </transition>
     </div>
 </template>
 
@@ -18,5 +23,27 @@ import Title from "../components/Title.vue";
     width: 100%;
     margin: 0;
     padding: 0;
+}
+
+// 隐藏过渡效果
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+// 折叠加隐藏过渡效果
+.collapse-enter-active,
+.collapse-leave-active {
+    transition: all 0.25s ease-in-out;
+    overflow: hidden;
+}
+.collapse-enter-from,
+.collapse-leave-to {
+    padding: 0px 18px !important;
+    height: 0px !important;
+    opacity: 0;
 }
 </style>

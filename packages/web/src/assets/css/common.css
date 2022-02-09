@@ -11,9 +11,5 @@ html,
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-}
-#app .title {
-  height: 32px;
   background-color: #f8f8f8;
-  -webkit-app-region: drag;
 }

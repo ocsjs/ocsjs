@@ -1,17 +1,18 @@
 {
     "name": "ocs-web",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "description": "web package of ocs",
     "scripts": {
         "dev": "vite",
-        "build": "vue-tsc --noEmit && vite build",
+        "build": "vue-tsc --noEmit && vite build --emptyOutDir",
         "serve": "vite preview"
     },
     "dependencies": {
         "@ant-design/icons-vue": "^6.0.1",
         "ant-design-vue": "^2.2.8",
         "axios": "^0.25.0",
-        "vue": "^3.2.6"
+        "vue": "^3.2.6",
+        "vue-router": "^4.0.12"
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^1.6.1",
