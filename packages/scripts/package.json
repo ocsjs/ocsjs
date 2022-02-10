@@ -4,8 +4,19 @@
     "description": "scripts package of ocs",
     "main": "index.js",
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1"
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "build": "tsc && npm run pack",
+        "pack": "webpack --config webpack.config.js"
     },
     "author": "enncy",
-    "license": "MIT"
+    "license": "MIT",
+    "devDependencies": {
+        "@types/string-similarity": "^4.0.0",
+        "webpack": "^5.68.0",
+        "webpack-cli": "^4.9.2"
+    },
+    "dependencies": {
+        "axios": "^0.25.0",
+        "string-similarity": "^4.0.4"
+    }
 }

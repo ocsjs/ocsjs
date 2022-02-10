@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain } = require("electron");
 const Store = require("electron-store");
 
 app.commandLine.appendSwitch("enable-webgl");
