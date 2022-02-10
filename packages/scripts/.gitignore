@@ -3,6 +3,9 @@
 pnpm-lock.yaml
 package-lock.json
 
+#env
+
+tests/**/local.*
 
 # Logs
 logs
