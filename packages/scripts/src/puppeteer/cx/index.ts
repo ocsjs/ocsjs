@@ -1,3 +1,3 @@
-import * as login from "./login";
-
-export { login };
+import * as CXLogin from "./login";
+export { waitForCXLogin } from "./utils";
+export { CXLogin };

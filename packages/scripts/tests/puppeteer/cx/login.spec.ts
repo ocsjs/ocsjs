@@ -1,15 +1,16 @@
 import { test } from "@playwright/test";
-import { CXScript } from "../../../src";
+import { CXLogin } from "../../../src";
+
 import config from "../../local.config";
 
 test("school login", async ({ page }) => {
-    await CXScript.login.schoolLogin(page, config.cx.login.school);
+    await CXLogin.schoolLogin(page, config.cx.login.school);
 });
 
 test("phone login", async ({ page }) => {
-    await CXScript.login.phoneLogin(page, config.cx.login.phone);
+    await CXLogin.phoneLogin(page, config.cx.login.phone);
 });
 
 test("other login", async ({ page }) => {
-    await CXScript.login.otherLogin(page, config.cx.login.other);
+    await CXLogin.otherLogin(page, config.cx.login.other);
 });

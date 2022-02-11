@@ -11,3 +11,7 @@ export interface CXLoginOptions {
     school: CXSchoolLoginOptions;
     other: CXOtherLoginOptions;
 }
+
+export const setting = {
+    timeout: 30 * 1000,
+};

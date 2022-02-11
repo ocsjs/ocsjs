@@ -1,4 +1,5 @@
 import { Page } from "playwright";
+import { setting } from ".";
 
 export interface ZHSPhoneLoginOptions {
     phone: string;
@@ -12,7 +13,7 @@ export async function phoneLogin(page: Page, opts: ZHSPhoneLoginOptions) {
     );
     await page.fill("#lUsername", phone);
     await page.fill("#lPassword", password);
-    await Promise.all([page.waitForNavigation(), page.click(".wall-sub-btn")]);
+    await Promise.all([page.waitForNavigation({ timeout: setting.timeout }), page.click(".wall-sub-btn")]);
 
     return page;
 }

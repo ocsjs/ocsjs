@@ -1,3 +1,3 @@
-import * as login from "./login";
-
-export { login };
+import * as ZHSLogin from "./login";
+export { waitForZHSLogin } from "./utils";
+export { ZHSLogin };

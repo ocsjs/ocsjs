@@ -1,4 +1,6 @@
 import { Page } from "playwright";
+import { setting } from ".";
+
 import { breakCode } from "../../common/break.code";
 import { ocr } from "../../common/ocr";
 
@@ -21,11 +23,11 @@ export async function schoolLogin(page: Page, opts: CXSchoolLoginOptions) {
     await page.fill("#password", password);
 
     const code = await breakCode(page, "#codeImg", verify);
- 
+
     if (code) {
         await page.fill("#vercode", code);
     }
-    await Promise.all([page.waitForNavigation(), page.click("#loginBtn")]);
+    await Promise.all([page.waitForNavigation({ timeout: setting.timeout }), page.click("#loginBtn")]);
 
     return page;
 }
