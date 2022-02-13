@@ -1,0 +1,3 @@
+interface Task {
+    name: string;
+}

@@ -2,13 +2,15 @@
     <div class="home">
         <Title></Title>
 
-        <transition name="fade">
-            <router-view v-slot="{ Component }">
-                <keep-alive>
-                    <component :is="Component" />
-                </keep-alive>
-            </router-view>
-        </transition>
+        <div class="content h-100">
+            <transition name="fade">
+                <router-view v-slot="{ Component }">
+                    <keep-alive>
+                        <component :is="Component" />
+                    </keep-alive>
+                </router-view>
+            </transition>
+        </div>
     </div>
 </template>
 
@@ -23,6 +25,10 @@ import Title from "../components/Title.vue";
     width: 100%;
     margin: 0;
     padding: 0;
+}
+
+.content{
+    padding: 32px 0;
 }
 
 // 隐藏过渡效果

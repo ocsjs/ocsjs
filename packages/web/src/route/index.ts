@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from "vue-router";
-import { config } from "../store";
+import { config } from "../config";
 
 /**
  * 根据配置生成路由

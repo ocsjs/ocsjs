@@ -1,13 +1,13 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const Store = require("electron-store");
-
-app.commandLine.appendSwitch("enable-webgl");
+const path = require("path");
 
 /**
  * electron store
  */
 const store = new Store();
 exports.store = store;
+require("./src/init.store")(store);
 
 function createWindow() {
     return new BrowserWindow({
@@ -23,7 +23,12 @@ function createWindow() {
         center: true,
 
         webPreferences: {
+            // 关闭拼写矫正
+            spellcheck: false,
+            webSecurity: true,
+            // 开启node
             nodeIntegration: true,
+            contextIsolation: false,
         },
     });
 }
@@ -46,27 +51,4 @@ app.whenReady().then(async () => {
             createWindow();
         }
     });
-});
-
-app.on("window-all-closed", () => {
-    if (process.platform !== "darwin") {
-        app.quit();
-    }
-});
-
-ipcMain.on("window-minimize", function (event) {
-    BrowserWindow.fromWebContents(event.sender).minimize();
-});
-
-ipcMain.on("window-maximize", function (event) {
-    const window = BrowserWindow.fromWebContents(event.sender);
-    window.isMaximized() ? window.unmaximize() : window.maximize();
-});
-
-ipcMain.on("window-close", function (event) {
-    BrowserWindow.fromWebContents(event.sender).close();
-});
-
-ipcMain.on("window-is-maximized", function (event) {
-    event.returnValue = BrowserWindow.fromWebContents(event.sender).isMaximized();
 });

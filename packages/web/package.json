@@ -8,11 +8,11 @@
         "serve": "vite preview"
     },
     "dependencies": {
-        "@ant-design/icons-vue": "^6.0.1",
         "ant-design-vue": "^2.2.8",
         "axios": "^0.25.0",
         "vue": "^3.2.6",
-        "vue-router": "^4.0.12"
+        "vue-router": "^4.0.12",
+        "electron":"../.."
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^1.6.1",

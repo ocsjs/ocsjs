@@ -1,5 +1,5 @@
 <template>
-    <div class="title" :style="config.title.style">
+    <div class="title shadow-sm" :style="config.title.style">
         <img :src="config.title.icon" width="16" height="16" />
         <span class="ms-2">
             {{ config.title.text }}
@@ -19,7 +19,7 @@
 </template>
 
 <script setup lang="ts">
-import { config } from "../store";
+import { config } from "../config";
 import { ref, reactive, toRefs, nextTick, onMounted } from "vue";
 import { router, routes } from "../route";
 
@@ -40,8 +40,11 @@ function active(event: MouseEvent) {
 
 <style scope lang="less">
 .title {
+    position: fixed;
+    z-index: 99;
+
     padding: 0px 10px;
-    height: 30px;
+    height: 36px;
     width: 100%;
     white-space: nowrap;
     display: inline-flex;
