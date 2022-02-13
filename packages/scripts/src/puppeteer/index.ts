@@ -1,3 +1,5 @@
-export * from "./cx";
-export * from "./zhs";
+ 
+export * as CX from "./cx";
+export * as ZHS from "./zhs";
 export * from "./script";
+ 

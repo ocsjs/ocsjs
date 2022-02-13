@@ -11,7 +11,3 @@ export interface ZHSLoginOptions {
     school: ZHSSchoolLoginOptions;
     other: ZHSOtherLoginOptions;
 }
-
-export const setting = {
-    timeout: 30 * 1000,
-};

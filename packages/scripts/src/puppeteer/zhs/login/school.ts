@@ -1,5 +1,5 @@
 import { Page } from "playwright";
-import { setting } from ".";
+import { setting } from "../";
 
 export interface ZHSSchoolLoginOptions {
     /** 学校名 */
@@ -32,7 +32,7 @@ export async function schoolLogin(page: Page, opts: ZHSSchoolLoginOptions) {
     await page.click("#schoolListCode li");
     await page.fill("#clCode", code);
     await page.fill("#clPassword", password);
-    await Promise.all([page.waitForNavigation({ timeout: setting.timeout }), page.click(".wall-sub-btn")]);
+    await Promise.all([page.waitForNavigation({ timeout: setting.login.timeout }), page.click(".wall-sub-btn")]);
 
     return page;
 }

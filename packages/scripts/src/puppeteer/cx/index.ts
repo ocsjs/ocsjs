@@ -1,3 +1,9 @@
-import * as CXLogin from "./login";
-export { waitForCXLogin } from "./utils";
-export { CXLogin };
+export * from "./login";
+export { waitForLogin } from "./utils";
+
+
+export const setting = {
+    login:{
+        timeout: 30 * 1000
+    },
+};

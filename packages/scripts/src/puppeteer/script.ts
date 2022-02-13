@@ -1,12 +1,8 @@
 import { chromium } from "playwright";
 import { ScriptOptions } from "./types";
-
-export interface ScriptConfig {}
-
-export async function Script(options: ScriptOptions, config?: ScriptConfig) {
-    const browser = await chromium.launch(options.launchOptions);
-
+ 
+export async function Script(options: ScriptOptions) {
+    const browser = await chromium.launch(options);
     const page = await browser.newPage();
-
     return page;
 }

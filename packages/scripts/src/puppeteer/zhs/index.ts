@@ -1,3 +1,8 @@
-import * as ZHSLogin from "./login";
-export { waitForZHSLogin } from "./utils";
-export { ZHSLogin };
+export * from "./login";
+export { waitForLogin } from "./utils";
+
+export const setting = {
+    login:{
+        timeout: 30 * 1000
+    },
+};

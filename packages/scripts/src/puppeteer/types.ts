@@ -1,5 +1,3 @@
 import { LaunchOptions } from "playwright";
 
-export interface ScriptOptions {
-    launchOptions?: LaunchOptions;
-}
+export type ScriptOptions = LaunchOptions

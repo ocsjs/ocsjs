@@ -1,5 +1,5 @@
 import { Page } from "playwright";
-import { waitForCXLogin } from "../utils";
+import { waitForLogin } from "../utils";
 
 export interface CXPhoneCodeLoginOptions {
     phone: string;
@@ -10,6 +10,6 @@ export async function phoneLogin(page: Page, opts: CXPhoneCodeLoginOptions) {
 
     await page.goto("https://passport2.chaoxing.com/login?loginType=2&newversion=true");
     await page.fill("#phone", phone);
-    await waitForCXLogin(page);
+    await waitForLogin(page);
     return page;
 }

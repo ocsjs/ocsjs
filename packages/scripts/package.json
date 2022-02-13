@@ -1,8 +1,9 @@
 {
-    "name": "ocs-scripts",
+    "name": "@ocsjs/scripts",
     "version": "1.0.0",
     "description": "scripts package of ocs",
-    "main": "./src/index.js",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
     "scripts": {
         "test": "playwright test --config=playwright.config.ts",
         "build": "tsc && npm run pack",
