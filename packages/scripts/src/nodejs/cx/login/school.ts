@@ -1,5 +1,5 @@
 import { Page } from "playwright";
-import { setting } from "../";
+import { setting } from "..";
 
 import { breakCode } from "../../common/break.code";
 import { ocr } from "../../common/ocr";

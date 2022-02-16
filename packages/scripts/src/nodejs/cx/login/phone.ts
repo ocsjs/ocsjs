@@ -1,5 +1,5 @@
 import { Page } from "playwright";
-import { setting } from "../";
+import { setting } from "..";
 
 export interface CXPhoneLoginOptions {
     phone: string;
