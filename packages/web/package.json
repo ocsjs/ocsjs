@@ -1,5 +1,5 @@
 {
-    "name": "ocs-web",
+    "name": "@ocsjs/web",
     "version": "1.0.0",
     "description": "web package of ocs",
     "scripts": {
@@ -12,7 +12,8 @@
         "axios": "^0.25.0",
         "vue": "^3.2.6",
         "vue-router": "^4.0.12",
-        "electron":"../.."
+        "electron": "../..",
+        "@ocsjs/scripts": "../scripts"
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^1.6.1",
@@ -22,5 +23,25 @@
         "typescript": "^4.3.2",
         "vite": "^2.5.4",
         "vue-tsc": "^0.2.2"
-    }
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/enncy/online-course-script.git"
+    },
+    "keywords": [
+        "ocs",
+        "script",
+        "playwright",
+        "puppeteer",
+        "electron",
+        "vue",
+        "ant-design-vue",
+        "typescript"
+    ],
+    "author": "enncy",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/enncy/online-course-script/issues"
+    },
+    "homepage": "https://github.com/enncy/online-course-script#readme"
 }

@@ -13,8 +13,6 @@
         "build": "tsc && npm run pack",
         "pack": "webpack --config webpack.config.js"
     },
-    "author": "enncy",
-    "license": "MIT",
     "dependencies": {
         "@playwright/test": "^1.18.1",
         "axios": "^0.25.0",
@@ -25,5 +23,25 @@
     "devDependencies": {
         "webpack": "^5.69.0",
         "webpack-cli": "^4.9.2"
-    }
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/enncy/online-course-script.git"
+    },
+    "keywords": [
+        "ocs",
+        "script",
+        "playwright",
+        "puppeteer",
+        "electron",
+        "vue",
+        "ant-design-vue",
+        "typescript"
+    ],
+    "author": "enncy",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/enncy/online-course-script/issues"
+    },
+    "homepage": "https://github.com/enncy/online-course-script#readme"
 }

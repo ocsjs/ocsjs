@@ -40,11 +40,16 @@
                 </template>
                 <template v-else>
                     <div class="dirs bg-white shadow-sm rounded p-2 mb-3">
-                        <template v-for="(item, index) in current.children" :key="index">
-                            <div class="p-2">
-                                <DirectoryVue :data="item" />
-                            </div>
-                        </template>
+                        <transition-group name="fade">
+                            <template
+                                v-for="(item, index) in current.children"
+                                :key="index"
+                            >
+                                <div class="p-2">
+                                    <DirectoryVue :data="item" />
+                                </div>
+                            </template>
+                        </transition-group>
                     </div>
                 </template>
 
@@ -93,8 +98,7 @@ const menus: ComputedRef<MenuItem[]> = computed(() => {
             },
         },
     ];
-    if(current.value.tasks){
-
+    if (current.value.tasks) {
     }
 
     if (selectedDirs.value.length > 0) {

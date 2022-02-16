@@ -1,34 +1,15 @@
 {
-    "name": "online-course-script",
+    "name": "ocsjs",
     "version": "3.0.0-beta",
-    "description": "ocs - 在线网络课程辅助工具",
-    "main": "index.js",
+    "description": "ocs - online course script 在线网络课程辅助工具",
+    "main": "./packages/scripts/lib/index.js",
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
     },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/enncy/online-course-script.git"
-    },
-    "keywords": [
-        "ocs",
-        "script",
-        "puppeteer",
-        "electron",
-        "vue3",
-        "antdv",
-        "typescript"
-    ],
-    "author": "enncy",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/enncy/online-course-script/issues"
-    },
-    "homepage": "https://github.com/enncy/online-course-script#readme",
     "dependencies": {
         "electron-store": "^8.0.1",
-        "puppeteer-core": "^13.2.0"
+        "playwright": "^1.18.1"
     },
     "devDependencies": {
         "@types/node": "^17.0.16",
@@ -40,6 +21,26 @@
         "nanoid": "3.1.31",
         "node-forge": "1.0.0"
     },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/enncy/online-course-script.git"
+    },
+    "keywords": [
+        "ocs",
+        "script",
+        "playwright",
+        "puppeteer",
+        "electron",
+        "vue",
+        "ant-design-vue",
+        "typescript"
+    ],
+    "author": "enncy",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/enncy/online-course-script/issues"
+    },
+    "homepage": "https://github.com/enncy/online-course-script#readme",
     "config": {
         "commitizen": {
             "path": "./node_modules/cz-conventional-changelog"

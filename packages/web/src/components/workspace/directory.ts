@@ -1,5 +1,3 @@
-import { MenuItem } from "./../menus/index";
-import EventEmitter from "events";
 import { nextTick, reactive, Ref, ref } from "vue";
 
 export interface DirectoryType {
@@ -18,9 +16,9 @@ export class Directory implements DirectoryType {
     name: string;
     children: Directory[];
     tasks: Task[];
+    createTime: number;
 
     /** status */
-    createTime: number;
     selected: boolean = false;
     editing: boolean = false;
     showDetail?: boolean = false;
