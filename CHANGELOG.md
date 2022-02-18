@@ -1,4 +1,4 @@
-# 3.0.0-beta (2022-02-18)
+# 3.0.0-beta.2 (2022-02-18)
 
 
 ### Bug Fixes
@@ -8,6 +8,7 @@
 
 ### Features
 
+* add glup ([15c0015](https://github.com/enncy/online-course-script/commit/15c0015141f4104888813dda905fc723843f66ca))
 * **app and web:** 添加文件夹管理，添加右键菜单，初始化设置和关于页面 ([24930ad](https://github.com/enncy/online-course-script/commit/24930ad1e32508e227fb36b7008fb2981438cbb7))
 * **app and web:** add elctron-builder in app , init  page view in web ([fe60df6](https://github.com/enncy/online-course-script/commit/fe60df65dfeed1607ab89a941fc6b6eb627132fc))
 * **init:** init project ([0675ac6](https://github.com/enncy/online-course-script/commit/0675ac6a631e8946a52e7e4e655b28faee8248d4))
@@ -20,4 +21,5 @@
 * **scripts:** add script package ([6f03fb4](https://github.com/enncy/online-course-script/commit/6f03fb4d3545f02f8ccfeb14fa7b5d8169c15348))
 * **test and cx login:** update tests README.md and add new login way of cx : phone-code-login ([ab46a1d](https://github.com/enncy/online-course-script/commit/ab46a1df98c73351518847a629ddaeb7f51a2d4d))
 
- 
+
+

@@ -1,17 +1,18 @@
 {
     "name": "ocsjs",
-    "version": "3.0.0-beta.2",
+    "version": "3.0.0-beta.4",
     "description": "ocs - online course script 在线网络课程辅助工具",
     "main": "./dist/index.js",
     "types": "./packages/scripts/lib/src/index.d.ts",
     "files": [
+        "lib",
         "dist"
     ],
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
         "webpack": "webpack --config webpack.config.js",
-        "gulp": "gulp"
+        "gulp": "gulp  --allowEmpty"
     },
     "dependencies": {
         "electron-store": "^8.0.1",

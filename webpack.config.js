@@ -6,7 +6,7 @@ const path = require("path");
 module.exports = [
     {
         mode: "production",
-        entry: "./packages/scripts/lib/src/browser.entry.js",
+        entry: "./lib/src/browser.entry.js",
         output: {
             filename: "index.min.js",
             path: path.resolve(__dirname, "dist"),
@@ -15,7 +15,7 @@ module.exports = [
     },
     {
         mode: "production",
-        entry: "./packages/scripts/lib/src/browser.entry.js",
+        entry: "./lib/src/browser.entry.js",
         output: {
             filename: "index.js",
             path: path.resolve(__dirname, "dist"),
