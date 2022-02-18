@@ -4,9 +4,6 @@ export async function sleep(period: number) {
     });
 }
 
-export async function logger(level: "info" | "error" | "warn" | "debug", ...msg: any[]) {
-    console.log(...loggerPrefix(level), ...msg);
-}
 
 function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
     let bgColor;
@@ -17,4 +14,16 @@ function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
         `%c[OCS][${new Date().toLocaleTimeString()}]${extra || ""}`,
         `background:${bgColor};color:white;padding:2px;border-radius:2px`,
     ];
+}
+
+
+/** 输出 */
+export async function logger(level: "info" | "error" | "warn" | "debug", ...msg: any[]) {
+    console.log(...loggerPrefix(level), ...msg);
+}
+
+/** 匹配 url */
+export function urlGlob(pattern: string, input = window.location.href) {
+    var re = new RegExp(pattern.replace(/([.?+^$[\]\\(){}|\/-])/g, "\\$1").replace(/\*/g, ".*"));
+    return re.test(input);
 }

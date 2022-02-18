@@ -9,8 +9,8 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "lib": ["DOM"],
-        
-         
+
+        "resolveJsonModule": true
     },
 
     "include": ["./src/**/*.ts"]
