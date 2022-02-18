@@ -8,6 +8,9 @@
         "lib",
         "dist"
     ],
+    "publishConfig": {
+        "access": "public"
+    },
     "scripts": {
         "test": "playwright test --config=playwright.config.ts",
         "build": "tsc && npm run pack",
