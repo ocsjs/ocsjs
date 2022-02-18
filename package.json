@@ -1,11 +1,17 @@
 {
     "name": "ocsjs",
-    "version": "3.0.0-beta",
+    "version": "3.0.0-beta.2",
     "description": "ocs - online course script 在线网络课程辅助工具",
-    "main": "./packages/scripts/lib/index.js",
+    "main": "./dist/index.js",
+    "types": "./packages/scripts/lib/src/index.d.ts",
+    "files": [
+        "dist"
+    ],
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
-        "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s"
+        "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
+        "webpack": "webpack --config webpack.config.js",
+        "gulp": "gulp"
     },
     "dependencies": {
         "electron-store": "^8.0.1",
@@ -14,12 +20,17 @@
     "devDependencies": {
         "@types/node": "^17.0.16",
         "cz-conventional-changelog": "^3.3.0",
+        "del": "^6.0.0",
         "electron": "^17.0.0",
         "follow-redirects": "1.14.7",
+        "gulp": "^4.0.2",
+        "gulp-cli": "^2.3.0",
         "json-schema": "0.4.0",
         "markdown-it": "12.3.2",
         "nanoid": "3.1.31",
-        "node-forge": "1.0.0"
+        "node-forge": "1.0.0",
+        "webpack": "^5.69.0",
+        "webpack-cli": "^4.9.2"
     },
     "repository": {
         "type": "git",

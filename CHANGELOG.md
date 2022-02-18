@@ -1,4 +1,4 @@
-# 3.0.0-beta (2022-02-13)
+# 3.0.0-beta (2022-02-18)
 
 
 ### Bug Fixes
@@ -13,6 +13,10 @@
 * **init:** init project ([0675ac6](https://github.com/enncy/online-course-script/commit/0675ac6a631e8946a52e7e4e655b28faee8248d4))
 * **packages:** init packages : web app scripts ([24e5386](https://github.com/enncy/online-course-script/commit/24e5386ec86dec33cc696fda6b5956785e2c1359))
 * **script:** add cx and zhs login ([8d69e16](https://github.com/enncy/online-course-script/commit/8d69e166fd73cf2ae2d700aa772b78159efbdeaa))
+* **script:** change folder name, and add browser script ([c540500](https://github.com/enncy/online-course-script/commit/c540500b0cef50e7c2944d3ea6331e93c3e00e52))
+* **scripts-tempaermonkey:** add tempermonkey support, update browser export ([456af02](https://github.com/enncy/online-course-script/commit/456af0250ff33fada0930f01270d1e147f27e2f7))
+* **scripts/cx:** add new login : phone-code login ([494e523](https://github.com/enncy/online-course-script/commit/494e523ffda8ddf5c9320be5861b42234fab4d91))
+* **scripts:** 修改 package.json ， 调整登录api ([614c628](https://github.com/enncy/online-course-script/commit/614c628a749bc6dd4e1556fd9fbdb026c82d6937))
 * **scripts:** add script package ([6f03fb4](https://github.com/enncy/online-course-script/commit/6f03fb4d3545f02f8ccfeb14fa7b5d8169c15348))
 * **test and cx login:** update tests README.md and add new login way of cx : phone-code-login ([ab46a1d](https://github.com/enncy/online-course-script/commit/ab46a1df98c73351518847a629ddaeb7f51a2d4d))
 
