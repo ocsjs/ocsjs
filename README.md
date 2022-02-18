@@ -147,4 +147,4 @@ const Ocs = OCS;
 
 大部分学习页面类似下图
 
-![study-page](img\README\study-page.png)
+![study-page](img/README/study-page.png)
