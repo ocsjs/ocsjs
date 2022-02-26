@@ -1,10 +1,6 @@
 <template>
-    <div class="title shadow-sm" :style="config.title.style">
-        <img :src="config.title.icon" width="16" height="16" />
-        <span class="ms-2">
-            {{ config.title.text }}
-        </span>
-        <ul>
+    <div class="title border-bottom">
+        <ul :style="config.title.style">
             <template v-for="(item, index) in routes">
                 <li
                     @click="router.push(item.path), active($event)"
@@ -40,23 +36,13 @@ function active(event: MouseEvent) {
 
 <style scope lang="less">
 .title {
-    position: fixed;
-    z-index: 99;
-
-    padding: 0px 10px;
-    height: 36px;
     width: 100%;
-    white-space: nowrap;
-    display: inline-flex;
-    align-items: center;
-    -webkit-app-region: drag;
 
     ul {
-        -webkit-app-region: no-drag;
         list-style-type: none;
         display: flex;
-        padding: 0;
-        margin: 0 14px;
+        padding: 4px 0;
+        margin: 0;
 
         li {
             font-size: 12px;

@@ -1,54 +1,61 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+// @ts-check
+
+const { app, ipcMain, BrowserWindow } = require("electron");
 const Store = require("electron-store");
-const path = require("path");
+const Logger = require("./src/logger");
+const { handleOpenFile } = require("./src/tasks/handle.file.open");
+const { openWindow } = require("./src/main");
+const { remoteRegister } = require("./src/tasks/remote.register");
+const { initStore } = require("./src/tasks/init.store");
+const { autoLaunch } = require("./src/tasks/auto.launch");
 
-/**
- * electron store
- */
+const logger = Logger("main");
 const store = new Store();
-exports.store = store;
-require("./src/init.store")(store);
 
-function createWindow() {
-    return new BrowserWindow({
-        minHeight: 400,
-        minWidth: 600,
-        show: false,
-        backgroundColor: "#f8f8f8",
-        titleBarStyle: "hidden",
-        titleBarOverlay: {
-            color: "#fff",
-            symbolColor: "black",
-        },
-        center: true,
+task("OCS启动程序", () =>
+    Promise.all([
+        task("初始化错误处理", () => handleError()),
+        task("初始化本地设置", () => initStore()),
+        task("初始化自动启动", () => autoLaunch()),
+        task("检测启动文件", () => handleOpenFile(logger)),
+        (async () => {
+            /** @type {BrowserWindow} */
+            const win = await task("启动软件", () => open());
+            await task("初始化远程通信模块", () => remoteRegister(win));
+            win.webContents.send("ready");
+        })(),
+    ])
+);
 
-        webPreferences: {
-            // 关闭拼写矫正
-            spellcheck: false,
-            webSecurity: true,
-            // 开启node
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
+/** 处理错误 */
+function handleError() {
+    app.on("render-process-gone", (e) => {
+        logger.error("render-process-gone", e);
+        process.exit(0);
+    });
+    app.on("child-process-gone", (e) => {
+        logger.error("child-process-gone", e);
+        process.exit(0);
     });
 }
 
-app.whenReady().then(async () => {
-    const win = createWindow();
+/** 等待显示 */
+async function open() {
+    return new Promise((resolve) => {
+        app.whenReady().then(async () => {
+            const win = await openWindow();
 
-    if (!app.isPackaged) {
-        /**
-         * using `mode` options to prevent issue : {@link https://github.com/electron/electron/issues/32702}
-         */
-        await win.loadURL("http://localhost:3000");
-        win.webContents.openDevTools({ mode: "detach" });
-    } else {
-        await win.loadFile("./public/index.html");
-    }
-    win.show();
-    app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
-        }
+            win.setAlwaysOnTop(Boolean(store.get("alwaysOnTop") || false));
+
+            resolve(win);
+        });
     });
-});
+}
+
+/** 注册任务 */
+async function task(name, func) {
+    const time = Date.now();
+    const res = await func();
+    logger.debug({ task: name, time: Date.now() - time });
+    return res;
+}

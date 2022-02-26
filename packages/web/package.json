@@ -8,12 +8,13 @@
         "serve": "vite preview"
     },
     "dependencies": {
+        "@ant-design/icons-vue": "6.0.1",
+        "@ocsjs/scripts": "workspace:^1.0.0",
         "ant-design-vue": "^2.2.8",
         "axios": "^0.25.0",
+        "interactjs": "^1.10.11",
         "vue": "^3.2.6",
-        "vue-router": "^4.0.12",
-        "electron": "../..",
-        "@ocsjs/scripts": "../scripts"
+        "vue-router": "^4.0.12"
     },
     "devDependencies": {
         "@vitejs/plugin-vue": "^1.6.1",

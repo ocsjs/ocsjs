@@ -1,17 +1,11 @@
 <template>
-    <div class="home">
-        <Title></Title>
-
-        <div class="content h-100">
-            <transition name="fade">
-                <router-view v-slot="{ Component }">
-                    <keep-alive>
-                        <component :is="Component" />
-                    </keep-alive>
-                </router-view>
-            </transition>
-        </div>
-    </div>
+    <transition name="fade">
+        <router-view v-slot="{ Component }">
+            <keep-alive>
+                <component  class="overflow-auto h-100" :is="Component" />
+            </keep-alive>
+        </router-view>
+    </transition>
 </template>
 
 <script setup lang="ts">
@@ -27,7 +21,7 @@ import Title from "../components/Title.vue";
     padding: 0;
 }
 
-.content{
+.content {
     padding: 32px 0;
 }
 

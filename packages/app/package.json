@@ -9,12 +9,14 @@
         "dist": "electron-builder --config ./electron.builder.json"
     },
     "devDependencies": {
+        "electron": "17.0.0",
         "electron-builder": "^22.14.13"
     },
     "dependencies": {
         "@ocsjs/scripts": "workspace:^1.0.0",
+        "dayjs": "^1.10.7",
         "electron-store": "^8.0.1",
-        "pino": "^7.6.5"
+        "pino": "^7.8.0"
     },
     "repository": {
         "type": "git",

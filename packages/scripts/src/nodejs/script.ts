@@ -2,7 +2,7 @@ import { chromium, LaunchOptions, Page } from "playwright";
 import { CX, ZHS } from ".";
 import { ScriptFunction, ScriptOptions } from "./types";
 
-const scripts: Record<keyof ScriptOptions, ScriptFunction> = {
+export const scripts: Record<keyof ScriptOptions, ScriptFunction> = {
     "cx-login-other": CX.otherLogin,
     "cx-login-phone": CX.phoneLogin,
     "cx-login-phone-code": CX.phoneCodeLogin,
@@ -12,12 +12,15 @@ const scripts: Record<keyof ScriptOptions, ScriptFunction> = {
     "zhs-login-school": ZHS.schoolLogin,
 };
 
-export async function launchScripts(launchOptions: LaunchOptions, ...scripts: { (page: Page): Promise<Page> }[]) {
+export async function launchScripts(
+    launchOptions: LaunchOptions,
+    ...scripts: { name: keyof ScriptOptions; options: ScriptOptions[keyof ScriptOptions] }[]
+) {
     const browser = await chromium.launch(launchOptions);
     let page = await browser.newPage();
 
-    for (const func of scripts) {
-        page = await func(page);
+    for (const item of scripts) {
+        page = await script(item.name, item.options)(page);
     }
 
     return {
@@ -26,8 +29,8 @@ export async function launchScripts(launchOptions: LaunchOptions, ...scripts: { 
     };
 }
 
-export function script<T extends keyof ScriptOptions>(name: T, opts: ScriptOptions[T]) {
+export function script<T extends keyof ScriptOptions>(name: T, options: ScriptOptions[T]) {
     return function (page: Page) {
-        return scripts[name](page, opts);
+        return scripts[name](page, options);
     };
 }

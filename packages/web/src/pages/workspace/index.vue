@@ -1,159 +1,154 @@
 <template>
-    <div class="h-100">
-        <ContextMenus>
-            <div id="workspace" class="text-center h-100">
-                <div id="nav" class="d-flex bg-white shadow-sm rounded p-2 mb-3">
-                    <!-- 面包屑 -->
-                    <div id="breadcrumb" class="w-100 d-flex align-items-center">
-                        <a-breadcrumb class="bread-crumb ps-3 pe-3 text-start">
-                            <template
-                                v-for="(item, index) of current
-                                    .getAllParent()
-                                    .concat(current)"
-                                :key="index"
-                            >
-                                <a-breadcrumb-item
-                                    class="pointer"
-                                    :title="item.name"
-                                    @click="item.click($event)"
-                                >
-                                    {{ StringUtils.maximum(item.name, 20) }}
-                                </a-breadcrumb-item>
-                            </template>
-                        </a-breadcrumb>
-                    </div>
-
-                    <div id="actions">
-                        <!-- 搜索文件夹 -->
-                        <a-button shape="circle" title="搜索文件夹">
-                            <template #icon><Icon type="icon-search" /></template>
-                        </a-button>
-                    </div>
-                </div>
-
-                <template v-if="current.children.length === 0">
-                    <div
-                        class="text-center text-secondary p-3 bg-white shadow-sm rounded w-100 mb-3"
-                    >
-                        右键创建文件夹
-                    </div>
+    <div id="workspace" class="text-center h-100">
+        <!-- 搜索文件夹 -->
+        <div class="files resizable col-2 p-2 ps-0 border-end">
+            <ContextMenus>
+                <a-directory-tree
+                    class="overflow-auto h-100"
+                    multiple
+                    v-model:expandedKeys="expandedKeys"
+                    v-model:selectedKeys="selectedKeys"
+                >
+                    <template #switcherIcon><Icon type="icon-down" /></template>
+                    <a-tree-node key="0-0" title="parent 0">
+                        <template #icon><Icon type="icon-wenjianjia" /></template>
+                        <a-tree-node key="0-0-0" title="leaf 0-0" is-leaf />
+                        <a-tree-node key="0-0-1" title="leaf 0-1" is-leaf />
+                    </a-tree-node>
+                </a-directory-tree>
+                <template #overlay>
+                    <Menus :data="menus" />
                 </template>
-                <template v-else>
-                    <div class="dirs bg-white shadow-sm rounded p-2 mb-3">
-                        <transition-group name="fade">
-                            <template
-                                v-for="(item, index) in current.children"
-                                :key="index"
-                            >
-                                <div class="p-2">
-                                    <DirectoryVue :data="item" />
-                                </div>
-                            </template>
-                        </transition-group>
-                    </div>
-                </template>
-
-                <template v-if="current.tasks.length === 0">
-                    <div
-                        class="text-center text-secondary p-3 bg-white shadow-sm rounded w-100 mb-3"
-                    >
-                        右键创建任务
-                    </div>
-                </template>
-                <template v-else>
-                    <div class="dirs bg-white shadow-sm rounded p-2 mb-3">
-                        <template v-for="(item, index) in current.tasks" :key="index">
-                            <div class="p-2">{{ item.name }}</div>
-                        </template>
-                    </div>
-                </template>
-            </div>
-
-            <template #overlay>
-                <Menus :data="menus" />
-            </template>
-        </ContextMenus>
+            </ContextMenus>
+        </div>
+        <div class="col-10"></div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef, Ref, ref } from "vue";
+import { computed, ComputedRef, onMounted, Ref, ref } from "vue";
 
 import { MenuItem } from "../../components/menus";
 import Menus from "../../components/menus/Menus.vue";
-import { StringUtils } from "../../utils/string";
-import { Directory, current } from "../../components/workspace/directory";
 import ContextMenus from "../../components/menus/ContextMenus.vue";
-import DirectoryVue from "../../components/workspace/Directory.vue";
+import { store } from "../../store";
+import interact from "interactjs";
 
-const selectedDirs = computed(() => current.value.getAllSelected());
+const fs = require("fs");
+const path = require("path");
 
-const menus: ComputedRef<MenuItem[]> = computed(() => {
-    let menus: MenuItem[] = [
-        {
-            title: "新建文件夹",
-            icon: "icon-folder",
-            onClick() {
-                current.value.add(Directory.create({ parent: current.value }));
+const expandedKeys = ref<string[]>(["0-0", "0-1"]);
+const selectedKeys = ref<string[]>([]);
+
+const menus: MenuItem[] = [
+    {
+        title: "新建文件夹",
+        icon: "icon-wenjianjia",
+        onClick() {
+            const name = validName("新建文件夹($count)");
+            const dir = path.resolve(store.workspace, name);
+            fs.mkdirSync(dir);
+            store.files.push(dir);
+        },
+    },
+    {
+        title: "新建OCS文件",
+        icon: "icon-file",
+        onClick() {
+            const name = validName("新建文件($count).ocs");
+            fs.writeFileSync(path.resolve(store.workspace, name), "{}");
+            store.files.push(name);
+        },
+    },
+];
+
+function validName(name: string) {
+    let count = 0;
+    let p = "";
+    while (true) {
+        p = path.resolve(
+            store.workspace,
+            name.replace("($count)", count++ === 0 ? "" : `(${count})`)
+        );
+
+        if (!fs.existsSync(p)) {
+            break;
+        }
+    }
+    return p;
+}
+
+onMounted(() => {
+    /** 边框拖拽，改变目录大小 */
+    interact(".resizable").resizable({
+        edges: { top: false, left: false, bottom: false, right: true },
+        margin: 8,
+        listeners: {
+            move: function (event) {
+                let { x, y } = event.target.dataset;
+
+                x = (parseFloat(x) || 0) + event.deltaRect.left;
+                y = (parseFloat(y) || 0) + event.deltaRect.top;
+
+                Object.assign(event.target.style, {
+                    width: `${event.rect.width}px`,
+                    height: `${event.rect.height}px`,
+                    transform: `translate(${x}px, ${y}px)`,
+                });
+
+                Object.assign(event.target.dataset, { x, y });
             },
         },
-    ];
-    if (current.value.tasks) {
-    }
-
-    if (selectedDirs.value.length > 0) {
-        menus.push({
-            title: "删除文件夹",
-            icon: "icon-delete",
-            onClick() {
-                current.value.remove(...selectedDirs.value);
-            },
-        });
-    }
-
-    if (selectedDirs.value.length === 1) {
-        menus.push({
-            title: "属性",
-            icon: "icon-detail",
-            onClick() {
-                selectedDirs.value[0].showDetail = true;
-            },
-        });
-    }
-
-    menus.push({
-        divide: true,
-        title: "新建任务",
-        icon: "icon-play-circle",
-        children: [
-            {
-                title: "超星刷课",
-            },
-            {
-                title: "超星作业",
-            },
-            {
-                title: "超星考试",
-            },
-        ],
     });
-
-    return menus;
-});
-
-/**
- * 点击页面，取消选中
- */
-document.addEventListener("click", (event) => {
-    if (!event.ctrlKey) {
-        current.value.unselectedChildren();
-    }
 });
 </script>
 
 <style scope lang="less">
 #workspace {
-    padding: 12px;
+    padding: 0;
+
+    .files {
+        max-width: 50vw;
+        min-width: 100px;
+        height: 100% !important;
+        background-color: white;
+
+        ul {
+            text-align: left;
+            padding: 0px 16px;
+        }
+
+        .ant-tree-switcher {
+            width: 12px;
+            height: 12px;
+        }
+        .ant-tree-switcher-icon {
+            transform: translate(-0.5px, -3px);
+        }
+
+        .ant-tree-treenode-selected > span.ant-tree-switcher {
+            color: #188fff85;
+        }
+        .ant-tree-node-selected {
+            color: #188fff85;
+        }
+
+        .ant-tree-treenode-selected > span.ant-tree-node-content-wrapper::before {
+            background-color: rgba(255, 255, 255, 0);
+        }
+        .ant-tree li .ant-tree-node-content-wrapper {
+            padding: 0;
+        }
+        .ant-tree li ul {
+            padding: 0px 0px 0px 8px;
+        }
+        .ant-tree li {
+            padding: 2px 0;
+        }
+        .ant-tree-title {
+            font-size: 12px;
+        }
+    }
 }
 
 #nav {
@@ -210,5 +205,9 @@ document.addEventListener("click", (event) => {
 [role="menuitem"],
 [role="menu"] {
     width: 180px;
+}
+
+.anticon {
+    transform: translate(-0.5px, -3px);
 }
 </style>

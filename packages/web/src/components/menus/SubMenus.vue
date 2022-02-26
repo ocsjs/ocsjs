@@ -1,6 +1,6 @@
 <template>
     <a-sub-menu :title="menu.title" :selectable="false">
-        <template #icon v-if="menu.icon">
+        <template>
             <Icon :type="menu.icon" />
         </template>
 

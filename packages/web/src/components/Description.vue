@@ -1,25 +1,32 @@
 <template>
-    <p class="row flex-nowrap">
+    <span class="row flex-nowrap mb-1">
         <span class="fw-bold me-1 col-3"> {{ label }} : </span>
 
-        <div class="ms-1 col-9 w"> <span class="desc">{{ String(desc) }}</span> </div>
-    </p>
+        <span class="ms-1 col-9">
+            <span v-if="desc" class="desc" :class="textClass"> {{ String(desc) }}</span>
+
+            <slot></slot>
+        </span>
+    </span>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, toRefs } from "vue";
 interface DescriptionProps {
     label: string;
-    desc: any
+    desc: any;
+    textClass: any;
 }
-const props = withDefaults(defineProps<DescriptionProps>(), {});
-const { label, desc } = toRefs(props);
+const props = withDefaults(defineProps<DescriptionProps>(), {
+    desc: "",
+    textClass: "",
+});
+const { label, desc, textClass } = toRefs(props);
 </script>
 
 <style scope lang="less">
-.desc{
-     word-wrap:break-word;  
-    word-break:break-all; 
+.desc {
+    word-wrap: break-word;
+    word-break: break-all;
 }
-
 </style>

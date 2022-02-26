@@ -15,6 +15,9 @@
         "gulp": "gulp  --allowEmpty"
     },
     "dependencies": {
+        "@playwright/test": "^1.18.1",
+        "dayjs": "^1.10.7",
+        "depcheck": "^1.4.3",
         "electron-store": "^8.0.1",
         "playwright": "^1.18.1"
     },
