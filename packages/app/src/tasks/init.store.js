@@ -20,7 +20,7 @@ exports.initStore = function () {
         /** 配置文件路径 */
         store.set("config-path", path.resolve(app.getPath("userData"), "./config.json"));
         
-        /** 工作台路径 */
+        /** 工作区路径 */
         const workspace = path.resolve(app.getPath("userData"), "./workspace");
         fs.mkdirSync(workspace, { recursive: true });
         store.set("workspace", workspace);

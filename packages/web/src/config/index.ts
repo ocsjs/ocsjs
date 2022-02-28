@@ -9,9 +9,7 @@ export const config = reactive({
     title: {
         style: {
             backgroundColor: "#fff",
-        },
-        text: "ocs",
-        icon: "favicon.png",
+        } 
     },
     /**
      * 状态存储
@@ -31,7 +29,7 @@ export const config = reactive({
             path: "/",
             component: shallowRef(workspace),
             meta: {
-                title: "工作台",
+                title: "工作区",
             },
         },
         setting: {

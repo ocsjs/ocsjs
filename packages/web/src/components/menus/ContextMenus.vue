@@ -19,30 +19,36 @@ onMounted(() => {
     let height = contextmenu.value.clientHeight;
     document.addEventListener("mousedown", () => {
         height = contextmenu.value.clientHeight;
-        contextmenu.value.style.display = "none";
+        contextmenu.value.style.visibility = "hidden";
     });
 
     //右键菜单单击
     container.value.oncontextmenu = function (event) {
-        var x = event.clientX;
-        var y = event.clientY;
+        console.log(event);
+        // 判断是否在文件或者文件夹之上点击
+        const overFileNode = event
+            .composedPath()
+            .some((t) => (t as HTMLElement).classList?.contains("ant-tree-title"));
 
-        if (y > document.body.clientHeight - height) {
-            y = document.body.clientHeight - height - 30;
+        if (!overFileNode) {
+            var x = event.clientX;
+            var y = event.clientY;
+
+            console.log({ x, y, el: [contextmenu.value] });
+
+            contextmenu.value.style.visibility = "visible";
+            contextmenu.value.style.left = x + 10 + "px";
+            contextmenu.value.style.top = y + 10 + "px";
+
+            return false;
         }
-
-        contextmenu.value.style.display = "block";
-        contextmenu.value.style.left = x + 10 + "px";
-        contextmenu.value.style.top = y + 10 + "px";
-
-        return false;
     };
 });
 </script>
 
 <style scope lang="less">
 .contextmenu {
-    display: none;
+    visibility: hidden;
     position: fixed;
     width: 180px;
     z-index: 999;

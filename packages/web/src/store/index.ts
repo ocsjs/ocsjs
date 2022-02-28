@@ -32,10 +32,32 @@ export const store = reactive({
 ipcRenderer.once("ready", () => {
     changeState();
 
-    watch(store, () => {
-        changeState();
-        s.store = JSON.parse(JSON.stringify(store));
+    watch(store, (newStore) => {
+        s.store = JSON.parse(JSON.stringify(newStore));
     });
+
+    watch(
+        () => store.alwaysOnTop,
+        () => remote.win.call("setAlwaysOnTop", store.alwaysOnTop)
+    );
+    watch(
+        () => store["auto-launch"],
+        () => remote.methods.call("autoLaunch")
+    );
+    watch(
+        () => store.win.size,
+        () => remote.webContents.call("setZoomFactor", store.win.size)
+    );
+    watch(
+        () => store.win.devtools,
+        () => {
+            if (store.win.devtools) {
+                remote.webContents.call("openDevTools");
+            } else {
+                remote.webContents.call("closeDevTools");
+            }
+        }
+    );
 });
 
 function changeState() {

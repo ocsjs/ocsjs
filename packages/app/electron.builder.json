@@ -4,13 +4,12 @@
     "productName": "ocs",
     "asar": false,
     "copyright": "Copyright © 2021 ${author}",
-    // "afterAllArtifactBuild": "./lib/electron/after-pack.js",
     "nsis": {
         "oneClick": false,
         "allowToChangeInstallationDirectory": true
     },
     "win": {
-        "icon": "public/favicon.ico",
+        "icon": "public/icon.ico",
         "artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
         "target": [
             {
@@ -20,13 +19,13 @@
         ]
     },
     "mac": {
-        "icon": "public/favicon.ico",
+        "icon": "public/icon.ico",
         "artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
         "target": "default"
     },
     "fileAssociations": {
         "ext": "ocs",
-        "icon": "public/favicon.ico",
+        "icon": "public/icon.ico",
         "name": "ocs 脚本"
     }
 }

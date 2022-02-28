@@ -1,82 +1,38 @@
 <template>
-    <div id="workspace" class="text-center h-100">
+    <div id="workspace" class="text-center h-100 d-flex">
         <!-- 搜索文件夹 -->
-        <div class="files resizable col-2 p-2 ps-0 border-end">
-            <ContextMenus>
-                <a-directory-tree
-                    class="overflow-auto h-100"
-                    multiple
-                    v-model:expandedKeys="expandedKeys"
-                    v-model:selectedKeys="selectedKeys"
-                >
-                    <template #switcherIcon><Icon type="icon-down" /></template>
-                    <a-tree-node key="0-0" title="parent 0">
-                        <template #icon><Icon type="icon-wenjianjia" /></template>
-                        <a-tree-node key="0-0-0" title="leaf 0-0" is-leaf />
-                        <a-tree-node key="0-0-1" title="leaf 0-1" is-leaf />
-                    </a-tree-node>
-                </a-directory-tree>
-                <template #overlay>
-                    <Menus :data="menus" />
-                </template>
-            </ContextMenus>
+        <div class="files resizable overflow-auto col-3 p-2 border-end">
+            <FileTree title="工作区" class="mb-2" :files="roots.workspace"></FileTree>
+            <FileTree title="打开的文件" :files="roots.opened"></FileTree>
         </div>
-        <div class="col-10"></div>
+        <div class="col-10">
+            <template v-if="fileStore.current === undefined">
+                打开 (.ocs) 文件进行编辑或者运行
+            </template>
+            <template v-else>
+                {{ fileStore.current }}
+            </template>
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, Ref, ref } from "vue";
+import { computed, ComputedRef, onMounted, reactive, Ref, ref } from "vue";
 
-import { MenuItem } from "../../components/menus";
-import Menus from "../../components/menus/Menus.vue";
-import ContextMenus from "../../components/menus/ContextMenus.vue";
 import { store } from "../../store";
 import interact from "interactjs";
+import { createFile, File, fs } from "../../components/file/File";
+import FileTree from "../../components/file/FileTree.vue";
+import { fileStore } from "../../components/file/store";
 
-const fs = require("fs");
-const path = require("path");
+const roots = reactive({
+    workspace: createFile(store.workspace).children || [],
+    opened: store.files
+        .filter((f) => fs.existsSync(String(f)))
+        .map((f) => createFile(String(f))),
+});
 
-const expandedKeys = ref<string[]>(["0-0", "0-1"]);
-const selectedKeys = ref<string[]>([]);
-
-const menus: MenuItem[] = [
-    {
-        title: "新建文件夹",
-        icon: "icon-wenjianjia",
-        onClick() {
-            const name = validName("新建文件夹($count)");
-            const dir = path.resolve(store.workspace, name);
-            fs.mkdirSync(dir);
-            store.files.push(dir);
-        },
-    },
-    {
-        title: "新建OCS文件",
-        icon: "icon-file",
-        onClick() {
-            const name = validName("新建文件($count).ocs");
-            fs.writeFileSync(path.resolve(store.workspace, name), "{}");
-            store.files.push(name);
-        },
-    },
-];
-
-function validName(name: string) {
-    let count = 0;
-    let p = "";
-    while (true) {
-        p = path.resolve(
-            store.workspace,
-            name.replace("($count)", count++ === 0 ? "" : `(${count})`)
-        );
-
-        if (!fs.existsSync(p)) {
-            break;
-        }
-    }
-    return p;
-}
+const activeKey = ref(["1"]);
 
 onMounted(() => {
     /** 边框拖拽，改变目录大小 */
@@ -84,7 +40,7 @@ onMounted(() => {
         edges: { top: false, left: false, bottom: false, right: true },
         margin: 8,
         listeners: {
-            move: function (event) {
+            move: function (event: any) {
                 let { x, y } = event.target.dataset;
 
                 x = (parseFloat(x) || 0) + event.deltaRect.left;
@@ -115,7 +71,7 @@ onMounted(() => {
 
         ul {
             text-align: left;
-            padding: 0px 16px;
+            padding: 0;
         }
 
         .ant-tree-switcher {
@@ -126,27 +82,34 @@ onMounted(() => {
             transform: translate(-0.5px, -3px);
         }
 
-        .ant-tree-treenode-selected > span.ant-tree-switcher {
-            color: #188fff85;
+        // background-color: #188fff31;
+        .ant-tree.ant-tree-directory
+            > li.ant-tree-treenode-selected
+            > span.ant-tree-node-content-wrapper::before {
+            background-color: #188fff54;
         }
-        .ant-tree-node-selected {
-            color: #188fff85;
+        .ant-tree.ant-tree-directory
+            .ant-tree-child-tree
+            > li.ant-tree-treenode-selected
+            > span.ant-tree-node-content-wrapper::before {
+            background-color: #188fff54;
         }
 
-        .ant-tree-treenode-selected > span.ant-tree-node-content-wrapper::before {
-            background-color: rgba(255, 255, 255, 0);
+        .ant-tree-child-tree .ant-tree-treenode-switcher-open {
+            border-left: 1px solid #dfdfdf;
         }
+
         .ant-tree li .ant-tree-node-content-wrapper {
             padding: 0;
         }
         .ant-tree li ul {
-            padding: 0px 0px 0px 8px;
+            padding: 0px 0px 0px 6px;
         }
         .ant-tree li {
-            padding: 2px 0;
+            padding: 0;
         }
         .ant-tree-title {
-            font-size: 12px;
+            font-size: 11px;
         }
     }
 }
@@ -205,9 +168,5 @@ onMounted(() => {
 [role="menuitem"],
 [role="menu"] {
     width: 180px;
-}
-
-.anticon {
-    transform: translate(-0.5px, -3px);
 }
 </style>

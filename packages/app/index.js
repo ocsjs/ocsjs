@@ -10,7 +10,12 @@ const { initStore } = require("./src/tasks/init.store");
 const { autoLaunch } = require("./src/tasks/auto.launch");
 
 const logger = Logger("main");
+
 const store = new Store();
+
+app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
+    logger.debug({ event, argv, workingDirectory, additionalData });
+});
 
 task("OCS启动程序", () =>
     Promise.all([
@@ -37,6 +42,13 @@ function handleError() {
         logger.error("child-process-gone", e);
         process.exit(0);
     });
+
+    process.on("uncaughtException", (e) => {
+        logger.error("rejectionHandled", e);
+    });
+    process.on("unhandledRejection", (e) => {
+        logger.error("unhandledRejection", e);
+    });
 }
 
 /** 等待显示 */
@@ -56,6 +68,6 @@ async function open() {
 async function task(name, func) {
     const time = Date.now();
     const res = await func();
-    logger.debug({ task: name, time: Date.now() - time });
+    logger.debug(name, "耗时:", Date.now() - time);
     return res;
 }

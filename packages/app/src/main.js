@@ -1,8 +1,7 @@
 // @ts-check
 const { BrowserWindow, app } = require("electron");
 
-
-app.disableHardwareAcceleration()
+app.disableHardwareAcceleration();
 
 function createWindow() {
     return new BrowserWindow({
@@ -41,7 +40,7 @@ async function openWindow() {
         }
     });
 
-    win.show()
+    win.show();
 
     return win;
 }

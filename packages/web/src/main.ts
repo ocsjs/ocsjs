@@ -13,3 +13,9 @@ const IconFont = createFromIconfontCN({
 const app = createApp(App);
 
 app.use(router).use(Antd).component("IconFont", IconFont).component("Icon", Icon).mount("#app");
+
+app.directive("focus", {
+    mounted(el) {
+        el.focus();
+    },
+});

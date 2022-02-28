@@ -32,7 +32,7 @@
             </Card>
 
             <Card title="路径设置">
-                <Path label="工作台路径" name="workspace" :setting="true" />
+                <Path label="工作区路径" name="workspace" :setting="true" />
                 <Path label="配置路径" name="config-path" />
                 <Path label="数据路径" name="user-data-path" />
                 <Path label="日志路径" name="logs-path" />

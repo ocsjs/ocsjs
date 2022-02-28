@@ -20,12 +20,6 @@ html,
 .pointer {
   cursor: pointer;
 }
-/**
-bootstrap 和 ant design 冲突，导致图标移位
-*/
-body .ocsicon {
-  transform: translate(-0.5px, -3px);
-}
 /* 设置滚动条的样式 */
 ::-webkit-scrollbar {
   width: 10px;
