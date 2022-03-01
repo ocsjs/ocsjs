@@ -1,4 +1,4 @@
-import { BrowserWindow, App, Dialog, WebContents } from "electron";
+import { BrowserWindow, App, Dialog, WebContents, Clipboard } from "electron";
 const { ipcRenderer } = require("electron");
 
 /**
@@ -34,4 +34,6 @@ export const remote = {
     dialog: registerRemote<Dialog>("dialog"),
     // 暴露方法
     methods: registerRemote<any>("methods"),
+    // 日志
+    logger: registerRemote<Console>("logger"),
 };

@@ -1,4 +1,4 @@
-const { ipcMain, app, dialog, BrowserWindow } = require("electron");
+const { ipcMain, app, dialog, BrowserWindow, clipboard } = require("electron");
 const Logger = require("../logger");
 
 const { autoLaunch } = require("./auto.launch");
@@ -40,4 +40,5 @@ exports.remoteRegister = function (win) {
     registerRemoteEvent("methods", {
         autoLaunch,
     });
+    registerRemoteEvent("logger", Logger("render"));
 };

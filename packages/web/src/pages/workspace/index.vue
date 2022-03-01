@@ -2,12 +2,17 @@
     <div id="workspace" class="text-center h-100 d-flex">
         <!-- 搜索文件夹 -->
         <div class="files resizable overflow-auto col-3 p-2 border-end">
-            <FileTree title="工作区" class="mb-2" :files="roots.workspace"></FileTree>
+            <FileTree
+                title="工作区"
+                :root="store.workspace"
+                :files="roots.workspace"
+            ></FileTree>
             <FileTree title="打开的文件" :files="roots.opened"></FileTree>
+            <FileTree title="临时文件" :files="[]"></FileTree>
         </div>
-        <div class="col-10">
+        <div>
             <template v-if="fileStore.current === undefined">
-                打开 (.ocs) 文件进行编辑或者运行
+                <div>打开 (.ocs) 文件进行编辑或者运行</div>
             </template>
             <template v-else>
                 {{ fileStore.current }}
@@ -17,28 +22,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ComputedRef, onMounted, reactive, Ref, ref } from "vue";
+import { onMounted, reactive } from "vue";
 
 import { store } from "../../store";
 import interact from "interactjs";
-import { createFile, File, fs } from "../../components/file/File";
+import { createFileNode, fs } from "../../components/file/File";
 import FileTree from "../../components/file/FileTree.vue";
 import { fileStore } from "../../components/file/store";
 
 const roots = reactive({
-    workspace: createFile(store.workspace).children || [],
+    workspace: createFileNode(store.workspace, store.workspace).children || [],
     opened: store.files
         .filter((f) => fs.existsSync(String(f)))
-        .map((f) => createFile(String(f))),
+        .map((f) => createFileNode(String(f), String(f))),
 });
-
-const activeKey = ref(["1"]);
 
 onMounted(() => {
     /** 边框拖拽，改变目录大小 */
     interact(".resizable").resizable({
         edges: { top: false, left: false, bottom: false, right: true },
-        margin: 8,
+        margin: 20,
         listeners: {
             move: function (event: any) {
                 let { x, y } = event.target.dataset;
@@ -68,49 +71,6 @@ onMounted(() => {
         min-width: 100px;
         height: 100% !important;
         background-color: white;
-
-        ul {
-            text-align: left;
-            padding: 0;
-        }
-
-        .ant-tree-switcher {
-            width: 12px;
-            height: 12px;
-        }
-        .ant-tree-switcher-icon {
-            transform: translate(-0.5px, -3px);
-        }
-
-        // background-color: #188fff31;
-        .ant-tree.ant-tree-directory
-            > li.ant-tree-treenode-selected
-            > span.ant-tree-node-content-wrapper::before {
-            background-color: #188fff54;
-        }
-        .ant-tree.ant-tree-directory
-            .ant-tree-child-tree
-            > li.ant-tree-treenode-selected
-            > span.ant-tree-node-content-wrapper::before {
-            background-color: #188fff54;
-        }
-
-        .ant-tree-child-tree .ant-tree-treenode-switcher-open {
-            border-left: 1px solid #dfdfdf;
-        }
-
-        .ant-tree li .ant-tree-node-content-wrapper {
-            padding: 0;
-        }
-        .ant-tree li ul {
-            padding: 0px 0px 0px 6px;
-        }
-        .ant-tree li {
-            padding: 0;
-        }
-        .ant-tree-title {
-            font-size: 11px;
-        }
     }
 }
 

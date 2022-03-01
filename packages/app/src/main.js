@@ -25,11 +25,7 @@ async function openWindow() {
     const win = createWindow();
 
     if (!app.isPackaged) {
-        /**
-         * using `mode` options to prevent issue : {@link https://github.com/electron/electron/issues/32702}
-         */
         await win.loadURL("http://localhost:3000");
-        win.webContents.openDevTools({ mode: "detach" });
     } else {
         await win.loadFile("./public/index.html");
     }

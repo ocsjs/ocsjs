@@ -40,3 +40,32 @@ html,
     background: rgba(0, 0, 0, 0.1);
     box-shadow: inset006pxrgba(0, 0, 0, 0.3);
 }
+
+/** 通知栏样式 */
+.ant-notification {
+    .anticon {
+        transform: translate(-0.5px, -6px);
+    }
+
+    /** 主容器 */
+    .ant-notification-notice{
+        padding: 12px;
+    }
+
+    /** 底部按钮 */
+    .ant-notification-notice-btn{
+        margin-top: 8px;
+    }
+
+    .ant-notification-notice-with-icon .ant-notification-notice-description {
+        margin-left: 0;
+        font-size: 12px;
+    }
+    .ant-notification-notice-with-icon .ant-notification-notice-message {
+        margin-left: 36px;
+    }
+
+    .ant-notification-notice-description {
+        overflow: auto;
+    }
+}

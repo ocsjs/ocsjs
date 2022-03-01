@@ -30,43 +30,39 @@ export const store = reactive({
 });
 
 ipcRenderer.once("ready", () => {
-    changeState();
+    setAlwaysOnTop();
+    setZoomFactor();
+    devtools();
+    autoLaunch();
 
     watch(store, (newStore) => {
         s.store = JSON.parse(JSON.stringify(newStore));
     });
 
-    watch(
-        () => store.alwaysOnTop,
-        () => remote.win.call("setAlwaysOnTop", store.alwaysOnTop)
-    );
-    watch(
-        () => store["auto-launch"],
-        () => remote.methods.call("autoLaunch")
-    );
-    watch(
-        () => store.win.size,
-        () => remote.webContents.call("setZoomFactor", store.win.size)
-    );
-    watch(
-        () => store.win.devtools,
-        () => {
-            if (store.win.devtools) {
-                remote.webContents.call("openDevTools");
-            } else {
-                remote.webContents.call("closeDevTools");
-            }
-        }
-    );
+    watch(() => store.alwaysOnTop, setAlwaysOnTop);
+    watch(() => store["auto-launch"], autoLaunch);
+    watch(() => store.win.size, setZoomFactor);
+    watch(() => store.win.devtools, devtools);
 });
 
-function changeState() {
+function setAlwaysOnTop() {
     remote.win.call("setAlwaysOnTop", store.alwaysOnTop);
-    remote.methods.call("autoLaunch");
-    remote.webContents.call("setZoomFactor", store.win.size);
+}
 
+function autoLaunch() {
+    remote.methods.call("autoLaunch");
+}
+
+function setZoomFactor() {
+    remote.webContents.call("setZoomFactor", store.win.size);
+}
+
+function devtools() {
     if (store.win.devtools) {
-        remote.webContents.call("openDevTools");
+        /**
+         * using `mode` options to prevent issue : {@link https://github.com/electron/electron/issues/32702}
+         */
+        remote.webContents.call("openDevTools", { mode: "detach" });
     } else {
         remote.webContents.call("closeDevTools");
     }
