@@ -1,6 +1,6 @@
 <template>
     <span class="row flex-nowrap mb-1">
-        <span class="fw-bold me-1 col-3"> {{ label }} : </span>
+        <span class="me-1 col-3"> {{ label }} : </span>
 
         <span class="ms-1 col-9">
             <span v-if="desc" class="desc" :class="textClass"> {{ String(desc) }}</span>

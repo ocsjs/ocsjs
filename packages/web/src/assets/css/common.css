@@ -37,6 +37,10 @@ html,
   background: rgba(0, 0, 0, 0.1);
   box-shadow: inset006pxrgba(0, 0, 0, 0.3);
 }
+/** message 消息样式 */
+.ant-message-notice .anticon {
+  transform: translate(-0.5px, -4px);
+}
 /** 通知栏样式 */
 .ant-notification {
   /** 主容器 */

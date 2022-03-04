@@ -5,6 +5,20 @@ import "ant-design-vue/dist/antd.css";
 import { router } from "./route";
 import { createFromIconfontCN } from "@ant-design/icons-vue";
 import Icon from "./components/Icon.vue";
+import { notify } from "./utils/notify";
+
+process.on("uncaughtException", (e) => {
+    notify("未知的错误", e.stack, "render-error", {
+        type: "error",
+        copy: true,
+    });
+});
+process.on("unhandledRejection", (e: Error) => {
+    notify("未知的错误", e.stack, "render-error", {
+        type: "error",
+        copy: true,
+    });
+});
 
 const IconFont = createFromIconfontCN({
     scriptUrl: "js/iconfont.js", // 在 iconfont.cn 上生成,

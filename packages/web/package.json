@@ -12,6 +12,7 @@
         "@ocsjs/scripts": "workspace:^1.0.0",
         "ant-design-vue": "^2.2.8",
         "axios": "^0.25.0",
+        "highlight.js": "^11.4.0",
         "interactjs": "^1.10.11",
         "vue": "^3.2.6",
         "vue-router": "^4.0.12"

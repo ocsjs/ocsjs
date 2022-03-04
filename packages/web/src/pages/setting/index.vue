@@ -39,7 +39,7 @@
                 <Path label="二进制文件" name="exe-path" />
             </Card>
 
-            <div>
+            <div class="mt-4">
                 <a-popconfirm
                     title="确认重置您的设置，并重新启动软件吗？"
                     ok-text="确认"
@@ -57,12 +57,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, toRefs } from "vue";
+import { ref, reactive, toRefs, watch } from "vue";
 import Card from "../../components/Card.vue";
 import Description from "../../components/Description.vue";
 import Path from "./Path.vue";
 import { store } from "../../store";
 import { remote } from "../../utils/remote";
+
+console.log(store);
+
+watch(store,()=>{
+    console.log(store);
+    
+})
+
 
 function reset() {
     store.version = undefined;

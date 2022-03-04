@@ -7,7 +7,7 @@
                     :key="item.title"
                     :selectable="false"
                     v-if="!item.hide"
-                    @click="item.onClick"
+                    @click="click(item)"
                     :disabled="item.disable"
                 >
                     <template #icon>
@@ -36,6 +36,17 @@ const props = withDefaults(defineProps<MenusProps>(), {
     data: [] as any,
 });
 const { data } = toRefs(props);
+const emits = defineEmits<{
+    (e: "error", error: Error): void;
+}>();
+
+function click(item: MenuItem) {
+    try {
+        item.onClick?.(item);
+    } catch (e) {
+        emits("error", e as Error);
+    }
+}
 </script>
 
 <style scope lang="less"></style>

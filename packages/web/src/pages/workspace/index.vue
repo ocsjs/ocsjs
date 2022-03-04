@@ -2,40 +2,33 @@
     <div id="workspace" class="text-center h-100 d-flex">
         <!-- 搜索文件夹 -->
         <div class="files resizable overflow-auto col-3 p-2 border-end">
-            <FileTree
-                title="工作区"
-                :root="store.workspace"
-                :files="roots.workspace"
-            ></FileTree>
-            <FileTree title="打开的文件" :files="roots.opened"></FileTree>
-            <FileTree title="临时文件" :files="[]"></FileTree>
+            <template v-for="(project, index) in projects" :key="index">
+                <FileTree v-if="project.node.children" :project="project"></FileTree>
+            </template>
         </div>
-        <div>
-            <template v-if="fileStore.current === undefined">
-                <div>打开 (.ocs) 文件进行编辑或者运行</div>
+        <div class="w-100 h-100">
+            <template v-if="Project.opened.value.length === 0">
+                <div class="notice">打开 (.ocs) 文件进行编辑或者运行</div>
             </template>
             <template v-else>
-                {{ fileStore.current }}
+                <template v-for="(file, index) of Project.opened.value" :key="index">
+                    <FormCreate v-show="file.stat.opened" :file="file"></FormCreate>
+                </template>
             </template>
         </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive } from "vue";
+import { onMounted, reactive, ref } from "vue";
 
 import { store } from "../../store";
 import interact from "interactjs";
-import { createFileNode, fs } from "../../components/file/File";
 import FileTree from "../../components/file/FileTree.vue";
-import { fileStore } from "../../components/file/store";
+import { Project } from "../../components/project";
+import FormCreate from "../../components/form/FormCreate.vue";
 
-const roots = reactive({
-    workspace: createFileNode(store.workspace, store.workspace).children || [],
-    opened: store.files
-        .filter((f) => fs.existsSync(String(f)))
-        .map((f) => createFileNode(String(f), String(f))),
-});
+const projects = ref<Project[]>([Project.create("工作区", store.workspace)]);
 
 onMounted(() => {
     /** 边框拖拽，改变目录大小 */
@@ -71,6 +64,11 @@ onMounted(() => {
         min-width: 100px;
         height: 100% !important;
         background-color: white;
+    }
+
+    .notice {
+        top: 30%;
+        position: relative;
     }
 }
 

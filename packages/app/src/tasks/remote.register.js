@@ -1,6 +1,6 @@
 const { ipcMain, app, dialog, BrowserWindow, clipboard } = require("electron");
 const Logger = require("../logger");
-
+const trash = require("trash");
 const { autoLaunch } = require("./auto.launch");
 
 /**
@@ -12,19 +12,31 @@ function registerRemoteEvent(name, target) {
     const logger = Logger("remote");
     ipcMain
         .on(name + "-get", (event, args) => {
-            logger.info({ event: name + "-get", args });
-            const property = args[0];
-            event.returnValue = target[property];
+            try {
+                logger.info({ event: name + "-get", args });
+                const property = args[0];
+                event.returnValue = target[property];
+            } catch (e) {
+                event.returnValue = { error: e };
+            }
         })
         .on(name + "-set", (event, args) => {
-            logger.info({ event: name + "-set", args });
-            const [property, value] = [args[0], args[1]];
-            event.returnValue = target[property] = value;
+            try {
+                logger.info({ event: name + "-set", args });
+                const [property, value] = [args[0], args[1]];
+                event.returnValue = target[property] = value;
+            } catch (e) {
+                event.returnValue = { error: e };
+            }
         })
         .on(name + "-call", async (event, args) => {
-            logger.info({ event: name + "-call", args });
-            const [property, ...value] = [args.shift(), ...args];
-            event.returnValue = await target[property](...value);
+            try {
+                logger.info({ event: name + "-call", args });
+                const [property, ...value] = [args.shift(), ...args];
+                event.returnValue = await target[property](...value);
+            } catch (e) {
+                event.returnValue = { error: e };
+            }
         });
 }
 
@@ -39,6 +51,7 @@ exports.remoteRegister = function (win) {
     registerRemoteEvent("dialog", dialog);
     registerRemoteEvent("methods", {
         autoLaunch,
+        trash,
     });
     registerRemoteEvent("logger", Logger("render"));
 };

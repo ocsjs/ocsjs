@@ -3,27 +3,24 @@ import { h, VNodeTypes } from "vue";
 import { StringUtils } from "./string";
 const { clipboard } = require("electron");
 
-export function notify(
-    title: string,
-    msg: any,
-    key: string,
-    options?: {
-        type?: "error" | "success" | "info" | "warn";
-        duration?: number;
-        btn?: VNodeTypes | undefined;
-        copy?: boolean;
-        close?: boolean;
-    }
-) {
+interface NotifyOptions {
+    type?: "error" | "success" | "info" | "warn";
+    duration?: number;
+    btn?: VNodeTypes | undefined;
+    copy?: boolean;
+    close?: boolean;
+}
+
+export function notify(title: string, msg: any, key: string, options?: NotifyOptions) {
     notification[options?.type || "info"]({
         key,
         message: title,
         description: h("span", { title: String(msg) }, StringUtils.maximum(String(msg), 100)),
-        duration: 0,
+        duration: options?.duration || 10,
         btn:
             options?.btn ||
             h("div", [
-                options?.copy ? cerateCopyButton(title, msg, key) : "",
+                options?.copy ? cerateCopyButton(title, msg, key, options) : "",
                 options?.close ? createCloseButton(key) : "",
             ]),
     });
@@ -49,7 +46,7 @@ function createCloseButton(key: string) {
 /**
  * 创建复制信息按钮
  */
-function cerateCopyButton(title: string, msg: any, key: string) {
+function cerateCopyButton(title: string, msg: any, key: string, options?: NotifyOptions) {
     return h(
         Button,
         {
@@ -59,15 +56,18 @@ function cerateCopyButton(title: string, msg: any, key: string) {
                 clipboard.writeText(title + "\n" + String(msg));
 
                 notify(title, msg, key, {
-                    btn: h(
-                        Button,
-                        {
-                            type: "primary",
-                            size: "small",
-                            disabled: true,
-                        },
-                        "复制成功√"
-                    ),
+                    ...options,
+                    ...{
+                        btn: h(
+                            Button,
+                            {
+                                type: "primary",
+                                size: "small",
+                                disabled: true,
+                            },
+                            "复制成功√"
+                        ),
+                    },
                 });
             },
         },

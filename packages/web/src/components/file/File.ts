@@ -1,26 +1,31 @@
+import { config } from "../../config";
+import { Project } from "../project";
+
 const fs = require("fs") as typeof import("fs");
 const path = require("path") as typeof import("path");
 
 export { fs, path };
 
-/** 文件状态 */
+/** 文件节点状态 */
 export interface FileStats {
     createTime: number;
     modifyTime: number;
     /** 是否为文件夹 */
     isDirectory: boolean;
-    /** 已被删除 */
-    removed: boolean;
     /** 是否选中 */
     selected: boolean;
     /** 重命名中 */
     renaming: boolean;
+    /** 是否展开 */
+    expand: boolean;
+    /** 是否正在打开编辑 */
+    opened: boolean;
 }
 
 /**
- * 文件对象
+ * 文件节点
  */
-export interface File {
+export interface FileNode {
     /** 文件名 */
     title: string;
     key: string;
@@ -36,8 +41,10 @@ export interface File {
     /** 文件内容 */
     content: string;
     /** 子文件 */
-    children?: File[];
+    children?: FileNode[];
 }
+
+export class FileNode {}
 
 /**
  * 获取可用文件名
@@ -58,61 +65,11 @@ export function validFileName(rootPath: string, name: string) {
 }
 
 /**
- * 创建文件(夹)对象，到文件树
- *
- * @param filePath 文件(夹)路径
- * @param title 覆盖文件显示名
- * @returns
- */
-export function createFileNode(rootPath: string, filePath?: string): File {
-    filePath = filePath || rootPath;
-    const stat = fs.statSync(filePath);
-    let children;
-    let content = "";
-    let icon;
-    if (stat.isDirectory()) {
-        icon = "dir";
-        children = fs
-            .readdirSync(filePath)
-            .map((childFilePath) => createFileNode(rootPath, path.resolve(filePath || rootPath, childFilePath)))
-            .filter((f) => !!f);
-    } else {
-        icon = "file";
-        content = fs.readFileSync(filePath).toString();
-    }
-
-    let title = path.basename(filePath);
-    let p = path.dirname(filePath);
-    return {
-        title,
-        key: filePath
-            .replace(rootPath + "\\", "")
-            .split("\\")
-            .join("-"),
-        slots: {
-            icon,
-        },
-        stat: {
-            isDirectory: stat.isDirectory(),
-            createTime: stat.birthtimeMs,
-            modifyTime: stat.ctimeMs,
-            removed: false,
-            selected: false,
-            renaming: true,
-        },
-        content,
-        parent: p,
-        path: filePath,
-        children,
-    };
-}
-
-/**
  * 提供文件遍历操作
  * @param files 文件源
  * @param handlers 处理器
  */
-export function loopFiles(files: File[], ...handlers: { (files: File[]): File[] }[]) {
+export function loopFiles(files: FileNode[], ...handlers: { (files: FileNode[]): FileNode[] }[]) {
     for (const handler of handlers) {
         files = handler(files);
     }
@@ -127,4 +84,33 @@ export function loopFiles(files: File[], ...handlers: { (files: File[]): File[] 
     }
 
     return files;
+}
+
+/**
+ * 扁平化目录结构
+ * @param files 文件源
+ */
+export function flatFiles(files: FileNode[]): FileNode[] {
+    let _files: FileNode[] = Array.from(JSON.parse(JSON.stringify(files)));
+    let flat = [] as FileNode[];
+    while (_files.length !== 0) {
+        const file = _files.shift();
+        if (file) {
+            if (file.children) {
+                _files = _files.concat(file.children);
+            }
+            flat.push(file);
+        }
+    }
+
+    return flat;
+}
+
+export function createFile(parent: FileNode) {
+    const newFilePath = validFileName(parent.path, "新建OCS文件($count).ocs");
+    fs.writeFileSync(newFilePath, config.ocsFileTemplate);
+}
+export function mkdir(parent: FileNode) {
+    const newDirPath = validFileName(parent.path, "新建文件夹($count)");
+    fs.mkdirSync(newDirPath);
 }

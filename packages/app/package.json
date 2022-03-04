@@ -16,7 +16,8 @@
         "@ocsjs/scripts": "workspace:^1.0.0",
         "dayjs": "^1.10.7",
         "electron-store": "^8.0.1",
-        "pino": "^7.8.0"
+        "pino": "^7.8.0",
+        "trash": "7.2.0"
     },
     "repository": {
         "type": "git",

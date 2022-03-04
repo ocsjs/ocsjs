@@ -1,6 +1,6 @@
 // @ts-check
 
-const { app, ipcMain, BrowserWindow } = require("electron");
+const { app, ipcMain, BrowserWindow, ipcRenderer } = require("electron");
 const Store = require("electron-store");
 const Logger = require("./src/logger");
 const { handleOpenFile } = require("./src/tasks/handle.file.open");
@@ -34,12 +34,12 @@ task("OCS启动程序", () =>
 
 /** 处理错误 */
 function handleError() {
-    app.on("render-process-gone", (e) => {
-        logger.error("render-process-gone", e);
+    app.on("render-process-gone", (e, c, details) => {
+        logger.error("render-process-gone", details);
         process.exit(0);
     });
-    app.on("child-process-gone", (e) => {
-        logger.error("child-process-gone", e);
+    app.on("child-process-gone", (e, details) => {
+        logger.error("child-process-gone", details);
         process.exit(0);
     });
 

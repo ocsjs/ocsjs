@@ -1,4 +1,4 @@
-import { reactive, watch } from "vue";
+import { onMounted, reactive, watch } from "vue";
 import { remote } from "../utils/remote";
 const Store = require("electron-store");
 const { ipcRenderer } = require("electron");
@@ -27,23 +27,27 @@ export const store = reactive({
         /** 开发者工具 */
         devtools: s.get("win")?.["devtools"] || false,
     },
+    script: {
+        launchOptions: s.get("script")?.["launchOptions"] || 1.0,
+    },
 });
 
 ipcRenderer.once("ready", () => {
+    remote.logger.call("info", "render store init");
     setAlwaysOnTop();
     setZoomFactor();
     devtools();
     autoLaunch();
-
-    watch(store, (newStore) => {
-        s.store = JSON.parse(JSON.stringify(newStore));
-    });
-
-    watch(() => store.alwaysOnTop, setAlwaysOnTop);
-    watch(() => store["auto-launch"], autoLaunch);
-    watch(() => store.win.size, setZoomFactor);
-    watch(() => store.win.devtools, devtools);
 });
+
+watch(store, (newStore) => {
+    s.store = JSON.parse(JSON.stringify(newStore));
+});
+
+watch(() => store.alwaysOnTop, setAlwaysOnTop);
+watch(() => store["auto-launch"], autoLaunch);
+watch(() => store.win.size, setZoomFactor);
+watch(() => store.win.devtools, devtools);
 
 function setAlwaysOnTop() {
     remote.win.call("setAlwaysOnTop", store.alwaysOnTop);

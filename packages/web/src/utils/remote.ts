@@ -1,4 +1,5 @@
 import { BrowserWindow, App, Dialog, WebContents, Clipboard } from "electron";
+import { notify } from "./notify";
 const { ipcRenderer } = require("electron");
 
 /**
@@ -7,18 +8,28 @@ const { ipcRenderer } = require("electron");
  * @returns
  */
 function registerRemote<T>(eventName: string) {
+    function sendSync(channel: string, ...args: any[]): any {
+        console.log(channel, args);
+        let res = ipcRenderer.sendSync(channel, ...args);
+
+        if (res?.error) {
+            notify("remote 模块错误", res.error, "remote", { copy: true, type: "error" });
+        }
+        return res;
+    }
+
     return {
         // 获取远程变量
         get(property: keyof T) {
-            return ipcRenderer.sendSync(eventName + "-get", [property]);
+            return sendSync(eventName + "-get", [property]);
         },
         // 设置远程变量
         set(property: keyof T, value: any) {
-            return ipcRenderer.sendSync(eventName + "-set", [property, value]);
+            return sendSync(eventName + "-set", [property, value]);
         },
         // 调用远程方法
         call(property: keyof T, ...args: any[]) {
-            return ipcRenderer.sendSync(eventName + "-call", [property, ...args]);
+            return sendSync(eventName + "-call", [property, ...args]);
         },
     };
 }

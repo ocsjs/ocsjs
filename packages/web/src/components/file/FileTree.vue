@@ -4,17 +4,30 @@
             <template #expandIcon="{ isActive }">
                 <Icon type="icon-caret-right" :rotate="isActive ? 90 : 0" />
             </template>
-            <a-collapse-panel :key="title" :disabled="openSearch">
+            <a-collapse-panel :key="project.title" :disabled="openSearch">
                 <template #header="{ isActive }">
                     <div class="header d-flex">
                         <div class="col-6 title">
-                            {{ title }}
+                            {{ project.title }}
                         </div>
                         <div
                             v-if="isActive"
                             class="col-6 d-flex align-items-center justify-content-end"
                         >
                             <Icon
+                                title="新建文件夹"
+                                class="me-2"
+                                type="icon-folder-plus"
+                                @click.stop="mkdir(project.node)"
+                            />
+                            <Icon
+                                title="新建文件"
+                                class="me-2"
+                                type="icon-file-plus"
+                                @click.stop="createFile(project.node)"
+                            />
+                            <Icon
+                                title="搜索文件"
                                 :type="openSearch ? 'icon-close-circle' : 'icon-search'"
                                 @click.stop="search"
                             />
@@ -30,19 +43,20 @@
                     placeholder="搜索"
                 />
 
-                <template v-if="files.length === 0">
+                <template v-if="node.children && node.children.length === 0">
                     <div style="font-size: 11px" class="text-center p-1 text-secondary">
                         没有任何文件
                     </div>
                 </template>
                 <template v-else>
-                    <a-tree
+                    <ATree
                         class="tree"
-                        :tree-data="resultList.length === 0 ? files : resultList"
+                        v-model:tree-data="node.children"
+                        :expandedKeys="expandedKeys"
                         show-icon
-                        default-expand-all
-                        :draggable="root !== undefined"
+                        :draggable="node.children !== undefined"
                         @drop="onDrop"
+                        @expand="onExpand"
                     >
                         <template #switcherIcon>
                             <Icon type="icon-down" />
@@ -54,20 +68,14 @@
                             <Icon type="icon-wenjianjia" />
                         </template>
                         <template #title="file">
-                            <template
-                                v-if="root && file.stat && file.stat.removed === false"
-                            >
+                            <template v-if="file.stat">
                                 <a-dropdown :trigger="['contextmenu']">
                                     <span @click="clickFile(file)">
                                         {{ StringUtils.maximum(file.title, 20) }}
                                     </span>
 
                                     <template #overlay>
-                                        <FileMenu
-                                            @fileChange="fileChange"
-                                            :root-path="root"
-                                            :file="file"
-                                        ></FileMenu>
+                                        <FileMenu :file="file"></FileMenu>
                                     </template>
                                 </a-dropdown>
                             </template>
@@ -75,7 +83,7 @@
                                 <span>{{ StringUtils.maximum(file.title, 20) }}</span>
                             </template>
                         </template>
-                    </a-tree>
+                    </ATree>
                 </template>
             </a-collapse-panel>
         </a-collapse>
@@ -83,28 +91,32 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { File, fs, loopFiles, path } from "./File";
+import { computed, ref, toRefs, watch } from "vue";
+import { FileNode, fs, path, createFile, mkdir, flatFiles } from "./File";
 import Icon from "../Icon.vue";
 import { StringUtils } from "../../utils/string";
 import FileMenu from "./FileMenu.vue";
-import { fileStore } from "./store";
-import { DropEvent, TreeDataItem } from "ant-design-vue/lib/tree/Tree";
+import { TreeDataItem } from "ant-design-vue/lib/tree/Tree";
 import { notify } from "../../utils/notify";
 import { remote } from "../../utils/remote";
+import { message } from "ant-design-vue";
+import { Project } from "../project";
+import ATree from "ant-design-vue/lib/tree";
 
 interface FileTreeProps {
-    /** 根路径 */
-    root?: string;
-    /** 文件 */
-    files: File[];
-    /** 标题 */
-    title: string;
+    project: Project;
 }
 const props = withDefaults(defineProps<FileTreeProps>(), {});
 
-const activeKey = ref([props.title]);
-const files = ref(props.files);
+const { project } = toRefs(props);
+
+const activeKey = ref([project.value.title]);
+const expandedKeys = ref(
+    flatFiles(project.value.node.children || [])
+        .filter((file) => file.stat.expand)
+        .map((file) => file.key)
+);
+const node = project.value.node;
 
 // 打开文件搜索
 const openSearch = ref(false);
@@ -116,19 +128,30 @@ const resultList = ref<TreeDataItem[]>([]);
 /**
  * 拖动文件
  */
-function onDrop(info: DropEvent) {
+function onDrop(info: any) {
     try {
-        const destFile: File = info.node.dataRef;
-        const dragFile: File = info.dragNode.dataRef;
+        const destFile: FileNode = info.node.dataRef;
+        const dragFile: FileNode = info.dragNode.dataRef;
 
         // 如果移到元素上，并且该元素不是文件夹，则不做反应
-        if (info.dropToGap === false && !destFile.stat?.isDirectory) return;
+        if (info.dropToGap === false && !destFile.stat?.isDirectory) {
+            return;
+        }
 
         /** 放置后的文件夹路径 */
         const destPath = path.join(
             info.dropToGap === false ? destFile.path : destFile.parent,
             dragFile.title
         );
+        /** 路径相同，则不做处理 */
+        if (dragFile.path === destPath) {
+            return;
+        }
+        if (fs.existsSync(destPath)) {
+            message.error("路径下存在相同名字的文件(夹)！");
+            return;
+        }
+
         /** 移动文件(夹) */
         fs.renameSync(dragFile.path, destPath);
 
@@ -152,7 +175,7 @@ function onDrop(info: DropEvent) {
                 }
             });
         };
-        const data = [...files.value];
+        const data = [...(node.children || [])];
 
         // Find dragObject
         let dragObj: TreeDataItem = {};
@@ -195,9 +218,9 @@ function onDrop(info: DropEvent) {
             }
         }
 
-        files.value = data;
+        node.children = data;
     } catch (e) {
-        notify("移动文件时出错", e, "file-move", { copy: true });
+        notify("移动文件时出错", e, "file-move", { copy: true, type: "error" });
         remote.logger.call(
             "error",
             "移动文件时出错 : " + (e as Error).message + "\n" + (e as Error).stack
@@ -211,7 +234,7 @@ function onDrop(info: DropEvent) {
 watch(searchValue, (value) => {
     resultList.value = [];
     if (value) {
-        let _files = JSON.parse(JSON.stringify(files.value));
+        let _files = JSON.parse(JSON.stringify(node.children));
         while (_files.length !== 0) {
             let item = _files.shift();
 
@@ -225,33 +248,29 @@ watch(searchValue, (value) => {
     }
 });
 
-function fileChange(file: File) {
-    console.log("fileChange", file);
-
-    files.value = loopFiles(files.value, topDir, clearRemovedFile);
-}
-
-files.value = loopFiles(files.value, topDir, clearRemovedFile);
-
-/**
- * 文件夹置顶
- */
-function topDir(files: File[]) {
-    return files.sort((a, b) => (a.stat?.isDirectory ? -1 : 1));
-}
-
-/**
- * 清理被删除文件
- */
-function clearRemovedFile(files: File[]) {
-    return files.filter((f) => f.stat.removed === false);
-}
-
 /**
  * 点击文件
  */
-function clickFile(file: File) {
-    fileStore.current = file;
+function clickFile(file: FileNode) {
+    if (file.stat.isDirectory) {
+        file.stat.expand = !file.stat.expand;
+        expandedKeys.value = flatFiles(project.value.node.children || [])
+            .filter((file) => file.stat.expand)
+            .map((file) => file.key);
+    } else {
+        /** 隐藏所有编辑文件 */
+        Project.opened.value.forEach((file) => (file.stat.opened = false));
+        /** 寻找打开过的文件 */
+        const openedFile = Project.opened.value.find((f) => f.key === file.key);
+        /** 如果该文件之前打开过 */
+        if (openedFile) {
+            openedFile.stat.opened = true;
+        } else {
+            /** 新增文件编辑 */
+            file.stat.opened = true;
+            Project.opened.value.push(file);
+        }
+    }
 }
 
 /** 如果搜索关闭，则清空搜索框 */
@@ -260,6 +279,11 @@ function search() {
     if (openSearch.value === false) {
         searchValue.value = "";
     }
+}
+
+function onExpand(keys: string[], e: { expanded: boolean; node: any }) {
+    expandedKeys.value = keys;
+    e.node.dataRef.stat.expand = e.expanded;
 }
 </script>
 
@@ -293,7 +317,7 @@ function search() {
     }
 
     .ant-tree {
-        max-height: 50vh;
+        max-height: 100vh;
         overflow: auto;
     }
 
@@ -302,7 +326,7 @@ function search() {
         padding: 0px 0px 12px 0px;
 
         .ocsicon {
-            transform: translate(-0.5px, -3px);
+            transform: translate(0.5px, -3px);
         }
     }
 
