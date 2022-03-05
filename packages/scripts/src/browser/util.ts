@@ -1,4 +1,4 @@
-import { createLog } from "./logger";
+import { createLog } from "../logger";
 
 export async function sleep(period: number) {
     return new Promise((resolve) => {

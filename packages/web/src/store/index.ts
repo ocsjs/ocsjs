@@ -27,6 +27,11 @@ export const store = reactive({
         /** 开发者工具 */
         devtools: s.get("win")?.["devtools"] || false,
     },
+    /** 服务器 */
+    server: {
+        port: s.get("server")?.["port"],
+    },
+    /** 脚本默认设置 */
     script: {
         launchOptions: s.get("script")?.["launchOptions"] || 1.0,
     },

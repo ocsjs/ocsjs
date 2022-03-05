@@ -15,7 +15,6 @@ html,
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  background-color: #f8f8f8;
 }
 .pointer {
   cursor: pointer;
@@ -23,17 +22,15 @@ html,
 /* 设置滚动条的样式 */
 ::-webkit-scrollbar {
   width: 10px;
-  height: 8px;
+  height: 10px;
 }
 /* 滚动槽 */
 ::-webkit-scrollbar-track {
-  border-radius: 10px;
-  box-shadow: inset 0 0 5px rgba(230, 230, 230, 0.2);
-  background: #fafafa;
+  background: #ffffff00;
 }
 /* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
-  border-radius: 10px;
+  border-radius: 2px;
   background: rgba(0, 0, 0, 0.1);
   box-shadow: inset006pxrgba(0, 0, 0, 0.3);
 }

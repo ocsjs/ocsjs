@@ -2,16 +2,13 @@
     <transition name="fade">
         <router-view v-slot="{ Component }">
             <keep-alive>
-                <component  class="overflow-auto h-100" :is="Component" />
+                <component class="overflow-auto h-100" :is="Component" />
             </keep-alive>
         </router-view>
     </transition>
 </template>
 
-<script setup lang="ts">
-import { ref, reactive, toRefs } from "vue";
-import Title from "../components/Title.vue";
-</script>
+<script setup lang="ts"></script>
 
 <style scope lang="less">
 .home {
@@ -28,7 +25,7 @@ import Title from "../components/Title.vue";
 // 隐藏过渡效果
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.5s ease;
+    transition: opacity 0.125s ease;
 }
 .fade-enter-from,
 .fade-leave-to {
@@ -37,7 +34,7 @@ import Title from "../components/Title.vue";
 // 折叠加隐藏过渡效果
 .collapse-enter-active,
 .collapse-leave-active {
-    transition: all 0.25s ease-in-out;
+    transition: all 0.125s ease-in-out;
     overflow: hidden;
 }
 .collapse-enter-from,

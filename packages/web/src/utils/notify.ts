@@ -16,7 +16,7 @@ export function notify(title: string, msg: any, key: string, options?: NotifyOpt
         key,
         message: title,
         description: h("span", { title: String(msg) }, StringUtils.maximum(String(msg), 100)),
-        duration: options?.duration || 10,
+        duration: options?.duration || (options?.type === "error" ? 60 : 10),
         btn:
             options?.btn ||
             h("div", [

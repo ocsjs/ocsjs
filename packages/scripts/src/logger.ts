@@ -1,4 +1,4 @@
-export function prefix(level: "info" | "error" | "warn" | "debug") {
+export function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
     let extra = level === "error" ? "[错误]" : level === "warn" ? "[警告]" : undefined;
 
     if (typeof global === "undefined") {
@@ -22,5 +22,5 @@ export function prefix(level: "info" | "error" | "warn" | "debug") {
 }
 
 export function createLog(level: "info" | "error" | "warn" | "debug", ...msg: any[]) {
-    return [...prefix(level), ...msg];
+    return [...loggerPrefix(level), ...msg];
 }

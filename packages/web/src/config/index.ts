@@ -3,7 +3,6 @@ import { RouteRecordRaw } from "vue-router";
 import about from "@/pages/about/index.vue";
 import setting from "@/pages/setting/index.vue";
 import workspace from "@/pages/workspace/index.vue";
-import console from "@/pages/console/index.vue";
 
 export const config = reactive({
     /** 标题设置 */
@@ -33,14 +32,6 @@ export const config = reactive({
                 title: "工作区",
             },
         },
-        console: {
-            name: "console",
-            path: "/console",
-            component: shallowRef(console),
-            meta: {
-                title: "控制台",
-            },
-        },
         setting: {
             name: "setting",
             path: "/setting",
@@ -64,10 +55,12 @@ export const config = reactive({
     ocsFileTemplate: JSON.stringify(
         {
             launchOptions: {},
-            script: {
-                name: "cx-login-other",
-                options: {},
-            },
+            scripts: [
+                {
+                    name: "cx-login-other",
+                    options: {},
+                },
+            ],
         },
         null,
         4

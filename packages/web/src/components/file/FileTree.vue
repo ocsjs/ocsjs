@@ -91,7 +91,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, toRefs, watch } from "vue";
+import { ref, toRefs, watch } from "vue";
 import { FileNode, fs, path, createFile, mkdir, flatFiles } from "./File";
 import Icon from "../Icon.vue";
 import { StringUtils } from "../../utils/string";

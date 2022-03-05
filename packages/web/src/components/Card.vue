@@ -1,7 +1,7 @@
 <template>
     <div class="text-start">
         <div class="bg-white rounded p-3 pt-1">
-            <p class="mb-3 fw-bold border-bottom" v-if="title">
+            <p class="mb-2 title fw-bold border-bottom" v-if="title">
                 {{ title }}
             </p>
 
@@ -29,5 +29,9 @@ const { title } = toRefs(props);
 #app .ant-badge-status-dot {
     height: 16px;
     border-radius: 4px;
+}
+
+.title {
+    font-size: 1rem;
 }
 </style>

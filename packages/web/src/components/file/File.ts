@@ -1,5 +1,7 @@
+import { Modal } from "ant-design-vue";
+import { h } from "vue";
 import { config } from "../../config";
-import { Project } from "../project";
+import Description from "../Description.vue";
 
 const fs = require("fs") as typeof import("fs");
 const path = require("path") as typeof import("path");
@@ -28,6 +30,7 @@ export interface FileStats {
 export interface FileNode {
     /** 文件名 */
     title: string;
+    uid: string;
     key: string;
     slots: {
         icon: string;
@@ -113,4 +116,28 @@ export function createFile(parent: FileNode) {
 export function mkdir(parent: FileNode) {
     const newDirPath = validFileName(parent.path, "新建文件夹($count)");
     fs.mkdirSync(newDirPath);
+}
+
+export function detail(file: FileNode) {
+    Modal.info({
+        title: () => "文件属性",
+        mask: false,
+        closable: true,
+        maskClosable: true,
+        okText: "确定",
+        width: 500,
+        icon: undefined,
+        content: () =>
+            h("div", {}, [
+                desc("uid", file.uid),
+                desc("文件名", file.title),
+                desc("位置", file.path),
+                desc("创建时间", new Date(file.stat.createTime).toLocaleString()),
+                desc("最近修改", new Date(file.stat.modifyTime).toLocaleString()),
+            ]),
+    });
+
+    function desc(label: string, desc: string) {
+        return h(Description, { label, desc });
+    }
 }

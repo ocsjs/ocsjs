@@ -1,9 +1,4 @@
-import { LaunchOptions, Script, ScriptOptions } from "@ocsjs/scripts";
-
-export interface Content {
-    launchOptions: LaunchOptions;
-    script: Script;
-}
+import { ScriptOptions } from "@ocsjs/scripts";
 
 export interface FormItem {
     type: "text" | "password" | "checkbox" | "radio";

@@ -55,7 +55,9 @@ function handleError() {
 async function open() {
     return new Promise((resolve) => {
         app.whenReady().then(async () => {
-            const win = await openWindow();
+            const win = await openWindow((win) => {
+                return app.isPackaged ? win.loadFile("./public/index.html") : win.loadURL("http://localhost:3000");
+            });
 
             win.setAlwaysOnTop(Boolean(store.get("alwaysOnTop") || false));
 
@@ -68,6 +70,6 @@ async function open() {
 async function task(name, func) {
     const time = Date.now();
     const res = await func();
-    logger.debug(name, "耗时:", Date.now() - time);
+    logger.debug(name, " 耗时:", Date.now() - time);
     return res;
 }

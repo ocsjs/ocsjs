@@ -3,9 +3,16 @@ import { CX, ZHS } from ".";
 import { ScriptFunction, ScriptOptions } from "./types";
 
 export { LaunchOptions };
+
 export interface Script {
     name: keyof ScriptOptions;
     options: ScriptOptions[keyof ScriptOptions];
+}
+
+export interface LaunchScriptsOptions {
+    userDataDir: string | undefined;
+    launchOptions: LaunchOptions;
+    scripts: Script[];
 }
 
 export const scripts: Record<keyof ScriptOptions, ScriptFunction> = {
@@ -28,8 +35,14 @@ export const scriptNames = [
     ["zhs-login-school", "智慧树学校登录"],
 ];
 
-export async function launchScripts(launchOptions: LaunchOptions, ...scripts: Script[]) {
-    const browser = await chromium.launch(launchOptions);
+export async function launchScripts({ userDataDir, launchOptions, scripts }: LaunchScriptsOptions) {
+    let browser;
+    if (userDataDir && userDataDir !== "") {
+        browser = await chromium.launchPersistentContext(userDataDir, launchOptions);
+    } else {
+        browser = await chromium.launch(launchOptions);
+    }
+
     let page = await browser.newPage();
 
     for (const item of scripts) {

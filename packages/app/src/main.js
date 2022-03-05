@@ -21,14 +21,15 @@ function createWindow() {
     });
 }
 
-async function openWindow() {
+/**
+ *
+ * @param {{(win:BrowserWindow):Promise<any>}} opener
+ * @returns
+ */
+async function openWindow(opener) {
     const win = createWindow();
 
-    if (!app.isPackaged) {
-        await win.loadURL("http://localhost:3000");
-    } else {
-        await win.loadFile("./public/index.html");
-    }
+    await opener(win);
 
     app.on("activate", () => {
         if (BrowserWindow.getAllWindows().length === 0) {

@@ -1,7 +1,9 @@
 import { remote } from "./../../utils/remote";
 import { MenuItem } from "../menus";
-import { createFile, FileNode, fs, mkdir, validFileName } from "./File";
-const { shell } = require("electron");
+import { createFile, detail, FileNode, fs, mkdir, validFileName } from "./File";
+import { message, Modal } from "ant-design-vue";
+import { h } from "vue";
+const { shell, clipboard } = require("electron");
 
 export function createFileMenus(file: FileNode) {
     const dirMenus: MenuItem[] = [
@@ -38,6 +40,13 @@ export function createFileMenus(file: FileNode) {
             },
         },
         {
+            title: "复制文件路径",
+            icon: "icon-file-copy",
+            onClick() {
+                clipboard.writeText(file.path);
+            },
+        },
+        {
             title: "删除",
             icon: "icon-delete",
             onClick() {
@@ -54,6 +63,9 @@ export function createFileMenus(file: FileNode) {
         {
             title: "属性",
             icon: "icon-unorderedlist",
+            onClick() {
+                detail(file)
+            },
         },
     ];
 

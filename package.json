@@ -19,7 +19,10 @@
         "dayjs": "^1.10.7",
         "depcheck": "^1.4.3",
         "electron-store": "^8.0.1",
-        "playwright": "^1.18.1"
+        "get-port": "^5.1.1",
+        "nan": "^2.15.0",
+        "playwright": "^1.18.1",
+        "ws": "^8.5.0"
     },
     "devDependencies": {
         "@types/node": "^17.0.16",

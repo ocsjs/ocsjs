@@ -6,13 +6,13 @@
                 <FileTree v-if="project.node.children" :project="project"></FileTree>
             </template>
         </div>
-        <div class="w-100 h-100">
+        <div class="w-100 h-100 overflow-auto">
             <template v-if="Project.opened.value.length === 0">
                 <div class="notice">打开 (.ocs) 文件进行编辑或者运行</div>
             </template>
             <template v-else>
                 <template v-for="(file, index) of Project.opened.value" :key="index">
-                    <FormCreate v-show="file.stat.opened" :file="file"></FormCreate>
+                    <File v-show="file.stat.opened" :file="file"></File>
                 </template>
             </template>
         </div>
@@ -26,7 +26,7 @@ import { store } from "../../store";
 import interact from "interactjs";
 import FileTree from "../../components/file/FileTree.vue";
 import { Project } from "../../components/project";
-import FormCreate from "../../components/form/FormCreate.vue";
+import File from "../../components/file/File.vue";
 
 const projects = ref<Project[]>([Project.create("工作区", store.workspace)]);
 
@@ -61,7 +61,7 @@ onMounted(() => {
 
     .files {
         max-width: 50vw;
-        min-width: 100px;
+        min-width: 180px;
         height: 100% !important;
         background-color: white;
     }

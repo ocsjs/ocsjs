@@ -1,5 +1,6 @@
 import { reactive, ref, Ref } from "vue";
 import { FileNode, fs, path } from "../file/File";
+import { md } from "node-forge";
 
 export class Project {
     path: string;
@@ -38,9 +39,11 @@ export class Project {
         }
 
         let parent = path.dirname(filePath);
+        let uid = md.md5.create().update(filePath).digest().toHex();
         return reactive({
             title: path.basename(filePath),
             key: filePath,
+            uid,
             slots: {
                 icon,
             },
@@ -66,7 +69,10 @@ export class Project {
 
             const newDir = this.createFileNode(dir.path);
             dir.children = newDir.children || [];
-            this.watchDirectory(newDir);
+
+            if (fs.existsSync(path.join(dir.path, f)) && fs.statSync(path.join(dir.path, f)).isDirectory()) {
+                this.watchDirectory(newDir);
+            }
         });
 
         if (dir.children) {

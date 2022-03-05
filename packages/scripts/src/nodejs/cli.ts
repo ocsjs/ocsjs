@@ -1,9 +1,13 @@
+#! /usr/bin/env node
+
 import { Command } from "commander";
-import { launchScripts } from "./script";
+import { launchScripts, LaunchScriptsOptions } from "./script";
 import fs from "fs";
 import path from "path";
-import { prefix } from "../browser/logger";
-import chalk from "chalk";
+import { loggerPrefix } from "../logger";
+import { Instance as Chalk } from "chalk";
+
+const chalk = new Chalk({ level: 2 });
 
 const ocs = new Command();
 
@@ -24,13 +28,24 @@ Example:
         try {
             const file = fs.readFileSync(filePath).toString();
             try {
-                const data = JSON.parse(file);
-                await launchScripts(data.launch, data.scripts);
-            } catch {
-                console.log(`\n\t${chalk.bgRedBright(prefix("error"))} 文件格式错误 : ${filePath}\n`);
+                const { userDataDir, launchOptions, scripts }: LaunchScriptsOptions = JSON.parse(file);
+
+                try {
+                    await launchScripts({ userDataDir, launchOptions, scripts });
+                } catch (e) {
+                    error("运行错误", e);
+                }
+            } catch (e) {
+                error("文件格式错误", e);
             }
-        } catch {
-            console.log(`\n\t${chalk.bgRedBright(prefix("error"))} 文件不存在 : ${filePath}\n`);
+        } catch (e) {
+            error("文件不存在", e);
+        }
+
+        function error(msg: string, e: any) {
+            console.log(
+                `\n${chalk.bgRedBright(loggerPrefix("error"))} ${msg} : ${filePath}\n\n${(e as Error).stack}\n`
+            );
         }
     })
 
