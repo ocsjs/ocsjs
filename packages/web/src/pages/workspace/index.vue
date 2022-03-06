@@ -2,9 +2,16 @@
     <div id="workspace" class="text-center h-100 d-flex">
         <!-- 搜索文件夹 -->
         <div class="files resizable overflow-auto col-3 p-2 border-end">
+            <!-- projects : 真实路径的工作项目节点 -->
             <template v-for="(project, index) in projects" :key="index">
-                <FileTree v-if="project.node.children" :project="project"></FileTree>
+                <ProjectNode
+                    v-if="project.node.children"
+                    :root-node="project.node"
+                    :title="project.title"
+                ></ProjectNode>
             </template>
+            <!-- 虚拟节点 -->
+            <ProjectNode :files="Project.opened.value" title="打开的文件"></ProjectNode>
         </div>
         <div class="w-100 h-100 overflow-auto">
             <template v-if="Project.opened.value.length === 0">
@@ -24,9 +31,9 @@ import { onMounted, reactive, ref } from "vue";
 
 import { store } from "../../store";
 import interact from "interactjs";
-import FileTree from "../../components/file/FileTree.vue";
 import { Project } from "../../components/project";
 import File from "../../components/file/File.vue";
+import ProjectNode from "../../components/project/ProjectNode.vue";
 
 const projects = ref<Project[]>([Project.create("工作区", store.workspace)]);
 

@@ -1,3 +1,4 @@
+import { LaunchOptions } from "playwright";
 import { onMounted, reactive, watch } from "vue";
 import { remote } from "../utils/remote";
 const Store = require("electron-store");
@@ -33,7 +34,13 @@ export const store = reactive({
     },
     /** 脚本默认设置 */
     script: {
-        launchOptions: s.get("script")?.["launchOptions"] || 1.0,
+        /** 是否使用 --user-data-dir (false 为无痕浏览) */
+        userDataDir: s.get("script")?.["userDataDir"] || false,
+        launchOptions:
+            s.get("script")?.["launchOptions"] ||
+            ({
+                headless: false,
+            } as LaunchOptions),
     },
 });
 

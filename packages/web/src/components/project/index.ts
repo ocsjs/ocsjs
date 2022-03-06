@@ -55,6 +55,7 @@ export class Project {
                 selected: false,
                 renaming: true,
                 opened: false,
+                running: false,
             },
             content,
             parent,

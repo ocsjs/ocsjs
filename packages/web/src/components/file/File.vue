@@ -17,10 +17,17 @@
                         >
                         </Icon>
                         <Icon
-                            @click="(showTerminal = true), (start = !start)"
-                            :title="start ? '关闭' : '运行'"
-                            :type="start ? 'icon-close-circle' : 'icon-play-circle'"
-                            :style="{ color: start ? '#f5222d' : '#1890ff' }"
+                            @click="
+                                (showTerminal = true),
+                                    (file.stat.running = !file.stat.running)
+                            "
+                            :title="file.stat.running ? '关闭' : '运行'"
+                            :type="
+                                file.stat.running
+                                    ? 'icon-close-circle'
+                                    : 'icon-play-circle'
+                            "
+                            :style="{ color: file.stat.running ? '#f5222d' : '#1890ff' }"
                         />
                     </div>
                 </div>
@@ -108,7 +115,7 @@
             <Transition name="fade">
                 <div v-show="showTerminal" class="h-100 iterminal overflow-hidden">
                     <span> 控制台 </span>
-                    <Terminal class="h-100" :start="start" :file="file" />
+                    <Terminal class="h-100" :running="file.stat.running" :file="file" />
                 </div>
             </Transition>
         </div>
@@ -146,8 +153,7 @@ try {
 
 /** 是否显示源码 */
 const showSource = ref(false);
-/** 是否开始运行 */
-const start = ref(false);
+
 /** 是否显示终端 */
 const showTerminal = ref(false);
 /** 是否开启无痕模式 */

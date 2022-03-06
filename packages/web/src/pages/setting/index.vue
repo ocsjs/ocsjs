@@ -31,6 +31,27 @@
                 </Description>
             </Card>
 
+            <Card title="浏览器默认设置">
+                <Description label="浏览器路径">
+                    <a-input
+                        size="small"
+                        v-model:value="launchOptions.executablePath"
+                    ></a-input>
+                </Description>
+                <Description label="隐身模式">
+                    <a-switch
+                        size="small"
+                        v-model:checked="launchOptions.headless"
+                    ></a-switch>
+                </Description>
+                <Description label="无痕浏览">
+                    <a-switch
+                        size="small"
+                        v-model:checked="store.script.userDataDir"
+                    ></a-switch>
+                </Description>
+            </Card>
+
             <Card title="路径设置">
                 <Path label="工作区路径" name="workspace" :setting="true" />
                 <Path label="配置路径" name="config-path" />
@@ -63,14 +84,13 @@ import Description from "../../components/Description.vue";
 import Path from "./Path.vue";
 import { store } from "../../store";
 import { remote } from "../../utils/remote";
+import { LaunchOptions } from "@ocsjs/scripts";
 
-console.log(store);
+const launchOptions = store.script.launchOptions as LaunchOptions;
 
-watch(store,()=>{
+watch(store, () => {
     console.log(store);
-    
-})
-
+});
 
 function reset() {
     store.version = undefined;

@@ -22,6 +22,8 @@ export interface FileStats {
     expand: boolean;
     /** 是否正在打开编辑 */
     opened: boolean;
+    /** 是否运行中 */
+    running: boolean
 }
 
 /**

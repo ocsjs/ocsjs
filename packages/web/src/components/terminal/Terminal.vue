@@ -17,10 +17,10 @@ const chalk = new Chalk({ level: 2 });
 
 interface TerminalProps {
     file: FileNode;
-    start: boolean;
+    running: boolean;
 }
 const props = withDefaults(defineProps<TerminalProps>(), {});
-const { file, start } = toRefs(props);
+const { file, running } = toRefs(props);
 
 const emits = defineEmits<{
     (e: "ready"): void;
@@ -28,8 +28,8 @@ const emits = defineEmits<{
 
 let shell: ChildProcess;
 
-watch(start, () => {
-    if (start.value) {
+watch(running, () => {
+    if (running.value) {
         send("open", file.value.content);
     } else {
         send("close", "");
