@@ -2,10 +2,10 @@
     <ATree
         class="tree"
         :tree-data="files"
-        :expandedKeys="expandedKeys"
         show-icon
         @drop="onDrop"
-        @expand="onExpand"
+        @select="onSelect"
+        :autoExpandParent="false"
     >
         <template #switcherIcon>
             <Icon type="icon-down" />
@@ -19,9 +19,23 @@
         <template #title="file">
             <template v-if="file.stat">
                 <a-dropdown :trigger="['contextmenu']">
-                    <span @click="clickFile(file)">
-                        {{ StringUtils.maximum(file.title, 20) }}
-                    </span>
+                    <template v-if="Project.renamingFile?.value?.path === file.path">
+                        <a-input
+                            size="small"
+                            class="rename-input"
+                            :default-value="file.title"
+                            @blur="rename($event, file)"
+                            @keyup.enter="rename($event, file)"
+                            v-focus
+                        ></a-input>
+                    </template>
+                    <template v-else>
+                        <span
+                            v-html="StringUtils.maximum(file.title, 40)"
+                            :title="file.path"
+                        >
+                        </span>
+                    </template>
 
                     <template #overlay>
                         <FileMenu :file="file"></FileMenu>
@@ -29,7 +43,8 @@
                 </a-dropdown>
             </template>
             <template v-else>
-                <span>{{ StringUtils.maximum(file.title, 20) }}</span>
+                <span v-html="StringUtils.maximum(file.title, 40)" :title="file.path">
+                </span>
             </template>
         </template>
     </ATree>
@@ -37,7 +52,7 @@
 
 <script setup lang="ts">
 import { ref, toRefs, watch } from "vue";
-import { FileNode, fs, path, flatFiles } from "./File";
+import { FileNode, fs, fsExtra, path, flatFiles } from "./File";
 import Icon from "../Icon.vue";
 import { StringUtils } from "../../utils/string";
 import FileMenu from "./FileMenu.vue";
@@ -52,14 +67,14 @@ interface FileTreeProps {
     files: FileNode[];
 }
 const props = withDefaults(defineProps<FileTreeProps>(), {});
-
+const emits = defineEmits<{
+    (e: "select", ...args: any): void;
+}>();
 const { files } = toRefs(props);
 
-const expandedKeys = ref(
-    flatFiles(files?.value || [])
-        .filter((file) => file.stat.expand)
-        .map((file) => file.key)
-);
+function onSelect(...args: any) {
+    emits("select", ...args);
+}
 
 /**
  * 拖动文件
@@ -165,33 +180,48 @@ function onDrop(info: any) {
 }
 
 /**
- * 点击文件
+ * 重命名文件
  */
-function clickFile(file: FileNode) {
-    if (file.stat.isDirectory) {
-        file.stat.expand = !file.stat.expand;
-        expandedKeys.value = flatFiles(files.value || [])
-            .filter((file) => file.stat.expand)
-            .map((file) => file.key);
-    } else {
-        /** 隐藏所有编辑文件 */
-        Project.opened.value.forEach((file) => (file.stat.opened = false));
-        /** 寻找打开过的文件 */
-        const openedFile = Project.opened.value.find((f) => f.key === file.key);
-        /** 如果该文件之前打开过 */
-        if (openedFile) {
-            openedFile.stat.opened = true;
+function rename(e: Event, file: FileNode) {
+    const name = (e.target as HTMLInputElement).value;
+    const dest = path.join(file.parent, name);
+
+    Project.renamingFile.value = undefined;
+
+    if (file.path !== dest) {
+        if (!fs.existsSync(dest)) {
+            if (file.stat.isDirectory) {
+                renameDir(file.path, dest);
+                fs.rmSync(file.path, { recursive: true });
+            } else {
+                fs.renameSync(file.path, dest);
+            }
         } else {
-            /** 新增文件编辑 */
-            file.stat.opened = true;
-            Project.opened.value.push(file);
+            message.error("路径下存在相同名字的文件(夹)！");
         }
     }
 }
 
-function onExpand(keys: string[], e: { expanded: boolean; node: any }) {
-    expandedKeys.value = keys;
-    e.node.dataRef.stat.expand = e.expanded;
+/**
+ * 递归重命名文件夹
+ */
+function renameDir(dir: string, dest: string) {
+    console.log({ dir, dest });
+
+    fsExtra.ensureDirSync(dest);
+
+    fsExtra.readdirSync(dir).forEach((file) => {
+        const filePath = path.resolve(dir, file);
+        const destPath = path.resolve(dest, file);
+        const fileStat = fs.statSync(filePath);
+
+        if (fileStat.isDirectory()) {
+            fs.mkdirSync(destPath);
+            renameDir(filePath, destPath);
+        } else {
+            fsExtra.moveSync(filePath, destPath);
+        }
+    });
 }
 </script>
 
@@ -248,7 +278,8 @@ function onExpand(keys: string[], e: { expanded: boolean; node: any }) {
     .ant-tree li {
         padding: 0;
     }
-    .ant-tree-title {
+    .ant-tree-title,
+    .rename-input {
         font-size: 11px;
     }
 }

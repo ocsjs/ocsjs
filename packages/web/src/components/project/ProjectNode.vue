@@ -5,6 +5,7 @@
                 <Icon type="icon-caret-right" :rotate="isActive ? 90 : 0" />
             </template>
             <a-collapse-panel :key="title" :disabled="openSearch">
+                <!-- 项目列表头部 -->
                 <template #header="{ isActive }">
                     <ProjectHeader
                         :title="title"
@@ -14,7 +15,7 @@
                         v-model:search-value="searchValue"
                     ></ProjectHeader>
                 </template>
-
+                <!-- 项目文件列表 -->
                 <template v-if="rootNode?.children?.length === 0 || files?.length === 0">
                     <div style="font-size: 11px" class="text-center p-1 text-secondary">
                         没有任何文件
@@ -22,10 +23,20 @@
                 </template>
                 <template v-else>
                     <template v-if="resultList.length !== 0">
-                        <FileTree :files="resultList"></FileTree>
+                        <FileTree
+                            class="search-result-list"
+                            :files="resultList"
+                            :draggable="false"
+                        ></FileTree>
                     </template>
                     <template v-else>
-                        <FileTree :files="rootNode?.children || files || []"></FileTree>
+                        <FileTree
+                            v-model:expandedKeys="expandedKeys"
+                            :draggable="true"
+                            :files="rootNode?.children || files || []"
+                            @expand="onExpand"
+                            @select="onSelect"
+                        ></FileTree>
                     </template>
                 </template>
             </a-collapse-panel>
@@ -34,12 +45,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRefs, watch } from "vue";
+import { ref, toRefs, watch, getCurrentInstance } from "vue";
 import { FileNode, flatFiles } from "../File/File";
 import Icon from "../Icon.vue";
-import { TreeDataItem } from "ant-design-vue/lib/tree/Tree";
 import FileTree from "../file/FileTree.vue";
 import ProjectHeader from "./ProjectHeader.vue";
+import { store } from "../../store";
+import { Project } from ".";
 
 interface FileTreeProps {
     title: string;
@@ -51,26 +63,66 @@ const props = withDefaults(defineProps<FileTreeProps>(), {});
 const { rootNode, files, title } = toRefs(props);
 
 const activeKey = ref([title.value]);
-const expandedKeys = ref(
-    flatFiles(rootNode?.value?.children || files?.value || [])
-        .filter((file) => file.stat.expand)
-        .map((file) => file.key)
-);
 
 // 打开文件搜索
 const openSearch = ref(false);
-
 // 搜索结果
 const resultList = ref<FileNode[]>([]);
-
+// 搜索值
 const searchValue = ref("");
+
+const expandedKeys = ref<string[]>(store.expandedKeys);
+
+/** 节点展开 */
+function onExpand(keys: string[], { node }: { expanded: boolean; node: any }) {
+    const fileNode = node.dataRef as FileNode;
+    /**
+     *  当父文件夹收回时，其所有的子文件夹也应该收回
+     */
+    expandedKeys.value = expandedKeys.value.filter(
+        (key) => key.length <= fileNode.path.length
+    );
+    /** 保存 */
+    store.expandedKeys = expandedKeys.value;
+}
+
+/** 节点选中 */
+
+function onSelect(
+    keys: string[],
+    e: { selected: boolean; selectedNodes: any[]; node: any; event: any }
+) {
+    const file: FileNode = e.node.dataRef;
+    /** 选中文件夹，则展开 */
+    if (file.stat.isDirectory) {
+        if (e.selected) {
+            expandedKeys.value = expandedKeys.value.filter(
+                (path) => path !== (e.node.dataRef as FileNode).path
+            );
+        } else {
+            expandedKeys.value.push((e.node.dataRef as FileNode).path);
+        }
+    } else {
+        /** 隐藏所有文件，显示当前点击的文件 */
+        Project.opened.value.forEach((file) => (file.stat.show = false));
+
+        /** 寻找打开过的文件 */
+        const openedFile = Project.opened.value.find((f) => f.key === file.key);
+        /** 如果该文件之前打开过 */
+        if (openedFile) {
+            openedFile.stat.show = true;
+        } else {
+            /** 新增文件编辑 */
+            file.stat.show = true;
+            Project.opened.value.push(file);
+        }
+    }
+}
 
 /**
  * 文件搜索
  */
 watch(searchValue, (value) => {
-    console.log(value);
-
     resultList.value = [];
     if (value) {
         let _files: FileNode[] = JSON.parse(
@@ -79,8 +131,18 @@ watch(searchValue, (value) => {
         while (_files.length !== 0) {
             let item = _files.shift();
 
-            if (item && item.title?.includes(value)) {
-                item.stat.expand = false;
+            if (
+                item &&
+                item.title?.toLocaleLowerCase().includes(value.toLocaleLowerCase())
+            ) {
+                /**
+                 * 显示搜索的字符串,忽略大小写
+                 */
+
+                item.title = item.title.replace(
+                    RegExp(`(${value})`, "ig"),
+                    `<em>$1</em>`
+                );
                 resultList.value.push(item);
             }
             if (item?.children) {
@@ -118,61 +180,6 @@ watch(openSearch, () => {
     }
     .ant-collapse-item {
         border: none;
-    }
-
-    .ant-tree {
-        max-height: 100vh;
-        overflow: auto;
-    }
-
-    ul {
-        text-align: left;
-        padding: 0px 0px 12px 0px;
-
-        .ocsicon {
-            transform: translate(0.5px, -3px);
-        }
-    }
-
-    .ant-tree-switcher {
-        width: 12px;
-        height: 12px;
-    }
-    .ant-tree-switcher-icon {
-        transform: translate(-0.5px, -3px);
-    }
-
-    // background-color: #188fff31;
-    .ant-tree.ant-tree-directory
-        > li.ant-tree-treenode-selected
-        > span.ant-tree-node-content-wrapper::before {
-        background-color: #188fff54;
-    }
-    .ant-tree.ant-tree-directory
-        .ant-tree-child-tree
-        > li.ant-tree-treenode-selected
-        > span.ant-tree-node-content-wrapper::before {
-        background-color: #188fff54;
-    }
-
-    .ant-tree-child-tree {
-        .ant-tree-treenode-switcher-open,
-        .ant-tree-treenode-switcher-close {
-            border-left: 1px solid #dfdfdf;
-        }
-    }
-
-    .ant-tree li .ant-tree-node-content-wrapper {
-        padding: 0px 8px 0px 0px;
-    }
-    .ant-tree li ul {
-        padding: 0px 0px 0px 6px;
-    }
-    .ant-tree li {
-        padding: 0;
-    }
-    .ant-tree-title {
-        font-size: 11px;
     }
 }
 

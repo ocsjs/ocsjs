@@ -4,9 +4,10 @@ import { config } from "../../config";
 import Description from "../Description.vue";
 
 const fs = require("fs") as typeof import("fs");
+const fsExtra = require("fs-extra") as typeof import("fs-extra");
 const path = require("path") as typeof import("path");
 
-export { fs, path };
+export { fs, fsExtra, path };
 
 /** 文件节点状态 */
 export interface FileStats {
@@ -14,16 +15,13 @@ export interface FileStats {
     modifyTime: number;
     /** 是否为文件夹 */
     isDirectory: boolean;
-    /** 是否选中 */
-    selected: boolean;
-    /** 重命名中 */
-    renaming: boolean;
-    /** 是否展开 */
-    expand: boolean;
+    /** 是否显示 */
+    show: boolean;
+
     /** 是否正在打开编辑 */
     opened: boolean;
     /** 是否运行中 */
-    running: boolean
+    running: boolean;
 }
 
 /**

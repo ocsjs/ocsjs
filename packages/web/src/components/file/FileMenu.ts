@@ -3,6 +3,7 @@ import { MenuItem } from "../menus";
 import { createFile, detail, FileNode, fs, mkdir, validFileName } from "./File";
 import { message, Modal } from "ant-design-vue";
 import { h } from "vue";
+import { Project } from "../project";
 const { shell, clipboard } = require("electron");
 
 export function createFileMenus(file: FileNode) {
@@ -57,7 +58,7 @@ export function createFileMenus(file: FileNode) {
             title: "重命名",
             icon: "icon-redo",
             onClick() {
-                file.stat.renaming = true;
+                Project.renamingFile.value = file;
             },
         },
         {

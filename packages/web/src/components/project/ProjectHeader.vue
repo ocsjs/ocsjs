@@ -21,25 +21,27 @@
                 <div class="title">
                     {{ title }}
                 </div>
-                <template v-if="expend && rootNode">
+                <template v-if="expend">
+                    <template v-if="rootNode">
+                        <Icon
+                            title="新建文件夹"
+                            class="me-2"
+                            type="icon-folder-plus"
+                            @click.stop="rootNode ? mkdir(rootNode) : ''"
+                        />
+                        <Icon
+                            title="新建文件"
+                            class="me-2"
+                            type="icon-file-plus"
+                            @click.stop="rootNode ? createFile(rootNode) : ''"
+                        />
+                    </template>
                     <Icon
-                        title="新建文件夹"
-                        class="me-2"
-                        type="icon-folder-plus"
-                        @click.stop="rootNode ? mkdir(rootNode) : ''"
-                    />
-                    <Icon
-                        title="新建文件"
-                        class="me-2"
-                        type="icon-file-plus"
-                        @click.stop="rootNode ? createFile(rootNode) : ''"
+                        title="搜索文件"
+                        type="icon-search"
+                        @click.stop="emits('update:openSearch', true)"
                     />
                 </template>
-                <Icon
-                    title="搜索文件"
-                    type="icon-search"
-                    @click.stop="emits('update:openSearch', true)"
-                />
             </div>
         </template>
     </div>

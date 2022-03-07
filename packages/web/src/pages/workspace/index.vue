@@ -1,7 +1,7 @@
 <template>
     <div id="workspace" class="text-center h-100 d-flex">
         <!-- 搜索文件夹 -->
-        <div class="files resizable overflow-auto col-3 p-2 border-end">
+        <div class="files resizable overflow-auto col-4 p-2 border-end">
             <!-- projects : 真实路径的工作项目节点 -->
             <template v-for="(project, index) in projects" :key="index">
                 <ProjectNode
@@ -15,11 +15,12 @@
         </div>
         <div class="w-100 h-100 overflow-auto">
             <template v-if="Project.opened.value.length === 0">
-                <div class="notice">打开 (.ocs) 文件进行编辑或者运行</div>
+                <!-- 显示帮助页面 -->
+                <Help class="help" />
             </template>
             <template v-else>
                 <template v-for="(file, index) of Project.opened.value" :key="index">
-                    <File v-show="file.stat.opened" :file="file"></File>
+                    <File v-show="file.stat.show" :file="file"></File>
                 </template>
             </template>
         </div>
@@ -34,6 +35,7 @@ import interact from "interactjs";
 import { Project } from "../../components/project";
 import File from "../../components/file/File.vue";
 import ProjectNode from "../../components/project/ProjectNode.vue";
+import Help from "../../components/Help.vue";
 
 const projects = ref<Project[]>([Project.create("工作区", store.workspace)]);
 
@@ -73,7 +75,7 @@ onMounted(() => {
         background-color: white;
     }
 
-    .notice {
+    .help {
         top: 30%;
         position: relative;
     }

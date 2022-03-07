@@ -1,12 +1,15 @@
 import { reactive, ref, Ref } from "vue";
-import { FileNode, fs, path } from "../file/File";
+import { FileNode, flatFiles, fs, path } from "../file/File";
 import { md } from "node-forge";
 
 export class Project {
     path: string;
     title: string = "未命名";
     node: FileNode;
+    /** 打开的文件 */
     static opened: Ref<FileNode[]> = ref([]);
+    /** 重命名中的文件 */
+    static renamingFile: Ref<FileNode | undefined> = ref()
 
     constructor(title: string, path: string, node?: FileNode) {
         if (fs.statSync(path).isDirectory() === false) {
@@ -14,11 +17,12 @@ export class Project {
         }
         this.title = title;
         this.path = path;
-        this.node = node || Project.createFileNode(path);
+        this.node = reactive(node || Project.createFileNode(path));
         /** 深层监听文件，如果文件有改变则更新 */
-        Project.watchDirectory(this.node);
+        this.watchDirectory(this.node);
     }
 
+    /** 创建文件节点 */
     static createFileNode(filePath: string): FileNode {
         const stat = fs.statSync(filePath);
         let isDirectory = stat.isDirectory();
@@ -52,8 +56,7 @@ export class Project {
                 createTime: stat.birthtimeMs,
                 modifyTime: stat.ctimeMs,
                 expand: isDirectory ? true : false,
-                selected: false,
-                renaming: true,
+                show: false,
                 opened: false,
                 running: false,
             },
@@ -64,25 +67,14 @@ export class Project {
         });
     }
 
-    static watchDirectory(dir: FileNode) {
-        fs.watch(dir.path, (e, f) => {
+    watchDirectory(dir: FileNode) {
+        fs.watch(dir.path, { recursive: true }, (e, f) => {
             console.log(e, f);
 
-            const newDir = this.createFileNode(dir.path);
-            dir.children = newDir.children || [];
+            Object.assign(this.node, Project.createFileNode(dir.path));
 
-            if (fs.existsSync(path.join(dir.path, f)) && fs.statSync(path.join(dir.path, f)).isDirectory()) {
-                this.watchDirectory(newDir);
-            }
+            console.log(this.node.children);
         });
-
-        if (dir.children) {
-            for (const file of dir.children) {
-                if (file.stat.isDirectory) {
-                    this.watchDirectory(file);
-                }
-            }
-        }
     }
 
     public static create(title: string, path: string, node?: FileNode) {

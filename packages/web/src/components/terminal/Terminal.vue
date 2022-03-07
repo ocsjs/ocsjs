@@ -1,9 +1,9 @@
 <template>
-    <div class="terminal-container" id="terminal"></div>
+    <div class="terminal-container" ref="terminal"></div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, toRefs, watch } from "vue";
+import { onMounted, onUnmounted, toRefs, watch, ref } from "vue";
 
 import { FileNode } from "../file/File";
 import { Instance as Chalk } from "chalk";
@@ -27,6 +27,7 @@ const emits = defineEmits<{
 }>();
 
 let shell: ChildProcess;
+const terminal = ref();
 
 watch(running, () => {
     if (running.value) {
@@ -60,10 +61,9 @@ onMounted(async () => {
     /** 显示 */
     emits("ready");
 
-    const el = document.querySelector("#terminal");
-    if (el !== null) {
+    if (terminal.value !== null) {
         /** 绑定元素 */
-        term.open(el as HTMLElement);
+        term.open(terminal.value as HTMLElement);
 
         term.write(`ocs@${file.value.uid}> `);
     }

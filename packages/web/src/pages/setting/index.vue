@@ -81,7 +81,7 @@
 import { ref, reactive, toRefs, watch } from "vue";
 import Card from "../../components/Card.vue";
 import Description from "../../components/Description.vue";
-import Path from "./Path.vue";
+import Path from "../../components/Path.vue";
 import { store } from "../../store";
 import { remote } from "../../utils/remote";
 import { LaunchOptions } from "@ocsjs/scripts";

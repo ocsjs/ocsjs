@@ -18,8 +18,8 @@
 
 <script setup lang="ts">
 import { ref, reactive, toRefs } from "vue";
-import Description from "../../components/Description.vue";
-import { remote } from "../../utils/remote";
+import Description from "./Description.vue";
+import { remote } from "../utils/remote";
 
 const Store = require("electron-store");
 const path = require("path");

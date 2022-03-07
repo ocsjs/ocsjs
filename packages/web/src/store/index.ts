@@ -1,5 +1,7 @@
 import { LaunchOptions } from "playwright";
-import { onMounted, reactive, watch } from "vue";
+import { reactive, watch } from "vue";
+import { fs } from "../components/file/File";
+import { Project } from "../components/project";
 import { remote } from "../utils/remote";
 const Store = require("electron-store");
 const { ipcRenderer } = require("electron");
@@ -42,6 +44,8 @@ export const store = reactive({
                 headless: false,
             } as LaunchOptions),
     },
+    /** 列表展开的 key */
+    expandedKeys: s.get("expandedKeys") || []
 });
 
 ipcRenderer.once("ready", () => {
@@ -50,6 +54,7 @@ ipcRenderer.once("ready", () => {
     setZoomFactor();
     devtools();
     autoLaunch();
+    initOpenFiles()
 });
 
 watch(store, (newStore) => {
@@ -81,5 +86,16 @@ function devtools() {
         remote.webContents.call("openDevTools", { mode: "detach" });
     } else {
         remote.webContents.call("closeDevTools");
+    }
+}
+
+/**
+ * 处理打开的文件
+ */
+function initOpenFiles() {
+    for (const file of store.files) {
+        if (fs.existsSync(String(file))) {
+            Project.opened.value.push(Project.createFileNode(String(file)));
+        }
     }
 }
