@@ -9,7 +9,7 @@ export class Project {
     /** 打开的文件 */
     static opened: Ref<FileNode[]> = ref([]);
     /** 重命名中的文件 */
-    static renamingFile: Ref<FileNode | undefined> = ref()
+    static renamingFile: Ref<FileNode | undefined> = ref();
 
     constructor(title: string, path: string, node?: FileNode) {
         if (fs.statSync(path).isDirectory() === false) {
@@ -67,13 +67,10 @@ export class Project {
         });
     }
 
+    /** 监听项目，如果发生变化。则重新渲染子目录 */
     watchDirectory(dir: FileNode) {
         fs.watch(dir.path, { recursive: true }, (e, f) => {
-            console.log(e, f);
-
             Object.assign(this.node, Project.createFileNode(dir.path));
-
-            console.log(this.node.children);
         });
     }
 

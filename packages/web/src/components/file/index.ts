@@ -1,12 +1,21 @@
 import { ScriptOptions } from "@ocsjs/scripts";
 
+/**
+ * 表单生成器单项
+ */
 export interface FormItem {
     type: "text" | "password" | "checkbox" | "radio";
     title: string;
 }
 
+/**
+ * 表单生成器
+ */
 export type Form<T extends keyof ScriptOptions> = Record<keyof ScriptOptions[T], FormItem>;
 
+/**
+ * 脚本的基础登录表单，使用 File.vue 可以自动生成表单内容
+ */
 export const scriptForms: Record<keyof ScriptOptions, any> = {
     "cx-login-other": {} as Form<"cx-login-other">,
     "cx-login-phone": {

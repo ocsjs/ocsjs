@@ -17,7 +17,6 @@ export interface FileStats {
     isDirectory: boolean;
     /** 是否显示 */
     show: boolean;
-
     /** 是否正在打开编辑 */
     opened: boolean;
     /** 是否运行中 */

@@ -23,6 +23,7 @@
                 </template>
                 <template v-else>
                     <template v-if="resultList.length !== 0">
+                        <!-- 搜索结果列表 -->
                         <FileTree
                             class="search-result-list"
                             :files="resultList"
@@ -30,6 +31,10 @@
                         ></FileTree>
                     </template>
                     <template v-else>
+                        <!-- 
+                            - 可以通过 node.children 或者 files 指定文件
+                            - 如果 rootNode 为空，则此项目为虚拟路径项目，不存在实体父文件夹
+                         -->
                         <FileTree
                             v-model:expandedKeys="expandedKeys"
                             :draggable="true"
@@ -54,8 +59,15 @@ import { store } from "../../store";
 import { Project } from ".";
 
 interface FileTreeProps {
+    /** 项目标题 */
     title: string;
+    /**
+     * 指定 rootNode ，则此项目为实体路径项目，存在父文件夹
+     */
     rootNode?: FileNode;
+    /**
+     * 指定 files 则此项目为虚拟路径项目，不存在实体父文件夹
+     */
     files?: FileNode[];
 }
 const props = withDefaults(defineProps<FileTreeProps>(), {});
@@ -70,7 +82,7 @@ const openSearch = ref(false);
 const resultList = ref<FileNode[]>([]);
 // 搜索值
 const searchValue = ref("");
-
+// 展开的节点
 const expandedKeys = ref<string[]>(store.expandedKeys);
 
 /** 节点展开 */

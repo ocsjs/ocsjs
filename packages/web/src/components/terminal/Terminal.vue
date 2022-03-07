@@ -22,22 +22,31 @@ interface TerminalProps {
 const props = withDefaults(defineProps<TerminalProps>(), {});
 const { file, running } = toRefs(props);
 
-const emits = defineEmits<{
-    (e: "ready"): void;
-}>();
-
+/**
+ * 使用 child_process.fork 进行文件运行
+ *
+ * 并且根据 message 进行各种事件执行
+ *
+ */
 let shell: ChildProcess;
 const terminal = ref();
 
 watch(running, () => {
     if (running.value) {
+        /** 运行文件 */
         send("open", file.value.content);
     } else {
+        /** 关闭文件运行 */
         send("close", "");
     }
 });
 
-function send(action: string, data: string = "") {
+/**
+ * 给子进程发送信息
+ * @param action 事件名
+ * @param data 数据
+ */
+function send(action: "open" | "close", data: string = "") {
     shell.send(
         JSON.stringify({
             action,
@@ -57,9 +66,6 @@ onMounted(async () => {
 
     shell.stdout?.on("data", (data: any) => term.write(data));
     shell.stderr?.on("data", (data: any) => term.write(chalk.redBright(data)));
-
-    /** 显示 */
-    emits("ready");
 
     if (terminal.value !== null) {
         /** 绑定元素 */

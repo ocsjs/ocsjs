@@ -19,6 +19,7 @@
         <template #title="file">
             <template v-if="file.stat">
                 <a-dropdown :trigger="['contextmenu']">
+                    <!-- 重命名文件 -->
                     <template v-if="Project.renamingFile?.value?.path === file.path">
                         <a-input
                             size="small"
@@ -29,6 +30,10 @@
                             v-focus
                         ></a-input>
                     </template>
+                    <!-- 
+                        显示标题
+                        使用 v-html 是因为需要搭配 <em> 标签，在搜索文件的时候，提供字体高亮
+                     -->
                     <template v-else>
                         <span
                             v-html="StringUtils.maximum(file.title, 40)"

@@ -14,12 +14,10 @@
 import { ref, reactive, toRefs } from "vue";
 interface CardProps {
     title?: string;
-
     badge?: string;
 }
 const props = withDefaults(defineProps<CardProps>(), {
     title: "",
-
     badge: "gray",
 });
 const { title } = toRefs(props);
