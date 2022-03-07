@@ -1,5 +1,5 @@
 <template>
-    <template v-if="content !== undefined">
+    <template v-if="options !== undefined">
         <div class="file">
             <div class="form-header text-start border-bottom">
                 <div class="file-title">
@@ -39,7 +39,7 @@
 
             <div class="form-container">
                 <template v-if="showSource">
-                    <JSONEditor :json="JSON.stringify(content, null, 4)" />
+                    <CodeHighlight lang="json" :code="content"></CodeHighlight>
                 </template>
 
                 <template v-else>
@@ -50,7 +50,7 @@
                                 <a-switch
                                     checked-children="开启"
                                     un-checked-children="关闭"
-                                    v-model:checked="content.launchOptions.headless"
+                                    v-model:checked="options.launchOptions.headless"
                                 />
                             </span>
                         </div>
@@ -67,7 +67,7 @@
                         <div class="form">
                             <label>浏览器路径</label>
                             <a-input
-                                v-model:value="content.launchOptions.executablePath"
+                                v-model:value="options.launchOptions.executablePath"
                                 placeholder="浏览器路径"
                             />
                         </div>
@@ -76,7 +76,7 @@
                             <label>登录类型</label>
                             <a-select
                                 style="width: 100%"
-                                v-model:value="content.scripts[0].name"
+                                v-model:value="options.scripts[0].name"
                                 @change="onScriptChange"
                                 show-search
                             >
@@ -96,13 +96,13 @@
                                 <label> {{ item.title }} </label>
                                 <template v-if="item.type === 'text'">
                                     <a-input
-                                        v-model:value="(content.scripts[0].options as any)[item.name]"
+                                        v-model:value="(options.scripts[0].options as any)[item.name]"
                                         :placeholder="'输入' + item.title"
                                     />
                                 </template>
                                 <template v-if="item.type === 'password'">
                                     <a-input-password
-                                        v-model:value="(content.scripts[0].options as any)[item.name]"
+                                        v-model:value="(options.scripts[0].options as any)[item.name]"
                                         :placeholder="'输入' + item.title"
                                     />
                                 </template>
@@ -115,26 +115,45 @@
             <Transition name="fade">
                 <div v-show="showTerminal" class="h-100 iterminal overflow-hidden">
                     <span> 控制台 </span>
-                    <Terminal class="h-100" :running="file.stat.running" :file="file" />
+                    <Terminal
+                        class="h-100"
+                        :running="file.stat.running"
+                        :file="file"
+                        :options="options"
+                    />
                 </div>
             </Transition>
         </div>
     </template>
-    <template v-else>文件格式错误</template>
+    <template v-else>
+        <div class="error-page">
+            <div class="error-message">
+                <p>解析文件时第 {{ errorLine }} 行发生错误:</p>
+                <pre>{{ error }}</pre>
+
+                <CodeHighlight
+                    class="json-editor border rounded"
+                    lang="json"
+                    :code="content"
+                    :error-line="errorLine"
+                ></CodeHighlight>
+            </div>
+        </div>
+    </template>
 </template>
 
 <script setup lang="ts">
 import { toRefs, computed, ref, watch } from "vue";
 import { FileNode, fs, path } from "./File";
 import { scriptForms, Form } from ".";
-import JSONEditor from "../JSONEditor.vue";
+import CodeHighlight from "../CodeHighlight.vue";
 import { LaunchScriptsOptions } from "@ocsjs/scripts";
 import { debounce } from "../../utils/index";
 import Terminal from "../terminal/Terminal.vue";
 import Card from "../Card.vue";
 import { store } from "../../store";
-import { notify } from "../../utils/notify";
 import Icon from "../Icon.vue";
+const jsonlint = require("jsonlint");
 
 const { scriptNames } = require("@ocsjs/scripts");
 interface FormCreateProps {
@@ -144,11 +163,21 @@ const props = withDefaults(defineProps<FormCreateProps>(), {});
 const { file } = toRefs(props);
 
 /** 文件内容 */
-const content = ref<LaunchScriptsOptions>();
+const content = ref(fs.readFileSync(file.value.path).toString());
+/** 解析内容 */
+const options = ref<LaunchScriptsOptions>();
+/** 错误信息 */
+const error = ref("");
+/** 错误行 */
+const errorLine = ref(0);
 try {
-    content.value = JSON.parse(file.value.content);
+    options.value = jsonlint.parse(content.value);
 } catch (e) {
-    notify("文件格式错误", e, "file", { type: "error", copy: true });
+    error.value = (e as Error).message;
+    errorLine.value = parseInt(
+        error.value.match(/Parse error on line (\d+):/)?.[1] || "0"
+    );
+    console.log(error.value);
 }
 
 /** 是否显示源码 */
@@ -161,11 +190,11 @@ const openIncognito = ref(false);
 
 setUserDataDir();
 
-if (content.value) {
+if (options.value) {
     watch(openIncognito, () => {
-        if (content.value) {
+        if (options.value) {
             if (openIncognito.value) {
-                content.value.userDataDir = "";
+                options.value.userDataDir = "";
             } else {
                 setUserDataDir();
             }
@@ -174,10 +203,9 @@ if (content.value) {
 
     /** 监听文件更新 */
     watch(
-        content.value,
+        options.value,
         debounce(() => {
             const value = JSON.stringify(content.value, null, 4);
-            file.value.content = value;
             fs.writeFileSync(file.value.path, value);
         }, 500)
     );
@@ -187,8 +215,8 @@ if (content.value) {
  * 解析第一个 script 内容，根据 script 的名字进行解析，并生成表单
  */
 const loginTypeForms = computed(() => {
-    if (content.value) {
-        const target = scriptForms[content.value.scripts[0].name] as Form<any>;
+    if (options.value) {
+        const target = scriptForms[options.value.scripts[0].name] as Form<any>;
         const keys = Reflect.ownKeys(target);
         return keys.map((key) => ({
             name: key,
@@ -200,14 +228,14 @@ const loginTypeForms = computed(() => {
 
 /** 登录脚本名更新时，重置options内容 */
 function onScriptChange() {
-    if (content.value) {
-        content.value.scripts[0].options = {};
+    if (options.value) {
+        options.value.scripts[0].options = {};
     }
 }
 
 function setUserDataDir() {
-    if (content.value) {
-        content.value.userDataDir = path.join(
+    if (options.value) {
+        options.value.userDataDir = path.join(
             store["user-data-path"],
             "scriptUserData",
             file.value.uid
@@ -217,6 +245,22 @@ function setUserDataDir() {
 </script>
 
 <style scope lang="less">
+.error-page {
+    width: 100%;
+    padding-top: 50px;
+    text-align: left;
+
+    .error-message {
+        padding: 4px;
+        width: fit-content;
+        margin: 0 auto;
+
+        .json-editor {
+            width: 100%;
+        }
+    }
+}
+
 .file {
     height: 100%;
     display: grid;

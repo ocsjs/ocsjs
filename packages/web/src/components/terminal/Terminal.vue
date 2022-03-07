@@ -11,16 +11,18 @@ import "xterm/css/xterm.css";
 import { ChildProcess } from "child_process";
 import { store } from "../../store";
 import { ITerminal } from ".";
+import { LaunchScriptsOptions } from "@ocsjs/scripts";
 
 const child_process = require("child_process") as typeof import("child_process");
 const chalk = new Chalk({ level: 2 });
 
 interface TerminalProps {
     file: FileNode;
+    options: LaunchScriptsOptions;
     running: boolean;
 }
 const props = withDefaults(defineProps<TerminalProps>(), {});
-const { file, running } = toRefs(props);
+const { file, options, running } = toRefs(props);
 
 /**
  * 使用 child_process.fork 进行文件运行
@@ -34,7 +36,7 @@ const terminal = ref();
 watch(running, () => {
     if (running.value) {
         /** 运行文件 */
-        send("open", file.value.content);
+        send("open", JSON.stringify(options.value));
     } else {
         /** 关闭文件运行 */
         send("close", "");

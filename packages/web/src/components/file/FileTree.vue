@@ -6,6 +6,7 @@
         @drop="onDrop"
         @select="onSelect"
         :autoExpandParent="false"
+        :replaceFields="{ children: 'children', title: 'title', key: 'path' }"
     >
         <template #switcherIcon>
             <Icon type="icon-down" />

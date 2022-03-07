@@ -119,7 +119,7 @@ function onSelect(
         Project.opened.value.forEach((file) => (file.stat.show = false));
 
         /** 寻找打开过的文件 */
-        const openedFile = Project.opened.value.find((f) => f.key === file.key);
+        const openedFile = Project.opened.value.find((f) => f.uid === file.uid);
         /** 如果该文件之前打开过 */
         if (openedFile) {
             openedFile.stat.show = true;

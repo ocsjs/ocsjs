@@ -30,7 +30,7 @@ export interface FileNode {
     /** 文件名 */
     title: string;
     uid: string;
-    key: string;
+
     slots: {
         icon: string;
     };
@@ -40,8 +40,6 @@ export interface FileNode {
     path: string;
     /** 父目录 */
     parent: string;
-    /** 文件内容 */
-    content: string;
     /** 子文件 */
     children?: FileNode[];
 }

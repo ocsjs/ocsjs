@@ -27,7 +27,6 @@ export class Project {
         const stat = fs.statSync(filePath);
         let isDirectory = stat.isDirectory();
         let children;
-        let content = "";
         let icon;
         if (isDirectory) {
             icon = "dir";
@@ -39,14 +38,12 @@ export class Project {
                 .sort((a, b) => (a.stat?.isDirectory ? -1 : 1));
         } else {
             icon = "file";
-            content = fs.readFileSync(filePath).toString();
         }
 
         let parent = path.dirname(filePath);
         let uid = md.md5.create().update(filePath).digest().toHex();
         return reactive({
             title: path.basename(filePath),
-            key: filePath,
             uid,
             slots: {
                 icon,
@@ -60,7 +57,6 @@ export class Project {
                 opened: false,
                 running: false,
             },
-            content,
             parent,
             path: filePath,
             children,
