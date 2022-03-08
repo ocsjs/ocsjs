@@ -9,7 +9,7 @@ export class Project {
     /** 打开的文件 */
     static opened: Ref<FileNode[]> = ref([]);
     /** 重命名中的文件 */
-    static renamingFile: Ref<FileNode | undefined> = ref();
+    static renamingFilePath: Ref<string> = ref("");
 
     constructor(title: string, path: string, node?: FileNode) {
         if (fs.statSync(path).isDirectory() === false) {

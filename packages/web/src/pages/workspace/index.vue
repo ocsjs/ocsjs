@@ -14,13 +14,17 @@
             <ProjectNode :files="Project.opened.value" title="打开的文件"></ProjectNode>
         </div>
         <div class="w-100 h-100 overflow-auto">
-            <template v-if="Project.opened.value.length === 0">
+            <template
+                v-if="Project.opened.value.every((file) => file.stat.show === false)"
+            >
                 <!-- 显示帮助页面 -->
                 <Help class="help" />
             </template>
             <template v-else>
                 <template v-for="(file, index) of Project.opened.value" :key="index">
-                    <File v-show="file.stat.show" :file="file"></File>
+                    <KeepAlive>
+                        <File v-if="file.stat.show" :file="file"></File>
+                    </KeepAlive>
                 </template>
             </template>
         </div>

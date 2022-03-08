@@ -1,35 +1,49 @@
 <template>
-    <template v-if="options !== undefined">
+    <template v-if="data.options !== undefined">
         <div class="file">
             <div class="form-header text-start border-bottom">
                 <div class="file-title">
-                    <span> {{ file.title }} </span>
-                    <div class="ms-2 actions">
+                    <a-space>
+                        <span>{{ file.title }}</span>
+
+                        <a class="link" @click="closeEditor">关闭编辑</a>
+                    </a-space>
+                    <a-space class="actions me-2" :size="12">
                         <Icon
-                            @click="showSource = !showSource"
-                            :title="showSource ? '返回编辑' : '查看源文件'"
-                            :type="showSource ? 'icon-edit-square' : 'icon-file-text'"
+                            @click="data.showSource = !data.showSource"
+                            :title="data.showSource ? '返回编辑' : '查看源文件'"
+                            :type="
+                                data.showSource ? 'icon-edit-square' : 'icon-file-text'
+                            "
                         />
                         <Icon
-                            @click="showTerminal = !showTerminal"
-                            :title="showTerminal ? '关闭控制台' : '打开控制台'"
+                            @click="data.showTerminal = !data.showTerminal"
+                            :title="data.showTerminal ? '关闭控制台' : '打开控制台'"
                             type="icon-codelibrary"
                         >
                         </Icon>
                         <Icon
-                            @click="
-                                (showTerminal = true),
-                                    (file.stat.running = !file.stat.running)
-                            "
+                            @click="run"
                             :title="file.stat.running ? '关闭' : '运行'"
                             :type="
                                 file.stat.running
                                     ? 'icon-close-circle'
                                     : 'icon-play-circle'
                             "
-                            :style="{ color: file.stat.running ? '#f5222d' : '#1890ff' }"
+                            :style="{
+                                color: file.stat.running ? '#f5222d' : '#1890ff',
+                            }"
                         />
-                    </div>
+
+                        <template v-if="data.process.launched">
+                            <a-divider type="vertical" class="m-0"></a-divider>
+                            <Icon
+                                type="icon-totop"
+                                title="显示当前的浏览器"
+                                @click="data.process.bringToFront()"
+                            />
+                        </template>
+                    </a-space>
                 </div>
 
                 <div class="file-path info text-secondary">
@@ -38,8 +52,8 @@
             </div>
 
             <div class="form-container">
-                <template v-if="showSource">
-                    <CodeHighlight lang="json" :code="content"></CodeHighlight>
+                <template v-if="data.showSource">
+                    <CodeHighlight lang="json" :code="data.content"></CodeHighlight>
                 </template>
 
                 <template v-else>
@@ -50,7 +64,7 @@
                                 <a-switch
                                     checked-children="开启"
                                     un-checked-children="关闭"
-                                    v-model:checked="options.launchOptions.headless"
+                                    v-model:checked="data.options.launchOptions.headless"
                                 />
                             </span>
                         </div>
@@ -60,14 +74,14 @@
                                 <a-switch
                                     checked-children="开启"
                                     un-checked-children="关闭"
-                                    v-model:checked="openIncognito"
+                                    v-model:checked="data.openIncognito"
                                 />
                             </span>
                         </div>
                         <div class="form">
                             <label>浏览器路径</label>
                             <a-input
-                                v-model:value="options.launchOptions.executablePath"
+                                v-model:value="data.options.launchOptions.executablePath"
                                 placeholder="浏览器路径"
                             />
                         </div>
@@ -76,7 +90,7 @@
                             <label>登录类型</label>
                             <a-select
                                 style="width: 100%"
-                                v-model:value="options.scripts[0].name"
+                                v-model:value="data.options.scripts[0].name"
                                 @change="onScriptChange"
                                 show-search
                             >
@@ -96,13 +110,13 @@
                                 <label> {{ item.title }} </label>
                                 <template v-if="item.type === 'text'">
                                     <a-input
-                                        v-model:value="(options.scripts[0].options as any)[item.name]"
+                                        v-model:value="(data.options.scripts[0].options as any)[item.name]"
                                         :placeholder="'输入' + item.title"
                                     />
                                 </template>
                                 <template v-if="item.type === 'password'">
                                     <a-input-password
-                                        v-model:value="(options.scripts[0].options as any)[item.name]"
+                                        v-model:value="(data.options.scripts[0].options as any)[item.name]"
                                         :placeholder="'输入' + item.title"
                                     />
                                 </template>
@@ -113,29 +127,32 @@
             </div>
 
             <Transition name="fade">
-                <div v-show="showTerminal" class="h-100 iterminal overflow-hidden">
-                    <span> 控制台 </span>
+                <div v-show="data.showTerminal" class="h-100 iterminal overflow-hidden">
+                    <div>
+                        <span>控制台</span>
+                        <span>日志文件</span>
+                    </div>
                     <Terminal
                         class="h-100"
-                        :running="file.stat.running"
+                        :xterm="data.xterm"
                         :file="file"
-                        :options="options"
+                        :process="data.process"
                     />
                 </div>
             </Transition>
         </div>
     </template>
-    <template v-else>
+    <template v-if="data.error">
         <div class="error-page">
             <div class="error-message">
-                <p>解析文件时第 {{ errorLine }} 行发生错误:</p>
-                <pre>{{ error }}</pre>
+                <p>解析文件时第 {{ data.error?.line }} 行发生错误:</p>
+                <pre>{{ data.error?.message }}</pre>
 
                 <CodeHighlight
                     class="json-editor border rounded"
                     lang="json"
-                    :code="content"
-                    :error-line="errorLine"
+                    :code="data.content"
+                    :error-line="data.error?.line"
                 ></CodeHighlight>
             </div>
         </div>
@@ -143,8 +160,8 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed, ref, watch } from "vue";
-import { FileNode, fs, path } from "./File";
+import { toRefs, computed, ref, watch, reactive, onUnmounted } from "vue";
+import { FileNode, fs, validFileContent, path } from "./File";
 import { scriptForms, Form } from ".";
 import CodeHighlight from "../CodeHighlight.vue";
 import { LaunchScriptsOptions } from "@ocsjs/scripts";
@@ -153,7 +170,9 @@ import Terminal from "../terminal/Terminal.vue";
 import Card from "../Card.vue";
 import { store } from "../../store";
 import Icon from "../Icon.vue";
-const jsonlint = require("jsonlint");
+import { Process } from "../terminal/process";
+import { ITerminal } from "../terminal";
+import { Project } from "../project";
 
 const { scriptNames } = require("@ocsjs/scripts");
 interface FormCreateProps {
@@ -162,50 +181,64 @@ interface FormCreateProps {
 const props = withDefaults(defineProps<FormCreateProps>(), {});
 const { file } = toRefs(props);
 
-/** 文件内容 */
-const content = ref(fs.readFileSync(file.value.path).toString());
-/** 解析内容 */
-const options = ref<LaunchScriptsOptions>();
-/** 错误信息 */
-const error = ref("");
-/** 错误行 */
-const errorLine = ref(0);
-try {
-    options.value = jsonlint.parse(content.value);
-} catch (e) {
-    error.value = (e as Error).message;
-    errorLine.value = parseInt(
-        error.value.match(/Parse error on line (\d+):/)?.[1] || "0"
-    );
-    console.log(error.value);
+const data = reactive<{
+    content: string;
+    options?: LaunchScriptsOptions;
+    error?: { message: string; line: number };
+    showSource: boolean;
+    openIncognito: boolean;
+    showTerminal: boolean;
+    process: Process;
+    xterm: ITerminal;
+}>({
+    /** 文件内容 */
+    content: fs.readFileSync(file.value.path).toString(),
+    /** 解析内容 */
+    options: undefined,
+    /** 是否错误 */
+    error: undefined,
+
+    /** 显示源码 */
+    showSource: false,
+    /** 开启无痕浏览 */
+    openIncognito: false,
+    /** 显示控制台 */
+    showTerminal: false,
+    /** 运行的子进程对象 */
+    process: new Process(file.value.uid, store["logs-path"]),
+    /** 终端对象 */
+    xterm: new ITerminal(),
+});
+
+const result = validFileContent(data.content);
+if (typeof result === "string") {
+    data.options = JSON.parse(result);
+} else {
+    data.error = result.error;
 }
 
-/** 是否显示源码 */
-const showSource = ref(false);
+if (data.options && data.error === undefined) {
+    /** 更新用户浏览器缓存文件夹 */
+    setUserDataDir();
 
-/** 是否显示终端 */
-const showTerminal = ref(false);
-/** 是否开启无痕模式 */
-const openIncognito = ref(false);
-
-setUserDataDir();
-
-if (options.value) {
-    watch(openIncognito, () => {
-        if (options.value) {
-            if (openIncognito.value) {
-                options.value.userDataDir = "";
-            } else {
-                setUserDataDir();
+    watch(
+        () => data.openIncognito,
+        () => {
+            if (data.options) {
+                if (data.openIncognito) {
+                    data.options.userDataDir = "";
+                } else {
+                    setUserDataDir();
+                }
             }
         }
-    });
+    );
 
     /** 监听文件更新 */
     watch(
-        options.value,
+        data.options,
         debounce(() => {
-            const value = JSON.stringify(content.value, null, 4);
+            const value = JSON.stringify(data.options, null, 4);
             fs.writeFileSync(file.value.path, value);
         }, 500)
     );
@@ -215,8 +248,8 @@ if (options.value) {
  * 解析第一个 script 内容，根据 script 的名字进行解析，并生成表单
  */
 const loginTypeForms = computed(() => {
-    if (options.value) {
-        const target = scriptForms[options.value.scripts[0].name] as Form<any>;
+    if (data.options) {
+        const target = scriptForms[data.options.scripts[0].name] as Form<any>;
         const keys = Reflect.ownKeys(target);
         return keys.map((key) => ({
             name: key,
@@ -228,20 +261,42 @@ const loginTypeForms = computed(() => {
 
 /** 登录脚本名更新时，重置options内容 */
 function onScriptChange() {
-    if (options.value) {
-        options.value.scripts[0].options = {};
+    if (data.options) {
+        data.options.scripts[0].options = {};
     }
 }
 
 function setUserDataDir() {
-    if (options.value) {
-        options.value.userDataDir = path.join(
+    if (data.options) {
+        data.options.userDataDir = path.join(
             store["user-data-path"],
             "scriptUserData",
             file.value.uid
         );
     }
 }
+
+/** 运行文件 */
+function run() {
+    if (data.options) {
+        data.showTerminal = true;
+        file.value.stat.running = !file.value.stat.running;
+
+        if (file.value.stat.running) {
+            data.process.launch(data.options);
+        } else {
+            data.process.close();
+        }
+    }
+}
+
+function closeEditor() {
+    Project.opened.value = Project.opened.value.filter((f) => f.path !== file.value.path);
+}
+
+onUnmounted(() => {
+    data.process.close();
+});
 </script>
 
 <style scope lang="less">
@@ -290,6 +345,10 @@ function setUserDataDir() {
         display: inline-flex;
         white-space: nowrap;
         width: 100%;
+
+        .link {
+            font-size: 11px;
+        }
     }
 
     .actions {
@@ -301,7 +360,6 @@ function setUserDataDir() {
         & * {
             font-size: 24px;
             cursor: pointer;
-            margin-right: 8px;
         }
     }
 }

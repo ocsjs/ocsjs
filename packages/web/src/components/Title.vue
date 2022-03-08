@@ -10,16 +10,52 @@
                     {{ item.meta?.title || "" }}
                 </li>
             </template>
+            <li>
+                <a-dropdown>
+                    <span @click.prevent> 帮助 </span>
+                    <template #overlay>
+                        <a-menu>
+                            <Link
+                                title="关于"
+                                url="https://github.com/enncy/online-course-script#readme"
+                            />
+                            <Link
+                                title="教程"
+                                url="https://github.com/enncy/online-course-script#readme"
+                            />
+                            <Link
+                                title="版本更新"
+                                url="https://github.com/enncy/online-course-script/releases"
+                            />
+                            <Link
+                                title="变更日志"
+                                url="https://github.com/enncy/online-course-script/blob/3.0/CHANGELOG.md"
+                            />
+                        </a-menu>
+                    </template>
+                </a-dropdown>
+            </li>
         </ul>
     </div>
 </template>
 
 <script setup lang="ts">
+import { defineComponent } from "vue";
 import { config } from "../config";
-import { ref, reactive, toRefs, nextTick, onMounted } from "vue";
 import { router, routes } from "../route";
+const { shell } = require("electron");
 
 const token = "active";
+
+const Link = defineComponent({
+    template: `<a-menu-item  @click="open(url)">{{title}}</a-menu-item>`,
+    props: ["title", "url"],
+    methods: {
+        open(url: string) {
+            shell.openExternal(url);
+        },
+    },
+});
 
 function active(event: MouseEvent) {
     const el = document.elementFromPoint(event.x, event.y);
@@ -31,6 +67,10 @@ function active(event: MouseEvent) {
     if (!el?.classList.contains(token)) {
         el?.classList.add(token);
     }
+}
+
+function open(url: string) {
+    shell.openExternal(url);
 }
 </script>
 

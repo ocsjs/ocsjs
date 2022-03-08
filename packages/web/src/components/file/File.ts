@@ -1,8 +1,10 @@
+import { LaunchScriptsOptions } from "@ocsjs/scripts";
 import { Modal } from "ant-design-vue";
 import { h } from "vue";
 import { config } from "../../config";
 import Description from "../Description.vue";
-
+import { Project } from "../project";
+const jsonlint = require("jsonlint");
 const fs = require("fs") as typeof import("fs");
 const fsExtra = require("fs-extra") as typeof import("fs-extra");
 const path = require("path") as typeof import("path");
@@ -106,15 +108,30 @@ export function flatFiles(files: FileNode[]): FileNode[] {
     return flat;
 }
 
+/**
+ * 在 parent 下创建文件
+ * @param parent
+ */
 export function createFile(parent: FileNode) {
     const newFilePath = validFileName(parent.path, "新建OCS文件($count).ocs");
-    fs.writeFileSync(newFilePath, config.ocsFileTemplate);
+    Project.renamingFilePath.value = newFilePath;
+    fs.writeFileSync(newFilePath, config.ocsFileTemplate());
 }
+
+/**
+ * 在 parent 下创建文件夹
+ * @param parent
+ */
 export function mkdir(parent: FileNode) {
     const newDirPath = validFileName(parent.path, "新建文件夹($count)");
+    Project.renamingFilePath.value = newDirPath;
     fs.mkdirSync(newDirPath);
 }
 
+/**
+ * 显示详情属性
+ * @param file 文件节点
+ */
 export function detail(file: FileNode) {
     Modal.info({
         title: () => "文件属性",
@@ -136,5 +153,23 @@ export function detail(file: FileNode) {
 
     function desc(label: string, desc: string) {
         return h(Description, { label, desc });
+    }
+}
+
+/**
+ * 检验文件格式
+ */
+export function validFileContent(content: string) {
+    try {
+        jsonlint.parse(content);
+        return content;
+    } catch (e) {
+        const message = (e as Error).message;
+        return {
+            error: {
+                message,
+                line: parseInt(message.match(/Parse error on line (\d+):/)?.[1] || "0"),
+            },
+        };
     }
 }

@@ -21,7 +21,7 @@
             <template v-if="file.stat">
                 <a-dropdown :trigger="['contextmenu']">
                     <!-- 重命名文件 -->
-                    <template v-if="Project.renamingFile?.value?.path === file.path">
+                    <template v-if="Project.renamingFilePath.value === file.path">
                         <a-input
                             size="small"
                             class="rename-input"
@@ -37,6 +37,7 @@
                      -->
                     <template v-else>
                         <span
+                            class="file-title"
                             v-html="StringUtils.maximum(file.title, 40)"
                             :title="file.path"
                         >
@@ -49,7 +50,11 @@
                 </a-dropdown>
             </template>
             <template v-else>
-                <span v-html="StringUtils.maximum(file.title, 40)" :title="file.path">
+                <span
+                    class="file-title"
+                    v-html="StringUtils.maximum(file.title, 40)"
+                    :title="file.path"
+                >
                 </span>
             </template>
         </template>
@@ -192,7 +197,7 @@ function rename(e: Event, file: FileNode) {
     const name = (e.target as HTMLInputElement).value;
     const dest = path.join(file.parent, name);
 
-    Project.renamingFile.value = undefined;
+    Project.renamingFilePath.value = "";
 
     if (file.path !== dest) {
         if (!fs.existsSync(dest)) {

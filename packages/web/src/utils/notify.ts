@@ -12,6 +12,9 @@ interface NotifyOptions {
 }
 
 export function notify(title: string, msg: any, key: string, options?: NotifyOptions) {
+    if (options?.type === "error") {
+        console.error(title, msg);
+    }
     notification[options?.type || "info"]({
         key,
         message: title,

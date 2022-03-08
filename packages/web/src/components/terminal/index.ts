@@ -40,7 +40,10 @@ export class ITerminal extends Terminal {
     }
 
     fit() {
-        fitAddon.fit();
+        const dimensions = fitAddon.proposeDimensions();
+        if (dimensions?.cols && dimensions?.rows) {
+            this.resize?.(dimensions.cols, dimensions.rows);
+        }
     }
 
     write(data: string) {

@@ -4,7 +4,8 @@ const ocs = require("@ocsjs/scripts");
 const { loggerPrefix } = require("@ocsjs/scripts");
 const { Instance: Chalk } = require("chalk");
 const { Logger } = require("./src/logger.core");
-const { redBright, bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
+const { chromium } = require("playwright");
+const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
 /** @type { Logger} */
 let logger;
@@ -22,8 +23,13 @@ process.on("message", async (message) => {
         logger.info("日志 : " + logger.dest);
     }
 
+    process.on("unhandledRejection", (e) => {
+        console.log(bgRedBright(loggerPrefix("error")), "未处理的错误 : ", e);
+        logger.info("未处理的错误!", e);
+    });
+
     try {
-        if (action === "open") {
+        if (action === "launch") {
             if (browser === undefined) {
                 logger.info("任务启动 : ", action, data, uid, logsPath);
 
@@ -52,9 +58,19 @@ process.on("message", async (message) => {
                     userDataDir,
                     launchOptions,
                     scripts,
+                    sync: false,
                 });
+
+                debug("启动成功");
+
                 browser = _browser;
                 page = _page;
+
+                page.context().on("page", (_page) => {
+                    if (_page.url() === "about:blank") {
+                        setTimeout(() => _page.close(), 500);
+                    }
+                });
             } else {
                 console.log(bgYellowBright(loggerPrefix("warn")), "任务已开启，请勿重复开启。", uid);
                 logger.info("任务已开启，请勿重复开启。");
@@ -66,8 +82,12 @@ process.on("message", async (message) => {
             browser = undefined;
             page = undefined;
         } else if (action === "call") {
-            const { name, args } = JSON.parse(data);
-            await page[name](args);
+            const { name, args, target } = JSON.parse(data);
+            if (target === "page") {
+                await page[name](args || []);
+            } else {
+                await browser[name](args || []);
+            }
         }
     } catch (e) {
         console.log(bgRedBright(loggerPrefix("error")), "任务发生未知错误 : ", e);

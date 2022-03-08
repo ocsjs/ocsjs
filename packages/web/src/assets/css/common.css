@@ -15,6 +15,18 @@ html,
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+  /** 禁用动画 */
+}
+#app * {
+  animation-duration: 0s !important;
+  animation: none !important;
+  transition: none !important;
+}
+/** 禁用动画 */
+* {
+  animation-duration: 0s !important;
+  animation: none !important;
+  transition: none !important;
 }
 .pointer {
   cursor: pointer;

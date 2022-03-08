@@ -1,8 +1,9 @@
 import { reactive, shallowRef } from "vue";
 import { RouteRecordRaw } from "vue-router";
-import about from "@/pages/about/index.vue";
 import setting from "@/pages/setting/index.vue";
 import workspace from "@/pages/workspace/index.vue";
+import { LaunchScriptsOptions } from "@ocsjs/scripts";
+import { store } from "../store";
 
 export const config = reactive({
     /** 标题设置 */
@@ -40,29 +41,23 @@ export const config = reactive({
                 title: "设置",
             },
         },
-        about: {
-            name: "about",
-            path: "/about",
-            component: shallowRef(about),
-            meta: {
-                title: "关于",
-            },
-        },
     } as Record<any, RouteRecordRaw>,
     /**
      * 初始文件模板
      */
-    ocsFileTemplate: JSON.stringify(
-        {
-            launchOptions: {},
-            scripts: [
-                {
-                    name: "cx-login-other",
-                    options: {},
-                },
-            ],
-        },
-        null,
-        4
-    ),
+    ocsFileTemplate: () => {
+        return JSON.stringify(
+            {
+                launchOptions: store.script.launchOptions,
+                scripts: [
+                    {
+                        name: "cx-login-other",
+                        options: {},
+                    },
+                ],
+            } as LaunchScriptsOptions,
+            null,
+            4
+        );
+    },
 });

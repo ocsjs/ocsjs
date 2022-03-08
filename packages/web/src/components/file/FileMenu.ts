@@ -1,8 +1,6 @@
 import { remote } from "./../../utils/remote";
 import { MenuItem } from "../menus";
 import { createFile, detail, FileNode, fs, mkdir, validFileName } from "./File";
-import { message, Modal } from "ant-design-vue";
-import { h } from "vue";
 import { Project } from "../project";
 const { shell, clipboard } = require("electron");
 
@@ -52,13 +50,14 @@ export function createFileMenus(file: FileNode) {
             icon: "icon-delete",
             onClick() {
                 remote.methods.call("trash", file.path);
+                Project.opened.value = Project.opened.value.filter(f=>f.path !== file.path)
             },
         },
         {
             title: "重命名",
             icon: "icon-redo",
             onClick() {
-                Project.renamingFile.value = file;
+                Project.renamingFilePath.value = file.path;
             },
         },
         {

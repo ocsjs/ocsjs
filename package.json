@@ -1,6 +1,6 @@
 {
     "name": "ocsjs",
-    "version": "3.0.0-beta.4",
+    "version": "3.0.0-beta.5",
     "description": "ocs - online course script 在线网络课程辅助工具",
     "main": "./dist/index.js",
     "types": "./packages/scripts/lib/src/index.d.ts",
@@ -9,7 +9,6 @@
         "dist"
     ],
     "scripts": {
-        "test": "echo \"Error: no test specified\" && exit 1",
         "changelog": "conventional-changelog -p angular -i CHANGELOG.md -s",
         "webpack": "webpack --config webpack.config.js",
         "gulp": "gulp  --allowEmpty"
