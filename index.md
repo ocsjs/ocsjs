@@ -1,91 +1,211 @@
- 
-## online-course-script
+# ocsjs
 
-> ocs online-course-script  在线网络课程辅助脚本工具
-> 简称网课脚本，帮助大学生解决网课难题，目前支持的平台：超星，智慧树
- 
-## 简介
+> OCS (Online Course Script) 网课刷课脚本，帮助大学生解决网课难题
 
-- 使用 `electron ` + `vue3` + `typescript` 的方式搭建的跨平台网课脚本软件，核心使用 `pupeteer` + 自研的 `pioneerjs` 脚本库来进行浏览器以及 js 脚本的驱动。
-- 一键式运行刷课脚本，只需要添加账号和一些基本参数，则可一键刷课，全程躺平，支持自动答题模块
-- 软件采用增量更新，自动更新，快捷迭代
- 
-## 软件教程
+@[toc]
 
-1.  进入`发行版`页面，也就是 `release` 页面
-- 码云发行版页面 : [https://gitee.com/enncy/online-course-script/releases](https://gitee.com/enncy/online-course-script/releases)
-- github release : [https://github.com/enncy/online-course-script/releases](https://github.com/enncy/online-course-script/releases)
-2. 找到最新版本的 release , 例如 1.2.6 或者 1.2.10 版本， 而 `1.2.10` 版本则是最新版本。
-3. 找到 `ocs-x.x.x-setup-win-xx.exe` 软件链接点击下载
-4. 下载后点击安装
-5. 进入软件后初始化`浏览器路径`和`查题码`配置
-6. 添加账号
-7. 点击账号下方的运行按钮运行
 
-## 项目运行
-- 不是开发人员无需阅读
-- 本项目使用的是 nodejs 环境，如果未安装，请先自行安装！
+# 使用方法
+
+-   [浏览器运行](#浏览器运行)
+-   [油猴运行](#油猴运行)
+-   [OCS 软件运行](#OCS软件运行)
+
+## 浏览器运行
+
+> `优点`：简单
+
+> `缺点`：不方便，每次都需要重新输入代码
+
+1.在指定的 [网课学习页面](#网课学习页面)，打开 `开发者工具`，方法如下。
+
+| 谷歌 chrome | 火狐 Firefox | 微软 Edge  |
+| :---------: | :----------: | :--------: |
+|    `F12`    |    `F12`     | `Ctrl`+`i` |
+
+2.点击`开发者工具`上方的：`Console` 或者 `控制台`
+
+3.然后输入下面代码
+
+5.按下回车运行
+
+```js
+if (window.$) {
+    loadOCS(window.$);
+} else {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js";
+    document.body.append(script);
+    const interval = setInterval(() => {
+        if (window.$) {
+            loadOCS(window.$);
+            clearInterval(interval);
+        }
+    }, 5000);
+}
+
+// 载入 OCS 并运行
+function loadOCS($) {
+    $("<link>")
+        .attr({
+            rel: "stylesheet",
+            type: "text/css",
+            href: "https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css",
+        })
+        .appendTo("head");
+    $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
+        OCS.start();
+    });
+}
+```
+
+## 油猴运行
+
+> `优点`：不需要重复输入代码，只需新建脚本保存即可
+
+> `缺点`：需要安装油猴拓展
+
+1.安装油猴浏览器拓展 https://www.tampermonkey.net/
+
+2.打开右上角油猴浏览器拓展
+
+3.点击添加新脚本
+
+4.删除原有所有代码，输入以下的代码
+
+5.按下 `ctrl + s` 保存代码
+
+6.打开指定的 [网课学习页面](#网课学习页面) 即可自动运行
+
+```js
+// ==UserScript==
+// @name         OCS 网课助手
+// @namespace    https://enncy.cn
+// @version      3.0.0
+// @description  OCS 网课助手，支持各平台网课学习
+// @author       enncy
+// @match        *://*.chaoxing.com/*
+// @match        *://*.zhihuishu.com/*
+// @require      https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js
+// @resource     OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css
+// @grant        unsafeWindow
+// @grant        GM_addElement
+// @grant        GM_getResourceText
+// @noframes
+// ==/UserScript==
+
+/* eslint no-undef: 0 */
+
+(function () {
+    "use strict";
+
+    window.OCS = OCS;
+
+    // 加载 bootstrap icons 图标样式
+    GM_addElement("link", {
+        rel: "stylesheet",
+        href: "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css",
+    });
+
+    OCS.start({
+        // 加载样式
+        style: GM_getResourceText("OCS_STYLE"),
+        // 支持拖动
+        draggable: true,
+        // 加载默认脚本列表，默认 OCS.definedScripts
+        // scripts: OCS.definedScripts
+    });
+})();
+```
+
+## OCS 软件运行
+
+> `优点`：全自动运行(推荐)
+
+下载地址: https://github.com/enncy/online-course-script/releases
+
+## 项目开发
+
+### 项目结构
+
+```
++ packages
+    + app                   # electron 主进程
+    + scripts               # 脚本实现库
+        + src
+            + browser       # 浏览器脚本实现
+            + nodejs        # node 端实现， 使用 playwright 进行浏览器控制
+    + web                   # 使用 vue3 + ts + ant design vue 构建的 electron 渲染进程
+- CHANGELOG.md              # 更新日志
+- gulpfile.js               # gulp 文件
+- webpack.config.js         # webpack 打包配置 ： 打包 packages/browser.entry.js 作为浏览器端环境
+```
+
+### 项目运行
 
 ```sh
-# 克隆项目到本地
-git clone git@github.com:enncy/online-course-script.git
+# 全局安装 pnpm ，如果已经安装，则无需执行
+npm i pnpm -g
+# 下载项目
+git clone https://github.com/enncy/online-course-script.git ocs
 # 进入目录
-cd online-course-script
-# 安装依赖
-npm install
-# 为防止 electron 安装失败，手动执行安装
-node node_modules/electron/install.js
-# 进入 electron app 文件夹
-cd app
-# 安装 electron 依赖 （本项目使用双依赖结构，具体参考 https://www.electron.build/tutorials/two-package-structure）
-npm install
-# 回到根目录
-cd ..
-# 运行项目
-npm run dev
-# ... 其他命令请参考 package.json
+cd ocs
+# 使用 pnpm 安装依赖
+pnpm i -w
 ```
-## 旧版详情
-- 旧版采用浏览器 + 油猴脚本方式运行，未来可能会废弃，具体教程前往 `master` 分支 或者 [ocs.enncy.cn](https://ocs.enncy.cn) 查看教程
 
-## 交流群
-1. 976662217 已满
-2. 940881245
-3. 688788798 
+```sh
+# 进入 scripts
+cd packages/scripts
+# 编译 scripts 项目
+npx tsc
+```
 
+接下来打开 2 个终端，分别执行 :
 
-## 问答
-问：`如何更换浏览器路径`        
-答：      
-> 此软件会使用浏览器控制脚本进行刷课操作     
-> 火狐浏览器运行存在问题，我们不建议使用火狐浏览器     
-> 支持`谷歌`,`Microsoft Edge`,等带有`chrome`内核的主流浏览器     
-> 如果您不知道浏览器的路径在哪，请按照如下操作查看:      
+```sh
+# 进入 web 渲染进程
+cd packages/web
+# 运行 vue 项目
+npm run dev
+```
 
-`谷歌`: 打开谷歌浏览器,输入链接 `chrome://version` , 找到 `可执行文件路径` 这一栏复制粘贴即可        
-    
-`Microsoft Edge`: 打开Edge浏览器，输入链接 `edge://version/` , 找到 `可执行文件路径` 这一栏复制粘贴即可       
+```sh
+# 进入 app 主进程
+cd packages/app
+# 运行 electron 软件
+npm run dev
+```
 
-- 刚开始时软件会弹出设置框，如果您想重新设置 ： 设置 -> 启动设置 -> 浏览器路径 -> 点击设置即可
+### 软件打包
 
+```sh
+# 进入 web 渲染进程
+cd packages/web
+# 编译 vue 项目到 app 下的 public 目录
+npm run dist
+```
 
-****
+```sh
+# 进入 app 主进程
+cd packages/app
+# 轻量打包
+npm run pack
+# 生成执行文件
+npm run dist
+```
 
+### 项目打包
 
+```sh
+npm run gulp
+```
 
-问：`如何运行`          
-答：添加账号 -> 选择平台 -> 选择登录类型 -> 输入信息 -> 然后点击获取课程 -> 等待获取完成后 -> 点击添加        
+# 网课学习页面
 
+-   `超星/尔雅/学习通` : `**chaoxing.com/mycourse/studentstudy/**`
+-   `智慧树/知道` : `**zhihuishu.com/videoStudy.html#/studyVideo/**`
 
+大部分学习页面类似下图
 
-****
-
-
-
-问：`报错怎么办，暂停了怎么办？`           
-答：             
-超星：可以刷新页面，或者手动切换任务，任务会重新分配。          
-智慧树：关闭浏览器，重新启动解决90%的问题          
- 
-
-
+![study-page](img/README/study-page.png)
