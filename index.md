@@ -1,14 +1,13 @@
-
 # OCS 网课助手
-  
-> OCS (Online Course Script) 网课助手，帮助大学生解决网课难题
 
+> OCS (Online Course Script) 网课刷课脚本，帮助大学生解决网课难题
 
 # 目录
 
-{:toc}
-
-# 使用方法
+-   [浏览器运行](#浏览器运行)
+-   [油猴运行](#油猴运行)
+-   [OCS 软件运行](#OCS软件运行)
+-   [项目开发](#项目开发)
 
 ## 浏览器运行
 
@@ -53,7 +52,12 @@ function loadOCS($) {
         })
         .appendTo("head");
     $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
-        OCS.start();
+        OCS.start({
+            // 支持拖动
+            draggable: true,
+            // 加载默认脚本列表，默认 OCS.definedScripts
+            // scripts: OCS.definedScripts
+        });
     });
 }
 ```
@@ -207,4 +211,4 @@ npm run gulp
 
 大部分学习页面类似下图
 
-![study-page](img/README/study-page.png)
+![study-page](https://cdn.jsdelivr.net/gh/enncy/online-course-script@3.0.0-beta.6/img/README/study-page.png)
