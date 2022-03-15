@@ -1,8 +1,5 @@
----
-layout: post
-title: "OCS 网课助手"
-toc: true
----
+
+# OCS 网课助手
   
 > OCS (Online Course Script) 网课助手，帮助大学生解决网课难题
  
