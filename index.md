@@ -1,9 +1,11 @@
-# ocsjs
-
-> OCS (Online Course Script) 网课刷课脚本，帮助大学生解决网课难题
-
-@[toc]
-
+---
+layout: post
+title: "OCS 网课助手"
+toc: true
+---
+  
+> OCS (Online Course Script) 网课助手，帮助大学生解决网课难题
+ 
 
 # 使用方法
 
