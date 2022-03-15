@@ -1,48 +1,15 @@
-import { logger, sleep } from "../util";
-
-export type StudyOptions = VideoOptions & {
-    /**
-     * 设置观看总时长(分钟)
-     *
-     * 如果设置为0，将一直观看，不暂停
-     *
-     * @default 30
-     */
-    watchTime?: number;
-
-    /**
-     * 复习模式：重复观看每个视频
-     *
-     * @default false
-     */
-    restudy: boolean;
-};
-
-export interface VideoOptions {
-    /**
-     * 是否禁音
-     *
-     * @default true
-     */
-    mute?: boolean;
-    /**
-     * 视频速度
-     *
-     * @default 1
-     */
-    playbackRate?: number;
-}
+import { logger } from "../../logger";
+import { sleep } from "../common/util";
+import { ScriptSettings } from "../scripts";
 
 /**
  * zhs 视频学习
- * @param options {@link StudyOptions}
- * @returns
  */
-export async function study(options?: StudyOptions) {
-    const { watchTime = 30, restudy = false } = options || {};
+export async function study(setting?: ScriptSettings["zhs"]["video"]) {
+    const { watchTime = 30, restudy = false } = setting || {};
     logger("info", "zhs 学习任务开始");
 
-    await new Promise<void>(async (resolve, reject) => {
+    await new Promise<void>(async (resolve) => {
         /** 查找任务 */
         let list: HTMLLIElement[] = Array.from(document.querySelectorAll("li.clearfix.video"));
 
@@ -69,14 +36,14 @@ export async function study(options?: StudyOptions) {
              * 到达学习时间后，自动关闭
              */
             if (watchTime !== 0) {
-                logger("info", "将在", watchTime, "分钟后自动暂停");
+                logger("info", "将在", watchTime, "小时后自动暂停");
                 setTimeout(() => {
                     const video: HTMLVideoElement = document.querySelector("video") as any;
                     (video as any).stop = true;
                     video.pause();
                     stop = true;
                     resolve();
-                }, watchTime * 60 * 1000);
+                }, watchTime * 60 * 60 * 1000);
             }
 
             /** 遍历任务进行学习 */
@@ -93,7 +60,7 @@ export async function study(options?: StudyOptions) {
                         );
                         item.click();
                         await sleep(5000);
-                        await watch(options);
+                        await watch(setting);
                     }
                 } catch (e) {
                     logger("error", e);
@@ -108,16 +75,15 @@ export async function study(options?: StudyOptions) {
 
 /**
  * 观看视频
- * @param options {@link VideoOptions}
+ * @param setting
  * @returns
  */
-export async function watch(options?: VideoOptions) {
-    const { playbackRate = 1, mute = true } = options || {};
+export async function watch(setting?: ScriptSettings["zhs"]["video"]) {
+    const { playbackRate = 1, mute = true } = setting || {};
     return new Promise<void>((resolve, reject) => {
         try {
             const video = document.querySelector("video") as HTMLVideoElement;
-            video.playbackRate = playbackRate;
-            video.muted = mute;
+
             video.onpause = function () {
                 if (!video.ended) {
                     if ((video as any).stop) {
@@ -130,6 +96,12 @@ export async function watch(options?: VideoOptions) {
             video.onended = function () {
                 resolve();
             };
+            // 静音
+            video.muted = mute;
+            // 改变速率
+            video.playbackRate = parseFloat(playbackRate.toString());
+            const playbackRateText = document.querySelector("div.speedBox > span") as HTMLVideoElement;
+            playbackRateText.textContent = "X " + video.playbackRate;
 
             video.play();
         } catch (e) {

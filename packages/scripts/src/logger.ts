@@ -1,7 +1,9 @@
 export function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
     let extra = level === "error" ? "[错误]" : level === "warn" ? "[警告]" : undefined;
 
-    if (typeof global === "undefined") {
+    if (typeof window === "undefined") {
+        return [`[OCS][${new Date().toLocaleTimeString()}]${extra || ""}`];
+    } else {
         let bgColor;
         bgColor =
             level === "info"
@@ -16,11 +18,14 @@ export function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
             `%c[OCS][${new Date().toLocaleTimeString()}]${extra || ""}`,
             `background:${bgColor};color:white;padding:2px;border-radius:2px`,
         ];
-    } else {
-        return [`[OCS][${new Date().toLocaleTimeString()}]${extra || ""}`];
     }
 }
 
 export function createLog(level: "info" | "error" | "warn" | "debug", ...msg: any[]) {
-    return [...loggerPrefix(level), ...msg];
+    return loggerPrefix(level).concat(...msg);
+}
+
+/** 输出 */
+export function logger(level: "info" | "error" | "warn" | "debug", ...msg: any[]) {
+    console.log(...createLog(level, msg));
 }

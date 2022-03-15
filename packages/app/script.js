@@ -4,7 +4,6 @@ const ocs = require("@ocsjs/scripts");
 const { loggerPrefix } = require("@ocsjs/scripts");
 const { Instance: Chalk } = require("chalk");
 const { Logger } = require("./src/logger.core");
-const { chromium } = require("playwright");
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
 /** @type { Logger} */
@@ -63,12 +62,18 @@ process.on("message", async (message) => {
 
                 debug("启动成功");
 
+                // @ts-ignore
                 browser = _browser;
+                // @ts-ignore
                 page = _page;
+
+                page.on("load", () => executeScript(page));
 
                 page.context().on("page", (_page) => {
                     if (_page.url() === "about:blank") {
                         setTimeout(() => _page.close(), 500);
+                    } else {
+                        _page.on("load", () => executeScript(page));
                     }
                 });
             } else {
@@ -94,3 +99,40 @@ process.on("message", async (message) => {
         logger.info("任务发生未知错误!", e);
     }
 });
+
+/**
+ * 执行 ocs 脚本
+ * @param {import("playwright").Page} page
+ */
+async function executeScript(page) {
+    await page.evaluate(() => {
+        console.log("execute script");
+        if (window.$) {
+            loadOCS(window.$);
+        } else {
+            const script = document.createElement("script");
+            script.src = "https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js";
+            document.body.append(script);
+            const interval = setInterval(() => {
+                if (window.$) {
+                    loadOCS(window.$);
+                    clearInterval(interval);
+                }
+            }, 5000);
+        }
+
+        // 载入 OCS 并运行
+        function loadOCS($) {
+            $("<link>")
+                .attr({
+                    rel: "stylesheet",
+                    type: "text/css",
+                    href: "https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css",
+                })
+                .appendTo("head");
+            $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
+                OCS.start();
+            });
+        }
+    });
+}

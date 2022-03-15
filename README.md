@@ -4,9 +4,9 @@
 
 # 使用方法
 
-- [浏览器运行](#浏览器运行)
-- [油猴运行](#油猴运行)
-- [OCS软件运行](#OCS软件运行)
+-   [浏览器运行](#浏览器运行)
+-   [油猴运行](#油猴运行)
+-   [OCS 软件运行](#OCS软件运行)
 
 ## 浏览器运行
 
@@ -24,121 +24,179 @@
 
 3.然后输入下面代码
 
-4.根据下面提示修改你想要的设置
-
 5.按下回车运行
 
 ```js
-let meta = `
-// 下面为OCS设置，所有设置都写在等于号(=)的后面，请不要另起一行，按照格式  @设置=文本  填写即可，你不需要考虑空格的问题，只需要保证写在等于号后面即可。
-// 你可以使用  "开始","关闭","任何文本或者数字"  进行设置的填写
-
-// ======== 知道智慧树的设置 ========
-
-// @智慧树.观看时间(分钟) = 30
-
-// 提示：智慧树的倍速最多只能 1.5 倍速，否则很容易会被封号!
-// @智慧树.播放速度(倍速) = 1
-
-// @智慧树.复习模式 = 开启
-
-// @智慧树.视频静音 = 开启
-
-// ==================================
-
-`;
-
-if (window.jQuery) {
-    loadOCS(window.jQuery);
+if (window.$) {
+    loadOCS(window.$);
 } else {
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js";
     document.body.append(script);
-    setTimeout(() => {
-        loadOCS(window.jQuery);
-    }, 1000);
+    const interval = setInterval(() => {
+        if (window.$) {
+            loadOCS(window.$);
+            clearInterval(interval);
+        }
+    }, 5000);
 }
 
 // 载入 OCS 并运行
 function loadOCS($) {
-    $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/index.min.js", function () {
-        OCS.start(OCS.GM_meta(meta, "=", "."));
+    $("<link>")
+        .attr({
+            rel: "stylesheet",
+            type: "text/css",
+            href: "https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css",
+        })
+        .appendTo("head");
+    $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
+        OCS.start();
     });
 }
 ```
 
 ## 油猴运行
+
 > `优点`：不需要重复输入代码，只需新建脚本保存即可
 
 > `缺点`：需要安装油猴拓展
 
-1.打开右上角油猴浏览器拓展
+1.安装油猴浏览器拓展 https://www.tampermonkey.net/
 
-2.点击添加新脚本
+2.打开右上角油猴浏览器拓展
 
-3.输入以下代码
+3.点击添加新脚本
 
-4.根据下面提示修改你想要的设置
+4.删除原有所有代码，输入以下的代码
 
-5.按下 `Ctrl + s` 保存代码
+5.按下 `ctrl + s` 保存代码
 
 6.打开指定的 [网课学习页面](#网课学习页面) 即可自动运行
 
 ```js
 // ==UserScript==
-// @name         OCS 脚本
-// @namespace    https://github.com/enncy
-// @version      1.0.0
-// @description  OCS 油猴模块，支持各平台网课学习
+// @name         OCS 网课助手
+// @namespace    https://enncy.cn
+// @version      3.0.0
+// @description  OCS 网课助手，支持各平台网课学习
 // @author       enncy
-// @match        https://**.zhihuishu.com/**
-// @match        https://**.chaoxing.com/**
+// @match        *://*.chaoxing.com/*
+// @match        *://*.zhihuishu.com/*
+// @require      https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js
+// @resource     OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css
+// @grant        unsafeWindow
+// @grant        GM_addElement
+// @grant        GM_getResourceText
 // @noframes
-// @require      https://cdn.jsdelivr.net/npm/ocsjs/dist/index.min.js
-// @grant        GM_setValue
-// @grant        GM_getValue
-// 上面的信息请不要修改
-
-// 下面为OCS设置，所有设置都写在等于号(=)的后面，请不要另起一行，按照格式  @设置=文本  填写即可，你不需要考虑空格的问题，只需要保证写在等于号后面即可。
-// 你可以使用  "开始","关闭","任何文本或者数字"  进行设置的填写
-
-// ======== 知道智慧树的设置 ========
-
-// @智慧树.观看时间(分钟) = 30
-
-// 提示：智慧树的倍速最多只能 1.5 倍速，否则很容易会被封号!
-// @智慧树.播放速度(倍速) = 1
-
-// @智慧树.复习模式 = 开启
-
-// @智慧树.视频静音 = 开启
-
-// ==================================
-
 // ==/UserScript==
 
-/* eslint-disable */
-
-var window = unsafeWindow;
-
-/** @see: https://github.com/enncy/online-course-script/blob/3.0/README.md#OCS */
-const Ocs = OCS;
-
-/* eslint-enable */
+/* eslint no-undef: 0 */
 
 (function () {
-    /**
-     * 读取油猴头部信息
-     * @see https://github.com/enncy/online-course-script/blob/3.0/README.md#GM_meta
-     */
-    const settings = Ocs.GM_meta(GM_info.scriptMetaStr, "=", ".");
+    "use strict";
 
-    Ocs.start(settings);
+    window.OCS = OCS;
+
+    // 加载 bootstrap icons 图标样式
+    GM_addElement("link", {
+        rel: "stylesheet",
+        href: "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css",
+    });
+
+    OCS.start({
+        // 加载样式
+        style: GM_getResourceText("OCS_STYLE"),
+        // 支持拖动
+        draggable: true,
+        // 加载默认脚本列表，默认 OCS.definedScripts
+        // scripts: OCS.definedScripts
+    });
 })();
 ```
 
-## OCS软件运行
+## OCS 软件运行
+
 > `优点`：全自动运行(推荐)
+
+下载地址: https://github.com/enncy/online-course-script/releases
+
+## 项目开发
+
+### 项目结构
+
+```
++ packages
+    + app                   # electron 主进程
+    + scripts               # 脚本实现库
+        + src
+            + browser       # 浏览器脚本实现
+            + nodejs        # node 端实现， 使用 playwright 进行浏览器控制
+    + web                   # 使用 vue3 + ts + ant design vue 构建的 electron 渲染进程
+- CHANGELOG.md              # 更新日志
+- gulpfile.js               # gulp 文件
+- webpack.config.js         # webpack 打包配置 ： 打包 packages/browser.entry.js 作为浏览器端环境
+```
+
+### 项目运行
+
+```sh
+# 全局安装 pnpm ，如果已经安装，则无需执行
+npm i pnpm -g
+# 下载项目
+git clone https://github.com/enncy/online-course-script.git ocs
+# 进入目录
+cd ocs
+# 使用 pnpm 安装依赖
+pnpm i -w
+```
+
+```sh
+# 进入 scripts
+cd packages/scripts
+# 编译 scripts 项目
+npx tsc
+```
+
+接下来打开 2 个终端，分别执行 :
+
+```sh
+# 进入 web 渲染进程
+cd packages/web
+# 运行 vue 项目
+npm run dev
+```
+
+```sh
+# 进入 app 主进程
+cd packages/app
+# 运行 electron 软件
+npm run dev
+```
+
+### 软件打包
+
+```sh
+# 进入 web 渲染进程
+cd packages/web
+# 编译 vue 项目到 app 下的 public 目录
+npm run dist
+```
+
+```sh
+# 进入 app 主进程
+cd packages/app
+# 轻量打包
+npm run pack
+# 生成执行文件
+npm run dist
+```
+
+### 项目打包
+
+```sh
+npm run gulp
+```
 
 # 网课学习页面
 

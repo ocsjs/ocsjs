@@ -14,9 +14,7 @@
         "ocs": "./lib/nodejs/cli.js"
     },
     "scripts": {
-        "test": "playwright test --config=playwright.config.ts",
-        "build": "tsc && npm run pack",
-        "pack": "webpack --config webpack.config.js"
+        "test": "playwright test --config=playwright.config.ts"
     },
     "dependencies": {
         "@playwright/test": "^1.18.1",
@@ -24,7 +22,10 @@
         "chalk": "4.1.0",
         "commander": "^9.0.0",
         "dotenv": "^16.0.0",
+        "interactjs": "^1.10.11",
+        "lodash": "^4.17.21",
         "playwright": "^1.18.1",
+        "vue": "^3.2.31",
         "ws": "^8.5.0"
     },
     "repository": {

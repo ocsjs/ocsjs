@@ -1,0 +1,109 @@
+/**
+
+panel style
+
+*/
+ocs-panel {
+    position: fixed;
+    top: 30%;
+    left: 40%;
+    min-width: 20%;
+    background: white;
+    z-index: 99999999;
+    border-radius: 4px;
+
+    box-shadow: 0px 2px 6px #848484;
+
+    .ocs-panel-header {
+        gap: 12px;
+        display: flex;
+        padding: 4px;
+        border-bottom: 1px solid #c6c6c6;
+
+        .title {
+            cursor: pointer;
+            font-size: 14px;
+
+            &.active {
+                font-weight: bold;
+            }
+        }
+    }
+
+    .ocs-panel-container {
+        font-size: 12px;
+        padding: 4px;
+    }
+}
+
+.ocs-panel-footer {
+    font-size: 1px;
+    color: #c5c5c5;
+    border-top: 1px solid #c6c6c6;
+    margin-top: 8px;
+    text-align: right;
+    padding-right: 4px;
+}
+
+.ocs-setting-items {
+    display: grid;
+    grid-template-columns: min-content auto;
+    gap: 8px;
+    white-space: nowrap;
+    font-size: 12px;
+
+    label::after {
+        content: ": ";
+    }
+
+    select {
+        font-size: 12px;
+        outline: none;
+        border: none;
+        border: 1px solid #e4e4e4;
+        border-radius: 4px;
+        width: 100%;
+    }
+
+    input {
+        outline: none;
+        border: none;
+        border-bottom: 1px solid #e4e4e4;
+        background: #fbfbfb;
+        border-radius: 4px;
+
+        padding-left: 8px;
+    }
+
+    input:not([type="checkbox"], [type="radio"]) {
+        width: 100%;
+    }
+}
+
+.ocs-setting-buttons {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 8px;
+
+    input {
+        outline: none;
+        border: none;
+        cursor: pointer;
+    }
+    [type="submit"],
+    [type="reset"] {
+        border: 1px solid #e4e4e4;
+        border-radius: 4px;
+        font-size: 12px;
+    }
+
+    [type="submit"] {
+        background: #1890ff;
+        color: white;
+        border: 1px solid #1890ff;
+    }
+
+    [type="reset"] {
+        background: white;
+    }
+}

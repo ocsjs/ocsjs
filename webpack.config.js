@@ -6,19 +6,19 @@ const path = require("path");
 module.exports = [
     {
         mode: "production",
-        entry: "./lib/src/browser.entry.js",
+        entry: "./lib/browser.entry.js",
         output: {
             filename: "index.min.js",
-            path: path.resolve(__dirname, "dist"),
+            path: path.resolve(__dirname, "dist/js"),
             library: "OCS",
         },
     },
     {
         mode: "production",
-        entry: "./lib/src/browser.entry.js",
+        entry: "./lib/browser.entry.js",
         output: {
             filename: "index.js",
-            path: path.resolve(__dirname, "dist"),
+            path: path.resolve(__dirname, "dist/js"),
             library: "OCS",
         },
         optimization: {
