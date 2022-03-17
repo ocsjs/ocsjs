@@ -1,5 +1,5 @@
-const { ipcMain, app, dialog, BrowserWindow, clipboard } = require("electron");
-const Logger = require("../logger");
+const { ipcMain, app, dialog, BrowserWindow } = require("electron");
+const { Logger } = require("../logger");
 const trash = require("trash");
 const { autoLaunch } = require("./auto.launch");
 
@@ -41,7 +41,7 @@ function registerRemoteEvent(name, target) {
 }
 
 /**
- *
+ * 初始化远程通信
  * @param {BrowserWindow} win
  */
 exports.remoteRegister = function (win) {
@@ -55,3 +55,5 @@ exports.remoteRegister = function (win) {
     });
     registerRemoteEvent("logger", Logger("render"));
 };
+
+exports.registerRemoteEvent = registerRemoteEvent;

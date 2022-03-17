@@ -9,7 +9,7 @@
         "allowToChangeInstallationDirectory": true
     },
     "win": {
-        "icon": "public/icon.ico",
+        "icon": "public/favicon.ico",
         "artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
         "target": [
             {
@@ -19,13 +19,13 @@
         ]
     },
     "mac": {
-        "icon": "public/icon.ico",
+        "icon": "public/favicon.ico",
         "artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
         "target": "default"
     },
     "fileAssociations": {
         "ext": "ocs",
-        "icon": "public/icon.ico",
+        "icon": "public/favicon.ico",
         "name": "ocs 脚本"
     }
 }

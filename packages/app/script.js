@@ -3,10 +3,10 @@
 const ocs = require("@ocsjs/scripts");
 const { loggerPrefix } = require("@ocsjs/scripts");
 const { Instance: Chalk } = require("chalk");
-const { Logger } = require("./src/logger.core");
+const { LoggerCore } = require("./src/logger.core");
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
-/** @type { Logger} */
+/** @type { LoggerCore} */
 let logger;
 
 /** @type {import("playwright").BrowserContext | import("playwright").Browser} */
@@ -18,7 +18,7 @@ process.on("message", async (message) => {
     // @ts-ignore
     const { action, data, uid, logsPath } = JSON.parse(message);
     if (logger === undefined) {
-        logger = new Logger(logsPath, false, "script", uid);
+        logger = new LoggerCore(logsPath, false, "script", uid);
         logger.info("日志 : " + logger.dest);
     }
 
@@ -105,17 +105,20 @@ process.on("message", async (message) => {
  * @param {import("playwright").Page} page
  */
 async function executeScript(page) {
+    await page.waitForFunction(() => window.document.readyState === "complete");
     await page.evaluate(() => {
         console.log("execute script");
-        if (window.$) {
-            loadOCS(window.$);
+        // @ts-ignore
+        const $ = window.$;
+        if ($) {
+            loadOCS($);
         } else {
             const script = document.createElement("script");
             script.src = "https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js";
             document.body.append(script);
             const interval = setInterval(() => {
-                if (window.$) {
-                    loadOCS(window.$);
+                if ($) {
+                    loadOCS($);
                     clearInterval(interval);
                 }
             }, 5000);
@@ -131,7 +134,13 @@ async function executeScript(page) {
                 })
                 .appendTo("head");
             $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
-                OCS.start();
+                // @ts-ignore
+                OCS.start({
+                    // 支持拖动
+                    draggable: true,
+                    // 加载默认脚本列表，默认 OCS.definedScripts
+                    // scripts: OCS.definedScripts
+                });
             });
         }
     });

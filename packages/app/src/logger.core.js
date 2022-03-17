@@ -15,14 +15,14 @@ function formatDate() {
 /**
  * 日志对象
  * ```js
- * const l = new logger(app.getPath("logs"), true, 'test') // create `${logs}/YYYY-MM-DD/test.log`
- * const l2 = new logger(app.getPath("logs"), true,'project','error','1') // create `${logs}/YYYY-MM-DD/project/error/1.log`
+ * const l = new LoggerCore(app.getPath("logs"), true, 'test') // create `${logs}/YYYY-MM-DD/test.log`
+ * const l2 = new LoggerCore(app.getPath("logs"), true,'project','error','1') // create `${logs}/YYYY-MM-DD/project/error/1.log`
  * ```
  * @param {string} basePath 根路径
  * @param {boolean} withConsole 是否同时使用 console 输出
  * @param {string[]} name 日志名，每个代表一个路径
  */
-exports.Logger = class Logger {
+exports.LoggerCore = class LoggerCore {
     basePath;
     withConsole;
     dest;
@@ -46,16 +46,19 @@ exports.Logger = class Logger {
                 }
                 return s;
             })
-            .join("");
+            .join(" ");
         const txt = `[${level}] ${new Date().toLocaleString()} \t ` + data;
 
         if (this.withConsole) {
             console.log(txt);
         }
 
-        if (!fs.existsSync(path.dirname(dest))) {
-            fs.mkdirSync(path.dirname(dest), { recursive: true });
-        }
-        fs.appendFileSync(dest, txt + "\n");
+        return new Promise((resolve) => {
+            if (!fs.existsSync(path.dirname(dest))) {
+                fs.mkdirSync(path.dirname(dest), { recursive: true });
+            }
+            fs.appendFileSync(dest, txt + "\n");
+            resolve();
+        });
     }
 };

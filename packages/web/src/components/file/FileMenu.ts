@@ -22,16 +22,8 @@ export function createFileMenus(file: FileNode) {
         },
     ];
 
-    const fileMenus: MenuItem[] = [
-        {
-            title: "运行",
-            icon: "icon-play-circle",
-        },
-    ];
-
     const baseMenus: MenuItem[] = [
         {
-            divide: true,
             title: "打开文件位置",
             icon: "icon-location",
             onClick() {
@@ -50,7 +42,7 @@ export function createFileMenus(file: FileNode) {
             icon: "icon-delete",
             onClick() {
                 remote.methods.call("trash", file.path);
-                Project.opened.value = Project.opened.value.filter(f=>f.path !== file.path)
+                Project.opened.value = Project.opened.value.filter((f) => f.path !== file.path);
             },
         },
         {
@@ -64,14 +56,13 @@ export function createFileMenus(file: FileNode) {
             title: "属性",
             icon: "icon-unorderedlist",
             onClick() {
-                detail(file)
+                detail(file);
             },
         },
     ];
 
     return {
         dirMenus,
-        fileMenus,
         baseMenus,
     };
 }

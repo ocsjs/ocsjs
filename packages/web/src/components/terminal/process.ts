@@ -4,7 +4,10 @@ import { ITerminal } from ".";
 import { Instance as Chalk } from "chalk";
 import { Page } from "playwright";
 import { message } from "ant-design-vue";
+import { remote } from "../../utils/remote";
+import { path } from "../file/File";
 const child_process = require("child_process") as typeof import("child_process");
+
 const chalk = new Chalk({ level: 2 });
 
 /**
@@ -21,7 +24,9 @@ export class Process {
      * 使用 child_process 运行 ocs 命令
      */
     init(xterm: ITerminal) {
-        const shell = child_process.fork("./script.js", { stdio: ["ipc"] });
+        const target = path.join(remote.app.call("getAppPath"), "./script.js");
+
+        const shell = child_process.fork(target, { stdio: ["ipc"] });
         shell.stdout?.on("data", (data: any) => xterm.write(data));
         shell.stderr?.on("data", (data: any) => xterm.write(chalk.redBright(data)));
         this.shell = shell;

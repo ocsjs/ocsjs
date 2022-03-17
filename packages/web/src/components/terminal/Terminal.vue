@@ -28,8 +28,6 @@ onMounted(async () => {
     if (terminal.value !== null) {
         /** 绑定元素 */
         xterm.value.open(terminal.value as HTMLElement);
-        /** 初始化子进程 */
-        process.value.init(xterm.value);
 
         xterm.value.write(`ocs@${file.value.uid}> `);
     }

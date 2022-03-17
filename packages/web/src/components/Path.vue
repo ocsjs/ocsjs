@@ -27,7 +27,7 @@ const path = require("path");
 interface PathProps {
     name: string;
     label: string;
-    setting: boolean;
+    setting?: boolean;
 }
 
 const props = withDefaults(defineProps<PathProps>(), {

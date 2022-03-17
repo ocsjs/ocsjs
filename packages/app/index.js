@@ -1,75 +1,46 @@
 // @ts-check
 
-const { app, ipcMain, BrowserWindow, ipcRenderer } = require("electron");
-const Store = require("electron-store");
-const Logger = require("./src/logger");
+const { app, BrowserWindow } = require("electron");
 const { handleOpenFile } = require("./src/tasks/handle.file.open");
-const { openWindow } = require("./src/main");
-const { remoteRegister } = require("./src/tasks/remote.register");
+const { remoteRegister, registerRemoteEvent } = require("./src/tasks/remote.register");
 const { initStore } = require("./src/tasks/init.store");
 const { autoLaunch } = require("./src/tasks/auto.launch");
+const { createWindow } = require("./src/main");
+const { globalListenerRegister } = require("./src/tasks/global.listener");
+const { task } = require("./src/utils");
+const { handleError } = require("./src/tasks/error.handler");
 
-const logger = Logger("main");
+/** @type {BrowserWindow | undefined} */
+let window;
 
-const store = new Store();
-
-app.on("second-instance", (event, argv, workingDirectory, additionalData) => {
-    logger.debug({ event, argv, workingDirectory, additionalData });
-});
-
-task("OCS启动程序", () =>
-    Promise.all([
-        task("初始化错误处理", () => handleError()),
-        task("初始化本地设置", () => initStore()),
-        task("初始化自动启动", () => autoLaunch()),
-        task("检测启动文件", () => handleOpenFile(logger)),
-        (async () => {
-            /** @type {BrowserWindow} */
-            const win = await task("启动软件", () => open());
-            await task("初始化远程通信模块", () => remoteRegister(win));
-            win.webContents.send("ready");
-        })(),
-    ])
-);
-
-/** 处理错误 */
-function handleError() {
-    app.on("render-process-gone", (e, c, details) => {
-        logger.error("render-process-gone", details);
-        process.exit(0);
-    });
-    app.on("child-process-gone", (e, details) => {
-        logger.error("child-process-gone", details);
-        process.exit(0);
-    });
-
-    process.on("uncaughtException", (e) => {
-        logger.error("rejectionHandled", e);
-    });
-    process.on("unhandledRejection", (e) => {
-        logger.error("unhandledRejection", e);
-    });
+/** 获取单进程锁 */
+const gotTheLock = app.requestSingleInstanceLock();
+if (!gotTheLock) {
+    app.quit();
+} else {
+    bootstrap();
 }
 
-/** 等待显示 */
-async function open() {
-    return new Promise((resolve) => {
-        app.whenReady().then(async () => {
-            const win = await openWindow((win) => {
-                return app.isPackaged ? win.loadFile("./public/index.html") : win.loadURL("http://localhost:3000");
-            });
+/** 启动渲染进程 */
+function bootstrap() {
+    task("OCS启动程序", () =>
+        Promise.all([
+            task("初始化错误处理", () => handleError()),
+            task("初始化本地设置", () => initStore()),
+            task("初始化自动启动", () => autoLaunch()),
+            task("处理打开文件", () => handleOpenFile(process.argv)),
 
-            win.setAlwaysOnTop(Boolean(store.get("alwaysOnTop") || false));
-
-            resolve(win);
-        });
-    });
-}
-
-/** 注册任务 */
-async function task(name, func) {
-    const time = Date.now();
-    const res = await func();
-    logger.debug(name, " 耗时:", Date.now() - time);
-    return res;
+            task("启动渲染进程", async () => {
+                await app.whenReady();
+                window = createWindow();
+                task("初始化远程通信模块", () => remoteRegister(window));
+                task("注册app事件监听器", () => globalListenerRegister(window));
+                if (app.isPackaged) {
+                    await window.loadFile("public/index.html");
+                } else {
+                    await window.loadURL("http://localhost:3000");
+                }
+            }),
+        ])
+    );
 }

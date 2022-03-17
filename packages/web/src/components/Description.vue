@@ -14,8 +14,8 @@
 import { ref, reactive, toRefs } from "vue";
 interface DescriptionProps {
     label: string;
-    desc: any;
-    textClass: any;
+    desc?: any;
+    textClass?: any;
 }
 const props = withDefaults(defineProps<DescriptionProps>(), {
     desc: "",

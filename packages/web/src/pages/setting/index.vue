@@ -8,12 +8,7 @@
                         v-model:checked="store['auto-launch']"
                     ></a-switch>
                 </Description>
-                <Description label="软件置顶">
-                    <a-switch
-                        size="small"
-                        v-model:checked="store['alwaysOnTop']"
-                    ></a-switch>
-                </Description>
+
                 <Description label="窗口大小">
                     <a-input-number
                         size="small"
@@ -22,12 +17,6 @@
                         :min="0"
                         :max="10"
                     ></a-input-number>
-                </Description>
-                <Description label="开发者模式">
-                    <a-switch
-                        size="small"
-                        v-model:checked="store.win.devtools"
-                    ></a-switch>
                 </Description>
             </Card>
 
@@ -67,10 +56,7 @@
                     cancel-text="取消"
                     @confirm="reset"
                 >
-                    <a-button type="danger" shape="round" size="small">
-                        重置设置
-                        <Icon type="icon-redo" />
-                    </a-button>
+                    <a-button shape="round" size="small" danger> 重置设置 </a-button>
                 </a-popconfirm>
             </div>
         </div>
@@ -78,7 +64,6 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, toRefs, watch } from "vue";
 import Card from "../../components/Card.vue";
 import Description from "../../components/Description.vue";
 import Path from "../../components/Path.vue";
@@ -87,10 +72,6 @@ import { remote } from "../../utils/remote";
 import { LaunchOptions } from "@ocsjs/scripts";
 
 const launchOptions = store.script.launchOptions as LaunchOptions;
-
-watch(store, () => {
-    console.log(store);
-});
 
 function reset() {
     store.version = undefined;

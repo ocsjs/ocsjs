@@ -4,22 +4,38 @@
             <div class="form-header text-start border-bottom">
                 <div class="file-title">
                     <a-space>
-                        <span>{{ file.title }}</span>
+                        <span>
+                            {{ file.title }}
+                        </span>
 
-                        <a class="link" @click="closeEditor">关闭编辑</a>
+                        <a class="link" @click="closeEditor">关闭</a>
+                        <a class="link" @click="openEditor">打开</a>
                     </a-space>
-                    <a-space class="actions me-2" :size="12">
+                    <a-space class="actions" :size="12">
                         <Icon
-                            @click="data.showSource = !data.showSource"
-                            :title="data.showSource ? '返回编辑' : '查看源文件'"
-                            :type="
-                                data.showSource ? 'icon-edit-square' : 'icon-file-text'
-                            "
+                            @click="data.activeKey = 'setting'"
+                            title="设置"
+                            type="icon-edit-square"
+                            :style="{
+                                color: data.activeKey === 'setting' ? '#1890ff' : '',
+                            }"
                         />
                         <Icon
-                            @click="data.showTerminal = !data.showTerminal"
-                            :title="data.showTerminal ? '关闭控制台' : '打开控制台'"
+                            @click="data.activeKey = 'content'"
+                            title="源文件"
+                            type="icon-file-text"
+                            :style="{
+                                color: data.activeKey === 'content' ? '#1890ff' : '',
+                            }"
+                        />
+
+                        <Icon
+                            @click="data.activeKey = 'terminal'"
+                            title="控制台"
                             type="icon-codelibrary"
+                            :style="{
+                                color: data.activeKey === 'terminal' ? '#1890ff' : '',
+                            }"
                         >
                         </Icon>
                         <Icon
@@ -36,7 +52,6 @@
                         />
 
                         <template v-if="data.process.launched">
-                            <a-divider type="vertical" class="m-0"></a-divider>
                             <Icon
                                 type="icon-totop"
                                 title="显示当前的浏览器"
@@ -52,86 +67,22 @@
             </div>
 
             <div class="form-container">
-                <template v-if="data.showSource">
-                    <CodeHighlight lang="json" :code="data.content"></CodeHighlight>
-                </template>
+                <CodeHighlight
+                    class="h-100"
+                    v-show="data.activeKey === 'content'"
+                    lang="json"
+                    :code="data.content"
+                ></CodeHighlight>
 
-                <template v-else>
-                    <Card title="启动设置">
-                        <div class="form">
-                            <label>隐身模式</label>
-                            <span class="w-100 text-start">
-                                <a-switch
-                                    checked-children="开启"
-                                    un-checked-children="关闭"
-                                    v-model:checked="data.options.launchOptions.headless"
-                                />
-                            </span>
-                        </div>
-                        <div class="form">
-                            <label>无痕浏览</label>
-                            <span class="w-100 text-start">
-                                <a-switch
-                                    checked-children="开启"
-                                    un-checked-children="关闭"
-                                    v-model:checked="data.openIncognito"
-                                />
-                            </span>
-                        </div>
-                        <div class="form">
-                            <label>浏览器路径</label>
-                            <a-input
-                                v-model:value="data.options.launchOptions.executablePath"
-                                placeholder="浏览器路径"
-                            />
-                        </div>
-
-                        <div class="form">
-                            <label>登录类型</label>
-                            <a-select
-                                style="width: 100%"
-                                v-model:value="data.options.scripts[0].name"
-                                @change="onScriptChange"
-                                show-search
-                            >
-                                <template
-                                    v-for="(name, index) in scriptNames"
-                                    :key="index"
-                                >
-                                    <a-select-option :value="name[0]">
-                                        {{ name[1] }}
-                                    </a-select-option>
-                                </template>
-                            </a-select>
-                        </div>
-
-                        <template v-for="(item, index) in loginTypeForms" :key="index">
-                            <div class="form">
-                                <label> {{ item.title }} </label>
-                                <template v-if="item.type === 'text'">
-                                    <a-input
-                                        v-model:value="(data.options.scripts[0].options as any)[item.name]"
-                                        :placeholder="'输入' + item.title"
-                                    />
-                                </template>
-                                <template v-if="item.type === 'password'">
-                                    <a-input-password
-                                        v-model:value="(data.options.scripts[0].options as any)[item.name]"
-                                        :placeholder="'输入' + item.title"
-                                    />
-                                </template>
-                            </div>
-                        </template>
-                    </Card>
-                </template>
-            </div>
-
-            <Transition name="fade">
-                <div v-show="data.showTerminal" class="h-100 iterminal overflow-hidden">
-                    <div>
+                <div
+                    v-show="data.activeKey === 'terminal'"
+                    class="iterminal overflow-hidden h-100"
+                >
+                    <a-space class="iterminal-items">
                         <span>控制台</span>
-                        <span>日志文件</span>
-                    </div>
+                        <span @click="data.xterm.clear()">清空</span>
+                    </a-space>
+
                     <Terminal
                         class="h-100"
                         :xterm="data.xterm"
@@ -139,17 +90,89 @@
                         :process="data.process"
                     />
                 </div>
-            </Transition>
+
+                <Card
+                    class="h-100"
+                    v-show="data.activeKey === 'setting'"
+                    title="启动设置"
+                >
+                    <div class="form">
+                        <label>隐身模式</label>
+                        <span class="w-100 text-start">
+                            <a-switch
+                                checked-children="开启"
+                                un-checked-children="关闭"
+                                v-model:checked="data.options.launchOptions.headless"
+                            />
+                        </span>
+                    </div>
+                    <div class="form">
+                        <label>无痕浏览</label>
+                        <span class="w-100 text-start">
+                            <a-switch
+                                checked-children="开启"
+                                un-checked-children="关闭"
+                                v-model:checked="data.openIncognito"
+                            />
+                        </span>
+                    </div>
+                    <div class="form">
+                        <label>浏览器路径</label>
+                        <a-input
+                            v-model:value="data.options.launchOptions.executablePath"
+                            placeholder="浏览器路径"
+                        />
+                    </div>
+
+                    <div class="form">
+                        <label>登录类型</label>
+                        <a-select
+                            style="width: 100%"
+                            v-model:value="data.options.scripts[0].name"
+                            @change="onScriptChange"
+                            show-search
+                        >
+                            <template v-for="(name, index) in scriptNames" :key="index">
+                                <a-select-option :value="name[0]">
+                                    {{ name[1] }}
+                                </a-select-option>
+                            </template>
+                        </a-select>
+                    </div>
+
+                    <template v-for="(item, index) in loginTypeForms" :key="index">
+                        <div class="form">
+                            <label> {{ item.title }} </label>
+                            <template v-if="item.type === 'text'">
+                                <a-input
+                                    v-model:value="(data.options.scripts[0].options as any)[item.name]"
+                                    :placeholder="'输入' + item.title"
+                                />
+                            </template>
+                            <template v-if="item.type === 'password'">
+                                <a-input-password
+                                    v-model:value="(data.options.scripts[0].options as any)[item.name]"
+                                    :placeholder="'输入' + item.title"
+                                />
+                            </template>
+                        </div>
+                    </template>
+                </Card>
+            </div>
         </div>
     </template>
     <template v-if="data.error">
         <div class="error-page">
-            <div class="error-message">
-                <p>解析文件时第 {{ data.error?.line }} 行发生错误:</p>
+            <div class="error-message w-100">
+                <a-space>
+                    <span>解析文件时第 {{ data.error?.line }} 行发生错误:</span>
+                    <a class="link" @click="closeEditor">关闭</a>
+                    <a class="link" @click="openEditor">打开</a>
+                </a-space>
                 <pre>{{ data.error?.message }}</pre>
 
                 <CodeHighlight
-                    class="json-editor border rounded"
+                    class="json-editor border rounded overflow-auto"
                     lang="json"
                     :code="data.content"
                     :error-line="data.error?.line"
@@ -160,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed, ref, watch, reactive, onUnmounted } from "vue";
+import { toRefs, computed, ref, watch, reactive, onUnmounted, onMounted } from "vue";
 import { FileNode, fs, validFileContent, path } from "./File";
 import { scriptForms, Form } from ".";
 import CodeHighlight from "../CodeHighlight.vue";
@@ -173,8 +196,9 @@ import Icon from "../Icon.vue";
 import { Process } from "../terminal/process";
 import { ITerminal } from "../terminal";
 import { Project } from "../project";
-
 const { scriptNames } = require("@ocsjs/scripts");
+const childProcess = require("child_process") as typeof import("child_process");
+
 interface FormCreateProps {
     file: FileNode;
 }
@@ -182,15 +206,16 @@ const props = withDefaults(defineProps<FormCreateProps>(), {});
 const { file } = toRefs(props);
 
 const data = reactive<{
+    activeKey: "setting" | "terminal" | "content";
     content: string;
     options?: LaunchScriptsOptions;
     error?: { message: string; line: number };
-    showSource: boolean;
     openIncognito: boolean;
-    showTerminal: boolean;
     process: Process;
     xterm: ITerminal;
 }>({
+    /** 显示的页面 */
+    activeKey: "setting",
     /** 文件内容 */
     content: fs.readFileSync(file.value.path).toString(),
     /** 解析内容 */
@@ -198,16 +223,13 @@ const data = reactive<{
     /** 是否错误 */
     error: undefined,
 
-    /** 显示源码 */
-    showSource: false,
     /** 开启无痕浏览 */
     openIncognito: false,
-    /** 显示控制台 */
-    showTerminal: false,
+
     /** 运行的子进程对象 */
     process: new Process(file.value.uid, store["logs-path"]),
     /** 终端对象 */
-    xterm: new ITerminal(),
+    xterm: new ITerminal(file.value.uid),
 });
 
 const result = validFileContent(data.content);
@@ -279,10 +301,13 @@ function setUserDataDir() {
 /** 运行文件 */
 function run() {
     if (data.options) {
-        data.showTerminal = true;
+        data.activeKey = "terminal";
         file.value.stat.running = !file.value.stat.running;
 
         if (file.value.stat.running) {
+            /** 如未初始化，则先初始化 */
+            if (data.process.shell === undefined) data.process.init(data.xterm);
+            /** 运行 */
             data.process.launch(data.options);
         } else {
             data.process.close();
@@ -292,6 +317,15 @@ function run() {
 
 function closeEditor() {
     Project.opened.value = Project.opened.value.filter((f) => f.path !== file.value.path);
+    /** 切换编辑到最后一个文件 */
+    const len = Project.opened.value.length;
+    if (len) {
+        Project.opened.value[len - 1].stat.show = true;
+    }
+}
+
+function openEditor() {
+    childProcess.exec(`notepad "${file.value.path}"`);
 }
 
 onUnmounted(() => {
@@ -318,13 +352,9 @@ onUnmounted(() => {
 
 .file {
     height: 100%;
-    display: grid;
-    grid-template-rows: min-content auto auto;
 
-    grid-template-areas:
-        "header"
-        "container "
-        "terminal";
+    display: grid;
+    grid-template-rows: min-content auto;
 }
 
 .form-header {
@@ -332,7 +362,6 @@ onUnmounted(() => {
     padding: 12px;
     height: fit-content;
     overflow: auto;
-    height: 100%;
 
     .info {
         font-size: 11px;
@@ -365,11 +394,11 @@ onUnmounted(() => {
 }
 
 .form-container {
-    height: 100%;
     overflow: auto;
 }
 
 .iterminal {
+    height: fit-content;
     background: #32302f;
     color: #ededed;
     text-align: left;
@@ -401,6 +430,12 @@ onUnmounted(() => {
         &::after {
             content: "：";
         }
+    }
+}
+
+.iterminal-items {
+    * {
+        cursor: pointer;
     }
 }
 </style>

@@ -1,3 +1,4 @@
+import { remote } from "./utils/remote";
 import { createApp } from "vue";
 import Antd from "ant-design-vue";
 import App from "./App.vue";
@@ -7,13 +8,17 @@ import { createFromIconfontCN } from "@ant-design/icons-vue";
 import Icon from "./components/Icon.vue";
 import { notify } from "./utils/notify";
 
+console.log(Date.now());
+
 process.on("uncaughtException", (e) => {
+    remote.logger.call("error", "未知的错误", e);
     notify("未知的错误", e.stack, "render-error", {
         type: "error",
         copy: true,
     });
 });
 process.on("unhandledRejection", (e: Error) => {
+    remote.logger.call("error", "未知的错误", e);
     notify("未知的错误", e.stack, "render-error", {
         type: "error",
         copy: true,
@@ -33,3 +38,5 @@ app.directive("focus", {
         el.focus();
     },
 });
+
+console.log(Date.now());

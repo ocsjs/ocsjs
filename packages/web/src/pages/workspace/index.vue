@@ -22,9 +22,9 @@
             </template>
             <template v-else>
                 <template v-for="(file, index) of Project.opened.value" :key="index">
-                    <KeepAlive>
-                        <File v-if="file.stat.show" :file="file"></File>
-                    </KeepAlive>
+                    <div class="h-100" v-show="file.stat.show">
+                        <File :file="file"></File>
+                    </div>
                 </template>
             </template>
         </div>

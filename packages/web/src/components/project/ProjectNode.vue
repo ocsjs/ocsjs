@@ -51,7 +51,7 @@
 
 <script setup lang="ts">
 import { ref, toRefs, watch, getCurrentInstance } from "vue";
-import { FileNode, flatFiles } from "../File/File";
+import { FileNode, flatFiles, showFile } from "../File/File";
 import Icon from "../Icon.vue";
 import FileTree from "../file/FileTree.vue";
 import ProjectHeader from "./ProjectHeader.vue";
@@ -115,19 +115,7 @@ function onSelect(
             expandedKeys.value.push((e.node.dataRef as FileNode).path);
         }
     } else {
-        /** 隐藏所有文件，显示当前点击的文件 */
-        Project.opened.value.forEach((file) => (file.stat.show = false));
-
-        /** 寻找打开过的文件 */
-        const openedFile = Project.opened.value.find((f) => f.uid === file.uid);
-        /** 如果该文件之前打开过 */
-        if (openedFile) {
-            openedFile.stat.show = true;
-        } else {
-            /** 新增文件编辑 */
-            file.stat.show = true;
-            Project.opened.value.push(file);
-        }
+        showFile(file);
     }
 }
 

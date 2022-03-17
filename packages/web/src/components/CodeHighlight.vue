@@ -1,17 +1,16 @@
 <template>
     <pre
         class="highlight"
-        ref="code"
-    ><code v-html="render(code, lang,[[errorLine - 1,'error']])" ></code></pre>
+    ><code v-html="render(code, lang,[[errorLine ,'error']])" ></code></pre>
 </template>
 
 <script setup lang="ts">
 import { ref, toRefs, computed } from "vue";
 
-import hljs from "highlight.js";
+import highlight from "highlight.js/lib/core";
 import jsonLanguage from "highlight.js/lib/languages/json";
 import "highlight.js/styles/atom-one-light.css";
-hljs.registerLanguage("json", jsonLanguage);
+highlight.registerLanguage("json", jsonLanguage);
 
 interface CodeHighlightProps {
     code: string;
@@ -30,10 +29,10 @@ const { code, errorLine } = toRefs(props);
  * @param styleList Array<[number,class]> 元素类列表， number - 行号
  */
 function render(content: string, language: string, styleList: any[]) {
-    let html = hljs.highlight(content, { language }).value;
-    console.log(styleList);
+    let html = highlight.highlight(content, { language }).value;
 
-    return Array.from(html.match(/(.*?)\n/g) || [])
+    return html
+        .split("\n")
         .map(
             (s, i) =>
                 `<div class="${
@@ -45,6 +44,12 @@ function render(content: string, language: string, styleList: any[]) {
 </script>
 
 <style scope lang="less">
+pre,
+code {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
 .highlight {
     text-align: left;
     height: 100%;

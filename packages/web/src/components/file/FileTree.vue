@@ -36,12 +36,16 @@
                         使用 v-html 是因为需要搭配 <em> 标签，在搜索文件的时候，提供字体高亮
                      -->
                     <template v-else>
-                        <span
-                            class="file-title"
-                            v-html="StringUtils.maximum(file.title, 40)"
-                            :title="file.path"
-                        >
-                        </span>
+                        <div class="d-inline-flex align-items-end" style="gap: 8px">
+                            <span
+                                class="file-title"
+                                v-html="StringUtils.maximum(file.title, 40)"
+                                :title="file.path"
+                            >
+                            </span>
+
+                            <Icon type="icon-play-circle" v-if="file.stat.running" />
+                        </div>
                     </template>
 
                     <template #overlay>
@@ -248,7 +252,7 @@ function renameDir(dir: string, dest: string) {
         padding: 0px 0px 12px 0px;
 
         .ocsicon {
-            transform: translate(0.5px, -3px);
+            transform: translate(0.5px, -5px);
         }
     }
 

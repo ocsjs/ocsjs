@@ -51,7 +51,12 @@ function loadOCS($) {
         })
         .appendTo("head");
     $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
-        OCS.start();
+        OCS.start({
+            // 支持拖动
+            draggable: true,
+            // 加载默认脚本列表，默认 OCS.definedScripts
+            // scripts: OCS.definedScripts
+        });
     });
 }
 ```
@@ -180,7 +185,7 @@ npm run dev
 # 进入 web 渲染进程
 cd packages/web
 # 编译 vue 项目到 app 下的 public 目录
-npm run dist
+npm run build
 ```
 
 ```sh

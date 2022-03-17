@@ -2,9 +2,9 @@ import { LaunchScriptsOptions } from "@ocsjs/scripts";
 import { Modal } from "ant-design-vue";
 import { h } from "vue";
 import { config } from "../../config";
+import { jsonLint } from "../../utils";
 import Description from "../Description.vue";
 import { Project } from "../project";
-const jsonlint = require("jsonlint");
 const fs = require("fs") as typeof import("fs");
 const fsExtra = require("fs-extra") as typeof import("fs-extra");
 const path = require("path") as typeof import("path");
@@ -45,8 +45,6 @@ export interface FileNode {
     /** 子文件 */
     children?: FileNode[];
 }
-
-export class FileNode {}
 
 /**
  * 获取可用文件名
@@ -160,16 +158,32 @@ export function detail(file: FileNode) {
  * 检验文件格式
  */
 export function validFileContent(content: string) {
-    try {
-        jsonlint.parse(content);
-        return content;
-    } catch (e) {
-        const message = (e as Error).message;
+    const result = jsonLint(content);
+
+    if (result) {
         return {
             error: {
-                message,
-                line: parseInt(message.match(/Parse error on line (\d+):/)?.[1] || "0"),
+                message: `Unexpected token ${result.token} in JSON at line ` + result.line,
+                line: result.line,
             },
         };
+    } else {
+        return content;
+    }
+}
+
+export function showFile(file: FileNode) {
+    /** 隐藏所有文件，显示当前点击的文件 */
+    Project.opened.value.forEach((file) => (file.stat.show = false));
+
+    /** 寻找打开过的文件 */
+    const openedFile = Project.opened.value.find((f) => f.uid === file.uid);
+    /** 如果该文件之前打开过 */
+    if (openedFile) {
+        openedFile.stat.show = true;
+    } else {
+        /** 新增文件编辑 */
+        file.stat.show = true;
+        Project.opened.value.push(file);
     }
 }

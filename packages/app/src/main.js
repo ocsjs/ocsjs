@@ -1,15 +1,22 @@
 // @ts-check
 const { BrowserWindow, app } = require("electron");
+const path = require("path");
+const { Library } = require("ffi-napi");
 
 app.disableHardwareAcceleration();
 
-function createWindow() {
-    return new BrowserWindow({
-        minHeight: 400,
-        minWidth: 600,
+function createWindow(show = true) {
+    const win = new BrowserWindow({
+        title: "ocs",
+        icon: path.resolve("./public/favicon.ico"),
+
+        minHeight: 500,
+        minWidth: 700,
         center: true,
-        autoHideMenuBar: true,
-        show: false,
+        frame: false,
+        show,
+        backgroundColor: "#fff",
+
         webPreferences: {
             // 关闭拼写矫正
             spellcheck: false,
@@ -19,28 +26,28 @@ function createWindow() {
             contextIsolation: false,
         },
     });
-}
-
-/**
- *
- * @param {{(win:BrowserWindow):Promise<any>}} opener
- * @returns
- */
-async function openWindow(opener) {
-    const win = createWindow();
-
-    await opener(win);
-
-    app.on("activate", () => {
-        if (BrowserWindow.getAllWindows().length === 0) {
-            createWindow();
-        }
-    });
-
-    win.show();
+    transition(win);
 
     return win;
 }
 
+/**
+ * 通过调用window底层方法，实现启动过渡
+ *
+ *  ffi - napi
+ */
+function transition(win) {
+    var ffi = Library("user32.dll", {
+        SetWindowLongA: ["int", ["int", "int", "long"]],
+        SetWindowPos: ["int", ["int", "int", "int", "int", "int", "int", "int"]],
+    });
+    // 细边框
+    const WS_THICKFRAME = 0x00040000;
+    // 显示窗口。
+    const SWP_SHOWWINDOW = 0x0040;
+    ffi.SetWindowLongA(win.getNativeWindowHandle().readUint32LE(), -16, WS_THICKFRAME);
+    ffi.SetWindowPos(win.getNativeWindowHandle().readUint32LE(), 0, 0, 0, 0, 0, SWP_SHOWWINDOW);
+    win.center();
+}
+
 exports.createWindow = createWindow;
-exports.openWindow = openWindow;

@@ -1,7 +1,7 @@
 //@ts-check
-const { Logger } = require("./logger.core");
+const { LoggerCore } = require("./logger.core");
 const { app } = require("electron");
 
-module.exports = function logger(...name) {
-    return new Logger(app.getPath("logs"), true, ...name);
+exports.Logger = function Logger(...name) {
+    return new LoggerCore(app.getPath("logs"), true, ...name);
 };

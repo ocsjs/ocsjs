@@ -1,10 +1,10 @@
 import { LaunchOptions } from "playwright";
 import { reactive, watch } from "vue";
-import { fs } from "../components/file/File";
+import { fs, showFile } from "../components/file/File";
 import { Project } from "../components/project";
 import { remote } from "../utils/remote";
-const Store = require("electron-store");
 const { ipcRenderer } = require("electron");
+const Store = require("electron-store");
 
 const s = new Store();
 
@@ -21,14 +21,11 @@ export const store = reactive({
     "auto-launch": s.get("auto-launch"),
     /** 文件编辑 */
     files: Array.from(s.get("files") || []),
-    /** 置顶 */
-    alwaysOnTop: s.get("alwaysOnTop"),
+
     /** win setting */
     win: {
         /** 窗口大小 */
         size: s.get("win")?.["size"] || 1.0,
-        /** 开发者工具 */
-        devtools: s.get("win")?.["devtools"] || false,
     },
     /** 服务器 */
     server: {
@@ -45,30 +42,37 @@ export const store = reactive({
             } as LaunchOptions),
     },
     /** 列表展开的 key */
-    expandedKeys: s.get("expandedKeys") || []
+    expandedKeys: s.get("expandedKeys") || [],
 });
 
-ipcRenderer.once("ready", () => {
-    remote.logger.call("info", "render store init");
-    setAlwaysOnTop();
-    setZoomFactor();
-    devtools();
-    autoLaunch();
-    initOpenFiles()
+window.addEventListener("load", () => {
+    setTimeout(() => {
+        remote.logger.call("info", "render store init");
+
+        setZoomFactor();
+        autoLaunch();
+        initOpenFiles();
+    }, 1000);
+});
+
+ipcRenderer.on("open-file", (e, file) => {
+    handleFile(file);
 });
 
 watch(store, (newStore) => {
     s.store = JSON.parse(JSON.stringify(newStore));
 });
 
-watch(() => store.alwaysOnTop, setAlwaysOnTop);
 watch(() => store["auto-launch"], autoLaunch);
 watch(() => store.win.size, setZoomFactor);
-watch(() => store.win.devtools, devtools);
 
-function setAlwaysOnTop() {
-    remote.win.call("setAlwaysOnTop", store.alwaysOnTop);
-}
+/** 监听打开的文件，保留工作区打开的文件 */
+watch(
+    () => Project.opened.value.length,
+    () => {
+        store.files = Project.opened.value.map((file) => file.path);
+    }
+);
 
 function autoLaunch() {
     remote.methods.call("autoLaunch");
@@ -78,14 +82,15 @@ function setZoomFactor() {
     remote.webContents.call("setZoomFactor", store.win.size);
 }
 
-function devtools() {
-    if (store.win.devtools) {
-        /**
-         * using `mode` options to prevent issue : {@link https://github.com/electron/electron/issues/32702}
-         */
-        remote.webContents.call("openDevTools", { mode: "detach" });
-    } else {
-        remote.webContents.call("closeDevTools");
+function handleFile(file: string) {
+    if (fs.existsSync(String(file))) {
+        Project.opened.value.push(Project.createFileNode(String(file)));
+
+        // 显示文件
+        const len = Project.opened.value.length;
+        if (len) {
+            showFile(Project.opened.value[len - 1]);
+        }
     }
 }
 
@@ -94,8 +99,6 @@ function devtools() {
  */
 function initOpenFiles() {
     for (const file of store.files) {
-        if (fs.existsSync(String(file))) {
-            Project.opened.value.push(Project.createFileNode(String(file)));
-        }
+        handleFile(String(file));
     }
 }

@@ -6,3 +6,7 @@ declare module "*.vue" {
     const component: DefineComponent<{}, {}, any>;
     export default component;
 }
+
+declare interface Window {
+    electron: typeof import("electron");
+}

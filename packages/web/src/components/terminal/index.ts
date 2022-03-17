@@ -1,6 +1,5 @@
 import { ITerminalOptions, Terminal } from "xterm";
 import { FitAddon } from "xterm-addon-fit";
-import { debounce } from "../../utils";
 const { clipboard } = require("electron");
 const fitAddon = new FitAddon();
 
@@ -10,7 +9,8 @@ const fitAddon = new FitAddon();
  * @see https://github.com/xtermjs/xterm.js
  */
 export class ITerminal extends Terminal {
-    constructor(options?: ITerminalOptions) {
+    uid: string = "";
+    constructor(uid: string, options?: ITerminalOptions) {
         super(
             Object.assign(
                 {
@@ -19,11 +19,12 @@ export class ITerminal extends Terminal {
                     fontFamily: "Consolas, 'Courier New', monospace",
                     fontSize: 12,
                     theme: { background: "#32302F" },
-                    rows: 20,
+                    rows: 40,
                 },
                 options
             )
         );
+        this.uid = uid;
         /** 载入窗口尺寸自适应插件 */
         this.loadAddon(fitAddon);
         this.onKey((key) => {
@@ -40,21 +41,29 @@ export class ITerminal extends Terminal {
     }
 
     fit() {
-        const dimensions = fitAddon.proposeDimensions();
-        if (dimensions?.cols && dimensions?.rows) {
-            this.resize?.(dimensions.cols, dimensions.rows);
-        }
+        try {
+            fitAddon.fit();
+        } catch {}
+        // const dimensions = fitAddon.proposeDimensions();
+        // if (dimensions?.cols && dimensions?.rows) {
+        //     this.resize?.(dimensions.cols, dimensions.rows);
+        // }
     }
 
     write(data: string) {
         super.write(data);
         /** 内容写入时，定时自适应界面 */
-        debounce(this.fit, 500)();
+        this.fit();
     }
 
     writeln(data: string | Uint8Array, callback?: () => void): void {
         super.writeln(data, callback);
         /** 内容写入时，定时自适应界面 */
-        debounce(this.fit, 500)();
+        this.fit();
+    }
+
+    override clear(): void {
+        super.clear();
+        // this.write(`ocs@${this.uid}> `);
     }
 }

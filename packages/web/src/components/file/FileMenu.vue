@@ -20,7 +20,7 @@ const props = defineProps<FileMenuProps>();
 const { file } = toRefs(props);
 
 /** 创建右键菜单 */
-const { baseMenus, dirMenus, fileMenus } = createFileMenus(file.value);
+const { baseMenus, dirMenus } = createFileMenus(file.value);
 
 const menus: Ref<MenuItem[]> = ref(baseMenus);
 
@@ -28,10 +28,6 @@ if (file.value.stat?.isDirectory) {
     let mes = menus.value;
     mes[0].divide = true;
     menus.value = dirMenus.concat(...mes);
-} else {
-    let mes = menus.value;
-    mes[0].divide = true;
-    menus.value = fileMenus.concat(...mes);
 }
 
 function onError(e: Error) {
