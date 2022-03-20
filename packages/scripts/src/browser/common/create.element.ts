@@ -1,6 +1,6 @@
 import { defaults } from "lodash";
 import { DefineComponent, defineComponent, defineCustomElement, h, VNode, VNodeArrayChildren, VNodeProps } from "vue";
-import { setItem } from "./store";
+import { getItem, setItem } from "./store";
 /**
  * 创建自定义元素
  */
@@ -21,7 +21,10 @@ export function createCustomElement(name: string, element: any) {
 export function createNote(...notes: string[]) {
     return h(
         "div",
-        notes.map((note) => h("p", note))
+        h(
+            "ul",
+            notes.map((note) => h("li", note))
+        )
     );
 }
 
@@ -234,4 +237,76 @@ function createSettingItem(input: SettingSelect | SettingInput) {
             }),
         ]
     );
+}
+
+/**
+ * 公共答题设置组件
+ * @param label 设置备注
+ * @param ref   本地设置路径
+ * @param defaultValue 默认值
+ */
+export function createWorkerSetting(
+    label: string,
+    ref: string,
+    defaultValue?: {
+        upload: string;
+        answererWrappers: string;
+    }
+): [SettingSelect, SettingInput] {
+    return [
+        {
+            label,
+            ref,
+            type: "select",
+            attrs: {
+                title: "查题之后不管是否提交, 都会自动将选项进行保存。",
+            },
+            options: (
+                [
+                    {
+                        label: "关闭自动答题",
+                        value: "close",
+                    },
+                    ...[10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => ({
+                        label: `查到大于${rate}%的题目则自动提交`,
+                        value: rate,
+                        attrs: {
+                            title: `例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`,
+                        },
+                    })),
+                    {
+                        label: "每个题目都查到答案才自动提交",
+                        value: "100",
+                    },
+                ] as SettingSelect["options"]
+            )?.map((option) => {
+                if (option.value === defaultValue?.upload) {
+                    option.attrs = option.attrs || {};
+                    option.attrs.selected = true;
+                }
+                return option;
+            }),
+        },
+        {
+            label: "题库配置",
+            ref: "setting.zhs.work.answererWrappers",
+            type: "text",
+            icons: [
+                {
+                    type: "bi bi-question-circle",
+                    attrs: {
+                        title: "点击查看题库配置教程",
+                    },
+                    onClick() {
+                        window.open("https://ocs.enncy.cn/answerer-wrappers");
+                    },
+                },
+            ],
+            attrs: {
+                title: "自定义搜题构造器, 如需设置, 前往API查看 https://github.enncy/online-course-script/ ",
+                value: defaultValue?.answererWrappers || "",
+                required: true,
+            },
+        },
+    ];
 }

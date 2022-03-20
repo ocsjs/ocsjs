@@ -32,38 +32,42 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, reactive, ref } from "vue";
+import { nextTick, onMounted, reactive, ref } from "vue";
 
 import { store } from "../../store";
 import interact from "interactjs";
 import { Project } from "../../components/project";
 import File from "../../components/file/File.vue";
-import ProjectNode from "../../components/project/ProjectNode.vue";
+import ProjectNode from "../../components/project/ProjectNode.vue"; 
 import Help from "../../components/Help.vue";
 
-const projects = ref<Project[]>([Project.create("工作区", store.workspace)]);
+const projects = ref<Project[]>([]);
 
 onMounted(() => {
-    /** 边框拖拽，改变目录大小 */
-    interact(".resizable").resizable({
-        edges: { top: false, left: false, bottom: false, right: true },
-        margin: 20,
-        listeners: {
-            move: function (event: any) {
-                let { x, y } = event.target.dataset;
+    nextTick(() => {
+        projects.value.push(Project.create("工作区", store.workspace));
 
-                x = (parseFloat(x) || 0) + event.deltaRect.left;
-                y = (parseFloat(y) || 0) + event.deltaRect.top;
+        /** 边框拖拽，改变目录大小 */
+        interact(".resizable").resizable({
+            edges: { top: false, left: false, bottom: false, right: true },
+            margin: 20,
+            listeners: {
+                move: function (event: any) {
+                    let { x, y } = event.target.dataset;
 
-                Object.assign(event.target.style, {
-                    width: `${event.rect.width}px`,
-                    height: `${event.rect.height}px`,
-                    transform: `translate(${x}px, ${y}px)`,
-                });
+                    x = (parseFloat(x) || 0) + event.deltaRect.left;
+                    y = (parseFloat(y) || 0) + event.deltaRect.top;
 
-                Object.assign(event.target.dataset, { x, y });
+                    Object.assign(event.target.style, {
+                        width: `${event.rect.width}px`,
+                        height: `${event.rect.height}px`,
+                        transform: `translate(${x}px, ${y}px)`,
+                    });
+
+                    Object.assign(event.target.dataset, { x, y });
+                },
             },
-        },
+        });
     });
 });
 </script>

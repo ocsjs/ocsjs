@@ -1,7 +1,8 @@
 import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute } from "./define.script";
 import interact from "interactjs";
+import { findBestMatch, Rating } from "string-similarity";
 
-export async function sleep(period: number) {
+export async function sleep(period: number): Promise<void> {
     return new Promise((resolve) => {
         setTimeout(resolve, period);
     });
@@ -108,4 +109,80 @@ export function dragEnable(el: HTMLElement | string) {
         target.setAttribute("data-x", x);
         target.setAttribute("data-y", y);
     }
+}
+
+/**
+ * 删除特殊字符，只保留英文，数字，中文
+ * @param str
+ * @returns
+ */
+export function clearString(str: string) {
+    return str
+        .trim()
+        .toLocaleLowerCase()
+        .replace(/[^\u4e00-\u9fa5A-Za-z0-9]*/g, "");
+}
+
+/**
+ * 元素搜索
+ *
+ * @example
+ *
+ * const { title , btn , arr } = domSearch(document.body,{
+ *      title: '.title'
+ *      btn: ()=> '.btn',
+ *      arr: ()=> Array.from(document.body.querySelectorAll('.function-arr'))
+ * })
+ *
+ * console.log(title) // 等价于 Array.from(document.body.querySelectorAll('.title'))
+ * console.log(btn)// 等价于 Array.from(document.body.querySelectorAll('.btn'))
+ */
+export function domSearch(
+    root: HTMLElement = document.body,
+    /** 搜索构造器 */
+    wrapper: Record<string, string | HTMLElement[] | { (): string | HTMLElement[] }>
+): Record<string, HTMLElement[]> {
+    const obj = Object.create({});
+    Reflect.ownKeys(wrapper).forEach((key) => {
+        let value = wrapper[key.toString()];
+
+        if (typeof value === "function") {
+            setValue(value());
+        } else {
+            setValue(value);
+        }
+
+        function setValue(value: string | HTMLElement[]) {
+            if (typeof value === "string") {
+                Reflect.set(obj, key, Array.from(root.querySelectorAll(value)));
+            } else if (Array.isArray(value)) {
+                Reflect.set(obj, key, value);
+            }
+        }
+    });
+    return obj;
+}
+
+/**
+ * 答案相似度匹配 , 返回相似度对象列表 Array<{@link Rating}>
+ *
+ * 相似度计算算法 : https://www.npmjs.com/package/string-similarity
+ *
+ * @param answers 答案列表
+ * @param options 选项列表
+ *
+ *
+ * @example
+ *
+ * ```js
+ *
+ * answerSimilar( ['3'], ['1+2','3','4','错误的例子'] ) // [0, 1, 0, 0]
+ *
+ * answerSimilar( ['hello world','console.log("hello world")'], ['console.log("hello world")','hello world','1','错误的例子'] ) // [1, 1, 0, 0]
+ *
+ * ```
+ *
+ */
+export function answerSimilar(answers: string[], options: string[]): Rating[] {
+    return options.map((option) => findBestMatch(option, answers).bestMatch);
 }

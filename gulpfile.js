@@ -3,7 +3,7 @@ const del = require("del");
 const { exec } = require("child_process");
 
 function cleanOutput() {
-    return del(["./dist", "./packages/scripts/lib", "./lib", "./CHANGELOG.md"]);
+    return del(["./dist", "./packages/scripts/lib", "./lib"]);
 }
 
 function tsc() {

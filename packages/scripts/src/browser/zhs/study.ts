@@ -1,5 +1,5 @@
 import { logger } from "../../logger";
-import { sleep } from "../common/util";
+import { sleep } from "../common/utils";
 import { ScriptSettings } from "../scripts";
 
 /**

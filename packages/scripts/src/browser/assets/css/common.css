@@ -11,6 +11,7 @@ ocs-panel {
   background: white;
   z-index: 99999999;
   border-radius: 4px;
+  text-align: left;
   box-shadow: 0px 2px 6px #848484;
 }
 ocs-panel .ocs-panel-header {
@@ -22,6 +23,8 @@ ocs-panel .ocs-panel-header {
 ocs-panel .ocs-panel-header .title {
   cursor: pointer;
   font-size: 14px;
+  margin: 0;
+  padding: 0;
 }
 ocs-panel .ocs-panel-header .title.active {
   font-weight: bold;
@@ -29,6 +32,9 @@ ocs-panel .ocs-panel-header .title.active {
 ocs-panel .ocs-panel-container {
   font-size: 12px;
   padding: 4px;
+}
+ocs-panel .ocs-panel-container ul li {
+  list-style: inside;
 }
 .ocs-panel-footer {
   font-size: 1px;
