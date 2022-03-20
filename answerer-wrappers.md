@@ -109,4 +109,8 @@ defaultAnswerWrapperHandler(
 - 可以解析 `第一个参数(源码中定义)` 的任意属性
 - 可以解析 [`localStorage.OCS`](https://enncy.github.io/online-course-script/api/#localStorage.OCS) 的任意属性
 
+所以最终填写的 `题库配置` 为： 
+```json
+[{"url":"https://example.com/search/","method":"get","answerPath":"data.answers","data":{"title":"${titleElements[0]}"},"answerHandler":"return (answers)=> answers.pop()"}]
+```
 
