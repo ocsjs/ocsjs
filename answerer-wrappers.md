@@ -10,7 +10,7 @@
 
  
 
-- [enncy 题库](https://wk.enncy.cn/tk) （OCS作者提供）
+- [enncy 题库](https://tk.enncy.cn/) （OCS作者提供）
 
 
 
