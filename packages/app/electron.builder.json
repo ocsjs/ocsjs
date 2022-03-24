@@ -1,5 +1,6 @@
 {
     "$schema": "https://json.schemastore.org/electron-builder.json",
+
     "appId": "ocs.enncy.cn",
     "productName": "ocs",
     "asar": false,

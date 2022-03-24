@@ -2,13 +2,18 @@
 
 const { app, BrowserWindow } = require("electron");
 const { handleOpenFile } = require("./src/tasks/handle.file.open");
-const { remoteRegister, registerRemoteEvent } = require("./src/tasks/remote.register");
+const { remoteRegister } = require("./src/tasks/remote.register");
 const { initStore } = require("./src/tasks/init.store");
 const { autoLaunch } = require("./src/tasks/auto.launch");
 const { createWindow } = require("./src/main");
 const { globalListenerRegister } = require("./src/tasks/global.listener");
 const { task } = require("./src/utils");
 const { handleError } = require("./src/tasks/error.handler");
+const path = require("path");
+
+app.setName("ocs");
+/** 修改成 ocs 文件夹，  而不是 @ocsjs/app */
+app.setPath("userData", path.resolve(path.join(app.getPath("userData"), "../../ocs")));
 
 /** @type {BrowserWindow | undefined} */
 let window;
