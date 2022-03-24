@@ -7,7 +7,7 @@
 -   [浏览器运行](#浏览器运行)
 -   [油猴运行](#油猴运行)
 -   [OCS 软件运行](#OCS软件运行)
--   [自动答题功能](#https://enncy.github.io/online-course-script/answerer-wrappers)
+-   [自动答题功能](https://enncy.github.io/online-course-script/answerer-wrappers)
 -   [项目开发文档](#项目开发文档)
 
 # 交流群
