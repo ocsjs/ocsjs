@@ -38,8 +38,8 @@
 var resource = (url) => fetch(url).then((res) => res.text());
 // 载入 OCS 并运行
 (async () => {
-    const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css");
-    const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js");
+    const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css");
+    const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js");
 
     const script = document.createElement("script");
     script.innerText = ocsjs;
@@ -81,8 +81,8 @@ var resource = (url) => fetch(url).then((res) => res.text());
 // @author       enncy
 // @match        *://*.chaoxing.com/*
 // @match        *://*.zhihuishu.com/*
-// @require      https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js
-// @resource     OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css
+// @require      https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js
+// @resource     OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css
 // @grant        unsafeWindow
 // @grant        GM_addElement
 // @grant        GM_getResourceText
