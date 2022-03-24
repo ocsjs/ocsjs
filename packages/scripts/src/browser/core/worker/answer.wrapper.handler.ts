@@ -1,0 +1,170 @@
+import { get } from "lodash";
+import { getItem } from "../store";
+
+/** 题库查询结果 */
+export interface SearchResult {
+    url: string;
+    name: string;
+    homepage?: string;
+    answers: Answer[];
+}
+
+/** 题目答案 */
+export interface Answer {
+    question: string;
+    answer: string;
+}
+
+/**
+ * 题库配置器
+ */
+export interface AnswererWrapper {
+    /** 答题器请求路径 */
+    url: string;
+    /** 题库名字 */
+    name: string;
+    /** 题库网址 */
+    homepage?: string;
+    data?: Record<string, string>;
+    method: "post" | "get";
+    /** 定义 handler 中的参数类型 */
+    contentType: "json" | "text";
+    /**
+     * 此选项是个字符串， 使用 [Function(string)](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function) 构造方法进行解析生成方法
+     *
+     * 方法传入一个参数 : 请求获取到的文本 ，可以使用 contentType 定义文本类型
+     *
+     * 对返回的数据进行自定义解析
+     *
+     * 并且返回一个数组 : `[题目, 答案]`
+     *
+     * 或者二维数据 : `[[题目1, 答案1],[题目2, 答案2, ...]`
+     *
+     * 如果搜不到则返回 undefined
+     *
+     * @example
+     *
+     * ```js
+     * {
+     *      handler: `return (res)=> res.answer === '未搜到答案' ? [res.question, res.answer] : [res.question, undefined]`
+     * }
+     * ```
+     *
+     */
+    handler: string;
+}
+
+/**
+ *
+ * 默认题库配置解析器
+ *
+ * @example
+ *
+ * ```js
+ *
+ * // 假设有一个接口 : https://example.com/search?title=1+2,2+3
+ * // 此接口返回 {code: 1, data: { answers: [3 , 5] , title:'1+2' }, msg:'成功'}
+ *
+ * defaultAnswerWrapperHandler({
+ *      titleElements: Array.from(document.querySelector('.title'))
+ * },
+ * [
+ *  // 可以有多个构造器，最终通过 answerPath 一起合并到一个列表并返回
+ *  {
+ *      url: 'https://example.com/search',
+ *      method: 'get',
+ *      answerPath: 'data.answers',
+ *      data:{
+ *          title: 'titleElements[0]' // 1+2,2+3
+ *      }
+ *  }
+ * ]) // [3 , 5]
+ *
+ *
+ * ```
+ *
+ * @param elements 题目元素
+ * @param answererWrappers 题库配置器数组
+ * @returns
+ */
+export async function defaultAnswerWrapperHandler(
+    answererWrappers: AnswererWrapper[],
+    type?: string,
+    title?: string
+): Promise<SearchResult[]> {
+    let searchResults: SearchResult[] = [];
+
+    for (const wrapper of answererWrappers) {
+        let answers: Answer[] = [];
+        const data = Object.create({});
+        wrapper.data = wrapper.data || {};
+        /** 构造一个请求数据 */
+        Reflect.ownKeys(wrapper.data).map((key) => {
+            if (wrapper.data) {
+                Reflect.set(data, key, resolvePlaceHolder(wrapper.data[key.toString()]));
+            }
+        });
+        /** 解析 url 数据 */
+        let url = resolvePlaceHolder(wrapper.url);
+
+        /** 请求 */
+        let res: Response;
+        if (wrapper.method === "post") {
+            res = await fetch(url, { method: wrapper.method, body: JSON.stringify(data) });
+        } else {
+            const params = new URLSearchParams(url);
+            Reflect.ownKeys(data).forEach((key) => params.set(key.toString(), data[key.toString()]));
+            res = await fetch(decodeURIComponent(params.toString()), { method: wrapper.method });
+        }
+        /** 从 handler 获取搜索到的题目和回答 */
+
+        if (wrapper.handler) {
+            let arg = "";
+            if (wrapper.contentType === "json") {
+                arg = await res.json();
+            } else {
+                arg = await res.text();
+            }
+
+            const info = Function(wrapper.handler)()(arg);
+            /** 如果返回一个二维数组 */
+            if (info.every((item: any) => Array.isArray(item))) {
+                answers = answers.concat(
+                    info.map((item: any) => ({
+                        question: item[0],
+                        answer: item[1],
+                    }))
+                );
+            } else {
+                if (info) {
+                    answers.push({
+                        question: info[0],
+                        answer: info[1],
+                    });
+                }
+            }
+        }
+
+        searchResults.push({
+            url: wrapper.url,
+            name: wrapper.name,
+            homepage: wrapper.homepage,
+            answers,
+        });
+    }
+
+    function resolvePlaceHolder(str: string) {
+        const matches = str.match(/\${(.*?)}/g) || [];
+        matches.forEach((placeHolder) => {
+            const value: any =
+                /** 获取元素属性 */
+                get({ type, title }, placeHolder.replace(/\${(.*)}/, "$1")) ||
+                /** 获取本地存储 */
+                getItem(placeHolder.replace(/\${(.*)}/, "$1"));
+            str = str.replace(placeHolder, value);
+        });
+        return str;
+    }
+
+    return searchResults;
+}

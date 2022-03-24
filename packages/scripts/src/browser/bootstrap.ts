@@ -1,9 +1,9 @@
-import { createApp, defineComponent, ref, h, isVNode, App, watch } from "vue";
+import { createApp, defineComponent, ref, h, isVNode, App, watch, computed, KeepAlive, onMounted, nextTick } from "vue";
 import { definedScripts } from ".";
-import { getItem } from "../browser.entry";
-import { createFooter, createNote, createHeaders, createContainers } from "./common/create.element";
-import { DefineScript } from "./common/define.script";
-import { dragEnable, getCurrentPanels, addEvent, getCurrentRoutes } from "./common/utils";
+import { logger } from "../logger";
+import { createFooter, createHeaders, createContainers } from "./core/create.element";
+import { DefineScript } from "./core/define.script";
+import { getCurrentPanels, addFunctionEventListener, getCurrentRoutes, domSearchAll, dragElement } from "./core/utils";
 
 /** 面板元素 */
 export let panel: HTMLElement | undefined | null;
@@ -27,7 +27,14 @@ export interface StartOptions {
  * 显示面板，检测是否存在需要运行的脚本，并执行
  */
 export function start(options?: StartOptions) {
-    showPanels(options);
+    if (top === window) {
+        document.addEventListener("readystatechange", () => {
+            if (document.readyState === "interactive") {
+                showPanels(options);
+                logger("info", "OCS 加载成功");
+            }
+        });
+    }
     executeScripts(options?.scripts);
 }
 
@@ -43,26 +50,69 @@ export function showPanels(options?: StartOptions) {
     app.mount(panel);
 
     if (draggable) {
-        dragEnable(panel);
+        dragElement("ocs-panel .draggable", panel);
     }
 
     function createPanel() {
         return defineComponent({
             data() {
                 const panels = ref(getCurrentPanels(scripts));
-                const activeKey = ref(panels.value[0]?.name);
 
-                history.pushState = addEvent(history, "pushState");
-                history.replaceState = addEvent(history, "replaceState");
+                history.pushState = addFunctionEventListener(history, "pushState");
+                history.replaceState = addFunctionEventListener(history, "replaceState");
 
                 window.addEventListener("pushState", () => (panels.value = getCurrentPanels(scripts)));
                 window.addEventListener("replaceState", () => (panels.value = getCurrentPanels(scripts)));
 
-                watch(panels, () => {
-                    activeKey.value = panels.value[0]?.name;
+                /**
+                 * 对面板进行处理
+                 *
+                 * 当所有面板都为 default 状态的时候，才显示 default 面板
+                 *
+                 * 否则显示其他面板
+                 */
+                const currentPanels = computed(() => {
+                    return (
+                        panels.value.every((panel) => panel.default === true)
+                            ? panels.value
+                            : panels.value.filter((panel) => !panel.default)
+                    ).sort((a, b) => (b.priority || 0) - (a.priority || 0));
                 });
 
-                return { panels, activeKey };
+                const activeKey = ref(currentPanels.value[0]?.name);
+
+                /** 当面板发生改变时重绘 */
+                watch(currentPanels, () => {
+                    const key = currentPanels.value.find((p) => p.name === activeKey.value);
+
+                    /** 缓存页面，  如果存在相同的面板，则不切换，否则切换回到第一个页面 */
+                    if (!key) {
+                        activeKey.value = currentPanels.value[0].name;
+                    }
+                    nextTick(update);
+                });
+
+                watch(activeKey, update);
+                onMounted(() => nextTick(update));
+
+                // 切换页面，和标题样式改变
+                function update() {
+                    const { panelElements, panelTitles } = domSearchAll({
+                        panelElements: "[panel]",
+                        panelTitles: "[paneltitle]",
+                    });
+                    panelElements.forEach((_, i) => {
+                        panelElements[i].style.display = "none";
+                        panelTitles[i].classList.remove("active");
+                    });
+                    const index = panelElements.findIndex((el) => el.getAttribute("panel") === activeKey.value);
+                    if (index !== -1) {
+                        panelElements[index].style.display = "block";
+                        panelTitles[index].classList.add("active");
+                    }
+                }
+
+                return { panels, activeKey, currentPanels };
             },
             render() {
                 const footer = createFooter();
@@ -75,55 +125,53 @@ export function showPanels(options?: StartOptions) {
                               rel: "stylesheet",
                           })
                         : h("style", style);
-                const about = createNote("进入相应的学习，作业，或者考试页面即可", "此窗口可以使用鼠标拖拽");
 
-                const main =
-                    this.panels.length === 0
-                        ? [createHeaders(h("div", { class: "title" }, "OCS助手")), createContainers(about), footer]
-                        : [
-                              /** 添加 tab 栏 */
-                              createHeaders(
-                                  this.panels.map((panel) =>
-                                      h(
-                                          "div",
-                                          {
-                                              class: ["title", this.activeKey === panel.name ? "active" : ""].join(" "),
-                                              onClick: () => {
-                                                  // 隐藏其他面板，显示点击的面板
-                                                  this.activeKey = panel.name;
-                                              },
-                                          },
-                                          panel.name
-                                      )
-                                  )
-                              ),
+                const main = [
+                    /** 添加 tab 栏 */
+                    createHeaders(
+                        this.currentPanels.map((panel) =>
+                            h(
+                                "div",
+                                {
+                                    panelTitle: panel.name,
+                                    class: "title",
+                                    onClick: () => {
+                                        // 隐藏其他面板，显示点击的面板
+                                        this.activeKey = panel.name;
+                                    },
+                                },
+                                panel.name
+                            )
+                        )
+                    ),
 
-                              /** 显示面板 */
-                              createContainers(
-                                  this.panels.map((panel, i) => {
-                                      const el = panel.el();
+                    h(KeepAlive, [
+                        /** 显示面板 */
+                        createContainers(
+                            this.currentPanels.map((panel, i) => {
+                                const el = panel.el();
 
-                                      let element;
-                                      if (isVNode(el)) {
-                                          element = defineComponent({ render: () => el });
-                                      } else if (typeof el === "string") {
-                                          element = defineComponent({ template: el });
-                                      } else {
-                                          element = el;
-                                      }
+                                let element;
+                                if (isVNode(el)) {
+                                    element = defineComponent({ render: () => el });
+                                } else if (typeof el === "string") {
+                                    element = defineComponent({ template: el });
+                                } else {
+                                    element = el;
+                                }
 
-                                      return h(element, {
-                                          panel: panel.name,
+                                return h(element, {
+                                    style: {
+                                        display: "none",
+                                    },
+                                    panel: panel.name,
+                                });
+                            })
+                        ),
+                    ]),
 
-                                          style: {
-                                              display: this.activeKey === panel.name ? "block" : "none",
-                                          },
-                                      });
-                                  })
-                              ),
-
-                              footer,
-                          ];
+                    footer,
+                ];
 
                 return h("div", [styleElement, ...main]);
             },
@@ -136,12 +184,14 @@ export function showPanels(options?: StartOptions) {
  */
 export function executeScripts(scripts: DefineScript[] = definedScripts) {
     const routes = getCurrentRoutes(scripts);
-
-    for (const route of routes) {
-        let setting;
-        if (route.settingPath) {
-            setting = getItem(route.settingPath);
+    /** 加载后执行 */
+    window.addEventListener("load", () => {
+        for (const route of routes.filter((route) => route.onload)) {
+            route.onload?.();
         }
-        route.script(setting);
+    });
+    /** 立即执行 */
+    for (const route of routes.filter((route) => route.start)) {
+        route.start?.();
     }
 }

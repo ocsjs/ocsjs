@@ -23,7 +23,6 @@
         "chalk": "4.1.0",
         "commander": "^9.0.0",
         "dotenv": "^16.0.0",
-        "interactjs": "^1.10.11",
         "lodash": "^4.17.21",
         "playwright": "^1.18.1",
         "string-similarity": "^4.0.4",

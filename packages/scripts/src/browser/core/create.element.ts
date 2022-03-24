@@ -1,6 +1,6 @@
 import { defaults } from "lodash";
 import { DefineComponent, defineComponent, defineCustomElement, h, VNode, VNodeArrayChildren, VNodeProps } from "vue";
-import { getItem, setItem } from "./store";
+import { setItem } from "./store";
 /**
  * 创建自定义元素
  */
@@ -67,26 +67,33 @@ export function createSettingPanel(...settingItems: (SettingSelect | SettingInpu
                     onSubmit: (e: any) => {
                         e.preventDefault();
                         const refs = this.$refs as any;
+                        let res = [];
                         /** 解析 refs 里面的所有绑定值 */
-
                         Reflect.ownKeys(refs)
                             .filter((key) => key !== "submit")
                             .flatMap((key) => {
+                                const input: HTMLInputElement = refs[key];
+                                const type = input.getAttribute("type") || "text";
+
                                 const value =
-                                    refs[key].type === "checkbox" || refs[key].type === "radio"
-                                        ? refs[key].checked
-                                        : refs[key].value;
+                                    type === "checkbox"
+                                        ? input.checked
+                                        : type === "radio"
+                                        ? input.checked
+                                        : type === "number"
+                                        ? input.valueAsNumber
+                                        : type === "object"
+                                        ? JSON.parse(input.value)
+                                        : parseFloat(input.value) || input.value;
+                                res.push([key.toString(), value]);
                                 setItem(key.toString(), value);
                             });
 
-                        /** 保存到 localStorage */
-                        console.log("设置保存");
-
-                        refs.submit.value = "保存成功√";
+                        refs.submit.value = "保存成功√ 即将刷新";
                         refs.submit.disabled = true;
                         setTimeout(() => {
                             window.location.reload();
-                        }, 1000);
+                        }, 3000);
                     },
                 },
                 [
@@ -165,7 +172,10 @@ export interface SettingInput extends SettingItem {
         | "text"
         | "time"
         | "url"
-        | "week";
+        | "week"
+
+        /** 自定义类型 */
+        | "object";
 }
 
 /**
@@ -239,19 +249,27 @@ function createSettingItem(input: SettingSelect | SettingInput) {
     );
 }
 
+export interface CreateWorkerSettingConfig {
+    /** 默认提交设置 */
+    defaultUpload?: string;
+    /** 自定义选项 */
+    options?: {
+        label: string;
+        value: any;
+        attrs?: (VNodeProps & Record<string, any>) | undefined;
+    }[];
+}
+
 /**
  * 公共答题设置组件
  * @param label 设置备注
  * @param ref   本地设置路径
- * @param defaultValue 默认值
+ * @param defaultUpload 默认值
  */
 export function createWorkerSetting(
     label: string,
     ref: string,
-    defaultValue?: {
-        upload: string;
-        answererWrappers: string;
-    }
+    config?: CreateWorkerSettingConfig
 ): [SettingSelect, SettingInput] {
     return [
         {
@@ -259,38 +277,48 @@ export function createWorkerSetting(
             ref,
             type: "select",
             attrs: {
-                title: "查题之后不管是否提交, 都会自动将选项进行保存。",
+                title: "答题设置",
             },
-            options: (
-                [
-                    {
-                        label: "关闭自动答题",
-                        value: "close",
-                    },
-                    ...[10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => ({
-                        label: `查到大于${rate}%的题目则自动提交`,
-                        value: rate,
-                        attrs: {
-                            title: `例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`,
-                        },
-                    })),
-                    {
-                        label: "每个题目都查到答案才自动提交",
-                        value: "100",
-                    },
-                ] as SettingSelect["options"]
-            )?.map((option) => {
-                if (option.value === defaultValue?.upload) {
-                    option.attrs = option.attrs || {};
-                    option.attrs.selected = true;
-                }
-                return option;
-            }),
+            options: config?.options
+                ? config.options
+                : (
+                      [
+                          {
+                              label: "关闭自动答题",
+                              value: "close",
+                          },
+                          {
+                              label: "完成后自动保存",
+                              value: "save",
+                          },
+                          {
+                              label: "完成后不做任何动作",
+                              value: "nomove",
+                          },
+                          ...[10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => ({
+                              label: `查到大于${rate}%的题目则自动提交`,
+                              value: rate,
+                              attrs: {
+                                  title: `例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`,
+                              },
+                          })),
+                          {
+                              label: "每个题目都查到答案才自动提交",
+                              value: 100,
+                          },
+                      ] as SettingSelect["options"]
+                  )?.map((option) => {
+                      if (option.value === config?.defaultUpload) {
+                          option.attrs = option.attrs || {};
+                          option.attrs.selected = true;
+                      }
+                      return option;
+                  }),
         },
         {
             label: "题库配置",
-            ref: "setting.zhs.work.answererWrappers",
-            type: "text",
+            ref: "setting.answererWrappers",
+            type: "object",
             icons: [
                 {
                     type: "bi bi-question-circle",
@@ -298,14 +326,15 @@ export function createWorkerSetting(
                         title: "点击查看题库配置教程",
                     },
                     onClick() {
-                        window.open("https://ocs.enncy.cn/answerer-wrappers");
+                        window.open("https://enncy.github.io/online-course-script/answerer-wrappers");
                     },
                 },
             ],
             attrs: {
-                title: "自定义搜题构造器, 如需设置, 前往API查看 https://github.enncy/online-course-script/ ",
-                value: defaultValue?.answererWrappers || "",
+                title: "输入题库配置, 点击右侧查看教程 ",
+                value: OCS.setting.answererWrappers.length === 0 ? "" : JSON.stringify(OCS.setting.answererWrappers),
                 required: true,
+                placeholder: "点击右侧查看教程 ",
             },
         },
     ];

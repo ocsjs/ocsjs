@@ -12,21 +12,15 @@ export interface ScriptRoute {
     name: string;
     /** 页面路径匹配 */
     url: string | RegExp | GlobPattern | string[] | RegExp[] | GlobPattern[];
-    /**
-     * 需要传入 script 函数设置参数的路径
-     *
-     * @see https://www.lodashjs.com/docs/lodash.get
-     *
-     * @example
-     *
-     * "智慧树.视频"
-     * "超星.学习.视频.默认设置"
-     */
-    settingPath?: string;
-
-    /** 运行入口 */
-    script: (setting: any) => any;
+    /** 等待页面加载完毕调用 */
+    onload?: (...args: any[]) => any;
+    /** 加载时 立即执行 */
+    start?: (...args: any[]) => any;
+    /** 优先级, 默认0 */
+    priority?: number;
 }
+
+export type ScriptPanelChild = Omit<ScriptPanel, "url" | "children">;
 
 /** 脚本面板 */
 export interface ScriptPanel {
@@ -41,7 +35,11 @@ export interface ScriptPanel {
      */
     el: () => DefineComponent<any> | VNode | HTMLElement | string;
     /** 其余的子面板  */
-    children?: Omit<ScriptPanel, "url" | "children">[];
+    children?: ScriptPanelChild[];
+    /** 优先级, 默认0 */
+    priority?: number;
+    /** 当页面没有任何面板时，显示的默认面板 */
+    default?: boolean;
 }
 
 export interface DefineScript {

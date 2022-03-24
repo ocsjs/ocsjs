@@ -1,15 +1,12 @@
 import { DefineComponent } from "vue";
-import { getItem } from "../common/store";
-import { defaultSetting, ScriptSettings } from "../scripts";
-import { createSettingPanel, createWorkerSetting } from "../common/create.element";
-import { AnswererWrapper, WorkOptions } from "../common/worker/interface";
+import { createSettingPanel, createWorkerSetting, CreateWorkerSettingConfig } from "../core/create.element";
 
 /**
  * 创建智慧树视频设置面板
  */
 
-export function createZHSVideoSettingPanel(): DefineComponent {
-    const settings: ScriptSettings["zhs"]["video"] = getItem("setting.zhs.video", defaultSetting().video);
+export function createZHSStudySettingPanel(): DefineComponent {
+    const settings = OCS.setting.zhs.video;
 
     return createSettingPanel(
         {
@@ -21,7 +18,7 @@ export function createZHSVideoSettingPanel(): DefineComponent {
                 value: settings.watchTime,
                 min: 0,
                 max: 24,
-                step: 0.5,
+                step: 0.1,
             },
         },
         {
@@ -56,28 +53,17 @@ export function createZHSVideoSettingPanel(): DefineComponent {
     );
 }
 
-type WorkSettingOptions = ScriptSettings["zhs"]["work"] &
-    Required<Pick<WorkOptions, "period" | "retry" | "timeout" | "stopWhenError">> & {
-        answererWrappers: AnswererWrapper[];
-    };
-
 /**
  * 创建智慧树 作业/考试 设置面板
  */
-export function createZHSWorkSettingPanel() {
-    const settings: WorkSettingOptions = getItem("setting.zhs.work", {
-        period: 3,
-        timeout: 30,
-        retry: 1,
-        stopWhenError: false,
-        answererWrappers: [],
-    } as WorkSettingOptions);
+export function createZHSWorkSettingPanel(config?: CreateWorkerSettingConfig) {
+    const settings = OCS.setting.zhs.work;
 
     return createSettingPanel(
         /** 作业答题设置 */
-        ...createWorkerSetting("作业答题", "setting.zhs.video.upload", {
-            upload: settings.upload,
-            answererWrappers: getItem("setting.answererWrappers"),
+        ...createWorkerSetting("作业提交", "setting.zhs.work.upload", {
+            defaultUpload: config?.defaultUpload || settings.upload,
+            options: config?.options,
         }),
         {
             label: "答题间隔(秒)",
@@ -109,6 +95,14 @@ export function createZHSWorkSettingPanel() {
                 min: 0,
                 max: 2,
                 step: 1,
+            },
+        },
+        {
+            label: "发生错误时暂停答题",
+            ref: "setting.zhs.work.stopWhenError",
+            type: "checkbox",
+            attrs: {
+                checked: settings.stopWhenError,
             },
         }
     );

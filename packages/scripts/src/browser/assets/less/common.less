@@ -6,13 +6,16 @@ panel style
 ocs-panel {
     position: fixed;
     top: 30%;
-    left: 40%;
-    min-width: 20%;
+    left: 42.5%;
+    min-width: 15%;
     background: white;
     z-index: 99999999;
     border-radius: 4px;
     text-align: left;
     box-shadow: 0px 2px 6px #848484;
+
+    max-width: 800px;
+    max-height: 1000px;
 
     .ocs-panel-header {
         gap: 12px;
@@ -21,7 +24,7 @@ ocs-panel {
         border-bottom: 1px solid #c6c6c6;
 
         .title {
-            cursor: pointer;
+            cursor: pointer !important;
             font-size: 14px;
             margin: 0;
             padding: 0;
@@ -39,6 +42,10 @@ ocs-panel {
         ul li {
             list-style: inside;
         }
+    }
+
+    .draggable {
+        cursor: move;
     }
 }
 
@@ -111,5 +118,53 @@ ocs-panel {
 
     [type="reset"] {
         background: white;
+    }
+}
+
+.terminal {
+    width: 300px;
+    height: 300px;
+    max-width: 300px;
+    max-height: 300px;
+    overflow: auto;
+    background-color: black;
+    padding: 12px 6px;
+
+    color: white;
+
+    level {
+        padding: 0px 2px;
+        border-radius: 2px;
+    }
+
+    level.info {
+        background-color: #2196f3a3;
+    }
+
+    level.warn {
+        background-color: #ffc107db;
+    }
+
+    level.error {
+        background-color: #f36c71cc;
+    }
+
+    level.debug {
+        background-color: #9e9e9ec4;
+    }
+}
+
+/** 搜索结果  */
+#search-results {
+    a {
+        text-decoration: underline;
+    }
+
+    .search-results-container {
+        padding-left: 12px;
+    }
+
+    .search-results-item {
+        margin-bottom: 8px;
     }
 }

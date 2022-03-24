@@ -1,24 +1,20 @@
-import { Worker } from "./../common/worker/worker";
-import { logger } from "../../logger";
-import { createNote } from "../common/create.element";
-import { defineScript } from "../common/define.script";
-import { AnswererWrapper, WorkOptions } from "../common/worker/interface";
+import { createNote } from "../core/create.element";
+import { defineScript } from "../core/define.script";
 import { defaultSetting } from "../scripts";
-import { createZHSVideoSettingPanel, createZHSWorkSettingPanel } from "./panels";
-
+import { createZHSStudySettingPanel, createZHSWorkSettingPanel } from "./panels";
 import { study } from "./study";
-import { defaultAnswerWrapperHandler } from "../common/worker/question.resolver";
-import { sleep } from "../common/utils";
-import { getItem } from "../common/store";
+import { createSearchResultPanel, createTerminalPanel, domSearch, sleep } from "../core/utils";
+import { work } from "./work";
+import { logger } from "../../logger";
+import { h } from "vue";
 
 export const ZHSScript = defineScript({
     name: "知道智慧树",
     routes: [
         {
             name: "视频脚本",
-            settingPath: "setting.zhs.video",
             url: "**zhihuishu.com/videoStudy.html**",
-            async script(setting) {
+            async onload(setting = OCS.setting.zhs.video) {
                 await sleep(5000);
                 // 智慧树视频学习
                 await study(setting || defaultSetting().video);
@@ -26,52 +22,17 @@ export const ZHSScript = defineScript({
         },
         {
             name: "作业脚本",
-            settingPath: "setting.zhs.work",
             url: "**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**",
-            async script(setting: Required<Pick<WorkOptions, "period" | "retry" | "timeout" | "stopWhenError">>) {
+            async onload(setting = OCS.setting.zhs.work) {
                 await sleep(5000);
-                const { period, timeout, retry, stopWhenError } = setting || defaultSetting().work;
-
-                /** 新建答题器 */
-                const worker = new Worker({
-                    root: ".examPaper_subject",
-                    elements: {
-                        title: ".subject_describe",
-                        options: ".subject_node .nodeLab",
-                    },
-                    /** 默认搜题方法构造器 */
-                    answerer: (elements) => {
-                        return defaultAnswerWrapperHandler(
-                            elements,
-                            JSON.parse(getItem("setting.answererWrappers")) as AnswererWrapper[]
-                        );
-                    },
-                    work: {
-                        /** 自定义处理器 */
-                        handler(type, answer, element) {
-                            if (type === "judgement" || type === "single" || type === "multiple") {
-                                if (!element.querySelector("input")?.checked) {
-                                    element.click();
-                                }
-                            } else if (type === "completion" && element.querySelector("textarea")?.innerText === "") {
-                                const text = element.querySelector("textarea");
-                                if (text) {
-                                    text.value = answer;
-                                }
-                            }
-                        },
-                    },
-                    onResult: (res) => logger("info", "题目完成结果 : ", res),
-
-                    /** 其余配置 */
-
-                    period: period * 1000,
-                    timeout: timeout * 1000,
-                    retry,
-                    stopWhenError,
-                });
-
-                await worker.doWork();
+                if (OCS.setting.answererWrappers.length === 0) {
+                    const { panel } = domSearch({ panel: '[panel="作业助手"]' });
+                    if (panel) panel.innerHTML = "<b>错误</b> : 未设置题库配置！";
+                    logger("error", "未设置题库配置！");
+                } else {
+                    /** 运行作业脚本 */
+                    await work(setting);
+                }
             },
         },
     ],
@@ -99,9 +60,10 @@ export const ZHSScript = defineScript({
                 ),
             children: [
                 {
-                    name: "视频设置面板",
-                    el: () => createZHSVideoSettingPanel(),
+                    name: "学习设置",
+                    el: () => createZHSStudySettingPanel(),
                 },
+                createTerminalPanel(),
             ],
         },
         {
@@ -115,9 +77,11 @@ export const ZHSScript = defineScript({
             el: () => createNote("进入 作业设置面板 可以调整作业设置", "5秒后自动开始作业..."),
             children: [
                 {
-                    name: "作业设置面板",
+                    name: "作业设置",
                     el: () => createZHSWorkSettingPanel(),
                 },
+                createTerminalPanel(),
+                createSearchResultPanel(),
             ],
         },
     ],

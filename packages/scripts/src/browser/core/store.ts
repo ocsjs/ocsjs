@@ -1,4 +1,6 @@
+import exp from "constants";
 import { get, set } from "lodash";
+import { ScriptSettings } from "../scripts";
 
 let listeners: any[] = [];
 
@@ -8,7 +10,7 @@ let listeners: any[] = [];
  * @param value
  */
 export function setItem(path: string | string[], value: any) {
-    const loc = JSON.parse(localStorage.getItem("OCS") || "{}");
+    const loc: OCSLocalStorage = JSON.parse(localStorage.getItem("OCS") || "{}");
     set(loc, path, value);
     localStorage.setItem("OCS", JSON.stringify(loc));
 
@@ -26,6 +28,16 @@ export function setItem(path: string | string[], value: any) {
  * @returns
  */
 export function getItem(path: string | string[], defaultValue?: any) {
-    const loc = JSON.parse(localStorage.getItem("OCS") || "{}");
+    const loc: OCSLocalStorage = JSON.parse(localStorage.getItem("OCS") || "{}");
     return get(loc, path) || defaultValue;
+}
+
+/**
+ * OCS 本地存储类型
+ */
+export interface OCSLocalStorage {
+    // 网课平台类型
+    platform?: string;
+    // 本地设置
+    setting?: ScriptSettings;
 }

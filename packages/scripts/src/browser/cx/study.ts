@@ -1,10 +1,228 @@
+import { debounce, defaults } from "lodash";
 import { logger } from "../../logger";
-import { ScriptSettings } from "../scripts";
+import { domSearch, domSearchAll, sleep, StringUtils } from "../core/utils";
+import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
+import { OCSWorker } from "../core/worker";
+import { defaultSetting, ScriptSettings } from "../scripts";
+import { createSearchResultElement } from "../core/worker/utils";
 
 /**
  * cx 任务学习
  */
 export async function study(setting: ScriptSettings["cx"]["video"]) {
-    logger("info", "cx 学习任务开始");
-    logger("error", "cx 正在开发中, 请耐心等待...");
+    logger("info", "开始");
+
+    for (const task of searchTask(setting)) {
+        await sleep(3000);
+        try {
+            await task();
+        } catch (e) {
+            // @ts-ignore
+            logger("error", e.message);
+        }
+    }
+
+    logger("info", "完成");
+
+    const { next } = domSearch({ next: ".next" }, top?.document);
+    next?.click();
+}
+
+/**
+ * 搜索任务点
+ */
+function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise<number>> {
+    return searchIFrame()
+        .map((frame) => () => {
+            const { media, ppt, chapterTest } = domSearch(
+                {
+                    media: "video,audio",
+                    chapterTest: ".TiMu",
+                    ppt: "#img.imglook",
+                },
+                frame.contentDocument || document
+            );
+
+            return media
+                ? mediaTask(setting, media as any)
+                : ppt
+                ? pptTask(frame)
+                : chapterTest
+                ? chapterTestTask(OCS.setting.cx.work, frame)
+                : undefined;
+        })
+        .filter((t) => t !== undefined) as any;
+}
+
+/**
+ *  递归寻找 iframe
+ */
+function searchIFrame() {
+    let list = Array.from(document.querySelectorAll("iframe"));
+    let result: HTMLIFrameElement[] = [];
+    while (list.length) {
+        const frame = list.shift();
+
+        try {
+            if (frame && frame?.contentWindow?.document) {
+                result.push(frame);
+                let frames = frame?.contentWindow?.document.querySelectorAll("iframe");
+                list = list.concat(Array.from(frames || []));
+            }
+        } catch (e) {
+            // @ts-ignore
+            console.log(e.message);
+            console.log({ frame });
+        }
+    }
+    return result;
+}
+
+/**
+ * 播放视频和音频
+ */
+function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement) {
+    logger("info", "开始自动播放");
+
+    const { playbackRate = 1, mute = true } = setting;
+    return new Promise<void>((resolve) => {
+        if (media) {
+            media.muted = mute;
+            media.play();
+            media.playbackRate = playbackRate;
+            media.addEventListener(
+                "pause",
+                debounce(function () {
+                    if (!media.ended) {
+                        media.play();
+                    }
+                }, 1000)
+            );
+            media.addEventListener("ended", () => resolve());
+        }
+    });
+}
+
+/**
+ * 阅读 ppt
+ */
+async function pptTask(frame?: HTMLIFrameElement) {
+    logger("info", "开始翻页PPT");
+
+    // @ts-ignore
+    let finishJob = frame?.contentWindow?.finishJob;
+    if (finishJob) finishJob();
+    await sleep(3000);
+}
+
+/**
+ * 章节测验
+ */
+async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTMLIFrameElement) {
+    logger("info", "开始自动答题");
+
+    const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
+
+    if (OCS.setting.cx.video.upload === "close") {
+        logger("warn", "章节测试已经关闭");
+        return;
+    }
+
+    // @ts-ignore
+
+    if (!frame.contentWindow) {
+        logger("warn", "元素不可访问");
+        return;
+    }
+
+    const { window } = frame.contentWindow;
+
+    const { TiMu } = domSearchAll({ TiMu: ".TiMu" }, window.document);
+    const { search } = domSearch({ search: "#search-results" }, top?.document);
+    if (search) search.innerHTML = "";
+
+    /** 新建答题器 */
+    const worker = new OCSWorker({
+        root: TiMu,
+        elements: {
+            title: ".Zy_TItle .clearfix",
+            options: ".Zy_ulTop li",
+        },
+        /** 默认搜题方法构造器 */
+        answerer: (elements, type) => {
+            const title = StringUtils.nowrap(elements.title[0].innerText)
+                .replace(/【.*?题】/, "")
+                .trim();
+            if (title) {
+                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, encodeURIComponent(title));
+            } else {
+                throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
+            }
+        },
+        work: {
+            /** 自定义处理器 */
+            handler(type, answer, option) {
+                if (type === "judgement" || type === "single" || type === "multiple") {
+                    if (!option.querySelector("input")?.checked) {
+                        option.querySelector("a")?.click();
+                    }
+                } else if (type === "completion" && answer.trim()) {
+                    const text = option.querySelector("textarea");
+                    const textareaFrame = option.querySelector("iframe");
+                    if (text) {
+                        text.value = answer;
+                    }
+                    if (textareaFrame?.contentDocument) {
+                        textareaFrame.contentDocument.body.innerHTML = answer;
+                    }
+                }
+            },
+        },
+        onResult: (res) => {
+            if (res.ctx) {
+                const result = createSearchResultElement(res);
+                if (search && result) {
+                    search.appendChild(result);
+                }
+            }
+
+            logger("info", "题目完成结果 : ", res);
+        },
+
+        /** 其余配置 */
+        period: (period || 3) * 1000,
+        timeout: (timeout || 30) * 1000,
+        retry,
+        stopWhenError,
+    });
+
+    const results = await worker.doWork();
+
+    logger("info", "做题完毕", results);
+
+    // 处理提交
+    await worker.uploadHandler({
+        uploadRate: OCS.setting.cx.video.upload,
+        results,
+        async callback(finishedRate, uploadable) {
+            logger("info", "完成率 : ", finishedRate, " , ", uploadable ? "5秒后将自动提交" : " 5秒后将自动保存");
+
+            await sleep(5000);
+
+            if (uploadable) {
+                // @ts-ignore 提交
+                window.btnBlueSubmit();
+
+                await sleep(3000);
+                /** 确定按钮 */
+                // @ts-ignore 确定
+                window.submitCheckTimes();
+            } else {
+                // @ts-ignore 禁止弹窗
+                window.alert = () => {};
+                // @ts-ignore 暂时保存
+                window.noSubmit();
+            }
+        },
+    });
 }
