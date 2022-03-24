@@ -86,7 +86,7 @@ var resource = (url) => fetch(url).then((res) => res.text());
 // @grant        unsafeWindow
 // @grant        GM_addElement
 // @grant        GM_getResourceText
-// @noframes
+// @run-at       document-start
 // ==/UserScript==
 
 /* eslint no-undef: 0 */
