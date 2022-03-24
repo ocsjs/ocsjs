@@ -14,7 +14,7 @@
 
 > `缺点`：不方便，每次都需要重新输入代码
 
-1.在指定的 [网课学习页面](#网课学习页面)，打开 `开发者工具`，方法如下。
+1.在任意的 [`网课平台`](#网课平台) 页面，打开 `开发者工具`，方法如下。
 
 | 谷歌 chrome | 火狐 Firefox | 微软 Edge  |
 | :---------: | :----------: | :--------: |
@@ -27,38 +27,23 @@
 5.按下回车运行
 
 ```js
-if (window.$) {
-    loadOCS(window.$);
-} else {
-    const script = document.createElement("script");
-    script.src = "https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js";
-    document.body.append(script);
-    const interval = setInterval(() => {
-        if (window.$) {
-            loadOCS(window.$);
-            clearInterval(interval);
-        }
-    }, 5000);
-}
-
+var resource = (url) => fetch(url).then((res) => res.text());
 // 载入 OCS 并运行
-function loadOCS($) {
-    $("<link>")
-        .attr({
-            rel: "stylesheet",
-            type: "text/css",
-            href: "https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css",
-        })
-        .appendTo("head");
-    $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
-        OCS.start({
-            // 支持拖动
-            draggable: true,
-            // 加载默认脚本列表，默认 OCS.definedScripts
-            // scripts: OCS.definedScripts
-        });
+(async () => {
+    const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css");
+    const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js");
+
+    const script = document.createElement("script");
+    script.innerText = ocsjs;
+    document.body.appendChild(script);
+    OCS.start({
+        style,
+        // 支持拖动
+        draggable: true,
+        // 加载默认脚本列表，默认 OCS.definedScripts
+        scripts: OCS.definedScripts,
     });
-}
+})();
 ```
 
 ## 油猴运行
@@ -77,7 +62,7 @@ function loadOCS($) {
 
 5.按下 `ctrl + s` 保存代码
 
-6.打开指定的 [网课学习页面](#网课学习页面) 即可自动运行
+6.打开任意的 [`网课平台`](#网课平台) 即可自动运行
 
 ```js
 // ==UserScript==
@@ -101,7 +86,8 @@ function loadOCS($) {
 (function () {
     "use strict";
 
-    window.OCS = OCS;
+    /** 将OCS对象加入到全局属性 */
+    unsafeWindow.OCS = OCS;
 
     // 加载 bootstrap icons 图标样式
     GM_addElement("link", {
@@ -115,7 +101,7 @@ function loadOCS($) {
         // 支持拖动
         draggable: true,
         // 加载默认脚本列表，默认 OCS.definedScripts
-        // scripts: OCS.definedScripts
+        scripts: OCS.definedScripts,
     });
 })();
 ```
@@ -203,11 +189,21 @@ npm run dist
 npm run gulp
 ```
 
-# 网课学习页面
+### 本地调试
 
--   `超星/尔雅/学习通` : `**chaoxing.com/mycourse/studentstudy/**`
--   `智慧树/知道` : `**zhihuishu.com/videoStudy.html#/studyVideo/**`
+在本地浏览器安装油猴，并且 `@require ` 引用本地打包好的文件，即可本地调试。
 
-大部分学习页面类似下图
+[油猴 API](https://www.tampermonkey.net/documentation.php)
 
-![study-page](img/README/study-page.png)
+```js
+// @require      file://E:\xxx\xxx\ocs\dist\js\index.js
+// @resource     OCS_STYLE file://E:\xxx\xxx\ocs\dist\style\common.css
+```
+
+# 网课平台
+
+目前支持的网课平台 :
+
+-   `超星` (别名: 尔雅/泛雅/学习通)
+
+-   `智慧树` (别名: 知道)
