@@ -105,43 +105,25 @@ process.on("message", async (message) => {
  * @param {import("playwright").Page} page
  */
 async function executeScript(page) {
-    await page.waitForFunction(() => window.document.readyState === "complete");
+    await page.waitForFunction(() => window.document.readyState === "interactive");
     await page.evaluate(() => {
-        console.log("execute script");
-        // @ts-ignore
-        const $ = window.$;
-        if ($) {
-            loadOCS($);
-        } else {
-            const script = document.createElement("script");
-            script.src = "https://cdn.jsdelivr.net/npm/jquery/dist/jquery.min.js";
-            document.body.append(script);
-            const interval = setInterval(() => {
-                if ($) {
-                    loadOCS($);
-                    clearInterval(interval);
-                }
-            }, 5000);
-        }
-
+        var resource = (url) => fetch(url).then((res) => res.text());
         // 载入 OCS 并运行
-        function loadOCS($) {
-            $("<link>")
-                .attr({
-                    rel: "stylesheet",
-                    type: "text/css",
-                    href: "https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css",
-                })
-                .appendTo("head");
-            $.getScript("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js", function () {
-                // @ts-ignore
-                OCS.start({
-                    // 支持拖动
-                    draggable: true,
-                    // 加载默认脚本列表，默认 OCS.definedScripts
-                    // scripts: OCS.definedScripts
-                });
+        (async () => {
+            const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css");
+            const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js");
+
+            const script = document.createElement("script");
+            script.innerText = ocsjs;
+            document.body.appendChild(script);
+            //@ts-ignore
+            OCS.start({
+                style,
+                // 支持拖动
+                draggable: true,
+                //  @ts-ignore 加载默认脚本列表，默认 OCS.definedScripts
+                scripts: OCS.definedScripts,
             });
-        }
+        })();
     });
 }

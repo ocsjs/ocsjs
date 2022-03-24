@@ -20,12 +20,17 @@ export async function study(setting: ScriptSettings["cx"]["video"]) {
             // @ts-ignore
             logger("error", e.message);
         }
+        await sleep(3000);
     }
 
     logger("info", "完成");
 
     const { next } = domSearch({ next: ".next" }, top?.document);
-    next?.click();
+    if (next && next.style.display === "block") {
+        next.click();
+    } else {
+        alert("OCS助手： 全部任务点已完成！");
+    }
 }
 
 /**
@@ -147,19 +152,44 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         elements: {
             title: ".Zy_TItle .clearfix",
             options: ".Zy_ulTop li",
+            type: 'input[id^="answertype"]',
         },
         /** 默认搜题方法构造器 */
         answerer: (elements, type) => {
             const title = StringUtils.nowrap(elements.title[0].innerText)
-                .replace(/【.*?题】/, "")
+                .replace(/(\d+)?【.*?题】/, "")
+                .replace(/（\d+.0分）/, "")
                 .trim();
             if (title) {
-                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, encodeURIComponent(title));
+                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, title);
             } else {
                 throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
             }
         },
         work: {
+            /**
+             * cx 题目类型 ：
+             * 0 单选题
+             * 1 多选题
+             * 2 简答题
+             * 3 判断题
+             * 4 填空题
+             */
+            type({ elements }) {
+                const typeInput = elements.type[0] as HTMLInputElement;
+                const type = parseInt(typeInput.value);
+                return type === 0
+                    ? "single"
+                    : type === 1
+                    ? "multiple"
+                    : type === 2
+                    ? "completion"
+                    : type === 3
+                    ? "judgement"
+                    : type === 4
+                    ? "completion"
+                    : undefined;
+            },
             /** 自定义处理器 */
             handler(type, answer, option) {
                 if (type === "judgement" || type === "single" || type === "multiple") {

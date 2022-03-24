@@ -34,7 +34,7 @@ export async function workOrExam(
                 .replace(/\d+\. \(.*?(题|分)\)/, "")
                 .trim();
             if (title) {
-                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, encodeURIComponent(title));
+                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, title);
             } else {
                 throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
             }

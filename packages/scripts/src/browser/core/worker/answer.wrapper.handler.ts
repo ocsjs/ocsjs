@@ -5,8 +5,13 @@ import { getItem } from "../store";
 export interface SearchResult {
     url: string;
     name: string;
+    /** 主页 */
     homepage?: string;
+    /** 题目答案 */
     answers: Answer[];
+    /** 请求响应内容 */
+    response: any;
+    data: any;
 }
 
 /** 题目答案 */
@@ -96,6 +101,9 @@ export async function defaultAnswerWrapperHandler(
 
     for (const wrapper of answererWrappers) {
         let answers: Answer[] = [];
+        let response: Response | undefined = undefined;
+        let responseData = "";
+
         const data = Object.create({});
         wrapper.data = wrapper.data || {};
         /** 构造一个请求数据 */
@@ -108,35 +116,34 @@ export async function defaultAnswerWrapperHandler(
         let url = resolvePlaceHolder(wrapper.url);
 
         /** 请求 */
-        let res: Response;
+
         if (wrapper.method === "post") {
-            res = await fetch(url, { method: wrapper.method, body: JSON.stringify(data) });
+            response = await fetch(url, { method: wrapper.method, body: JSON.stringify(data) });
         } else {
             const params = new URLSearchParams();
             Reflect.ownKeys(data).forEach((key) => params.set(key.toString(), data[key.toString()]));
-            res = await fetch(url + "?" + params.toString(), { method: wrapper.method });
+            response = await fetch(url + "?" + params.toString(), { method: wrapper.method });
         }
         /** 从 handler 获取搜索到的题目和回答 */
 
         if (wrapper.handler) {
-            let arg = "";
             if (wrapper.contentType === "json") {
-                arg = await res.json();
+                responseData = await response.json();
             } else {
-                arg = await res.text();
+                responseData = await response.text();
             }
 
-            const info = Function(wrapper.handler)()(arg);
-            /** 如果返回一个二维数组 */
-            if (info.every((item: any) => Array.isArray(item))) {
-                answers = answers.concat(
-                    info.map((item: any) => ({
-                        question: item[0],
-                        answer: item[1],
-                    }))
-                );
-            } else {
-                if (info) {
+            const info = Function(wrapper.handler)()(responseData);
+            if (info) {
+                /** 如果返回一个二维数组 */
+                if (info.every((item: any) => Array.isArray(item))) {
+                    answers = answers.concat(
+                        info.map((item: any) => ({
+                            question: item[0],
+                            answer: item[1],
+                        }))
+                    );
+                } else {
                     answers.push({
                         question: info[0],
                         answer: info[1],
@@ -150,6 +157,8 @@ export async function defaultAnswerWrapperHandler(
             name: wrapper.name,
             homepage: wrapper.homepage,
             answers,
+            response,
+            data: responseData,
         });
     }
 

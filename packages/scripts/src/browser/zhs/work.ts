@@ -25,11 +25,7 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
         },
         /** 默认搜题方法构造器 */
         answerer: (elements, type) =>
-            defaultAnswerWrapperHandler(
-                OCS.setting.answererWrappers,
-                type,
-                encodeURIComponent(elements.title[0].innerText)
-            ),
+            defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, elements.title[0].innerText),
         work: {
             /** 自定义处理器 */
             handler(type, answer, option) {
