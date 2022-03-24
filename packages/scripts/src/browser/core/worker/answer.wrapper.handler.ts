@@ -46,7 +46,7 @@ export interface AnswererWrapper {
      *
      * ```js
      * {
-     *      handler: `return (res)=> res.answer === '未搜到答案' ? [res.question, res.answer] : [res.question, undefined]`
+     *      handler: `return (res)=> res.code === 0 ? undefined : [res.question, undefined]`
      * }
      * ```
      *
@@ -112,9 +112,9 @@ export async function defaultAnswerWrapperHandler(
         if (wrapper.method === "post") {
             res = await fetch(url, { method: wrapper.method, body: JSON.stringify(data) });
         } else {
-            const params = new URLSearchParams(url);
+            const params = new URLSearchParams();
             Reflect.ownKeys(data).forEach((key) => params.set(key.toString(), data[key.toString()]));
-            res = await fetch(decodeURIComponent(params.toString()), { method: wrapper.method });
+            res = await fetch(url + "?" + params.toString(), { method: wrapper.method });
         }
         /** 从 handler 获取搜索到的题目和回答 */
 
