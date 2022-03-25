@@ -90,7 +90,9 @@ defaultAnswerWrapperHandler(
             contentType: "json",
             data: {
                 title: "${title}", // 1+2,2+3,
-                abc: "123", // 自定义参数
+                abc: "123", // 自定义参数,
+                platform: "${platform}" // 解析本地 localStorage.OCS 参数,
+                upload: "${setting.cx.work.upload}" // 解析本地 localStorage.OCS 参数
             },
             handler: `return (res)=> res.code === 0 ? undefined : [res.data.title, res.data.answers[0]]`  // 取第一个结果
         },
