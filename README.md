@@ -78,48 +78,6 @@ var resource = (url) => fetch(url).then((res) => res.text());
 
 3.打开任意的 [`网课平台`](#网课平台) 即可自动运行
 
-```js
-// ==UserScript==
-// @name         OCS 网课助手
-// @namespace    https://enncy.cn
-// @version      3.0.0
-// @description  OCS 网课助手，支持各平台网课学习
-// @author       enncy
-// @match        *://*.chaoxing.com/*
-// @match        *://*.zhihuishu.com/*
-// @require      https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js
-// @resource     OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css
-// @grant        unsafeWindow
-// @grant        GM_getResourceText
-// @run-at       document-start
-// ==/UserScript==
-
-/* eslint no-undef: 0 */
-
-(function () {
-    "use strict";
-
-    /** 将OCS对象加入到全局属性 */
-    unsafeWindow.OCS = OCS;
-
-    // 加载 bootstrap icons 图标样式
-    const link = document.createElement("link");
-    link.href = "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css";
-    link.rel = "stylesheet";
-    link.type = "text/css";
-    document.head.appendChild(link);
-
-    OCS.start({
-        // 加载样式
-        style: GM_getResourceText("OCS_STYLE"),
-        // 支持拖动
-        draggable: true,
-        // 加载默认脚本列表，默认 OCS.definedScripts
-        scripts: OCS.definedScripts,
-    });
-})();
-```
-
 ## OCS 软件运行
 
 > `优点`：全自动运行(推荐)
