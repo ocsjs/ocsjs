@@ -161,7 +161,7 @@ export function defaultQuestionResolve<E>(
         /** 填空题处理器 */
         completion: function (results, options, handler) {
             for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
-                if (answers.length === options.length) {
+                if (answers.length !== 0 && answers.length === options.length) {
                     options.forEach((el, i) => {
                         handler("completion", answers[i], el, ctx);
                     });

@@ -3,6 +3,7 @@ import interact from "interactjs";
 import { findBestMatch, Rating } from "string-similarity";
 import { RawElements, SearchedElements } from "./worker/interface";
 import { h } from "vue";
+import { logger } from "../../logger";
 
 export async function sleep(period: number): Promise<void> {
     return new Promise((resolve) => {
@@ -155,6 +156,7 @@ export function domSearchAll<E extends RawElements>(
  *
  */
 export function answerSimilar(answers: string[], options: string[]): Rating[] {
+    logger("debug", "结果匹配", { answers, options });
     return options.map((option) => findBestMatch(option, answers).bestMatch);
 }
 

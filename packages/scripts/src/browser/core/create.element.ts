@@ -83,7 +83,13 @@ export function createSettingPanel(...settingItems: (SettingSelect | SettingInpu
                                         : type === "number"
                                         ? input.valueAsNumber
                                         : type === "object"
-                                        ? JSON.parse(input.value)
+                                        ? input.value
+                                            ? JSON.parse(input.value)
+                                            : {}
+                                        : type === "array"
+                                        ? input.value
+                                            ? JSON.parse(input.value)
+                                            : []
                                         : parseFloat(input.value) || input.value;
                                 res.push([key.toString(), value]);
                                 setItem(key.toString(), value);
@@ -175,7 +181,8 @@ export interface SettingInput extends SettingItem {
         | "week"
 
         /** 自定义类型 */
-        | "object";
+        | "object"
+        | "array";
 }
 
 /**
@@ -318,7 +325,7 @@ export function createWorkerSetting(
         {
             label: "题库配置",
             ref: "setting.answererWrappers",
-            type: "object",
+            type: "array",
             icons: [
                 {
                     type: "bi bi-question-circle",

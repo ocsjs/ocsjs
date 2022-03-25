@@ -158,7 +158,8 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         root: TiMu,
         elements: {
             title: ".Zy_TItle .clearfix",
-            options: ".Zy_ulTop li",
+            /** 兼容各种选项 */
+            options: "ul li",
             type: 'input[id^="answertype"]',
         },
         /** 默认搜题方法构造器 */
