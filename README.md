@@ -25,9 +25,9 @@
 
 1.在任意的 [`网课平台`](#网课平台) 页面，打开 `开发者工具`，方法如下。
 
-| 谷歌 chrome | 火狐 Firefox | 微软 Edge  |
-| :---------: | :----------: | :--------: |
-|    `F12`    |    `F12`     | `Ctrl`+`i` |
+| 谷歌 chrome | 火狐 Firefox |      微软 Edge       |
+| :---------: | :----------: | :------------------: |
+|    `F12`    |    `F12`     | `Ctrl`+ `Shift` +`i` |
 
 2.点击`开发者工具`上方的：`Console` 或者 `控制台`
 
@@ -61,7 +61,11 @@ var resource = (url) => fetch(url).then((res) => res.text());
 
 > `缺点`：需要安装油猴拓展
 
-1.安装油猴浏览器拓展 https://www.tampermonkey.net/
+1.安装油猴浏览器拓展
+
+-   `官网` https://www.tampermonkey.net/
+-   `谷歌网上商店` [https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+-   `Edge外接程序` [https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)
 
 2.打开右上角油猴浏览器拓展
 

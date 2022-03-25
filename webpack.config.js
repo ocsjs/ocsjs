@@ -1,4 +1,11 @@
 const path = require("path");
+const { BannerPlugin } = require("webpack");
+const { name, license, author, version, homepage } = require("./package.json");
+const TerserPlugin = require("terser-webpack-plugin");
+
+const banner = `${name} ${version} (${homepage})
+Copyright © ${author}
+Licensed under ${license}`;
 
 /**
  * @type {import("webpack").Configuration[]}
@@ -12,6 +19,14 @@ module.exports = [
             path: path.resolve(__dirname, "dist/js"),
             library: "OCS",
         },
+        optimization: {
+            minimizer: [
+                new TerserPlugin({
+                    extractComments: false,
+                }),
+            ],
+        },
+        plugins: [new BannerPlugin({ banner })],
     },
     {
         mode: "production",
@@ -23,6 +38,12 @@ module.exports = [
         },
         optimization: {
             minimize: false,
+            minimizer: [
+                new TerserPlugin({
+                    extractComments: false,
+                }),
+            ],
         },
+        plugins: [new BannerPlugin({ banner })],
     },
 ];

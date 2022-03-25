@@ -1,6 +1,6 @@
 {
     "name": "ocsjs",
-    "version": "3.1.5",
+    "version": "3.1.6",
     "description": "ocs - online course script 在线网络课程辅助工具",
     "main": "./dist/index.js",
     "types": "./packages/scripts/lib/src/index.d.ts",
@@ -10,7 +10,10 @@
     ],
     "scripts": {
         "webpack": "webpack --config webpack.config.js",
-        "gulp": "gulp  --allowEmpty"
+        "gulp": "gulp  --allowEmpty",
+        "pub:patch": "pnpm gulp && npm version patch && npm publish",
+        "pub:minor": "pnpm gulp && npm version minor && npm publish",
+        "pub:major": "pnpm gulp && npm version major && npm publish"
     },
     "dependencies": {
         "@playwright/test": "^1.18.1",
@@ -26,6 +29,7 @@
     },
     "devDependencies": {
         "@types/node": "^17.0.16",
+        "css-loader": "^6.7.1",
         "cz-conventional-changelog": "^3.3.0",
         "del": "^6.0.0",
         "electron": "^17.0.0",
@@ -36,6 +40,8 @@
         "markdown-it": "12.3.2",
         "nanoid": "3.1.31",
         "node-forge": "1.0.0",
+        "style-loader": "^3.3.1",
+        "terser-webpack-plugin": "^5.3.1",
         "webpack": "^5.69.0",
         "webpack-cli": "^4.9.2"
     },
