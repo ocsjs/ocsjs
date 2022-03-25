@@ -38,6 +38,7 @@ export interface AnswererWrapper {
     name: string;
     /** 题库网址 */
     homepage?: string;
+    /** 传递的参数, get 请求将会添加到 url 后面， post 请求会生成请求体 */
     data?: Record<string, string>;
     method: "post" | "get";
     /** 定义 handler 中的参数类型 */
