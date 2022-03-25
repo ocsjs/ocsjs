@@ -16,7 +16,7 @@ export function createCXStudySettingPanel(): DefineComponent {
             ref: "setting.cx.video.playbackRate",
             type: "number",
             attrs: {
-                title: "高倍速可能导致封号或者频繁验证码，请谨慎设置。",
+                title: "高倍速可能导致封号或者频繁验证码\n超星后台可以看到学习时长\n请谨慎设置。",
                 value: settings.playbackRate.toString(),
                 min: "1",
                 max: "16",

@@ -48,6 +48,9 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise
                 frame.contentDocument || document
             );
 
+            // @ts-ignore
+            // console.log("data", { frame }, unsafeWindow.attachments[0]);
+
             return media
                 ? mediaTask(setting, media as any)
                 : ppt

@@ -21,7 +21,7 @@
 
 > `优点`：简单
 
-> `缺点`：不方便，每次都需要重新输入代码
+> `缺点`：不方便，每次都需要重新输入代码，有些功能不能使用，例如倍速破解。
 
 1.在任意的 [`网课平台`](#网课平台) 页面，打开 `开发者工具`，方法如下。
 
@@ -84,8 +84,8 @@ var resource = (url) => fetch(url).then((res) => res.text());
 // @match        *://*.zhihuishu.com/*
 // @require      https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js
 // @resource     OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css
+// @resource     BootstrapIcons https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css
 // @grant        unsafeWindow
-// @grant        GM_addElement
 // @grant        GM_getResourceText
 // @run-at       document-start
 // ==/UserScript==
@@ -99,10 +99,9 @@ var resource = (url) => fetch(url).then((res) => res.text());
     unsafeWindow.OCS = OCS;
 
     // 加载 bootstrap icons 图标样式
-    GM_addElement("link", {
-        rel: "stylesheet",
-        href: "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css",
-    });
+    const style = document.createElement("style");
+    style.innerText = GM_getResourceText("BootstrapIcons");
+    document.head.appendChild(style);
 
     OCS.start({
         // 加载样式
