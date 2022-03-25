@@ -82,6 +82,8 @@ var resource = (url) => fetch(url).then((res) => res.text());
 
 > `优点`：全自动运行(推荐)
 
+开发中。。。
+
 下载地址: https://github.com/enncy/online-course-script/releases
 
 ## 项目开发文档
