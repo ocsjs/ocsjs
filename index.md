@@ -25,9 +25,9 @@
 
 1.在任意的 [`网课平台`](#网课平台) 页面，打开 `开发者工具`，方法如下。
 
-| 谷歌 chrome | 火狐 Firefox | 微软 Edge  |
-| :---------: | :----------: | :--------: |
-|    `F12`    |    `F12`     | `Ctrl`+`i` |
+| 谷歌 chrome | 火狐 Firefox |      微软 Edge       |
+| :---------: | :----------: | :------------------: |
+|    `F12`    |    `F12`     | `Ctrl`+ `Shift` +`i` |
 
 2.点击`开发者工具`上方的：`Console` 或者 `控制台`
 
@@ -41,6 +41,13 @@ var resource = (url) => fetch(url).then((res) => res.text());
 (async () => {
     const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css");
     const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js");
+
+    // 加载 bootstrap icons 图标样式
+    const link = document.createElement("link");
+    link.href = "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css";
+    link.rel = "stylesheet";
+    link.type = "text/css";
+    document.head.appendChild(link);
 
     const script = document.createElement("script");
     script.innerText = ocsjs;
@@ -61,58 +68,15 @@ var resource = (url) => fetch(url).then((res) => res.text());
 
 > `缺点`：需要安装油猴拓展
 
-1.安装油猴浏览器拓展 https://www.tampermonkey.net/
+1.安装油猴浏览器拓展
 
-2.打开右上角油猴浏览器拓展
+-   `官网` https://www.tampermonkey.net/
+-   `谷歌网上商店` [https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+-   `Edge外接程序` [https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)
 
-3.点击添加新脚本
+2.安装 OCS 油猴脚本 [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
-4.删除原有所有代码，输入以下的代码
-
-5.按下 `ctrl + s` 保存代码
-
-6.打开任意的 [`网课平台`](#网课平台) 即可自动运行
-
-```js
-// ==UserScript==
-// @name         OCS 网课助手
-// @namespace    https://enncy.cn
-// @version      3.0.0
-// @description  OCS 网课助手，支持各平台网课学习
-// @author       enncy
-// @match        *://*.chaoxing.com/*
-// @match        *://*.zhihuishu.com/*
-// @require      https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js
-// @resource     OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css
-// @resource     BootstrapIcons https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css
-// @grant        unsafeWindow
-// @grant        GM_getResourceText
-// @run-at       document-start
-// ==/UserScript==
-
-/* eslint no-undef: 0 */
-
-(function () {
-    "use strict";
-
-    /** 将OCS对象加入到全局属性 */
-    unsafeWindow.OCS = OCS;
-
-    // 加载 bootstrap icons 图标样式
-    const style = document.createElement("style");
-    style.innerText = GM_getResourceText("BootstrapIcons");
-    document.head.appendChild(style);
-
-    OCS.start({
-        // 加载样式
-        style: GM_getResourceText("OCS_STYLE"),
-        // 支持拖动
-        draggable: true,
-        // 加载默认脚本列表，默认 OCS.definedScripts
-        scripts: OCS.definedScripts,
-    });
-})();
-```
+3.打开任意的 [`网课平台`](#网课平台) 即可自动运行
 
 ## OCS 软件运行
 
