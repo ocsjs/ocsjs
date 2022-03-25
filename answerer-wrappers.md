@@ -7,15 +7,20 @@
 - 自动搜题
 
 ## 推荐的配置列表
-
  
-
 - [enncy 题库](https://tk.enncy.cn/) （OCS作者提供）
+- 更多题库配置请等待更新...
 
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
 
-
-
-##  手动配置 
+##  API 
 
 > 不会配置的请联系题库作者(提供题库的人)
 
@@ -71,7 +76,7 @@ export interface AnswererWrapper {
 
 ```
 
-例子: 
+## 简单例子 
 ```ts
 // 假设有一个接口 : https://example.com/search?title=1+2,2+3
 // 此接口返回 {code: 1, data: { answers: [3 , 5] , title:'1+2' }, msg:'成功'}
