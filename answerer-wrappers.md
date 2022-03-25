@@ -51,7 +51,7 @@ export interface AnswererWrapper {
      *
      * 并且返回一个数组 : `[题目, 答案]`
      *
-     * 或者二维数据 : `[[题目1, 答案1],[题目2, 答案2, ...]`
+     * 或者二维数据 : `[[题目1, 答案1],[题目2, 答案2], ...`
      *
      * 如果搜不到则返回 undefined
      *
@@ -85,11 +85,12 @@ defaultAnswerWrapperHandler(
     [
         // 可以有多个构造器，最终通过 answerPath 一起合并到一个列表并返回
         {
-            url: "https://example.com/search/"// url 也可以进行解析 ${title} ,
+            url: "https://example.com/search/"// url 也可以进行解析 ${title} , 例如 https://example.com/search/${title}/,
             method: "get",
             contentType: "json",
             data: {
-                title: "${title}", // 1+2,2+3
+                title: "${title}", // 1+2,2+3,
+                abc: "123", // 自定义参数
             },
             handler: `return (res)=> res.code === 0 ? undefined : [res.data.title, res.data.answers[0]]`  // 取第一个结果
         },
@@ -100,12 +101,11 @@ defaultAnswerWrapperHandler(
 注意：
 - 文本为 json 数组， 数组意味着你可以配置多个题库
 - `${xxx}` 是变量占位符 
-- xxx 为对象属性路径 , 详情看 [lodash.get](https://www.lodashjs.com/docs/lodash.get)
-- 可以使用在 `data` 和 `url` 字段中
-- 可以解析 
-   - $title: 题目标题
-   - $tyle: 题目类型
-- 可以解析 [`localStorage.OCS`](https://enncy.github.io/online-course-script/api/#localStorage.OCS) 的任意属性
+    - 可以使用在 `data` 和 `url` 字段中
+    - 可以解析 
+        - $title: 题目标题
+        - $type: 题目类型
+    - 可以解析 [`localStorage.OCS`](https://enncy.github.io/online-course-script/api/#localStorage.OCS) 的任意属性
 
 所以最终填写的 `题库配置` 为： 
 ```json
