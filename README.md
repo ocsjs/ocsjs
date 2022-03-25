@@ -74,15 +74,9 @@ var resource = (url) => fetch(url).then((res) => res.text());
 -   `谷歌网上商店` [https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 -   `Edge外接程序` [https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)
 
-2.打开右上角油猴浏览器拓展
+2.安装 OCS 油猴脚本 [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
-3.点击添加新脚本
-
-4.删除原有所有代码，输入以下的代码
-
-5.按下 `ctrl + s` 保存代码
-
-6.打开任意的 [`网课平台`](#网课平台) 即可自动运行
+3.打开任意的 [`网课平台`](#网课平台) 即可自动运行
 
 ```js
 // ==UserScript==
