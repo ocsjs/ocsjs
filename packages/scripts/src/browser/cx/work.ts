@@ -17,6 +17,11 @@ export async function workOrExam(
         return;
     }
 
+    if (OCS.setting.answererWrappers.length === 0) {
+        logger("warn", "题库配置为空，请设置。");
+        return;
+    }
+
     const { search } = domSearch({ search: "#search-results" });
     if (search) search.innerHTML = "";
 

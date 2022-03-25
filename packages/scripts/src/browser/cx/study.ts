@@ -136,8 +136,12 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         return;
     }
 
-    // @ts-ignore
+    if (OCS.setting.answererWrappers.length === 0) {
+        logger("warn", "题库配置为空，请设置。");
+        return;
+    }
 
+    // @ts-ignore
     if (!frame.contentWindow) {
         logger("warn", "元素不可访问");
         return;

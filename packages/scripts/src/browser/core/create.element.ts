@@ -333,7 +333,6 @@ export function createWorkerSetting(
             attrs: {
                 title: "输入题库配置, 点击右侧查看教程 ",
                 value: OCS.setting.answererWrappers.length === 0 ? "" : JSON.stringify(OCS.setting.answererWrappers),
-                required: true,
                 placeholder: "点击右侧查看教程 ",
             },
         },

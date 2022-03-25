@@ -13,6 +13,12 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
         logger("warn", "章节测试功能已经关闭");
         return;
     }
+
+    if (OCS.setting.answererWrappers.length === 0) {
+        logger("warn", "题库配置为空，请设置。");
+        return;
+    }
+
     const { search } = domSearch({ search: "#search-results" });
     if (search) search.innerHTML = "";
 
