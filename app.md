@@ -36,7 +36,7 @@ OCS 软件定义了以 .ocs 为后缀的文件， 里面是可供OCS软件解析
 
 `问` : 如何使用自动答题
 
-`答` : 自动答题需要你进入学习，作业，考试页面后，根据弹出来的弹窗，进行题库配置。 关于题库配置，请看： [https://enncy.github.io/online-course-script/](https://enncy.github.io/online-course-script/)
+`答` : 自动答题需要你进入学习，作业，考试页面后，根据弹出来的弹窗，进行题库配置。 关于题库配置，请看： [https://enncy.github.io/online-course-script/](https://enncy.github.io/online-course-script/answerer-wrappers)
 
 ****
 
