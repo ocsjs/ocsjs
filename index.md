@@ -4,6 +4,9 @@
 
 # 使用方法
 
+你如果自己一个人刷，你就看`油猴运行`就行了 ， 你如果想要管理多个网课，你就看 `OSC软件运行`。 都是大学生了，自己琢磨一下，别老问 🤣
+
+
 -   [油猴运行](#油猴运行)
 -   [OCS软件运行](#OCS软件运行)
 -   [自动答题功能](https://enncy.github.io/online-course-script/answerer-wrappers)
