@@ -33,7 +33,7 @@ OCS 软件定义了以 .ocs 为后缀的文件， 里面是可供OCS软件解析
 
 ## 主教程
 
-https://github.com/enncy/online-course-script/
+[https://github.com/enncy/online-course-script/](https://github.com/enncy/online-course-script/)
   
 ## 疑问解答
 
