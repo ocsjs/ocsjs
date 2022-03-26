@@ -9,12 +9,13 @@ exports.fetchScriptFile = function () {
 
     fetch("https://cdn.jsdelivr.net/npm/ocsjs@latest/public/index.js")
         .then((result) => {
+            console.log(result.status);
             if (result.status === 200 || result.status === 304) {
                 result
                     .text()
                     .then((result) => {
                         const store = new Store();
-                        store.set("script", result);
+                        store.set("scriptFile", result);
                     })
                     .catch((err) => {
                         logger.error("脚本获取失败", err);

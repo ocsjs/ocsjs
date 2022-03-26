@@ -28,13 +28,20 @@ export interface StartOptions {
  */
 export function start(options?: StartOptions) {
     if (top === window) {
-        document.addEventListener("readystatechange", () => {
-            if (document.readyState === "interactive") {
-                showPanels(options);
-                logger("info", "OCS 加载成功");
-            }
-        });
+        if (window.document.readyState === "complete") {
+            showPanels(options);
+            logger("info", "OCS 加载成功");
+        } else {
+            /** 加载后执行 */
+            document.addEventListener("readystatechange", () => {
+                if (document.readyState === "interactive") {
+                    showPanels(options);
+                    logger("info", "OCS 加载成功");
+                }
+            });
+        }
     }
+
     executeScripts(options?.scripts);
 }
 
@@ -184,12 +191,19 @@ export function showPanels(options?: StartOptions) {
  */
 export function executeScripts(scripts: DefineScript[] = definedScripts) {
     const routes = getCurrentRoutes(scripts);
-    /** 加载后执行 */
-    window.addEventListener("load", () => {
+    if (window.document.readyState === "complete") {
+        load();
+    } else {
+        /** 加载后执行 */
+        window.addEventListener("load", load);
+    }
+
+    function load() {
         for (const route of routes.filter((route) => route.onload)) {
             route.onload?.();
         }
-    });
+    }
+
     /** 立即执行 */
     for (const route of routes.filter((route) => route.start)) {
         route.start?.();

@@ -2,11 +2,11 @@
 
 const { Logger } = require("./logger");
 
-const logger = Logger("main");
+const logger = Logger("task");
 
 exports.task = async function task(name, func) {
     const time = Date.now();
     const res = await func();
-    logger.debug(name, " 耗时:", Date.now() - time);
+    logger.info(name, " 耗时:", Date.now() - time);
     return res;
 };

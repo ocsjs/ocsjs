@@ -118,8 +118,6 @@ export async function workOrExam(
                 logger("info", "为了安全考虑，请自行检查后自行点击提交！");
             } else {
                 logger("info", "完成率 : ", finishedRate, " , ", uploadable ? "5秒后将自动提交" : "5秒后将自动保存");
-                // @ts-ignore
-                console.log("window", unsafeWindow);
 
                 await sleep(5000);
                 if (uploadable) {

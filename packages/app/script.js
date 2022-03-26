@@ -71,13 +71,13 @@ process.on("message", async (message) => {
                 // @ts-ignore
                 page = _page;
 
-                page.on("load", () => executeScript(page, store.script));
+                page.on("load", () => executeScript(page, store.scriptFile));
 
                 page.context().on("page", (_page) => {
                     if (_page.url() === "about:blank") {
                         setTimeout(() => _page.close(), 500);
                     } else {
-                        _page.on("load", () => executeScript(page, store.script));
+                        _page.on("load", () => executeScript(page, store.scriptFile));
                     }
                 });
             } else {
@@ -110,6 +110,7 @@ process.on("message", async (message) => {
  * @param {string} script
  */
 async function executeScript(page, script) {
-    await page.waitForFunction(() => window.document.readyState === "interactive", "", { timeout: 0 });
+    await page.waitForFunction(() => window.document.readyState === "complete", "", { timeout: 0 });
+    console.log(bgGray(loggerPrefix("debug")), "执行脚本");
     await page.evaluate(script);
 }

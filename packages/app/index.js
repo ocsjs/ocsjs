@@ -9,12 +9,8 @@ const { createWindow } = require("./src/main");
 const { globalListenerRegister } = require("./src/tasks/global.listener");
 const { task } = require("./src/utils");
 const { handleError } = require("./src/tasks/error.handler");
-const path = require("path");
-const { fetchScriptFile } = require("./src/tasks/fetch.script.file");
 
-app.setName("ocs");
-/** 修改成 ocs 文件夹，  而不是 @ocsjs/app */
-app.setPath("userData", path.resolve(path.join(app.getPath("userData"), "../../ocs")));
+const { fetchScriptFile } = require("./src/tasks/fetch.script.file");
 
 /** @type {BrowserWindow | undefined} */
 let window;

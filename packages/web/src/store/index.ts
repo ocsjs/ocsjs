@@ -43,6 +43,7 @@ export const store = reactive({
     },
     /** 列表展开的 key */
     expandedKeys: s.get("expandedKeys") || [],
+    scriptFile: s.get("scriptFile") || "",
 });
 
 window.addEventListener("load", () => {
