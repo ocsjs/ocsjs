@@ -6,6 +6,11 @@
 - 自动答题
 - 自动搜题
 
+## 使用
+
+1. 点击下面的配置列表， 进入查看每个配置列表的教程，根据相应的教程获取题库配置
+2. 获取到题库配置后， 打开你安装好OCS助手脚本的浏览器， 然后打开学习，作业，考试任意页面，即可看到设置面板，设置面板里面会有题库配置的设置，填写进去保存即可！！
+
 ## 推荐的配置列表
  
 - [enncy 题库](https://tk.enncy.cn/) （OCS作者提供）
@@ -16,11 +21,9 @@
 <br>
 <br>
 <br>
-<br>
-<br>
-<br>
+ 
 
-##  API 
+##  API （小白不要看下面的）
 
 > 不会配置的请联系题库作者(提供题库的人)
 
@@ -115,7 +118,7 @@ defaultAnswerWrapperHandler(
         - $type: 题目类型
     - 可以解析 [`localStorage.OCS`](https://enncy.github.io/online-course-script/api/#localStorage.OCS) 的任意属性
 
-所以最终填写的 `题库配置` 为： 
+所以最终填写的 `题库配置` 为：  （这个只是例子！！！！）
 ```json
 [{"url":"https://example.com/search/","method":"get","contentType":"json","data":{"title":"${title}"},"handler":"return (res)=> res.code === 0 ? undefined : [res.data.title, res.data.answers[0]]"}]
 ```
