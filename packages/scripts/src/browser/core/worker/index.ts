@@ -55,12 +55,16 @@ export class OCSWorker<E extends RawElements = RawElements> {
 
                 /** 查找题目 */
                 const searchResults = await this.doAnswer(elements, type);
+
                 if (!searchResults || searchResults.length === 0) {
-                    throw new Error(
-                        searchResults?.length === 0
-                            ? "答案获取为空, 请重试获取忽略此题"
-                            : "答案获取失败, 请重新运行, 或者忽略此题。"
-                    );
+                    if (!searchResults) {
+                        throw new Error("答案获取失败, 请重新运行, 或者忽略此题。");
+                    } else {
+                        const ansLength = searchResults.map((res) => res.answers.map((ans) => ans.answer)).flat();
+                        if (ansLength.length === 0) {
+                            throw new Error("搜索不到答案, 请重新运行, 或者忽略此题。");
+                        }
+                    }
                 }
 
                 /** 改变上下文 */
