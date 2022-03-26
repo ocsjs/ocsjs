@@ -3,6 +3,7 @@
 const ocs = require("@ocsjs/scripts");
 const { loggerPrefix } = require("@ocsjs/scripts");
 const { Instance: Chalk } = require("chalk");
+const { readFileSync } = require("fs");
 const { LoggerCore } = require("./src/logger.core");
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
@@ -16,7 +17,10 @@ let page;
 
 process.on("message", async (message) => {
     // @ts-ignore
-    const { action, data, uid, logsPath } = JSON.parse(message);
+    const { action, data, uid, logsPath, configPath } = JSON.parse(message);
+
+    const store = JSON.parse(readFileSync(configPath).toString());
+
     if (logger === undefined) {
         logger = new LoggerCore(logsPath, false, "script", uid);
         logger.info("日志 : " + logger.dest);
@@ -67,13 +71,13 @@ process.on("message", async (message) => {
                 // @ts-ignore
                 page = _page;
 
-                page.on("load", () => executeScript(page));
+                page.on("load", () => executeScript(page, store.script));
 
                 page.context().on("page", (_page) => {
                     if (_page.url() === "about:blank") {
                         setTimeout(() => _page.close(), 500);
                     } else {
-                        _page.on("load", () => executeScript(page));
+                        _page.on("load", () => executeScript(page, store.script));
                     }
                 });
             } else {
@@ -103,27 +107,9 @@ process.on("message", async (message) => {
 /**
  * 执行 ocs 脚本
  * @param {import("playwright").Page} page
+ * @param {string} script
  */
-async function executeScript(page) {
-    await page.waitForFunction(() => window.document.readyState === "interactive");
-    await page.evaluate(() => {
-        var resource = (url) => fetch(url).then((res) => res.text());
-        // 载入 OCS 并运行
-        (async () => {
-            const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css");
-            const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js");
-
-            const script = document.createElement("script");
-            script.innerText = ocsjs;
-            document.body.appendChild(script);
-            //@ts-ignore
-            OCS.start({
-                style,
-                // 支持拖动
-                draggable: true,
-                //  @ts-ignore 加载默认脚本列表，默认 OCS.definedScripts
-                scripts: OCS.definedScripts,
-            });
-        })();
-    });
+async function executeScript(page, script) {
+    await page.waitForFunction(() => window.document.readyState === "interactive", "", { timeout: 0 });
+    await page.evaluate(script);
 }

@@ -6,7 +6,8 @@
     "types": "./packages/scripts/lib/src/index.d.ts",
     "files": [
         "lib",
-        "dist"
+        "dist",
+        "public"
     ],
     "scripts": {
         "webpack": "webpack --config webpack.config.js",

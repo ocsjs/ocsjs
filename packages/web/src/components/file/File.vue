@@ -121,7 +121,31 @@
                         <a-input
                             v-model:value="data.options.launchOptions.executablePath"
                             placeholder="浏览器路径"
-                        />
+                        >
+                            <template #suffix>
+                                <a-popover>
+                                    <template #title>
+                                        <b>浏览器路径获取方式</b>
+                                    </template>
+                                    <template #content>
+                                        <div>
+                                            <b>谷歌浏览器</b> : 打开谷歌浏览器 <br />
+                                            访问
+                                            <b>chrome://version</b> 找到
+                                            <b>可执行文件路径</b> 复制粘贴即可
+                                        </div>
+                                        <div>
+                                            <b>Edge浏览器</b> : 打开Edge浏览器<br />
+                                            访问
+                                            <b>edge://version</b> 找到
+                                            <b>可执行文件路径</b> 复制粘贴即可
+                                        </div>
+                                    </template>
+
+                                    <Icon type="icon-question-circle" />
+                                </a-popover>
+                            </template>
+                        </a-input>
                     </div>
 
                     <div class="form">
@@ -227,7 +251,7 @@ const data = reactive<{
     openIncognito: false,
 
     /** 运行的子进程对象 */
-    process: new Process(file.value.uid, store["logs-path"]),
+    process: new Process(file.value.uid, store["logs-path"], store["config-path"]),
     /** 终端对象 */
     xterm: new ITerminal(file.value.uid),
 });
@@ -413,7 +437,8 @@ onUnmounted(() => {
     margin-bottom: 12px;
 
     .ant-input,
-    .ant-input-password {
+    .ant-input-password,
+    .ant-input-affix-wrapper {
         border: none;
         border-bottom: 1px solid #dadada;
     }

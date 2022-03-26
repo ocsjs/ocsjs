@@ -21,6 +21,7 @@
         "ffi-napi": "^4.0.3",
         "fs-extra": "^10.0.1",
         "get-port": "^5.1.1",
+        "node-fetch": "^2.6.7",
         "node-forge": "1.0.0",
         "pino": "^7.8.0",
         "trash": "7.2.0",
