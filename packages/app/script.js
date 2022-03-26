@@ -3,7 +3,8 @@
 const ocs = require("@ocsjs/scripts");
 const { loggerPrefix } = require("@ocsjs/scripts");
 const { Instance: Chalk } = require("chalk");
-const { readFileSync } = require("fs");
+const { default: fetch } = require("node-fetch");
+const path = require("path");
 const { LoggerCore } = require("./src/logger.core");
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
@@ -17,9 +18,7 @@ let page;
 
 process.on("message", async (message) => {
     // @ts-ignore
-    const { action, data, uid, logsPath, configPath } = JSON.parse(message);
-
-    const store = JSON.parse(readFileSync(configPath).toString());
+    const { action, data, uid, logsPath } = JSON.parse(message);
 
     if (logger === undefined) {
         logger = new LoggerCore(logsPath, false, "script", uid);
@@ -38,7 +37,7 @@ process.on("message", async (message) => {
 
                 /** @type {import("@ocsjs/scripts").LaunchScriptsOptions} */
                 const options = JSON.parse(data);
-                const { userDataDir, launchOptions, scripts } = options;
+                const { userDataDir, launchOptions, scripts, init } = options;
                 console.log("\n");
                 debug("任务启动", uid);
                 debug("隐身模式 ", launchOptions.headless === true ? bgBlueBright("开启") : bgRedBright("关闭"));
@@ -57,11 +56,20 @@ process.on("message", async (message) => {
                     },
                 };
 
+                /** 加载油猴 */
+                const pathToExtension = path.join(__dirname, "./extensions/Tampermonkey");
+
+                launchOptions.args = [
+                    `--disable-extensions-except=${pathToExtension}`,
+                    `--load-extension=${pathToExtension}`,
+                ];
+
                 const { browser: _browser, page: _page } = await ocs.launchScripts({
                     userDataDir,
                     launchOptions,
                     scripts,
                     sync: false,
+                    init,
                 });
 
                 debug("启动成功");
@@ -71,13 +79,9 @@ process.on("message", async (message) => {
                 // @ts-ignore
                 page = _page;
 
-                page.on("load", () => executeScript(page, store.scriptFile));
-
                 page.context().on("page", (_page) => {
                     if (_page.url() === "about:blank") {
                         setTimeout(() => _page.close(), 500);
-                    } else {
-                        _page.on("load", () => executeScript(page, store.scriptFile));
                     }
                 });
             } else {
@@ -103,14 +107,3 @@ process.on("message", async (message) => {
         logger.info("任务发生未知错误!", e);
     }
 });
-
-/**
- * 执行 ocs 脚本
- * @param {import("playwright").Page} page
- * @param {string} script
- */
-async function executeScript(page, script) {
-    await page.waitForFunction(() => window.document.readyState === "complete", "", { timeout: 0 });
-    console.log(bgGray(loggerPrefix("debug")), "执行脚本");
-    await page.evaluate(script);
-}

@@ -117,6 +117,16 @@
                         </span>
                     </div>
                     <div class="form">
+                        <label>自动更新OCS脚本</label>
+                        <span class="w-100 text-start">
+                            <a-switch
+                                checked-children="开启"
+                                un-checked-children="关闭"
+                                v-model:checked="data.options.init"
+                            />
+                        </span>
+                    </div>
+                    <div class="form">
                         <label>浏览器路径</label>
                         <a-input
                             v-model:value="data.options.launchOptions.executablePath"
@@ -229,6 +239,16 @@ interface FormCreateProps {
 const props = withDefaults(defineProps<FormCreateProps>(), {});
 const { file } = toRefs(props);
 
+/** 解析文件内容 */
+const result = validFileContent(fs.readFileSync(file.value.path).toString());
+let options;
+let error;
+if (typeof result === "string") {
+    options = JSON.parse(result);
+} else {
+    error = result.error;
+}
+
 const data = reactive<{
     activeKey: "setting" | "terminal" | "content";
     content: string;
@@ -243,25 +263,18 @@ const data = reactive<{
     /** 文件内容 */
     content: fs.readFileSync(file.value.path).toString(),
     /** 解析内容 */
-    options: undefined,
+    options: options,
     /** 是否错误 */
-    error: undefined,
+    error: error,
 
     /** 开启无痕浏览 */
     openIncognito: false,
 
     /** 运行的子进程对象 */
-    process: new Process(file.value.uid, store["logs-path"], store["config-path"]),
+    process: new Process(file.value.uid, store["logs-path"]),
     /** 终端对象 */
     xterm: new ITerminal(file.value.uid),
 });
-
-const result = validFileContent(data.content);
-if (typeof result === "string") {
-    data.options = JSON.parse(result);
-} else {
-    data.error = result.error;
-}
 
 if (data.options && data.error === undefined) {
     /** 更新用户浏览器缓存文件夹 */
@@ -285,6 +298,7 @@ if (data.options && data.error === undefined) {
         data.options,
         debounce(() => {
             const value = JSON.stringify(data.options, null, 4);
+            data.content = value;
             fs.writeFileSync(file.value.path, value);
         }, 500)
     );
@@ -329,10 +343,17 @@ function run() {
         file.value.stat.running = !file.value.stat.running;
 
         if (file.value.stat.running) {
-            /** 如未初始化，则先初始化 */
+            /** 如未初始化控制台面板，则先初始化 */
             if (data.process.shell === undefined) data.process.init(data.xterm);
+            /**  初始化文件 */
+
             /** 运行 */
             data.process.launch(data.options);
+            // @ts-ignore
+            if (data.options.init === undefined) {
+                // @ts-ignore 关闭初始化，下次将不再初始化脚本
+                data.options.init = false;
+            }
         } else {
             data.process.close();
         }
@@ -449,7 +470,7 @@ onUnmounted(() => {
     }
 
     label {
-        width: 30%;
+        width: 40%;
         text-align: left;
 
         &::after {

@@ -1,5 +1,8 @@
 # customize
 
+## 油猴拓展文件
+extensions/Tampermonkey
+
 *.local.test.js
 
 pnpm-lock.yaml

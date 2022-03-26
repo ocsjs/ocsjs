@@ -5,7 +5,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRefs, computed } from "vue";
+import { ref, toRefs, computed, watch } from "vue";
 
 import highlight from "highlight.js/lib/core";
 import jsonLanguage from "highlight.js/lib/languages/json";

@@ -55,6 +55,7 @@ export const config = reactive({
                         options: {},
                     },
                 ],
+                init: true,
             } as LaunchScriptsOptions,
             null,
             4

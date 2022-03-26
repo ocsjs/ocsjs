@@ -39,8 +39,8 @@
 var resource = (url) => fetch(url).then((res) => res.text());
 // 载入 OCS 并运行
 (async () => {
-    const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/style/common.css");
-    const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs@latest/dist/js/index.min.js");
+    const style = await resource("https://cdn.jsdelivr.net/npm/ocsjs/dist/style/common.css?t=" + Date.now());
+    const ocsjs = await resource("https://cdn.jsdelivr.net/npm/ocsjs/dist/js/index.min.js?t=" + Date.now());
 
     // 加载 bootstrap icons 图标样式
     const link = document.createElement("link");

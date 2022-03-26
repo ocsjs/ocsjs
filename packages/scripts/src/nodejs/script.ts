@@ -1,3 +1,4 @@
+import axios from "axios";
 import { Browser, BrowserContext, chromium, LaunchOptions, Page } from "playwright";
 import { CX, ZHS } from ".";
 import { ScriptFunction, ScriptOptions } from "./types";
@@ -18,6 +19,8 @@ export interface LaunchScriptsOptions {
     scripts: Script[];
     /** 是否等待脚本执行，否：直接返回 browser 和 page 对象 */
     sync?: boolean;
+    /** 是否初始化油猴脚本 */
+    init?: boolean;
 }
 
 export const scripts: Record<keyof ScriptOptions, ScriptFunction> = {
@@ -43,7 +46,7 @@ export const scriptNames = [
 /**
  * 运行脚本
  */
-export async function launchScripts({ userDataDir, launchOptions, scripts, sync = true }: LaunchScriptsOptions) {
+export async function launchScripts({ userDataDir, launchOptions, scripts, sync = true, init }: LaunchScriptsOptions) {
     let browser: Browser | BrowserContext;
 
     if (userDataDir && userDataDir !== "") {
@@ -53,7 +56,10 @@ export async function launchScripts({ userDataDir, launchOptions, scripts, sync 
     }
     let page = await browser.newPage();
 
-    
+    if (init) {
+        initScript(browser);
+    }
+
     if (sync) {
         for (const item of scripts) {
             page = await script(item.name, item.options)(page);
@@ -67,6 +73,8 @@ export async function launchScripts({ userDataDir, launchOptions, scripts, sync 
         }
     }
 
+    await page.bringToFront();
+
     return {
         browser,
         page,
@@ -76,4 +84,27 @@ export function script<T extends keyof ScriptOptions>(name: T, options: ScriptOp
     return function (page: Page) {
         return scripts[name](page, options);
     };
+}
+
+/**
+ * 安装 ocs 脚本
+ *
+ */
+async function initScript(browser: Browser | BrowserContext) {
+    /** 获取最新资源信息 */
+    const { data } = await axios.get("https://cdn.jsdelivr.net/npm/ocsjs/public/infos.json?t=" + Date.now());
+    const info = JSON.parse(data);
+
+    const page = await browser.newPage();
+    await page.goto(info.resource.tampermonkey);
+
+    const [installPage] = await Promise.all([
+        page.context().waitForEvent("page"),
+        // @ts-ignore
+        page.click(".install-link"),
+    ]);
+
+    await installPage.click('[value="安装"],[value="重新安装"]');
+    await page.close();
+    await installPage.close();
 }

@@ -18,7 +18,7 @@ export class Process {
     launched: boolean = false;
     options?: LaunchScriptsOptions;
 
-    constructor(public uid: string, public logsPath: string, public configPath: string) {}
+    constructor(public uid: string, public logsPath: string) {}
 
     /**
      * 使用 child_process 运行 ocs 命令
@@ -49,7 +49,6 @@ export class Process {
                 data: JSON.stringify(data),
                 uid: this.uid,
                 logsPath: this.logsPath,
-                configPath: this.configPath,
             })
         );
     }

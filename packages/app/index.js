@@ -10,8 +10,6 @@ const { globalListenerRegister } = require("./src/tasks/global.listener");
 const { task } = require("./src/utils");
 const { handleError } = require("./src/tasks/error.handler");
 
-const { fetchScriptFile } = require("./src/tasks/fetch.script.file");
-
 /** @type {BrowserWindow | undefined} */
 let window;
 
@@ -36,7 +34,7 @@ function bootstrap() {
                 window = createWindow();
                 task("初始化远程通信模块", () => remoteRegister(window));
                 task("注册app事件监听器", () => globalListenerRegister(window));
-                task("获取最新OCS脚本", () => fetchScriptFile());
+
                 if (app.isPackaged) {
                     await window.loadFile("public/index.html");
                 } else {
