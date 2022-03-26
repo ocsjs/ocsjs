@@ -4,7 +4,7 @@
 
 目前只支持这个链接，方便更新以及管理，如果访问不了的话，加qq群找群文件或者群主。
 
-https://github.com/enncy/online-course-script/releases
+[https://github.com/enncy/online-course-script/releases](https://github.com/enncy/online-course-script/releases)
 
 ## 介绍
 
@@ -30,6 +30,10 @@ OCS 软件定义了以 .ocs 为后缀的文件， 里面是可供OCS软件解析
 
 
 如果你使用的是 `Microsoft Edge浏览器` ： 进入Edge浏览器，打开链接 edge://version  找到 `可执行文件路径` 找到就是浏览器路径。
+
+## 主教程
+
+https://github.com/enncy/online-course-script/
   
 ## 疑问解答
 
