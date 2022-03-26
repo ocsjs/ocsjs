@@ -349,11 +349,6 @@ function run() {
 
             /** 运行 */
             data.process.launch(data.options);
-            // @ts-ignore
-            if (data.options.init === undefined) {
-                // @ts-ignore 关闭初始化，下次将不再初始化脚本
-                data.options.init = false;
-            }
         } else {
             data.process.close();
         }
