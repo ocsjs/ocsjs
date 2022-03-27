@@ -22,6 +22,20 @@ export const CommonScript = defineScript({
                 }
             },
         },
+        {
+            name: "禁止弹窗脚本",
+            url: supports.map((arr) => arr[0]),
+            start() {
+                // @ts-ignore
+                window?.alert = console.log;
+                // @ts-ignore
+                unsafeWindow?.alert = console.log;
+                // @ts-ignore
+                top?.alert = console.log;
+                // @ts-ignore
+                self?.alert = console.log;
+            },
+        },
     ],
     panels: [
         {
