@@ -1,36 +1,44 @@
 import { DefineComponent } from "vue";
-import { createSettingPanel, createWorkerSetting, CreateWorkerSettingConfig } from "../core/create.element";
+import {
+    createSettingPanel,
+    createWorkerSetting,
+    CreateWorkerSettingConfig,
+    SettingInput,
+    SettingSelect,
+} from "../core/create.element";
 
 /**
  * 创建智慧树视频设置面板
+ * @param creditStudy 是否为学分课
  */
-
-export function createZHSStudySettingPanel(): DefineComponent {
+export function createZHSStudySettingPanel(creditStudy: boolean = false): DefineComponent {
     const settings = OCS.setting.zhs.video;
 
-    return createSettingPanel(
-        {
-            label: "播放时间(小时)",
-            ref: "setting.zhs.video.watchTime",
-            type: "number",
-            attrs: {
-                title: "播放时间到后, 将会自动暂停。\n如设置为0, 则不会自动暂停",
-                value: settings.watchTime,
-                min: 0,
-                max: 24,
-                step: 0.1,
-            },
+    const watchTimeSetting = {
+        label: "播放时间(小时)",
+        ref: "setting.zhs.video.watchTime",
+        type: "number",
+        attrs: {
+            title: "播放时间到后, 将会自动暂停。\n如设置为0, 则不会自动暂停",
+            value: settings.watchTime,
+            min: 0,
+            max: 24,
+            step: 0.1,
         },
+    };
+
+    const settingInputs = [
         {
             label: "视频倍速",
             ref: "setting.zhs.video.playbackRate",
             type: "number",
             attrs: {
-                title: "不能大于1.5倍速,否则容易封号",
-                value: settings.playbackRate,
+                title: creditStudy ? "学分课不可修改倍速" : "不能大于1.5倍速,否则容易封号",
+                value: creditStudy ? 1 : settings.playbackRate,
                 min: 1.0,
                 max: 1.5,
                 step: 0.25,
+                disabled: creditStudy,
             },
         },
         {
@@ -49,8 +57,14 @@ export function createZHSStudySettingPanel(): DefineComponent {
                 title: "将播放过的视频再播放一遍。",
                 checked: settings.restudy,
             },
-        }
-    );
+        },
+    ] as (SettingSelect | SettingInput)[];
+
+    if (!creditStudy) {
+        settingInputs.unshift(watchTimeSetting as SettingInput);
+    }
+
+    return createSettingPanel(...settingInputs);
 }
 
 /**

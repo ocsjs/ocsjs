@@ -2,7 +2,7 @@ import { createNote } from "../core/create.element";
 import { defineScript } from "../core/define.script";
 import { defaultSetting } from "../scripts";
 import { createZHSStudySettingPanel, createZHSWorkSettingPanel } from "./panels";
-import { study } from "./study";
+import { creditStudy, study } from "./study";
 import { createSearchResultPanel, createTerminalPanel, domSearch, sleep } from "../core/utils";
 import { work } from "./work";
 import { logger } from "../../logger";
@@ -12,12 +12,24 @@ export const ZHSScript = defineScript({
     name: "知道智慧树",
     routes: [
         {
-            name: "视频脚本",
+            name: "共享课视频脚本",
             url: "**zhihuishu.com/videoStudy.html**",
             async onload(setting = OCS.setting.zhs.video) {
                 await sleep(5000);
                 // 智慧树视频学习
+                logger("info", "开始智慧树共享课视频学习");
                 await study(setting || defaultSetting().video);
+            },
+        },
+        {
+            name: "学分课视频脚本",
+            /** 学分共享课（翻转课） */
+            url: "**zhihuishu.com/aidedteaching/sourceLearning/**",
+            async onload(setting = OCS.setting.zhs.video) {
+                await sleep(5000);
+                // 智慧树视频学习
+                logger("info", "开始智慧树学分课视频学习");
+                await creditStudy(setting || defaultSetting().video);
             },
         },
         {
@@ -48,9 +60,9 @@ export const ZHSScript = defineScript({
             el: () => createNote("提示您:", "请点击任意的课程进入。"),
         },
         {
-            name: "视频助手",
+            name: "共享课视频助手",
+            /** 共享课 */
             url: "**zhihuishu.com/videoStudy.html**",
-
             el: () =>
                 createNote(
                     "进入 视频设置面板 可以调整视频设置",
@@ -62,6 +74,24 @@ export const ZHSScript = defineScript({
                 {
                     name: "学习设置",
                     el: () => createZHSStudySettingPanel(),
+                },
+                createTerminalPanel(),
+            ],
+        },
+        {
+            name: "学分课视频助手",
+            /** 学分共享课（翻转课） */
+            url: "**zhihuishu.com/aidedteaching/sourceLearning/**",
+            el: () =>
+                createNote(
+                    "进入 视频设置面板 可以调整视频设置",
+                    "学分课默认1倍速, 不可修改",
+                    "5秒后自动开始播放视频..."
+                ),
+            children: [
+                {
+                    name: "学习设置",
+                    el: () => createZHSStudySettingPanel(true),
                 },
                 createTerminalPanel(),
             ],

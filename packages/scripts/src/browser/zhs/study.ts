@@ -78,7 +78,7 @@ export async function study(setting?: ScriptSettings["zhs"]["video"]) {
  * @param setting
  * @returns
  */
-export async function watch(setting?: ScriptSettings["zhs"]["video"]) {
+export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "playbackRate" | "mute">) {
     const { playbackRate = 1, mute = true } = setting || {};
     return new Promise<void>((resolve, reject) => {
         try {
@@ -101,7 +101,9 @@ export async function watch(setting?: ScriptSettings["zhs"]["video"]) {
             // 改变速率
             video.playbackRate = parseFloat(playbackRate.toString());
             const playbackRateText = document.querySelector("div.speedBox > span") as HTMLVideoElement;
-            playbackRateText.textContent = "X " + video.playbackRate;
+            if (playbackRateText) {
+                playbackRateText.textContent = "X " + video.playbackRate;
+            }
 
             video.play();
         } catch (e) {
@@ -111,7 +113,7 @@ export async function watch(setting?: ScriptSettings["zhs"]["video"]) {
 }
 
 /**
- * 关闭zhs测验弹窗
+ * 关闭zhs共享课测验弹窗
  */
 export async function closeTestDialog() {
     if (document.querySelectorAll(".topic-item").length != 0) {
@@ -121,5 +123,34 @@ export async function closeTestDialog() {
         //关闭
         (document.querySelector(`[aria-label="弹题测验"] .btn`) as HTMLElement).click();
         await sleep(500);
+    }
+}
+
+/** 校内学分课 */
+export async function creditStudy(setting?: ScriptSettings["zhs"]["video"]) {
+    const { restudy = false } = setting || {};
+
+    /** 查找任务 */
+    let list: HTMLLIElement[] = Array.from(document.querySelectorAll(".file-item"));
+
+    /** 如果不是复习模式，则排除掉已经完成的任务 */
+    if (!restudy) {
+        list = list.filter((el) => el.querySelector(".icon-finish") === null);
+    }
+
+    console.log(list);
+
+    const item = list[0];
+    if (item) {
+        if (item.classList.contains("active")) {
+            await watch({
+                mute: setting?.mute || true,
+                playbackRate: 1,
+            });
+            /** 下一章 */
+            if (list[1]) list[1].click();
+        } else {
+            item.click();
+        }
     }
 }
