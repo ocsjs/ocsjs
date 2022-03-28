@@ -103,6 +103,8 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
                 debounce(function () {
                     if (!media.ended) {
                         media.play();
+                        /** 重新设置倍速 */
+                        media.playbackRate = playbackRate;
                     }
                 }, 1000)
             );

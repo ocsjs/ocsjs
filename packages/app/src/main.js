@@ -16,6 +16,7 @@ function createWindow(show = true) {
         frame: false,
         show,
         backgroundColor: "#fff",
+        hasShadow: true,
 
         webPreferences: {
             // 关闭拼写矫正
