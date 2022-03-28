@@ -29,11 +29,11 @@
 
 > 题库配置 一般为一行 json 文本
 
-> OCS 提供了强大的 [`题库配置解析器`](https://github.com/enncy/online-course-script/blob/3.0/packages/scripts/src/browser/common/worker/answer.wrapper.handler.ts)，你可以对接大多数的题库进行使用
+> OCS 提供了强大的 [`题库配置解析器`](https://github.com/enncy/online-course-script/blob/3.0/packages/scripts/src/browser/core/worker/answer.wrapper.handler.ts)，你可以对接大多数的题库进行使用
   
 
 参数如下：
-[参数详情](https://github.com/enncy/online-course-script/blob/3.0/packages/scripts/src/browser/common/worker/answer.wrapper.handler.ts)
+[参数详情](https://github.com/enncy/online-course-script/blob/3.0/packages/scripts/src/browser/core/worker/answer.wrapper.handler.ts)
 ```ts
 
 /**
@@ -116,9 +116,9 @@ defaultAnswerWrapperHandler(
     - 可以解析 
         - $title: 题目标题
         - $type: 题目类型
-    - 可以解析 [`localStorage.OCS`](https://enncy.github.io/online-course-script/api/#localStorage.OCS) 的任意属性
+    - 可以解析 [`localStorage.OCS`](https://github.com/enncy/online-course-script/blob/9a996c32500188c633e06ba10922d33446fd448b/packages/scripts/src/browser/core/store.ts#L38) 的任意属性
 
-所以最终填写的 `题库配置` 为：  （这个只是例子！！！！）
+所以最终填写的 `题库配置` 为：  （不要使用这个，这个只是例子！！！！）
 ```json
 [{"url":"https://example.com/search/","method":"get","contentType":"json","data":{"title":"${title}"},"handler":"return (res)=> res.code === 0 ? undefined : [res.data.title, res.data.answers[0]]"}]
 ```
