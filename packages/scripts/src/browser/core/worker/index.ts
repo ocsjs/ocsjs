@@ -38,6 +38,8 @@ export class OCSWorker<E extends RawElements = RawElements> {
                 /**  dom 搜索 */
                 const elements: WorkContext<E>["elements"] = domSearchAll<E>(this.opts.elements, el);
 
+                this.opts.onElementSearched?.(elements);
+
                 /** 改变上下文 */
                 this.currentContext = { searchResults: [], root: el, elements };
 

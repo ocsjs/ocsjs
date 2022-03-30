@@ -84,11 +84,11 @@ export function addFunctionEventListener(obj: any, type: string) {
  * @param str
  * @returns
  */
-export function clearString(str: string) {
+export function clearString(str: string, ...exclude: string[]) {
     return str
         .trim()
         .toLocaleLowerCase()
-        .replace(/[^\u4e00-\u9fa5A-Za-z0-9]*/g, "");
+        .replace(RegExp(`[^\\u4e00-\\u9fa5A-Za-z0-9${exclude.join("")}]*`, "g"), "");
 }
 
 /**

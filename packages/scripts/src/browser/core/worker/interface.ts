@@ -125,6 +125,8 @@ export type WorkOptions<E extends RawElements> = {
     retry?: number;
     /** 监听答题结果 */
     onResult?: (res: WorkResult<E>) => void;
+    /** 当元素被搜索到的处理器 */
+    onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>) => void;
     /** 监听错误事件 */
     onError?: (e: Error, ctx?: WorkContext<E>) => void;
 };

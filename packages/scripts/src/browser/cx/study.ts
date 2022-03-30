@@ -39,6 +39,10 @@ export async function study(setting: ScriptSettings["cx"]["video"]) {
 function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise<number>> {
     return searchIFrame()
         .map((frame) => () => {
+            const data = JSON.parse(frame.getAttribute("data") || "{}");
+            // @ts-ignore
+            const attachments = frame.contentWindow?.parent.attachments as any[];
+
             const { media, ppt, chapterTest } = domSearch(
                 {
                     media: "video,audio",
@@ -48,16 +52,26 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise
                 frame.contentDocument || document
             );
 
-            // @ts-ignore
-            // console.log("data", { frame }, unsafeWindow.attachments[0]);
+            /** 如果是任务点， 并且 未完成或者复习模式 */
+            if (
+                attachments?.some((atta) => atta?.jobid === data?.jobid && (atta.job === true || setting.restudy)) ||
+                chapterTest?.querySelector('input[type="checkbox"],input[type="radio"]')
+            ) {
+                const name = media ? "视频/音频" : ppt ? "ppt" : chapterTest ? "章节测试" : "任务";
+                logger("info", `${name}开始：` + data?.name ? data.name : data?.title ? data.title : "未知的任务名");
 
-            return media
-                ? mediaTask(setting, media as any)
-                : ppt
-                ? pptTask(frame)
-                : chapterTest
-                ? chapterTestTask(OCS.setting.cx.work, frame)
-                : undefined;
+                return media
+                    ? mediaTask(setting, media as any)
+                    : ppt
+                    ? pptTask(frame)
+                    : chapterTest
+                    ? chapterTestTask(OCS.setting.cx.work, frame)
+                    : undefined;
+            } else {
+                console.log(frame);
+
+                logger("info", `${data?.name || data?.title || "未知任务点"} 已完成，即将跳过`);
+            }
         })
         .filter((t) => t !== undefined) as any;
 }
@@ -90,8 +104,6 @@ function searchIFrame() {
  * 播放视频和音频
  */
 function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement) {
-    logger("info", "开始自动播放");
-
     const { playbackRate = 1, mute = true } = setting;
     return new Promise<void>((resolve) => {
         if (media) {
@@ -117,8 +129,6 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
  * 阅读 ppt
  */
 async function pptTask(frame?: HTMLIFrameElement) {
-    logger("info", "开始翻页PPT");
-
     // @ts-ignore
     let finishJob = frame?.contentWindow?.finishJob;
     if (finishJob) finishJob();
@@ -176,6 +186,19 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
                 throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
             }
         },
+        /** 处理cx作业判断题选项是图片的问题 */
+        onElementSearched(elements) {
+            const typeInput = elements.type[0] as HTMLInputElement;
+            const type = parseInt(typeInput.value);
+            if (type === 3) {
+                elements.options.forEach((option) => {
+                    const ri = option.querySelector(".ri");
+                    const span = document.createElement("span");
+                    span.innerText = ri ? "√" : "×";
+                    option.appendChild(span);
+                });
+            }
+        },
         work: {
             /**
              * cx 题目类型 ：
@@ -204,7 +227,8 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
             handler(type, answer, option) {
                 if (type === "judgement" || type === "single" || type === "multiple") {
                     if (!option.querySelector("input")?.checked) {
-                        option.querySelector("a")?.click();
+                        // @ts-ignore
+                        option.querySelector("a,label")?.click();
                     }
                 } else if (type === "completion" && answer.trim()) {
                     const text = option.querySelector("textarea");

@@ -152,7 +152,9 @@ export function defaultQuestionResolve<E>(
                 }
 
                 function matches(target: string, options: string[]) {
-                    return options.map((option) => RegExp(clearString(option)).test(clearString(target)));
+                    return options.some((option) =>
+                        RegExp(clearString(option, "√", "×")).test(clearString(target, "√", "×"))
+                    );
                 }
             }
 
