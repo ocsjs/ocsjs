@@ -12,9 +12,10 @@
     "scripts": {
         "webpack": "webpack --config webpack.config.js",
         "gulp": "gulp  --allowEmpty",
-        "pub:patch": "pnpm gulp && npm version patch && npm publish",
-        "pub:minor": "pnpm gulp && npm version minor && npm publish",
-        "pub:major": "pnpm gulp && npm version major && npm publish"
+        "pub:patch": "npm version patch && pnpm gulp && npm publish",
+        "pub:minor": "npm version minor && pnpm gulp && npm publish",
+        "pub:major": "npm version major && pnpm gulp && npm publish",
+        "changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file"
     },
     "dependencies": {
         "@playwright/test": "^1.18.1",
