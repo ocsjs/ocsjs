@@ -97,7 +97,7 @@ export function script<T extends keyof ScriptOptions>(name: T, options: ScriptOp
  */
 async function initScript(browser: Browser | BrowserContext) {
     /** 获取最新资源信息 */
-    const { data } = await axios.get("https://cdn.jsdelivr.net/npm/ocsjs/public/infos.json?t=" + Date.now());
+    const { data } = await axios.get("https://enncy.github.io/online-course-script/infos.json?t=" + Date.now());
 
     const page = await browser.newPage();
     await page.goto(data.resource.tampermonkey);
