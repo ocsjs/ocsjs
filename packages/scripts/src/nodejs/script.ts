@@ -57,7 +57,12 @@ export async function launchScripts({ userDataDir, launchOptions, scripts, sync 
     let page = await browser.newPage();
 
     if (init) {
-        await initScript(browser);
+        try {
+            await initScript(browser);
+            console.log("脚本更新完毕");
+        } catch (e) {
+            console.log("自动更新脚本失败，请手动更新，或者忽略。", e);
+        }
     }
 
     if (sync) {
@@ -103,7 +108,7 @@ async function initScript(browser: Browser | BrowserContext) {
         page.click(".install-link"),
     ]);
 
-    await installPage.click('[value="安装"],[value="重新安装"]');
+    await installPage.click(".ask_action_buttons > input");
     await page.close();
     await installPage.close();
 }

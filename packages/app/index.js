@@ -29,6 +29,7 @@ function bootstrap() {
             task("初始化本地设置", () => initStore()),
             task("初始化自动启动", () => autoLaunch()),
             task("处理打开文件", () => handleOpenFile(process.argv)),
+            task("软件更新"),
             task("启动渲染进程", async () => {
                 await app.whenReady();
                 window = createWindow();

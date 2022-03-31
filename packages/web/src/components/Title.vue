@@ -1,7 +1,7 @@
 <template>
     <div class="title border-bottom">
         <ul :style="config.title.style">
-            <li><img src="root/public/favicon.ico" width="16" height="16" /></li>
+            <li><img :src="favicon" width="16" height="16" /></li>
             <template v-for="(item, index) in routes">
                 <li
                     @click="router.push(item.path), active($event)"
@@ -99,6 +99,8 @@ import TitleLink from "./TitleLink.vue";
 import { formatDate } from "../utils";
 import { path } from "./file/File";
 import { ref, watch } from "vue";
+import favicon from "root/public/favicon.ico";
+
 const { shell } = require("electron");
 
 const token = "active";

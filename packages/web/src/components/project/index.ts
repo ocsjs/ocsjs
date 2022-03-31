@@ -1,5 +1,5 @@
 import { reactive, ref, Ref } from "vue";
-import { FileNode, flatFiles, fs, path } from "../file/File";
+import { FileNode, flatFiles, fs, path, validFileContent } from "../file/File";
 import { md } from "node-forge";
 
 export class Project {
@@ -27,6 +27,7 @@ export class Project {
         const stat = fs.statSync(filePath);
         let isDirectory = stat.isDirectory();
         let children;
+        let content;
         let icon;
         if (isDirectory) {
             icon = "dir";
@@ -36,15 +37,25 @@ export class Project {
                 .filter((f) => !!f)
                 /** 文件夹置顶 */
                 .sort((a, b) => (a.stat?.isDirectory ? -1 : 1));
+            content = "";
         } else {
             icon = "file";
+            content = fs.readFileSync(filePath).toString();
         }
 
         let parent = path.dirname(filePath);
-        let uid = md.md5.create().update(filePath).digest().toHex();
+        console.log(filePath);
+
+        const result = validFileContent(content);
+        let options;
+        if (typeof result === "string") {
+            options = JSON.parse(result);
+        }
+
         return reactive({
             title: path.basename(filePath),
-            uid,
+            uid: options?.uid,
+            content,
             slots: {
                 icon,
             },

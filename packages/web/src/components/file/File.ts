@@ -32,6 +32,7 @@ export interface FileNode {
     /** 文件名 */
     title: string;
     uid: string;
+    content: string;
 
     slots: {
         icon: string;
@@ -113,7 +114,7 @@ export function flatFiles(files: FileNode[]): FileNode[] {
 export function createFile(parent: FileNode) {
     const newFilePath = validFileName(parent.path, "新建OCS文件($count).ocs");
     Project.renamingFilePath.value = newFilePath;
-    fs.writeFileSync(newFilePath, config.ocsFileTemplate());
+    fs.writeFileSync(newFilePath, config.ocsFileTemplate(parent.uid));
 }
 
 /**

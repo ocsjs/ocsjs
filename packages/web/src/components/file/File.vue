@@ -97,26 +97,6 @@
                     title="启动设置"
                 >
                     <div class="form">
-                        <label>隐身模式</label>
-                        <span class="w-100 text-start">
-                            <a-switch
-                                checked-children="开启"
-                                un-checked-children="关闭"
-                                v-model:checked="data.options.launchOptions.headless"
-                            />
-                        </span>
-                    </div>
-                    <div class="form">
-                        <label>无痕浏览</label>
-                        <span class="w-100 text-start">
-                            <a-switch
-                                checked-children="开启"
-                                un-checked-children="关闭"
-                                v-model:checked="data.openIncognito"
-                            />
-                        </span>
-                    </div>
-                    <div class="form">
                         <label>自动更新OCS脚本</label>
                         <span class="w-100 text-start">
                             <a-switch
@@ -240,7 +220,7 @@ const props = withDefaults(defineProps<FormCreateProps>(), {});
 const { file } = toRefs(props);
 
 /** 解析文件内容 */
-const result = validFileContent(fs.readFileSync(file.value.path).toString());
+const result = validFileContent(file.value.content);
 let options;
 let error;
 if (typeof result === "string") {
@@ -254,7 +234,6 @@ const data = reactive<{
     content: string;
     options?: LaunchScriptsOptions;
     error?: { message: string; line: number };
-    openIncognito: boolean;
     process: Process;
     xterm: ITerminal;
 }>({
@@ -267,9 +246,6 @@ const data = reactive<{
     /** 是否错误 */
     error: error,
 
-    /** 开启无痕浏览 */
-    openIncognito: false,
-
     /** 运行的子进程对象 */
     process: new Process(file.value.uid, store["logs-path"]),
     /** 终端对象 */
@@ -277,22 +253,6 @@ const data = reactive<{
 });
 
 if (data.options && data.error === undefined) {
-    /** 更新用户浏览器缓存文件夹 */
-    setUserDataDir();
-
-    watch(
-        () => data.openIncognito,
-        () => {
-            if (data.options) {
-                if (data.openIncognito) {
-                    data.options.userDataDir = "";
-                } else {
-                    setUserDataDir();
-                }
-            }
-        }
-    );
-
     /** 监听文件更新 */
     watch(
         data.options,
@@ -323,16 +283,6 @@ const loginTypeForms = computed(() => {
 function onScriptChange() {
     if (data.options) {
         data.options.scripts[0].options = {};
-    }
-}
-
-function setUserDataDir() {
-    if (data.options) {
-        data.options.userDataDir = path.join(
-            store["user-data-path"],
-            "scriptUserData",
-            file.value.uid
-        );
     }
 }
 

@@ -3,7 +3,10 @@ import { RouteRecordRaw } from "vue-router";
 import setting from "@/pages/setting/index.vue";
 import workspace from "@/pages/workspace/index.vue";
 import { LaunchScriptsOptions } from "@ocsjs/scripts";
+import { path } from "../components/file/File";
 import { store } from "../store";
+
+const { randomUUID } = require("crypto") as typeof import("crypto");
 
 export const config = reactive({
     /** 标题设置 */
@@ -45,16 +48,22 @@ export const config = reactive({
     /**
      * 初始文件模板
      */
-    ocsFileTemplate: () => {
+    ocsFileTemplate: (uid?: string) => {
+        uid = uid || randomUUID().replace(/-/g, "");
+
         return JSON.stringify(
             {
-                launchOptions: store.script.launchOptions,
+                uid,
+                launchOptions: {
+                    headless: false,
+                },
                 scripts: [
                     {
                         name: "cx-login-other",
                         options: {},
                     },
                 ],
+                userDataDir: path.join(store["user-data-path"], "scriptUserData", uid),
                 init: true,
             } as LaunchScriptsOptions,
             null,

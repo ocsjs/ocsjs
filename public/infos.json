@@ -2,5 +2,14 @@
     "resource": {
         "browser": "https://cdn.jsdelivr.net/npm/ocsjs@3.x/dist/js/index.min.js",
         "tampermonkey": "https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B"
-    }
+    },
+    "version": [
+        {
+            "tag": "1.2.0",
+            "description": {
+                "feature": ["新增软件自动更新功能"],
+                "fix": ["修复自动更新OCS功能不运行的BUG"]
+            }
+        }
+    ]
 }
