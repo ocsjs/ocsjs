@@ -25,9 +25,9 @@ export interface Answer {
  */
 export interface AnswererWrapper {
     /** 答题器请求路径 */
-    url: string;
+    url: "https://tk.enncy.cn/query","method"
     /** 题库名字 */
-    name: string;
+    name:"enncy题库","homepage":"https://tk.enncy.cn/","url":"https://tk.enncy.cn/query","method":"get","data":{"token":"1fd9c5e867d31812b65545fcb8a67249","title":"${title}"},"contentType":"json","handler":"return (res)=>res.code === 0 ? undefined : [res.data.question,res.data.answer]"}]
     /** 题库网址 */
     homepage?: string;
     data?: Record<string, string>;
