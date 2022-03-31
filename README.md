@@ -11,29 +11,29 @@
 -   [自动答题功能](https://enncy.github.io/online-course-script/answerer-wrappers)
 -   [项目开发文档](#项目开发文档)
 
-## 油猴运行
+# 油猴运行
 
 > `优点`：不需要重复输入代码，只需新建脚本保存即可
 
 > `缺点`：需要安装油猴拓展
 
-1.打开你的浏览器，安装油猴浏览器拓展
+1.打开你的浏览器，安装油猴浏览器拓展， 安装途径有如下：
 
--   `官网` https://www.tampermonkey.net/
--   `谷歌浏览器网上商店(需翻墙)` [https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
--   `Edge浏览器网上商店` [https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)
+-   [油猴官网](https://www.tampermonkey.net/)
+-   [谷歌浏览器网上商店(需翻墙)](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+-   [Edge 浏览器网上商店](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)
 
-2.安装 OCS 油猴脚本 [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
+2.安装 [OCS 油猴脚本](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
 3.打开任意的 [`网课平台`](#支持的网课平台) 即可自动运行
 
-## OCS 软件运行
+# OCS 软件运行
 
 > `优点`：全自动运行(推荐)
 
-软件教程： [https://enncy.github.io/online-course-script/app](https://enncy.github.io/online-course-script/app)
+软件教程 : [https://enncy.github.io/online-course-script/app](https://enncy.github.io/online-course-script/app)
 
-下载地址: [https://github.com/enncy/online-course-script/releases](https://github.com/enncy/online-course-script/releases)
+下载地址 : [https://github.com/enncy/online-course-script/releases](https://github.com/enncy/online-course-script/releases)
 
 下载不了的可以[加 qq 群](#交流群)，群文件里面有。
 
