@@ -40,8 +40,10 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise
     return searchIFrame()
         .map((frame) => () => {
             const data = JSON.parse(frame.getAttribute("data") || "{}");
-            // @ts-ignore
-            const attachments = frame.contentWindow?.parent.attachments as any[];
+
+            if (data?.name || data?.title) {
+                logger("info", `${data?.name || data?.title} 正在运行`);
+            }
 
             const { media, ppt, chapterTest } = domSearch(
                 {
@@ -52,26 +54,13 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise
                 frame.contentDocument || document
             );
 
-            /** 如果是任务点， 并且 未完成或者复习模式 */
-            if (
-                attachments?.some((atta) => atta?.jobid === data?.jobid && (atta.job === true || setting.restudy)) ||
-                chapterTest?.querySelector('input[type="checkbox"],input[type="radio"]')
-            ) {
-                const name = media ? "视频/音频" : ppt ? "ppt" : chapterTest ? "章节测试" : "任务";
-                logger("info", `${name}开始：` + data?.name ? data.name : data?.title ? data.title : "未知的任务名");
-
-                return media
-                    ? mediaTask(setting, media as any)
-                    : ppt
-                    ? pptTask(frame)
-                    : chapterTest
-                    ? chapterTestTask(OCS.setting.cx.work, frame)
-                    : undefined;
-            } else {
-                console.log(frame);
-
-                logger("info", `${data?.name || data?.title || "未知任务点"} 已完成，即将跳过`);
-            }
+            return media
+                ? mediaTask(setting, media as any)
+                : ppt
+                ? pptTask(frame)
+                : chapterTest
+                ? chapterTestTask(OCS.setting.cx.work, frame)
+                : undefined;
         })
         .filter((t) => t !== undefined) as any;
 }
