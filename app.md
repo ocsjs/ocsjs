@@ -22,14 +22,21 @@ OCS 软件定义了以 .ocs 为后缀的文件， 里面是可供OCS软件解析
 
 在上方点击 `设置` 进入设置页面， 设置页面唯一重要的就是浏览器默认设置， 这里填写 `浏览器的路径` ，然后在你新建文件的时候，就会使用默认的路径，而不需要重复输入
 
-## 浏览器路径
+### 指定浏览器
 
 > 目前只支持谷歌和Edge浏览器
 
+软件会自动获取浏览器路径，如果获取不到请看下面方法自己获取：
+
 如果你使用的是 `谷歌浏览器` ： 进入谷歌浏览器，打开链接 chrome://version   找到 `可执行文件路径` 这个就是浏览器路径。
-
-
 如果你使用的是 `Microsoft Edge浏览器` ： 进入Edge浏览器，打开链接 edge://version  找到 `可执行文件路径` 找到就是浏览器路径。
+
+
+### 默认题库配置
+
+>  只需要修改这个设置，脚本里面会自动获取，不需要重复配置。
+
+更多题库配置教程查看： [https://enncy.github.io/online-course-script/answerer-wrappers](https://enncy.github.io/online-course-script/answerer-wrappers)
 
 ## 主教程
 
