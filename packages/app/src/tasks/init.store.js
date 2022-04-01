@@ -33,7 +33,9 @@ exports.initStore = function () {
         store.set("alwaysOnTop", false);
 
         /** 通知 */
-        store.set("notify", []);
+        store.set("notify", store.get("notify") || []);
+        /** 脚本设置 */
+        store.set("script", store.get("script") || {});
 
         /** 浏览器路径 */
         store.set("validBrowserPaths", getValidBrowserPaths());

@@ -1,7 +1,6 @@
 // @ts-check
 
 const ocs = require("@ocsjs/scripts");
-const { loggerPrefix } = require("@ocsjs/scripts");
 const { Instance: Chalk } = require("chalk");
 const path = require("path");
 const { LoggerCore } = require("./src/logger.core");
@@ -128,3 +127,8 @@ process.on("message", async (message) => {
         logger.info("任务发生未知错误!", e);
     }
 });
+
+function loggerPrefix(level) {
+    let extra = level === "error" ? "[错误]" : level === "warn" ? "[警告]" : undefined;
+    return `[OCS${extra ? " " + extra : ""}] ${new Date().toLocaleTimeString()}`;
+}
