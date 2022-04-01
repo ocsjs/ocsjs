@@ -3,17 +3,8 @@
         "browser": "https://cdn.jsdelivr.net/npm/ocsjs@3.x/dist/js/index.min.js",
         "tampermonkey": "https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B"
     },
-    "versions": [
-        {
-            "tag": "1.2.0",
-            "description": {
-                "feat": ["软件自动更新功能", "新增浏览器路径自动获取功能"],
-                "fix": ["修复自动更新OCS功能不运行的BUG", "删除隐身模式", "删除无痕模式"]
-            },
-            "url": "https://enncy.cn/app.zip"
-        }
-    ],
+    "versions": [],
     "notify":[
-        {"id":"2022/3/31","content":["通知测试🎉"]}
+        {"id":"2022/3/31","content":["欢迎更新到最新版OCS软件🎉"]}
     ]
 }
