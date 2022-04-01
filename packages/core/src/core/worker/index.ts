@@ -58,7 +58,11 @@ export class OCSWorker<E extends RawElements = RawElements> {
                 /** 查找题目 */
                 const searchResults = await this.doAnswer(elements, type);
 
-                if (!searchResults || searchResults.length === 0) {
+                if (
+                    !searchResults ||
+                    searchResults.length === 0 ||
+                    searchResults.map((res) => res.answers.map((ans) => ans.answer)).flat().length === 0
+                ) {
                     if (!searchResults) {
                         throw new Error("答案获取失败, 请重新运行, 或者忽略此题。");
                     } else {
@@ -107,8 +111,6 @@ export class OCSWorker<E extends RawElements = RawElements> {
                 error,
                 type,
             };
-
-            console.log("res", res);
 
             /** 监听答题结果 */
             this.opts.onResult?.(res);

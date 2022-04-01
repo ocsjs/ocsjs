@@ -1,5 +1,7 @@
+// @ts-check
+
 const path = require("path");
-const { BannerPlugin } = require("webpack");
+const { BannerPlugin, DefinePlugin } = require("webpack");
 const { name, license, author, version, homepage } = require("./package.json");
 const TerserPlugin = require("terser-webpack-plugin");
 
@@ -7,44 +9,48 @@ const banner = `${name} ${version} (${homepage})
 Copyright © ${author}
 Licensed under ${license}`;
 
+const plugins = [
+    new BannerPlugin({ banner }),
+    new DefinePlugin({
+        "process.env.VERSION": JSON.stringify(version),
+    }),
+];
+
+const optimization = (minimize) => ({
+    minimize,
+    minimizer: [
+        new TerserPlugin({
+            extractComments: false,
+        }),
+    ],
+});
+
+const output = (filename) =>
+    /**
+     * @type {import("webpack").Configuration}
+     */
+    ({
+        mode: "production",
+        entry: "./lib/index.js",
+        output: {
+            filename,
+            path: path.resolve(__dirname, "dist/js"),
+            library: "OCS",
+        },
+    });
+
 /**
  * @type {import("webpack").Configuration[]}
  */
 module.exports = [
     {
-        mode: "production",
-        entry: "./lib/index.js",
-        output: {
-            filename: "index.min.js",
-            path: path.resolve(__dirname, "dist/js"),
-            library: "OCS",
-            environment: {},
-        },
-        optimization: {
-            minimizer: [
-                new TerserPlugin({
-                    extractComments: false,
-                }),
-            ],
-        },
-        plugins: [new BannerPlugin({ banner })],
+        ...output("index.min.js"),
+        optimization: optimization(true),
+        plugins,
     },
     {
-        mode: "production",
-        entry: "./lib/index.js",
-        output: {
-            filename: "index.js",
-            path: path.resolve(__dirname, "dist/js"),
-            library: "OCS",
-        },
-        optimization: {
-            minimize: false,
-            minimizer: [
-                new TerserPlugin({
-                    extractComments: false,
-                }),
-            ],
-        },
-        plugins: [new BannerPlugin({ banner })],
+        ...output("index.js"),
+        optimization: optimization(false),
+        plugins,
     },
 ];

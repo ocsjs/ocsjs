@@ -1,10 +1,10 @@
-import * as ocs from "./browser.entry";
+import * as ocs from "../index";
 
 export {};
 
 declare global {
     interface Window {
-        OCS: typeof import("./browser.entry");
+        OCS: typeof import("../index");
     }
 
     const OCS = ocs;

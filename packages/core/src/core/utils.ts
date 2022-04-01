@@ -1,5 +1,5 @@
 import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute, ScriptPanelChild } from "./define.script";
-import interact from "interactjs";
+
 import { findBestMatch, Rating } from "string-similarity";
 import { RawElements, SearchedElements } from "./worker/interface";
 import { h } from "vue";
@@ -156,8 +156,12 @@ export function domSearchAll<E extends RawElements>(
  *
  */
 export function answerSimilar(answers: string[], options: string[]): Rating[] {
-    logger("debug", "结果匹配", { answers, options });
-    return options.map((option) => findBestMatch(option, answers).bestMatch);
+    const similar =
+        answers.length !== 0
+            ? options.map((option) => findBestMatch(option, answers).bestMatch)
+            : options.map((opt) => ({ rating: 0, target: "" } as Rating));
+    logger("debug", "结果匹配", { answers, options, similar });
+    return similar;
 }
 
 /**

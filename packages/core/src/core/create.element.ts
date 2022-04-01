@@ -49,7 +49,7 @@ export function createContainers(children: string | number | boolean | VNode | V
 }
 
 export function createFooter() {
-    return h("div", { class: "ocs-panel-footer" }, "—— OCS网课助手");
+    return h("div", { class: "ocs-panel-footer" }, `—— OCS网课助手 v${OCS.VERSION}`);
 }
 
 /**

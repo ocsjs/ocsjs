@@ -1,6 +1,6 @@
 // @ts-nocheck
 
-import { logger } from "../../logger";
+import { logger } from "../logger";
 
 /**
  * 屏蔽倍速限制

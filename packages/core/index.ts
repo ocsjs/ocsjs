@@ -7,3 +7,6 @@
  */
 
 export * from "./src/index";
+// @ts-ignore webpack define
+const VERSION = process.env.VERSION;
+export { VERSION };

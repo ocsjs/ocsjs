@@ -58,27 +58,30 @@ export function defaultQuestionResolve<E>(
                 targetAnswers[count] = [];
                 targetOptions[count] = [];
 
-                // 匹配相似率
-                if (ratings.some((rating) => rating.rating > 0.6)) {
-                    options.forEach((el, i) => {
-                        if (ratings[i].rating > 0.6) {
-                            targetAnswers[count][i] = el.innerText;
-                            targetOptions[count][i] = el;
-                        }
-                    });
-                }
                 // 判断选项是否完全存在于答案里面
-                else {
-                    options.forEach((el, i) => {
-                        if (answers.some((answer) => answer.includes(el.innerText))) {
-                            targetAnswers[count][i] = el.innerText;
-                            targetOptions[count][i] = el;
-                        }
-                    });
+                options.forEach((el, i) => {
+                    if (answers.some((answer) => answer.includes(el.innerText))) {
+                        targetAnswers[count][i] = el.innerText;
+                        targetOptions[count][i] = el;
+                    }
+                });
+
+                if (targetAnswers[count].length === 0) {
+                    // 匹配相似率
+                    if (ratings.some((rating) => rating.rating > 0.6)) {
+                        options.forEach((el, i) => {
+                            if (ratings[i].rating > 0.6) {
+                                targetAnswers[count][i] = el.innerText;
+                                targetOptions[count][i] = el;
+                            }
+                        });
+                    }
                 }
 
                 count++;
             }
+
+            /** 查找每个题库里面是否存在答案 ， 并且找到答案数量较多的一个 */
             let max = 0;
             let index = -1;
             for (let i = 0; i < targetOptions.length; i++) {
@@ -89,12 +92,13 @@ export function defaultQuestionResolve<E>(
                 }
             }
 
-            targetAnswers[index] = targetAnswers[index].filter((ans) => ans !== undefined);
-            targetOptions[index] = targetOptions[index].filter((ans) => ans !== undefined);
-
+            /** 如果答案不存在 */
             if (index === -1) {
                 return { finish: false };
             } else {
+                targetAnswers[index] = targetAnswers[index].filter((ans) => ans !== undefined);
+                targetOptions[index] = targetOptions[index].filter((ans) => ans !== undefined);
+
                 targetOptions[index].forEach((_, i) => {
                     handler("multiple", targetAnswers[index][i], targetOptions[index][i], ctx);
                 });

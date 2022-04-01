@@ -30,13 +30,13 @@ export function start(options?: StartOptions) {
     if (top === window) {
         if (window.document.readyState === "complete") {
             showPanels(options);
-            logger("info", "OCS 加载成功");
+            logger("info", `OCS ${OCS.VERSION} 加载成功`);
         } else {
             /** 加载后执行 */
             document.addEventListener("readystatechange", () => {
                 if (document.readyState === "interactive") {
                     showPanels(options);
-                    logger("info", "OCS 加载成功");
+                    logger("info", `OCS ${OCS.VERSION} 加载成功`);
                 }
             });
         }

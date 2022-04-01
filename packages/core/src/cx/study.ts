@@ -159,8 +159,14 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         root: TiMu,
         elements: {
             title: ".Zy_TItle .clearfix",
-            /** 兼容各种选项 */
-            options: "ul li",
+            /**
+             * 兼容各种选项
+             *
+             * ul li .after 单选多选
+             * ul li label:not(.after) 判断题
+             * ul li textarea 填空题
+             */
+            options: "ul li .after,ul li textarea,ul li label:not(.before)",
             type: 'input[id^="answertype"]',
         },
         /** 默认搜题方法构造器 */
@@ -199,6 +205,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
              */
             type({ elements }) {
                 const typeInput = elements.type[0] as HTMLInputElement;
+
                 const type = parseInt(typeInput.value);
                 return type === 0
                     ? "single"
@@ -208,20 +215,20 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
                     ? "completion"
                     : type === 3
                     ? "judgement"
-                    : type === 4
+                    : elements.options[0].querySelector("textarea")
                     ? "completion"
                     : undefined;
             },
             /** 自定义处理器 */
             handler(type, answer, option) {
                 if (type === "judgement" || type === "single" || type === "multiple") {
-                    if (!option.querySelector("input")?.checked) {
+                    if (!option.parentElement?.querySelector("input")?.checked) {
                         // @ts-ignore
-                        option.querySelector("a,label")?.click();
+                        option.parentElement?.querySelector("a,label")?.click();
                     }
                 } else if (type === "completion" && answer.trim()) {
-                    const text = option.querySelector("textarea");
-                    const textareaFrame = option.querySelector("iframe");
+                    const text = option.parentElement?.querySelector("textarea");
+                    const textareaFrame = option.parentElement?.querySelector("iframe");
                     if (text) {
                         text.value = answer;
                     }
