@@ -1,4 +1,4 @@
-import { logger } from "../../logger";
+import { logger } from "../logger";
 import { sleep } from "../core/utils";
 import { ScriptSettings } from "../scripts";
 

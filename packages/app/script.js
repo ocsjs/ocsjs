@@ -3,7 +3,6 @@
 const ocs = require("@ocsjs/scripts");
 const { loggerPrefix } = require("@ocsjs/scripts");
 const { Instance: Chalk } = require("chalk");
-const { default: fetch } = require("node-fetch");
 const path = require("path");
 const { LoggerCore } = require("./src/logger.core");
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
@@ -37,7 +36,7 @@ process.on("message", async (message) => {
 
                 /** @type {import("@ocsjs/scripts").LaunchScriptsOptions} */
                 const options = JSON.parse(data);
-                const { userDataDir, launchOptions, scripts, init } = options;
+                const { userDataDir, launchOptions, scripts, init, localStorage: ocsLocalStorage } = options;
                 console.log("\n");
                 debug("任务启动", uid);
                 debug("隐身模式 ", launchOptions.headless === true ? bgBlueBright("开启") : bgRedBright("关闭"));
@@ -70,6 +69,7 @@ process.on("message", async (message) => {
                     scripts,
                     sync: false,
                     init,
+                    localStorage: ocsLocalStorage,
                 });
 
                 debug("启动成功");
@@ -79,11 +79,32 @@ process.on("message", async (message) => {
                 // @ts-ignore
                 page = _page;
 
+                page.on("load", () => injectLocalStorage(page));
+
                 page.context().on("page", (_page) => {
+                    debug("新开页面");
+
                     if (_page.url() === "about:blank") {
                         setTimeout(() => _page.close(), 500);
+                    } else {
+                        /** 注入本地变量 */
+                        _page.on("load", () => injectLocalStorage(_page));
                     }
                 });
+
+                function injectLocalStorage(page) {
+                    page.evaluate((str) => {
+                        console.log("注入题库配置: ", str);
+                        const options = JSON.parse(window.localStorage.OCS || `{}`);
+                        options.setting = options.setting || {};
+                        options.setting.answererWrappers = JSON.parse(str).setting.answererWrappers;
+                        window.localStorage.OCS = JSON.stringify(options);
+                        // @ts-ignore
+                        window.OCS.setting = window.OCS.setting || {};
+                        // @ts-ignore
+                        window.OCS.setting.answererWrappers = options.setting.answererWrappers;
+                    }, JSON.stringify(ocsLocalStorage));
+                }
             } else {
                 console.log(bgYellowBright(loggerPrefix("warn")), "任务已开启，请勿重复开启。", uid);
                 logger.info("任务已开启，请勿重复开启。");

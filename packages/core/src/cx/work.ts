@@ -1,6 +1,6 @@
 import { defaults } from "lodash";
-import { logger } from "../../logger";
-import { domSearch, sleep, StringUtils } from "../core/utils";
+import { logger } from "../logger";
+import { clearSearchResult, domSearch, sleep, StringUtils } from "../core/utils";
 import { OCSWorker } from "../core/worker";
 import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
 import { createSearchResultElement } from "../core/worker/utils";
@@ -23,7 +23,8 @@ export async function workOrExam(
     }
 
     const { search } = domSearch({ search: "#search-results" });
-    if (search) search.innerHTML = "";
+    /** 清空内容 */
+    clearSearchResult(search);
 
     /** 新建答题器 */
     const worker = new OCSWorker({

@@ -139,7 +139,6 @@ export function detail(file: FileNode) {
         maskClosable: true,
         okText: "确定",
         width: 500,
-        icon: undefined,
         content: () =>
             h("div", {}, [
                 desc("uid", file.uid),

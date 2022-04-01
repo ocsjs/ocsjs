@@ -21,6 +21,8 @@ export interface LaunchScriptsOptions {
     sync?: boolean;
     /** 是否初始化油猴脚本 */
     init?: boolean;
+    /** 注入到 localStorage.OCS 的变量 */
+    localStorage: any;
 }
 
 export const scripts: Record<keyof ScriptOptions, ScriptFunction> = {
@@ -107,6 +109,9 @@ async function initScript(browser: Browser | BrowserContext) {
         // @ts-ignore
         page.click(".install-link"),
     ]);
+
+    await installPage.waitForEvent("load");
+    await installPage.waitForTimeout(2000);
 
     await installPage.click(".ask_action_buttons > input");
     await page.close();

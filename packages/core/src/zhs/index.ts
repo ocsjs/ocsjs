@@ -5,8 +5,7 @@ import { createZHSStudySettingPanel, createZHSWorkSettingPanel } from "./panels"
 import { creditStudy, study } from "./study";
 import { createSearchResultPanel, createTerminalPanel, domSearch, sleep } from "../core/utils";
 import { work } from "./work";
-import { logger } from "../../logger";
-import { h } from "vue";
+import { logger } from "../logger";
 
 export const ZHSScript = defineScript({
     name: "知道智慧树",

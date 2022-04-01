@@ -1,6 +1,6 @@
 import { debounce, defaults } from "lodash";
-import { logger } from "../../logger";
-import { domSearch, domSearchAll, sleep, StringUtils } from "../core/utils";
+import { logger } from "../logger";
+import { clearSearchResult, domSearch, domSearchAll, sleep, StringUtils } from "../core/utils";
 import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
 import { OCSWorker } from "../core/worker";
 import { defaultSetting, ScriptSettings } from "../scripts";
@@ -152,7 +152,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
 
     const { TiMu } = domSearchAll({ TiMu: ".TiMu" }, window.document);
     const { search } = domSearch({ search: "#search-results" }, top?.document);
-    if (search) search.innerHTML = "";
+    clearSearchResult(search);
 
     /** 新建答题器 */
     const worker = new OCSWorker({

@@ -91,11 +91,7 @@
                     />
                 </div>
 
-                <Card
-                    class="h-100"
-                    v-show="data.activeKey === 'setting'"
-                    title="启动设置"
-                >
+                <Card v-show="data.activeKey === 'setting'" title="启动设置">
                     <div class="form">
                         <label>自动更新OCS脚本</label>
                         <span class="w-100 text-start">
@@ -105,37 +101,6 @@
                                 v-model:checked="data.options.init"
                             />
                         </span>
-                    </div>
-                    <div class="form">
-                        <label>浏览器路径</label>
-                        <a-input
-                            v-model:value="data.options.launchOptions.executablePath"
-                            placeholder="浏览器路径"
-                        >
-                            <template #suffix>
-                                <a-popover>
-                                    <template #title>
-                                        <b>浏览器路径获取方式</b>
-                                    </template>
-                                    <template #content>
-                                        <div>
-                                            <b>谷歌浏览器</b> : 打开谷歌浏览器 <br />
-                                            访问
-                                            <b>chrome://version</b> 找到
-                                            <b>可执行文件路径</b> 复制粘贴即可
-                                        </div>
-                                        <div>
-                                            <b>Edge浏览器</b> : 打开Edge浏览器<br />
-                                            访问
-                                            <b>edge://version</b> 找到
-                                            <b>可执行文件路径</b> 复制粘贴即可
-                                        </div>
-                                    </template>
-
-                                    <Icon type="icon-question-circle" />
-                                </a-popover>
-                            </template>
-                        </a-input>
                     </div>
 
                     <div class="form">

@@ -20,24 +20,88 @@
                 </Description>
             </Card>
 
-            <Card title="浏览器默认设置">
-                <Description label="浏览器路径">
+            <Card title="默认设置">
+                <Description label="指定浏览器">
+                    <a-select
+                        size="small"
+                        class="w-100"
+                        @change="onBrowserTypeChange"
+                        :defaultValue="browserType"
+                    >
+                        <a-select-option value="diy"> 自定义浏览器 </a-select-option>
+                        <template v-for="(key, index) in keys" :key="index">
+                            <a-select-option
+                                :value="(store.validBrowserPaths as any)[key]"
+                            >
+                                {{ key }}
+                            </a-select-option>
+                        </template>
+                    </a-select>
+                </Description>
+                <Description v-if="browserType === 'diy'" label="自定义浏览器路径">
                     <a-input
                         size="small"
+                        class="w-100"
                         v-model:value="launchOptions.executablePath"
-                    ></a-input>
+                    >
+                        <template #suffix>
+                            <a-popover>
+                                <template #title>
+                                    <b>浏览器路径获取方式</b>
+                                </template>
+                                <template #content>
+                                    <div>
+                                        <b>谷歌浏览器</b> : 打开谷歌浏览器 <br />
+                                        访问
+                                        <b>chrome://version</b> 找到
+                                        <b>可执行文件路径</b> 复制粘贴即可
+                                    </div>
+                                    <div>
+                                        <b>Edge浏览器</b> : 打开Edge浏览器<br />
+                                        访问
+                                        <b>edge://version</b> 找到
+                                        <b>可执行文件路径</b> 复制粘贴即可
+                                    </div>
+                                </template>
+
+                                <Icon type="icon-question-circle" />
+                            </a-popover>
+                        </template>
+                    </a-input>
                 </Description>
-                <Description label="隐身模式">
-                    <a-switch
-                        size="small"
-                        v-model:checked="launchOptions.headless"
-                    ></a-switch>
+                <Description v-else label="默认路径">
+                    {{ launchOptions.executablePath }}
                 </Description>
-                <Description label="无痕浏览">
-                    <a-switch
+
+                <Description label="默认题库设置">
+                    <a-input
                         size="small"
-                        v-model:checked="store.script.userDataDir"
-                    ></a-switch>
+                        class="w-100"
+                        type="text"
+                        :value="answererWrapper"
+                        @change="onAWChange($event)"
+                    >
+                        <template #suffix>
+                            <a-popover>
+                                <template #content>
+                                    <div>
+                                        <b>题库配置教程</b> :
+                                        <a
+                                            href="#"
+                                            @click="
+                                                link(
+                                                    'https://enncy.github.io/online-course-script/answerer-wrappers'
+                                                )
+                                            "
+                                            >https://enncy.github.io/online-course-script/answerer-wrappers</a
+                                        >
+                                    </div>
+                                </template>
+
+                                <Icon type="icon-question-circle" />
+                            </a-popover>
+                        </template>
+                    </a-input>
                 </Description>
             </Card>
 
@@ -70,14 +134,52 @@ import Path from "../../components/Path.vue";
 import { store } from "../../store";
 import { remote } from "../../utils/remote";
 import { LaunchOptions } from "@ocsjs/scripts";
+import { ref } from "vue";
+const { shell } = require("electron");
 
 const launchOptions = store.script.launchOptions as LaunchOptions;
+
+const keys = Reflect.ownKeys(store.validBrowserPaths);
+
+const answererWrapper = ref(
+    store.script.localStorage?.setting?.answererWrappers
+        ? JSON.stringify(store.script.localStorage?.setting?.answererWrappers)
+        : ""
+);
+
+const browserType = ref(
+    keys.find(
+        (key) => (store.validBrowserPaths as any)[key] === launchOptions.executablePath
+    ) || "diy"
+);
 
 function reset() {
     store.version = undefined;
 
     remote.app.call("relaunch");
     remote.app.call("exit", 0);
+}
+
+function onBrowserTypeChange(val: string) {
+    launchOptions.executablePath = val === "diy" ? "" : val;
+    browserType.value =
+        keys.find(
+            (key) =>
+                (store.validBrowserPaths as any)[key] === launchOptions.executablePath
+        ) || "diy";
+}
+
+function link(url: string) {
+    shell.openExternal(url);
+}
+
+function onAWChange(e: Event) {
+    // @ts-ignore
+    let val = e.target.value;
+
+    store.script.localStorage.setting.answererWrappers = val ? JSON.parse(val) : "";
+
+    answererWrapper.value = val;
 }
 </script>
 

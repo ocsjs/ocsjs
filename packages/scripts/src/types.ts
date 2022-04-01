@@ -1,4 +1,4 @@
-import { LaunchOptions, Page } from "playwright";
+import { Page } from "playwright";
 
 import { CXLoginOptions } from "./cx/types";
 import { ZHSLoginOptions } from "./zhs/types";

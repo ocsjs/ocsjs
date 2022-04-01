@@ -4,7 +4,7 @@ import { ScriptOptions } from "@ocsjs/scripts";
  * 表单生成器单项
  */
 export interface FormItem {
-    type: "text" | "password" | "checkbox" | "radio";
+    type: "text" | "number" | "password" | "checkbox" | "radio";
     title: string;
 }
 

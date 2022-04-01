@@ -6,6 +6,8 @@ import { Page } from "playwright";
 import { message } from "ant-design-vue";
 import { remote } from "../../utils/remote";
 import { path } from "../file/File";
+import { store } from "../../store";
+import { markRaw } from "vue";
 const child_process = require("child_process") as typeof import("child_process");
 
 const chalk = new Chalk({ level: 2 });
@@ -55,9 +57,21 @@ export class Process {
 
     /** 启动文件 */
     launch(options: LaunchScriptsOptions) {
-        this.send("launch", options);
+        let opts = JSON.parse(JSON.stringify(options));
+
+        /** 解析默认字段 */
+        opts.launchOptions.executablePath =
+            opts.launchOptions.executablePath === "default"
+                ? store.script.launchOptions.executablePath
+                : opts.launchOptions.executablePath;
+        opts.localStorage = opts.localStorage === "default" ? store.script.localStorage : opts.localStorage;
+
+        // opts.localStorage.setting.answererWrappers = JSON.parse(opts.localStorage.setting.answererWrappers);
+        console.log("opts", opts);
+
+        this.send("launch", opts);
         this.launched = true;
-        this.options = options;
+        this.options = opts;
     }
 
     /** 关闭进程 */

@@ -1,6 +1,6 @@
 import { defaults } from "lodash";
-import { logger } from "../../logger";
-import { domSearch, sleep } from "../core/utils";
+import { logger } from "../logger";
+import { clearSearchResult, domSearch, sleep } from "../core/utils";
 import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
 import { OCSWorker } from "../core/worker";
 import { defaultSetting, ScriptSettings } from "../scripts";
@@ -20,7 +20,8 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
     }
 
     const { search } = domSearch({ search: "#search-results" });
-    if (search) search.innerHTML = "";
+    /** 清空内容 */
+    clearSearchResult(search);
 
     /** 新建答题器 */
     const worker = new OCSWorker({

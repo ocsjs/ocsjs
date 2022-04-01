@@ -15,7 +15,7 @@ export interface Setting {
         Pick<WorkOptions<any>, "period" | "timeout" | "retry" | "stopWhenError"> & { upload: string };
 }
 
-type SupportPlatform = "zhs" | "cx";
+export type SupportPlatform = "zhs" | "cx";
 
 export type ScriptSettings = Record<SupportPlatform, Setting>;
 

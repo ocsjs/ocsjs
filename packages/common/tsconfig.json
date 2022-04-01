@@ -1,17 +1,12 @@
 {
     "compilerOptions": {
-        "target": "es6",
+        "target": "es5",
         "module": "commonjs",
-        "outDir": "./lib",
-        "declaration": true,
         "strict": true,
         "esModuleInterop": true,
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
-        "lib": ["DOM"],
-
-        "resolveJsonModule": true
+        "declaration": true
     },
-
-    "include": ["./src/**/*.ts", "index copy.ts"]
+    "compileOnSave": true
 }

@@ -1,4 +1,4 @@
-import { domSearch } from "./browser/core/utils";
+import { domSearch } from "./core/utils";
 
 export function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
     let extra = level === "error" ? "[错误]" : level === "warn" ? "[警告]" : undefined;

@@ -1,6 +1,6 @@
 import { createApp, defineComponent, ref, h, isVNode, App, watch, computed, KeepAlive, onMounted, nextTick } from "vue";
 import { definedScripts } from ".";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { createFooter, createHeaders, createContainers } from "./core/create.element";
 import { DefineScript } from "./core/define.script";
 import { getCurrentPanels, addFunctionEventListener, getCurrentRoutes, domSearchAll, dragElement } from "./core/utils";

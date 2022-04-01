@@ -1,5 +1,5 @@
 import { OCSWorker } from "./core/worker";
-import { logger } from "../logger";
+import { logger } from "./logger";
 import { getItem, setItem } from "./core/store";
 import { CXScript } from "./cx";
 import { ZHSScript } from "./zhs";

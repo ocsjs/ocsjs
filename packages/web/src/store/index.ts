@@ -5,6 +5,7 @@ import { Project } from "../components/project";
 import { remote } from "../utils/remote";
 const { ipcRenderer } = require("electron");
 const Store = require("electron-store");
+const { getValidBrowserPaths } = require("@ocsjs/common") as typeof import("@ocsjs/common");
 
 const s = new Store();
 
@@ -40,9 +41,15 @@ export const store = reactive({
             ({
                 headless: false,
             } as LaunchOptions),
+        localStorage: s.get("script")?.["localStorage"] || {
+            setting: {},
+        },
     },
     /** 列表展开的 key */
     expandedKeys: s.get("expandedKeys") || [],
+    notify: s.get("notify") || [],
+    validBrowserPaths:
+        (s.get("validBrowserPaths") as ReturnType<typeof getValidBrowserPaths>) || getValidBrowserPaths(),
 });
 
 window.addEventListener("load", () => {
@@ -98,6 +105,7 @@ function handleFile(file: string) {
  * 处理打开的文件
  */
 function initOpenFiles() {
+    store.files = Array.from(new Set(store.files));
     for (const file of store.files) {
         handleFile(String(file));
     }

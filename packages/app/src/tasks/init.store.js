@@ -4,6 +4,7 @@ const Store = require("electron-store");
 const { app } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const { getValidBrowserPaths } = require("@ocsjs/common");
 
 /**
  * 初始化配置
@@ -19,7 +20,7 @@ exports.initStore = function () {
 
         /** 配置文件路径 */
         store.set("config-path", path.resolve(app.getPath("userData"), "./config.json"));
-        
+
         /** 工作区路径 */
         const workspace = path.resolve(app.getPath("userData"), "./workspace");
         fs.mkdirSync(workspace, { recursive: true });
@@ -30,5 +31,11 @@ exports.initStore = function () {
 
         /** 置顶 */
         store.set("alwaysOnTop", false);
+
+        /** 通知 */
+        store.set("notify", []);
+
+        /** 浏览器路径 */
+        store.set("validBrowserPaths", getValidBrowserPaths());
     }
 };

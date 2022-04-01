@@ -6,4 +6,4 @@
  * includes all the function of web script.
  */
 
-export * from "./browser";
+export * from "./src/index";

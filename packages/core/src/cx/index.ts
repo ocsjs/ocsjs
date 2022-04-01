@@ -1,5 +1,4 @@
-import { h } from "vue";
-import { logger } from "../../logger";
+import { logger } from "../logger";
 import { createNote } from "../core/create.element";
 import { defineScript } from "../core/define.script";
 import { createSearchResultPanel, createTerminalPanel, sleep } from "../core/utils";

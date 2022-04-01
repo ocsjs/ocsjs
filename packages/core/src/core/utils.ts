@@ -3,7 +3,7 @@ import interact from "interactjs";
 import { findBestMatch, Rating } from "string-similarity";
 import { RawElements, SearchedElements } from "./worker/interface";
 import { h } from "vue";
-import { logger } from "../../logger";
+import { logger } from "../logger";
 
 export async function sleep(period: number): Promise<void> {
     return new Promise((resolve) => {
@@ -235,6 +235,12 @@ export function createSearchResultPanel() {
         name: "搜题结果",
         el: () => h("div", { id: "search-results" }, ["暂无搜索结果"]),
     };
+}
+
+/** 清除搜题结果 */
+export function clearSearchResult(el: HTMLElement | null) {
+    /** 清空内容 */
+    if (el) el.innerHTML = "开始搜索，点击题目可以展开查看搜题结果。";
 }
 
 export class StringUtils {

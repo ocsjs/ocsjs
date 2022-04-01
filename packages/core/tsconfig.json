@@ -13,5 +13,5 @@
         "resolveJsonModule": true
     },
 
-    "include": ["./src/**/*.ts", "index copy.ts"]
+    "include": ["./index.ts", "./src/**/*.ts"]
 }

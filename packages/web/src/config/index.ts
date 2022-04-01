@@ -56,15 +56,17 @@ export const config = reactive({
                 uid,
                 launchOptions: {
                     headless: false,
+                    executablePath: "default",
                 },
                 scripts: [
                     {
-                        name: "cx-login-other",
+                        name: "cx-login-phone",
                         options: {},
                     },
                 ],
                 userDataDir: path.join(store["user-data-path"], "scriptUserData", uid),
                 init: true,
+                localStorage: "default",
             } as LaunchScriptsOptions,
             null,
             4

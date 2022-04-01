@@ -61,16 +61,14 @@
                             title="教程"
                             url="https://github.com/enncy/online-course-script#readme"
                         />
-                        <TitleLink
-                            title="关于"
-                            url="https://github.com/enncy/online-course-script#readme"
-                        />
+                        <a-menu-item @click="about">关于</a-menu-item>
+
                         <TitleLink
                             title="版本更新"
                             url="https://github.com/enncy/online-course-script/releases"
                         />
                         <TitleLink
-                            title="变更日志"
+                            title="脚本更新日志"
                             url="https://github.com/enncy/online-course-script/blob/3.0/CHANGELOG.md"
                         />
                     </a-menu>
@@ -98,8 +96,10 @@ import { remote } from "../utils/remote";
 import TitleLink from "./TitleLink.vue";
 import { formatDate } from "../utils";
 import { path } from "./file/File";
-import { ref, watch } from "vue";
+import { h, ref, watch } from "vue";
 import favicon from "root/public/favicon.ico";
+import { Modal } from "ant-design-vue";
+import { store } from "../store";
 
 const { shell } = require("electron");
 
@@ -124,6 +124,31 @@ function relaunch() {
 
 function openLog() {
     shell.openPath(path.join(remote.app.call("getPath", "logs"), formatDate()));
+}
+
+function about() {
+    Modal.info({
+        title: "关于",
+        closable: true,
+        maskClosable: true,
+        content: h("ul", [
+            h("li", "版本 : " + store.version),
+            h("li", [
+                h("span", "版本详情 : "),
+                h(
+                    "a",
+                    {
+                        href: "#",
+                        onClick: () =>
+                            shell.openExternal(
+                                "https://enncy.github.io/online-course-script/app-version"
+                            ),
+                    },
+                    "https://enncy.github.io/online-course-script/app-version"
+                ),
+            ]),
+        ]),
+    });
 }
 
 const max = ref<boolean>(remote.win.call("isMaximized"));

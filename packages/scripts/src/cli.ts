@@ -4,7 +4,6 @@ import { Command } from "commander";
 import { launchScripts, LaunchScriptsOptions } from "./script";
 import fs from "fs";
 import path from "path";
-import { loggerPrefix } from "../logger";
 import { Instance as Chalk } from "chalk";
 
 const chalk = new Chalk({ level: 2 });
@@ -28,10 +27,10 @@ Example:
         try {
             const file = fs.readFileSync(filePath).toString();
             try {
-                const { userDataDir, launchOptions, scripts }: LaunchScriptsOptions = JSON.parse(file);
+                const options: LaunchScriptsOptions = JSON.parse(file);
 
                 try {
-                    await launchScripts({ userDataDir, launchOptions, scripts });
+                    await launchScripts(options);
                 } catch (e) {
                     error("运行错误", e);
                 }
@@ -43,9 +42,7 @@ Example:
         }
 
         function error(msg: string, e: any) {
-            console.log(
-                `\n${chalk.bgRedBright(loggerPrefix("error"))} ${msg} : ${filePath}\n\n${(e as Error).stack}\n`
-            );
+            console.log(`\n${chalk.bgRedBright("[OCS] error : ")} ${msg} : ${filePath}\n\n${(e as Error).stack}\n`);
         }
     })
 
