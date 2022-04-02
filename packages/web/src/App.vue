@@ -9,70 +9,10 @@
 import Index from "./pages/index.vue";
 import Title from "./components/Title.vue";
 import { notify } from "./utils/notify";
-import axios from "axios";
-import { message, Modal } from "ant-design-vue";
-import { store } from "./store";
-import { h } from "vue";
+import { fetchRemoteNotify } from "./utils";
 
-/** 获取最新通知 */
-axios
-    .get("https://enncy.github.io/online-course-script/infos.json?t=" + Date.now())
-    .then(({ data }) => {
-        const notify = (data.notify as any[]) || [];
-
-        /** 寻找未阅读的通知 */
-        const unread = notify.filter(
-            (item) =>
-                // 寻找未阅读过的
-                (store.notify as any[]).findIndex(
-                    (localeItem) => item?.id === localeItem?.id
-                ) === -1
-        );
-
-        console.log("notify", { data, exits: store.notify, unread });
-        if (unread.length) {
-            Modal.info({
-                title: () => "🎉最新公告🎉",
-                okText: "朕已阅读",
-                cancelText: "下次一定",
-                okCancel: true,
-                style: { top: "20px" },
-                content: () =>
-                    h(
-                        "div",
-                        {
-                            style: {
-                                maxHeight: "320px",
-                                overflow: "auto",
-                            },
-                        },
-                        unread.map((item) =>
-                            h("div", [
-                                h(
-                                    "div",
-                                    {
-                                        style: {
-                                            marginBottom: "6px",
-                                            fontWeight: "bold",
-                                        },
-                                    },
-                                    item?.id || "无标题"
-                                ),
-                                h(
-                                    "ul",
-                                    item.content.map((text: string) => h("li", text))
-                                ),
-                            ])
-                        )
-                    ),
-                onOk() {
-                    store.notify = [...store.notify].concat(unread);
-                },
-                onCancel() {},
-            });
-        }
-    })
-    .catch((err) => message.error("最新通知获取失败 : " + err));
+/** 获取最新远程通知 */
+fetchRemoteNotify();
 
 /** 如果正在更新的话，获取更新进度 */
 const { ipcRenderer } = require("electron");

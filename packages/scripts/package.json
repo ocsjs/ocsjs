@@ -17,6 +17,7 @@
         "test": "playwright test --config=playwright.config.ts"
     },
     "dependencies": {
+        "@ocsjs/common": "workspace:^1.0.0",
         "axios": "^0.25.0",
         "chalk": "4.1.0",
         "commander": "^9.0.0",

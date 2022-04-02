@@ -1,22 +1,18 @@
 // @ts-check
 
-const { default: axios } = require("axios");
 const { app, dialog, clipboard } = require("electron");
 const semver = require("semver");
 const { Logger } = require("../logger");
 
 const path = require("path");
 const { downloadFile } = require("../utils");
-const { fork } = require("child_process");
+const { OCSApi } = require("@ocsjs/common");
 
 exports.updater = async function (win) {
     const logger = Logger("updater");
-    const { data } = await axios.get("https://enncy.github.io/online-course-script/infos.json?t=" + Date.now());
+    const infos = await OCSApi.getInfos();
 
-    /**
-     * @type {any[]}
-     */
-    const versions = data.versions || [];
+    const versions = infos.versions || [];
 
     const newVersion = versions.find((version) => semver.lt(app.getVersion(), version.tag));
     /** 自动更新 */
@@ -27,9 +23,9 @@ exports.updater = async function (win) {
             message: [
                 `检测到最新版本：${tag}`,
                 "新增功能:",
-                description?.["feat"]?.map((s) => `    + ${s}`).join("\n"),
+                description?.feat?.map((s) => `    + ${s}`).join("\n"),
                 "修复BUG:",
-                description?.["fix"]?.map((s) => `    - ${s}`).join("\n"),
+                description?.fix?.map((s) => `    - ${s}`).join("\n"),
                 "",
                 "是否更新 ?",
             ].join("\n"),

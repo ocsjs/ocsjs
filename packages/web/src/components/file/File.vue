@@ -39,7 +39,7 @@
                         >
                         </Icon>
                         <Icon
-                            @click="run"
+                            @click="submitData"
                             :title="file.stat.running ? '关闭' : '运行'"
                             :type="
                                 file.stat.running
@@ -119,23 +119,30 @@
                         </a-select>
                     </div>
 
-                    <template v-for="(item, index) in loginTypeForms" :key="index">
-                        <div class="form">
-                            <label> {{ item.title }} </label>
-                            <template v-if="item.type === 'text'">
-                                <a-input
-                                    v-model:value="(data.options.scripts[0].options as any)[item.name]"
-                                    :placeholder="'输入' + item.title"
-                                />
-                            </template>
-                            <template v-if="item.type === 'password'">
-                                <a-input-password
-                                    v-model:value="(data.options.scripts[0].options as any)[item.name]"
-                                    :placeholder="'输入' + item.title"
-                                />
-                            </template>
-                        </div>
-                    </template>
+                    <form ref="dataForm">
+                        <template v-for="(item, index) in loginTypeForms" :key="index">
+                            <div class="form">
+                                <label> {{ item.title }} </label>
+                                <template v-if="['tel', 'text'].includes(item.type)">
+                                    <a-input
+                                        :type="item.type"
+                                        v-model:value="(data.options.scripts[0].options as any)[item.name]"
+                                        :placeholder="'输入' + item.title"
+                                        :required="item.required"
+                                        :name="item.name"
+                                    />
+                                </template>
+                                <template v-if="item.type === 'password'">
+                                    <a-input-password
+                                        v-model:value="(data.options.scripts[0].options as any)[item.name]"
+                                        :placeholder="'输入' + item.title"
+                                        :required="item.required"
+                                        :name="item.name"
+                                    />
+                                </template>
+                            </div>
+                        </template>
+                    </form>
                 </Card>
             </div>
         </div>
@@ -229,6 +236,8 @@ if (data.options && data.error === undefined) {
     );
 }
 
+const dataForm = ref();
+
 /**
  * 解析第一个 script 内容，根据 script 的名字进行解析，并生成表单
  */
@@ -240,6 +249,7 @@ const loginTypeForms = computed(() => {
             name: key,
             title: target[key].title,
             type: target[key].type,
+            required: target[key].required,
         }));
     }
 });
@@ -248,6 +258,15 @@ const loginTypeForms = computed(() => {
 function onScriptChange() {
     if (data.options) {
         data.options.scripts[0].options = {};
+    }
+}
+
+/** 验证表单 */
+function submitData() {
+    if (dataForm.value.checkValidity()) {
+        run();
+    } else {
+        dataForm.value.reportValidity();
     }
 }
 

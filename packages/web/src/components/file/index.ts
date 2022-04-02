@@ -4,8 +4,9 @@ import { ScriptOptions } from "@ocsjs/scripts";
  * 表单生成器单项
  */
 export interface FormItem {
-    type: "text" | "number" | "password" | "checkbox" | "radio";
+    type: "text" | "number" | "password" | "checkbox" | "radio" | "tel";
     title: string;
+    required: boolean;
 }
 
 /**
@@ -20,57 +21,68 @@ export const scriptForms: Record<keyof ScriptOptions, any> = {
     "cx-login-other": {} as Form<"cx-login-other">,
     "cx-login-phone": {
         phone: {
-            type: "text",
+            type: "tel",
             title: "手机号",
+            required: true,
         },
         password: {
             type: "password",
             title: "密码",
+            required: true,
         },
     } as Form<"cx-login-phone">,
     "cx-login-phone-code": {
         phone: {
-            type: "text",
+            type: "tel",
             title: "手机号",
+            required: true,
         },
     } as Form<"cx-login-phone-code">,
     "cx-login-school": {
         unitname: {
             type: "text",
             title: "机构名/学校名",
+            required: true,
         },
         uname: {
             type: "text",
             title: "学号",
+            required: true,
         },
         password: {
             type: "password",
             title: "密码",
+            required: true,
         },
     } as Form<"cx-login-school">,
     "zhs-login-other": {} as Form<"zhs-login-other">,
     "zhs-login-phone": {
         phone: {
-            type: "text",
+            type: "tel",
             title: "手机号",
+            required: true,
         },
         password: {
             type: "password",
             title: "密码",
+            required: true,
         },
     } as Form<"zhs-login-phone">,
     "zhs-login-school": {
         schoolname: {
             type: "text",
             title: "学校名",
+            required: true,
         },
         code: {
             type: "text",
             title: "学号",
+            required: true,
         },
         password: {
             type: "password",
             title: "密码",
+            required: true,
         },
     } as Form<"zhs-login-school">,
 };

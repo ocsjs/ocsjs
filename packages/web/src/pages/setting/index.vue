@@ -84,6 +84,7 @@
                         <template #suffix>
                             <a-popover>
                                 <template #content>
+                                    <div><b>请直接复制粘贴，不要一个个字输入</b></div>
                                     <div>
                                         <b>题库配置教程</b> :
                                         <a

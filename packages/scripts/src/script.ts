@@ -1,4 +1,4 @@
-import axios from "axios";
+import { OCSApi } from "@ocsjs/common";
 import { Browser, BrowserContext, chromium, LaunchOptions, Page } from "playwright";
 import { CX, ZHS } from ".";
 import { ScriptFunction, ScriptOptions } from "./types";
@@ -63,7 +63,7 @@ export async function launchScripts({ userDataDir, launchOptions, scripts, sync 
             await initScript(browser);
             console.log("脚本更新完毕");
         } catch (e) {
-            console.log("自动更新脚本失败，请手动更新，或者忽略。", e);
+            console.log("自动更新脚本失败，请手动更新，或者忽略。", (e as any)?.message);
         }
     }
 
@@ -99,10 +99,10 @@ export function script<T extends keyof ScriptOptions>(name: T, options: ScriptOp
  */
 async function initScript(browser: Browser | BrowserContext) {
     /** 获取最新资源信息 */
-    const { data } = await axios.get("https://enncy.github.io/online-course-script/infos.json?t=" + Date.now());
+    const infos = await OCSApi.getInfos();
 
     const page = await browser.newPage();
-    await page.goto(data.resource.tampermonkey);
+    await page.goto(infos.resource.tampermonkey);
 
     const [installPage] = await Promise.all([
         page.context().waitForEvent("page"),
@@ -110,8 +110,7 @@ async function initScript(browser: Browser | BrowserContext) {
         page.click(".install-link"),
     ]);
 
-    await installPage.waitForEvent("load");
-    await installPage.waitForTimeout(2000);
+    await installPage.waitForTimeout(3000);
 
     await installPage.click(".ask_action_buttons > input");
     await page.close();

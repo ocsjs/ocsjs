@@ -50,7 +50,6 @@ process.on("message", async (message) => {
                     log(name, severity, message, args) {
                         const str = [severity, new Date().toLocaleTimeString(), name, message, args].join(" ");
                         console.log(str);
-                        logger.info(str);
                     },
                 };
 
@@ -92,17 +91,34 @@ process.on("message", async (message) => {
                 });
 
                 function injectLocalStorage(page) {
-                    page.evaluate((str) => {
-                        console.log("注入题库配置: ", str);
-                        const options = JSON.parse(window.localStorage.OCS || `{}`);
-                        options.setting = options.setting || {};
-                        options.setting.answererWrappers = JSON.parse(str).setting.answererWrappers;
-                        window.localStorage.OCS = JSON.stringify(options);
-                        // @ts-ignore
-                        window.OCS.setting = window.OCS.setting || {};
-                        // @ts-ignore
-                        window.OCS.setting.answererWrappers = options.setting.answererWrappers;
-                    }, JSON.stringify(ocsLocalStorage));
+                    if (ocsLocalStorage) {
+                        page.evaluate((str) => {
+                            console.log("注入题库配置: ", str);
+                            let opts;
+                            try {
+                                opts = JSON.parse(window.localStorage.OCS);
+                            } catch {
+                                opts = { setting: {} };
+                            }
+                            console.log("options", opts);
+                            if (str && opts.setting) {
+                                opts.setting.answererWrappers = JSON.parse(str)?.setting?.answererWrappers;
+                                window.localStorage.OCS = JSON.stringify(opts);
+                                // @ts-ignore
+                                if (window.OCS) {
+                                    // @ts-ignore
+                                    window.OCS.setting = window.OCS.setting || {};
+                                    // @ts-ignore
+                                    window.OCS.setting.answererWrappers = opts.setting.answererWrappers;
+                                }
+                            }
+                        }, JSON.stringify(ocsLocalStorage));
+                    } else {
+                        console.log(
+                            bgRedBright(loggerPrefix("error")),
+                            "题库配置检测不到， 请尝试重新创建文件，或者自己在页面设置中填写。"
+                        );
+                    }
                 }
             } else {
                 console.log(bgYellowBright(loggerPrefix("warn")), "任务已开启，请勿重复开启。", uid);
@@ -129,6 +145,6 @@ process.on("message", async (message) => {
 });
 
 function loggerPrefix(level) {
-    let extra = level === "error" ? "[错误]" : level === "warn" ? "[警告]" : undefined;
+    let extra = level === "error" ? "错误" : level === "warn" ? "警告" : undefined;
     return `[OCS${extra ? " " + extra : ""}] ${new Date().toLocaleTimeString()}`;
 }

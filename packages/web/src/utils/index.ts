@@ -1,3 +1,8 @@
+import { message, Modal } from "ant-design-vue";
+import { h } from "vue";
+import { store } from "../store";
+const { OCSApi } = require("@ocsjs/common") as typeof import("@ocsjs/common");
+
 /**
  * 防抖
  * @param fn 方法
@@ -48,4 +53,63 @@ export function formatDate() {
         String(date.getMonth() + 1).padStart(2, "0"),
         date.getDate().toString().padStart(2, "0"),
     ].join("-");
+}
+
+/** 获取远程通知 */
+export async function fetchRemoteNotify() {
+    try {
+        const infos = await OCSApi.getInfos();
+
+        const remoteNotify = infos.notify;
+        const storeNotify: typeof infos.notify = store.notify;
+        /** 寻找未阅读的通知 */
+        const unread = remoteNotify.filter(
+            (item) => storeNotify.findIndex((localeItem) => item?.id === localeItem?.id) === -1
+        );
+
+        console.log("notify", { infos, exits: storeNotify, unread });
+        if (unread.length) {
+            Modal.info({
+                title: () => "🎉最新公告🎉",
+                okText: "朕已阅读",
+                cancelText: "下次一定",
+                okCancel: true,
+                style: { top: "20px" },
+                content: () =>
+                    h(
+                        "div",
+                        {
+                            style: {
+                                maxHeight: "320px",
+                                overflow: "auto",
+                            },
+                        },
+                        unread.map((item) =>
+                            h("div", [
+                                h(
+                                    "div",
+                                    {
+                                        style: {
+                                            marginBottom: "6px",
+                                            fontWeight: "bold",
+                                        },
+                                    },
+                                    item?.id || "无标题"
+                                ),
+                                h(
+                                    "ul",
+                                    item.content.map((text: string) => h("li", text))
+                                ),
+                            ])
+                        )
+                    ),
+                onOk() {
+                    store.notify = [...store.notify].concat(unread);
+                },
+                onCancel() {},
+            });
+        }
+    } catch (e) {
+        message.error("最新通知获取失败：" + e);
+    }
 }

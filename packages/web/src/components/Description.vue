@@ -1,6 +1,6 @@
 <template>
     <span class="row flex-nowrap mb-1">
-        <span class="me-1 col-3"> {{ label }} : </span>
+        <span class="me-1 col-3 desc-label"> {{ label }} : </span>
 
         <span class="ms-1 col-9">
             <span v-if="desc" class="desc" :class="textClass"> {{ String(desc) }}</span>
@@ -28,5 +28,9 @@ const { label, desc, textClass } = toRefs(props);
 .desc {
     word-wrap: break-word;
     word-break: break-all;
+}
+
+.desc-label {
+    white-space: nowrap;
 }
 </style>

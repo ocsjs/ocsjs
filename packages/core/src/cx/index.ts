@@ -51,6 +51,14 @@ export const CXScript = defineScript({
             onload() {
                 const { restudy } = OCS.setting.cx.video;
 
+                const params = new URLSearchParams(window.location.href);
+                const mooc = params.get("mooc2");
+                /** 切换新版 */
+                if (mooc === null) {
+                    params.set("mooc2", "1");
+                    window.location.replace(decodeURIComponent(params.toString()));
+                }
+
                 let chapters = Array.from(document.querySelectorAll('[onclick^="getTeacherAjax"]')).map((el) => {
                     return {
                         chapterId: el.getAttribute("onclick")?.match(/\('(.*)','(.*)','(.*)'\)/)?.[3],

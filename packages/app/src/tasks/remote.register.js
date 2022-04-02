@@ -1,7 +1,9 @@
 const { ipcMain, app, dialog, BrowserWindow } = require("electron");
+const { default: axios } = require("axios");
 const { Logger } = require("../logger");
 const trash = require("trash");
 const { autoLaunch } = require("./auto.launch");
+const { OCSApi } = require("@ocsjs/common");
 
 /**
  * 注册主进程远程通信事件

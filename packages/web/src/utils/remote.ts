@@ -1,3 +1,4 @@
+import { Axios } from "axios";
 import { BrowserWindow, App, Dialog, WebContents, Clipboard } from "electron";
 import { notify } from "./notify";
 const { ipcRenderer } = require("electron");

@@ -14,7 +14,6 @@ ocs-panel {
   text-align: left;
   box-shadow: 0px 2px 6px #848484;
   max-width: 800px;
-  max-height: 1000px;
 }
 ocs-panel .ocs-panel-header {
   gap: 12px;
@@ -34,6 +33,8 @@ ocs-panel .ocs-panel-header .title.active {
 ocs-panel .ocs-panel-container {
   font-size: 12px;
   padding: 4px;
+  max-height: 400px;
+  overflow: auto;
 }
 ocs-panel .ocs-panel-container ul li {
   list-style: inside;

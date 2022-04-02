@@ -2,8 +2,8 @@
     "name": "@ocsjs/common",
     "version": "1.0.0",
     "description": "common package of ocs",
-    "main": "index.js",
-    "types": "index.d.ts",
+    "main": "./lib/index.js",
+    "types": "./lib/index.d.ts",
     "scripts": {},
     "repository": {
         "type": "git",
@@ -24,5 +24,8 @@
     "bugs": {
         "url": "https://github.com/enncy/online-course-script/issues"
     },
-    "homepage": "https://github.com/enncy/online-course-script#readme"
+    "homepage": "https://github.com/enncy/online-course-script#readme",
+    "dependencies": {
+        "axios": "^0.25.0"
+    }
 }
