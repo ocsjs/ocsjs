@@ -16,6 +16,9 @@ exports.updater = async function (win) {
     const versions = infos.versions || [];
 
     const newVersion = versions.find((version) => semver.lt(app.getVersion(), version.tag));
+
+    logger.info("updater", { versions, newVersion });
+
     /** 自动更新 */
     if (newVersion) {
         const { url, tag, description } = newVersion;

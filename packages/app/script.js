@@ -80,12 +80,8 @@ process.on("message", async (message) => {
                 page.on("load", () => injectLocalStorage(page));
 
                 page.context().on("page", (_page) => {
-                    if (_page.url() === "about:blank") {
-                        setTimeout(() => _page.close(), 500);
-                    } else {
-                        /** 注入本地变量 */
-                        _page.on("load", () => injectLocalStorage(_page));
-                    }
+                    /** 注入本地变量 */
+                    _page.on("load", () => injectLocalStorage(_page));
                 });
 
                 function injectLocalStorage(page) {
