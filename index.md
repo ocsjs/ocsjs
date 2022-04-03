@@ -4,7 +4,7 @@
 
 -   [油猴运行](#油猴教程)
 -   [OCS软件运行](#ocs软件教程)
- 
+-   [自动答题功能](#自动答题功能)
 
 # 油猴教程
 
@@ -18,9 +18,15 @@
 -   [谷歌浏览器网上商店(需翻墙)](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 -   [Edge 浏览器网上商店](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)
 
-2.安装 [OCS 油猴脚本](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
+2.打开 [OCS 油猴脚本链接](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
-3.打开任意的 [`网课平台`](#支持的网课平台) 即可自动运行
+3.点击绿色按钮安装
+
+4.打开任意的 [`网课平台`](#支持的网课平台) 
+
+5.等待页面上出现提示面板
+
+6.根据面板提示操作，进入学习，作业考试页面即可自动运行。
 
 # OCS软件教程
 
