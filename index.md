@@ -34,9 +34,7 @@
 
 软件教程 : [https://enncy.github.io/online-course-script/app](https://enncy.github.io/online-course-script/app)
 
-下载地址 : [https://github.com/enncy/online-course-script/releases](https://github.com/enncy/online-course-script/releases)
-
-下载不了的可以[加 qq 群](#交流群)，群文件里面有。
+下载地址 : [https://enncy.github.io/online-course-script/app-version](https://enncy.github.io/online-course-script/app-version)
 
 ## 项目开发文档
 
