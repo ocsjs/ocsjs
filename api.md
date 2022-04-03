@@ -3,9 +3,10 @@
 ## 目录
 
 - [项目结构](#项目结构)
+- [项目构建](#项目构建) 
 - [项目运行](#项目运行) 
 - [软件打包](#软件打包) 
-- [项目打包](#项目打包) 
+- [脚本打包](#脚本打包) 
 - [本地调试](#本地调试) 
 - [API](#API)
 
@@ -13,17 +14,30 @@
 
 ```
 + packages
-    + app                   # electron 主进程
-    + scripts               # 脚本实现库
-        + src
-            + browser       # 浏览器脚本实现
-            + nodejs        # node 端实现， 使用 playwright 进行浏览器控制
+    + core				   # 油猴脚本库
+    + scripts               # 软件自动登录库
+    + common			   # 公共库 (一些工具方法)
     + web                   # 使用 vue3 + ts + ant design vue 构建的 electron 渲染进程
-- gulpfile.js               # gulp 文件
-- webpack.config.js         # webpack 打包配置 ： 打包 packages/browser.entry.js 作为浏览器端环境
+    + app                   # electron 主进程
++ scripts				   # 项目打包构建 gulp 文件
+- gulpfile.js               # 主 gulp 文件，打包 core 油猴脚本库
+- webpack.config.js         # webpack 打包配置 ： 打包  core 油猴脚本库 作为浏览器端环境
 ```
 
-## 项目运行
+## package.json 命令介绍
+
+```json
+{
+        "webpack": "webpack --config webpack.config.js", // 打包 core 油猴脚本库 作为浏览器端环境
+        "build:core": "pnpm build && gulp --allowEmpty", // 配合 webpack 命令进行 core构建， 文件夹清理，css文件打包等构建流程
+        "build:app": "pnpm build && gulp -f ./scripts/build.js ", // 打包 web 和 app 的软件端
+        "build": "gulp -f ./scripts/tsc.js", // 为每个 typescript 子项目运行 tsc 命令
+}
+```
+
+ 
+
+## 项目构建
 
 ```sh
 # 全局安装 pnpm ，如果已经安装，则无需执行
@@ -34,14 +48,11 @@ git clone https://github.com/enncy/online-course-script.git ocs
 cd ocs
 # 使用 pnpm 安装依赖
 pnpm i -w
+# 构建项目 (为每个子项目进行 tsc 构建)
+pnpm build
 ```
 
-```sh
-# 进入 scripts
-cd packages/scripts
-# 编译 scripts 项目
-npx tsc
-```
+## 项目运行
 
 接下来打开 2 个终端，分别执行 :
 
@@ -62,25 +73,13 @@ npm run dev
 ## 软件打包
 
 ```sh
-# 进入 web 渲染进程
-cd packages/web
-# 编译 vue 项目到 app 下的 public 目录
-npm run build
+pnpm build:app
 ```
 
-```sh
-# 进入 app 主进程
-cd packages/app
-# 轻量打包
-npm run pack
-# 生成执行文件
-npm run dist
-```
-
-## 项目打包
+## 脚本打包
 
 ```sh
-npm run gulp
+pnpm build:core
 ```
 
 ## 本地调试
@@ -95,6 +94,5 @@ npm run gulp
 ```
 
 ## API
-...
 
-
+...编写中
