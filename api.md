@@ -12,17 +12,17 @@
 
 ## 项目结构
 
-```
-+ packages
-    + core				   # 油猴脚本库
-    + scripts              # 软件自动登录库
-    + common			   # 公共库 (一些工具方法)
-    + web                  # 使用 vue3 + ts + ant design vue 构建的 electron 渲染进程
-    + app                  # electron 主进程
-+ scripts				   # 项目打包构建 gulp 文件
-- gulpfile.js              # 主 gulp 文件，打包 core 油猴脚本库
-- webpack.config.js        # webpack 打包配置 ： 打包  core 油猴脚本库 作为浏览器端环境
-```
+
++ `packages`
+    + `core`                油猴脚本库
+    + `scripts`              软件自动登录库
+    + `common`			   公共库 (一些工具方法)
+    + `web`                  使用 vue3 + ts + ant design vue 构建的 electron 渲染进程
+    + `app`                 electron 主进程
++ `scripts`				   项目打包构建 gulp 文件
+- `gulpfile.js`             主 gulp 文件，打包 core 油猴脚本库
+- `webpack.config.js`        webpack 打包配置 ： 打包  core 油猴脚本库 作为浏览器端环境
+
 
 ## package.json 命令介绍
 
