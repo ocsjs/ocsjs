@@ -4,19 +4,7 @@
         "tampermonkey": "https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B"
     },
     "versions": [
-        {
-            "tag": "1.2.1",
-            "description": {
-                "feat": [
-                    "添加浏览器路径自动查询功能",
-                    "添加题库配置设置，可以直接应用到每个文件，无需每次手动填写"
-                ],
-                "fix": [
-                    "修复脚本执行报错的BUG"
-                ]
-            },
-            "url":"https://cdn.ocs.enncy.cn/resources/app1.2.1.zip"
-        }
+  
     ],
     "notify": [
         {
