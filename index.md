@@ -4,7 +4,7 @@
 
 -   [油猴运行](#油猴教程)
 -   [OCS软件运行](#ocs软件教程)
--   [自动答题功能](#自动答题功能)
+-   [自动答题功能](https://enncy.github.io/online-course-script/answerer-wrappers)
 
 # 油猴教程
 
