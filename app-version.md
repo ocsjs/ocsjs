@@ -1,6 +1,6 @@
 # 软件下载列表
 
-## [ocs-1.2.1-setup-win-x64.exe](https://cdn.ocs.enncy.cn/resources/ocs-1.2.1-setup-win-x64.exe)  
+## [ocs-1.2.1.exe](https://cdn.ocs.enncy.cn/resources/ocs-1.2.1-setup-win-x64.exe)  
  
 - 自动更新
 - 实时通知
