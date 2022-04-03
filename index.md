@@ -45,10 +45,7 @@
 > `缺点`: BUG可能比较多🤣
 
 软件教程 : [https://enncy.github.io/online-course-script/app](https://enncy.github.io/online-course-script/app)
-
-下载地址 : [https://enncy.github.io/online-course-script/app-version](https://enncy.github.io/online-course-script/app-version)
- 
-
+  
 # 支持的网课平台
 
 目前支持的网课平台 :
