@@ -30,7 +30,7 @@ export class Process {
 
         const shell = child_process.fork(target, { stdio: ["ipc"] });
         shell.stdout?.on("data", (data: any) => xterm.write(data));
-        shell.stderr?.on("data", (data: any) => xterm.write(chalk.redBright(data)));
+        shell.stderr?.on("data", (data: any) => remote.logger.call("error", String(data)));
         this.shell = shell;
     }
 

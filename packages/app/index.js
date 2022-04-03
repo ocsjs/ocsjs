@@ -37,7 +37,6 @@ function bootstrap() {
                 task("注册app事件监听器", () => globalListenerRegister(window));
 
                 if (app.isPackaged) {
-                    task("软件更新", () => updater(window));
                     await window.loadFile("public/index.html");
                 } else {
                     await window.loadURL("http://localhost:3000");
@@ -45,7 +44,9 @@ function bootstrap() {
 
                 window.show();
 
-                window.webContents.openDevTools();
+                if (app.isPackaged) {
+                    task("软件更新", () => updater(window));
+                }
             }),
         ])
     );

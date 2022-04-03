@@ -32,7 +32,7 @@
                         <a-menu-item @click="relaunch">重新启动</a-menu-item>
                         <a-menu-divider />
 
-                        <a-menu-item @click="remote.win.call('setAlwaysOnTop')"
+                        <a-menu-item @click="remote.win.call('setAlwaysOnTop', true)"
                             >窗口置顶</a-menu-item
                         >
 
@@ -62,6 +62,7 @@
                             url="https://github.com/enncy/online-course-script#readme"
                         />
                         <a-menu-item @click="about">关于</a-menu-item>
+                        <a-menu-item @click="allNotify">全部通知</a-menu-item>
 
                         <TitleLink
                             title="版本更新"
@@ -94,7 +95,7 @@ import { config } from "../config";
 import { router, routes } from "../route";
 import { remote } from "../utils/remote";
 import TitleLink from "./TitleLink.vue";
-import { formatDate } from "../utils";
+import { fetchRemoteNotify, formatDate } from "../utils";
 import { path } from "./file/File";
 import { h, ref, watch } from "vue";
 import favicon from "root/public/favicon.ico";
@@ -126,13 +127,17 @@ function openLog() {
     shell.openPath(path.join(remote.app.call("getPath", "logs"), formatDate()));
 }
 
+function allNotify() {
+    fetchRemoteNotify(true);
+}
+
 function about() {
     Modal.info({
         title: "关于",
         closable: true,
         maskClosable: true,
         content: h("ul", [
-            h("li", "版本 : " + store.version),
+            h("li", "软件版本 : " + remote.app.call("getVersion")),
             h("li", [
                 h("span", "版本详情 : "),
                 h(

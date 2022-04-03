@@ -45,16 +45,28 @@ export const scriptNames = [
     ["zhs-login-school", "智慧树学校登录"],
 ];
 
+process.on("unhandledRejection", (e) => {
+    console.error("未知错误", e);
+});
+
+process.on("uncaughtException", (e) => {
+    console.error("未知错误", e);
+});
+
 /**
  * 运行脚本
  */
 export async function launchScripts({ userDataDir, launchOptions, scripts, sync = true, init }: LaunchScriptsOptions) {
-    let browser: Browser | BrowserContext;
+    let browser: BrowserContext;
 
-    if (userDataDir && userDataDir !== "") {
-        browser = await chromium.launchPersistentContext(userDataDir, launchOptions);
+    if (userDataDir) {
+        browser = await chromium.launchPersistentContext(userDataDir, {
+            viewport: null,
+            ignoreHTTPSErrors: true,
+            ...launchOptions,
+        });
     } else {
-        browser = await chromium.launch(launchOptions);
+        throw "传入的数据文件夹为空";
     }
     let page = await browser.newPage();
 

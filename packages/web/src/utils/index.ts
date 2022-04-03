@@ -55,24 +55,29 @@ export function formatDate() {
     ].join("-");
 }
 
-/** 获取远程通知 */
-export async function fetchRemoteNotify() {
+/**
+ * 获取远程通知
+ * @param readAll 是否阅读全部
+ */
+export async function fetchRemoteNotify(readAll: boolean) {
     try {
         const infos = await OCSApi.getInfos();
 
-        const remoteNotify = infos.notify;
+        let remoteNotify = infos.notify;
         const storeNotify: typeof infos.notify = store.notify;
         /** 寻找未阅读的通知 */
-        const unread = remoteNotify.filter(
-            (item) => storeNotify.findIndex((localeItem) => item?.id === localeItem?.id) === -1
-        );
+        if (!readAll) {
+            remoteNotify = remoteNotify.filter(
+                (item) => storeNotify.findIndex((localeItem) => item?.id === localeItem?.id) === -1
+            );
+        }
 
-        console.log("notify", { infos, exits: storeNotify, unread });
-        if (unread.length) {
+        console.log("notify", { infos, exits: storeNotify, remoteNotify });
+        if (remoteNotify.length) {
             Modal.info({
                 title: () => "🎉最新公告🎉",
-                okText: "朕已阅读",
-                cancelText: "下次一定",
+                okText: readAll ? "确定" : "朕已阅读",
+                cancelText: readAll ? "取消" : "下次一定",
                 okCancel: true,
                 style: { top: "20px" },
                 content: () =>
@@ -84,7 +89,7 @@ export async function fetchRemoteNotify() {
                                 overflow: "auto",
                             },
                         },
-                        unread.map((item) =>
+                        remoteNotify.map((item) =>
                             h("div", [
                                 h(
                                     "div",
@@ -104,7 +109,9 @@ export async function fetchRemoteNotify() {
                         )
                     ),
                 onOk() {
-                    store.notify = [...store.notify].concat(unread);
+                    if (!readAll) {
+                        store.notify = [...store.notify].concat(remoteNotify);
+                    }
                 },
                 onCancel() {},
             });

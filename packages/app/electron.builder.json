@@ -6,8 +6,7 @@
     "asar": false,
     "copyright": "Copyright © 2021 ${author}",
     "nsis": {
-        "oneClick": false,
-        "allowToChangeInstallationDirectory": true
+        "oneClick": true
     },
     "win": {
         "icon": "public/favicon.ico",

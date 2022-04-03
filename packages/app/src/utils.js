@@ -26,7 +26,7 @@ exports.task = async function (name, func) {
  */
 exports.downloadFile = async function (fileURL, outputURL, rateHandler) {
     logger.info("downloadFile", fileURL, outputURL);
-    const writer = createWriteStream(outputURL);
+
     return new Promise(async (resolve, reject) => {
         const { data, headers } = await axios.get(fileURL, {
             responseType: "stream",
@@ -39,7 +39,9 @@ exports.downloadFile = async function (fileURL, outputURL, rateHandler) {
             rateHandler(rate, totalLength, chunkLength);
         });
 
+        const writer = createWriteStream(outputURL);
         data.pipe(writer);
-        resolve(finished(writer));
+        await finished(writer);
+        resolve();
     });
 };

@@ -9,7 +9,7 @@ const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level:
 /** @type { LoggerCore} */
 let logger;
 
-/** @type {import("playwright").BrowserContext | import("playwright").Browser} */
+/** @type {import("playwright").BrowserContext  } */
 let browser;
 /** @type {import("playwright").Page} */
 let page;
@@ -28,6 +28,11 @@ process.on("message", async (message) => {
         logger.info("未处理的错误!", e);
     });
 
+    process.on("uncaughtException", (e) => {
+        console.log(bgRedBright(loggerPrefix("error")), "未处理的错误 : ", e);
+        logger.info("未处理的错误!", e);
+    });
+
     try {
         if (action === "launch") {
             if (browser === undefined) {
@@ -36,14 +41,9 @@ process.on("message", async (message) => {
                 /** @type {import("@ocsjs/scripts").LaunchScriptsOptions} */
                 const options = JSON.parse(data);
                 const { userDataDir, launchOptions, scripts, init, localStorage: ocsLocalStorage } = options;
-                console.log("\n");
-                debug("任务启动", uid);
-                debug("隐身模式 ", launchOptions.headless === true ? bgBlueBright("开启") : bgRedBright("关闭"));
-                debug("无痕浏览 ", userDataDir === "" ? bgBlueBright("开启") : bgRedBright("关闭"));
+                const debug = (...msg) => console.log(bgGray(loggerPrefix("debug")), ...msg);
 
-                function debug(...msg) {
-                    console.log(bgGray(loggerPrefix("debug")), ...msg);
-                }
+                debug("任务启动", uid);
 
                 launchOptions.logger = {
                     isEnabled: () => true,
@@ -80,8 +80,6 @@ process.on("message", async (message) => {
                 page.on("load", () => injectLocalStorage(page));
 
                 page.context().on("page", (_page) => {
-                    debug("新开页面");
-
                     if (_page.url() === "about:blank") {
                         setTimeout(() => _page.close(), 500);
                     } else {
@@ -97,12 +95,15 @@ process.on("message", async (message) => {
                             let opts;
                             try {
                                 opts = JSON.parse(window.localStorage.OCS);
+                                if (opts.setting === undefined) {
+                                    opts = { setting: {} };
+                                }
                             } catch {
                                 opts = { setting: {} };
                             }
-                            console.log("options", opts);
+
                             if (str && opts.setting) {
-                                opts.setting.answererWrappers = JSON.parse(str)?.setting?.answererWrappers;
+                                opts.setting.answererWrappers = JSON.parse(str)?.setting?.answererWrappers || [];
                                 window.localStorage.OCS = JSON.stringify(opts);
                                 // @ts-ignore
                                 if (window.OCS) {

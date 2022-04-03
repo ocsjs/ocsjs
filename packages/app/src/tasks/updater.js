@@ -3,10 +3,11 @@
 const { app, dialog, clipboard } = require("electron");
 const semver = require("semver");
 const { Logger } = require("../logger");
-
+const AdmZip = require("adm-zip");
 const path = require("path");
 const { downloadFile } = require("../utils");
 const { OCSApi } = require("@ocsjs/common");
+const { writeFileSync, rmSync } = require("fs");
 
 exports.updater = async function (win) {
     const logger = Logger("updater");
@@ -36,7 +37,21 @@ exports.updater = async function (win) {
         });
 
         if (response === 1) {
-            const dest = path.join(app.getAppPath(), `../app-${tag}.zip`);
+            const appPath = app.getAppPath();
+            /** 日志路径 */
+            const logPath = path.join(appPath, `../update-${tag}.log`);
+            /** 安装路径 */
+            const dest = path.join(appPath, `../app-${tag}.zip`);
+            /** 解压路径 */
+            const unzipDest = path.join(appPath, "./");
+
+            /** 删除app */
+            rmSync(unzipDest, { recursive: true, force: true });
+            /** 添加日志 */
+            writeFileSync(logPath, JSON.stringify(Object.assign(newVersion, { dest, unzipDest }), null, 4));
+
+            logger.info("更新文件 : " + dest);
+            logger.info("解压路径 : " + unzipDest);
             try {
                 /** 下载最新版本 */
                 await downloadFile(url, dest, (rate, totalLength, chunkLength) => {
@@ -44,11 +59,10 @@ exports.updater = async function (win) {
                 });
 
                 /** 解压缩 */
-                const AdmZip = require("adm-zip");
                 const zip = new AdmZip(dest);
 
                 new Promise((resolve, reject) => {
-                    zip.extractAllTo(path.join(app.getAppPath(), "../"), true);
+                    zip.extractAllTo(unzipDest, true);
                     resolve();
                 })
                     .then(() => {

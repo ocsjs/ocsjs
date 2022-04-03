@@ -182,6 +182,7 @@ import Icon from "../Icon.vue";
 import { Process } from "../terminal/process";
 import { ITerminal } from "../terminal";
 import { Project } from "../project";
+import { message } from "ant-design-vue";
 const { scriptNames } = require("@ocsjs/scripts");
 const childProcess = require("child_process") as typeof import("child_process");
 
@@ -263,10 +264,14 @@ function onScriptChange() {
 
 /** 验证表单 */
 function submitData() {
-    if (dataForm.value.checkValidity()) {
-        run();
+    if (!store.script.launchOptions.executablePath) {
+        message.error("请前往 设置 -> 指定浏览器 , 设置您的默认浏览器。");
     } else {
-        dataForm.value.reportValidity();
+        if (dataForm.value.checkValidity()) {
+            run();
+        } else {
+            dataForm.value.reportValidity();
+        }
     }
 }
 

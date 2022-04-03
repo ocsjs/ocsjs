@@ -12,7 +12,7 @@ import { notify } from "./utils/notify";
 import { fetchRemoteNotify } from "./utils";
 
 /** 获取最新远程通知 */
-fetchRemoteNotify();
+fetchRemoteNotify(false);
 
 /** 如果正在更新的话，获取更新进度 */
 const { ipcRenderer } = require("electron");
