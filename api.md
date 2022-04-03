@@ -28,10 +28,10 @@
 
 ```json
 {
-        "webpack": "webpack --config webpack.config.js", // 打包 core 油猴脚本库 作为浏览器端环境
-        "build:core": "pnpm build && gulp --allowEmpty", // 配合 webpack 命令进行 core构建， 文件夹清理，css文件打包等构建流程
-        "build:app": "pnpm build && gulp -f ./scripts/build.js ", // 打包 web 和 app 的软件端
-        "build": "gulp -f ./scripts/tsc.js", // 为每个 typescript 子项目运行 tsc 命令
+        "webpack": "webpack --config webpack.config.js", /** 打包 core 油猴脚本库 作为浏览器端环境 */
+        "build:core": "pnpm build && gulp --allowEmpty", /** 配合 webpack 命令进行 core构建， 文件夹清理，css文件打包等构建流程 */
+        "build:app": "pnpm build && gulp -f ./scripts/build.js ", /** 打包 web 和 app 的软件端 */
+        "build": "gulp -f ./scripts/tsc.js", /** 为每个 typescript 子项目运行 tsc 命令 */
 }
 ```
 
