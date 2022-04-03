@@ -4,7 +4,7 @@
 
 # 关于
 
--   [使用方法](https://enncy.github.io/online-course-script/docs)
+-   [使用方法](https://enncy.github.io/online-course-script)
 -   [项目开发](https://enncy.github.io/online-course-script/api)
 -   [赞助名单](https://enncy.github.io/online-course-script/sponsors)
 -   [疑难问答](https://enncy.github.io/online-course-script/FQA)
