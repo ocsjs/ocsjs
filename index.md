@@ -6,6 +6,16 @@
 -   [OCS软件运行](#ocs软件教程)
 -   [自动答题功能](https://enncy.github.io/online-course-script/answerer-wrappers)
 
+*** 
+
+其他
+
+-   [项目开发](https://enncy.github.io/online-course-script/api)
+-   [赞助名单](https://enncy.github.io/online-course-script/sponsors)
+-   [疑难问答](https://enncy.github.io/online-course-script/FQA)
+-   [更新日志](https://github.com/enncy/online-course-script/blob/3.0/CHANGELOG.md)
+
+
 # 油猴教程
 
 > `优点`：不需要重复输入代码，只需新建脚本保存即可
@@ -46,15 +56,7 @@
 -   `超星` (别名: 尔雅/泛雅/学习通)
 
 -   `智慧树` (别名: 知道)
- 
-
-# 关于
-
--   [使用方法](https://enncy.github.io/online-course-script/docs)
--   [项目开发](https://enncy.github.io/online-course-script/api)
--   [赞助名单](https://enncy.github.io/online-course-script/sponsors)
--   [疑难问答](https://enncy.github.io/online-course-script/FQA)
--   [更新日志](https://github.com/enncy/online-course-script/blob/3.0/CHANGELOG.md)
+  
 
 # 交流群
 
