@@ -57,6 +57,7 @@ export const CXScript = defineScript({
                 if (mooc === null) {
                     params.set("mooc2", "1");
                     window.location.replace(decodeURIComponent(params.toString()));
+                    return;
                 }
 
                 let chapters = Array.from(document.querySelectorAll('[onclick^="getTeacherAjax"]')).map((el) => {
