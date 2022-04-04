@@ -103,7 +103,7 @@ export function defaultQuestionResolve<E>(
                     /** 延长点击时间，避免一次点击全部 */
                     setTimeout(() => {
                         handler("multiple", targetAnswers[index][i], targetOptions[index][i], ctx);
-                    }, 200 * i);
+                    }, 500 * i);
                 });
 
                 return { finish: true, targetOptions, targetAnswers };
