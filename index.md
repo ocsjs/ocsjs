@@ -30,6 +30,8 @@
 
 2.打开 [OCS 油猴脚本链接](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
+如果打不开链接，请看教程：https://enncy.github.io/online-course-script/script  
+
 3.点击绿色按钮安装
 
 4.打开任意的 [`网课平台`](#支持的网课平台) 
@@ -37,6 +39,7 @@
 5.等待页面上出现提示面板
 
 6.根据面板提示操作，进入学习，作业考试页面即可自动运行。
+
 
 # OCS软件教程
 
