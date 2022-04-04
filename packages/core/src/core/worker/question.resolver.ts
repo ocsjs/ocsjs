@@ -1,4 +1,4 @@
-import { answerSimilar, clearString } from "../utils";
+import { answerSimilar, clearString, removeRedundant } from "../utils";
 import { QuestionResolver, WorkContext } from "./interface";
 
 /** 默认答案题目处理器 */
@@ -50,23 +50,23 @@ export function defaultQuestionResolve<E>(
 
             let count = 0;
             for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
-                const ratings = answerSimilar(
-                    answers,
-                    options.map((el) => el.innerText)
-                ).sort((a, b) => b.rating - a.rating);
-
                 targetAnswers[count] = [];
                 targetOptions[count] = [];
 
                 // 判断选项是否完全存在于答案里面
                 options.forEach((el, i) => {
-                    if (answers.some((answer) => answer.includes(el.innerText))) {
+                    if (answers.some((answer) => answer.includes(removeRedundant(el.innerText)))) {
                         targetAnswers[count][i] = el.innerText;
                         targetOptions[count][i] = el;
                     }
                 });
 
                 if (targetAnswers[count].length === 0) {
+                    const ratings = answerSimilar(
+                        answers,
+                        options.map((el) => el.innerText)
+                    ).sort((a, b) => b.rating - a.rating);
+
                     // 匹配相似率
                     if (ratings.some((rating) => rating.rating > 0.6)) {
                         options.forEach((el, i) => {
@@ -100,7 +100,10 @@ export function defaultQuestionResolve<E>(
                 targetOptions[index] = targetOptions[index].filter((ans) => ans !== undefined);
 
                 targetOptions[index].forEach((_, i) => {
-                    handler("multiple", targetAnswers[index][i], targetOptions[index][i], ctx);
+                    /** 延长点击时间，避免一次点击全部 */
+                    setTimeout(() => {
+                        handler("multiple", targetAnswers[index][i], targetOptions[index][i], ctx);
+                    }, 200 * i);
                 });
 
                 return { finish: true, targetOptions, targetAnswers };

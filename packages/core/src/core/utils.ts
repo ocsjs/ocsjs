@@ -156,12 +156,6 @@ export function domSearchAll<E extends RawElements>(
  *
  */
 export function answerSimilar(answers: string[], options: string[]): Rating[] {
-    /**
-     * 删除题目选项中开头的冗余字符串
-     */
-    const removeRedundant = (str: string) => {
-        return str.replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, "$1");
-    };
     answers = answers.map(removeRedundant);
     options = options.map(removeRedundant);
 
@@ -174,9 +168,15 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
 }
 
 /**
+ * 删除题目选项中开头的冗余字符串
+ */
+export function removeRedundant(str: string) {
+    return str.trim().replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, "$1");
+}
+
+/**
  * 创建日志面板
  */
-
 export function createTerminalPanel(): ScriptPanelChild {
     return {
         name: "日志",
