@@ -30,7 +30,7 @@
 
 2.打开 [OCS 油猴脚本链接](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
-如果打不开链接，请看教程：https://enncy.github.io/online-course-script/script  
+如果打不开链接，请看教程：[https://enncy.github.io/online-course-script/script](https://enncy.github.io/online-course-script/script)
 
 3.点击绿色按钮安装
 
