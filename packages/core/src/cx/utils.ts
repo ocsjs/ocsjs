@@ -7,7 +7,9 @@ import { logger } from "../logger";
  */
 export function rateHack() {
     try {
+        hack();
         window.document.addEventListener("readystatechange", hack);
+        window.addEventListener("load", hack);
     } catch (e) {
         console.error(e.message);
     }

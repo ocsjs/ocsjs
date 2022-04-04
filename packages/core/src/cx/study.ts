@@ -110,7 +110,6 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
 
                     if (!isPlaying) {
                         media.play();
-                        media.playbackRate = playbackRate;
                     }
                 }, 1000)
             );
