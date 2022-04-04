@@ -1,3 +1,4 @@
+import { defineScript } from "./core/define.script";
 import { OCSWorker } from "./core/worker";
 import { logger } from "./logger";
 import { getItem, setItem } from "./core/store";
@@ -10,7 +11,7 @@ import { defaultsDeep } from "lodash";
 import { CommonScript } from "./common";
 
 /** 统一导出 */
-export { getItem, setItem, logger, OCSWorker, QuestionTypeEnum, defaultAnswerWrapperHandler };
+export { getItem, setItem, logger, defineScript, OCSWorker, QuestionTypeEnum, defaultAnswerWrapperHandler };
 export * as utils from "./core/utils";
 
 export { start, app, panel } from "./bootstrap";
