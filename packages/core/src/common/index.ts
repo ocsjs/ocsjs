@@ -2,6 +2,7 @@ import { createNote } from "../core/create.element";
 import { defineScript } from "../core/define.script";
 import { setItem } from "../core/store";
 import { urlGlob } from "../core/utils";
+import { logger } from "../logger";
 
 const supports = [
     ["**chaoxing.com**", "cx"],
@@ -26,14 +27,27 @@ export const CommonScript = defineScript({
             name: "禁止弹窗脚本",
             url: supports.map((arr) => arr[0]),
             start() {
-                // @ts-ignore
-                window?.alert = console.log;
-                // @ts-ignore
-                unsafeWindow?.alert = console.log;
-                // @ts-ignore
-                top?.alert = console.log;
-                // @ts-ignore
-                self?.alert = console.log;
+                try {
+                    console.log("禁止弹窗脚本启动");
+                    // @ts-ignore
+                    window.alert = unsafeWindow.alert = self.alert = console.log;
+                } catch (e) {
+                    // @ts-ignore
+                    console.error("禁止弹窗脚本错误", e.message);
+                }
+            },
+        },
+        {
+            name: "开启页面右键复制粘贴功能",
+            url: supports.map((arr) => arr[0]),
+            onload() {
+                setTimeout(() => {
+                    console.log("开启页面右键复制粘贴功能");
+                    const d = document;
+                    const b = document.body;
+                    d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
+                    b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
+                }, 3000);
             },
         },
     ],

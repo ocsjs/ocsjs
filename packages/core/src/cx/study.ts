@@ -102,13 +102,19 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             media.addEventListener(
                 "pause",
                 debounce(function () {
-                    if (!media.ended) {
+                    var isPlaying =
+                        media.currentTime > 0 &&
+                        !media.paused &&
+                        !media.ended &&
+                        media.readyState > media.HAVE_CURRENT_DATA;
+
+                    if (!isPlaying) {
                         media.play();
-                        /** 重新设置倍速 */
                         media.playbackRate = playbackRate;
                     }
                 }, 1000)
             );
+
             media.addEventListener("ended", () => resolve());
         }
     });

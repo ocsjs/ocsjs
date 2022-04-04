@@ -23,18 +23,22 @@ export interface StartOptions {
     scripts?: DefineScript[];
 }
 
+let loaded = false;
+
 /**
  * 显示面板，检测是否存在需要运行的脚本，并执行
  */
 export function start(options?: StartOptions) {
     if (top === window) {
-        if (window.document.readyState === "complete") {
+        if (window.document.readyState === "complete" && !loaded) {
+            loaded = true;
             showPanels(options);
             logger("info", `OCS ${OCS.VERSION} 加载成功`);
         } else {
             /** 加载后执行 */
             document.addEventListener("readystatechange", () => {
-                if (document.readyState === "interactive") {
+                if (document.readyState !== "loading" && !loaded) {
+                    loaded = true;
                     showPanels(options);
                     logger("info", `OCS ${OCS.VERSION} 加载成功`);
                 }

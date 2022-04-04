@@ -42,6 +42,7 @@ export const CXScript = defineScript({
             name: "屏蔽倍速限制",
             url: "**ananas/modules/video/**",
             start() {
+                console.log("屏蔽倍速限制启动");
                 rateHack();
             },
         },
