@@ -9,11 +9,11 @@ import { workOrExam } from "./work";
 
 /** 需切换版本的 url 页面 */
 const updateURLs = [
-    "**chaoxing.com**mooc2=0**",
-    "**chaoxing.com/mycourse/studentcourse**",
-    "**chaoxing.com/work/getAllWork**",
-    "**chaoxing.com/work/doHomeWorkNew**",
-    "**mooc1.chaoxing.com/exam/test?courseId**",
+    `**mooc2=0**`,
+    `**/mycourse/studentcourse**`,
+    `**/work/getAllWork**`,
+    `**/work/doHomeWorkNew**`,
+    `**/exam/test?courseId**`,
 ];
 
 export const CXScript = defineScript({
@@ -48,7 +48,7 @@ export const CXScript = defineScript({
         },
         {
             name: "任务切换脚本",
-            url: "**chaoxing.com/mycourse/studentstudy**",
+            url: "**/mycourse/studentstudy**",
             onload() {
                 const { restudy } = OCS.setting.cx.video;
 
@@ -92,7 +92,7 @@ export const CXScript = defineScript({
         },
         {
             name: "学习脚本",
-            url: "**chaoxing.com/knowledge/cards**",
+            url: "**/knowledge/cards**",
             async onload(setting = OCS.setting.cx.video) {
                 await sleep(5000);
                 await study(setting);
@@ -113,7 +113,7 @@ export const CXScript = defineScript({
         },
         {
             name: "作业脚本",
-            url: "**chaoxing.com/mooc2/work/dowork**",
+            url: "**/mooc2/work/dowork**",
             async onload(setting = OCS.setting.cx.work) {
                 await sleep(5000);
                 await workOrExam(setting, false);
@@ -121,7 +121,7 @@ export const CXScript = defineScript({
         },
         {
             name: "整卷预览脚本",
-            url: "**chaoxing.com/exam/test/reVersionTestStartNew**",
+            url: "**/exam/test/reVersionTestStartNew**",
             async onload() {
                 alert("即将自动切换到整卷预览。。。");
                 await sleep(3000);
@@ -131,7 +131,7 @@ export const CXScript = defineScript({
         },
         {
             name: "考试脚本",
-            url: "**chaoxing.com/mooc2/exam/preview**",
+            url: "**/mooc2/exam/preview**",
             async onload(setting = OCS.setting.cx.exam) {
                 await sleep(5000);
                 await workOrExam(setting, true);
@@ -141,37 +141,34 @@ export const CXScript = defineScript({
     panels: [
         {
             name: "版本切换助手",
-            url: updateURLs,
+            url: updateURLs.flat(),
 
             el: () => createNote(`必须切换到最新版本才能使用此脚本`, "3秒后将自动切换..."),
         },
         {
             name: "超星助手",
-            url: "**chaoxing.com/space/index**",
+            url: "**/space/index**",
 
             el: () => createNote("提示您:", "请点击任意的课程进入。"),
         },
         {
             name: "学习助手",
-            url: "**chaoxing.com/mycourse/**pageHeader=1**",
-
+            url: "**/mycourse/**pageHeader=1**",
             el: () => createNote("提示您:", "请点击任意的章节进入学习。"),
         },
         {
             name: "作业助手",
-            url: "**chaoxing.com/mycourse/**pageHeader=8**",
-
+            url: "**/mycourse/**pageHeader=8**",
             el: () => createNote("提示您:", "请点击任意的作业进入。"),
         },
         {
             name: "考试助手",
-            url: "**chaoxing.com/mycourse/**pageHeader=9**",
-
+            url: "**/mycourse/**pageHeader=9**",
             el: () => createNote("提示您:", "请点击任意的考试进入。"),
         },
         {
             name: "学习助手",
-            url: "**chaoxing.com/mycourse/studentstudy**",
+            url: "**/mycourse/studentstudy**",
 
             el: () => createNote("进入设置面板可以调整学习设置", "5秒后将自动开始..."),
             children: [
@@ -185,7 +182,7 @@ export const CXScript = defineScript({
         },
         {
             name: "作业助手",
-            url: "**chaoxing.com/mooc2/work/dowork**",
+            url: "**/mooc2/work/dowork**",
             el: () => createNote("进入设置面板可以调整作业设置", "5秒后将自动开始..."),
             children: [
                 {
@@ -198,7 +195,7 @@ export const CXScript = defineScript({
         },
         {
             name: "考试助手",
-            url: "**chaoxing.com/mooc2/exam/preview**",
+            url: "**/mooc2/exam/preview**",
             el: () => createNote("进入设置面板可以调整考试设置", "5秒后将自动开始..."),
             children: [
                 {
@@ -215,7 +212,7 @@ export const CXScript = defineScript({
         },
         {
             name: "考试助手",
-            url: "**chaoxing.com/exam/test/reVersionTestStartNew**",
+            url: "**/exam/test/reVersionTestStartNew**",
             el: () => createNote("注意！ 即将切换到整卷预览页面， 然后才可以自动考试！"),
         },
     ],

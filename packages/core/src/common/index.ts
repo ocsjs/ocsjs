@@ -6,6 +6,7 @@ import { logger } from "../logger";
 
 const supports = [
     ["**chaoxing.com**", "cx"],
+    ["**edu.cn**", "cx"],
     ["**zhihuishu.com**", "zhs"],
 ];
 
