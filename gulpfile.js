@@ -3,7 +3,7 @@ const del = require("del");
 const { exec } = require("child_process");
 
 function cleanOutput() {
-    return del(["./dist", "./packages/core/lib", "./lib"]);
+    return del(["./dist", "./packages/core/lib", "./lib", "./CHANGELOG.md"]);
 }
 
 function tsc() {
@@ -30,4 +30,8 @@ function copyCSS() {
     );
 }
 
-exports.default = series(cleanOutput, tsc, copyLib, copyCSS, webpack);
+function changelog() {
+    return exec("npm run changelog");
+}
+
+exports.default = series(cleanOutput, tsc, copyLib, copyCSS, webpack, changelog);

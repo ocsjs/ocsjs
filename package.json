@@ -17,7 +17,7 @@
         "pub:patch": "npm version patch && pnpm gulp && npm publish",
         "pub:minor": "npm version minor && pnpm gulp && npm publish",
         "pub:major": "npm version major && pnpm gulp && npm publish",
-        "changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file"
+        "changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file -r 0"
     },
     "dependencies": {
         "@playwright/test": "^1.18.1",
