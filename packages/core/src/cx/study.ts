@@ -100,21 +100,18 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             media.play();
             media.playbackRate = playbackRate;
 
-            var playFunction = debounce(function () {
-                var isPlaying =
-                    media.currentTime > 0 &&
-                    !media.paused &&
-                    !media.ended &&
-                    media.readyState > media.HAVE_CURRENT_DATA;
-
-                if (!isPlaying) {
+            var playFunction = function () {
+                // @ts-ignore
+                if (!media.ended && !media.__played__) {
                     media.play();
                 } else {
+                    // @ts-ignore
+                    media.__played__ = true;
                     logger("info", "视频播放完毕");
                     // @ts-ignore
                     media.removeEventListener("pause", playFunction);
                 }
-            }, 1000);
+            };
 
             media.addEventListener("pause", playFunction);
 
