@@ -140,10 +140,8 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
         );
         const currentLine = setting.line;
         if (currentLine) {
-            setTimeout(() => {
-                logger("info", "切换路线： " + currentLine);
-                selectLine(currentLine);
-            }, 3000);
+            logger("info", "切换路线中： " + currentLine);
+            setTimeout(() => selectLine(currentLine), 3000);
         }
 
         /** 添加选项 */
@@ -173,6 +171,7 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
                     menu.click();
                     OCS.setting.cx.video.line = value;
                     setItem("setting.cx.video.line", value);
+                    setTimeout(() => (media.playbackRate = playbackRate), 3000);
                     break;
                 }
             }
