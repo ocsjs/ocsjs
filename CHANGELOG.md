@@ -1,3 +1,13 @@
+## [3.2.14](https://github.com/enncy/online-course-script/compare/v3.2.13...v3.2.14) (2022-04-08)
+
+
+### Features
+
+* 新增隐藏按钮 ([dce116e](https://github.com/enncy/online-course-script/commit/dce116e6f268bffe5ef1e178980c4318b47ea755))
+* 新增ocs快捷键，可重置位置，优化面板初始位置 ([af7d231](https://github.com/enncy/online-course-script/commit/af7d231d9af520ace066190981196975a4d08213))
+
+
+
 ## [3.2.13](https://github.com/enncy/online-course-script/compare/v3.2.12...v3.2.13) (2022-04-07)
 
 

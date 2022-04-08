@@ -57,14 +57,15 @@ export const CommonScript = defineScript({
             onload() {
                 const target = ["o", "c", "s"];
                 let stack: string[] = [];
-                window.onkeydown = (e) => {
+
+                onkeydown = (e) => {
                     if (target.includes(e.key)) {
                         stack.push(e.key);
                         const contains = stack.join("").includes(target.join(""));
+
                         if (contains) {
                             // @ts-ignore
-                            const panel: HTMLElement = OCS?.panel || top?.OCS.panel || unsafeWindow?.OCS.panel;
-                            console.log("panel", panel);
+                            const panel: HTMLElement = document.querySelector("ocs-panel");
                             if (panel) {
                                 if (panel.classList.contains("hide")) {
                                     panel.style.top = "unset";
