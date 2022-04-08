@@ -51,6 +51,39 @@ export const CommonScript = defineScript({
                 }, 3000);
             },
         },
+        {
+            name: "OCS居中脚本",
+            url: supports.map((arr) => arr[0]),
+            onload() {
+                const target = ["o", "c", "s"];
+                let stack: string[] = [];
+                window.onkeydown = (e) => {
+                    if (target.includes(e.key)) {
+                        stack.push(e.key);
+                        const contains = stack.join("").includes(target.join(""));
+                        if (contains) {
+                            // @ts-ignore
+                            const panel: HTMLElement = OCS?.panel || top?.OCS.panel || unsafeWindow?.OCS.panel;
+                            console.log("panel", panel);
+                            if (panel) {
+                                if (panel.classList.contains("hide")) {
+                                    panel.style.top = "unset";
+                                    panel.style.bottom = "10%";
+                                    panel.style.left = "5%";
+                                } else {
+                                    panel.style.top = "20%";
+                                    panel.style.bottom = "unset";
+                                    panel.style.left = "50%";
+                                }
+                            }
+                            stack = [];
+                        }
+                    } else {
+                        stack = [];
+                    }
+                };
+            },
+        },
     ],
     panels: [
         {

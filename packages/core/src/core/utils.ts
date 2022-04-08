@@ -232,6 +232,8 @@ export function dragElement(
         // set the element's new position:
         containerEl.style.top = containerEl.offsetTop - pos2 + "px";
         containerEl.style.left = containerEl.offsetLeft - pos1 + "px";
+        containerEl.style.bottom = "unset";
+        containerEl.style.right = "unset";
     }
 
     function closeDragElement(e: any) {
@@ -273,6 +275,8 @@ export function togglePanel() {
             panel
         );
 
+        const tips = ["", "连续按下ocs重置位置", "双击展开"];
+
         if (icon && header && container && footer && tip) {
             if (panel.classList.contains("hide")) {
                 panel.classList.remove("hide");
@@ -280,14 +284,14 @@ export function togglePanel() {
                 container.classList.remove("hide");
                 footer.classList.remove("hide");
                 icon.style.display = "none";
-                tip.innerHTML = tip.innerHTML.replace("<br>双击展开<br>按下ocs重新居中", "");
+                tip.innerHTML = tip.innerHTML.replace(tips.join("<br>"), "");
             } else {
                 panel.classList.add("hide");
                 header.classList.add("hide");
                 container.classList.add("hide");
                 footer.classList.add("hide");
                 icon.style.display = "block";
-                tip.innerHTML = tip.innerHTML + "<br>双击展开<br>按下ocs重新居中";
+                tip.innerHTML = tip.innerHTML + tips.join("<br>");
             }
         }
     }

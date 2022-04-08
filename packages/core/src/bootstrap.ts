@@ -61,7 +61,8 @@ export function showPanels(options?: StartOptions) {
     app.mount(panel);
 
     if (draggable) {
-        dragElement("ocs-panel .draggable", panel);
+        dragElement("ocs-panel .ocs-panel-header", panel);
+        dragElement("ocs-panel .ocs-panel-footer", panel);
         dragElement(".ocs-icon", panel);
     }
 

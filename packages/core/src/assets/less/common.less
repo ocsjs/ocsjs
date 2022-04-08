@@ -7,22 +7,22 @@ panel style
 */
 ocs-panel {
     position: fixed;
-    top: 30%;
-    left: 42.5%;
-    min-width: 15%;
+    top: 20%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-width: 600px;
     background: white;
     z-index: 99999999;
     border-radius: 4px;
     text-align: left;
     box-shadow: 0px 2px 6px #848484;
-    max-width: 800px;
 
-    // transition: all 0.5s;
+    transition: top left bottom right width height 0.5s;
 
     .ocs-panel-header {
         gap: 12px;
         display: flex;
-        padding: 4px;
+        padding: 6px 4px;
         border-bottom: 1px solid #c6c6c6;
 
         .title {
@@ -67,6 +67,9 @@ ocs-panel {
         box-shadow: 0px 0px 16px grey;
         border-radius: 10px;
         min-width: unset;
+        bottom: 10%;
+        left: 5%;
+        top: unset;
     }
 }
 

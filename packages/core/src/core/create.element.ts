@@ -53,7 +53,7 @@ export function createFooter() {
     return h(
         "div",
         {
-            class: "ocs-panel-footer",
+            class: "ocs-panel-footer draggable",
         },
         [
             h(
