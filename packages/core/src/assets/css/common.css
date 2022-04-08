@@ -33,6 +33,9 @@ ocs-panel .ocs-panel-header .title {
 ocs-panel .ocs-panel-header .title.active {
   font-weight: bold;
 }
+ocs-panel .ocs-panel-header.hide {
+  display: none;
+}
 ocs-panel .ocs-panel-container {
   font-size: 12px;
   padding: 4px;
@@ -42,8 +45,19 @@ ocs-panel .ocs-panel-container {
 ocs-panel .ocs-panel-container ul li {
   list-style: inside;
 }
+ocs-panel .ocs-panel-container.hide {
+  display: none;
+}
 ocs-panel .draggable {
   cursor: move;
+}
+ocs-panel.hide {
+  width: 48px;
+  height: 48px;
+  background-color: rgba(0, 0, 0, 0);
+  box-shadow: 0px 0px 16px grey;
+  border-radius: 10px;
+  min-width: unset;
 }
 .ocs-panel-footer {
   font-size: 1px;
@@ -52,6 +66,19 @@ ocs-panel .draggable {
   margin-top: 8px;
   text-align: right;
   padding-right: 4px;
+}
+.ocs-panel-footer.hide {
+  border-top: none;
+}
+.ocs-panel-footer.hide > .hide-btn {
+  display: none;
+}
+.ocs-panel-footer.hide > .ocs-tip {
+  text-align: center;
+  white-space: nowrap;
+  position: absolute;
+  top: 64px;
+  left: -32px;
 }
 .ocs-setting-items {
   display: grid;
@@ -141,4 +168,12 @@ ocs-panel .draggable {
 }
 #search-results .search-results-item {
   margin-bottom: 8px;
+}
+.ocs-icon {
+  width: 64px;
+  height: 64px;
+  position: relative;
+  top: -16px;
+  left: -8px;
+  display: none;
 }

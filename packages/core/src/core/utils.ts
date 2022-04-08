@@ -212,6 +212,7 @@ export function dragElement(
     function dragMouseDown(e: any) {
         e = e || window.event;
         e.preventDefault();
+
         // get the mouse cursor position at startup:
         pos3 = e.clientX;
         pos4 = e.clientY;
@@ -233,7 +234,7 @@ export function dragElement(
         containerEl.style.left = containerEl.offsetLeft - pos1 + "px";
     }
 
-    function closeDragElement() {
+    function closeDragElement(e: any) {
         // stop moving when mouse button is released:
         document.onmouseup = null;
         document.onmousemove = null;
@@ -254,6 +255,42 @@ export function createSearchResultPanel() {
 export function clearSearchResult(el: HTMLElement | null) {
     /** 清空内容 */
     if (el) el.innerHTML = "开始搜索，点击题目可以展开查看搜题结果。";
+}
+
+/** 显示与隐藏面板 */
+export function togglePanel() {
+    const panel = OCS.panel;
+
+    if (panel) {
+        const { icon, header, container, footer, tip } = domSearch(
+            {
+                icon: ".ocs-icon",
+                tip: ".ocs-tip",
+                header: ".ocs-panel-header",
+                container: ".ocs-panel-container",
+                footer: ".ocs-panel-footer",
+            },
+            panel
+        );
+
+        if (icon && header && container && footer && tip) {
+            if (panel.classList.contains("hide")) {
+                panel.classList.remove("hide");
+                header.classList.remove("hide");
+                container.classList.remove("hide");
+                footer.classList.remove("hide");
+                icon.style.display = "none";
+                tip.innerHTML = tip.innerHTML.replace("<br>双击展开<br>按下ocs重新居中", "");
+            } else {
+                panel.classList.add("hide");
+                header.classList.add("hide");
+                container.classList.add("hide");
+                footer.classList.add("hide");
+                icon.style.display = "block";
+                tip.innerHTML = tip.innerHTML + "<br>双击展开<br>按下ocs重新居中";
+            }
+        }
+    }
 }
 
 export class StringUtils {

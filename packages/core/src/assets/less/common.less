@@ -15,8 +15,9 @@ ocs-panel {
     border-radius: 4px;
     text-align: left;
     box-shadow: 0px 2px 6px #848484;
-
     max-width: 800px;
+
+    // transition: all 0.5s;
 
     .ocs-panel-header {
         gap: 12px;
@@ -34,6 +35,10 @@ ocs-panel {
                 font-weight: bold;
             }
         }
+
+        &.hide {
+            display: none;
+        }
     }
 
     .ocs-panel-container {
@@ -45,10 +50,23 @@ ocs-panel {
         ul li {
             list-style: inside;
         }
+
+        &.hide {
+            display: none;
+        }
     }
 
     .draggable {
         cursor: move;
+    }
+
+    &.hide {
+        width: 48px;
+        height: 48px;
+        background-color: rgba(0, 0, 0, 0);
+        box-shadow: 0px 0px 16px grey;
+        border-radius: 10px;
+        min-width: unset;
     }
 }
 
@@ -59,6 +77,20 @@ ocs-panel {
     margin-top: 8px;
     text-align: right;
     padding-right: 4px;
+
+    &.hide {
+        border-top: none;
+        & > .hide-btn {
+            display: none;
+        }
+        & > .ocs-tip {
+            text-align: center;
+            white-space: nowrap;
+            position: absolute;
+            top: 64px;
+            left: -32px;
+        }
+    }
 }
 
 .ocs-setting-items {
@@ -170,4 +202,13 @@ ocs-panel {
     .search-results-item {
         margin-bottom: 8px;
     }
+}
+
+.ocs-icon {
+    width: 64px;
+    height: 64px;
+    position: relative;
+    top: -16px;
+    left: -8px;
+    display: none;
 }

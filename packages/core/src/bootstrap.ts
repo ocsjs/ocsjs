@@ -62,6 +62,7 @@ export function showPanels(options?: StartOptions) {
 
     if (draggable) {
         dragElement("ocs-panel .draggable", panel);
+        dragElement(".ocs-icon", panel);
     }
 
     function createPanel() {
@@ -129,7 +130,7 @@ export function showPanels(options?: StartOptions) {
                 const footer = createFooter();
                 const styleElement =
                     /** 添加样式 */
-                    /[a-zA-z]+:\/\/[^\s]*/.test(style)
+                    style.startsWith("http")
                         ? h("link", {
                               href: style,
                               type: "text/css",

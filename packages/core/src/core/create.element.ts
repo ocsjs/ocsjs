@@ -1,6 +1,7 @@
 import { defaults } from "lodash";
 import { DefineComponent, defineComponent, defineCustomElement, h, VNode, VNodeArrayChildren, VNodeProps } from "vue";
 import { setItem } from "./store";
+import { domSearch, togglePanel } from "./utils";
 /**
  * 创建自定义元素
  */
@@ -49,7 +50,38 @@ export function createContainers(children: string | number | boolean | VNode | V
 }
 
 export function createFooter() {
-    return h("div", { class: "ocs-panel-footer" }, `—— OCS网课助手 v${OCS.VERSION}`);
+    return h(
+        "div",
+        {
+            class: "ocs-panel-footer",
+        },
+        [
+            h(
+                "span",
+                {
+                    class: "hide-btn",
+                    style: { float: "left", cursor: "pointer" },
+                    onClick() {
+                        togglePanel();
+                    },
+                },
+                "点击隐藏"
+            ),
+            h("span", { class: "ocs-tip" }, `OCS网课助手 ${OCS.VERSION}`),
+            h("img", {
+                class: "ocs-icon",
+                src: "https://cdn.ocs.enncy.cn/logo.png",
+                title: "双击展开",
+                onclick(e: any) {
+                    e.stopPropagation();
+                },
+                ondblclick(e: any) {
+                    e.stopPropagation();
+                    togglePanel();
+                },
+            }),
+        ]
+    );
 }
 
 /**
