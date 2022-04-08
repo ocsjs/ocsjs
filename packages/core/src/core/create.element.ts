@@ -1,5 +1,14 @@
 import { defaults } from "lodash";
-import { DefineComponent, defineComponent, defineCustomElement, h, VNode, VNodeArrayChildren, VNodeProps } from "vue";
+import {
+    DefineComponent,
+    defineComponent,
+    defineCustomElement,
+    h,
+    isVNode,
+    VNode,
+    VNodeArrayChildren,
+    VNodeProps,
+} from "vue";
 import { setItem } from "./store";
 import { domSearch, togglePanel } from "./utils";
 /**
@@ -88,7 +97,7 @@ export function createFooter() {
  * 创建设置面板
  */
 
-export function createSettingPanel(...settingItems: (SettingSelect | SettingInput)[]): DefineComponent {
+export function createSettingPanel(...settingItems: FormType[]): DefineComponent {
     return defineComponent({
         render() {
             return h(
@@ -141,16 +150,15 @@ export function createSettingPanel(...settingItems: (SettingSelect | SettingInpu
                             class: "ocs-setting-items",
                         },
                         settingItems
-                            .map((input) => [h("label", input.label), createSettingItem.apply(this, [input])])
+                            .map((item) =>
+                                isVNode(item) ? item : [h("label", item.label), createSettingItem.apply(this, [item])]
+                            )
                             .flat()
                     ),
                     h(
                         "div",
                         {
                             class: "ocs-setting-buttons",
-                            style: {
-                                marginTop: "4px",
-                            },
                         },
                         [
                             h("input", {
@@ -185,6 +193,8 @@ export interface SettingSelect extends SettingItem {
     type: "select";
     options?: { label: string; value: any; attrs?: VNodeProps & Record<string, any> }[];
 }
+
+export type FormType = VNode | SettingSelect | SettingInput;
 
 export interface SettingInput extends SettingItem {
     type:

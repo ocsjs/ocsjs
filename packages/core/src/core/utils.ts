@@ -296,6 +296,10 @@ export function togglePanel() {
     }
 }
 
+export function getNumber(...nums: number[]) {
+    return nums.map((num) => (typeof num === "number" ? num : undefined)).find((num) => num !== undefined);
+}
+
 export class StringUtils {
     constructor(private _text: string) {}
 

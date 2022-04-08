@@ -1,10 +1,11 @@
 import { debounce, defaults } from "lodash";
 import { logger } from "../logger";
-import { clearSearchResult, domSearch, domSearchAll, sleep, StringUtils } from "../core/utils";
+import { clearSearchResult, domSearch, domSearchAll, getNumber, sleep, StringUtils } from "../core/utils";
 import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
 import { OCSWorker } from "../core/worker";
 import { defaultSetting, ScriptSettings } from "../scripts";
 import { createSearchResultElement } from "../core/worker/utils";
+import { setItem } from "../core/store";
 
 /**
  * cx 任务学习
@@ -39,12 +40,6 @@ export async function study(setting: ScriptSettings["cx"]["video"]) {
 function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise<number>> {
     return searchIFrame()
         .map((frame) => () => {
-            const data = JSON.parse(frame.getAttribute("data") || "{}");
-
-            if (data?.name || data?.title) {
-                logger("info", `${data?.name || data?.title} 正在运行`);
-            }
-
             const { media, ppt, chapterTest } = domSearch(
                 {
                     media: "video,audio",
@@ -54,13 +49,46 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise
                 frame.contentDocument || document
             );
 
-            return media
-                ? mediaTask(setting, media as any)
-                : ppt
-                ? pptTask(frame)
-                : chapterTest
-                ? chapterTestTask(OCS.setting.cx.work, frame)
-                : undefined;
+            if (media || ppt || chapterTest) {
+                // @ts-ignore
+                let _parent = frame.contentWindow.parent;
+                // @ts-ignore
+                let jobIndex = getNumber(frame.contentWindow?._jobindex, _parent._jobindex);
+                while (_parent) {
+                    // @ts-ignore
+                    jobIndex = getNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
+                    // @ts-ignore
+                    let attachments = _parent?.JC?.attachments || _parent.attachments;
+
+                    if (attachments && typeof jobIndex == "number") {
+                        const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
+                        const jobName = name || title || (bookname ? bookname + author : undefined) || "未知任务";
+
+                        if (attachments[jobIndex]?.job === true) {
+                            logger("debug", jobName, "即将开始。");
+                            return media
+                                ? mediaTask(setting, media as any, frame)
+                                : ppt
+                                ? pptTask(frame)
+                                : chapterTest
+                                ? chapterTestTask(OCS.setting.cx.work, frame)
+                                : undefined;
+                        } else if (setting.restudy && media) {
+                            logger("debug", jobName, "即将重新学习。");
+                            return mediaTask(setting, media as any, frame);
+                        } else {
+                            logger("debug", jobName, "已经完成，即将跳过。");
+                            break;
+                        }
+                    }
+                    // @ts-ignore
+                    if (_parent.parent == _parent) {
+                        break;
+                    }
+                    // @ts-ignore
+                    _parent = _parent.parent;
+                }
+            }
         })
         .filter((t) => t !== undefined) as any;
 }
@@ -92,8 +120,68 @@ function searchIFrame() {
 /**
  * 播放视频和音频
  */
-function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement) {
+function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement, frame: HTMLIFrameElement) {
     const { playbackRate = 1, mute = true } = setting;
+    /**
+     *  视频路线选择器
+     */
+    // @ts-ignore
+    const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
+    const { lineSelect } = domSearch({ lineSelect: "#video-line" }, top?.document);
+
+    // @ts-ignore
+    if (videojs?.player) {
+        // @ts-ignore  播放路线列表
+        const playlines = Array.from(videojs.player.controlBar.options_.playerOptions.playlines);
+        // 播放菜单元素
+        const menus: HTMLElement[] = Array.from(
+            // @ts-ignore
+            videojs.player.controlBar.videoJsPlayLine.querySelectorAll("ul li")
+        );
+        const currentLine = setting.line;
+        if (currentLine) {
+            setTimeout(() => {
+                logger("info", "切换路线： " + currentLine);
+                selectLine(currentLine);
+            }, 3000);
+        }
+
+        /** 添加选项 */
+        if (lineSelect) {
+            for (const line of playlines) {
+                // @ts-ignore
+                createOption(line.label);
+            }
+
+            lineSelect.onchange = function () {
+                const select = lineSelect as HTMLSelectElement;
+                selectLine(select.value);
+            };
+
+            function createOption(label: string) {
+                const option = document.createElement("option");
+                option.text = label;
+                option.value = label;
+                // @ts-ignore
+                lineSelect.appendChild(option);
+            }
+        }
+
+        function selectLine(value: string) {
+            for (const menu of menus) {
+                if (menu.textContent?.includes(value)) {
+                    menu.click();
+                    OCS.setting.cx.video.line = value;
+                    setItem("setting.cx.video.line", value);
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * 视频播放
+     */
     return new Promise<void>((resolve) => {
         if (media) {
             media.muted = mute;
