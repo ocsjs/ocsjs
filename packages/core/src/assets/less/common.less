@@ -17,8 +17,6 @@ ocs-panel {
     text-align: left;
     box-shadow: 0px 2px 6px #848484;
 
-    transition: top left bottom right width height 0.5s;
-
     .ocs-panel-header {
         gap: 12px;
         display: flex;
@@ -30,6 +28,7 @@ ocs-panel {
             font-size: 14px;
             margin: 0;
             padding: 0;
+            white-space: nowrap;
 
             &.active {
                 font-weight: bold;
@@ -79,7 +78,7 @@ ocs-panel {
     border-top: 1px solid #c6c6c6;
     margin-top: 8px;
     text-align: right;
-    padding-right: 4px;
+    padding: 0px 4px;
 
     &.hide {
         border-top: none;
@@ -212,6 +211,6 @@ ocs-panel {
     height: 64px;
     position: relative;
     top: -16px;
-    left: -8px;
+    left: -12px;
     display: none;
 }

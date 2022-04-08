@@ -233,7 +233,6 @@ export function dragElement(
         containerEl.style.top = containerEl.offsetTop - pos2 + "px";
         containerEl.style.left = containerEl.offsetLeft - pos1 + "px";
         containerEl.style.bottom = "unset";
-        containerEl.style.right = "unset";
     }
 
     function closeDragElement(e: any) {

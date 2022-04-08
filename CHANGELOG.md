@@ -1,3 +1,12 @@
+## [3.2.15](https://github.com/enncy/online-course-script/compare/v3.2.14...v3.2.15) (2022-04-08)
+
+
+### Bug Fixes
+
+* 修复快捷键有时候失效的问题 ([0d5df16](https://github.com/enncy/online-course-script/commit/0d5df16cbd18936180935d02642cf68faea8c22f))
+
+
+
 ## [3.2.14](https://github.com/enncy/online-course-script/compare/v3.2.13...v3.2.14) (2022-04-08)
 
 
