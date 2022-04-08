@@ -22,6 +22,30 @@ export function createCXStudySettingPanel(): DefineComponent {
                 max: "16",
                 step: "1",
             },
+
+            icons: [
+                {
+                    type: "bi bi-info-circle",
+                    attrs: {
+                        title: "高倍速可能导致封号或者频繁验证码\n超星后台可以看到学习时长\n请谨慎设置。",
+                    },
+                },
+            ],
+        },
+        {
+            label: "播放路线",
+            ref: "setting.cx.video.line",
+            type: "select",
+            attrs: { id: "video-line", value: settings.line || "" },
+            options: (
+                [
+                    settings.line ? { label: "指定-" + settings.line, value: settings.line } : [],
+                    {
+                        label: "请指定路线(播放视频后才可选择, 无需保存)",
+                        value: "",
+                    },
+                ] as any[]
+            ).flat(),
         },
         {
             label: "静音模式",
@@ -40,6 +64,8 @@ export function createCXStudySettingPanel(): DefineComponent {
                 checked: settings.restudy,
             },
         },
+        h("hr"),
+        h("hr"),
         ...createWorkerSetting("章节测试", "setting.cx.video.upload", {
             defaultUpload: settings.upload,
         }),

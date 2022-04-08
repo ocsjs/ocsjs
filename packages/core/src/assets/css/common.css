@@ -87,9 +87,12 @@ ocs-panel.hide {
 .ocs-setting-items {
   display: grid;
   grid-template-columns: min-content auto;
-  gap: 8px;
+  grid-row-gap: 8px;
   white-space: nowrap;
   font-size: 12px;
+}
+.ocs-setting-items label {
+  padding-right: 4px;
 }
 .ocs-setting-items label::after {
   content: ": ";
@@ -117,6 +120,7 @@ ocs-panel.hide {
   display: grid;
   grid-template-columns: auto auto;
   gap: 8px;
+  margin-top: 12px;
 }
 .ocs-setting-buttons input {
   outline: none;

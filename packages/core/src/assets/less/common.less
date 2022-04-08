@@ -98,10 +98,13 @@ ocs-panel {
 .ocs-setting-items {
     display: grid;
     grid-template-columns: min-content auto;
-    gap: 8px;
+    grid-row-gap: 8px;
     white-space: nowrap;
     font-size: 12px;
 
+    label {
+        padding-right: 4px;
+    }
     label::after {
         content: ": ";
     }
@@ -134,6 +137,7 @@ ocs-panel {
     display: grid;
     grid-template-columns: auto auto;
     gap: 8px;
+    margin-top: 12px;
 
     input {
         outline: none;
