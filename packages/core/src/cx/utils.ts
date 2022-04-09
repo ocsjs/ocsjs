@@ -19,11 +19,6 @@ function hack() {
     if (videojs && Ext) {
         logger("debug", "倍速破解启动");
 
-        videojs.hook("beforesetup", function (videoEl, options) {
-            options.playbackRates = [1, 1.25, 1.5, 2, 4, 8, 12, 16];
-            return options;
-        });
-
         Ext.define("ans.VideoJs", {
             override: "ans.VideoJs",
             constructor: function (b) {

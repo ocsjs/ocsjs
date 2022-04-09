@@ -180,7 +180,30 @@ export function removeRedundant(str: string) {
 export function createTerminalPanel(): ScriptPanelChild {
     return {
         name: "日志",
-        el: () => h("div", { class: "terminal" }),
+        el: () =>
+            h(
+                "div",
+                { class: "terminal" },
+                OCS.localStorage.logs.map((log: any) =>
+                    h("div", [
+                        h(
+                            "span",
+                            {
+                                style: {
+                                    color: "gray",
+                                },
+                            },
+                            [new Date(log.time).toLocaleTimeString("zh-CN")]
+                        ),
+                        h("span", [" "]),
+                        h("level", { class: log.level }, [log.extra]),
+                        h("span", [" "]),
+                        h("span", {
+                            innerHTML: log.text,
+                        }),
+                    ])
+                )
+            ),
     };
 }
 
@@ -248,7 +271,84 @@ export function dragElement(
 export function createSearchResultPanel() {
     return {
         name: "搜题结果",
-        el: () => h("div", { id: "search-results" }, ["暂无搜索结果"]),
+        el: () =>
+            h(
+                "div",
+                { id: "search-results" },
+                OCS.localStorage.workResults.filter((res) => res.ctx?.elements.title?.[0]?.innerText)?.length
+                    ? OCS.localStorage.workResults
+                          .filter((res) => res.ctx?.elements.title?.[0]?.innerText)
+                          .map((res) => {
+                              const title = res.ctx?.elements.title?.[0];
+
+                              return h("details", [
+                                  h("summary", { title: title?.innerText || "" }, [
+                                      h(
+                                          "span",
+                                          StringUtils.of(title?.innerText || "")
+                                              .nowrap()
+                                              .max(40)
+                                              .text()
+                                      ),
+                                  ]),
+                                  res.ctx?.searchResults.length
+                                      ? res.ctx?.searchResults.map((searchResult) =>
+                                            h("div", { class: "search-results-container" }, [
+                                                h("span", { class: "search-results-title" }, [
+                                                    "题库: ",
+                                                    h(
+                                                        "a",
+                                                        {
+                                                            href: searchResult.homepage ? searchResult.homepage : "#",
+                                                        },
+                                                        searchResult.name
+                                                    ),
+                                                    `一共有 ${searchResult.answers.length} 个答案`,
+                                                ]),
+                                                h(
+                                                    "div",
+                                                    {
+                                                        style: {
+                                                            paddingLeft: "12px",
+                                                        },
+                                                    },
+                                                    searchResult.answers.map((answer) => {
+                                                        return h("div", { class: "search-results-item" }, [
+                                                            h("div", { title: answer.question }, [
+                                                                h(
+                                                                    "span",
+                                                                    "题目: " +
+                                                                        StringUtils.of(answer.question)
+                                                                            .nowrap()
+                                                                            .max(50)
+                                                                            .text()
+                                                                ),
+                                                            ]),
+                                                            h("div", { title: answer.answer }, [
+                                                                h(
+                                                                    "span",
+                                                                    "回答: " +
+                                                                        StringUtils.of(answer.answer)
+                                                                            .nowrap()
+                                                                            .max(50)
+                                                                            .text()
+                                                                ),
+                                                            ]),
+                                                        ]);
+                                                    })
+                                                ),
+                                            ])
+                                        )
+                                      : [
+                                            h("div", { style: { color: "red", padding: "0px 0px 0px 8px" } }, [
+                                                "未搜索到答案",
+                                            ]),
+                                        ],
+                              ]);
+                          })
+                          .filter((el) => el)
+                    : h("div", { class: "search-results-empty", style: { textAlign: "center" } }, "没有搜索结果")
+            ),
     };
 }
 

@@ -50,7 +50,7 @@ export const CXScript = defineScript({
             name: "任务切换脚本",
             url: "**/mycourse/studentstudy**",
             onload() {
-                const { restudy } = OCS.setting.cx.video;
+                const { restudy } = (top || window).OCS.setting.cx.video;
 
                 const params = new URLSearchParams(window.location.href);
                 const mooc = params.get("mooc2");
@@ -93,7 +93,7 @@ export const CXScript = defineScript({
         {
             name: "学习脚本",
             url: "**/knowledge/cards**",
-            async onload(setting = OCS.setting.cx.video) {
+            async onload(setting = (top || window).OCS.setting.cx.video) {
                 await sleep(5000);
                 await study(setting);
             },
@@ -114,7 +114,7 @@ export const CXScript = defineScript({
         {
             name: "作业脚本",
             url: "**/mooc2/work/dowork**",
-            async onload(setting = OCS.setting.cx.work) {
+            async onload(setting = (top || window).OCS.setting.cx.work) {
                 await sleep(5000);
                 await workOrExam(setting, false);
             },
@@ -132,7 +132,7 @@ export const CXScript = defineScript({
         {
             name: "考试脚本",
             url: "**/mooc2/exam/preview**",
-            async onload(setting = OCS.setting.cx.exam) {
+            async onload(setting = (top || window).OCS.setting.cx.exam) {
                 await sleep(5000);
                 await workOrExam(setting, true);
             },
@@ -170,7 +170,8 @@ export const CXScript = defineScript({
             name: "学习助手",
             url: "**/mycourse/studentstudy**",
 
-            el: () => createNote("进入设置面板可以调整学习设置", "5秒后将自动开始..."),
+            el: () =>
+                createNote("进入设置面板可以调整学习设置", "章节栏你随便点, 脚本卡了算我输。", "5秒后将自动开始..."),
             children: [
                 {
                     name: "学习设置",

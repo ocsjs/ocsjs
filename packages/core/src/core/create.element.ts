@@ -9,8 +9,7 @@ import {
     VNodeArrayChildren,
     VNodeProps,
 } from "vue";
-import { setItem } from "./store";
-import { domSearch, togglePanel } from "./utils";
+import { togglePanel } from "./utils";
 /**
  * 创建自定义元素
  */
@@ -100,80 +99,19 @@ export function createFooter() {
 export function createSettingPanel(...settingItems: FormType[]): DefineComponent {
     return defineComponent({
         render() {
-            return h(
-                "form",
-                {
-                    method: "get",
-                    action: "/",
-                    onSubmit: (e: any) => {
-                        e.preventDefault();
-                        const refs = this.$refs as any;
-                        let res = [];
-                        /** 解析 refs 里面的所有绑定值 */
-                        Reflect.ownKeys(refs)
-                            .filter((key) => key !== "submit")
-                            .flatMap((key) => {
-                                const input: HTMLInputElement = refs[key];
-                                const type = input.getAttribute("type") || "text";
-
-                                const value =
-                                    type === "checkbox"
-                                        ? input.checked
-                                        : type === "radio"
-                                        ? input.checked
-                                        : type === "number"
-                                        ? input.valueAsNumber
-                                        : type === "object"
-                                        ? input.value
-                                            ? JSON.parse(input.value)
-                                            : {}
-                                        : type === "array"
-                                        ? input.value
-                                            ? JSON.parse(input.value)
-                                            : []
-                                        : parseFloat(input.value) || input.value;
-                                res.push([key.toString(), value]);
-                                setItem(key.toString(), value);
-                            });
-
-                        refs.submit.value = "保存成功√ 即将刷新";
-                        refs.submit.disabled = true;
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 3000);
+            return h("form", [
+                h(
+                    "div",
+                    {
+                        class: "ocs-setting-items",
                     },
-                },
-                [
-                    h(
-                        "div",
-                        {
-                            class: "ocs-setting-items",
-                        },
-                        settingItems
-                            .map((item) =>
-                                isVNode(item) ? item : [h("label", item.label), createSettingItem.apply(this, [item])]
-                            )
-                            .flat()
-                    ),
-                    h(
-                        "div",
-                        {
-                            class: "ocs-setting-buttons",
-                        },
-                        [
-                            h("input", {
-                                type: "reset",
-                                value: "重置",
-                            }),
-                            h("input", {
-                                type: "submit",
-                                ref: "submit",
-                                value: "保存",
-                            }),
-                        ]
-                    ),
-                ]
-            );
+                    settingItems
+                        .map((item) =>
+                            isVNode(item) ? item : [h("label", item.label), createSettingItem.apply(this, [item])]
+                        )
+                        .flat()
+                ),
+            ]);
         },
     });
 }
@@ -181,7 +119,6 @@ export function createSettingPanel(...settingItems: FormType[]): DefineComponent
 export interface SettingItem {
     label: string;
     type: string;
-    ref: string;
     icons?: ({
         type: string;
         onClick?: (eL: HTMLElement) => void;
@@ -234,7 +171,6 @@ function createSettingSelect(input: SettingSelect) {
     return h(
         "select",
         {
-            ref: input.ref,
             ...input.attrs,
         },
         input.options?.map((option) =>
@@ -255,7 +191,6 @@ function createSettingSelect(input: SettingSelect) {
  */
 function createSettingInput(input: SettingInput) {
     return h("input", {
-        ref: input.ref,
         type: input.type,
         ...input.attrs,
     });
@@ -317,16 +252,16 @@ export interface CreateWorkerSettingConfig {
  */
 export function createWorkerSetting(
     label: string,
-    ref: string,
-    config?: CreateWorkerSettingConfig
+    config: CreateWorkerSettingConfig,
+    changeHandler: (e: Event) => void
 ): [SettingSelect, SettingInput] {
     return [
         {
             label,
-            ref,
             type: "select",
             attrs: {
                 title: "答题设置",
+                onchange: changeHandler,
             },
             options: config?.options
                 ? config.options
@@ -366,7 +301,6 @@ export function createWorkerSetting(
         },
         {
             label: "题库配置",
-            ref: "setting.answererWrappers",
             type: "array",
             icons: [
                 {
@@ -380,6 +314,7 @@ export function createWorkerSetting(
                 },
             ],
             attrs: {
+                onchange: (e: any) => (OCS.setting.answererWrappers = JSON.parse(e.target.value)),
                 title: "输入题库配置, 点击右侧查看教程 ",
                 value: OCS.setting.answererWrappers.length === 0 ? "" : JSON.stringify(OCS.setting.answererWrappers),
                 placeholder: "点击右侧查看教程 ",

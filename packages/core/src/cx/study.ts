@@ -129,6 +129,8 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
     const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
     const { lineSelect } = domSearch({ lineSelect: "#video-line" }, top?.document);
 
+    console.log({ videojs, lineSelect });
+
     // @ts-ignore
     if (videojs?.player) {
         // @ts-ignore  播放路线列表
@@ -138,6 +140,8 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             // @ts-ignore
             videojs.player.controlBar.videoJsPlayLine.querySelectorAll("ul li")
         );
+        console.log({ playlines, menus });
+
         const currentLine = setting.line;
         if (currentLine) {
             logger("info", "切换路线中： " + currentLine);
@@ -157,11 +161,14 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             };
 
             function createOption(label: string) {
+                console.log({ label });
+
                 const option = document.createElement("option");
                 option.text = label;
                 option.value = label;
                 // @ts-ignore
                 lineSelect.appendChild(option);
+                console.log(lineSelect);
             }
         }
 
@@ -169,8 +176,8 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             for (const menu of menus) {
                 if (menu.textContent?.includes(value)) {
                     menu.click();
-                    OCS.setting.cx.video.line = value;
-                    setItem("setting.cx.video.line", value);
+                    setting.line = value;
+                    setting;
                     setTimeout(() => (media.playbackRate = playbackRate), 3000);
                     break;
                 }
@@ -190,7 +197,7 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             var playFunction = function () {
                 // @ts-ignore
                 if (!media.ended && !media.__played__) {
-                    media.play();
+                    setTimeout(() => media.play(), 1000);
                 } else {
                     // @ts-ignore
                     media.__played__ = true;
@@ -244,8 +251,8 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
     const { window } = frame.contentWindow;
 
     const { TiMu } = domSearchAll({ TiMu: ".TiMu" }, window.document);
-    const { search } = domSearch({ search: "#search-results" }, top?.document);
-    clearSearchResult(search);
+    /** 清空答案 */
+    if (top?.OCS) top.OCS.localStorage.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -333,10 +340,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         },
         onResult: (res) => {
             if (res.ctx) {
-                const result = createSearchResultElement(res);
-                if (search && result) {
-                    search.appendChild(result);
-                }
+                top?.OCS.localStorage.workResults.push(res);
             }
 
             logger("info", "题目完成结果 : ", res);

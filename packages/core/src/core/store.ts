@@ -1,5 +1,6 @@
 import { get, set } from "lodash";
 import { ScriptSettings } from "../scripts";
+import { SearchedElements, WorkResult } from "./worker/interface";
 
 let listeners: any[] = [];
 
@@ -35,8 +36,20 @@ export function getItem(path: string | string[], defaultValue?: any) {
  * OCS 本地存储类型
  */
 export interface OCSLocalStorage {
-    // 网课平台类型
+    [x: string]: any;
+    /** 网课平台类型 */
     platform?: string;
-    // 本地设置
+    /** 本地设置 */
     setting?: ScriptSettings;
+    /** 面板是否隐藏 */
+    hide: boolean;
+    /** 日志存储 */
+    logs: {
+        time: number;
+        level: string;
+        extra: string;
+        text: string;
+    }[];
+    /** 搜索结果存储 */
+    workResults: WorkResult<any>[];
 }

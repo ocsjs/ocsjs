@@ -19,9 +19,8 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
         return;
     }
 
-    const { search } = domSearch({ search: "#search-results" });
-    /** 清空内容 */
-    clearSearchResult(search);
+    /** 清空答案 */
+    if (top?.OCS) top.OCS.localStorage.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -50,11 +49,7 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
         },
         onResult: (res) => {
             if (res.ctx) {
-                const { search } = domSearch({ search: "#search-results" });
-                const result = createSearchResultElement(res);
-                if (search && result) {
-                    search.appendChild(result);
-                }
+                top?.OCS.localStorage.workResults.push(res);
             }
 
             logger("info", "题目完成结果 : ", res);

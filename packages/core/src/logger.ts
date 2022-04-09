@@ -1,3 +1,4 @@
+import { nextTick } from "vue";
 import { domSearch } from "./core/utils";
 
 export function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
@@ -32,7 +33,6 @@ export function logger(level: "info" | "error" | "warn" | "debug", ...msg: any[]
     console.log(...createLog(level, msg));
 
     if (document) {
-        const { terminal } = domSearch({ terminal: ".terminal" }, top?.document);
         let extra =
             level === "info"
                 ? "信息"
@@ -43,32 +43,40 @@ export function logger(level: "info" | "error" | "warn" | "debug", ...msg: any[]
                 : level === "debug"
                 ? "调试"
                 : "";
-        if (terminal) {
-            const logs = Array.from(terminal.querySelectorAll("div"));
+        const text = msg.map((s) => {
+            const type = typeof s;
+            return type === "function"
+                ? "[Function]"
+                : type === "object"
+                ? "[Object]"
+                : type === "undefined"
+                ? "无"
+                : s;
+        });
+        if (top?.OCS) {
+            const logs = top.OCS.localStorage.logs;
             if (logs.length > 50) {
-                logs.shift()?.remove();
+                logs.shift();
+            } else {
+                logs.push({
+                    time: Date.now(),
+                    level,
+                    extra,
+                    text: text.join(" "),
+                });
             }
-
-            const li = document.createElement("div");
-            const text = msg.map((s) => {
-                const type = typeof s;
-                return type === "function"
-                    ? "[Function]"
-                    : type === "object"
-                    ? "[Object]"
-                    : type === "undefined"
-                    ? "无"
-                    : s;
-            });
-            li.innerHTML = `<span style="color: gray;">${new Date().toLocaleTimeString()}</span> <level  class="${level}">${extra}</level> <span>${text.join(
-                " "
-            )}</span>`;
-            terminal.appendChild(li);
-
-            terminal.scrollTo({
-                behavior: "auto",
-                top: terminal.scrollHeight,
-            });
         }
+
+        setTimeout(() => {
+            const { terminal } = domSearch({ terminal: ".terminal" }, top?.document);
+            if (terminal?.scrollHeight) {
+                console.log("erminal?.scrollHeight", terminal?.scrollHeight);
+
+                terminal?.scrollTo({
+                    behavior: "auto",
+                    top: terminal.scrollHeight,
+                });
+            }
+        }, 100);
     }
 }

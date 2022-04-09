@@ -13,14 +13,16 @@ export function createCXStudySettingPanel(): DefineComponent {
 
         {
             label: "视频倍速",
-            ref: "setting.cx.video.playbackRate",
             type: "number",
             attrs: {
                 title: "高倍速可能导致封号或者频繁验证码\n超星后台可以看到学习时长\n请谨慎设置。",
-                value: settings.playbackRate.toString(),
+                value: settings.playbackRate,
                 min: "1",
                 max: "16",
                 step: "1",
+                onchange: (e: any) => {
+                    settings.playbackRate = e.target.valueAsNumber;
+                },
             },
 
             icons: [
@@ -34,9 +36,15 @@ export function createCXStudySettingPanel(): DefineComponent {
         },
         {
             label: "播放路线",
-            ref: "setting.cx.video.line",
             type: "select",
-            attrs: { id: "video-line", value: settings.line || "" },
+            attrs: {
+                id: "video-line",
+                value: settings.line || "",
+                onchange: (e: any) => {
+                    console.log("播放路线", e.target.value);
+                    settings.line = e.target.value;
+                },
+            },
             options: (
                 [
                     settings.line ? { label: "指定-" + settings.line, value: settings.line } : [],
@@ -49,31 +57,35 @@ export function createCXStudySettingPanel(): DefineComponent {
         },
         {
             label: "静音模式",
-            ref: "setting.cx.video.mute",
             type: "checkbox",
             attrs: {
+                onchange: (e: any) => (settings.mute = e.target.checked),
                 checked: settings.mute,
             },
         },
         {
             label: "复习模式",
-            ref: "setting.cx.video.restudy",
             type: "checkbox",
             attrs: {
+                onchange: (e: any) => (settings.restudy = e.target.checked),
                 title: "将播放过的视频再播放一遍。",
                 checked: settings.restudy,
             },
         },
         h("hr"),
         h("hr"),
-        ...createWorkerSetting("章节测试", "setting.cx.video.upload", {
-            defaultUpload: settings.upload,
-        }),
+        ...createWorkerSetting(
+            "章节测试",
+            {
+                defaultUpload: settings.upload,
+            },
+            (e: any) => (settings.upload = e.target.value)
+        ),
         {
             label: "答题间隔(秒)",
-            ref: "setting.cx.work.period",
             type: "number",
             attrs: {
+                onchange: (e: any) => (OCS.setting.cx.work.period = e.target.valueAsNumber),
                 value: OCS.setting.cx.work.period,
                 min: 0,
                 step: 1,
@@ -81,9 +93,9 @@ export function createCXStudySettingPanel(): DefineComponent {
         },
         {
             label: "搜题请求超时时间(秒)",
-            ref: "setting.cx.work.timeout",
             type: "number",
             attrs: {
+                onchange: (e: any) => (OCS.setting.cx.work.timeout = e.target.valueAsNumber),
                 title: "每道题最多做n秒, 超过则跳过此题。",
                 value: OCS.setting.cx.work.timeout,
                 min: 0,
@@ -92,9 +104,9 @@ export function createCXStudySettingPanel(): DefineComponent {
         },
         {
             label: "搜题请求重试次数",
-            ref: "setting.cx.work.retry",
             type: "number",
             attrs: {
+                onchange: (e: any) => (OCS.setting.cx.work.retry = e.target.valueAsNumber),
                 value: OCS.setting.cx.work.retry,
                 min: 0,
                 max: 2,
@@ -103,9 +115,9 @@ export function createCXStudySettingPanel(): DefineComponent {
         },
         {
             label: "发生错误时暂停答题",
-            ref: "setting.cx.work.stopWhenError",
             type: "checkbox",
             attrs: {
+                onchange: (e: any) => (OCS.setting.cx.work.retry = e.target.checked),
                 checked: OCS.setting.cx.work.stopWhenError,
             },
         }
@@ -117,15 +129,19 @@ export function createCXWorkSettingPanel(isExam: boolean, config?: CreateWorkerS
 
     return createSettingPanel(
         /** 作业答题设置 */
-        ...createWorkerSetting(isExam ? "考试提交" : "作业提交", "setting.cx.work.upload", {
-            defaultUpload: config?.defaultUpload || settings.upload,
-            options: config?.options,
-        }),
+        ...createWorkerSetting(
+            isExam ? "考试提交" : "作业提交",
+            {
+                defaultUpload: config?.defaultUpload || settings.upload,
+                options: config?.options,
+            },
+            (e: any) => (settings.upload = e.target.value)
+        ),
         {
             label: "答题间隔(秒)",
-            ref: "setting.cx.work.period",
             type: "number",
             attrs: {
+                onchange: (e: any) => (settings.period = e.target.valueAsNumber),
                 value: settings.period,
                 min: 0,
                 step: 1,
@@ -133,10 +149,10 @@ export function createCXWorkSettingPanel(isExam: boolean, config?: CreateWorkerS
         },
         {
             label: "搜题请求超时时间(秒)",
-            ref: "setting.cx.work.timeout",
             type: "number",
             attrs: {
                 title: "每道题最多做n秒, 超过则跳过此题。",
+                onchange: (e: any) => (settings.timeout = e.target.valueAsNumber),
                 value: settings.timeout,
                 min: 0,
                 step: 1,
@@ -144,9 +160,10 @@ export function createCXWorkSettingPanel(isExam: boolean, config?: CreateWorkerS
         },
         {
             label: "搜题请求重试次数",
-            ref: "setting.cx.work.retry",
+
             type: "number",
             attrs: {
+                onchange: (e: any) => (settings.retry = e.target.valueAsNumber),
                 value: settings.retry,
                 min: 0,
                 max: 2,
@@ -155,9 +172,9 @@ export function createCXWorkSettingPanel(isExam: boolean, config?: CreateWorkerS
         },
         {
             label: "发生错误时暂停答题",
-            ref: "setting.cx.work.stopWhenError",
             type: "checkbox",
             attrs: {
+                onchange: (e: any) => (settings.stopWhenError = e.target.valueAsNumber),
                 checked: settings.stopWhenError,
             },
         }

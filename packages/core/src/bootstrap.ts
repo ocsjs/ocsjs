@@ -102,28 +102,7 @@ export function showPanels(options?: StartOptions) {
                     if (!key) {
                         activeKey.value = currentPanels.value[0].name;
                     }
-                    nextTick(update);
                 });
-
-                watch(activeKey, update);
-                onMounted(() => nextTick(update));
-
-                // 切换页面，和标题样式改变
-                function update() {
-                    const { panelElements, panelTitles } = domSearchAll({
-                        panelElements: "[panel]",
-                        panelTitles: "[paneltitle]",
-                    });
-                    panelElements.forEach((_, i) => {
-                        panelElements[i].style.display = "none";
-                        panelTitles[i].classList.remove("active");
-                    });
-                    const index = panelElements.findIndex((el) => el.getAttribute("panel") === activeKey.value);
-                    if (index !== -1) {
-                        panelElements[index].style.display = "block";
-                        panelTitles[index].classList.add("active");
-                    }
-                }
 
                 return { panels, activeKey, currentPanels };
             },
@@ -147,7 +126,7 @@ export function showPanels(options?: StartOptions) {
                                 "div",
                                 {
                                     panelTitle: panel.name,
-                                    class: "title",
+                                    class: "title " + (panel.name === this.activeKey ? "active" : ""),
                                     onClick: () => {
                                         // 隐藏其他面板，显示点击的面板
                                         this.activeKey = panel.name;
@@ -175,7 +154,7 @@ export function showPanels(options?: StartOptions) {
 
                                 return h(element, {
                                     style: {
-                                        display: "none",
+                                        display: panel.name === this.activeKey ? "block" : "none",
                                     },
                                     panel: panel.name,
                                 });

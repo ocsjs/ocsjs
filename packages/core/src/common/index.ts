@@ -19,7 +19,7 @@ export const CommonScript = defineScript({
             start() {
                 for (const arr of supports) {
                     if (urlGlob(arr[0])) {
-                        setItem("platform", arr[1]);
+                        OCS.localStorage.platform = arr[1];
                     }
                 }
             },
@@ -52,11 +52,14 @@ export const CommonScript = defineScript({
             },
         },
         {
-            name: "OCS居中脚本",
+            name: "OCS样式切换, 位置定位脚本",
             url: supports.map((arr) => arr[0]),
             onload() {
                 const target = ["o", "c", "s"];
                 let stack: string[] = [];
+
+                if (OCS.localStorage.hide) {
+                }
 
                 onkeydown = (e) => {
                     if (target.includes(e.key)) {

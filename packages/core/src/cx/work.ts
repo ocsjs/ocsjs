@@ -1,9 +1,8 @@
 import { defaults } from "lodash";
 import { logger } from "../logger";
-import { clearSearchResult, domSearch, sleep, StringUtils } from "../core/utils";
+import { domSearch, sleep, StringUtils } from "../core/utils";
 import { OCSWorker } from "../core/worker";
 import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
-import { createSearchResultElement } from "../core/worker/utils";
 import { defaultSetting, ScriptSettings } from "../scripts";
 
 export async function workOrExam(
@@ -22,9 +21,8 @@ export async function workOrExam(
         return;
     }
 
-    const { search } = domSearch({ search: "#search-results" });
     /** 清空内容 */
-    clearSearchResult(search);
+    if (top?.OCS) top.OCS.localStorage.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -90,10 +88,7 @@ export async function workOrExam(
         },
         onResult: (res) => {
             if (res.ctx) {
-                const result = createSearchResultElement(res);
-                if (search && result) {
-                    search.appendChild(result);
-                }
+                top?.OCS.localStorage.workResults.push(res);
             }
             logger("info", "题目完成结果 : ", res);
         },
