@@ -6,6 +6,7 @@ import { createCXStudySettingPanel, createCXWorkSettingPanel } from "./panels";
 import { study } from "./study";
 import { rateHack } from "./utils";
 import { workOrExam } from "./work";
+import { useOCS } from "..";
 
 /** 需切换版本的 url 页面 */
 const updateURLs = [
@@ -50,7 +51,7 @@ export const CXScript = defineScript({
             name: "任务切换脚本",
             url: "**/mycourse/studentstudy**",
             onload() {
-                const { restudy } = (top || window).OCS.setting.cx.video;
+                const { restudy } = useOCS().setting.cx.video;
 
                 const params = new URLSearchParams(window.location.href);
                 const mooc = params.get("mooc2");
@@ -93,7 +94,7 @@ export const CXScript = defineScript({
         {
             name: "学习脚本",
             url: "**/knowledge/cards**",
-            async onload(setting = (top || window).OCS.setting.cx.video) {
+            async onload(setting = useOCS().setting.cx.video) {
                 await sleep(5000);
                 await study(setting);
             },
@@ -114,7 +115,7 @@ export const CXScript = defineScript({
         {
             name: "作业脚本",
             url: "**/mooc2/work/dowork**",
-            async onload(setting = (top || window).OCS.setting.cx.work) {
+            async onload(setting = useOCS().setting.cx.work) {
                 await sleep(5000);
                 await workOrExam(setting, false);
             },
@@ -132,7 +133,7 @@ export const CXScript = defineScript({
         {
             name: "考试脚本",
             url: "**/mooc2/exam/preview**",
-            async onload(setting = (top || window).OCS.setting.cx.exam) {
+            async onload(setting = useOCS().setting.cx.exam) {
                 await sleep(5000);
                 await workOrExam(setting, true);
             },

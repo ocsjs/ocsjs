@@ -106,6 +106,7 @@ export function createSettingPanel(...settingItems: FormType[]): DefineComponent
                         class: "ocs-setting-items",
                     },
                     settingItems
+                        .filter((item) => item)
                         .map((item) =>
                             isVNode(item) ? item : [h("label", item.label), createSettingItem.apply(this, [item])]
                         )

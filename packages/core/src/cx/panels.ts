@@ -1,5 +1,7 @@
 import { DefineComponent, h } from "vue";
 import { createSettingPanel, createWorkerSetting, CreateWorkerSettingConfig } from "../core/create.element";
+import { domSearch } from "../core/utils";
+import { switchPlayLine } from "./study";
 
 /**
  * 创建超星学习设置面板
@@ -41,13 +43,21 @@ export function createCXStudySettingPanel(): DefineComponent {
                 id: "video-line",
                 value: settings.line || "",
                 onchange: (e: any) => {
-                    console.log("播放路线", e.target.value);
                     settings.line = e.target.value;
+                    const { iframe } = domSearch({ iframe: "iframe" });
+                    const win = (iframe as HTMLIFrameElement).contentWindow;
+                    win?.location.reload();
                 },
             },
             options: (
                 [
                     settings.line ? { label: "指定-" + settings.line, value: settings.line } : [],
+                    ...[
+                        Array.from(settings.playlines || [{ label: "公网1" }, { label: "公网2" }]).map((line: any) => ({
+                            label: line.label,
+                            value: line.label,
+                        })),
+                    ],
                     {
                         label: "请指定路线(播放视频后才可选择, 无需保存)",
                         value: "",

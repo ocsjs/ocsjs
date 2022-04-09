@@ -43,3 +43,8 @@ export const setting: typeof defaultOCSSetting = defaultsDeep(localStorage.setti
 
 // @ts-ignore
 localStorage.setting = setting;
+
+export function useOCS(): typeof OCS {
+    // @ts-ignore
+    return unsafeWindow?.OCS;
+}

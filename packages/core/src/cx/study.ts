@@ -118,18 +118,15 @@ function searchIFrame() {
 }
 
 /**
- * 播放视频和音频
+ *  视频路线切换
  */
-function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement, frame: HTMLIFrameElement) {
-    const { playbackRate = 1, mute = true } = setting;
-    /**
-     *  视频路线选择器
-     */
-    // @ts-ignore
-    const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
-    const { lineSelect } = domSearch({ lineSelect: "#video-line" }, top?.document);
-
-    console.log({ videojs, lineSelect });
+export function switchPlayLine(
+    setting: ScriptSettings["cx"]["video"],
+    videojs: HTMLElement,
+    media: HTMLMediaElement,
+    line: string
+) {
+    const { playbackRate = 1 } = setting;
 
     // @ts-ignore
     if (videojs?.player) {
@@ -140,49 +137,36 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             // @ts-ignore
             videojs.player.controlBar.videoJsPlayLine.querySelectorAll("ul li")
         );
-        console.log({ playlines, menus });
 
-        const currentLine = setting.line;
-        if (currentLine) {
-            logger("info", "切换路线中： " + currentLine);
-            setTimeout(() => selectLine(currentLine), 3000);
-        }
+        setting.playlines = playlines;
 
-        /** 添加选项 */
-        if (lineSelect) {
-            for (const line of playlines) {
-                // @ts-ignore
-                createOption(line.label);
-            }
+        logger("info", "切换路线中： " + line);
+        selectLine(line);
 
-            lineSelect.onchange = function () {
-                const select = lineSelect as HTMLSelectElement;
-                selectLine(select.value);
-            };
-
-            function createOption(label: string) {
-                console.log({ label });
-
-                const option = document.createElement("option");
-                option.text = label;
-                option.value = label;
-                // @ts-ignore
-                lineSelect.appendChild(option);
-                console.log(lineSelect);
-            }
-        }
-
-        function selectLine(value: string) {
+        function selectLine(line: string) {
             for (const menu of menus) {
-                if (menu.textContent?.includes(value)) {
+                if (menu.textContent?.includes(line)) {
                     menu.click();
-                    setting.line = value;
-                    setting;
+                    setting.line = line;
                     setTimeout(() => (media.playbackRate = playbackRate), 3000);
                     break;
                 }
             }
         }
+    }
+}
+
+/**
+ * 播放视频和音频
+ */
+function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement, frame: HTMLIFrameElement) {
+    const { playbackRate = 1, mute = true } = setting;
+
+    // @ts-ignore
+    const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
+    if (videojs) {
+        // 切换路线
+        setTimeout(() => switchPlayLine(setting, videojs, media, setting.line), 3000);
     }
 
     /**
