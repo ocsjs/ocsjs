@@ -1,14 +1,15 @@
-import { createApp, defineComponent, ref, h, isVNode, App, watch, computed, KeepAlive, onMounted, nextTick } from "vue";
+import { createApp, App as VueApp } from "vue";
 import { definedScripts } from ".";
 import { logger } from "./logger";
-import { createFooter, createHeaders, createContainers } from "./core/create.element";
 import { DefineScript } from "./core/define.script";
-import { getCurrentPanels, addFunctionEventListener, getCurrentRoutes, domSearchAll, dragElement } from "./core/utils";
+import { getCurrentRoutes, dragElement } from "./core/utils";
+import App from "./views/App.vue";
+import { store } from "./views/store";
 
 /** 面板元素 */
 export let panel: HTMLElement | undefined | null;
 /** vue app 元素 */
-export let app: App;
+export let app: VueApp;
 
 export interface StartOptions {
     /**
@@ -53,9 +54,11 @@ export function start(options?: StartOptions) {
  * 显示面板
  */
 export function showPanels(options?: StartOptions) {
-    const { style = "", draggable, scripts = definedScripts } = options || {};
+    const { draggable, scripts = definedScripts } = options || {};
 
-    app = createApp(createPanel());
+    store.scripts = scripts;
+
+    app = createApp(App);
     panel = document.createElement("ocs-panel");
     document.body.appendChild(panel);
     app.mount(panel);
@@ -64,110 +67,6 @@ export function showPanels(options?: StartOptions) {
         dragElement("ocs-panel .ocs-panel-header", panel);
         dragElement("ocs-panel .ocs-panel-footer", panel);
         dragElement(".ocs-icon", panel);
-    }
-
-    function createPanel() {
-        return defineComponent({
-            data() {
-                const panels = ref(getCurrentPanels(scripts));
-
-                history.pushState = addFunctionEventListener(history, "pushState");
-                history.replaceState = addFunctionEventListener(history, "replaceState");
-
-                window.addEventListener("pushState", () => (panels.value = getCurrentPanels(scripts)));
-                window.addEventListener("replaceState", () => (panels.value = getCurrentPanels(scripts)));
-
-                /**
-                 * 对面板进行处理
-                 *
-                 * 当所有面板都为 default 状态的时候，才显示 default 面板
-                 *
-                 * 否则显示其他面板
-                 */
-                const currentPanels = computed(() => {
-                    return (
-                        panels.value.every((panel) => panel.default === true)
-                            ? panels.value
-                            : panels.value.filter((panel) => !panel.default)
-                    ).sort((a, b) => (b.priority || 0) - (a.priority || 0));
-                });
-
-                const activeKey = ref(currentPanels.value[0]?.name);
-
-                /** 当面板发生改变时重绘 */
-                watch(currentPanels, () => {
-                    const key = currentPanels.value.find((p) => p.name === activeKey.value);
-
-                    /** 缓存页面，  如果存在相同的面板，则不切换，否则切换回到第一个页面 */
-                    if (!key) {
-                        activeKey.value = currentPanels.value[0].name;
-                    }
-                });
-
-                return { panels, activeKey, currentPanels };
-            },
-            render() {
-                const footer = createFooter();
-                const styleElement =
-                    /** 添加样式 */
-                    style.startsWith("http")
-                        ? h("link", {
-                              href: style,
-                              type: "text/css",
-                              rel: "stylesheet",
-                          })
-                        : h("style", style);
-
-                const main = [
-                    /** 添加 tab 栏 */
-                    createHeaders(
-                        this.currentPanels.map((panel) =>
-                            h(
-                                "div",
-                                {
-                                    panelTitle: panel.name,
-                                    class: "title " + (panel.name === this.activeKey ? "active" : ""),
-                                    onClick: () => {
-                                        // 隐藏其他面板，显示点击的面板
-                                        this.activeKey = panel.name;
-                                    },
-                                },
-                                panel.name
-                            )
-                        )
-                    ),
-
-                    h(KeepAlive, [
-                        /** 显示面板 */
-                        createContainers(
-                            this.currentPanels.map((panel, i) => {
-                                const el = panel.el();
-
-                                let element;
-                                if (isVNode(el)) {
-                                    element = defineComponent({ render: () => el });
-                                } else if (typeof el === "string") {
-                                    element = defineComponent({ template: el });
-                                } else {
-                                    element = el;
-                                }
-
-                                return h(element, {
-                                    style: {
-                                        display: panel.name === this.activeKey ? "block" : "none",
-                                    },
-                                    panel: panel.name,
-                                });
-                            })
-                        ),
-                    ]),
-
-                    footer,
-                ];
-
-                return h("div", [styleElement, ...main]);
-            },
-        });
     }
 }
 

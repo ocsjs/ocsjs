@@ -13,5 +13,5 @@
         "resolveJsonModule": true
     },
 
-    "include": ["./index.ts", "./src/**/*.ts"]
+    "include": ["./index.ts", "./src/**/*.ts", "vite.config.ts"]
 }
