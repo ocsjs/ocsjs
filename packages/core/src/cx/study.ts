@@ -190,7 +190,7 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             var playFunction = function () {
                 // @ts-ignore
                 if (!media.ended && !media.__played__) {
-                    media.play();
+                    setTimeout(() => media.play(), 1000);
                 } else {
                     // @ts-ignore
                     media.__played__ = true;
