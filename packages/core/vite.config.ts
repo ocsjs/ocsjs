@@ -5,24 +5,26 @@ import path from "path";
 // https://vitejs.dev/config/
 export default defineConfig({
     build: {
-        outDir: "./public",
-        rollupOptions: {
-            output: {
-                manualChunks(id) {
-                    if (id.includes("node_modules")) {
-                        return id.toString().split("node_modules/")[1].split("/")[0].toString();
-                    }
-                },
-            },
+        /** 取消css代码分离 */
+        cssCodeSplit: true,
+        /** 输出路径 */
+        outDir: "./dist",
+        /** 清空输出路径 */
+        emptyOutDir: true,
+        /** 压缩代码 */
+        minify: true,
+        /** 打包库， 全局名字为 OCS */
+        lib: {
+            entry: "./index.ts",
+            name: "OCS",
+            fileName: (m) => `index.min.js`,
+            formats: ["umd"],
         },
+        sourcemap: true,
     },
-    base: "",
-    resolve: {
-        alias: {
-            "@": path.resolve(__dirname, "./src"),
-            root: path.resolve(__dirname),
-            app: path.resolve(__dirname, "./app"),
-        },
+    define: {
+        _VERSION_: JSON.stringify("1.0.0"),
     },
-    plugins: [vue(), visualizer()],
+
+    plugins: [vue(), , visualizer()],
 });
