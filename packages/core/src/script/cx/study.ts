@@ -1,33 +1,44 @@
-import { debounce, defaults } from "lodash";
-import { logger } from "../logger";
-import { clearSearchResult, domSearch, domSearchAll, getNumber, sleep, StringUtils } from "../core/utils";
-import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
-import { OCSWorker } from "../core/worker";
-import { defaultSetting, ScriptSettings } from "../scripts";
-import { createSearchResultElement } from "../core/worker/utils";
-import { setItem } from "../core/store";
+import { defaults } from "lodash";
+import { logger } from "../../logger";
+import { domSearch, domSearchAll, getNumber, sleep, StringUtils } from "../../core/utils";
+import { defaultAnswerWrapperHandler } from "../../core/worker/answer.wrapper.handler";
+import { OCSWorker } from "../../core/worker";
+import { defaultSetting, ScriptSettings } from "../../scripts";
+
+import { store } from "..";
 
 /**
  * cx 任务学习
  */
 export async function study(setting: ScriptSettings["cx"]["video"]) {
-    logger("info", "开始");
+    logger("debug", "即将开始");
 
-    for (const task of searchTask(setting)) {
+    const tasks = searchTask(setting);
+
+    for (const task of tasks) {
         await sleep(3000);
-        try {
-            await task();
-        } catch (e) {
-            // @ts-ignore
-            logger("error", e.message);
-        }
-        await sleep(3000);
+        await task();
     }
 
-    logger("info", "完成");
+    const { next, chapterIdInput } = domSearch(
+        { next: ".next", chapterIdInput: `input[id="chapterId"]` },
+        top?.document
+    );
+    const { tabs } = domSearchAll({ tabs: ".prev_ul li" }, top?.document);
 
-    const { next } = domSearch({ next: ".next" }, top?.document);
-    if (next && next.style.display === "block") {
+    if (next && next.style.display === "block" && chapterIdInput) {
+        // 如果下一章的id和当前保存的下一章id一致，则说明当前为闯关模式，并且已经不能继续下一章
+        if (tabs.length && tabs[tabs.length - 1].classList.contains("active")) {
+            if ((chapterIdInput as HTMLInputElement).value === store.setting.cx.video.chapterId) {
+                logger("warn", "当前章节未完成, 必须自行手动完成后才能进行下一章。");
+                return;
+            } else {
+                store.setting.cx.video.chapterId = (chapterIdInput as HTMLInputElement).value;
+            }
+        }
+
+        logger("debug", "完成, 即将跳转");
+        await sleep(3000);
         next.click();
     } else {
         alert("OCS助手： 全部任务点已完成！");
@@ -37,9 +48,9 @@ export async function study(setting: ScriptSettings["cx"]["video"]) {
 /**
  * 搜索任务点
  */
-function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise<number>> {
+function searchTask(setting: ScriptSettings["cx"]["video"]): (() => Promise<void> | undefined)[] {
     return searchIFrame()
-        .map((frame) => () => {
+        .map((frame) => {
             const { media, ppt, chapterTest } = domSearch(
                 {
                     media: "video,audio",
@@ -50,47 +61,52 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise
             );
 
             if (media || ppt || chapterTest) {
-                // @ts-ignore
-                let _parent = frame.contentWindow.parent;
-                // @ts-ignore
-                let jobIndex = getNumber(frame.contentWindow?._jobindex, _parent._jobindex);
-                while (_parent) {
+                return () => {
                     // @ts-ignore
-                    jobIndex = getNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
+                    let _parent = frame.contentWindow.parent;
                     // @ts-ignore
-                    let attachments = _parent?.JC?.attachments || _parent.attachments;
+                    let jobIndex = getNumber(frame.contentWindow?._jobindex, _parent._jobindex);
+                    while (_parent) {
+                        // @ts-ignore
+                        jobIndex = getNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
+                        // @ts-ignore
+                        let attachments = _parent?.JC?.attachments || _parent.attachments;
 
-                    if (attachments && typeof jobIndex == "number") {
-                        const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
-                        const jobName = name || title || (bookname ? bookname + author : undefined) || "未知任务";
+                        if (attachments && typeof jobIndex == "number") {
+                            const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
+                            const jobName = name || title || (bookname ? bookname + author : undefined) || "未知任务";
 
-                        if (attachments[jobIndex]?.job === true) {
-                            logger("debug", jobName, "即将开始。");
-                            return media
-                                ? mediaTask(setting, media as any, frame)
-                                : ppt
-                                ? pptTask(frame)
-                                : chapterTest
-                                ? chapterTestTask(OCS.setting.cx.work, frame)
-                                : undefined;
-                        } else if (setting.restudy && media) {
-                            logger("debug", jobName, "即将重新学习。");
-                            return mediaTask(setting, media as any, frame);
-                        } else {
-                            logger("debug", jobName, "已经完成，即将跳过。");
+                            if (attachments[jobIndex]?.job === true) {
+                                logger("debug", jobName, "即将开始。");
+
+                                return media
+                                    ? mediaTask(setting, media as any, frame)
+                                    : ppt
+                                    ? pptTask(frame)
+                                    : chapterTest
+                                    ? chapterTestTask(store.setting.cx.work, frame)
+                                    : undefined;
+                            } else if (setting.restudy && media) {
+                                logger("debug", jobName, "即将重新学习。");
+                                return mediaTask(setting, media as any, frame);
+                            } else {
+                                logger("debug", jobName, "已经完成，即将跳过。");
+                                break;
+                            }
+                        }
+                        // @ts-ignore
+                        if (_parent.parent == _parent) {
                             break;
                         }
+                        // @ts-ignore
+                        _parent = _parent.parent;
                     }
-                    // @ts-ignore
-                    if (_parent.parent == _parent) {
-                        break;
-                    }
-                    // @ts-ignore
-                    _parent = _parent.parent;
-                }
+                };
+            } else {
+                return undefined;
             }
         })
-        .filter((t) => t !== undefined) as any;
+        .filter((f) => f) as any[];
 }
 
 /**
@@ -148,6 +164,7 @@ export function switchPlayLine(
                 if (menu.textContent?.includes(line)) {
                     menu.click();
                     setting.line = line;
+                    /** 重新选择倍速 */
                     setTimeout(() => (media.playbackRate = playbackRate), 3000);
                     break;
                 }
@@ -164,6 +181,9 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
 
     // @ts-ignore
     const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
+    store.videojs = videojs;
+    store.currentMedia = media;
+
     if (videojs) {
         // 切换路线
         setTimeout(() => switchPlayLine(setting, videojs, media, setting.line), 3000);
@@ -212,16 +232,16 @@ async function pptTask(frame?: HTMLIFrameElement) {
  * 章节测验
  */
 async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTMLIFrameElement) {
-    logger("info", "开始自动答题");
-
     const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
 
-    if (OCS.setting.cx.video.upload === "close") {
-        logger("warn", "章节测试已经关闭");
+    if (store.setting.cx.video.upload === "close") {
+        logger("warn", "自动答题已被关闭！");
         return;
     }
 
-    if (OCS.setting.answererWrappers.length === 0) {
+    logger("info", "开始自动答题");
+
+    if (store.setting.answererWrappers.length === 0) {
         logger("warn", "题库配置为空，请设置。");
         return;
     }
@@ -236,7 +256,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
 
     const { TiMu } = domSearchAll({ TiMu: ".TiMu" }, window.document);
     /** 清空答案 */
-    if (top?.OCS) top.OCS.localStorage.workResults = [];
+    store.localStorage.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -260,7 +280,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
                 .replace(/（\d+.0分）/, "")
                 .trim();
             if (title) {
-                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, title);
+                return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
             } else {
                 throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
             }
@@ -324,7 +344,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         },
         onResult: (res) => {
             if (res.ctx) {
-                top?.OCS.localStorage.workResults.push(res);
+                store.localStorage.workResults.push(res);
             }
 
             logger("info", "题目完成结果 : ", res);
@@ -343,7 +363,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
 
     // 处理提交
     await worker.uploadHandler({
-        uploadRate: OCS.setting.cx.video.upload,
+        uploadRate: store.setting.cx.video.upload,
         results,
         async callback(finishedRate, uploadable) {
             logger("info", "完成率 : ", finishedRate, " , ", uploadable ? "5秒后将自动提交" : " 5秒后将自动保存");

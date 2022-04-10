@@ -1,7 +1,8 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { visualizer } from "rollup-plugin-visualizer";
-import path from "path";
+import vueJsx from "@vitejs/plugin-vue-jsx";
+
 // https://vitejs.dev/config/
 export default defineConfig({
     build: {
@@ -12,7 +13,7 @@ export default defineConfig({
         /** 清空输出路径 */
         emptyOutDir: true,
         /** 压缩代码 */
-        minify: true,
+        minify: false,
         /** 打包库， 全局名字为 OCS */
         lib: {
             entry: "./index.ts",
@@ -26,5 +27,5 @@ export default defineConfig({
         _VERSION_: JSON.stringify("1.0.0"),
     },
 
-    plugins: [vue(), , visualizer()],
+    plugins: [vue(), vueJsx(), , visualizer()],
 });

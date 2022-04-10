@@ -1,5 +1,6 @@
 import { nextTick } from "vue";
 import { domSearch } from "./core/utils";
+import { store } from "./script";
 
 export function loggerPrefix(level: "info" | "error" | "warn" | "debug") {
     let extra = level === "error" ? "[错误]" : level === "warn" ? "[警告]" : undefined;
@@ -30,7 +31,11 @@ export function createLog(level: "info" | "error" | "warn" | "debug", ...msg: an
 
 /** 输出 */
 export function logger(level: "info" | "error" | "warn" | "debug", ...msg: any[]) {
-    console.log(...createLog(level, msg));
+    if (level === "error") {
+        console.error(...createLog(level, msg));
+    } else {
+        console.log(...createLog(level, msg));
+    }
 
     if (document) {
         let extra =
@@ -53,30 +58,16 @@ export function logger(level: "info" | "error" | "warn" | "debug", ...msg: any[]
                 ? "无"
                 : s;
         });
-        if (top?.OCS) {
-            const logs = top.OCS.localStorage.logs;
-            if (logs.length > 50) {
-                logs.shift();
-            } else {
-                logs.push({
-                    time: Date.now(),
-                    level,
-                    extra,
-                    text: text.join(" "),
-                });
-            }
+        const logs = store.localStorage.logs;
+        if (logs.length > 50) {
+            logs.shift();
         }
 
-        setTimeout(() => {
-            const { terminal } = domSearch({ terminal: ".terminal" }, top?.document);
-            if (terminal?.scrollHeight) {
-                console.log("erminal?.scrollHeight", terminal?.scrollHeight);
-
-                terminal?.scrollTo({
-                    behavior: "auto",
-                    top: terminal.scrollHeight,
-                });
-            }
-        }, 100);
+        logs.push({
+            time: Date.now(),
+            level,
+            extra,
+            text: text.join(" "),
+        });
     }
 }

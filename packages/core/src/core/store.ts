@@ -43,6 +43,8 @@ export interface OCSLocalStorage {
     setting?: ScriptSettings;
     /** 面板是否隐藏 */
     hide: boolean;
+    /** 面板位置 */
+    position: { x: number; y: number };
     /** 日志存储 */
     logs: {
         time: number;

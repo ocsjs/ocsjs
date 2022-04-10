@@ -1,9 +1,10 @@
 import { defaults } from "lodash";
-import { logger } from "../logger";
-import { domSearch, sleep, StringUtils } from "../core/utils";
-import { OCSWorker } from "../core/worker";
-import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
-import { defaultSetting, ScriptSettings } from "../scripts";
+import { logger } from "../../logger";
+import { domSearch, sleep, StringUtils } from "../../core/utils";
+import { OCSWorker } from "../../core/worker";
+import { defaultAnswerWrapperHandler } from "../../core/worker/answer.wrapper.handler";
+import { defaultSetting, ScriptSettings } from "../../scripts";
+import { store } from "..";
 
 export async function workOrExam(
     setting: ScriptSettings["cx"]["work"] | ScriptSettings["cx"]["exam"],
@@ -12,17 +13,17 @@ export async function workOrExam(
     const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
 
     if (setting.upload === "close") {
-        logger("warn", "章节测试已经关闭");
+        logger("warn", "自动答题已被关闭！");
         return;
     }
 
-    if (OCS.setting.answererWrappers.length === 0) {
+    if (store.setting.answererWrappers.length === 0) {
         logger("warn", "题库配置为空，请设置。");
         return;
     }
 
     /** 清空内容 */
-    if (top?.OCS) top.OCS.localStorage.workResults = [];
+    store.localStorage.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -38,7 +39,7 @@ export async function workOrExam(
                 .replace(/\d+\. \(.*?(题|分)\)/, "")
                 .trim();
             if (title) {
-                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, title);
+                return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
             } else {
                 throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
             }
@@ -88,7 +89,7 @@ export async function workOrExam(
         },
         onResult: (res) => {
             if (res.ctx) {
-                top?.OCS.localStorage.workResults.push(res);
+                store.localStorage.workResults.push(res);
             }
             logger("info", "题目完成结果 : ", res);
         },

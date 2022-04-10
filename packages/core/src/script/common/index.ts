@@ -1,12 +1,12 @@
-import { createNote } from "../core/create.element";
-import { defineScript } from "../core/define.script";
-import { setItem } from "../core/store";
-import { urlGlob } from "../core/utils";
-import { logger } from "../logger";
+import { createNote } from "../../components";
+import { defineScript } from "../../core/define.script";
+import { urlGlob } from "../../core/utils";
+import { store } from "..";
 
 const supports = [
     ["**chaoxing.com**", "cx"],
     ["**edu.cn**", "cx"],
+    ["**org.cn**", "cx"],
     ["**zhihuishu.com**", "zhs"],
 ];
 
@@ -19,7 +19,7 @@ export const CommonScript = defineScript({
             start() {
                 for (const arr of supports) {
                     if (urlGlob(arr[0])) {
-                        OCS.localStorage.platform = arr[1];
+                        store.localStorage.platform = arr[1];
                     }
                 }
             },
@@ -58,9 +58,6 @@ export const CommonScript = defineScript({
                 const target = ["o", "c", "s"];
                 let stack: string[] = [];
 
-                if (OCS.localStorage.hide) {
-                }
-
                 onkeydown = (e) => {
                     if (target.includes(e.key)) {
                         stack.push(e.key);
@@ -68,7 +65,7 @@ export const CommonScript = defineScript({
 
                         if (contains) {
                             // @ts-ignore
-                            const panel: HTMLElement = document.querySelector("ocs-panel");
+                            const panel: HTMLElement = top?.document.querySelector("ocs-panel");
                             if (panel) {
                                 if (panel.classList.contains("hide")) {
                                     panel.style.top = "unset";

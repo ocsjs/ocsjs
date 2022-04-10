@@ -17,23 +17,21 @@
         <!-- 内容栏 -->
         <div class="ocs-panel-container">
             <template v-for="(panel, index) in currentPanels" :key="index">
-                <component
-                    :panel="panel.name"
-                    v-if="panel.name === activeKey"
-                    :is="panel.el"
-                ></component>
+                <div v-show="panel.name === activeKey" :panel="panel.name">
+                    <component :is="panel.el()"></component>
+                </div>
             </template>
         </div>
 
         <!-- 底部栏 -->
         <div class="ocs-panel-footer draggable">
-            <span class="hide-btn" @click="togglePanel"> 点击隐藏 </span>
-            <span class="ocs-tip"> OCS 网课助手 {{ OCS.VERSION }} </span>
+            <span class="hide-btn" @click="togglePanel()"> 点击隐藏 </span>
+            <span class="ocs-tip"> OCS 网课助手 {{ store.VERSION }} </span>
             <img
                 class="ocs-icon"
                 src="https://cdn.ocs.enncy.cn/logo.png"
                 title="双击展开"
-                @dblclick="togglePanel"
+                @dblclick="togglePanel()"
                 @click="(e) => e.stopPropagation()"
             />
         </div>
@@ -42,9 +40,9 @@
 
 <script setup lang="ts">
 import { computed } from "@vue/reactivity";
-import { ref, watch } from "vue";
-import { addFunctionEventListener, getCurrentPanels, togglePanel } from "../core/utils";
-import { store } from "./store/index";
+import { h, ref, watch } from "vue";
+import { addFunctionEventListener, getCurrentPanels, togglePanel } from "./core/utils";
+import { store } from "./script";
 
 const scripts = store.scripts;
 
@@ -87,11 +85,6 @@ watch(currentPanels, () => {
 </script>
 
 <style scope lang="less">
-@import "../assets/less/common.less";
-@import "../assets/less/cx.less";
-
-.hide-btn {
-    float: "left";
-    cursor: "pointer";
-}
+@import "./assets/less/common.less";
+@import "./assets/less/cx.less";
 </style>

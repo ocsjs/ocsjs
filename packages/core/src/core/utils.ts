@@ -1,9 +1,8 @@
-import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute, ScriptPanelChild } from "./define.script";
-
+import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute } from "./define.script";
 import { findBestMatch, Rating } from "string-similarity";
 import { RawElements, SearchedElements } from "./worker/interface";
-import { h } from "vue";
 import { logger } from "../logger";
+import { store } from "../script";
 
 export async function sleep(period: number): Promise<void> {
     return new Promise((resolve) => {
@@ -175,45 +174,13 @@ export function removeRedundant(str: string) {
 }
 
 /**
- * 创建日志面板
- */
-export function createTerminalPanel(): ScriptPanelChild {
-    return {
-        name: "日志",
-        el: () =>
-            h(
-                "div",
-                { class: "terminal" },
-                OCS.localStorage.logs.map((log: any) =>
-                    h("div", [
-                        h(
-                            "span",
-                            {
-                                style: {
-                                    color: "gray",
-                                },
-                            },
-                            [new Date(log.time).toLocaleTimeString("zh-CN")]
-                        ),
-                        h("span", [" "]),
-                        h("level", { class: log.level }, [log.extra]),
-                        h("span", [" "]),
-                        h("span", {
-                            innerHTML: log.text,
-                        }),
-                    ])
-                )
-            ),
-    };
-}
-
-/**
  * 元素拖拽
  */
 
 export function dragElement(
     draggable: string | HTMLElement,
     container: string | HTMLElement,
+    onMove: (x: number, y: number) => void,
     root: Document | HTMLElement = document
 ) {
     var pos1 = 0,
@@ -255,6 +222,7 @@ export function dragElement(
         // set the element's new position:
         containerEl.style.top = containerEl.offsetTop - pos2 + "px";
         containerEl.style.left = containerEl.offsetLeft - pos1 + "px";
+        onMove(containerEl.offsetLeft - pos1, containerEl.offsetTop - pos2);
         containerEl.style.bottom = "unset";
     }
 
@@ -265,93 +233,6 @@ export function dragElement(
     }
 }
 
-/**
- * 添加题目答题结果
- */
-export function createSearchResultPanel() {
-    return {
-        name: "搜题结果",
-        el: () =>
-            h(
-                "div",
-                { id: "search-results" },
-                OCS.localStorage.workResults.filter((res) => res.ctx?.elements.title?.[0]?.innerText)?.length
-                    ? OCS.localStorage.workResults
-                          .filter((res) => res.ctx?.elements.title?.[0]?.innerText)
-                          .map((res) => {
-                              const title = res.ctx?.elements.title?.[0];
-
-                              return h("details", [
-                                  h("summary", { title: title?.innerText || "" }, [
-                                      h(
-                                          "span",
-                                          StringUtils.of(title?.innerText || "")
-                                              .nowrap()
-                                              .max(40)
-                                              .text()
-                                      ),
-                                  ]),
-                                  res.ctx?.searchResults.length
-                                      ? res.ctx?.searchResults.map((searchResult) =>
-                                            h("div", { class: "search-results-container" }, [
-                                                h("span", { class: "search-results-title" }, [
-                                                    "题库: ",
-                                                    h(
-                                                        "a",
-                                                        {
-                                                            href: searchResult.homepage ? searchResult.homepage : "#",
-                                                        },
-                                                        searchResult.name
-                                                    ),
-                                                    `一共有 ${searchResult.answers.length} 个答案`,
-                                                ]),
-                                                h(
-                                                    "div",
-                                                    {
-                                                        style: {
-                                                            paddingLeft: "12px",
-                                                        },
-                                                    },
-                                                    searchResult.answers.map((answer) => {
-                                                        return h("div", { class: "search-results-item" }, [
-                                                            h("div", { title: answer.question }, [
-                                                                h(
-                                                                    "span",
-                                                                    "题目: " +
-                                                                        StringUtils.of(answer.question)
-                                                                            .nowrap()
-                                                                            .max(50)
-                                                                            .text()
-                                                                ),
-                                                            ]),
-                                                            h("div", { title: answer.answer }, [
-                                                                h(
-                                                                    "span",
-                                                                    "回答: " +
-                                                                        StringUtils.of(answer.answer)
-                                                                            .nowrap()
-                                                                            .max(50)
-                                                                            .text()
-                                                                ),
-                                                            ]),
-                                                        ]);
-                                                    })
-                                                ),
-                                            ])
-                                        )
-                                      : [
-                                            h("div", { style: { color: "red", padding: "0px 0px 0px 8px" } }, [
-                                                "未搜索到答案",
-                                            ]),
-                                        ],
-                              ]);
-                          })
-                          .filter((el) => el)
-                    : h("div", { class: "search-results-empty", style: { textAlign: "center" } }, "没有搜索结果")
-            ),
-    };
-}
-
 /** 清除搜题结果 */
 export function clearSearchResult(el: HTMLElement | null) {
     /** 清空内容 */
@@ -359,9 +240,8 @@ export function clearSearchResult(el: HTMLElement | null) {
 }
 
 /** 显示与隐藏面板 */
-export function togglePanel() {
-    const panel = OCS.panel;
-
+export function togglePanel(show?: boolean) {
+    const { panel } = domSearch({ panel: "ocs-panel" });
     if (panel) {
         const { icon, header, container, footer, tip } = domSearch(
             {
@@ -376,21 +256,43 @@ export function togglePanel() {
 
         const tips = ["", "连续按下ocs重置位置", "双击展开"];
 
-        if (icon && header && container && footer && tip) {
-            if (panel.classList.contains("hide")) {
-                panel.classList.remove("hide");
-                header.classList.remove("hide");
-                container.classList.remove("hide");
-                footer.classList.remove("hide");
-                icon.style.display = "none";
-                tip.innerHTML = tip.innerHTML.replace(tips.join("<br>"), "");
+        /** 如果指定了 hide ，则根据 hide 进行显示和隐藏 */
+        if (show !== undefined) {
+            if (show) {
+                showPanel();
             } else {
+                hidePanel();
+            }
+        } else {
+            /** 否则自动判断是否需要隐藏或者显示 */
+            if (panel.classList.contains("hide")) {
+                showPanel();
+            } else {
+                hidePanel();
+            }
+        }
+
+        function hidePanel() {
+            if (panel && icon && header && container && footer && tip) {
                 panel.classList.add("hide");
                 header.classList.add("hide");
                 container.classList.add("hide");
                 footer.classList.add("hide");
                 icon.style.display = "block";
                 tip.innerHTML = tip.innerHTML + tips.join("<br>");
+                store.localStorage.hide = true;
+            }
+        }
+
+        function showPanel() {
+            if (panel && icon && header && container && footer && tip) {
+                panel.classList.remove("hide");
+                header.classList.remove("hide");
+                container.classList.remove("hide");
+                footer.classList.remove("hide");
+                icon.style.display = "none";
+                tip.innerHTML = tip.innerHTML.replace(tips.join("<br>"), "");
+                store.localStorage.hide = false;
             }
         }
     }

@@ -9,8 +9,8 @@ ocs-panel {
     position: fixed;
     top: 20%;
     left: 50%;
-    transform: translate(-50%, -50%);
-    max-width: 600px;
+    transform: translate(-50%);
+    max-width: 800px;
     background: white;
     z-index: 99999999;
     border-radius: 4px;
@@ -92,6 +92,11 @@ ocs-panel {
             left: -32px;
         }
     }
+
+    .hide-btn {
+        float: left;
+        cursor: pointer;
+    }
 }
 
 .ocs-setting-items {
@@ -104,6 +109,13 @@ ocs-panel {
     label {
         padding-right: 4px;
     }
+
+    label + div {
+        display: inline-flex;
+        align-items: center;
+        gap: 2px;
+    }
+
     label::after {
         content: ": ";
     }
@@ -123,7 +135,6 @@ ocs-panel {
         border-bottom: 1px solid #e4e4e4;
         background: #fbfbfb;
         border-radius: 4px;
-
         padding-left: 8px;
     }
 
@@ -141,7 +152,6 @@ ocs-panel {
     input {
         outline: none;
         border: none;
-        width: 100%;
         cursor: pointer;
     }
     [type="submit"],
@@ -207,6 +217,9 @@ ocs-panel {
 
     .search-results-item {
         margin-bottom: 8px;
+        background: #f6ffed;
+        border: 1px solid #b7eb8f;
+        padding: 0px 2px;
     }
 }
 
@@ -217,4 +230,10 @@ ocs-panel {
     top: -16px;
     left: -12px;
     display: none;
+}
+
+/** bootstrap style */
+.bi-icon {
+    font-size: 14px;
+    cursor: pointer;
 }

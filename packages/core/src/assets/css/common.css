@@ -10,8 +10,8 @@ ocs-panel {
   position: fixed;
   top: 20%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  max-width: 600px;
+  transform: translate(-50%);
+  max-width: 800px;
   background: white;
   z-index: 99999999;
   border-radius: 4px;
@@ -83,6 +83,10 @@ ocs-panel.hide {
   top: 64px;
   left: -32px;
 }
+.ocs-panel-footer .hide-btn {
+  float: left;
+  cursor: pointer;
+}
 .ocs-setting-items {
   display: grid;
   grid-template-columns: min-content auto;
@@ -92,6 +96,11 @@ ocs-panel.hide {
 }
 .ocs-setting-items label {
   padding-right: 4px;
+}
+.ocs-setting-items label + div {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
 }
 .ocs-setting-items label::after {
   content: ": ";
@@ -124,7 +133,6 @@ ocs-panel.hide {
 .ocs-setting-buttons input {
   outline: none;
   border: none;
-  width: 100%;
   cursor: pointer;
 }
 .ocs-setting-buttons [type="submit"],
@@ -176,6 +184,9 @@ ocs-panel.hide {
 }
 #search-results .search-results-item {
   margin-bottom: 8px;
+  background: #f6ffed;
+  border: 1px solid #b7eb8f;
+  padding: 0px 2px;
 }
 .ocs-icon {
   width: 64px;
@@ -184,4 +195,9 @@ ocs-panel.hide {
   top: -16px;
   left: -12px;
   display: none;
+}
+/** bootstrap style */
+.bi-icon {
+  font-size: 14px;
+  cursor: pointer;
 }
