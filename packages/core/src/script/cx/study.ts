@@ -60,12 +60,24 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): (() => Promise<void
                 frame.contentDocument || document
             );
 
+            function getJob() {
+                return media
+                    ? mediaTask(setting, media as any, frame)
+                    : ppt
+                    ? pptTask(frame)
+                    : chapterTest
+                    ? chapterTestTask(store.setting.cx.work, frame)
+                    : undefined;
+            }
             if (media || ppt || chapterTest) {
                 return () => {
                     // @ts-ignore
-                    let _parent = frame.contentWindow.parent;
+                    let _parent = frame.contentWindow;
                     // @ts-ignore
                     let jobIndex = getNumber(frame.contentWindow?._jobindex, _parent._jobindex);
+                    if (ppt) {
+                        console.log({ jobIndex, _parent });
+                    }
                     while (_parent) {
                         // @ts-ignore
                         jobIndex = getNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
@@ -76,19 +88,13 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): (() => Promise<void
                             const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
                             const jobName = name || title || (bookname ? bookname + author : undefined) || "未知任务";
 
-                            if (attachments[jobIndex]?.job === true) {
-                                logger("debug", jobName, "即将开始。");
-
-                                return media
-                                    ? mediaTask(setting, media as any, frame)
-                                    : ppt
-                                    ? pptTask(frame)
-                                    : chapterTest
-                                    ? chapterTestTask(store.setting.cx.work, frame)
-                                    : undefined;
-                            } else if (setting.restudy && media) {
+                            // 直接重复学习，不执行任何判断, 章节测试除外
+                            if (setting.restudy && !chapterTest) {
                                 logger("debug", jobName, "即将重新学习。");
-                                return mediaTask(setting, media as any, frame);
+                                return getJob();
+                            } else if (attachments[jobIndex]?.job === true) {
+                                logger("debug", jobName, "即将开始。");
+                                return getJob();
                             } else {
                                 logger("debug", jobName, "已经完成，即将跳过。");
                                 break;
@@ -256,7 +262,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
 
     const { TiMu } = domSearchAll({ TiMu: ".TiMu" }, window.document);
     /** 清空答案 */
-    store.localStorage.workResults = [];
+    store.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -344,10 +350,10 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         },
         onResult: (res) => {
             if (res.ctx) {
-                store.localStorage.workResults.push(res);
+                store.workResults.push(res);
             }
 
-            logger("info", "题目完成结果 : ", res);
+            logger("info", "题目完成结果 : ", res.result?.finish ? "完成" : "未完成");
         },
 
         /** 其余配置 */

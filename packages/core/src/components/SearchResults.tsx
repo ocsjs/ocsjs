@@ -1,14 +1,12 @@
-import { computed, defineComponent, h } from "vue";
+import { computed, defineComponent, nextTick, watch } from "vue";
 import { store } from "../script";
 
-import { StringUtils } from "../core/utils";
+import { domSearch, StringUtils } from "../core/utils";
 
 export const SearchResults = defineComponent({
     data() {
         // 判断是否有搜索结果
-        const validResult = computed(() =>
-            store.localStorage.workResults.filter((res) => res.ctx?.elements.title?.[0]?.innerText)
-        );
+        const validResult = computed(() => store.workResults.filter((res) => res.ctx?.elements.title?.[0]?.innerText));
         const hasResult = computed(() => validResult.value.length > 0);
         return { hasResult, validResult };
     },
@@ -18,8 +16,10 @@ export const SearchResults = defineComponent({
             <div id="search-results">
                 {this.hasResult ? (
                     <div>
-                        <div style="text-align:center"> 📢 点击以下任意题目，可以展开查看搜索详情 📢 </div>
-                        <hr></hr>
+                        <div style="text-align:center; padding-bottom: 4px">
+                            📢 点击以下任意题目，可以展开查看搜索详情 📢{" "}
+                        </div>
+                        <hr />
                         {this.validResult.map((res) => {
                             const title = res.ctx?.elements.title?.[0];
 
@@ -39,7 +39,10 @@ export const SearchResults = defineComponent({
                                             <div class="search-results-container">
                                                 <span class="search-results-title">
                                                     <span>题库:</span>
-                                                    <a href={searchResult.homepage ? searchResult.homepage : "#"}>
+                                                    <a
+                                                        href={searchResult.homepage ? searchResult.homepage : "#"}
+                                                        target="_blank"
+                                                    >
                                                         {searchResult.name}
                                                     </a>
                                                     一共有 {searchResult.answers.length} 个答案
@@ -80,6 +83,8 @@ export const SearchResults = defineComponent({
                 ) : (
                     <div class="search-results-empty" style={{ textAlign: "center" }}>
                         没有搜索结果
+                        <br />
+                        如果当前为学习页面，请等待视频，ppt等完成后才会开始自动答题
                     </div>
                 )}
             </div>

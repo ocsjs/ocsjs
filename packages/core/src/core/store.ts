@@ -52,6 +52,4 @@ export interface OCSLocalStorage {
         extra: string;
         text: string;
     }[];
-    /** 搜索结果存储 */
-    workResults: WorkResult<any>[];
 }

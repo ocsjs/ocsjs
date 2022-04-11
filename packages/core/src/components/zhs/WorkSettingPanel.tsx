@@ -1,6 +1,7 @@
 import { defineComponent } from "vue";
 import { createWorkerSetting } from "..";
 import { store } from "../../script";
+import { Tooltip } from "../Tooltip";
 
 const settings = store.setting.zhs.work;
 
@@ -31,14 +32,15 @@ export const WorkSettingPanel = defineComponent({
 
                     <label>搜题请求超时时间(秒)</label>
                     <div>
-                        <input
-                            type="number"
-                            onChange={(e: any) => (settings.timeout = e.target.valueAsNumber)}
-                            title="每道题最多做n秒, 超过则跳过此题。"
-                            value={settings.timeout}
-                            min="0"
-                            step="1"
-                        ></input>
+                        <Tooltip title="每道题最多做n秒, 超过则跳过此题。">
+                            <input
+                                type="number"
+                                onChange={(e: any) => (settings.timeout = e.target.valueAsNumber)}
+                                value={settings.timeout}
+                                min="0"
+                                step="1"
+                            ></input>
+                        </Tooltip>
                     </div>
 
                     <label>搜题请求重试次数</label>

@@ -73,6 +73,8 @@ export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "play
     return new Promise<void>((resolve, reject) => {
         try {
             const video = document.querySelector("video") as HTMLVideoElement;
+            // 设置当前视频
+            store.currentMedia = video;
 
             video.onpause = function () {
                 if (!video.ended) {
@@ -150,12 +152,11 @@ export function autoClose(watchTime: number) {
         store.setting.zhs.video.interval = setInterval(() => {
             if (time >= watchTime * 60 * 60 * 1000) {
                 clearInterval(store.setting.zhs.video.interval);
-            } else {
-                time += 1000;
                 const video: HTMLVideoElement = document.querySelector("video") as any;
-                (video as any).stop = true;
                 video.pause();
                 stop = true;
+            } else {
+                time += 1000;
             }
         }, 1000);
     } else {

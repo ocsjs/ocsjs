@@ -97,6 +97,7 @@ export const CXScript = defineScript({
             name: "学习脚本",
             url: "**/knowledge/cards**",
             async onload(setting = store.setting.cx.video) {
+                logger("info", "开始学习");
                 await sleep(5000);
                 await study(setting);
             },
@@ -106,9 +107,8 @@ export const CXScript = defineScript({
             name: "阅读脚本",
             url: "**/readsvr/book/mooc**",
             onload() {
+                console.log("阅读脚本启动");
                 setTimeout(() => {
-                    // @ts-ignore
-                    console.log("阅读脚本启动");
                     // @ts-ignore
                     readweb.goto(epage);
                 }, 5000);
@@ -119,7 +119,13 @@ export const CXScript = defineScript({
             url: "**/mooc2/work/dowork**",
             async onload(setting = store.setting.cx.work) {
                 await sleep(5000);
-                await workOrExam(setting, false);
+                if (store.setting.answererWrappers.length === 0) {
+                    logger("error", "未设置题库配置！");
+                    confirm("未设置题库配置！请在设置面板设置后刷新重试！");
+                } else {
+                    /** 运行作业脚本 */
+                    await workOrExam(setting, false);
+                }
             },
         },
         {
@@ -137,7 +143,13 @@ export const CXScript = defineScript({
             url: "**/mooc2/exam/preview**",
             async onload(setting = store.setting.cx.exam) {
                 await sleep(5000);
-                await workOrExam(setting, true);
+                if (store.setting.answererWrappers.length === 0) {
+                    logger("error", "未设置题库配置！");
+                    confirm("未设置题库配置！请在设置面板设置后刷新重试！");
+                } else {
+                    /** 运行考试脚本 */
+                    await workOrExam(setting, true);
+                }
             },
         },
     ],

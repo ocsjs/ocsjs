@@ -23,7 +23,7 @@ export async function workOrExam(
     }
 
     /** 清空内容 */
-    store.localStorage.workResults = [];
+    store.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -89,9 +89,9 @@ export async function workOrExam(
         },
         onResult: (res) => {
             if (res.ctx) {
-                store.localStorage.workResults.push(res);
+                store.workResults.push(res);
             }
-            logger("info", "题目完成结果 : ", res);
+            logger("info", "题目完成结果 : ", res.result?.finish ? "完成" : "未完成");
         },
 
         /** 其余配置 */

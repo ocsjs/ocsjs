@@ -5,6 +5,7 @@ import { store } from "../script";
 import { Terminal } from "./Terminal";
 import { SearchResults } from "./SearchResults";
 import { logger } from "../logger";
+import { Tooltip } from "./Tooltip";
 
 /**
  * 创建提示面板
@@ -98,44 +99,53 @@ export function createWorkerSetting(
 
             <label>题库配置</label>
             <div>
-                <input
-                    type="text"
-                    title="请复制粘贴题库配置, 点击右侧查看教程 "
-                    placeholder="点击右侧问号查看教程 => "
-                    value={
-                        store.setting.answererWrappers.length === 0
-                            ? ""
-                            : JSON.stringify(store.setting.answererWrappers)
-                    }
-                    onChange={(e: any) => {
-                        try {
-                            const value = JSON.parse(e.target.value);
+                <Tooltip title="请复制粘贴题库配置, 点击右侧问号查看教程 ">
+                    <input
+                        type="text"
+                        placeholder="点击右侧问号查看教程 => "
+                        value={
+                            store.setting.answererWrappers.length === 0
+                                ? ""
+                                : JSON.stringify(store.setting.answererWrappers)
+                        }
+                        onChange={(e: any) => {
+                            try {
+                                const value = JSON.parse(e.target.value);
 
-                            if (value && Array.isArray(value)) {
-                                store.setting.answererWrappers = value;
-                            } else {
+                                if (value && Array.isArray(value)) {
+                                    store.setting.answererWrappers = value;
+                                } else {
+                                    store.setting.answererWrappers = [];
+                                }
+                            } catch (e) {
+                                logger("error", "题库格式错误");
                                 store.setting.answererWrappers = [];
                             }
-                        } catch (e) {
-                            logger("error", "题库格式错误");
-                            store.setting.answererWrappers = [];
-                        }
-                    }}
-                ></input>
+                        }}
+                    ></input>
+                </Tooltip>
+
                 <span style={{ color: store.setting.answererWrappers.length ? "green" : "red" }}>
                     {store.setting.answererWrappers.length ? (
-                        <i title="题库配置正确" class="bi bi-check-circle bi-icon" />
+                        <Tooltip title="题库配置正确">
+                            <i class="bi bi-check-circle bi-icon" />
+                        </Tooltip>
                     ) : (
-                        <i title="题库没有配置, 自动答题功能将不能使用 !" class="bi bi-x-circle bi-icon" />
+                        <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
+                            <i class="bi bi-x-circle bi-icon" />
+                        </Tooltip>
                     )}
                 </span>
-                <i
-                    class="bi bi-question-circle bi-icon"
-                    title="点击查看题库配置教程"
-                    onClick={() => {
-                        window.open("https://enncy.github.io/online-course-script/answerer-wrappers");
-                    }}
-                ></i>
+                <span>
+                    <Tooltip title="点击查看题库配置教程">
+                        <i
+                            class="bi bi-question-circle bi-icon"
+                            onClick={() => {
+                                window.open("https://enncy.github.io/online-course-script/answerer-wrappers");
+                            }}
+                        ></i>
+                    </Tooltip>
+                </span>
             </div>
         </Fragment>
     );

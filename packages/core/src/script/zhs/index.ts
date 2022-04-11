@@ -41,9 +41,8 @@ export const ZHSScript = defineScript({
             async onload(setting = store.setting.zhs.work) {
                 await sleep(5000);
                 if (store.setting.answererWrappers.length === 0) {
-                    const { panel } = domSearch({ panel: '[panel="作业助手"]' });
-                    if (panel) panel.innerHTML = "<b>错误</b> : 未设置题库配置！";
                     logger("error", "未设置题库配置！");
+                    confirm("未设置题库配置！请在设置面板设置后刷新重试！");
                 } else {
                     /** 运行作业脚本 */
                     await work(setting);

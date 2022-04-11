@@ -4,18 +4,18 @@ const util = require("util");
 const exec = util.promisify(require("child_process").exec);
 
 function cleanOutput() {
-    return del(["./dist", "./lib", "./packages/core/lib"]);
+    return del(["../dist", "../lib", "../packages/core/lib"], { force: true });
 }
 
 function build() {
-    return Promise.all([exec("tsc", { cwd: "./packages/core" }), exec("npm run build", { cwd: "./packages/core" })]);
+    return Promise.all([exec("tsc", { cwd: "../packages/core" }), exec("npm run build", { cwd: "../packages/core" })]);
 }
 
 function copyDist() {
-    return src("./packages/core/dist/**/*").pipe(dest("./dist"));
+    return src("../packages/core/dist/**/*").pipe(dest("../dist"));
 }
 function copyLib() {
-    return src("./packages/core/lib/**/*").pipe(dest("./lib"));
+    return src("../packages/core/lib/**/*").pipe(dest("../lib"));
 }
 
 exports.default = series(cleanOutput, build, copyDist, copyLib);

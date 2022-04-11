@@ -8,7 +8,7 @@ panel style
 */
 ocs-panel {
   position: fixed;
-  top: 20%;
+  top: 40%;
   left: 50%;
   transform: translate(-50%);
   max-width: 800px;
@@ -61,6 +61,10 @@ ocs-panel.hide {
   bottom: 10%;
   left: 5%;
   top: unset;
+}
+ocs-panel ul {
+  padding: 0;
+  margin: 0;
 }
 .ocs-panel-footer {
   font-size: 1px;
@@ -117,9 +121,9 @@ ocs-panel.hide {
   outline: none;
   border: none;
   border-bottom: 1px solid #e4e4e4;
-  background: #fbfbfb;
-  border-radius: 4px;
-  padding-left: 8px;
+  background: #f5f5f5;
+  padding-left: 2px;
+  text-align: center;
 }
 .ocs-setting-items input:not([type="checkbox"], [type="radio"]) {
   width: 100%;
@@ -195,6 +199,16 @@ ocs-panel.hide {
   top: -16px;
   left: -12px;
   display: none;
+}
+/** 文字提示 */
+.tooltip {
+  position: absolute;
+  transform: translate(0%, -100%);
+  background: black;
+  color: white;
+  padding: 4px;
+  border-radius: 4px;
+  opacity: 0.8;
 }
 /** bootstrap style */
 .bi-icon {

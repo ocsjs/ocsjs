@@ -1,7 +1,6 @@
 import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute } from "./define.script";
 import { findBestMatch, Rating } from "string-similarity";
 import { RawElements, SearchedElements } from "./worker/interface";
-import { logger } from "../logger";
 import { store } from "../script";
 
 export async function sleep(period: number): Promise<void> {
@@ -162,7 +161,7 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
         answers.length !== 0
             ? options.map((option) => findBestMatch(option, answers).bestMatch)
             : options.map((opt) => ({ rating: 0, target: "" } as Rating));
-    logger("debug", "结果匹配", { answers, options, similar });
+    console.log("结果匹配", { answers, options, similar });
     return similar;
 }
 

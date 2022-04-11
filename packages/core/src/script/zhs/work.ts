@@ -10,7 +10,7 @@ import { store } from "..";
 export async function work(setting: ScriptSettings["zhs"]["work"]) {
     const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
 
-    if (setting.zhs.work.upload === "close") {
+    if (setting.upload === "close") {
         logger("warn", "自动答题已被关闭！");
         return;
     }
@@ -21,7 +21,7 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
     }
 
     /** 清空答案 */
-    store.localStorage.workResults = [];
+    store.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -50,10 +50,10 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
         },
         onResult: (res) => {
             if (res.ctx) {
-                store.localStorage.workResults.push(res);
+                store.workResults.push(res);
             }
 
-            logger("info", "题目完成结果 : ", res);
+            logger("info", "题目完成结果 : ", res.result?.finish ? "完成" : "未完成");
         },
 
         /** 其余配置 */
@@ -70,7 +70,7 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
 
     // 处理提交
     await worker.uploadHandler({
-        uploadRate: store.setting.zhs.work.upload,
+        uploadRate: setting.upload,
         results,
         async callback(finishedRate, uploadable) {
             logger("info", "完成率 : ", finishedRate, " , ", uploadable ? "5秒后将自动提交" : "5秒后将自动保存");

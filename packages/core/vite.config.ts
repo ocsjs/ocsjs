@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { visualizer } from "rollup-plugin-visualizer";
 import vueJsx from "@vitejs/plugin-vue-jsx";
+import { version } from "../../package.json";
 
 // https://vitejs.dev/config/
 export default defineConfig({
@@ -21,10 +22,9 @@ export default defineConfig({
             fileName: (m) => `index.min.js`,
             formats: ["umd"],
         },
-        sourcemap: true,
     },
     define: {
-        _VERSION_: JSON.stringify("1.0.0"),
+        _VERSION_: JSON.stringify(version),
     },
 
     plugins: [vue(), vueJsx(), , visualizer()],

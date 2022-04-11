@@ -11,8 +11,8 @@
     ],
     "scripts": {
         "webpack": "webpack --config webpack.config.js",
-        "build:core": "pnpm build && gulp --allowEmpty",
-        "build:app": "pnpm build && gulp -f ./scripts/build.js ",
+        "build:core": "gulp -f ./scripts/build-core.js",
+        "build:app": "pnpm build && gulp -f ./scripts/build-app.js",
         "build": "gulp -f ./scripts/tsc.js",
         "pub:patch": "npm version patch && pnpm gulp && npm publish",
         "pub:minor": "npm version minor && pnpm gulp && npm publish",
