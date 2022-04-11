@@ -20,15 +20,19 @@ export async function study(setting: ScriptSettings["cx"]["video"]) {
         await task();
     }
 
-    const { next, chapterIdInput } = domSearch(
-        { next: ".next", chapterIdInput: `input[id="chapterId"]` },
-        top?.document
-    );
+    // 下一章按钮
+    const { next } = domSearch({ next: ".next" }, top?.document);
+    // 上方小节任务栏
     const { tabs } = domSearchAll({ tabs: ".prev_ul li" }, top?.document);
 
-    if (next && next.style.display === "block" && chapterIdInput) {
-        // 如果下一章的id和当前保存的下一章id一致，则说明当前为闯关模式，并且已经不能继续下一章
+    // 如果按钮显示
+    if (next && next.style.display === "block") {
+        // 如果下一章的id和当前保存的下一章id一致，则说明当前为闯关模式
         if (tabs.length && tabs[tabs.length - 1].classList.contains("active")) {
+            // 最后一小节完成的时候， 暂停久一点防止任务点刷新太慢
+            await sleep(5000);
+            const { chapterIdInput } = domSearch({ chapterIdInput: `input[id="chapterId"]` }, top?.document);
+            // 章节id相同，则不能继续下一章
             if ((chapterIdInput as HTMLInputElement).value === store.setting.cx.video.chapterId) {
                 logger("warn", "当前章节未完成, 必须自行手动完成后才能进行下一章。");
                 return;
