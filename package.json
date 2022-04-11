@@ -6,17 +6,16 @@
     "types": "./packages/scripts/lib/src/index.d.ts",
     "files": [
         "lib",
-        "dist",
-        "public"
+        "dist"
     ],
     "scripts": {
         "webpack": "webpack --config webpack.config.js",
         "build:core": "gulp -f ./scripts/build-core.js",
         "build:app": "pnpm build && gulp -f ./scripts/build-app.js",
         "build": "gulp -f ./scripts/tsc.js",
-        "pub:patch": "npm version patch && pnpm gulp && npm publish",
-        "pub:minor": "npm version minor && pnpm gulp && npm publish",
-        "pub:major": "npm version major && pnpm gulp && npm publish",
+        "pub:patch": "npm version patch && pnpm build:core && npm publish",
+        "pub:minor": "npm version minor && pnpm build:core && npm publish",
+        "pub:major": "npm version major && pnpm build:core && npm publish",
         "changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file -r 0"
     },
     "dependencies": {

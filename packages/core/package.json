@@ -1,6 +1,6 @@
 {
     "name": "@ocsjs/core",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "core package of ocs",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
