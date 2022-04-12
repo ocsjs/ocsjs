@@ -18,7 +18,7 @@ const bannerContent = `
 export default defineConfig({
     build: {
         /** 取消css代码分离 */
-        cssCodeSplit: true,
+        cssCodeSplit: false,
         /** 输出路径 */
         outDir: "./dist",
         /** 清空输出路径 */
@@ -29,12 +29,12 @@ export default defineConfig({
         lib: {
             entry: "./index.ts",
             name: "OCS",
-            fileName: (m) => `index.min.js`,
+            fileName: () => "index.min.js",
             formats: ["umd"],
         },
     },
     define: {
-        _VERSION_: JSON.stringify(version),
+        "process.env._VERSION_": JSON.stringify(version),
     },
 
     plugins: [vue(), vueJsx(), , visualizer(), banner(bannerContent)],

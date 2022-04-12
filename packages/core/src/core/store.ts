@@ -1,6 +1,6 @@
-import { get, set } from "lodash";
+import get from "lodash/get";
+import set from "lodash/set";
 import { ScriptSettings } from "../scripts";
-import { SearchedElements, WorkResult } from "./worker/interface";
 
 let listeners: any[] = [];
 

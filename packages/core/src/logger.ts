@@ -1,5 +1,3 @@
-import { nextTick } from "vue";
-import { domSearch } from "./core/utils";
 import { store } from "./script";
 
 export function loggerPrefix(level: "info" | "error" | "warn" | "debug") {

@@ -1,7 +1,7 @@
-import { computed, defineComponent, nextTick, watch } from "vue";
+import { computed, defineComponent } from "vue";
 import { store } from "../script";
 
-import { domSearch, StringUtils } from "../core/utils";
+import { StringUtils } from "../core/utils";
 
 export const SearchResults = defineComponent({
     data() {
@@ -26,7 +26,9 @@ export const SearchResults = defineComponent({
                             return (
                                 <details>
                                     <summary
-                                        style={{ color: res.ctx?.searchResults.length ? "" : "red" }}
+                                        style={{
+                                            color: res.ctx?.searchResults.length && res.result?.finish ? "" : "red",
+                                        }}
                                         title={title?.innerText || ""}
                                     >
                                         {StringUtils.of(title?.innerText || "")
@@ -34,48 +36,54 @@ export const SearchResults = defineComponent({
                                             .max(40)
                                             .text()}
                                     </summary>
-                                    {res.ctx?.searchResults.length ? (
-                                        res.ctx?.searchResults.map((searchResult) => (
-                                            <div class="search-results-container">
-                                                <span class="search-results-title">
-                                                    <span>题库:</span>
-                                                    <a
-                                                        href={searchResult.homepage ? searchResult.homepage : "#"}
-                                                        target="_blank"
-                                                    >
-                                                        {searchResult.name}
-                                                    </a>
-                                                    一共有 {searchResult.answers.length} 个答案
-                                                </span>
-                                                <div style={{ paddingLeft: "12px" }}>
-                                                    {searchResult.answers.map((answer) => (
-                                                        <div class="search-results-item">
-                                                            <div title={answer.question}>
-                                                                <span>
-                                                                    <span style="color: #a7a7a7">题目: </span>
-                                                                    {StringUtils.of(answer.question)
-                                                                        .nowrap()
-                                                                        .max(50)
-                                                                        .text()}
-                                                                </span>
-                                                            </div>
-                                                            <div title={answer.answer}>
-                                                                <span>
-                                                                    <span style="color: #a7a7a7">回答: </span>
-                                                                    {StringUtils.of(answer.answer)
-                                                                        .nowrap()
-                                                                        .max(50)
-                                                                        .text()}
-                                                                </span>
-                                                            </div>
+                                    <div
+                                        class="search-results-error"
+                                        style={{ color: "red", padding: "0px 0px 0px 8px" }}
+                                    >
+                                        {res.result?.finish === false ? (
+                                            <span>未完成, 可能是没有匹配的选项</span>
+                                        ) : res.ctx?.searchResults.length === 0 ? (
+                                            <span>未搜索到答案</span>
+                                        ) : (
+                                            {}
+                                        )}
+                                    </div>
+
+                                    {res.ctx?.searchResults.map((searchResult) => (
+                                        <div class="search-results-container">
+                                            <span class="search-results-title">
+                                                <span>题库:</span>
+                                                <a
+                                                    href={searchResult.homepage ? searchResult.homepage : "#"}
+                                                    target="_blank"
+                                                >
+                                                    {searchResult.name}
+                                                </a>
+                                                一共有 {searchResult.answers.length} 个答案
+                                            </span>
+                                            <div style={{ paddingLeft: "12px" }}>
+                                                {searchResult.answers.map((answer) => (
+                                                    <div class="search-results-item">
+                                                        <div title={answer.question}>
+                                                            <span>
+                                                                <span style="color: #a7a7a7">题目: </span>
+                                                                {StringUtils.of(answer.question)
+                                                                    .nowrap()
+                                                                    .max(50)
+                                                                    .text()}
+                                                            </span>
                                                         </div>
-                                                    ))}
-                                                </div>
+                                                        <div title={answer.answer}>
+                                                            <span>
+                                                                <span style="color: #a7a7a7">回答: </span>
+                                                                {StringUtils.of(answer.answer).nowrap().max(50).text()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
-                                        ))
-                                    ) : (
-                                        <div style={{ color: "red", padding: "0px 0px 0px 8px" }}>未搜索到答案</div>
-                                    )}
+                                        </div>
+                                    ))}
                                 </details>
                             );
                         })}

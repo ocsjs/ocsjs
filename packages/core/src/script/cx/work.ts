@@ -1,4 +1,4 @@
-import { defaults } from "lodash";
+import defaults from "lodash/defaults";
 import { logger } from "../../logger";
 import { domSearch, sleep, StringUtils } from "../../core/utils";
 import { OCSWorker } from "../../core/worker";

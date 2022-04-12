@@ -1,4 +1,4 @@
-import { get } from "lodash";
+import get from "lodash/get";
 import { getItem } from "../store";
 
 /** 题库查询结果 */
@@ -122,7 +122,12 @@ export async function defaultAnswerWrapperHandler(
         } else {
             const params = new URLSearchParams();
             Reflect.ownKeys(data).forEach((key) => params.set(key.toString(), data[key.toString()]));
-            response = await fetch(url + "?" + params.toString(), { method: wrapper.method });
+            response = (await (typeof global === "undefined" ? fetch : require("node-fetch").default)(
+                url + "?" + params.toString(),
+                {
+                    method: wrapper.method,
+                }
+            )) as Response;
         }
         /** 从 handler 获取搜索到的题目和回答 */
 

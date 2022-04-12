@@ -1,5 +1,3 @@
-import { DefineComponent, VNode } from "vue";
-
 /**
  * url glob pattern
  *  @see https://en.wikipedia.org/wiki/Glob_(programming)

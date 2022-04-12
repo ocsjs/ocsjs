@@ -1,4 +1,4 @@
-import { defaults } from "lodash";
+import defaults from "lodash/defaults";
 import { logger } from "../../logger";
 import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, StringUtils } from "../../core/utils";
 import { defaultAnswerWrapperHandler } from "../../core/worker/answer.wrapper.handler";

@@ -2,8 +2,8 @@
     "name": "ocsjs",
     "version": "3.3.2",
     "description": "ocs - online course script 在线网络课程辅助工具",
-    "main": "./dist/index.js",
-    "types": "./packages/scripts/lib/src/index.d.ts",
+    "types": "./lib/core/index.d.ts",
+    "main": "./lib/core/index.js",
     "files": [
         "lib",
         "dist"
@@ -18,26 +18,13 @@
         "pub:major": "npm version major && pnpm build:core && npm publish",
         "changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file -r 0"
     },
-    "dependencies": {
-        "@playwright/test": "^1.18.1",
-        "dayjs": "^1.10.7",
-        "depcheck": "^1.4.3",
-        "electron-store": "^8.0.1",
-        "fs-extra": "^10.0.1",
-        "playwright": "^1.18.1"
-    },
     "devDependencies": {
         "@types/node": "^17.0.16",
         "cz-conventional-changelog": "^3.3.0",
         "del": "^6.0.0",
-        "electron": "^17.0.0",
         "gulp": "^4.0.2",
         "gulp-cli": "^2.3.0",
-        "gulp-zip": "^5.1.0",
-        "node-forge": "1.0.0",
-        "terser-webpack-plugin": "^5.3.1",
-        "webpack": "^5.69.0",
-        "webpack-cli": "^4.9.2"
+        "gulp-zip": "^5.1.0"
     },
     "repository": {
         "type": "git",
