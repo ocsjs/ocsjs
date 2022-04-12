@@ -6,6 +6,7 @@ import { Terminal } from "./Terminal";
 import { SearchResults } from "./SearchResults";
 import { logger } from "../logger";
 import { Tooltip } from "./Tooltip";
+import { StringUtils } from "../core/utils";
 
 /**
  * 创建提示面板
@@ -127,7 +128,47 @@ export function createWorkerSetting(
 
                 <span style={{ color: store.setting.answererWrappers.length ? "green" : "red" }}>
                     {store.setting.answererWrappers.length ? (
-                        <Tooltip title="题库配置正确">
+                        <Tooltip
+                            v-slots={{
+                                title: () => (
+                                    <>
+                                        <span>解析成功, 一共有 {store.setting.answererWrappers.length} 个题库</span>
+                                        <ol>
+                                            {store.setting.answererWrappers.map((aw) => (
+                                                <li>
+                                                    <details>
+                                                        <summary>{aw.name}</summary>
+                                                        <ul>
+                                                            <li>
+                                                                主页:
+                                                                <a href={aw.homepage ? aw.homepage : "#"}>
+                                                                    {aw.homepage}
+                                                                </a>
+                                                            </li>
+                                                            <li>接口: {aw.url}</li>
+                                                            <li>请求方式: {aw.method}</li>
+                                                            <li>数据类型: {aw.contentType}</li>
+                                                            <li>
+                                                                请求数据:
+                                                                <ul style={{ paddingLeft: "12px" }}>
+                                                                    {Reflect.ownKeys(aw.data || {}).map((key) => (
+                                                                        <li>
+                                                                            {key.toString()} =
+                                                                            {hideToken(aw.data?.[key.toString()] || "")}
+                                                                        </li>
+                                                                    ))}
+                                                                </ul>
+                                                            </li>
+                                                            <li>处理方法: {aw.handler}</li>
+                                                        </ul>
+                                                    </details>
+                                                </li>
+                                            ))}
+                                        </ol>
+                                    </>
+                                ),
+                            }}
+                        >
                             <i class="bi bi-check-circle bi-icon" />
                         </Tooltip>
                     ) : (
@@ -151,12 +192,20 @@ export function createWorkerSetting(
     );
 }
 
+function hideToken(token: string) {
+    return /[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}/.test(token) ||
+        /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(token)
+        ? StringUtils.of(token).hide(4, token.length - 4)
+        : token;
+}
+
 /**
  * 创建日志面板
  */
 export function createTerminalPanel(): ScriptPanelChild {
     return {
         name: "日志",
+        priority: -999,
         el: () => Terminal,
     };
 }

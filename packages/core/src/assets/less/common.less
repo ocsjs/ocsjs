@@ -42,7 +42,7 @@ ocs-panel {
     .ocs-panel-container {
         font-size: 12px;
         padding: 4px;
-        max-height: 400px;
+        max-height: 550px;
         overflow: auto;
 
         ul li {
@@ -239,17 +239,38 @@ ocs-panel {
     /** 文字提示 */
     .tooltip {
         position: absolute;
-        transform: translate(0%, -120%);
-        background: black;
-        color: white;
+        transform: translate(0%, -100%);
         padding: 4px;
         border-radius: 4px;
-        opacity: 0.8;
+        box-shadow: 0px 0px 4px black;
+
+        a {
+            color: #1890ff;
+        }
+
+        &.dark {
+            background: black;
+            color: white;
+            opacity: 0.8;
+        }
+        &.light {
+            background: white;
+            color: inherit;
+        }
     }
 
     /** bootstrap style */
     .bi-icon {
         font-size: 14px;
         cursor: pointer;
+    }
+
+    // 搜索结果悬浮窗
+    .search-result-modal {
+        background-color: white;
+        padding: 4px;
+        transform: translate(-105%, 0px);
+        position: absolute;
+        box-shadow: 0px 0px 4px rgb(199, 199, 199);
     }
 }

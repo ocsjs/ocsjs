@@ -162,7 +162,7 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
         answers.length !== 0
             ? options.map((option) => findBestMatch(option, answers).bestMatch)
             : options.map((opt) => ({ rating: 0, target: "" } as Rating));
-    console.log("结果匹配", { answers, options, similar });
+
     return similar;
 }
 
@@ -170,7 +170,7 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
  * 删除题目选项中开头的冗余字符串
  */
 export function removeRedundant(str: string) {
-    return str.trim().replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, "$1");
+    return str?.trim().replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, "$1") || "";
 }
 
 /**
@@ -338,28 +338,35 @@ export class StringUtils {
     static nowrap(str?: string) {
         return str?.replace(/\n/g, "") || "";
     }
+    nowrap() {
+        this._text = StringUtils.nowrap(this._text);
+        return this;
+    }
     /** 删除特殊字符 */
     static noSpecialChar(str?: string) {
         return str?.replace(/[^\w\s]/gi, "") || "";
+    }
+    noSpecialChar() {
+        this._text = StringUtils.noSpecialChar(this._text);
+        return this;
     }
 
     /** 最大长度，剩余显示省略号 */
     static max(str: string, len: number) {
         return str.length > len ? str.substring(0, len) + "..." : str;
     }
-
-    nowrap() {
-        this._text = StringUtils.nowrap(this._text);
-        return this;
-    }
-
-    noSpecialChar() {
-        this._text = StringUtils.noSpecialChar(this._text);
-        return this;
-    }
-
     max(len: number) {
         this._text = StringUtils.max(this._text, len);
+        return this;
+    }
+
+    /** 隐藏字符串 */
+    static hide(str: string, start: number, end: number, replacer: string = "*") {
+        // 从 start 到 end 中间的字符串全部替换成 replacer
+        return str.substring(0, start) + str.substring(start, end).replace(/./g, replacer) + str.substring(end);
+    }
+    hide(start: number, end: number, replacer: string = "*") {
+        this._text = StringUtils.hide(this._text, start, end, replacer);
         return this;
     }
 
@@ -367,7 +374,7 @@ export class StringUtils {
         return new StringUtils(text);
     }
 
-    text() {
+    toString() {
         return this._text;
     }
 }

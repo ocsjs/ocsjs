@@ -52,7 +52,7 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
             if (res.ctx) {
                 store.workResults.push(res);
             }
-
+            console.log(res);
             logger("info", "题目完成结果 : ", res.result?.finish ? "完成" : "未完成");
         },
 

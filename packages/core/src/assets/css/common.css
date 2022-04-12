@@ -42,7 +42,7 @@ ocs-panel .ocs-panel-header.hide {
 ocs-panel .ocs-panel-container {
   font-size: 12px;
   padding: 4px;
-  max-height: 400px;
+  max-height: 550px;
   overflow: auto;
 }
 ocs-panel .ocs-panel-container ul li {
@@ -203,14 +203,31 @@ ocs-panel .ocs-icon {
 }
 ocs-panel .tooltip {
   position: absolute;
-  transform: translate(0%, -120%);
-  background: black;
-  color: white;
+  transform: translate(0%, -100%);
   padding: 4px;
   border-radius: 4px;
+  box-shadow: 0px 0px 4px black;
+}
+ocs-panel .tooltip a {
+  color: #1890ff;
+}
+ocs-panel .tooltip.dark {
+  background: black;
+  color: white;
   opacity: 0.8;
+}
+ocs-panel .tooltip.light {
+  background: white;
+  color: inherit;
 }
 ocs-panel .bi-icon {
   font-size: 14px;
   cursor: pointer;
+}
+ocs-panel .search-result-modal {
+  background-color: white;
+  padding: 4px;
+  transform: translate(-105%, 0px);
+  position: absolute;
+  box-shadow: 0px 0px 4px #c7c7c7;
 }
