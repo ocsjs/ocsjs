@@ -68,8 +68,8 @@ export async function study(setting?: ScriptSettings["zhs"]["video"]) {
  * @param setting
  * @returns
  */
-export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "playbackRate" | "mute">) {
-    const { mute = true } = setting || {};
+export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "playbackRate" | "volume">) {
+    const { volume = 0 } = setting || {};
     return new Promise<void>((resolve, reject) => {
         try {
             const video = document.querySelector("video") as HTMLVideoElement;
@@ -89,7 +89,7 @@ export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "play
                 resolve();
             };
             // 静音
-            video.muted = mute;
+            video.volume = volume;
             video.play();
         } catch (e) {
             reject(e);
@@ -129,7 +129,7 @@ export async function creditStudy(setting?: ScriptSettings["zhs"]["video"]) {
     if (item) {
         if (item.classList.contains("active")) {
             await watch({
-                mute: setting?.mute || true,
+                volume: setting?.volume || 0,
                 playbackRate: 1,
             });
             /** 下一章 */

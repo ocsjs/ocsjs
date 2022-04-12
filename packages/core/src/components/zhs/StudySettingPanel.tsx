@@ -54,20 +54,23 @@ export const StudySettingPanel = defineComponent({
                     <div>
                         <Tooltip title="智慧树不能倍速, 否则观看时间会变短, 并且容易封号！">
                             <input type="number" value="1" disabled="true"></input>
-                            <span>倍</span>
                         </Tooltip>
                     </div>
 
-                    <label>静音模式</label>
+                    <label>音量调节</label>
                     <div>
                         <input
-                            type="checkbox"
-                            checked={settings.mute}
-                            onChange={(e: any) => {
-                                settings.mute = e.target.checked;
-                                if (store.currentMedia) store.currentMedia.muted = e.target.checked;
+                            type="range"
+                            min="0"
+                            max="1"
+                            step="0.05"
+                            value={settings.volume}
+                            onInput={(e: any) => {
+                                settings.volume = e.target.valueAsNumber;
+                                if (store.currentMedia) store.currentMedia.volume = e.target.valueAsNumber;
                             }}
                         ></input>
+                        <span> {Math.round(settings.volume * 100)}% </span>
                     </div>
 
                     <label>复习模式</label>

@@ -17,6 +17,9 @@ ocs-panel {
   border-radius: 4px;
   text-align: left;
   box-shadow: 0px 2px 6px #848484;
+  /** 搜索结果  */
+  /** 文字提示 */
+  /** bootstrap style */
 }
 ocs-panel .ocs-panel-header {
   display: flex;
@@ -66,7 +69,10 @@ ocs-panel ul {
   padding: 0;
   margin: 0;
 }
-.ocs-panel-footer {
+ocs-panel hr {
+  margin: 4px 0px;
+}
+ocs-panel .ocs-panel-footer {
   font-size: 1px;
   color: #c5c5c5;
   border-top: 1px solid #c6c6c6;
@@ -74,42 +80,42 @@ ocs-panel ul {
   text-align: right;
   padding: 0px 4px;
 }
-.ocs-panel-footer.hide {
+ocs-panel .ocs-panel-footer.hide {
   border-top: none;
 }
-.ocs-panel-footer.hide > .hide-btn {
+ocs-panel .ocs-panel-footer.hide > .hide-btn {
   display: none;
 }
-.ocs-panel-footer.hide > .ocs-tip {
+ocs-panel .ocs-panel-footer.hide > .ocs-tip {
   text-align: center;
   white-space: nowrap;
   position: absolute;
   top: 64px;
   left: -32px;
 }
-.ocs-panel-footer .hide-btn {
+ocs-panel .ocs-panel-footer .hide-btn {
   float: left;
   cursor: pointer;
 }
-.ocs-setting-items {
+ocs-panel .ocs-setting-items {
   display: grid;
   grid-template-columns: min-content auto;
   grid-row-gap: 8px;
   white-space: nowrap;
   font-size: 12px;
 }
-.ocs-setting-items label {
+ocs-panel .ocs-setting-items label {
   padding-right: 4px;
 }
-.ocs-setting-items label + div {
+ocs-panel .ocs-setting-items label + div {
   display: inline-flex;
   align-items: center;
   gap: 2px;
 }
-.ocs-setting-items label::after {
+ocs-panel .ocs-setting-items label::after {
   content: ": ";
 }
-.ocs-setting-items select {
+ocs-panel .ocs-setting-items select {
   font-size: 12px;
   outline: none;
   border: none;
@@ -117,7 +123,7 @@ ocs-panel ul {
   border-radius: 4px;
   width: 100%;
 }
-.ocs-setting-items input {
+ocs-panel .ocs-setting-items input {
   outline: none;
   border: none;
   border-bottom: 1px solid #e4e4e4;
@@ -125,35 +131,31 @@ ocs-panel ul {
   padding-left: 2px;
   text-align: center;
 }
-.ocs-setting-items input:not([type="checkbox"], [type="radio"]) {
+ocs-panel .ocs-setting-items input:not([type="checkbox"], [type="radio"]) {
   width: 100%;
 }
-.ocs-setting-buttons {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 8px;
-  margin-top: 12px;
-}
-.ocs-setting-buttons input {
+ocs-panel .ocs-btn-primary {
   outline: none;
   border: none;
   cursor: pointer;
-}
-.ocs-setting-buttons [type="submit"],
-.ocs-setting-buttons [type="reset"] {
-  border: 1px solid #e4e4e4;
-  border-radius: 4px;
-  font-size: 12px;
-}
-.ocs-setting-buttons [type="submit"] {
   background: #1890ff;
   color: white;
   border: 1px solid #1890ff;
+  font-size: 12px;
+  border-radius: 4px;
+  margin: 2px;
 }
-.ocs-setting-buttons [type="reset"] {
+ocs-panel .ocs-btn {
+  outline: none;
+  border: none;
+  cursor: pointer;
   background: white;
+  border: 1px solid #e4e4e4;
+  border-radius: 4px;
+  font-size: 12px;
+  margin: 2px;
 }
-.terminal {
+ocs-panel .terminal {
   width: 300px;
   height: 300px;
   max-width: 300px;
@@ -163,36 +165,35 @@ ocs-panel ul {
   padding: 12px 6px;
   color: white;
 }
-.terminal level {
+ocs-panel .terminal level {
   padding: 0px 2px;
   border-radius: 2px;
 }
-.terminal level.info {
+ocs-panel .terminal level.info {
   background-color: #2196f3a3;
 }
-.terminal level.warn {
+ocs-panel .terminal level.warn {
   background-color: #ffc107db;
 }
-.terminal level.error {
+ocs-panel .terminal level.error {
   background-color: #f36c71cc;
 }
-.terminal level.debug {
+ocs-panel .terminal level.debug {
   background-color: #9e9e9ec4;
 }
-/** 搜索结果  */
-#search-results a {
+ocs-panel #search-results a {
   text-decoration: underline;
 }
-#search-results .search-results-container {
+ocs-panel #search-results .search-results-container {
   padding-left: 12px;
 }
-#search-results .search-results-item {
+ocs-panel #search-results .search-results-item {
   margin-bottom: 8px;
   background: #f6ffed;
   border: 1px solid #b7eb8f;
   padding: 0px 2px;
 }
-.ocs-icon {
+ocs-panel .ocs-icon {
   width: 64px;
   height: 64px;
   position: relative;
@@ -200,18 +201,16 @@ ocs-panel ul {
   left: -12px;
   display: none;
 }
-/** 文字提示 */
-.tooltip {
+ocs-panel .tooltip {
   position: absolute;
-  transform: translate(0%, -100%);
+  transform: translate(0%, -120%);
   background: black;
   color: white;
   padding: 4px;
   border-radius: 4px;
   opacity: 0.8;
 }
-/** bootstrap style */
-.bi-icon {
+ocs-panel .bi-icon {
   font-size: 14px;
   cursor: pointer;
 }

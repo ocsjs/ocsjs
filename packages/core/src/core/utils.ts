@@ -19,11 +19,12 @@ export function urlGlob(pattern: string, input = window.location.href) {
  * 匹配url
  * @param target 字符串，正则表达式，glob表达式
  */
-export function urlMatch(target: string | RegExp | GlobPattern | string[] | RegExp[] | GlobPattern[]) {
+export function urlMatch(
+    target: string | RegExp | GlobPattern | string[] | RegExp[] | GlobPattern[],
+    input = window.location.href
+) {
     const targetURL = Array.isArray(target) ? target : [target];
-    return targetURL.some((target) =>
-        typeof target === "string" ? urlGlob(target) : target.test(window.location.href)
-    );
+    return targetURL.some((target) => (typeof target === "string" ? urlGlob(target) : target.test(input)));
 }
 
 /**
@@ -297,8 +298,37 @@ export function togglePanel(show?: boolean) {
     }
 }
 
+/**
+ * 获取有效的数字
+ * @param nums
+ * @returns
+ */
 export function getNumber(...nums: number[]) {
     return nums.map((num) => (typeof num === "number" ? num : undefined)).find((num) => num !== undefined);
+}
+
+/**
+ *  递归寻找 iframe
+ */
+export function searchIFrame(root: Document) {
+    let list = Array.from(root.querySelectorAll("iframe"));
+    let result: HTMLIFrameElement[] = [];
+    while (list.length) {
+        const frame = list.shift();
+
+        try {
+            if (frame && frame?.contentWindow?.document) {
+                result.push(frame);
+                let frames = frame?.contentWindow?.document.querySelectorAll("iframe");
+                list = list.concat(Array.from(frames || []));
+            }
+        } catch (e) {
+            // @ts-ignore
+            console.log(e.message);
+            console.log({ frame });
+        }
+    }
+    return result;
 }
 
 export class StringUtils {

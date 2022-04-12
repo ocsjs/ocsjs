@@ -108,7 +108,7 @@ export function createWorkerSetting(
                                 ? ""
                                 : JSON.stringify(store.setting.answererWrappers)
                         }
-                        onChange={(e: any) => {
+                        onInput={(e: any) => {
                             try {
                                 const value = JSON.parse(e.target.value);
 

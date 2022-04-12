@@ -1,6 +1,6 @@
 import { defaults } from "lodash";
 import { logger } from "../../logger";
-import { domSearch, domSearchAll, getNumber, sleep, StringUtils } from "../../core/utils";
+import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, StringUtils } from "../../core/utils";
 import { defaultAnswerWrapperHandler } from "../../core/worker/answer.wrapper.handler";
 import { OCSWorker } from "../../core/worker";
 import { defaultSetting, ScriptSettings } from "../../scripts";
@@ -53,7 +53,7 @@ export async function study(setting: ScriptSettings["cx"]["video"]) {
  * 搜索任务点
  */
 function searchTask(setting: ScriptSettings["cx"]["video"]): (() => Promise<void> | undefined)[] {
-    return searchIFrame()
+    return searchIFrame(document)
         .map((frame) => {
             const { media, ppt, chapterTest } = domSearch(
                 {
@@ -120,30 +120,6 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): (() => Promise<void
 }
 
 /**
- *  递归寻找 iframe
- */
-function searchIFrame() {
-    let list = Array.from(document.querySelectorAll("iframe"));
-    let result: HTMLIFrameElement[] = [];
-    while (list.length) {
-        const frame = list.shift();
-
-        try {
-            if (frame && frame?.contentWindow?.document) {
-                result.push(frame);
-                let frames = frame?.contentWindow?.document.querySelectorAll("iframe");
-                list = list.concat(Array.from(frames || []));
-            }
-        } catch (e) {
-            // @ts-ignore
-            console.log(e.message);
-            console.log({ frame });
-        }
-    }
-    return result;
-}
-
-/**
  *  视频路线切换
  */
 export function switchPlayLine(
@@ -187,7 +163,7 @@ export function switchPlayLine(
  * 播放视频和音频
  */
 function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement, frame: HTMLIFrameElement) {
-    const { playbackRate = 1, mute = true } = setting;
+    const { playbackRate = 1, volume = 0 } = setting;
 
     // @ts-ignore
     const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
@@ -204,7 +180,7 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
      */
     return new Promise<void>((resolve) => {
         if (media) {
-            media.muted = mute;
+            media.volume = volume;
             media.play();
             media.playbackRate = playbackRate;
 

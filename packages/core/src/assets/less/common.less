@@ -74,182 +74,182 @@ ocs-panel {
         padding: 0;
         margin: 0;
     }
-}
 
-.ocs-panel-footer {
-    font-size: 1px;
-    color: #c5c5c5;
-    border-top: 1px solid #c6c6c6;
-    margin-top: 8px;
-    text-align: right;
-    padding: 0px 4px;
+    hr {
+        margin: 4px 0px;
+    }
 
-    &.hide {
-        border-top: none;
-        & > .hide-btn {
-            display: none;
+    .ocs-panel-footer {
+        font-size: 1px;
+        color: #c5c5c5;
+        border-top: 1px solid #c6c6c6;
+        margin-top: 8px;
+        text-align: right;
+        padding: 0px 4px;
+
+        &.hide {
+            border-top: none;
+            & > .hide-btn {
+                display: none;
+            }
+            & > .ocs-tip {
+                text-align: center;
+                white-space: nowrap;
+                position: absolute;
+                top: 64px;
+                left: -32px;
+            }
         }
-        & > .ocs-tip {
+
+        .hide-btn {
+            float: left;
+            cursor: pointer;
+        }
+    }
+
+    .ocs-setting-items {
+        display: grid;
+        grid-template-columns: min-content auto;
+        grid-row-gap: 8px;
+        white-space: nowrap;
+        font-size: 12px;
+
+        label {
+            padding-right: 4px;
+        }
+
+        label + div {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        label::after {
+            content: ": ";
+        }
+
+        select {
+            font-size: 12px;
+            outline: none;
+            border: none;
+            border: 1px solid #e4e4e4;
+            border-radius: 4px;
+            width: 100%;
+        }
+
+        input {
+            outline: none;
+            border: none;
+            border-bottom: 1px solid #e4e4e4;
+            background: #f5f5f5;
+            padding-left: 2px;
             text-align: center;
-            white-space: nowrap;
-            position: absolute;
-            top: 64px;
-            left: -32px;
+        }
+
+        input:not([type="checkbox"], [type="radio"]) {
+            width: 100%;
         }
     }
 
-    .hide-btn {
-        float: left;
-        cursor: pointer;
-    }
-}
-
-.ocs-setting-items {
-    display: grid;
-    grid-template-columns: min-content auto;
-    grid-row-gap: 8px;
-    white-space: nowrap;
-    font-size: 12px;
-
-    label {
-        padding-right: 4px;
-    }
-
-    label + div {
-        display: inline-flex;
-        align-items: center;
-        gap: 2px;
-    }
-
-    label::after {
-        content: ": ";
-    }
-
-    select {
-        font-size: 12px;
-        outline: none;
-        border: none;
-        border: 1px solid #e4e4e4;
-        border-radius: 4px;
-        width: 100%;
-    }
-
-    input {
-        outline: none;
-        border: none;
-        border-bottom: 1px solid #e4e4e4;
-        background: #f5f5f5;
-        padding-left: 2px;
-        text-align: center;
-    }
-
-    input:not([type="checkbox"], [type="radio"]) {
-        width: 100%;
-    }
-}
-
-.ocs-setting-buttons {
-    display: grid;
-    grid-template-columns: auto auto;
-    gap: 8px;
-    margin-top: 12px;
-
-    input {
+    .ocs-btn-primary {
         outline: none;
         border: none;
         cursor: pointer;
-    }
-    [type="submit"],
-    [type="reset"] {
-        border: 1px solid #e4e4e4;
-        border-radius: 4px;
-        font-size: 12px;
-    }
 
-    [type="submit"] {
         background: #1890ff;
         color: white;
         border: 1px solid #1890ff;
+        font-size: 12px;
+        border-radius: 4px;
+        margin: 2px;
     }
 
-    [type="reset"] {
+    .ocs-btn {
+        outline: none;
+        border: none;
+        cursor: pointer;
+
         background: white;
-    }
-}
-
-.terminal {
-    width: 300px;
-    height: 300px;
-    max-width: 300px;
-    max-height: 300px;
-    overflow: auto;
-    background-color: black;
-    padding: 12px 6px;
-
-    color: white;
-
-    level {
-        padding: 0px 2px;
-        border-radius: 2px;
+        border: 1px solid #e4e4e4;
+        border-radius: 4px;
+        font-size: 12px;
+        margin: 2px;
     }
 
-    level.info {
-        background-color: #2196f3a3;
+    .terminal {
+        width: 300px;
+        height: 300px;
+        max-width: 300px;
+        max-height: 300px;
+        overflow: auto;
+        background-color: black;
+        padding: 12px 6px;
+
+        color: white;
+
+        level {
+            padding: 0px 2px;
+            border-radius: 2px;
+        }
+
+        level.info {
+            background-color: #2196f3a3;
+        }
+
+        level.warn {
+            background-color: #ffc107db;
+        }
+
+        level.error {
+            background-color: #f36c71cc;
+        }
+
+        level.debug {
+            background-color: #9e9e9ec4;
+        }
     }
 
-    level.warn {
-        background-color: #ffc107db;
+    /** 搜索结果  */
+    #search-results {
+        a {
+            text-decoration: underline;
+        }
+
+        .search-results-container {
+            padding-left: 12px;
+        }
+
+        .search-results-item {
+            margin-bottom: 8px;
+            background: #f6ffed;
+            border: 1px solid #b7eb8f;
+            padding: 0px 2px;
+        }
     }
 
-    level.error {
-        background-color: #f36c71cc;
+    .ocs-icon {
+        width: 64px;
+        height: 64px;
+        position: relative;
+        top: -16px;
+        left: -12px;
+        display: none;
     }
 
-    level.debug {
-        background-color: #9e9e9ec4;
-    }
-}
-
-/** 搜索结果  */
-#search-results {
-    a {
-        text-decoration: underline;
-    }
-
-    .search-results-container {
-        padding-left: 12px;
+    /** 文字提示 */
+    .tooltip {
+        position: absolute;
+        transform: translate(0%, -120%);
+        background: black;
+        color: white;
+        padding: 4px;
+        border-radius: 4px;
+        opacity: 0.8;
     }
 
-    .search-results-item {
-        margin-bottom: 8px;
-        background: #f6ffed;
-        border: 1px solid #b7eb8f;
-        padding: 0px 2px;
+    /** bootstrap style */
+    .bi-icon {
+        font-size: 14px;
+        cursor: pointer;
     }
-}
-
-.ocs-icon {
-    width: 64px;
-    height: 64px;
-    position: relative;
-    top: -16px;
-    left: -12px;
-    display: none;
-}
-
-/** 文字提示 */
-.tooltip {
-    position: absolute;
-    transform: translate(0%, -100%);
-    background: black;
-    color: white;
-    padding: 4px;
-    border-radius: 4px;
-    opacity: 0.8;
-}
-
-/** bootstrap style */
-.bi-icon {
-    font-size: 14px;
-    cursor: pointer;
 }

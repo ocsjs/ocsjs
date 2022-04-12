@@ -6,7 +6,8 @@ export interface Setting {
         [x: string]: any;
         watchTime: number;
         playbackRate: number;
-        mute: boolean;
+        /** 音量 */
+        volume: number;
         restudy: boolean;
     };
     work: Record<string, any> &
@@ -34,7 +35,7 @@ export function defaultSetting(): Setting {
             watchTime: 0,
             playbackRate: 1,
             restudy: false,
-            mute: true,
+            volume: 0,
         },
         work: {
             period: 3,
