@@ -1,6 +1,6 @@
 {
     "name": "ocsjs",
-    "version": "3.3.2",
+    "version": "3.3.3",
     "description": "ocs - online course script 在线网络课程辅助工具",
     "types": "./lib/core/index.d.ts",
     "main": "./lib/core/index.js",
