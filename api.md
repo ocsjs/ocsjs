@@ -8,7 +8,7 @@
 - [软件打包](#软件打包) 
 - [脚本打包](#脚本打包) 
 - [本地调试](#本地调试) 
-- [API](#API)
+- [API](#api)
 
 ## 项目结构
 
@@ -20,19 +20,17 @@
     + web                   # 使用 vue3 + ts + ant design vue 构建的 electron 渲染进程
     + app                   # electron 主进程
 + scripts				   # 项目打包构建 gulp 文件
-- gulpfile.js               # 主 gulp 文件，打包 core 油猴脚本库
 - webpack.config.js         # webpack 打包配置 ： 打包  core 油猴脚本库 作为浏览器端环境
 ```
 
 ## package.json 命令介绍
 
-```json
+```jsonc
 {
-        "webpack": "webpack --config webpack.config.js", // 打包 core 油猴脚本库 作为浏览器端环境
-        "build:core": "pnpm build && gulp --allowEmpty", // 配合 webpack 命令进行 core构建， 文件夹清理，css文件打包等构建流程
-        "build:app": "pnpm build && gulp -f ./scripts/build.js ", // 打包 web 和 app 的软件端
-        "build": "gulp -f ./scripts/tsc.js", // 为每个 typescript 子项目运行 tsc 命令
-}
+        "build:core": "gulp -f ./scripts/build-core.js", /** core构建， 文件夹清理，css文件打包等构建流程 */
+        "build:app": "pnpm build && gulp -f ./scripts/build-app.js",  /** 打包 web 和 app 的软件端 */
+        "build": "gulp -f ./scripts/tsc.js", /** 为每个 typescript 子项目运行 tsc 命令 */
+} 
 ```
 
  
@@ -89,8 +87,8 @@ pnpm build:core
 [油猴 API](https://www.tampermonkey.net/documentation.php)
 
 ```js
-// @require      file://E:\xxx\xxx\ocs\dist\js\index.js
-// @resource     OCS_STYLE file://E:\xxx\xxx\ocs\dist\style\common.css
+// @require      file://E:\xxx\xxx\ocs\dist\index.min.js
+// @resource     OCS_STYLE file://E:\xxx\xxx\ocs\dist\style.css
 ```
 
 # API
@@ -98,10 +96,17 @@ pnpm build:core
 
 
 - [类型](#类型)
+	- [DefineScript](#definescript)
+	- [ScriptRoute](#scriptroute)
+	- [ScriptPanel](#scriptpanel)
+	- [AnswererWrapper](#answererwrapper)
 
 - [方法](#方法)
+	- [OCS.start](#start)
+	- [OCS.definescript](#definescript-1)
 
 - [定义](#定义)
+	- [AnswererWrapper 题库配置](#answererwrapper--题库配置)
 
 - [变量](#变量)
 
@@ -162,7 +167,7 @@ pnpm build:core
 
 -  `priority`?: `number `     优先级, 默认0
 
-- `default`?: `boolean`      当页面没有任何面板时，是否显示 
+-  `default`?: `boolean`      当页面没有任何面板时，是否显示 
 
 ### AnswererWrapper
 
@@ -183,19 +188,7 @@ pnpm build:core
   如果搜不到则返回 undefined
   例子：`return (res)=> res.code === 0 ? undefined : [res.question, undefined]`
 
- 
-
-### OCSLocalStorage
-
-> OCS 本地存储类型
-
-**参数** : 
-
-- `platfom`?: `string` 	网课平台类型 
-- `setting`?: `ScriptSettings  `    本地设置
-
-
-
+  
 ## 方法
 
 ### `start(...)`
@@ -203,8 +196,7 @@ pnpm build:core
 > 加载  OCS
 
 **参数**
-
-- `style`: `string` OCS样式文本, 可以为字符串或者URL
+ 
 - `draggable`:`boolean` 是否开启拖拽功能
 - `scripts` : [`Array<DefineScript>`](#DefineScript) 需要运行的脚本
 
@@ -332,7 +324,7 @@ defaultAnswerWrapperHandler(
 
 > OCS面板的元素对象
 
-### `setting` : [`OCSLocalStorage`](#OCSLocalStorage)
+### `store` : OCSStore
 
-> OCS设置 ， 从 localStorage.OCS 本地缓存读取生成的对象。
+> OCS存储，存储一些临时元素，以及本地存储数据。
 
