@@ -12,9 +12,14 @@ export let store: OCSStore = {} as OCSStore;
 
 // 环境检测
 if (typeof global === "undefined") {
+    if (typeof unsafeWindow !== "undefined") {
+        store = createStore();
+    }
+
     onReady(() => {
         if (typeof unsafeWindow !== "undefined") {
-            store = unsafeWindow.top?.OCS.store || createStore();
+            // 统一转向顶层对象
+            store = unsafeWindow.top?.OCS.store || store;
         } else {
             logger("warn", "为了确保功能正常使用, 请在油猴环境下运行 https://www.tampermonkey.net/");
         }
