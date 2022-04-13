@@ -154,7 +154,7 @@ export function createWorkerSetting(
                                                                     {Reflect.ownKeys(aw.data || {}).map((key) => (
                                                                         <li>
                                                                             {key.toString()} =
-                                                                            {hideToken(aw.data[key.toString()])}
+                                                                            {hideToken(aw.data?.[key.toString()] || "")}
                                                                         </li>
                                                                     ))}
                                                                 </ul>

@@ -43,7 +43,7 @@ import { computed } from "@vue/reactivity";
 import { h, ref, watch } from "vue";
 import { addFunctionEventListener, getCurrentPanels, togglePanel } from "./core/utils";
 import { store } from "./script";
-import { definedScripts } from "./main.ts";
+import { definedScripts } from "./main";
 
 const panels = ref(getCurrentPanels(definedScripts));
 

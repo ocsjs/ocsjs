@@ -1,5 +1,4 @@
 import get from "lodash/get";
-import { getItem } from "../store";
 
 /** 题库查询结果 */
 export interface SearchResult {
@@ -172,9 +171,7 @@ export async function defaultAnswerWrapperHandler(
         matches.forEach((placeHolder) => {
             const value: any =
                 /** 获取元素属性 */
-                get({ type, title }, placeHolder.replace(/\${(.*)}/, "$1")) ||
-                /** 获取本地存储 */
-                getItem(placeHolder.replace(/\${(.*)}/, "$1"));
+                get({ type, title }, placeHolder.replace(/\${(.*)}/, "$1"));
             str = str.replace(placeHolder, value);
         });
         return str;

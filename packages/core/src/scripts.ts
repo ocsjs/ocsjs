@@ -18,7 +18,9 @@ export interface Setting {
 
 export type SupportPlatform = "zhs" | "cx";
 
-export type ScriptSettings = Record<SupportPlatform, Setting>;
+export type ScriptSettings = Record<SupportPlatform, Setting> & {
+    answererWrappers: AnswererWrapper[];
+};
 
 export const defaultOCSSetting = {
     zhs: defaultSetting(),
