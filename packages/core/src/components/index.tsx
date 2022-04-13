@@ -8,6 +8,7 @@ import { logger } from "../logger";
 import { Tooltip } from "./Tooltip";
 import { StringUtils } from "../core/utils";
 import { debounce } from "lodash";
+import { AnswererWrapper } from "../core/worker/answer.wrapper.handler";
 
 /**
  * 创建提示面板
@@ -111,18 +112,13 @@ export function createWorkerSetting(
                                 : JSON.stringify(store.setting.answererWrappers)
                         }
                         onInput={debounce(function (e: any) {
-                            try {
-                                const value = JSON.parse(e.target.value);
-
-                                if (value && Array.isArray(value)) {
-                                    store.setting.answererWrappers = value;
-                                } else {
-                                    store.setting.answererWrappers = [];
-                                }
-                            } catch (e) {
-                                store.setting.answererWrappers = [];
-                            }
+                            store.setting.answererWrappers = parseAnswererWrappers(e.target.value);
                         }, 100)}
+                        onPaste={(e) => {
+                            store.setting.answererWrappers = parseAnswererWrappers(
+                                e.clipboardData?.getData("text") || ""
+                            );
+                        }}
                     ></input>
                 </Tooltip>
 
@@ -192,6 +188,20 @@ export function createWorkerSetting(
     );
 }
 
+function parseAnswererWrappers(value: string): AnswererWrapper[] {
+    try {
+        const aw = JSON.parse(value);
+        if (aw && Array.isArray(aw)) {
+            return aw;
+        } else {
+            return [];
+        }
+    } catch (e) {
+        return [];
+    }
+}
+
+/** 隐藏 token， 只保留头尾的几个字符串 */
 function hideToken(token: string) {
     return /[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}/.test(token) ||
         /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(token)
