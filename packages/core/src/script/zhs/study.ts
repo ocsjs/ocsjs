@@ -24,6 +24,8 @@ export async function study(setting?: ScriptSettings["zhs"]["video"]) {
         if (list.length === 0) {
             logger("warn", "视频任务数量为 0 !");
         } else {
+            console.log(list);
+
             logger("info", "视频任务数量", list.length);
 
             /**
@@ -75,22 +77,25 @@ export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "play
             const video = document.querySelector("video") as HTMLVideoElement;
             // 设置当前视频
             store.currentMedia = video;
-
-            video.onpause = function () {
-                if (!video.ended) {
-                    if (stop) {
-                        resolve();
-                    } else {
-                        video.play();
-                    }
-                }
-            };
-            video.onended = function () {
-                resolve();
-            };
-            // 静音
+            // 如果已经播放完了，则重置视频进度
+            video.currentTime = 0;
+            // 音量
             video.volume = volume;
-            video.play();
+            setTimeout(() => {
+                video.play();
+                video.onpause = function () {
+                    if (!video.ended) {
+                        if (stop) {
+                            resolve();
+                        } else {
+                            video.play();
+                        }
+                    }
+                };
+                video.onended = function () {
+                    resolve();
+                };
+            }, 1000);
         } catch (e) {
             reject(e);
         }
