@@ -40,7 +40,11 @@
 
 ## 第二步
 
-打开 OCS 油猴脚本链接 [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
+打开以下任意链接：
+
+- OCS网课助手 油猴链接 [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
+
+- OCS网课助手 脚本猫链接 [https://scriptcat.org/script-show-page/367](https://scriptcat.org/script-show-page/367)
 
 如果打不开链接，请看教程：[https://enncy.github.io/online-course-script/script](https://enncy.github.io/online-course-script/script)
 
