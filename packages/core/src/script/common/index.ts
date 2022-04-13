@@ -47,7 +47,7 @@ export const CommonScript = defineScript({
                     const d = document;
                     const b = document.body;
                     d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
-                    b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
+                    b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
                 }, 3000);
             },
         },
