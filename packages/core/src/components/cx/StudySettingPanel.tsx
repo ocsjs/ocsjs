@@ -23,8 +23,6 @@ export const StudySettingPanel = defineComponent({
                                 step="1"
                                 onChange={(e: any) => {
                                     settings.playbackRate = e.target.valueAsNumber;
-                                    console.log("store.currentMedia", store.currentMedia);
-
                                     if (store.currentMedia) {
                                         store.currentMedia.playbackRate = e.target.valueAsNumber;
                                     }
@@ -71,8 +69,6 @@ export const StudySettingPanel = defineComponent({
                             value={settings.volume}
                             onInput={(e: any) => {
                                 settings.volume = e.target.valueAsNumber;
-                                console.log("store.currentMedia", store.currentMedia);
-
                                 if (store.currentMedia) store.currentMedia.volume = e.target.valueAsNumber;
                             }}
                         />
