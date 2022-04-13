@@ -11,4 +11,4 @@
 </div>
 
 
-{% include footer.html %}
+{% include feat-list.html %}
