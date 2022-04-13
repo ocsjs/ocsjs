@@ -9,7 +9,6 @@
         "dist"
     ],
     "scripts": {
-        "webpack": "webpack --config webpack.config.js",
         "build:core": "gulp -f ./scripts/build-core.js",
         "build:app": "pnpm build && gulp -f ./scripts/build-app.js",
         "build": "gulp -f ./scripts/tsc.js",
