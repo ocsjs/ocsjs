@@ -88,26 +88,12 @@ process.on("message", async (message) => {
                     if (ocsLocalStorage) {
                         page.evaluate((str) => {
                             console.log("注入题库配置: ", str);
-                            let opts;
                             try {
-                                opts = JSON.parse(window.localStorage.OCS);
-                                if (opts.setting === undefined) {
-                                    opts = { setting: {} };
-                                }
-                            } catch {
-                                opts = { setting: {} };
-                            }
-
-                            if (str && opts.setting) {
-                                opts.setting.answererWrappers = JSON.parse(str)?.setting?.answererWrappers || [];
-                                window.localStorage.OCS = JSON.stringify(opts);
                                 // @ts-ignore
-                                if (window.OCS) {
-                                    // @ts-ignore
-                                    window.OCS.setting = window.OCS.setting || {};
-                                    // @ts-ignore
-                                    window.OCS.setting.answererWrappers = opts.setting.answererWrappers;
-                                }
+                                top.OCS.store.localStorage.setting.answererWrappers =
+                                    JSON.parse(str)?.setting?.answererWrappers;
+                            } catch (e) {
+                                console.log("注入失败: ", e);
                             }
                         }, JSON.stringify(ocsLocalStorage));
                     } else {
