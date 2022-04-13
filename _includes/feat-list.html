@@ -1,0 +1,21 @@
+
+
+
+
+<script src="https://cdn.jsdelivr.net/npm/ocsjs@3/dist/index.min.js"></script>
+<script>
+  const scripts = OCS.definedScripts
+  console.log(scripts)
+
+  var $ = (s)=>document.querySelector(s)
+  
+  $("#version").innerText = OCS.VERSION
+  
+  const list = scripts.map((script)=>{
+    const routes = script.routes.map((route)=>["<li>",route.name,"</li>"].join("")).join("")
+    return ["<div>"+script.name+"</div>","<ul>",routes,"</ul>"].join("")
+  }).join("")
+ 
+  $("#main").innerHTML = list
+
+</script>
