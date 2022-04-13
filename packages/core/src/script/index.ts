@@ -2,7 +2,9 @@ import defaultsDeep from "lodash/defaultsDeep";
 import { reactive, watch } from "vue";
 import { DefineScript } from "../core/define.script";
 import { OCSLocalStorage } from "../core/store";
+import { onReady } from "../core/utils";
 import { WorkResult } from "../core/worker/interface";
+import { logger } from "../logger";
 import { defaultOCSSetting } from "../scripts";
 
 export interface OCSStore {
@@ -57,11 +59,14 @@ if (typeof global === "undefined") {
     watch(_localStorage, () => {
         localStorage.OCS = JSON.stringify(_localStorage);
     });
-    /** 初始化 store */
-    document.addEventListener("readystatechange", () => {
-        if (document.readyState === "complete") {
+
+    onReady(() => {
+        // @ts-ignore
+        if (typeof unsafeWindow !== "undefined") {
             // @ts-ignore
             store = unsafeWindow?.top?.OCS.store || _store;
+        } else {
+            logger("warn", "为了确保功能正常使用, 请在油猴环境下运行 https://www.tampermonkey.net/");
         }
     });
 }

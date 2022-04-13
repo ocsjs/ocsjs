@@ -1,6 +1,6 @@
 import { createApp, App as VueApp } from "vue";
 import { DefineScript } from "./core/define.script";
-import { dragElement, togglePanel, getCurrentRoutes } from "./core/utils";
+import { dragElement, togglePanel, getCurrentRoutes, onLoaded } from "./core/utils";
 import { logger } from "./logger";
 import { definedScripts } from "./main";
 import { store } from "./script";
@@ -31,18 +31,12 @@ export let loaded = false;
  */
 export function start(options?: StartOptions) {
     if (top === window) {
-        if (window.document.readyState === "complete" && !loaded) {
-            loaded = true;
-            showPanels(options);
-        } else {
-            /** 加载后执行 */
-            document.addEventListener("readystatechange", () => {
-                if (document.readyState !== "loading" && !loaded) {
-                    loaded = true;
-                    showPanels(options);
-                }
-            });
-        }
+        onLoaded(() => {
+            if (!loaded) {
+                loaded = true;
+                showPanels(options);
+            }
+        });
     }
 
     executeScripts(options?.scripts || definedScripts);

@@ -331,6 +331,33 @@ export function searchIFrame(root: Document) {
     return result;
 }
 
+/**
+ * 检测页面是否准备完毕
+ */
+export function onReady(callback: () => void, root: Document = document) {
+    function checkReady() {
+        if (root.readyState === "complete") {
+            callback();
+            root.removeEventListener("readystatechange", checkReady);
+        }
+    }
+    checkReady();
+    root.addEventListener("readystatechange", checkReady);
+}
+/**
+ * 检测页面是否加载
+ */
+export function onLoaded(callback: () => void, root: Document = document) {
+    function checkLoaded() {
+        if (root.readyState === "complete" || root.readyState === "interactive") {
+            root.removeEventListener("readystatechange", checkLoaded);
+            callback();
+        }
+    }
+    checkLoaded();
+    root.addEventListener("readystatechange", checkLoaded);
+}
+
 export class StringUtils {
     constructor(private _text: string) {}
 

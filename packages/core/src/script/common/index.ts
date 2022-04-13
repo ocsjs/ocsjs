@@ -31,7 +31,11 @@ export const CommonScript = defineScript({
                 try {
                     console.log("禁止弹窗脚本启动");
                     // @ts-ignore
-                    window.alert = unsafeWindow.alert = self.alert = console.log;
+                    if (typeof unsafeWindow !== "undefined") {
+                        // @ts-ignore
+                        unsafeWindow.alert = console.log;
+                    }
+                    window.alert = self.alert = console.log;
                 } catch (e) {
                     // @ts-ignore
                     console.error("禁止弹窗脚本错误", e.message);
