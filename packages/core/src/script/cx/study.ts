@@ -256,7 +256,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
              * ul li label:not(.after) 判断题
              * ul li textarea 填空题
              */
-            options: "ul li .after,ul li textarea,ul li label:not(.before)",
+            options: "ul li .after,ul li textarea,ul textarea,ul li label:not(.before)",
             type: 'input[id^="answertype"]',
         },
         /** 默认搜题方法构造器 */
