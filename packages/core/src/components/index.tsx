@@ -111,9 +111,6 @@ export function createWorkerSetting(
                                 ? ""
                                 : JSON.stringify(store.setting.answererWrappers)
                         }
-                        onInput={debounce(function (e: any) {
-                            store.setting.answererWrappers = parseAnswererWrappers(e.target.value);
-                        }, 100)}
                         onPaste={(e) => {
                             store.setting.answererWrappers = parseAnswererWrappers(
                                 e.clipboardData?.getData("text") || ""
