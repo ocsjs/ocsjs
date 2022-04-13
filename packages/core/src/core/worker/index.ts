@@ -56,25 +56,32 @@ export class OCSWorker<E extends RawElements = RawElements> {
                 }
 
                 /** 查找题目 */
-                const searchResults = await this.doAnswer(elements, type);
+                let searchResults = await this.doAnswer(elements, type);
 
-                if (
-                    !searchResults ||
-                    searchResults.length === 0 ||
-                    searchResults.map((res) => res.answers.map((ans) => ans.answer)).flat().length === 0
-                ) {
-                    if (!searchResults) {
-                        throw new Error("答案获取失败, 请重新运行, 或者忽略此题。");
-                    } else {
-                        const ansLength = searchResults.map((res) => res.answers.map((ans) => ans.answer)).flat();
-                        if (ansLength.length === 0) {
-                            throw new Error("搜索不到答案, 请重新运行, 或者忽略此题。");
-                        }
+                if (!searchResults) {
+                    throw new Error("答案获取失败, 请重新运行, 或者忽略此题。");
+                } else {
+                    /** 筛选出有效的答案 */
+                    const validResults = searchResults
+                        .map((res) => res.answers.map((ans) => ans.answer))
+                        .flat()
+                        .filter((ans) => ans);
+
+                    // 答案为 undefined 的情况， 需要赋值给一个空字符串
+                    searchResults.forEach((res) => {
+                        res.answers = res.answers.map((ans) => {
+                            ans.answer = ans.answer ? ans.answer : "";
+                            return ans;
+                        });
+                    });
+
+                    /** 改变上下文 */
+                    this.currentContext = { searchResults, root: el, elements };
+
+                    if (searchResults.length === 0 || validResults.length === 0) {
+                        throw new Error("搜索不到答案, 请重新运行, 或者忽略此题。");
                     }
                 }
-
-                /** 改变上下文 */
-                this.currentContext = { searchResults, root: el, elements };
 
                 /** 开始处理 */
                 if (typeof this.opts.work === "object") {

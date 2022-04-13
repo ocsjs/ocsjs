@@ -1,12 +1,12 @@
-import { createNote } from "../core/create.element";
-import { defineScript } from "../core/define.script";
-import { setItem } from "../core/store";
-import { urlGlob } from "../core/utils";
-import { logger } from "../logger";
+import { createNote } from "../../components";
+import { defineScript } from "../../core/define.script";
+import { urlGlob } from "../../core/utils";
+import { store } from "..";
 
 const supports = [
     ["**chaoxing.com**", "cx"],
     ["**edu.cn**", "cx"],
+    ["**org.cn**", "cx"],
     ["**zhihuishu.com**", "zhs"],
 ];
 
@@ -19,7 +19,7 @@ export const CommonScript = defineScript({
             start() {
                 for (const arr of supports) {
                     if (urlGlob(arr[0])) {
-                        setItem("platform", arr[1]);
+                        store.localStorage.platform = arr[1];
                     }
                 }
             },
@@ -42,17 +42,19 @@ export const CommonScript = defineScript({
             name: "开启页面右键复制粘贴功能",
             url: supports.map((arr) => arr[0]),
             onload() {
-                setTimeout(() => {
-                    console.log("开启页面右键复制粘贴功能");
+                console.log("开启页面右键复制粘贴功能");
+                try {
                     const d = document;
                     const b = document.body;
                     d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
-                    b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
-                }, 3000);
+                    b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
+                } catch (err) {
+                    console.error("页面右键复制粘贴功能开启失败", err);
+                }
             },
         },
         {
-            name: "OCS居中脚本",
+            name: "OCS样式切换, 位置定位脚本",
             url: supports.map((arr) => arr[0]),
             onload() {
                 const target = ["o", "c", "s"];
@@ -65,7 +67,7 @@ export const CommonScript = defineScript({
 
                         if (contains) {
                             // @ts-ignore
-                            const panel: HTMLElement = document.querySelector("ocs-panel");
+                            const panel: HTMLElement = top?.document.querySelector("ocs-panel");
                             if (panel) {
                                 if (panel.classList.contains("hide")) {
                                     panel.style.top = "unset";

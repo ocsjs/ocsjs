@@ -1,11 +1,14 @@
-import { logger } from "../logger";
-import { createNote } from "../core/create.element";
-import { defineScript } from "../core/define.script";
-import { createSearchResultPanel, createTerminalPanel, sleep } from "../core/utils";
-import { createCXStudySettingPanel, createCXWorkSettingPanel } from "./panels";
+import { logger } from "../../logger";
+import { createNote, createSearchResultPanel, createTerminalPanel } from "../../components";
+import { defineScript } from "../../core/define.script";
+import { sleep } from "../../core/utils";
+import { StudySettingPanel } from "../../components/cx/StudySettingPanel";
 import { study } from "./study";
 import { rateHack } from "./utils";
 import { workOrExam } from "./work";
+import { store } from "..";
+import { WorkSettingPanel } from "../../components/cx/WorkSettingPanel";
+import { ExamSettingPanel } from "../../components/cx/ExamSettingPanel";
 
 /** 需切换版本的 url 页面 */
 const updateURLs = [
@@ -50,7 +53,7 @@ export const CXScript = defineScript({
             name: "任务切换脚本",
             url: "**/mycourse/studentstudy**",
             onload() {
-                const { restudy } = OCS.setting.cx.video;
+                const { restudy } = store.setting.cx.video;
 
                 const params = new URLSearchParams(window.location.href);
                 const mooc = params.get("mooc2");
@@ -93,7 +96,8 @@ export const CXScript = defineScript({
         {
             name: "学习脚本",
             url: "**/knowledge/cards**",
-            async onload(setting = OCS.setting.cx.video) {
+            async onload(setting = store.setting.cx.video) {
+                logger("info", "开始学习");
                 await sleep(5000);
                 await study(setting);
             },
@@ -103,9 +107,8 @@ export const CXScript = defineScript({
             name: "阅读脚本",
             url: "**/readsvr/book/mooc**",
             onload() {
+                console.log("阅读脚本启动");
                 setTimeout(() => {
-                    // @ts-ignore
-                    console.log("阅读脚本启动");
                     // @ts-ignore
                     readweb.goto(epage);
                 }, 5000);
@@ -114,9 +117,15 @@ export const CXScript = defineScript({
         {
             name: "作业脚本",
             url: "**/mooc2/work/dowork**",
-            async onload(setting = OCS.setting.cx.work) {
+            async onload(setting = store.setting.cx.work) {
                 await sleep(5000);
-                await workOrExam(setting, false);
+                if (store.setting.answererWrappers.length === 0) {
+                    logger("error", "未设置题库配置！");
+                    confirm("未设置题库配置！请在设置面板设置后刷新重试！");
+                } else {
+                    /** 运行作业脚本 */
+                    await workOrExam(setting, false);
+                }
             },
         },
         {
@@ -132,17 +141,22 @@ export const CXScript = defineScript({
         {
             name: "考试脚本",
             url: "**/mooc2/exam/preview**",
-            async onload(setting = OCS.setting.cx.exam) {
+            async onload(setting = store.setting.cx.exam) {
                 await sleep(5000);
-                await workOrExam(setting, true);
+                if (store.setting.answererWrappers.length === 0) {
+                    logger("error", "未设置题库配置！");
+                    confirm("未设置题库配置！请在设置面板设置后刷新重试！");
+                } else {
+                    /** 运行考试脚本 */
+                    await workOrExam(setting, true);
+                }
             },
         },
     ],
     panels: [
         {
             name: "版本切换助手",
-            url: updateURLs.flat(),
-
+            url: updateURLs,
             el: () => createNote(`必须切换到最新版本才能使用此脚本`, "3秒后将自动切换..."),
         },
         {
@@ -170,11 +184,12 @@ export const CXScript = defineScript({
             name: "学习助手",
             url: "**/mycourse/studentstudy**",
 
-            el: () => createNote("进入设置面板可以调整学习设置", "5秒后将自动开始..."),
+            el: () =>
+                createNote("进入设置面板可以调整学习设置", "章节栏你随便点, 脚本卡了算我输。", "5秒后将自动开始..."),
             children: [
                 {
                     name: "学习设置",
-                    el: () => createCXStudySettingPanel(),
+                    el: () => StudySettingPanel,
                 },
                 createTerminalPanel(),
                 createSearchResultPanel(),
@@ -187,7 +202,7 @@ export const CXScript = defineScript({
             children: [
                 {
                     name: "作业设置",
-                    el: () => createCXWorkSettingPanel(false),
+                    el: () => WorkSettingPanel,
                 },
                 createTerminalPanel(),
                 createSearchResultPanel(),
@@ -200,11 +215,7 @@ export const CXScript = defineScript({
             children: [
                 {
                     name: "考试设置",
-                    el: () =>
-                        createCXWorkSettingPanel(true, {
-                            defaultUpload: "close",
-                            options: [{ value: "close", label: "请自行检查后自行点击提交" }],
-                        }),
+                    el: () => ExamSettingPanel,
                 },
                 createTerminalPanel(),
                 createSearchResultPanel(),

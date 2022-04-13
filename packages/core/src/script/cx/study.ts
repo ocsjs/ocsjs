@@ -1,33 +1,48 @@
-import { debounce, defaults } from "lodash";
-import { logger } from "../logger";
-import { clearSearchResult, domSearch, domSearchAll, getNumber, sleep, StringUtils } from "../core/utils";
-import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
-import { OCSWorker } from "../core/worker";
-import { defaultSetting, ScriptSettings } from "../scripts";
-import { createSearchResultElement } from "../core/worker/utils";
-import { setItem } from "../core/store";
+import defaults from "lodash/defaults";
+import { logger } from "../../logger";
+import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, StringUtils } from "../../core/utils";
+import { defaultAnswerWrapperHandler } from "../../core/worker/answer.wrapper.handler";
+import { OCSWorker } from "../../core/worker";
+import { defaultSetting, ScriptSettings } from "../../scripts";
+
+import { store } from "..";
 
 /**
  * cx 任务学习
  */
 export async function study(setting: ScriptSettings["cx"]["video"]) {
-    logger("info", "开始");
+    logger("debug", "即将开始");
 
-    for (const task of searchTask(setting)) {
+    const tasks = searchTask(setting);
+
+    for (const task of tasks) {
         await sleep(3000);
-        try {
-            await task();
-        } catch (e) {
-            // @ts-ignore
-            logger("error", e.message);
-        }
-        await sleep(3000);
+        await task();
     }
 
-    logger("info", "完成");
-
+    // 下一章按钮
     const { next } = domSearch({ next: ".next" }, top?.document);
+    // 上方小节任务栏
+    const { tabs } = domSearchAll({ tabs: ".prev_ul li" }, top?.document);
+
+    // 如果按钮显示
     if (next && next.style.display === "block") {
+        // 如果下一章的id和当前保存的下一章id一致，则说明当前为闯关模式
+        if (tabs.length && tabs[tabs.length - 1].classList.contains("active")) {
+            // 最后一小节完成的时候， 暂停久一点防止任务点刷新太慢
+            await sleep(5000);
+            const { chapterIdInput } = domSearch({ chapterIdInput: `input[id="chapterId"]` }, top?.document);
+            // 章节id相同，则不能继续下一章
+            if ((chapterIdInput as HTMLInputElement).value === store.setting.cx.video.chapterId) {
+                logger("warn", "当前章节未完成, 必须自行手动完成后才能进行下一章。");
+                return;
+            } else {
+                store.setting.cx.video.chapterId = (chapterIdInput as HTMLInputElement).value;
+            }
+        }
+
+        logger("debug", "完成, 即将跳转");
+        await sleep(3000);
         next.click();
     } else {
         alert("OCS助手： 全部任务点已完成！");
@@ -37,9 +52,9 @@ export async function study(setting: ScriptSettings["cx"]["video"]) {
 /**
  * 搜索任务点
  */
-function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise<number>> {
-    return searchIFrame()
-        .map((frame) => () => {
+function searchTask(setting: ScriptSettings["cx"]["video"]): (() => Promise<void> | undefined)[] {
+    return searchIFrame(document)
+        .map((frame) => {
             const { media, ppt, chapterTest } = domSearch(
                 {
                     media: "video,audio",
@@ -49,85 +64,71 @@ function searchTask(setting: ScriptSettings["cx"]["video"]): Array<() => Promise
                 frame.contentDocument || document
             );
 
+            function getJob() {
+                return media
+                    ? mediaTask(setting, media as any, frame)
+                    : ppt
+                    ? pptTask(frame)
+                    : chapterTest
+                    ? chapterTestTask(store.setting.cx.work, frame)
+                    : undefined;
+            }
             if (media || ppt || chapterTest) {
-                // @ts-ignore
-                let _parent = frame.contentWindow.parent;
-                // @ts-ignore
-                let jobIndex = getNumber(frame.contentWindow?._jobindex, _parent._jobindex);
-                while (_parent) {
+                return () => {
                     // @ts-ignore
-                    jobIndex = getNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
+                    let _parent = frame.contentWindow;
                     // @ts-ignore
-                    let attachments = _parent?.JC?.attachments || _parent.attachments;
+                    let jobIndex = getNumber(frame.contentWindow?._jobindex, _parent._jobindex);
+                    if (ppt) {
+                        console.log({ jobIndex, _parent });
+                    }
+                    while (_parent) {
+                        // @ts-ignore
+                        jobIndex = getNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
+                        // @ts-ignore
+                        let attachments = _parent?.JC?.attachments || _parent.attachments;
 
-                    if (attachments && typeof jobIndex == "number") {
-                        const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
-                        const jobName = name || title || (bookname ? bookname + author : undefined) || "未知任务";
+                        if (attachments && typeof jobIndex == "number") {
+                            const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
+                            const jobName = name || title || (bookname ? bookname + author : undefined) || "未知任务";
 
-                        if (attachments[jobIndex]?.job === true) {
-                            logger("debug", jobName, "即将开始。");
-                            return media
-                                ? mediaTask(setting, media as any, frame)
-                                : ppt
-                                ? pptTask(frame)
-                                : chapterTest
-                                ? chapterTestTask(OCS.setting.cx.work, frame)
-                                : undefined;
-                        } else if (setting.restudy && media) {
-                            logger("debug", jobName, "即将重新学习。");
-                            return mediaTask(setting, media as any, frame);
-                        } else {
-                            logger("debug", jobName, "已经完成，即将跳过。");
+                            // 直接重复学习，不执行任何判断, 章节测试除外
+                            if (setting.restudy && !chapterTest) {
+                                logger("debug", jobName, "即将重新学习。");
+                                return getJob();
+                            } else if (attachments[jobIndex]?.job === true) {
+                                logger("debug", jobName, "即将开始。");
+                                return getJob();
+                            } else {
+                                logger("debug", jobName, "已经完成，即将跳过。");
+                                break;
+                            }
+                        }
+                        // @ts-ignore
+                        if (_parent.parent == _parent) {
                             break;
                         }
+                        // @ts-ignore
+                        _parent = _parent.parent;
                     }
-                    // @ts-ignore
-                    if (_parent.parent == _parent) {
-                        break;
-                    }
-                    // @ts-ignore
-                    _parent = _parent.parent;
-                }
+                };
+            } else {
+                return undefined;
             }
         })
-        .filter((t) => t !== undefined) as any;
+        .filter((f) => f) as any[];
 }
 
 /**
- *  递归寻找 iframe
+ *  视频路线切换
  */
-function searchIFrame() {
-    let list = Array.from(document.querySelectorAll("iframe"));
-    let result: HTMLIFrameElement[] = [];
-    while (list.length) {
-        const frame = list.shift();
-
-        try {
-            if (frame && frame?.contentWindow?.document) {
-                result.push(frame);
-                let frames = frame?.contentWindow?.document.querySelectorAll("iframe");
-                list = list.concat(Array.from(frames || []));
-            }
-        } catch (e) {
-            // @ts-ignore
-            console.log(e.message);
-            console.log({ frame });
-        }
-    }
-    return result;
-}
-
-/**
- * 播放视频和音频
- */
-function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement, frame: HTMLIFrameElement) {
-    const { playbackRate = 1, mute = true } = setting;
-    /**
-     *  视频路线选择器
-     */
-    // @ts-ignore
-    const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
-    const { lineSelect } = domSearch({ lineSelect: "#video-line" }, top?.document);
+export function switchPlayLine(
+    setting: ScriptSettings["cx"]["video"],
+    videojs: HTMLElement,
+    media: HTMLMediaElement,
+    line: string
+) {
+    const { playbackRate = 1 } = setting;
 
     // @ts-ignore
     if (videojs?.player) {
@@ -138,44 +139,40 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
             // @ts-ignore
             videojs.player.controlBar.videoJsPlayLine.querySelectorAll("ul li")
         );
-        const currentLine = setting.line;
-        if (currentLine) {
-            logger("info", "切换路线中： " + currentLine);
-            setTimeout(() => selectLine(currentLine), 3000);
-        }
 
-        /** 添加选项 */
-        if (lineSelect) {
-            for (const line of playlines) {
-                // @ts-ignore
-                createOption(line.label);
-            }
+        setting.playlines = playlines;
 
-            lineSelect.onchange = function () {
-                const select = lineSelect as HTMLSelectElement;
-                selectLine(select.value);
-            };
+        logger("info", "切换路线中： " + line);
+        selectLine(line);
 
-            function createOption(label: string) {
-                const option = document.createElement("option");
-                option.text = label;
-                option.value = label;
-                // @ts-ignore
-                lineSelect.appendChild(option);
-            }
-        }
-
-        function selectLine(value: string) {
+        function selectLine(line: string) {
             for (const menu of menus) {
-                if (menu.textContent?.includes(value)) {
+                if (menu.textContent?.includes(line)) {
                     menu.click();
-                    OCS.setting.cx.video.line = value;
-                    setItem("setting.cx.video.line", value);
+                    setting.line = line;
+                    /** 重新选择倍速 */
                     setTimeout(() => (media.playbackRate = playbackRate), 3000);
                     break;
                 }
             }
         }
+    }
+}
+
+/**
+ * 播放视频和音频
+ */
+function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaElement, frame: HTMLIFrameElement) {
+    const { playbackRate = 1, volume = 0 } = setting;
+
+    // @ts-ignore
+    const { videojs } = domSearch({ videojs: "#video" }, frame.contentDocument || document);
+    store.videojs = videojs;
+    store.currentMedia = media;
+
+    if (videojs) {
+        // 切换路线
+        setTimeout(() => switchPlayLine(setting, videojs, media, setting.line), 3000);
     }
 
     /**
@@ -183,7 +180,7 @@ function mediaTask(setting: ScriptSettings["cx"]["video"], media: HTMLMediaEleme
      */
     return new Promise<void>((resolve) => {
         if (media) {
-            media.muted = mute;
+            media.volume = volume;
             media.play();
             media.playbackRate = playbackRate;
 
@@ -221,16 +218,16 @@ async function pptTask(frame?: HTMLIFrameElement) {
  * 章节测验
  */
 async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTMLIFrameElement) {
-    logger("info", "开始自动答题");
-
     const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
 
-    if (OCS.setting.cx.video.upload === "close") {
-        logger("warn", "章节测试已经关闭");
+    if (store.setting.cx.video.upload === "close") {
+        logger("warn", "自动答题已被关闭！");
         return;
     }
 
-    if (OCS.setting.answererWrappers.length === 0) {
+    logger("info", "开始自动答题");
+
+    if (store.setting.answererWrappers.length === 0) {
         logger("warn", "题库配置为空，请设置。");
         return;
     }
@@ -244,8 +241,8 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
     const { window } = frame.contentWindow;
 
     const { TiMu } = domSearchAll({ TiMu: ".TiMu" }, window.document);
-    const { search } = domSearch({ search: "#search-results" }, top?.document);
-    clearSearchResult(search);
+    /** 清空答案 */
+    store.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -259,7 +256,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
              * ul li label:not(.after) 判断题
              * ul li textarea 填空题
              */
-            options: "ul li .after,ul li textarea,ul li label:not(.before)",
+            options: "ul li .after,ul li textarea,ul textarea,ul li label:not(.before)",
             type: 'input[id^="answertype"]',
         },
         /** 默认搜题方法构造器 */
@@ -269,7 +266,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
                 .replace(/（\d+.0分）/, "")
                 .trim();
             if (title) {
-                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, title);
+                return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
             } else {
                 throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
             }
@@ -333,13 +330,10 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
         },
         onResult: (res) => {
             if (res.ctx) {
-                const result = createSearchResultElement(res);
-                if (search && result) {
-                    search.appendChild(result);
-                }
+                store.workResults.push(res);
             }
-
-            logger("info", "题目完成结果 : ", res);
+            console.log(res);
+            logger("info", "题目完成结果 : ", res.result?.finish ? "完成" : "未完成");
         },
 
         /** 其余配置 */
@@ -355,7 +349,7 @@ async function chapterTestTask(setting: ScriptSettings["cx"]["work"], frame: HTM
 
     // 处理提交
     await worker.uploadHandler({
-        uploadRate: OCS.setting.cx.video.upload,
+        uploadRate: store.setting.cx.video.upload,
         results,
         async callback(finishedRate, uploadable) {
             logger("info", "完成率 : ", finishedRate, " , ", uploadable ? "5秒后将自动提交" : " 5秒后将自动保存");

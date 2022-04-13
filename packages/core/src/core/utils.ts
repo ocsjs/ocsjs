@@ -1,9 +1,7 @@
-import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute, ScriptPanelChild } from "./define.script";
-
+import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute } from "./define.script";
 import { findBestMatch, Rating } from "string-similarity";
 import { RawElements, SearchedElements } from "./worker/interface";
-import { h } from "vue";
-import { logger } from "../logger";
+import { store } from "../script";
 
 export async function sleep(period: number): Promise<void> {
     return new Promise((resolve) => {
@@ -21,11 +19,12 @@ export function urlGlob(pattern: string, input = window.location.href) {
  * 匹配url
  * @param target 字符串，正则表达式，glob表达式
  */
-export function urlMatch(target: string | RegExp | GlobPattern | string[] | RegExp[] | GlobPattern[]) {
+export function urlMatch(
+    target: string | RegExp | GlobPattern | string[] | RegExp[] | GlobPattern[],
+    input = window.location.href
+) {
     const targetURL = Array.isArray(target) ? target : [target];
-    return targetURL.some((target) =>
-        typeof target === "string" ? urlGlob(target) : target.test(window.location.href)
-    );
+    return targetURL.some((target) => (typeof target === "string" ? urlGlob(target) : target.test(input)));
 }
 
 /**
@@ -163,7 +162,7 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
         answers.length !== 0
             ? options.map((option) => findBestMatch(option, answers).bestMatch)
             : options.map((opt) => ({ rating: 0, target: "" } as Rating));
-    logger("debug", "结果匹配", { answers, options, similar });
+
     return similar;
 }
 
@@ -171,17 +170,7 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
  * 删除题目选项中开头的冗余字符串
  */
 export function removeRedundant(str: string) {
-    return str.trim().replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, "$1");
-}
-
-/**
- * 创建日志面板
- */
-export function createTerminalPanel(): ScriptPanelChild {
-    return {
-        name: "日志",
-        el: () => h("div", { class: "terminal" }),
-    };
+    return str?.trim().replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, "$1") || "";
 }
 
 /**
@@ -191,6 +180,7 @@ export function createTerminalPanel(): ScriptPanelChild {
 export function dragElement(
     draggable: string | HTMLElement,
     container: string | HTMLElement,
+    onMove: (x: number, y: number) => void,
     root: Document | HTMLElement = document
 ) {
     var pos1 = 0,
@@ -232,6 +222,7 @@ export function dragElement(
         // set the element's new position:
         containerEl.style.top = containerEl.offsetTop - pos2 + "px";
         containerEl.style.left = containerEl.offsetLeft - pos1 + "px";
+        onMove(containerEl.offsetLeft - pos1, containerEl.offsetTop - pos2);
         containerEl.style.bottom = "unset";
     }
 
@@ -242,16 +233,6 @@ export function dragElement(
     }
 }
 
-/**
- * 添加题目答题结果
- */
-export function createSearchResultPanel() {
-    return {
-        name: "搜题结果",
-        el: () => h("div", { id: "search-results" }, ["暂无搜索结果"]),
-    };
-}
-
 /** 清除搜题结果 */
 export function clearSearchResult(el: HTMLElement | null) {
     /** 清空内容 */
@@ -259,9 +240,8 @@ export function clearSearchResult(el: HTMLElement | null) {
 }
 
 /** 显示与隐藏面板 */
-export function togglePanel() {
-    const panel = OCS.panel;
-
+export function togglePanel(show?: boolean) {
+    const { panel } = domSearch({ panel: "ocs-panel" });
     if (panel) {
         const { icon, header, container, footer, tip } = domSearch(
             {
@@ -276,28 +256,79 @@ export function togglePanel() {
 
         const tips = ["", "连续按下ocs重置位置", "双击展开"];
 
-        if (icon && header && container && footer && tip) {
-            if (panel.classList.contains("hide")) {
-                panel.classList.remove("hide");
-                header.classList.remove("hide");
-                container.classList.remove("hide");
-                footer.classList.remove("hide");
-                icon.style.display = "none";
-                tip.innerHTML = tip.innerHTML.replace(tips.join("<br>"), "");
+        /** 如果指定了 hide ，则根据 hide 进行显示和隐藏 */
+        if (show !== undefined) {
+            if (show) {
+                showPanel();
             } else {
+                hidePanel();
+            }
+        } else {
+            /** 否则自动判断是否需要隐藏或者显示 */
+            if (panel.classList.contains("hide")) {
+                showPanel();
+            } else {
+                hidePanel();
+            }
+        }
+
+        function hidePanel() {
+            if (panel && icon && header && container && footer && tip) {
                 panel.classList.add("hide");
                 header.classList.add("hide");
                 container.classList.add("hide");
                 footer.classList.add("hide");
                 icon.style.display = "block";
                 tip.innerHTML = tip.innerHTML + tips.join("<br>");
+                store.localStorage.hide = true;
+            }
+        }
+
+        function showPanel() {
+            if (panel && icon && header && container && footer && tip) {
+                panel.classList.remove("hide");
+                header.classList.remove("hide");
+                container.classList.remove("hide");
+                footer.classList.remove("hide");
+                icon.style.display = "none";
+                tip.innerHTML = tip.innerHTML.replace(tips.join("<br>"), "");
+                store.localStorage.hide = false;
             }
         }
     }
 }
 
+/**
+ * 获取有效的数字
+ * @param nums
+ * @returns
+ */
 export function getNumber(...nums: number[]) {
     return nums.map((num) => (typeof num === "number" ? num : undefined)).find((num) => num !== undefined);
+}
+
+/**
+ *  递归寻找 iframe
+ */
+export function searchIFrame(root: Document) {
+    let list = Array.from(root.querySelectorAll("iframe"));
+    let result: HTMLIFrameElement[] = [];
+    while (list.length) {
+        const frame = list.shift();
+
+        try {
+            if (frame && frame?.contentWindow?.document) {
+                result.push(frame);
+                let frames = frame?.contentWindow?.document.querySelectorAll("iframe");
+                list = list.concat(Array.from(frames || []));
+            }
+        } catch (e) {
+            // @ts-ignore
+            console.log(e.message);
+            console.log({ frame });
+        }
+    }
+    return result;
 }
 
 export class StringUtils {
@@ -307,28 +338,35 @@ export class StringUtils {
     static nowrap(str?: string) {
         return str?.replace(/\n/g, "") || "";
     }
+    nowrap() {
+        this._text = StringUtils.nowrap(this._text);
+        return this;
+    }
     /** 删除特殊字符 */
     static noSpecialChar(str?: string) {
         return str?.replace(/[^\w\s]/gi, "") || "";
+    }
+    noSpecialChar() {
+        this._text = StringUtils.noSpecialChar(this._text);
+        return this;
     }
 
     /** 最大长度，剩余显示省略号 */
     static max(str: string, len: number) {
         return str.length > len ? str.substring(0, len) + "..." : str;
     }
-
-    nowrap() {
-        this._text = StringUtils.nowrap(this._text);
-        return this;
-    }
-
-    noSpecialChar() {
-        this._text = StringUtils.noSpecialChar(this._text);
-        return this;
-    }
-
     max(len: number) {
         this._text = StringUtils.max(this._text, len);
+        return this;
+    }
+
+    /** 隐藏字符串 */
+    static hide(str: string, start: number, end: number, replacer: string = "*") {
+        // 从 start 到 end 中间的字符串全部替换成 replacer
+        return str.substring(0, start) + str.substring(start, end).replace(/./g, replacer) + str.substring(end);
+    }
+    hide(start: number, end: number, replacer: string = "*") {
+        this._text = StringUtils.hide(this._text, start, end, replacer);
         return this;
     }
 
@@ -336,7 +374,7 @@ export class StringUtils {
         return new StringUtils(text);
     }
 
-    text() {
+    toString() {
         return this._text;
     }
 }

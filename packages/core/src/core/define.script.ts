@@ -1,5 +1,3 @@
-import { DefineComponent, VNode } from "vue";
-
 /**
  * url glob pattern
  *  @see https://en.wikipedia.org/wiki/Glob_(programming)
@@ -30,10 +28,12 @@ export interface ScriptPanel {
     url: string | RegExp | GlobPattern | string[] | RegExp[] | GlobPattern[];
     /** 返回一个 html 元素
      *
-     * 支持 3种 el 元素， {@link VNode} ， {@link DefineComponent} ， string template
-     *
+     * 支持 3 种 el 元素 :
+     * - {@link VNode}
+     * - {@link DefineComponent}
+     * - string template
      */
-    el: () => DefineComponent<any> | VNode | HTMLElement | string;
+    el: () => any;
     /** 其余的子面板  */
     children?: ScriptPanelChild[];
     /** 优先级, 默认0 */

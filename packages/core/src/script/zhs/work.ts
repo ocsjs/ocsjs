@@ -1,27 +1,27 @@
-import { defaults } from "lodash";
-import { logger } from "../logger";
-import { clearSearchResult, domSearch, sleep } from "../core/utils";
-import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
-import { OCSWorker } from "../core/worker";
-import { defaultSetting, ScriptSettings } from "../scripts";
-import { createSearchResultElement } from "../core/worker/utils";
+import defaults from "lodash/defaults";
+import { logger } from "../../logger";
+import { domSearch, sleep } from "../../core/utils";
+import { defaultAnswerWrapperHandler } from "../../core/worker/answer.wrapper.handler";
+import { OCSWorker } from "../../core/worker";
+import { defaultSetting, ScriptSettings } from "../../scripts";
+
+import { store } from "..";
 
 export async function work(setting: ScriptSettings["zhs"]["work"]) {
     const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
 
-    if (OCS.setting.zhs.work.upload === "close") {
-        logger("warn", "章节测试功能已经关闭");
+    if (setting.upload === "close") {
+        logger("warn", "自动答题已被关闭！");
         return;
     }
 
-    if (OCS.setting.answererWrappers.length === 0) {
+    if (store.setting.answererWrappers.length === 0) {
         logger("warn", "题库配置为空，请设置。");
         return;
     }
 
-    const { search } = domSearch({ search: "#search-results" });
-    /** 清空内容 */
-    clearSearchResult(search);
+    /** 清空答案 */
+    store.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -32,7 +32,7 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
         },
         /** 默认搜题方法构造器 */
         answerer: (elements, type) =>
-            defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, elements.title[0].innerText),
+            defaultAnswerWrapperHandler(store.setting.answererWrappers, type, elements.title[0].innerText),
         work: {
             /** 自定义处理器 */
             handler(type, answer, option) {
@@ -50,14 +50,10 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
         },
         onResult: (res) => {
             if (res.ctx) {
-                const { search } = domSearch({ search: "#search-results" });
-                const result = createSearchResultElement(res);
-                if (search && result) {
-                    search.appendChild(result);
-                }
+                store.workResults.push(res);
             }
-
-            logger("info", "题目完成结果 : ", res);
+            console.log(res);
+            logger("info", "题目完成结果 : ", res.result?.finish ? "完成" : "未完成");
         },
 
         /** 其余配置 */
@@ -74,7 +70,7 @@ export async function work(setting: ScriptSettings["zhs"]["work"]) {
 
     // 处理提交
     await worker.uploadHandler({
-        uploadRate: OCS.setting.zhs.work.upload,
+        uploadRate: setting.upload,
         results,
         async callback(finishedRate, uploadable) {
             logger("info", "完成率 : ", finishedRate, " , ", uploadable ? "5秒后将自动提交" : "5秒后将自动保存");

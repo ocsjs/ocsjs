@@ -1,10 +1,10 @@
-import { defaults } from "lodash";
-import { logger } from "../logger";
-import { clearSearchResult, domSearch, sleep, StringUtils } from "../core/utils";
-import { OCSWorker } from "../core/worker";
-import { defaultAnswerWrapperHandler } from "../core/worker/answer.wrapper.handler";
-import { createSearchResultElement } from "../core/worker/utils";
-import { defaultSetting, ScriptSettings } from "../scripts";
+import defaults from "lodash/defaults";
+import { logger } from "../../logger";
+import { domSearch, sleep, StringUtils } from "../../core/utils";
+import { OCSWorker } from "../../core/worker";
+import { defaultAnswerWrapperHandler } from "../../core/worker/answer.wrapper.handler";
+import { defaultSetting, ScriptSettings } from "../../scripts";
+import { store } from "..";
 
 export async function workOrExam(
     setting: ScriptSettings["cx"]["work"] | ScriptSettings["cx"]["exam"],
@@ -13,18 +13,17 @@ export async function workOrExam(
     const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
 
     if (setting.upload === "close") {
-        logger("warn", "章节测试已经关闭");
+        logger("warn", "自动答题已被关闭！");
         return;
     }
 
-    if (OCS.setting.answererWrappers.length === 0) {
+    if (store.setting.answererWrappers.length === 0) {
         logger("warn", "题库配置为空，请设置。");
         return;
     }
 
-    const { search } = domSearch({ search: "#search-results" });
     /** 清空内容 */
-    clearSearchResult(search);
+    store.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -40,7 +39,7 @@ export async function workOrExam(
                 .replace(/\d+\. \(.*?(题|分)\)/, "")
                 .trim();
             if (title) {
-                return defaultAnswerWrapperHandler(OCS.setting.answererWrappers, type, title);
+                return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
             } else {
                 throw new Error("题目为空，请查看题目是否为空，或者忽略此题");
             }
@@ -90,12 +89,10 @@ export async function workOrExam(
         },
         onResult: (res) => {
             if (res.ctx) {
-                const result = createSearchResultElement(res);
-                if (search && result) {
-                    search.appendChild(result);
-                }
+                store.workResults.push(res);
             }
-            logger("info", "题目完成结果 : ", res);
+            console.log(res);
+            logger("info", "题目完成结果 : ", res.result?.finish ? "完成" : "未完成");
         },
 
         /** 其余配置 */

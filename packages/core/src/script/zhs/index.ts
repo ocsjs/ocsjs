@@ -1,11 +1,13 @@
-import { createNote } from "../core/create.element";
-import { defineScript } from "../core/define.script";
-import { defaultSetting } from "../scripts";
-import { createZHSStudySettingPanel, createZHSWorkSettingPanel } from "./panels";
+import { createNote, createSearchResultPanel, createTerminalPanel } from "../../components";
+import { defineScript } from "../../core/define.script";
+import { defaultSetting } from "../../scripts";
 import { creditStudy, study } from "./study";
-import { createSearchResultPanel, createTerminalPanel, domSearch, sleep } from "../core/utils";
+import { domSearch, sleep } from "../../core/utils";
 import { work } from "./work";
-import { logger } from "../logger";
+import { logger } from "../../logger";
+import { store } from "..";
+import { StudySettingPanel } from "../../components/zhs/StudySettingPanel";
+import { WorkSettingPanel } from "../../components/zhs/WorkSettingPanel";
 
 export const ZHSScript = defineScript({
     name: "知道智慧树",
@@ -13,8 +15,9 @@ export const ZHSScript = defineScript({
         {
             name: "共享课视频脚本",
             url: "**zhihuishu.com/videoStudy.html**",
-            async onload(setting = OCS.setting.zhs.video) {
+            async onload(setting = store.setting.zhs.video) {
                 await sleep(5000);
+                setting.creditStudy = false;
                 // 智慧树视频学习
                 logger("info", "开始智慧树共享课视频学习");
                 await study(setting || defaultSetting().video);
@@ -24,8 +27,9 @@ export const ZHSScript = defineScript({
             name: "学分课视频脚本",
             /** 学分共享课（翻转课） */
             url: "**zhihuishu.com/aidedteaching/sourceLearning/**",
-            async onload(setting = OCS.setting.zhs.video) {
+            async onload(setting = store.setting.zhs.video) {
                 await sleep(5000);
+                setting.creditStudy = true;
                 // 智慧树视频学习
                 logger("info", "开始智慧树学分课视频学习");
                 await creditStudy(setting || defaultSetting().video);
@@ -34,12 +38,11 @@ export const ZHSScript = defineScript({
         {
             name: "作业脚本",
             url: "**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**",
-            async onload(setting = OCS.setting.zhs.work) {
+            async onload(setting = store.setting.zhs.work) {
                 await sleep(5000);
-                if (OCS.setting.answererWrappers.length === 0) {
-                    const { panel } = domSearch({ panel: '[panel="作业助手"]' });
-                    if (panel) panel.innerHTML = "<b>错误</b> : 未设置题库配置！";
+                if (store.setting.answererWrappers.length === 0) {
                     logger("error", "未设置题库配置！");
+                    confirm("未设置题库配置！请在设置面板设置后刷新重试！");
                 } else {
                     /** 运行作业脚本 */
                     await work(setting);
@@ -72,7 +75,7 @@ export const ZHSScript = defineScript({
             children: [
                 {
                     name: "学习设置",
-                    el: () => createZHSStudySettingPanel(),
+                    el: () => StudySettingPanel,
                 },
                 createTerminalPanel(),
             ],
@@ -90,7 +93,7 @@ export const ZHSScript = defineScript({
             children: [
                 {
                     name: "学习设置",
-                    el: () => createZHSStudySettingPanel(true),
+                    el: () => StudySettingPanel,
                 },
                 createTerminalPanel(),
             ],
@@ -107,7 +110,7 @@ export const ZHSScript = defineScript({
             children: [
                 {
                     name: "作业设置",
-                    el: () => createZHSWorkSettingPanel(),
+                    el: () => WorkSettingPanel,
                 },
                 createTerminalPanel(),
                 createSearchResultPanel(),

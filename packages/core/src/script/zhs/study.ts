@@ -1,6 +1,9 @@
-import { logger } from "../logger";
-import { sleep } from "../core/utils";
-import { ScriptSettings } from "../scripts";
+import { logger } from "../../logger";
+import { sleep } from "../../core/utils";
+import { ScriptSettings } from "../../scripts";
+import { store } from "..";
+
+let stop = false;
 
 /**
  * zhs 视频学习
@@ -21,30 +24,19 @@ export async function study(setting?: ScriptSettings["zhs"]["video"]) {
         if (list.length === 0) {
             logger("warn", "视频任务数量为 0 !");
         } else {
-            logger("info", "视频任务数量", list.length);
+            console.log(list);
 
-            let stop = false;
+            logger("info", "视频任务数量", list.length);
 
             /**
              * 实时监测，关闭弹窗测验
              */
-            setInterval(() => {
-                closeTestDialog();
-            }, 3000);
+            setInterval(() => closeTestDialog(), 3000);
 
             /**
              * 到达学习时间后，自动关闭
              */
-            if (watchTime !== 0) {
-                logger("info", "将在", watchTime, "小时后自动暂停");
-                setTimeout(() => {
-                    const video: HTMLVideoElement = document.querySelector("video") as any;
-                    (video as any).stop = true;
-                    video.pause();
-                    stop = true;
-                    resolve();
-                }, watchTime * 60 * 60 * 1000);
-            }
+            autoClose(watchTime);
 
             /** 遍历任务进行学习 */
             for (const item of list) {
@@ -78,34 +70,32 @@ export async function study(setting?: ScriptSettings["zhs"]["video"]) {
  * @param setting
  * @returns
  */
-export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "playbackRate" | "mute">) {
-    const { playbackRate = 1, mute = true } = setting || {};
+export async function watch(setting?: Pick<ScriptSettings["zhs"]["video"], "playbackRate" | "volume">) {
+    const { volume = 0 } = setting || {};
     return new Promise<void>((resolve, reject) => {
         try {
             const video = document.querySelector("video") as HTMLVideoElement;
-
-            video.onpause = function () {
-                if (!video.ended) {
-                    if ((video as any).stop) {
-                        resolve();
-                    } else {
-                        video.play();
+            // 设置当前视频
+            store.currentMedia = video;
+            // 如果已经播放完了，则重置视频进度
+            video.currentTime = 0;
+            // 音量
+            video.volume = volume;
+            setTimeout(() => {
+                video.play();
+                video.onpause = function () {
+                    if (!video.ended) {
+                        if (stop) {
+                            resolve();
+                        } else {
+                            video.play();
+                        }
                     }
-                }
-            };
-            video.onended = function () {
-                resolve();
-            };
-            // 静音
-            video.muted = mute;
-            // 改变速率
-            video.playbackRate = parseFloat(playbackRate.toString());
-            const playbackRateText = document.querySelector("div.speedBox > span") as HTMLVideoElement;
-            if (playbackRateText) {
-                playbackRateText.textContent = "X " + video.playbackRate;
-            }
-
-            video.play();
+                };
+                video.onended = function () {
+                    resolve();
+                };
+            }, 1000);
         } catch (e) {
             reject(e);
         }
@@ -144,7 +134,7 @@ export async function creditStudy(setting?: ScriptSettings["zhs"]["video"]) {
     if (item) {
         if (item.classList.contains("active")) {
             await watch({
-                mute: setting?.mute || true,
+                volume: setting?.volume || 0,
                 playbackRate: 1,
             });
             /** 下一章 */
@@ -152,5 +142,30 @@ export async function creditStudy(setting?: ScriptSettings["zhs"]["video"]) {
         } else {
             item.click();
         }
+    }
+}
+
+/**
+ * 到达学习时间后，自动关闭
+ */
+export function autoClose(watchTime: number) {
+    if (watchTime !== 0) {
+        let time = 0;
+        // 清空之前的计数器
+        clearInterval(store.setting.zhs.video.interval);
+        // 开始计时
+        store.setting.zhs.video.interval = setInterval(() => {
+            if (time >= watchTime * 60 * 60 * 1000) {
+                clearInterval(store.setting.zhs.video.interval);
+                const video: HTMLVideoElement = document.querySelector("video") as any;
+                video.pause();
+                stop = true;
+            } else {
+                time += 1000;
+            }
+        }, 1000);
+    } else {
+        // 清空的计数器
+        clearInterval(store.setting.zhs.video.interval);
     }
 }

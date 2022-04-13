@@ -9,9 +9,9 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "lib": ["DOM"],
-
+        "jsx": "preserve",
         "resolveJsonModule": true
     },
 
-    "include": ["./index.ts", "./src/**/*.ts"]
+    "include": ["./src/core/index.ts"]
 }

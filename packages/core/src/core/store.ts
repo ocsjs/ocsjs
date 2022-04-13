@@ -1,4 +1,5 @@
-import { get, set } from "lodash";
+import get from "lodash/get";
+import set from "lodash/set";
 import { ScriptSettings } from "../scripts";
 
 let listeners: any[] = [];
@@ -35,8 +36,20 @@ export function getItem(path: string | string[], defaultValue?: any) {
  * OCS 本地存储类型
  */
 export interface OCSLocalStorage {
-    // 网课平台类型
+    [x: string]: any;
+    /** 网课平台类型 */
     platform?: string;
-    // 本地设置
+    /** 本地设置 */
     setting?: ScriptSettings;
+    /** 面板是否隐藏 */
+    hide: boolean;
+    /** 面板位置 */
+    position: { x: number; y: number };
+    /** 日志存储 */
+    logs: {
+        time: number;
+        level: string;
+        extra: string;
+        text: string;
+    }[];
 }

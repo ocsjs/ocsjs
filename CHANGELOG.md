@@ -1,12 +1,3 @@
-## [3.2.20](https://github.com/enncy/online-course-script/compare/v3.2.19...v3.2.20) (2022-04-09)
-
-
-### Bug Fixes
-
-* 延长一点视频暂停后启动的时间，防止超星鬼畜。 ([837d873](https://github.com/enncy/online-course-script/commit/837d873d29146de7741e9cfb4b4e988633767551))
-
-
-
 ## [3.2.19](https://github.com/enncy/online-course-script/compare/v3.2.18...v3.2.19) (2022-04-08)
 
 
