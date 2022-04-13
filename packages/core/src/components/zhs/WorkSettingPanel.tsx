@@ -3,12 +3,12 @@ import { createWorkerSetting } from "..";
 import { store } from "../../script";
 import { Tooltip } from "../Tooltip";
 
-const settings = store.setting.zhs.work;
-
 // 根据上方 vnode 变量 ， 生成 jsx 的渲染函数
 export const WorkSettingPanel = defineComponent({
-    render() {
-        return (
+    setup() {
+        const settings = store.setting.zhs.work;
+
+        return () => (
             <div class="ocs-setting-panel">
                 <div class="ocs-setting-items">
                     {createWorkerSetting(

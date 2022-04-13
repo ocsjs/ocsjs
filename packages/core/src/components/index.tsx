@@ -7,6 +7,7 @@ import { SearchResults } from "./SearchResults";
 import { logger } from "../logger";
 import { Tooltip } from "./Tooltip";
 import { StringUtils } from "../core/utils";
+import { debounce } from "lodash";
 
 /**
  * 创建提示面板
@@ -109,7 +110,7 @@ export function createWorkerSetting(
                                 ? ""
                                 : JSON.stringify(store.setting.answererWrappers)
                         }
-                        onInput={(e: any) => {
+                        onInput={debounce(function (e: any) {
                             try {
                                 const value = JSON.parse(e.target.value);
 
@@ -119,10 +120,9 @@ export function createWorkerSetting(
                                     store.setting.answererWrappers = [];
                                 }
                             } catch (e) {
-                                logger("error", "题库格式错误");
                                 store.setting.answererWrappers = [];
                             }
-                        }}
+                        }, 100)}
                     ></input>
                 </Tooltip>
 
@@ -154,7 +154,7 @@ export function createWorkerSetting(
                                                                     {Reflect.ownKeys(aw.data || {}).map((key) => (
                                                                         <li>
                                                                             {key.toString()} =
-                                                                            {hideToken(aw.data?.[key.toString()] || "")}
+                                                                            {hideToken(aw.data[key.toString()])}
                                                                         </li>
                                                                     ))}
                                                                 </ul>
@@ -195,7 +195,9 @@ export function createWorkerSetting(
 function hideToken(token: string) {
     return /[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}/.test(token) ||
         /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(token)
-        ? StringUtils.of(token).hide(4, token.length - 4)
+        ? StringUtils.of(token)
+              .hide(4, token.length - 4)
+              .toString()
         : token;
 }
 

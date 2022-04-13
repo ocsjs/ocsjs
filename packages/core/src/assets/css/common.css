@@ -231,3 +231,13 @@ ocs-panel .search-result-modal {
   position: absolute;
   box-shadow: 0px 0px 4px #c7c7c7;
 }
+ocs-panel .search-results-title {
+  padding: 2px 0px;
+}
+html * {
+  -webkit-user-select: text !important;
+  -khtml-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+  user-select: text !important;
+}

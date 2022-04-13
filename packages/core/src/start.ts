@@ -45,9 +45,7 @@ export function start(options?: StartOptions) {
         }
     }
 
-    store.scripts = options?.scripts || definedScripts;
-
-    executeScripts(store.scripts);
+    executeScripts(options?.scripts || definedScripts);
 }
 
 /**

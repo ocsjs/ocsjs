@@ -43,10 +43,9 @@ import { computed } from "@vue/reactivity";
 import { h, ref, watch } from "vue";
 import { addFunctionEventListener, getCurrentPanels, togglePanel } from "./core/utils";
 import { store } from "./script";
+import { definedScripts } from "./main.ts";
 
-const scripts = store.scripts;
-
-const panels = ref(getCurrentPanels(scripts));
+const panels = ref(getCurrentPanels(definedScripts));
 
 /**
  * 对面板进行处理
@@ -70,8 +69,14 @@ const activeKey = ref(currentPanels.value[0]?.name);
 history.pushState = addFunctionEventListener(history, "pushState");
 history.replaceState = addFunctionEventListener(history, "replaceState");
 
-window.addEventListener("pushState", () => (panels.value = getCurrentPanels(scripts)));
-window.addEventListener("replaceState", () => (panels.value = getCurrentPanels(scripts)));
+window.addEventListener(
+    "pushState",
+    () => (panels.value = getCurrentPanels(definedScripts))
+);
+window.addEventListener(
+    "replaceState",
+    () => (panels.value = getCurrentPanels(definedScripts))
+);
 
 /** 当面板发生改变时重绘 */
 watch(currentPanels, () => {

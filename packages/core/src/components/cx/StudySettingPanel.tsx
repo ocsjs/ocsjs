@@ -3,11 +3,12 @@ import { createWorkerSetting } from "..";
 import { store } from "../../script";
 import { switchPlayLine } from "../../script/cx/study";
 import { Tooltip } from "../Tooltip";
-const settings = store.setting.cx.video;
 
 export const StudySettingPanel = defineComponent({
-    render() {
-        return (
+    setup() {
+        const settings = store.setting.cx.video;
+
+        return () => (
             <div class="ocs-setting-panel">
                 <div class="ocs-setting-items">
                     <label>视频倍速 </label>
@@ -22,6 +23,8 @@ export const StudySettingPanel = defineComponent({
                                 step="1"
                                 onChange={(e: any) => {
                                     settings.playbackRate = e.target.valueAsNumber;
+                                    console.log("store.currentMedia", store.currentMedia);
+
                                     if (store.currentMedia) {
                                         store.currentMedia.playbackRate = e.target.valueAsNumber;
                                     }
@@ -68,6 +71,8 @@ export const StudySettingPanel = defineComponent({
                             value={settings.volume}
                             onInput={(e: any) => {
                                 settings.volume = e.target.valueAsNumber;
+                                console.log("store.currentMedia", store.currentMedia);
+
                                 if (store.currentMedia) store.currentMedia.volume = e.target.valueAsNumber;
                             }}
                         />

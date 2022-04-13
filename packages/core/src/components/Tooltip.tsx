@@ -12,10 +12,7 @@ export const Tooltip = defineComponent({
     render() {
         return (
             <div onMouseenter={() => (this.show = true)} onMouseleave={() => (this.show = false)} style="width: 100%">
-                <span
-                    style={{ display: this.show ? "block" : "none", transform: "translate(100%,-100%)" }}
-                    class={"tooltip " + this.type || "dark"}
-                >
+                <span style={{ display: this.show ? "block" : "none" }} class={"tooltip " + (this.type || "dark")}>
                     {this.$slots.title ? (
                         this.$slots.title()
                     ) : (

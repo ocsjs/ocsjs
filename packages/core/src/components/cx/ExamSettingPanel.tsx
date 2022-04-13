@@ -3,11 +3,11 @@ import { createWorkerSetting } from "..";
 import { store } from "../../script";
 import { Tooltip } from "../Tooltip";
 
-const settings = store.setting.cx.exam;
-
 export const ExamSettingPanel = defineComponent({
-    render() {
-        return (
+    setup() {
+        const settings = store.setting.cx.exam;
+
+        return () => (
             <div class="ocs-setting-panel">
                 <div class="ocs-setting-items">
                     {createWorkerSetting(

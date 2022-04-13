@@ -3,11 +3,11 @@ import { createWorkerSetting } from "..";
 import { store } from "../../script";
 import { Tooltip } from "../Tooltip";
 
-const settings = store.setting.cx.work;
-
 export const WorkSettingPanel = defineComponent({
-    render() {
-        return (
+    setup() {
+        const settings = store.setting.cx.work;
+
+        return () => (
             <div class="ocs-setting-panel">
                 <div class="ocs-setting-items">
                     {createWorkerSetting(

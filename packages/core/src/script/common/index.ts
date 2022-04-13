@@ -42,13 +42,15 @@ export const CommonScript = defineScript({
             name: "开启页面右键复制粘贴功能",
             url: supports.map((arr) => arr[0]),
             onload() {
-                setTimeout(() => {
-                    console.log("开启页面右键复制粘贴功能");
+                console.log("开启页面右键复制粘贴功能");
+                try {
                     const d = document;
                     const b = document.body;
                     d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
                     b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
-                }, 3000);
+                } catch (err) {
+                    console.error("页面右键复制粘贴功能开启失败", err);
+                }
             },
         },
         {

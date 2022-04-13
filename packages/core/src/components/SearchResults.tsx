@@ -35,7 +35,7 @@ export const SearchResults = defineComponent({
                 {hasResult.value ? (
                     <div>
                         {currentResult.value ? (
-                            <div class="search-result-modal">
+                            <div class="search-result-modal" onClick={(e) => e.stopPropagation()}>
                                 <div>
                                     <span
                                         style={{ float: "right", cursor: "pointer" }}
@@ -107,6 +107,7 @@ export const SearchResults = defineComponent({
 
                                 return (
                                     <div
+                                        class="search-results-title"
                                         onMouseenter={() => (currentResult.value = res)}
                                         style={{ color: res.result?.finish ? "" : "red" }}
                                     >

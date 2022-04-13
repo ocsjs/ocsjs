@@ -3,17 +3,14 @@ import { store } from "../../script";
 import { autoClose } from "../../script/zhs/study";
 import { Tooltip } from "../Tooltip";
 
-const settings = store.setting.zhs.video;
-
 export const StudySettingPanel = defineComponent({
     setup() {
+        const settings = store.setting.zhs.video;
         const closeDate = new Date();
         closeDate.setMinutes(closeDate.getMinutes() + settings.watchTime * 60);
         settings.closeDate = closeDate;
-    },
-    render() {
-        // 根据上方 vnode 变量 ， 生成 jsx 的渲染函数
-        return (
+
+        return () => (
             <div class="ocs-setting-panel">
                 <div class="ocs-setting-items">
                     {settings.creditStudy === false
