@@ -49,6 +49,7 @@ export const CXScript = defineScript({
                 rateHack();
             },
         },
+
         {
             name: "任务切换脚本",
             url: "**/mycourse/studentstudy**",
@@ -149,6 +150,25 @@ export const CXScript = defineScript({
                 } else {
                     /** 运行考试脚本 */
                     await workOrExam(setting, true);
+                }
+            },
+        },
+        {
+            name: "屏蔽作业考试填空简答题粘贴限制",
+            url: ["**/mooc2/exam/preview**", "**/mooc2/work/dowork**", "**/work/doHomeWorkNew/**"],
+            onload() {
+                try {
+                    // @ts-ignore
+                    const EDITORUI = $EDITORUI;
+                    for (const key in EDITORUI) {
+                        const ui = EDITORUI[key];
+                        if (ui.__proto__.uiName === "editor") {
+                            // @ts-ignore
+                            ui.editor.removeListener("beforepaste", editorPaste);
+                        }
+                    }
+                } catch (e) {
+                    console.log("屏蔽作业考试粘贴限制错误", e);
                 }
             },
         },
