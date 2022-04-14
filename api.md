@@ -1,6 +1,6 @@
 # OCS开发文档
 
-{:toc}
+{% include toc.html html=content %}
   
 ## 项目结构
 
