@@ -1,51 +1,51 @@
 {
-    "name": "@ocsjs/app",
-    "version": "1.2.3",
-    "description": "app package of ocs",
-    "main": "index.js",
-    "scripts": {
-        "dev": "chcp 65001 && electron .",
-        "pack": "electron-builder --config ./electron.builder.json --dir",
-        "dist": "electron-builder --config ./electron.builder.json"
-    },
-    "devDependencies": {
-        "@types/adm-zip": "^0.4.34",
-        "@types/axios": "^0.14.0",
-        "@types/node-forge": "^1.0.0",
-        "electron": "17.0.0",
-        "electron-builder": "^22.14.13"
-    },
-    "dependencies": {
-        "@ocsjs/common": "workspace:^1.0.0",
-        "@ocsjs/scripts": "workspace:^1.0.0",
-        "adm-zip": "^0.5.9",
-        "axios": "^0.25.0",
-        "chalk": "4.1.0",
-        "dayjs": "^1.10.7",
-        "electron-store": "^8.0.1",
-        "fs-extra": "^10.0.1",
-        "node-forge": "1.0.0",
-        "semver": "^7.3.5",
-        "trash": "7.2.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/enncy/online-course-script.git"
-    },
-    "keywords": [
-        "ocs",
-        "script",
-        "playwright",
-        "puppeteer",
-        "electron",
-        "vue",
-        "ant-design-vue",
-        "typescript"
-    ],
-    "author": "enncy",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/enncy/online-course-script/issues"
-    },
-    "homepage": "https://github.com/enncy/online-course-script#readme"
+  "name": "@ocsjs/app",
+  "version": "1.2.3",
+  "description": "app package of ocs",
+  "main": "index.js",
+  "scripts": {
+    "dev": "chcp 65001 && electron .",
+    "pack": "electron-builder --config ./electron.builder.json --dir",
+    "dist": "electron-builder --config ./electron.builder.json"
+  },
+  "devDependencies": {
+    "@types/adm-zip": "^0.4.34",
+    "@types/axios": "^0.14.0",
+    "@types/node-forge": "^1.0.0",
+    "electron": "17.0.0",
+    "electron-builder": "^22.14.13"
+  },
+  "dependencies": {
+    "@ocsjs/common": "workspace:^1.0.0",
+    "@ocsjs/scripts": "workspace:^1.0.0",
+    "adm-zip": "^0.5.9",
+    "axios": "^0.25.0",
+    "chalk": "4.1.0",
+    "dayjs": "^1.10.7",
+    "electron-store": "^8.0.1",
+    "fs-extra": "^10.0.1",
+    "node-forge": "1.0.0",
+    "semver": "^7.3.5",
+    "trash": "7.2.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enncy/online-course-script.git"
+  },
+  "keywords": [
+    "ocs",
+    "script",
+    "playwright",
+    "puppeteer",
+    "electron",
+    "vue",
+    "ant-design-vue",
+    "typescript"
+  ],
+  "author": "enncy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/enncy/online-course-script/issues"
+  },
+  "homepage": "https://github.com/enncy/online-course-script#readme"
 }

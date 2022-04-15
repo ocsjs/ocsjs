@@ -1,11 +1,14 @@
 <template>
-    <IconFont :type="type" class="ocsicon"></IconFont>
+  <IconFont
+    :type="type"
+    class="ocsicon"
+  />
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, toRefs } from "vue";
+import { toRefs } from 'vue';
 interface IconProps {
-    type: string;
+  type: string
 }
 const props = withDefaults(defineProps<IconProps>(), {});
 const { type } = toRefs(props);

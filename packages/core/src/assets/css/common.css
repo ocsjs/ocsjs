@@ -181,6 +181,9 @@ ocs-panel .terminal level.error {
 ocs-panel .terminal level.debug {
   background-color: #9e9e9ec4;
 }
+ocs-panel .terminal *::selection {
+  background-color: #ffffff6b;
+}
 ocs-panel #search-results a {
   text-decoration: underline;
 }

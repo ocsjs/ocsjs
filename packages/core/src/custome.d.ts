@@ -1,9 +1,8 @@
-import * as ocs from "../index";
-
 export {};
 
 declare global {
-    interface Window {
-        OCS: typeof import("../index");
-    }
+  // eslint-disable-next-line no-unused-vars
+  declare interface Window {
+    OCS: typeof import('../index')
+  }
 }

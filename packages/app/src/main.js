@@ -1,33 +1,33 @@
 // @ts-check
-const { BrowserWindow, app } = require("electron");
-const path = require("path");
+const { BrowserWindow, app } = require('electron');
+const path = require('path');
 
 app.disableHardwareAcceleration();
 
-function createWindow() {
-    const win = new BrowserWindow({
-        title: "ocs",
-        icon: path.resolve("./public/favicon.ico"),
+function createWindow () {
+  const win = new BrowserWindow({
+    title: 'ocs',
+    icon: path.resolve('./public/favicon.ico'),
 
-        minHeight: 500,
-        minWidth: 800,
-        center: true,
-        frame: false,
-        show: false,
-        backgroundColor: "#fff",
-        hasShadow: true,
+    minHeight: 500,
+    minWidth: 800,
+    center: true,
+    frame: false,
+    show: false,
+    backgroundColor: '#fff',
+    hasShadow: true,
 
-        webPreferences: {
-            // 关闭拼写矫正
-            spellcheck: false,
-            webSecurity: true,
-            // 开启node
-            nodeIntegration: true,
-            contextIsolation: false,
-        },
-    });
+    webPreferences: {
+      // 关闭拼写矫正
+      spellcheck: false,
+      webSecurity: true,
+      // 开启node
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  });
 
-    return win;
+  return win;
 }
 
 /**

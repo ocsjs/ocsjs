@@ -1,53 +1,66 @@
 {
-    "name": "ocsjs",
-    "version": "3.3.12",
-    "description": "ocs - online course script 在线网络课程辅助工具",
-    "types": "./lib/core/index.d.ts",
-    "main": "./lib/core/index.js",
-    "files": [
-        "lib",
-        "dist"
-    ],
-    "scripts": {
-        "build:core": "gulp -f ./scripts/build-core.js",
-        "build:app": "pnpm build && gulp -f ./scripts/build-app.js",
-        "build": "gulp -f ./scripts/tsc.js",
-        "pub:patch": "npm version patch && pnpm build:core && npm publish",
-        "pub:minor": "npm version minor && pnpm build:core && npm publish",
-        "pub:major": "npm version major && pnpm build:core && npm publish",
-        "changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file -r 0"
-    },
-    "devDependencies": {
-        "@types/node": "^17.0.16",
-        "cz-conventional-changelog": "^3.3.0",
-        "del": "^6.0.0",
-        "gulp": "^4.0.2",
-        "gulp-cli": "^2.3.0",
-        "gulp-zip": "^5.1.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/enncy/online-course-script.git"
-    },
-    "keywords": [
-        "ocs",
-        "script",
-        "playwright",
-        "puppeteer",
-        "electron",
-        "vue",
-        "ant-design-vue",
-        "typescript"
-    ],
-    "author": "enncy",
-    "license": "MIT",
-    "bugs": {
-        "url": "https://github.com/enncy/online-course-script/issues"
-    },
-    "homepage": "https://github.com/enncy/online-course-script#readme",
-    "config": {
-        "commitizen": {
-            "path": "./node_modules/cz-conventional-changelog"
-        }
+  "name": "ocsjs",
+  "version": "3.3.12",
+  "description": "ocs - online course script 在线网络课程辅助工具",
+  "types": "./lib/core/index.d.ts",
+  "main": "./lib/core/index.js",
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "scripts": {
+    "build:core": "pnpm lint &&  gulp -f ./scripts/build-core.js",
+    "build:app": "pnpm lint && pnpm build && gulp -f ./scripts/build-app.js",
+    "build": "pnpm lint && gulp -f ./scripts/tsc.js",
+    "lint": "eslint  ./packages --ext .ts,.tsx,.js,.jsx,.vue",
+    "release": "sh ./scripts/release.sh",
+    "pub:minor": "npm version minor && pnpm build:core && npm publish",
+    "pub:major": "npm version major && pnpm build:core && npm publish",
+    "changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file -r 0"
+  },
+  "devDependencies": {
+    "@types/node": "^17.0.16",
+    "@typescript-eslint/eslint-plugin": "^5.19.0",
+    "@typescript-eslint/parser": "^5.19.0",
+    "cz-conventional-changelog": "^3.3.0",
+    "del": "^6.0.0",
+    "eslint": "^7.12.1",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-config-standard": "^16.0.3",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^4.0.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-vue": "^8.6.0",
+    "gulp": "^4.0.2",
+    "gulp-cli": "^2.3.0",
+    "gulp-zip": "^5.1.0",
+    "prettier": "^2.6.2",
+    "typescript": "^4.5.5"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/enncy/online-course-script.git"
+  },
+  "keywords": [
+    "ocs",
+    "script",
+    "playwright",
+    "puppeteer",
+    "electron",
+    "vue",
+    "ant-design-vue",
+    "typescript"
+  ],
+  "author": "enncy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/enncy/online-course-script/issues"
+  },
+  "homepage": "https://github.com/enncy/online-course-script#readme",
+  "config": {
+    "commitizen": {
+      "path": "./node_modules/cz-conventional-changelog"
     }
+  }
 }
