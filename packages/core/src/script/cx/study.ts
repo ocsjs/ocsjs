@@ -38,7 +38,7 @@ export async function study (setting: ScriptSettings['cx']['video']) {
       }
     }
 
-    logger('debug', '完成, 即将跳转');
+    logger('debug', '完成, 即将跳转, 如卡死请自行点击下一章。');
     await sleep(3000);
     next.click();
   } else {

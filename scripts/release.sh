@@ -19,14 +19,14 @@ if [ "$isRelease" = "y" ]; then
     npm run changelog
     # 代码检查
     npm run lint
+    # 更新版本
+    npm version "$version" --no-git-tag-version
     # 构建
     npm run build:core
     # 保存
-    git add -all
+    git add --all
     git commit -m "version release $version"
     git tag "$version"
-    # 更新版本
-    npm version "$version" --no-git-tag-version
     # 发布
     npm publish
     echo "$version 发布成功"
