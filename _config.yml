@@ -1,2 +1,8 @@
 theme: jekyll-theme-cayman
 markdown: kramdown
+github:
+  使用方法: https://enncy.github.io/online-course-script
+  功能列表: https://enncy.github.io/online-course-script/feat-list
+  疑问解答: https://enncy.github.io/online-course-script/FQA
+  脚本安装: https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B
+  脚本安装: https://enncy.github.io/online-course-script/app-version
