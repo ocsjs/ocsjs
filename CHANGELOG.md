@@ -1,3 +1,12 @@
+## [3.3.14](https://github.com/enncy/online-course-script/compare/3.3.13...3.3.14) (2022-04-15)
+
+
+### Bug Fixes
+
+* 修复 release.sh 版本命令 ([652a022](https://github.com/enncy/online-course-script/commit/652a022b1f895e0ec848dc0b54f238d4f8192772))
+
+
+
 ## [3.3.13](https://github.com/enncy/online-course-script/compare/v3.3.12...3.3.13) (2022-04-15)
 
 

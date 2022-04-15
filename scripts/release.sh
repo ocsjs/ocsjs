@@ -15,12 +15,13 @@ read -p "确认发布版本 $version ? [y/n]: " isRelease
 if [ "$isRelease" = "y" ]; then
     # 发布
     echo "版本发布 $version"
-    # 更新日志
-    npm run changelog
+
     # 代码检查
     npm run lint
     # 更新版本
     npm version "$version" --no-git-tag-version
+    # 更新日志
+    npm run changelog
     # 构建
     npm run build:core
     # 保存
