@@ -86,7 +86,7 @@
  
 
 <div style="display: flex">
- <img src="https://user-images.githubusercontent.com/50533276/163658298-3620946b-e427-4e19-ae32-b186f495f921.png" width="49%" height="300px">
+ <img src="" width="49%" height="300px">
  <img src="https://user-images.githubusercontent.com/50533276/163658300-3092460b-92dc-476e-b86e-517d65a9f4a1.png" width="49%" height="300px">
 </div>
  
