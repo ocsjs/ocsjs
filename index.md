@@ -23,6 +23,16 @@
 
 > `缺点`：需要安装油猴拓展
 
+
+## 脚本预览
+
+<div style="display: flex">
+ <img src="https://user-images.githubusercontent.com/50533276/163658182-6479c0c7-0933-4b4f-915d-5315e7b4fa1c.png" width="43%" height="300px">
+ <img src="https://user-images.githubusercontent.com/50533276/163658186-16399de1-8776-4961-b0e5-550b0290da29.png" width="56%" height="300px">
+</div>
+ 
+
+
 ## 第一步
 
 打开你的浏览器，安装油猴浏览器拓展， 安装途径有如下：
@@ -72,7 +82,19 @@
 
 > `优点`：自动登录，多个账号管理，浏览器多开，脚本自动更新，软件自动更新，实时通知等功能。
 
-软件教程 : [https://enncy.github.io/online-course-script/app](https://enncy.github.io/online-course-script/app)
+## 软件预览
+ 
+
+<div style="display: flex">
+ <img src="https://user-images.githubusercontent.com/50533276/163658298-3620946b-e427-4e19-ae32-b186f495f921.png" width="49%" height="300px">
+ <img src="https://user-images.githubusercontent.com/50533276/163658300-3092460b-92dc-476e-b86e-517d65a9f4a1.png" width="49%" height="300px">
+</div>
+ 
+
+
+## 软件教程
+
+[https://enncy.github.io/online-course-script/app](https://enncy.github.io/online-course-script/app)
   
 # 支持的网课平台
 
