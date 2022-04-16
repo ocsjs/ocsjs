@@ -86,10 +86,11 @@
  
 
 <div style="display: flex">
- <img src="" width="49%" height="300px">
+ <img src="https://user-images.githubusercontent.com/50533276/163658348-569c55c7-77d7-47f8-b3f1-185c52d5cb07.png" width="49%" height="300px">
  <img src="https://user-images.githubusercontent.com/50533276/163658300-3092460b-92dc-476e-b86e-517d65a9f4a1.png" width="49%" height="300px">
 </div>
  
+
 
 
 ## 软件教程
