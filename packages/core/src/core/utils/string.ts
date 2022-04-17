@@ -1,7 +1,7 @@
-import { Rating, findBestMatch } from 'string-similarity';
+import { findBestMatch, Rating } from 'string-similarity';
 
 /**
- * 删除特殊字符，只保留英文，数字，中文
+ * 删除特殊字符, 并且全部转小写，只保留英文，数字，中文
  * @param str
  * @returns
  */

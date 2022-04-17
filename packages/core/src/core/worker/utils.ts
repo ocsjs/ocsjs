@@ -1,4 +1,4 @@
-import { WorkContext, QuestionTypes } from './interface';
+import { QuestionTypes, WorkContext } from './interface';
 
 /** 默认题目类型解析器 */
 export function defaultWorkTypeResolver (ctx: WorkContext<any>): QuestionTypes | undefined {
@@ -20,4 +20,28 @@ export function defaultWorkTypeResolver (ctx: WorkContext<any>): QuestionTypes |
         : count('textarea') >= 1
           ? 'completion'
           : undefined;
+}
+
+/** 判断答案是否为A-Z的文本, 并且字符序号依次递增, 并且 每个字符是否都只出现了一次 */
+export function isPlainAnswer (answer: string) {
+  if (answer.length > 8 || !/[A-Z]/.test(answer)) {
+    return false;
+  }
+  const counter: any = {};
+  let min = 0;
+  for (let i = 0; i < answer.length; i++) {
+    if (answer.charCodeAt(i) < min) {
+      return false;
+    }
+    min = answer.charCodeAt(i);
+    counter[min] = (counter[min] || 0) + 1;
+  }
+  // 判断每个字符是否都只出现了一次
+  for (const key in counter) {
+    if (counter[key] !== 1) {
+      return false;
+    }
+  }
+
+  return true;
 }

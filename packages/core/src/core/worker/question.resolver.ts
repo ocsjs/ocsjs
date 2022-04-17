@@ -1,5 +1,6 @@
-import { answerSimilar, clearString, removeRedundant } from '../utils';
+import { answerSimilar, clearString, removeRedundant, StringUtils } from '../utils';
 import { QuestionResolver, WorkContext } from './interface';
+import { isPlainAnswer } from './utils';
 
 /** 默认答案题目处理器 */
 export function defaultQuestionResolve<E> (
@@ -12,6 +13,18 @@ export function defaultQuestionResolve<E> (
      * 在多个题库给出的答案中，找出最相似的答案
      */
     single (results, options, handler) {
+      // 是否为纯ABCD答案
+      for (const result of results) {
+        for (const answer of result.answers) {
+          const ans = StringUtils.nowrap(answer.answer).trim();
+          if (ans.length === 1 && isPlainAnswer(ans)) {
+            const index = ans.charCodeAt(0) - 65;
+            options[index].click();
+            return { finish: true, option: options[index] };
+          }
+        }
+      }
+
       /** 配对选项的相似度 */
       const ratings = answerSimilar(
         results.map((res) => res.answers.map((ans) => ans.answer)).flat(),
@@ -48,6 +61,7 @@ export function defaultQuestionResolve<E> (
       /** 最终的选项 */
       const targetOptions: HTMLElement[][] = [];
 
+      // 各个题库的序号
       let count = 0;
       for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
         targetAnswers[count] = [];
@@ -60,6 +74,18 @@ export function defaultQuestionResolve<E> (
             targetOptions[count][i] = el;
           }
         });
+
+        // 判断是否为纯ABCD答案
+        for (const answer of answers) {
+          const ans = StringUtils.nowrap(answer).trim();
+          if (isPlainAnswer(ans)) {
+            for (let i = 0; i < ans.length; i++) {
+              const index = ans.charCodeAt(i) - 65;
+              targetAnswers[count][i] = options[index].innerText;
+              targetOptions[count][i] = options[index];
+            }
+          }
+        }
 
         if (targetAnswers[count].length === 0) {
           const ratings = answerSimilar(

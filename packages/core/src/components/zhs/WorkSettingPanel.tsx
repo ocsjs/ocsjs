@@ -3,21 +3,25 @@ import { createWorkerSetting } from '..';
 import { store } from '../../script';
 import { Tooltip } from '../Tooltip';
 
-// 根据上方 vnode 变量 ， 生成 jsx 的渲染函数
 export const WorkSettingPanel = defineComponent({
-  setup () {
+  setup (props, { slots }) {
     const settings = store.setting.zhs.work;
 
     return () => (
       <div class="ocs-setting-panel">
         <div class="ocs-setting-items">
-          {createWorkerSetting(
-            '作业提交',
-            {
-              selected: settings.upload
-            },
-            (e: any) => (settings.upload = e.target.value)
-          )}
+
+        {slots.upload
+          ? slots.upload()
+          : (
+              createWorkerSetting(
+                '作业提交',
+                {
+                  selected: settings.upload
+                },
+                (e: any) => (settings.upload = e.target.value)
+              )
+            )}
 
           <label>答题间隔(秒)</label>
           <div>
@@ -63,6 +67,7 @@ export const WorkSettingPanel = defineComponent({
               checked={settings.stopWhenError}
             ></input>
           </div>
+
         </div>
       </div>
     );

@@ -105,6 +105,7 @@ export const SearchResults = defineComponent({
                     class="search-results-title"
                     onMouseenter={() => (currentResult.value = res)}
                     style={{ color: res.result?.finish ? '' : 'red' }}
+                    title={res.ctx?.elements.title?.[0].innerText}
                   >
                     {StringUtils.of(title?.innerText || '')
                       .nowrap()

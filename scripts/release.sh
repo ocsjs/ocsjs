@@ -26,8 +26,8 @@ if [ "$isRelease" = "y" ]; then
     npm run build:core
     # 保存
     git add --all
-    git commit -m "version release $version"
     git tag "$version"
+    git commit -m "version release $version"
     # 发布
     npm publish
     echo "$version 发布成功"

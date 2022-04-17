@@ -1,4 +1,4 @@
-import { GlobPattern, DefineScript, ScriptPanel, ScriptRoute } from '../define.script';
+import { DefineScript, GlobPattern, ScriptPanel, ScriptRoute } from '../define.script';
 
 export async function sleep (period: number): Promise<void> {
   return new Promise((resolve) => {
@@ -82,4 +82,11 @@ export function addFunctionEventListener (obj: any, type: string) {
  */
 export function getNumber (...nums: number[]) {
   return nums.map((num) => (typeof num === 'number' ? num : undefined)).find((num) => num !== undefined);
+}
+
+/**
+ * 当前是否处于浏览器环境
+ */
+export function isInBrowser (): boolean {
+  return typeof window !== 'undefined' && typeof window.document !== 'undefined';
 }

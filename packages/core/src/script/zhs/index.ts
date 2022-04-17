@@ -1,13 +1,14 @@
-import { createNote, createSearchResultPanel, createTerminalPanel } from '../../components';
-import { defineScript } from '../../core/define.script';
-import { defaultSetting } from '../../scripts';
-import { creditStudy, study } from './study';
-import { sleep } from '../../core/utils';
-import { work } from './work';
-import { logger } from '../../logger';
 import { store } from '..';
+import { createNote, createSearchResultPanel, createTerminalPanel } from '../../components';
 import { StudySettingPanel } from '../../components/zhs/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/zhs/WorkSettingPanel';
+import { defineScript } from '../../core/define.script';
+import { sleep } from '../../core/utils';
+import { logger } from '../../logger';
+import { defaultSetting } from '../../scripts';
+import { CreditWorkSettingPanel } from './../../components/zhs/CreditWorkSettingPanel';
+import { creditStudy, study } from './study';
+import { creditWork, work } from './work';
 
 export const ZHSScript = defineScript({
   name: '知道智慧树',
@@ -36,7 +37,7 @@ export const ZHSScript = defineScript({
       }
     },
     {
-      name: '作业脚本',
+      name: '共享课作业脚本',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
       async onload (setting = store.setting.zhs.work) {
         await sleep(5000);
@@ -46,6 +47,20 @@ export const ZHSScript = defineScript({
         } else {
           /** 运行作业脚本 */
           await work(setting);
+        }
+      }
+    },
+    {
+      name: '学分课作业脚本',
+      url: '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**',
+      async onload (setting = store.setting.zhs.work) {
+        await sleep(5000);
+        if (store.setting.answererWrappers.length === 0) {
+          logger('error', '未设置题库配置！');
+          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+        } else {
+          /** 运行作业脚本 */
+          await creditWork(setting);
         }
       }
     }
@@ -100,13 +115,26 @@ export const ZHSScript = defineScript({
       el: () => createNote('点击任意作业可以使用作业功能', '注意: 考试功能暂未开放')
     },
     {
-      name: '作业助手',
+      name: '共享课作业助手',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
       el: () => createNote('进入 作业设置面板 可以调整作业设置', '5秒后自动开始作业...'),
       children: [
         {
           name: '作业设置',
           el: () => WorkSettingPanel
+        },
+        createTerminalPanel(),
+        createSearchResultPanel()
+      ]
+    },
+    {
+      name: '学分课作业助手',
+      url: '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**',
+      el: () => createNote('进入 作业设置面板 可以调整作业设置', '5秒后自动开始作业...'),
+      children: [
+        {
+          name: '作业设置',
+          el: () => CreditWorkSettingPanel
         },
         createTerminalPanel(),
         createSearchResultPanel()

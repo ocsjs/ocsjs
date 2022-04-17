@@ -1,4 +1,5 @@
 import get from 'lodash/get';
+import { isInBrowser } from '../utils';
 
 /** 题目答案 */
 export interface Answer {
@@ -121,7 +122,7 @@ export async function defaultAnswerWrapperHandler (
     } else {
       const params = new URLSearchParams();
       Reflect.ownKeys(data).forEach((key) => params.set(key.toString(), data[key.toString()]));
-      response = (await (typeof global === 'undefined' ? fetch : require('node-fetch').default)(
+      response = (await (isInBrowser() ? fetch : require('node-fetch').default)(
         url + '?' + params.toString(),
         {
           method: wrapper.method

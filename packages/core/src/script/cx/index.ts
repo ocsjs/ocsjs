@@ -18,7 +18,7 @@ const updateURLs = [
   '**/work/getAllWork**',
   '**/work/doHomeWorkNew**',
   '**/exam/test?**',
-  '**exam/test/reVersionTestStartNew**'
+  '**exam/test/reVersionTestStartNew**examsystem**'
 ];
 
 export const CXScript = defineScript({
@@ -38,6 +38,9 @@ export const CXScript = defineScript({
             } else {
               const params = new URLSearchParams(window.location.href);
               params.set('mooc2', '1');
+              // 兼容考试切换
+              params.set('newMooc', 'true');
+              params.delete('examsystem');
               window.location.replace(decodeURIComponent(params.toString()));
             }
           }
