@@ -19,7 +19,7 @@ export function defaultQuestionResolve<E> (
           const ans = StringUtils.nowrap(answer.answer).trim();
           if (ans.length === 1 && isPlainAnswer(ans)) {
             const index = ans.charCodeAt(0) - 65;
-            options[index].click();
+            handler('single', options[index].innerText, options[index], ctx);
             return { finish: true, option: options[index] };
           }
         }
