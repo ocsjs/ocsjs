@@ -1,7 +1,11 @@
 <div align="center">
+<<<<<<< HEAD
 
+=======
+  
+>>>>>>> d04b6bc3904ee68004996f965ae8e5b0a776ddec
 # OCS 网课助手
-
+ 
 > OCS (Online Course Script) 网课刷课脚本，帮助大学生解决网课难题
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/enncy/online-course-script?style=flat-square)
