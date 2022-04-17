@@ -1,3 +1,12 @@
+# [3.4.0](https://github.com/enncy/online-course-script/compare/3.3.14...3.4.0) (2022-04-17)
+
+
+### Features
+
+* 新增智慧树学分课作业脚本 ([978bf47](https://github.com/enncy/online-course-script/commit/978bf47feec507910ae62e0be60a79ffd8d46941))
+
+
+
 ## [3.3.14](https://github.com/enncy/online-course-script/compare/3.3.13...3.3.14) (2022-04-15)
 
 
