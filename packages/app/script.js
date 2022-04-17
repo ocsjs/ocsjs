@@ -87,7 +87,7 @@ process.on('message', async (message) => {
               console.log('注入题库配置: ', str);
               try {
                 // @ts-ignore
-                top.OCS.store.localStorage.setting.answererWrappers = JSON.parse(str)?.setting?.answererWrappers;
+                top.OCS.store.localStorage.setting.answererWrappers = JSON.parse(str)?.setting?.answererWrappers || [];
               } catch (e) {
                 console.log('注入失败: ', e);
               }
