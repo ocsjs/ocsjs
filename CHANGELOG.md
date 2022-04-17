@@ -1,3 +1,12 @@
+## [3.4.1](https://github.com/enncy/online-course-script/compare/3.4.0...3.4.1) (2022-04-17)
+
+
+### Bug Fixes
+
+* 修复ABCD纯答案直接点击的BUG ([9df1222](https://github.com/enncy/online-course-script/commit/9df1222dfa7569ee0995284cbc988ddda7c292bc))
+
+
+
 # [3.4.0](https://github.com/enncy/online-course-script/compare/3.3.14...3.4.0) (2022-04-17)
 
 
