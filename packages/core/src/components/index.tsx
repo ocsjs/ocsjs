@@ -1,12 +1,12 @@
 import { defineComponent, VNodeProps } from 'vue';
 import { ScriptPanelChild } from '../core/define.script';
 
-import { store } from '../script';
-import { Terminal } from './Terminal';
-import { SearchResults } from './SearchResults';
-import { Tooltip } from './Tooltip';
 import { StringUtils } from '../core/utils';
 import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
+import { store } from '../script';
+import { SearchResults } from './SearchResults';
+import { Terminal } from './Terminal';
+import { Tooltip } from './Tooltip';
 
 /**
  * 创建提示面板
@@ -78,7 +78,7 @@ export function createWorkerSetting (
       ];
 
   options = options.map((option) => {
-    if (option.value === config?.selected) {
+    if (config?.selected && option.value === config.selected) {
       option.selected = true;
     }
     return option;
