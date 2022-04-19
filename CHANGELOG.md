@@ -1,3 +1,14 @@
+## [3.4.2](https://github.com/enncy/online-course-script/compare/3.4.1...3.4.2) (2022-04-19)
+
+
+### Bug Fixes
+
+* 修复软件设置空白的BUG ([f757a3b](https://github.com/enncy/online-course-script/commit/f757a3b8ae6233eee6fd187471d866b7ec25028a))
+* 修复自动答题提交设置保存不了的BUG ([fb9bd39](https://github.com/enncy/online-course-script/commit/fb9bd394c246b7446173fba0d956431c300b6577))
+* app version upate ([505ce22](https://github.com/enncy/online-course-script/commit/505ce22fc11c799da5c22b6f183182ea0b43eb6d))
+
+
+
 ## [3.4.1](https://github.com/enncy/online-course-script/compare/3.4.0...3.4.1) (2022-04-17)
 
 
