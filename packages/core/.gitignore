@@ -3,6 +3,8 @@
 test/
 stats.html
 
+src/assets/css
+
 # Logs
 logs
 *.log
