@@ -11,7 +11,7 @@ import CXAnalyses from './utils';
 /**
  * cx 任务学习
  */
-export async function study (setting: ScriptSettings['cx']['video']) {
+export async function study(setting: ScriptSettings['cx']['video']) {
   logger('debug', '即将开始');
 
   const tasks = searchTask(setting);
@@ -53,7 +53,7 @@ export async function study (setting: ScriptSettings['cx']['video']) {
 /**
  * 搜索任务点
  */
-function searchTask (setting: ScriptSettings['cx']['video']): (() => Promise<void> | undefined)[] {
+function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void> | undefined)[] {
   return searchIFrame(document)
     .map((frame) => {
       const { media, ppt, chapterTest } = domSearch(
@@ -65,7 +65,7 @@ function searchTask (setting: ScriptSettings['cx']['video']): (() => Promise<voi
         frame.contentDocument || document
       );
 
-      function getJob () {
+      function getJob() {
         return media
           ? mediaTask(setting, media as any, frame)
           : ppt
@@ -121,7 +121,7 @@ function searchTask (setting: ScriptSettings['cx']['video']): (() => Promise<voi
 /**
  *  视频路线切换
  */
-export function switchPlayLine (
+export function switchPlayLine(
   setting: ScriptSettings['cx']['video'],
   videojs: HTMLElement,
   media: HTMLMediaElement,
@@ -144,7 +144,7 @@ export function switchPlayLine (
     logger('info', '切换路线中： ' + line);
     selectLine(line);
 
-    function selectLine (line: string) {
+    function selectLine(line: string) {
       for (const menu of menus) {
         if (menu.textContent?.includes(line)) {
           menu.click();
@@ -161,7 +161,7 @@ export function switchPlayLine (
 /**
  * 播放视频和音频
  */
-function mediaTask (setting: ScriptSettings['cx']['video'], media: HTMLMediaElement, frame: HTMLIFrameElement) {
+function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaElement, frame: HTMLIFrameElement) {
   const { playbackRate = 1, volume = 0 } = setting;
 
   // @ts-ignore
@@ -183,7 +183,7 @@ function mediaTask (setting: ScriptSettings['cx']['video'], media: HTMLMediaElem
       media.play();
       media.playbackRate = playbackRate;
 
-      function playFunction () {
+      function playFunction() {
         // @ts-ignore
         if (!media.ended && !media.__played__) {
           setTimeout(() => media.play(), 1000);
@@ -206,7 +206,7 @@ function mediaTask (setting: ScriptSettings['cx']['video'], media: HTMLMediaElem
 /**
  * 阅读 ppt
  */
-async function pptTask (frame?: HTMLIFrameElement) {
+async function pptTask(frame?: HTMLIFrameElement) {
   // @ts-ignore
   const finishJob = frame?.contentWindow?.finishJob;
   if (finishJob) finishJob();
@@ -216,8 +216,8 @@ async function pptTask (frame?: HTMLIFrameElement) {
 /**
  * 章节测验
  */
-async function chapterTestTask (setting: ScriptSettings['cx']['work'], frame: HTMLIFrameElement) {
-  const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
+async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTMLIFrameElement) {
+  const { period, timeout, retry } = defaults(setting, defaultSetting().work);
 
   if (store.setting.cx.video.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
@@ -271,7 +271,7 @@ async function chapterTestTask (setting: ScriptSettings['cx']['work'], frame: HT
       }
     },
     /** 处理cx作业判断题选项是图片的问题 */
-    onElementSearched (elements) {
+    onElementSearched(elements) {
       const typeInput = elements.type[0] as HTMLInputElement;
       const type = parseInt(typeInput.value);
       if (type === 3) {
@@ -292,7 +292,7 @@ async function chapterTestTask (setting: ScriptSettings['cx']['work'], frame: HT
        * 3 判断题
        * 4 填空题
        */
-      type ({ elements }) {
+      type({ elements }) {
         const typeInput = elements.type[0] as HTMLInputElement;
 
         const type = parseInt(typeInput.value);
@@ -309,7 +309,7 @@ async function chapterTestTask (setting: ScriptSettings['cx']['work'], frame: HT
                   : undefined;
       },
       /** 自定义处理器 */
-      handler (type, answer, option) {
+      handler(type, answer, option) {
         if (type === 'judgement' || type === 'single' || type === 'multiple') {
           if (!option.parentElement?.querySelector('input')?.checked) {
             // @ts-ignore
@@ -339,7 +339,7 @@ async function chapterTestTask (setting: ScriptSettings['cx']['work'], frame: HT
     period: (period || 3) * 1000,
     timeout: (timeout || 30) * 1000,
     retry,
-    stopWhenError
+    stopWhenError: false
   });
 
   const results = await worker.doWork();
@@ -350,7 +350,7 @@ async function chapterTestTask (setting: ScriptSettings['cx']['work'], frame: HT
   await worker.uploadHandler({
     uploadRate: store.setting.cx.video.upload,
     results,
-    async callback (finishedRate, uploadable) {
+    async callback(finishedRate, uploadable) {
       logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : ' 5秒后将自动保存');
 
       await sleep(5000);
@@ -365,7 +365,7 @@ async function chapterTestTask (setting: ScriptSettings['cx']['work'], frame: HT
         window.submitCheckTimes();
       } else {
         // @ts-ignore 禁止弹窗
-        window.alert = () => {};
+        window.alert = () => { };
         // @ts-ignore 暂时保存
         window.noSubmit();
       }

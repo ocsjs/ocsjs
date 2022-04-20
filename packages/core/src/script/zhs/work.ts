@@ -6,8 +6,8 @@ import { ScriptSettings } from '../../scripts';
 
 import { store } from '..';
 
-export async function work (setting: ScriptSettings['zhs']['work']) {
-  const { period, timeout, retry, stopWhenError } = setting;
+export async function work(setting: ScriptSettings['zhs']['work']) {
+  const { period, timeout, retry } = setting;
 
   if (setting.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
@@ -34,7 +34,7 @@ export async function work (setting: ScriptSettings['zhs']['work']) {
       defaultAnswerWrapperHandler(store.setting.answererWrappers, type, elements.title[0].innerText),
     work: {
       /** 自定义处理器 */
-      handler (type, answer, option) {
+      handler(type, answer, option) {
         if (type === 'judgement' || type === 'single' || type === 'multiple') {
           if (!option.querySelector('input')?.checked) {
             option.click();
@@ -60,7 +60,7 @@ export async function work (setting: ScriptSettings['zhs']['work']) {
     period: (period || 3) * 1000,
     timeout: (timeout || 30) * 1000,
     retry,
-    stopWhenError
+    stopWhenError: false
   });
 
   const results = await worker.doWork();
@@ -71,7 +71,7 @@ export async function work (setting: ScriptSettings['zhs']['work']) {
   await worker.uploadHandler({
     uploadRate: setting.upload,
     results,
-    async callback (finishedRate, uploadable) {
+    async callback(finishedRate, uploadable) {
       logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : '5秒后将自动保存');
 
       await sleep(5000);
@@ -126,7 +126,7 @@ export async function creditWork(setting: ScriptSettings['zhs']['work']) {
     },
     work: {
       /** 自定义处理器 */
-      handler (type, answer, option, ctx) {
+      handler(type, answer, option, ctx) {
         if (type === 'judgement' || type === 'single' || type === 'multiple') {
           if (option.querySelector('input')?.checked === false) {
             option.click();

@@ -124,7 +124,7 @@ export const StudySettingPanel = defineComponent({
             </Tooltip>
           </div>
 
-          <label>搜题请求重试次数</label>
+          <label>搜题超时重试次数</label>
           <div>
             <input
               type="number"
@@ -134,17 +134,6 @@ export const StudySettingPanel = defineComponent({
               step="1"
               onChange={(e: any) => {
                 store.setting.cx.work.retry = e.target.valueAsNumber;
-              }}
-            />
-          </div>
-
-          <label>发生错误时暂停答题</label>
-          <div>
-            <input
-              type="checkbox"
-              checked={store.setting.cx.work.stopWhenError}
-              onChange={(e: any) => {
-                store.setting.cx.work.stopWhenError = e.target.checked;
               }}
             />
           </div>

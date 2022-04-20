@@ -1,16 +1,16 @@
 import defaults from 'lodash/defaults';
-import { logger } from '../../logger';
+import { store } from '..';
 import { domSearch, sleep, StringUtils } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
+import { logger } from '../../logger';
 import { defaultSetting, ScriptSettings } from '../../scripts';
-import { store } from '..';
 
-export async function workOrExam (
+export async function workOrExam(
   setting: ScriptSettings['cx']['work'] | ScriptSettings['cx']['exam'],
   isExam: boolean
 ) {
-  const { period, timeout, retry, stopWhenError } = defaults(setting, defaultSetting().work);
+  const { period, timeout, retry } = defaults(setting, defaultSetting().work);
 
   if (setting.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
@@ -54,7 +54,7 @@ export async function workOrExam (
        * 3 判断题
        * 4 填空题
        */
-      type ({ elements }) {
+      type({ elements }) {
         const typeInput = elements.type[0] as HTMLInputElement;
         const type = parseInt(typeInput.value);
         return type === 0
@@ -70,7 +70,7 @@ export async function workOrExam (
                   : undefined;
       },
       /** 自定义处理器 */
-      handler (type, answer, option) {
+      handler(type, answer, option) {
         if (type === 'judgement' || type === 'single' || type === 'multiple') {
           if (option.parentElement?.querySelector('.check_answer,.check_answer_dx') === null) {
             option.click();
@@ -100,7 +100,7 @@ export async function workOrExam (
     period: (period || 3) * 1000,
     timeout: (timeout || 30) * 1000,
     retry,
-    stopWhenError
+    stopWhenError: false
   });
 
   const results = await worker.doWork();
@@ -111,7 +111,7 @@ export async function workOrExam (
   await worker.uploadHandler({
     uploadRate: setting.upload,
     results,
-    async callback (finishedRate, uploadable) {
+    async callback(finishedRate, uploadable) {
       if (isExam) {
         logger('info', '为了安全考虑，请自行检查后自行点击提交！');
       } else {

@@ -11,9 +11,9 @@ export interface Setting {
     restudy: boolean
   }
   work: Record<string, any> &
-  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry' | 'stopWhenError'> & { upload: string }
+  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string }
   exam: Record<string, any> &
-  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry' | 'stopWhenError'> & { upload: string }
+  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string }
 }
 
 export type SupportPlatform = 'zhs' | 'cx'
@@ -31,7 +31,7 @@ export const defaultOCSSetting = {
 /**
  * 默认设置
  */
-export function defaultSetting (): Setting {
+export function defaultSetting(): Setting {
   return {
     video: {
       watchTime: 0,

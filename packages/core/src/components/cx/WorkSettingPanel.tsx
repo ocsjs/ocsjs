@@ -44,7 +44,7 @@ export const WorkSettingPanel = defineComponent({
             </Tooltip>
           </div>
 
-          <label>搜题请求重试次数</label>
+          <label>搜题超时重试次数</label>
           <div>
             <input
               type="number"
@@ -58,16 +58,6 @@ export const WorkSettingPanel = defineComponent({
             />
           </div>
 
-          <label>发生错误时暂停答题</label>
-          <div>
-            <input
-              type="checkbox"
-              checked={settings.stopWhenError}
-              onChange={(e: any) => {
-                settings.stopWhenError = e.target.checked;
-              }}
-            />
-          </div>
         </div>
       </div>
     );
