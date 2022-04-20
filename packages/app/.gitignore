@@ -5,6 +5,9 @@ extensions/**
 extensions
 *.local.test.js
 
+## 测试文件
+tests/
+
 pnpm-lock.yaml
 package-lock.json
 
