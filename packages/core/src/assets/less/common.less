@@ -147,6 +147,33 @@ ocs-panel {
             text-align: center;
         }
 
+        /** check box 的样式 */
+        input[type="checkbox"]{
+            appearance: none;
+            width: 32px;
+            height: 16px;
+            background: #c5c5c5;
+            border-radius: 100px;
+            display: flex;
+            align-items: center;
+            padding: 0px 2px;
+            transition: all .2s ease-in-out;
+  
+            &:checked {
+                background: #1890ff !important;
+                justify-content: flex-end;
+            }
+            &::before{
+                background-color: #fff;
+                border-radius: 9px;
+                box-shadow: 0 2px 4px #00230b33;
+
+                width: 12px;
+                height: 12px;
+                content: "";
+            }
+        }
+
         input:not([type="checkbox"], [type="radio"]) {
             width: 100%;
         }
