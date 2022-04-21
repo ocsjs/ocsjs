@@ -1,3 +1,12 @@
+## [3.4.3](https://github.com/enncy/online-course-script/compare/3.4.2...3.4.3) (2022-04-21)
+
+
+### Bug Fixes
+
+* 删除无用的选项：搜题错误时暂停 ([e30446c](https://github.com/enncy/online-course-script/commit/e30446c2627e628a8aa1c4bb7843c32734131e80))
+
+
+
 ## [3.4.2](https://github.com/enncy/online-course-script/compare/3.4.1...3.4.2) (2022-04-19)
 
 
