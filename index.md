@@ -1,3 +1,6 @@
+---
+title: OCS 网课助手
+---
 # ocs 网课助手使用方法
 
 如果仅仅个人使用，可以查看  [脚本教程](https://enncy.github.io/online-course-script/script)
