@@ -1,8 +1,8 @@
 # ocs 网课助手使用方法
 
-如果仅仅个人使用，可以查看  [脚本教程](#https://enncy.github.io/online-course-script/script)
+如果仅仅个人使用，可以查看  [脚本教程](https://enncy.github.io/online-course-script/script)
 
-如果想要管理账号，浏览器多开，自动登录等更多功能使用，请查看 [软件教程](#https://enncy.github.io/online-course-script/app) 
+如果想要管理账号，浏览器多开，自动登录等更多功能使用，请查看 [软件教程](https://enncy.github.io/online-course-script/app) 
 
 如果想要自动答题功能，请看 [自动答题教程](https://enncy.github.io/online-course-script/answerer-wrappers)
 
