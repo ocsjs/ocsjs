@@ -15,7 +15,7 @@ export const WorkSettingPanel = defineComponent({
           ? slots.upload()
           : (
               createWorkerSetting(
-                '作业提交',
+                '自动答题',
                 {
                   selected: settings.upload
                 },

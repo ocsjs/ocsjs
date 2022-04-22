@@ -11,7 +11,7 @@ export const ExamSettingPanel = defineComponent({
       <div class="ocs-setting-panel">
         <div class="ocs-setting-items">
           {createWorkerSetting(
-            '考试提交',
+            '自动答题',
             {
               selected: 'close',
               options: [

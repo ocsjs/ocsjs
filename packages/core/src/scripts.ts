@@ -37,7 +37,8 @@ export function defaultSetting(): Setting {
       watchTime: 0,
       playbackRate: 1,
       restudy: false,
-      volume: 0
+      volume: 0,
+      upload: 'close'
     },
     work: {
       period: 3,

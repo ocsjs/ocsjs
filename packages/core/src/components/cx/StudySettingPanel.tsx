@@ -91,7 +91,7 @@ export const StudySettingPanel = defineComponent({
           <hr />
           <hr />
           {createWorkerSetting(
-            '章节测试',
+            '自动答题',
             { selected: settings.upload },
             (e: any) => (settings.upload = e.target.value)
           )}

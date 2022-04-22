@@ -78,7 +78,8 @@ export function createWorkerSetting (
       ];
 
   options = options.map((option) => {
-    if (config?.selected && option.value === config.selected) {
+    config.selected = config?.selected || 'close';
+    if (option.value === config.selected || String(option.value) === config.selected) {
       option.selected = true;
     }
     return option;
