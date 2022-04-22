@@ -1,4 +1,6 @@
-# OCS 软件使用教程
+---
+title: OCS 网课助手 - 软件教程
+---
 
 ## 软件下载
  
@@ -6,13 +8,13 @@
 
 ## 介绍
 
-OCS 软件定义了以 .ocs 为后缀的文件， 里面是可供OCS软件解析的数据，这个文件可以用来执行浏览器的打开以及简单的登录脚本。
+OCS 软件定义了以 .ocs 为后缀的文件， 里面是可供OCS软件解析的数据，这个文件可以用来执行浏览器的打开以及简单的登录脚本，登录后软件会自动运行 OCS 网课助手的脚本。
 
 软件的目的是为了管理多个账号的网课，如果你有超星，智慧树，等多个网课的账号想要管理，则推荐使用软件。
 
-如果仅仅只有一门，那么还是推荐使用油猴比较好。
+如果仅仅只有一门，那么还是推荐看 [`OCS 网课助手 - 脚本教程`](https://enncy.github.io/online-course-script/script) 比较好。
 
-## 使用
+## 使用方法
 
 1. 左上角 => 设置 => [软件设置-指定浏览器](#软件设置-指定浏览器)
 
@@ -42,11 +44,8 @@ OCS 软件定义了以 .ocs 为后缀的文件， 里面是可供OCS软件解析
 ### 软件设置-默认题库配置
 > 如果有自动答题的需要，请在设置里面设置好答题配置
 
->  只需要在软件设置修改这个设置，脚本里面会自动获取，不需要重复配置，否则页面刷新后会被清空。
+> 只需要在软件设置修改这个设置，脚本里面会自动获取，不需要重复配置，否则页面刷新后会被清空。
 
 更多题库配置教程查看： [https://enncy.github.io/online-course-script/answerer-wrappers](https://enncy.github.io/online-course-script/answerer-wrappers)
-
-## 主教程
-
-[https://github.com/enncy/online-course-script/](https://github.com/enncy/online-course-script/)
+ 
 
