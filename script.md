@@ -1,82 +1,62 @@
----
-title: 油猴脚本链接打不开的解决方法
----
 
-1. 如果打不开链接，那么就只能点击右上角的油猴，打开管理面板
+# 脚本教程
 
+> `简介`: OCS 助手支持使用油猴浏览器拓展运行网页脚本。
 
-![image](https://user-images.githubusercontent.com/50533276/161479264-6fc17fad-5e01-4724-b4ff-04b22cff7306.png)
+> `优点`：不需要重复输入代码，只需新建脚本保存即可
 
-
-
-![image](https://user-images.githubusercontent.com/50533276/161479300-22737603-5f09-43f9-b87c-a6805f41a35c.png)
-
-2. 点击右上角的加号图标，添加新的脚本。
-
-![image](https://user-images.githubusercontent.com/50533276/161479346-878713c1-1d93-4140-b75e-630b4f4c8ad3.png)
+> `缺点`：需要安装油猴拓展
 
 
-3. 然后删除里面的所有代码
+## 脚本预览
 
-![image](https://user-images.githubusercontent.com/50533276/161479368-ace42a84-7f3c-4fad-9b02-88d93de0bfd0.png)
-
-
-5. 复制下面的代码，到新建的脚本里面
-6. 按下快捷键 `ctrl+s` 保存即可
-
-
-
-8. 注意，此方法脚本不会实时更新，你必须定时查看此页面的代码，然后把最新的代码重复的方式复制进去。
-
-油猴源代码，不定时更新，实在访问不了油猴脚本的的情况下，才使用此方法。
-
-```js
-// ==UserScript==
-// @name         OCS 网课助手
-// @namespace    https://enncy.cn
-// @license      MIT
-// @version      3.3.12
-// @description  ocs 网课助手，支持各平台网课学习，支持超星学习通，知道智慧树，等网课的学习，作业，考试功能。
-// @author       enncy
-// @match        *://*.chaoxing.com/*
-// @match        *://*.edu.cn/*
-// @match        *://*.org.cn/*
-// @match        *://*.zhihuishu.com/*
-// @require      https://cdn.jsdelivr.net/npm/ocsjs@3.3.12/dist/index.min.js
-// @resource      OCS_STYLE https://cdn.jsdelivr.net/npm/ocsjs@3.3.12/dist/style.css
-// @grant        unsafeWindow
-// @grant        GM_getResourceText
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @run-at       document-start
-// ==/UserScript==
-
-/* eslint no-undef: 0 */
-
-(async function () {
-    "use strict";
-
-    // 加载 bootstrap icons 图标样式
-    const link = document.createElement("link");
-    link.href = "https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css";
-    link.rel = "stylesheet";
-    link.type = "text/css";
-    document.head.appendChild(link);
-
-    const style = document.createElement("style");
-    style.innerHTML = GM_getResourceText("OCS_STYLE");
-    document.head.appendChild(style);
-
-    /** 将OCS对象加入到全局属性 */
-    unsafeWindow.OCS = OCS;
+<div style="display: flex">
+ <img src="https://user-images.githubusercontent.com/50533276/163658182-6479c0c7-0933-4b4f-915d-5315e7b4fa1c.png" width="43%" height="300px">
+ <img src="https://user-images.githubusercontent.com/50533276/163658186-16399de1-8776-4961-b0e5-550b0290da29.png" width="56%" height="300px">
+</div>
+ 
 
 
-    OCS.start({
-        // 支持拖动
-        draggable: true,
-        // 加载默认脚本列表，默认 OCS.definedScripts
-        scripts: OCS.definedScripts,
-    });
-})();
+## 第一步
 
-```
+打开你的浏览器，安装油猴浏览器拓展， 安装途径有如下：
+
+-   [油猴官网 www.tampermonkey.net](https://www.tampermonkey.net/) 
+
+点击官网的左边油猴下载
+
+![image](https://user-images.githubusercontent.com/50533276/162660285-063771a2-b923-46e7-a9eb-ddaf513944af.png)
+
+
+-   [谷歌浏览器网上商店(需翻墙)  chrome.google.com](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
+-   [Edge 浏览器网上商店 microsoftedge.microsoft.com](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)   
+
+安装失败的话查看手动安装教程： [https://enncy.github.io/online-course-script/tampermonkey](https://enncy.github.io/online-course-script/tampermonkey)
+
+## 第二步
+
+打开以下任意链接：
+
+- OCS网课助手 脚本安装地址1(greasyfork) [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
+
+- OCS网课助手 脚本安装地址2(脚本猫) [https://scriptcat.org/script-show-page/367](https://scriptcat.org/script-show-page/367)
+
+如果打不开链接，请看教程：[https://enncy.github.io/online-course-script/script](https://enncy.github.io/online-course-script/script)
+
+## 第三步
+
+点击绿色按钮安装
+![image](https://user-images.githubusercontent.com/50533276/162660627-ed7eddce-ce37-4f2a-9d0b-67e3b1ce4707.png)
+![image](https://user-images.githubusercontent.com/50533276/162660722-ceeeec1e-d154-48f9-a077-a0e04a89e038.png)
+
+## 第四步
+
+打开任意的 [`网课平台`](#支持的网课平台) 
+
+## 第五步
+
+等待页面上出现提示面板 （一个白色的小框框，一般在屏幕正中间）
+
+## 第六步
+
+根据面板提示操作，进入学习，作业考试页面即可自动运行。
