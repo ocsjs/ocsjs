@@ -7,14 +7,6 @@
 如果想要自动答题功能，请看 [自动答题教程](https://enncy.github.io/online-course-script/answerer-wrappers)
 
 *** 
-
-其他
--   [功能列表](https://enncy.github.io/online-course-script/feat-list)
--   [项目开发](https://enncy.github.io/online-course-script/api)
--   [赞助名单](https://enncy.github.io/online-course-script/sponsors)
--   [疑难问答](https://enncy.github.io/online-course-script/FQA)
--   [更新日志](https://github.com/enncy/online-course-script/blob/3.0/CHANGELOG.md)
--   [交流群](#交流群)
  
 # 支持的网课平台
 
