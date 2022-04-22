@@ -3,7 +3,9 @@ title: OCS 网课助手 - 脚本教程
 ---
 
 OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个人去运行各种网课的学习，作业，考试等功能。
-  
+
+* TOC
+{:toc}
 
 ## 脚本预览
 
@@ -14,7 +16,7 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
  
 
 
-## 第一步
+## 第一步 安装油猴
 
 打开你的浏览器，安装油猴浏览器拓展， 安装途径有如下：
 
@@ -30,7 +32,7 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 
 安装失败的话查看手动安装教程： [https://enncy.github.io/online-course-script/tampermonkey](https://enncy.github.io/online-course-script/tampermonkey)
 
-## 第二步
+## 第二步 打开脚本链接
 
 打开以下任意链接：
 
@@ -40,20 +42,20 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 
 如果打不开链接，请看教程：[https://enncy.github.io/online-course-script/script](https://enncy.github.io/online-course-script/script)
 
-## 第三步
+## 第三步 安装脚本
 
 点击绿色按钮安装
 ![image](https://user-images.githubusercontent.com/50533276/162660627-ed7eddce-ce37-4f2a-9d0b-67e3b1ce4707.png)
 ![image](https://user-images.githubusercontent.com/50533276/162660722-ceeeec1e-d154-48f9-a077-a0e04a89e038.png)
 
-## 第四步
+## 第四步 进入网课页面
 
 打开任意的 [`网课平台`](#支持的网课平台) 
 
-## 第五步
+## 第五步 等待加载
 
 等待页面上出现提示面板 （一个白色的小框框，一般在屏幕正中间）
 
-## 第六步
+## 第六步 跟随提示使用
 
 根据面板提示操作，进入学习，作业考试页面即可自动运行。
