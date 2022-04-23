@@ -1,3 +1,12 @@
+## [3.4.4](https://github.com/enncy/online-course-script/compare/3.4.3...3.4.4) (2022-04-22)
+
+
+### Bug Fixes
+
+* 修复提交设置的BUG ([612dccc](https://github.com/enncy/online-course-script/commit/612dcccc40bec2871cccf92bb46c2210da76623e))
+
+
+
 ## [3.4.3](https://github.com/enncy/online-course-script/compare/3.4.2...3.4.3) (2022-04-21)
 
 
