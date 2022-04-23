@@ -3,15 +3,27 @@ import { reactive, watch } from 'vue';
 import { fs, showFile } from '../components/file/File';
 import { Project } from '../components/project';
 import { remote } from '../utils/remote';
+import { FileNode } from './../components/file/File';
 const { ipcRenderer } = require('electron');
 const Store = require('electron-store');
 const { getValidBrowserPaths } = require('@ocsjs/common') as typeof import('@ocsjs/common');
 
 const s = new Store();
 
+/** 工作区数据 */
+export const workspace = reactive<{
+  projects: Project[],
+  opened: FileNode[]
+}>({
+  projects: [],
+  /** 打开的文件 */
+  opened: []
+});
+
 export const store = reactive({
   name: s.get('name'),
   version: s.get('version'),
+  // 工作路径
   workspace: s.get('workspace'),
   'config-path': s.get('config-path'),
   'user-data-path': s.get('user-data-path'),
@@ -74,28 +86,28 @@ watch(() => store.win.size, setZoomFactor);
 
 /** 监听打开的文件，保留工作区打开的文件 */
 watch(
-  () => Project.opened.value.length,
+  () => workspace.opened.length,
   () => {
-    store.files = Project.opened.value.map((file) => file.path);
+    store.files = workspace.opened.map((file) => file.path);
   }
 );
 
-function autoLaunch () {
+function autoLaunch() {
   remote.methods.call('autoLaunch');
 }
 
-function setZoomFactor () {
+function setZoomFactor() {
   remote.webContents.call('setZoomFactor', store.win.size);
 }
 
-function handleFile (file: string) {
+function handleFile(file: string) {
   if (fs.existsSync(String(file))) {
-    Project.opened.value.push(Project.createFileNode(String(file)));
+    workspace.opened.push(Project.createFileNode(String(file)));
 
     // 显示文件
-    const len = Project.opened.value.length;
+    const len = workspace.opened.length;
     if (len) {
-      showFile(Project.opened.value[len - 1]);
+      showFile(workspace.opened[len - 1]);
     }
   }
 }
@@ -103,7 +115,7 @@ function handleFile (file: string) {
 /**
  * 处理打开的文件
  */
-function initOpenFiles () {
+function initOpenFiles() {
   store.files = Array.from(new Set(store.files));
   for (const file of store.files) {
     handleFile(String(file));

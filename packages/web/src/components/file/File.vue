@@ -3,11 +3,13 @@
     <div class="file">
       <div class="form-header text-start border-bottom">
         <div class="file-title">
-          <a-space>
-            <span>
-              {{ file.title }}
-            </span>
-
+          <span>
+            {{ file.title }}
+          </span>
+          <a-space
+            class="actions"
+            :size="12"
+          >
             <a
               class="link"
               @click="closeEditor"
@@ -16,11 +18,6 @@
               class="link"
               @click="openEditor"
             >打开</a>
-          </a-space>
-          <a-space
-            class="actions"
-            :size="12"
-          >
             <Icon
               title="设置"
               type="icon-edit-square"
@@ -165,6 +162,7 @@
       <div class="error-message w-100">
         <a-space>
           <span>解析文件时第 {{ data.error?.line }} 行发生错误:</span>
+
           <a
             class="link"
             @click="closeEditor"
@@ -174,7 +172,7 @@
             @click="openEditor"
           >打开</a>
         </a-space>
-        <pre>{{ data.error?.message }}</pre>
+        <pre style="color: red;">{{ data.error?.message }}</pre>
 
         <CodeHighlight
           class="json-editor border rounded overflow-auto"
@@ -188,20 +186,19 @@
 </template>
 
 <script setup lang="ts">
-import { toRefs, computed, ref, watch, reactive, onUnmounted } from 'vue';
-import { FileNode, fs, validFileContent } from './File';
-import { scriptForms, Form } from '.';
-import CodeHighlight from '../CodeHighlight.vue';
 import { LaunchScriptsOptions } from '@ocsjs/scripts';
-import { debounce } from '../../utils/index';
-import Terminal from '../terminal/Terminal.vue';
-import Card from '../Card.vue';
-import { store } from '../../store';
-import Icon from '../Icon.vue';
-import { Process } from '../terminal/process';
-import { ITerminal } from '../terminal';
-import { Project } from '../project';
 import { message } from 'ant-design-vue';
+import { computed, onUnmounted, reactive, ref, toRefs, watch } from 'vue';
+import { Form, scriptForms } from '.';
+import { store, workspace } from '../../store';
+import { debounce } from '../../utils/index';
+import Card from '../Card.vue';
+import CodeHighlight from '../CodeHighlight.vue';
+import Icon from '../Icon.vue';
+import { ITerminal } from '../terminal';
+import { Process } from '../terminal/process';
+import Terminal from '../terminal/Terminal.vue';
+import { FileNode, fs, validFileContent } from './File';
 const { scriptNames } = require('@ocsjs/scripts');
 const childProcess = require('child_process') as typeof import('child_process');
 
@@ -220,6 +217,7 @@ if (typeof result === 'string') {
 } else {
   error = result.error;
 }
+console.log('data.options', options);
 
 const data = reactive<{
   activeKey: 'setting' | 'terminal' | 'content'
@@ -316,11 +314,11 @@ function run () {
 }
 
 function closeEditor () {
-  Project.opened.value = Project.opened.value.filter((f) => f.path !== file.value.path);
+  workspace.opened = workspace.opened.filter((f) => f.path !== file.value.path);
   /** 切换编辑到最后一个文件 */
-  const len = Project.opened.value.length;
+  const len = workspace.opened.length;
   if (len) {
-    Project.opened.value[len - 1].stat.show = true;
+    workspace.opened[len - 1].stat.show = true;
   }
 }
 

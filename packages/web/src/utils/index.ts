@@ -8,7 +8,7 @@ const { OCSApi } = require('@ocsjs/common') as typeof import('@ocsjs/common');
  * @param fn 方法
  * @param period 间隔
  */
-export function debounce (fn: Function, period: number) {
+export function debounce(fn: Function, period: number) {
   let timer: number | null = null;
   return function () {
     if (timer !== null) {
@@ -22,7 +22,7 @@ export function debounce (fn: Function, period: number) {
  * 检测 json 语法
  * @param jsonString json 字符串
  */
-export function jsonLint (jsonString: string) {
+export function jsonLint(jsonString: string) {
   try {
     JSON.parse(jsonString);
   } catch (e) {
@@ -46,7 +46,7 @@ export function jsonLint (jsonString: string) {
   }
 }
 
-export function formatDate () {
+export function formatDate() {
   const date = new Date();
   return [
     date.getFullYear(),
@@ -59,7 +59,7 @@ export function formatDate () {
  * 获取远程通知
  * @param readAll 是否阅读全部
  */
-export async function fetchRemoteNotify (readAll: boolean) {
+export async function fetchRemoteNotify(readAll: boolean) {
   try {
     const infos = await OCSApi.getInfos();
 
@@ -108,12 +108,12 @@ export async function fetchRemoteNotify (readAll: boolean) {
               ])
             )
           ),
-        onOk () {
+        onOk() {
           if (!readAll) {
             store.notify = [...store.notify].concat(remoteNotify);
           }
         },
-        onCancel () {}
+        onCancel() { }
       });
     }
   } catch (e) {

@@ -21,12 +21,12 @@
             v-model:open-search="openSearch"
             v-model:search-value="searchValue"
             :title="title"
-            :root-node="rootNode"
+            :root-path="rootPath"
             :expend="isActive"
           />
         </template>
         <!-- 项目文件列表 -->
-        <template v-if="rootNode?.children?.length === 0 || files?.length === 0">
+        <template v-if="files?.length === 0">
           <div
             style="font-size: 11px"
             class="text-center p-1 text-secondary"
@@ -45,15 +45,16 @@
           </template>
           <template v-else>
             <!--
-                            - 可以通过 node.children 或者 files 指定文件
-                            - 如果 rootNode 为空，则此项目为虚拟路径项目，不存在实体父文件夹
-                         -->
+                - 可以通过 node.children 或者 files 指定文件
+                - 如果 rootNode 为空，则此项目为虚拟路径项目，不存在实体父文件夹
+            -->
             <FileTree
               v-model:expandedKeys="expandedKeys"
               :draggable="true"
-              :files="rootNode?.children || files || []"
+              :files="files"
               @expand="onExpand"
               @select="onSelect"
+              @update:files="onFilesUpdate"
             />
           </template>
         </template>
@@ -64,30 +65,31 @@
 
 <script setup lang="ts">
 import { ref, toRefs, watch } from 'vue';
-import { FileNode, showFile } from '../File/File';
-import Icon from '../Icon.vue';
-import FileTree from '../file/FileTree.vue';
-import ProjectHeader from './ProjectHeader.vue';
 import { store } from '../../store';
+import { FileNode, flatFiles, showFile } from '../File/File';
+import FileTree from '../file/FileTree.vue';
+import Icon from '../Icon.vue';
+import ProjectHeader from './ProjectHeader.vue';
 
 interface FileTreeProps {
   /** 项目标题 */
   title: string
   /**
-   * 指定 rootNode ，则此项目为实体路径项目，存在父文件夹
-   */
-  rootNode?: FileNode
-  /**
    * 指定 files 则此项目为虚拟路径项目，不存在实体父文件夹
    */
-  files?: FileNode[]
+  files: FileNode[]
+  /** 根路径 */
+  rootPath?:string
 }
 const props = withDefaults(defineProps<FileTreeProps>(), {
   files: undefined,
-  rootNode: undefined
+  rootPath: undefined
 });
+const emits = defineEmits<{
+  (e:'update:files', files: FileNode[]):void
+}>();
 
-const { rootNode, files, title } = toRefs(props);
+const { files, title } = toRefs(props);
 
 const activeKey = ref([title.value]);
 
@@ -100,30 +102,40 @@ const searchValue = ref('');
 // 展开的节点
 const expandedKeys = ref<string[]>(store.expandedKeys);
 
+// 文件改变监听
+function onFilesUpdate(files:FileNode[]) {
+  emits('update:files', files);
+}
+
 /** 节点展开 */
 function onExpand (keys: string[], { node }: { expanded: boolean; node: any }) {
-  const fileNode = node.dataRef as FileNode;
+  const fileNode: FileNode | undefined = flatFiles(files.value).find(f => f.path === node.dataRef.path);
+  if (fileNode) {
   /**
    *  当父文件夹收回时，其所有的子文件夹也应该收回
    */
-  expandedKeys.value = expandedKeys.value.filter((key) => key.length <= fileNode.path.length);
-  /** 保存 */
-  store.expandedKeys = expandedKeys.value;
+    expandedKeys.value = expandedKeys.value.filter((key) => key.length <= fileNode.path.length);
+    /** 保存 */
+    store.expandedKeys = expandedKeys.value;
+  }
 }
 
 /** 节点选中 */
 
 function onSelect (keys: string[], e: { selected: boolean; selectedNodes: any[]; node: any; event: any }) {
-  const file: FileNode = e.node.dataRef;
+  const file: FileNode | undefined = flatFiles(files.value).find(f => f.path === e.node.dataRef.path);
+
   /** 选中文件夹，则展开 */
-  if (file.stat.isDirectory) {
-    if (e.selected) {
-      expandedKeys.value = expandedKeys.value.filter((path) => path !== (e.node.dataRef as FileNode).path);
+  if (file) {
+    if (file.stat.isDirectory) {
+      if (e.selected) {
+        expandedKeys.value = expandedKeys.value.filter((path) => path !== (e.node.dataRef as FileNode).path);
+      } else {
+        expandedKeys.value.push((e.node.dataRef as FileNode).path);
+      }
     } else {
-      expandedKeys.value.push((e.node.dataRef as FileNode).path);
+      showFile(file);
     }
-  } else {
-    showFile(file);
   }
 }
 
@@ -133,7 +145,7 @@ function onSelect (keys: string[], e: { selected: boolean; selectedNodes: any[];
 watch(searchValue, (value) => {
   resultList.value = [];
   if (value) {
-    let _files: FileNode[] = JSON.parse(JSON.stringify(rootNode?.value?.children || files?.value));
+    let _files: FileNode[] = JSON.parse(JSON.stringify(files.value));
     while (_files.length !== 0) {
       const item = _files.shift();
 

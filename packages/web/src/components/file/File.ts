@@ -1,9 +1,9 @@
 import { Modal } from 'ant-design-vue';
 import { h } from 'vue';
 import { config } from '../../config';
+import { workspace } from '../../store';
 import { jsonLint } from '../../utils';
 import Description from '../Description.vue';
-import { Project } from '../project';
 const fs = require('fs') as typeof import('fs');
 const fsExtra = require('fs-extra') as typeof import('fs-extra');
 const path = require('path') as typeof import('path');
@@ -53,7 +53,7 @@ export interface FileNode {
  * @param rootPath 父目录
  * @param name 名字模板, 例如 新建文件夹($count) , $count - 序号占位符
  */
-export function validFileName (rootPath: string, name: string) {
+export function validFileName(rootPath: string, name: string) {
   if (!name.includes('$count')) throw new Error('名字模板未带有序号占位符 - $count');
   let count = 0;
   let p = '';
@@ -71,7 +71,7 @@ export function validFileName (rootPath: string, name: string) {
  * @param files 文件源
  * @param handlers 处理器
  */
-export function loopFiles (files: FileNode[], ...handlers: { (files: FileNode[]): FileNode[] }[]) {
+export function loopFiles(files: FileNode[], ...handlers: { (files: FileNode[]): FileNode[] }[]) {
   for (const handler of handlers) {
     files = handler(files);
   }
@@ -92,7 +92,7 @@ export function loopFiles (files: FileNode[], ...handlers: { (files: FileNode[])
  * 扁平化目录结构
  * @param files 文件源
  */
-export function flatFiles (files: FileNode[]): FileNode[] {
+export function flatFiles(files: FileNode[]): FileNode[] {
   let _files: FileNode[] = Array.from(JSON.parse(JSON.stringify(files)));
   const flat = [] as FileNode[];
   while (_files.length !== 0) {
@@ -112,17 +112,17 @@ export function flatFiles (files: FileNode[]): FileNode[] {
  * 在 parent 下创建文件
  * @param parent
  */
-export function createFile (parent: FileNode) {
-  const newFilePath = validFileName(parent.path, '新建OCS文件($count).ocs');
-  fs.writeFileSync(newFilePath, config.ocsFileTemplate(parent.uid));
+export function createFile(parentPath: string, uid?: string) {
+  const newFilePath = validFileName(parentPath, '新建OCS文件($count).ocs');
+  fs.writeFileSync(newFilePath, config.ocsFileTemplate(uid));
 }
 
 /**
  * 在 parent 下创建文件夹
  * @param parent
  */
-export function mkdir (parent: FileNode) {
-  const newDirPath = validFileName(parent.path, '新建文件夹($count)');
+export function mkdir(parentPath: string) {
+  const newDirPath = validFileName(parentPath, '新建文件夹($count)');
   fs.mkdirSync(newDirPath);
 }
 
@@ -130,7 +130,7 @@ export function mkdir (parent: FileNode) {
  * 显示详情属性
  * @param file 文件节点
  */
-export function detail (file: FileNode) {
+export function detail(file: FileNode) {
   Modal.info({
     title: () => '文件属性',
     mask: false,
@@ -148,7 +148,7 @@ export function detail (file: FileNode) {
       ])
   });
 
-  function desc (label: string, desc: string) {
+  function desc(label: string, desc: string) {
     return h(Description, { label, desc });
   }
 }
@@ -156,7 +156,7 @@ export function detail (file: FileNode) {
 /**
  * 检验文件格式
  */
-export function validFileContent (content: string) {
+export function validFileContent(content: string) {
   const result = jsonLint(content);
 
   if (result) {
@@ -167,22 +167,30 @@ export function validFileContent (content: string) {
       }
     };
   } else {
+    if (typeof JSON.parse(content) !== 'object') {
+      return {
+        error: {
+          message: '错误的OCS文件格式, 请勿创建除了 (.ocs) 以外的任何文件, 软件将不会解析',
+          line: 1
+        }
+      };
+    }
     return content;
   }
 }
 
-export function showFile (file: FileNode) {
+export function showFile(file: FileNode) {
   /** 隐藏所有文件，显示当前点击的文件 */
-  Project.opened.value.forEach((file) => (file.stat.show = false));
+  workspace.opened.forEach((file) => (file.stat.show = false));
 
   /** 寻找打开过的文件 */
-  const openedFile = Project.opened.value.find((f) => f.uid === file.uid);
+  const openedFile = workspace.opened.find((f) => f.uid === file.uid);
   /** 如果该文件之前打开过 */
   if (openedFile) {
     openedFile.stat.show = true;
   } else {
     /** 新增文件编辑 */
     file.stat.show = true;
-    Project.opened.value.push(file);
+    workspace.opened.push(file);
   }
 }

@@ -6,24 +6,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, toRefs, Ref } from 'vue';
-import { MenuItem } from '../menus';
-
-import { FileNode } from './File';
-import Menus from '../menus/Menus.vue';
+import { ref, Ref, toRefs } from 'vue';
 import { notify } from '../../utils/notify';
-import { createFileMenus } from './FileMenu';
 import { remote } from '../../utils/remote';
+import { MenuItem } from '../menus';
+import Menus from '../menus/Menus.vue';
+import { FileNode } from './File';
+import { createFileMenus } from './FileMenu';
 
 interface FileMenuProps {
   file: FileNode
 }
 const props = defineProps<FileMenuProps>();
+const emits = defineEmits<{
+  (e:'update:file', file: FileNode):void
+}>();
 
 const { file } = toRefs(props);
 
 /** 创建右键菜单 */
-const { baseMenus, dirMenus } = createFileMenus(file);
+const { baseMenus, dirMenus } = createFileMenus(file.value, (fileNode) => {
+  emits('update:file', fileNode);
+});
 
 const menus: Ref<MenuItem[]> = ref(baseMenus);
 

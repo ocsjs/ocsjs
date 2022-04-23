@@ -5,6 +5,7 @@
     class="tree"
     :tree-data="files"
     show-icon
+    :draggable="draggable && fileRenaming"
     :auto-expand-parent="false"
     :replace-fields="{ children: 'children', title: 'title', key: 'path' }"
     @drop="onDrop"
@@ -58,7 +59,10 @@
           </template>
 
           <template #overlay>
-            <FileMenu :file="file" />
+            <FileMenu
+              :file="file"
+              @update:file="onUpdate"
+            />
           </template>
         </a-dropdown>
       </template>
@@ -75,28 +79,43 @@
 
 <script setup lang="ts">
 
-import { toRefs } from 'vue';
-import { FileNode, fs, fsExtra, path } from './File';
-import Icon from '../Icon.vue';
-import { StringUtils } from '../../utils/string';
-import FileMenu from './FileMenu.vue';
-import { TreeDataItem } from 'ant-design-vue/lib/tree/Tree';
-import { notify } from '../../utils/notify';
-import { remote } from '../../utils/remote';
 import { message } from 'ant-design-vue';
 import ATree from 'ant-design-vue/lib/tree';
+import { TreeDataItem } from 'ant-design-vue/lib/tree/Tree';
+import { computed, toRefs } from 'vue';
+import { notify } from '../../utils/notify';
+import { remote } from '../../utils/remote';
+import { StringUtils } from '../../utils/string';
+import Icon from '../Icon.vue';
+import { FileNode, fs, fsExtra, loopFiles, path } from './File';
+import FileMenu from './FileMenu.vue';
 
 interface FileTreeProps {
   files: FileNode[]
+  draggable: boolean
 }
 const props = withDefaults(defineProps<FileTreeProps>(), {});
 const emits = defineEmits<{
   (e: 'select', ...args: any): void
+  (e:'update:files', files: FileNode[]):void
 }>();
-const { files } = toRefs(props);
+const { files, draggable } = toRefs(props);
+// 是否有文件正在重命名
+const fileRenaming = computed(() => files.value.every(f => f.stat.renaming === false));
 
 function onSelect (...args: any) {
   emits('select', ...args);
+}
+
+function onUpdate(fileNode:FileNode) {
+  const newFiles = loopFiles(files.value, (children) => {
+    const index = children.findIndex((f) => f.path === fileNode.path);
+    if (index !== -1) {
+      children[index] = fileNode;
+    }
+    return children;
+  });
+  emits('update:files', newFiles);
 }
 
 /**
@@ -199,8 +218,6 @@ function rename (e: Event, file: FileNode) {
   const name = (e.target as HTMLInputElement).value;
   const dest = path.join(file.parent, name);
 
-  file.stat.renaming = false;
-
   if (file.path !== dest) {
     if (!fs.existsSync(dest)) {
       if (file.stat.isDirectory) {
@@ -213,6 +230,7 @@ function rename (e: Event, file: FileNode) {
       message.error('路径下存在相同名字的文件(夹)！');
     }
   }
+  file.stat.renaming = false;
 }
 
 /**

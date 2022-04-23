@@ -22,18 +22,19 @@
           {{ title }}
         </div>
         <template v-if="expend">
-          <template v-if="rootNode">
+          <template v-if="rootPath">
             <Icon
               title="新建文件夹"
               class="me-2"
               type="icon-folder-plus"
-              @click.stop="rootNode ? mkdir(rootNode) : ''"
+              @click.stop="mkdir(rootPath) "
             />
+
             <Icon
               title="新建文件"
               class="me-2"
               type="icon-file-plus"
-              @click.stop="rootNode ? createFile(rootNode) : ''"
+              @click.stop="createFile(rootPath,undefined)"
             />
           </template>
           <Icon
@@ -49,18 +50,18 @@
 
 <script setup lang="ts">
 import { toRefs } from 'vue';
-import { createFile, FileNode, mkdir } from '../file/File';
+import { createFile, mkdir } from '../file/File';
 interface ProjectHeaderProps {
-  rootNode?: FileNode
+  rootPath?: string
   openSearch: boolean
   searchValue: string
   title: string
   expend: boolean
 }
 const props = withDefaults(defineProps<ProjectHeaderProps>(), {
-  rootNode: undefined
+  rootPath: ''
 });
-const { rootNode, openSearch } = toRefs(props);
+const { openSearch } = toRefs(props);
 
 const emits = defineEmits<{
   (e: 'update:openSearch', value: boolean) : void

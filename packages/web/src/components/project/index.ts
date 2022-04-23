@@ -1,14 +1,13 @@
-import { reactive, ref, Ref } from 'vue';
+
+import { reactive } from 'vue';
 import { FileNode, fs, path, validFileContent } from '../file/File';
 
 export class Project {
   path: string
   title: string = '未命名'
   node: FileNode
-  /** 打开的文件 */
-  static opened: Ref<FileNode[]> = ref([])
 
-  constructor (title: string, path: string, node?: FileNode) {
+  constructor(title: string, path: string, node?: FileNode) {
     if (fs.statSync(path).isDirectory() === false) {
       throw Error('项目路径应该为文件夹路径！');
     }
@@ -20,7 +19,7 @@ export class Project {
   }
 
   /** 创建文件节点 */
-  static createFileNode (filePath: string): FileNode {
+  static createFileNode(filePath: string): FileNode {
     const stat = fs.statSync(filePath);
     const isDirectory = stat.isDirectory();
     let children;
@@ -41,7 +40,6 @@ export class Project {
     }
 
     const parent = path.dirname(filePath);
-    console.log(filePath);
 
     const result = validFileContent(content);
     let options;
@@ -49,7 +47,7 @@ export class Project {
       options = JSON.parse(result);
     }
 
-    return reactive({
+    return {
       title: path.basename(filePath),
       uid: options?.uid,
       content,
@@ -60,7 +58,6 @@ export class Project {
         isDirectory,
         createTime: stat.birthtimeMs,
         modifyTime: stat.ctimeMs,
-        expand: !!isDirectory,
         show: false,
         opened: false,
         running: false,
@@ -69,17 +66,18 @@ export class Project {
       parent,
       path: filePath,
       children
-    });
+    };
   }
 
   /** 监听项目，如果发生变化。则重新渲染子目录 */
-  watchDirectory (dir: FileNode) {
+  watchDirectory(dir: FileNode) {
     fs.watch(dir.path, { recursive: true }, (e, f) => {
       Object.assign(this.node, Project.createFileNode(dir.path));
+      console.log('update', this.node);
     });
   }
 
-  public static create (title: string, path: string, node?: FileNode) {
+  public static create(title: string, path: string, node?: FileNode) {
     return new Project(title, path, node);
   }
 }

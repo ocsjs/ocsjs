@@ -1,24 +1,23 @@
-import { Ref } from 'vue';
+import { workspace } from '../../store';
 import { MenuItem } from '../menus';
-import { Project } from '../project';
 import { remote } from './../../utils/remote';
 import { createFile, detail, FileNode, mkdir } from './File';
 const { shell, clipboard } = require('electron');
 
-export function createFileMenus (file: Ref<FileNode>) {
+export function createFileMenus(file: FileNode, onUpdate: (fileNode: FileNode) => void) {
   const dirMenus: MenuItem[] = [
     {
       title: '新建文件夹',
       icon: 'icon-wenjianjia',
-      onClick () {
-        mkdir(file.value);
+      onClick() {
+        mkdir(file.path);
       }
     },
     {
       title: '新建OCS文件',
       icon: 'icon-file-text',
-      onClick () {
-        createFile(file.value);
+      onClick() {
+        createFile(file.path, file.uid);
       }
     }
   ];
@@ -27,38 +26,38 @@ export function createFileMenus (file: Ref<FileNode>) {
     {
       title: '打开文件位置',
       icon: 'icon-location',
-      onClick () {
-        shell.showItemInFolder(file.value.path);
+      onClick() {
+        shell.showItemInFolder(file.path);
       }
     },
     {
       title: '复制文件路径',
       icon: 'icon-file-copy',
-      onClick () {
-        clipboard.writeText(file.value.path);
+      onClick() {
+        clipboard.writeText(file.path);
       }
     },
     {
       title: '删除',
       icon: 'icon-delete',
-      onClick () {
-        remote.methods.call('trash', file.value.path);
-        Project.opened.value = Project.opened.value.filter((f) => f.path !== file.value.path);
+      onClick() {
+        remote.methods.call('trash', file.path);
+        workspace.opened = workspace.opened.filter((f) => f.path !== file.path);
       }
     },
     {
       title: '重命名',
       icon: 'icon-redo',
-      onClick () {
-        console.log('rename', file);
-        file.value.stat.renaming = true;
+      onClick() {
+        file.stat.renaming = true;
+        onUpdate(file);
       }
     },
     {
       title: '属性',
       icon: 'icon-unorderedlist',
-      onClick () {
-        detail(file.value);
+      onClick() {
+        detail(file);
       }
     }
   ];

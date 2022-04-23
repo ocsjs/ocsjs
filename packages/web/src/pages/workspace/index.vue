@@ -6,33 +6,33 @@
     <!-- 搜索文件夹 -->
     <div class="files resizable overflow-auto col-4 p-2 border-end">
       <!-- projects : 真实路径的工作项目节点 -->
-      <template v-for="(project, index) in projects">
+      <template v-for="(project, index) in workspace.projects">
         <ProjectNode
           v-if="project.node.children"
           :key="index"
-          :root-node="project.node"
+          v-model:files="project.node.children"
+          :root-path="project.node.path"
           :title="project.title"
         />
       </template>
       <!-- 虚拟节点 -->
       <ProjectNode
-        :files="Project.opened.value"
+        :files="workspace.opened"
         title="打开的文件"
       />
     </div>
     <div class="w-100 h-100 overflow-auto">
-      <template v-if="Project.opened.value.every((file) => file.stat.show === false)">
+      <template v-if="workspace.opened.every((file) => file.stat.show === false)">
         <!-- 显示帮助页面 -->
         <Help class="help" />
       </template>
       <template v-else>
         <template
-          v-for="(file, index) of Project.opened.value"
+          v-for="(file, index) of workspace.opened"
           :key="index"
         >
           <div
             v-show="file.stat.show"
-
             class="h-100"
           >
             <File :file="file" />
@@ -44,27 +44,20 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from 'vue';
-
-import { store } from '../../store';
 import interact from 'interactjs';
-import { Project } from '../../components/project';
+import { nextTick, onMounted } from 'vue';
 import File from '../../components/file/File.vue';
-import ProjectNode from '../../components/project/ProjectNode.vue';
 import Help from '../../components/Help.vue';
+import { Project } from '../../components/project';
+import ProjectNode from '../../components/project/ProjectNode.vue';
+import { store, workspace } from '../../store/index';
 
-const projects = ref<Project[]>([]);
-
-// @ts-ignore
-window.projects = projects;
-// @ts-ignore
-window.Project = Project;
 // @ts-ignore
 window.electron = require('electron');
 
 onMounted(() => {
   nextTick(() => {
-    projects.value.push(Project.create('工作区', store.workspace));
+    workspace.projects.push(Project.create('工作区', store.workspace));
 
     /** 边框拖拽，改变目录大小 */
     interact('.resizable').resizable({
