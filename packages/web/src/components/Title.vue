@@ -74,7 +74,7 @@
           <a-menu class="title-menu">
             <TitleLink
               title="教程"
-              url="https://github.com/enncy/online-course-script#readme"
+              url="https://enncy.github.io/online-course-script/"
             />
             <a-menu-item @click="about">
               关于
@@ -85,7 +85,7 @@
 
             <TitleLink
               title="版本更新"
-              url="https://github.com/enncy/online-course-script/releases"
+              url="https://enncy.github.io/online-course-script/app-version"
             />
             <TitleLink
               title="脚本更新日志"
@@ -119,15 +119,15 @@
 </template>
 
 <script setup lang="ts">
+import { Modal } from 'ant-design-vue';
+import favicon from 'root/public/favicon.ico';
+import { h, ref, watch } from 'vue';
 import { config } from '../config';
 import { router, routes } from '../route';
-import { remote } from '../utils/remote';
-import TitleLink from './TitleLink.vue';
 import { fetchRemoteNotify, formatDate } from '../utils';
+import { remote } from '../utils/remote';
 import { path } from './file/File';
-import { h, ref, watch } from 'vue';
-import favicon from 'root/public/favicon.ico';
-import { Modal } from 'ant-design-vue';
+import TitleLink from './TitleLink.vue';
 
 const { shell } = require('electron');
 

@@ -199,6 +199,7 @@ import { ITerminal } from '../terminal';
 import { Process } from '../terminal/process';
 import Terminal from '../terminal/Terminal.vue';
 import { FileNode, fs, validFileContent } from './File';
+
 const { scriptNames } = require('@ocsjs/scripts');
 const childProcess = require('child_process') as typeof import('child_process');
 
@@ -217,7 +218,6 @@ if (typeof result === 'string') {
 } else {
   error = result.error;
 }
-console.log('data.options', options);
 
 const data = reactive<{
   activeKey: 'setting' | 'terminal' | 'content'

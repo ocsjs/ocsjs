@@ -4,7 +4,7 @@ import { fs, showFile } from '../components/file/File';
 import { Project } from '../components/project';
 import { remote } from '../utils/remote';
 import { FileNode } from './../components/file/File';
-const { ipcRenderer } = require('electron');
+
 const Store = require('electron-store');
 const { getValidBrowserPaths } = require('@ocsjs/common') as typeof import('@ocsjs/common');
 
@@ -13,7 +13,8 @@ const s = new Store();
 /** 工作区数据 */
 export const workspace = reactive<{
   projects: Project[],
-  opened: FileNode[]
+  opened: FileNode[],
+
 }>({
   projects: [],
   /** 打开的文件 */
@@ -63,25 +64,11 @@ export const store = reactive({
   validBrowserPaths: (s.get('validBrowserPaths') as ReturnType<typeof getValidBrowserPaths>) || getValidBrowserPaths()
 });
 
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    remote.logger.call('info', 'render store init');
-
-    setZoomFactor();
-    autoLaunch();
-    initOpenFiles();
-  }, 1000);
-});
-
-ipcRenderer.on('open-file', (e, file) => {
-  handleFile(file);
-});
-
 watch(store, (newStore) => {
   s.store = JSON.parse(JSON.stringify(newStore));
 });
 
-watch(() => store['auto-launch'], autoLaunch);
+watch(() => store['auto-launch'], setAutoLaunch);
 watch(() => store.win.size, setZoomFactor);
 
 /** 监听打开的文件，保留工作区打开的文件 */
@@ -92,15 +79,15 @@ watch(
   }
 );
 
-function autoLaunch() {
+export function setAutoLaunch() {
   remote.methods.call('autoLaunch');
 }
 
-function setZoomFactor() {
+export function setZoomFactor() {
   remote.webContents.call('setZoomFactor', store.win.size);
 }
 
-function handleFile(file: string) {
+export function handleFile(file: string) {
   if (fs.existsSync(String(file))) {
     workspace.opened.push(Project.createFileNode(String(file)));
 
@@ -115,7 +102,7 @@ function handleFile(file: string) {
 /**
  * 处理打开的文件
  */
-function initOpenFiles() {
+export function initOpenFiles() {
   store.files = Array.from(new Set(store.files));
   for (const file of store.files) {
     handleFile(String(file));
