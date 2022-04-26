@@ -49,12 +49,34 @@ export const StudySettingPanel = defineComponent({
               ]
             : []}
 
-          <label>视频倍速 </label>
-          <div>
-            <Tooltip title="智慧树不能倍速, 否则观看时间会变短, 并且容易封号！">
-              <input type="number" value="1" disabled="true"></input>
-            </Tooltip>
-          </div>
+          {
+            settings.creditStudy === true
+              ? <>
+                  <label>视频倍速 </label>
+                  <div>
+                    <Tooltip title="学分课不允许倍速！">
+                      <input type="number"
+                      value="1">
+                      </input>
+                    </Tooltip>
+                  </div>
+                </>
+              : <>
+                  <label>视频倍速 </label>
+                  <div>
+                    <Tooltip title="智慧树最高1.5倍速, 超过1.5容易封号！">
+                      <input type="number"
+                      step="0.25"
+                      max="1.5"
+                      min="1"
+                      value={settings.playbackRate}
+                      onChange={(e: any) => {
+                        settings.playbackRate = e.target.valueAsNumber;
+                      }}></input>
+                    </Tooltip>
+                  </div>
+                </>
+          }
 
           <label>音量调节</label>
           <div>

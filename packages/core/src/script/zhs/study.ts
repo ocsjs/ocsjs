@@ -1,14 +1,14 @@
-import { logger } from '../../logger';
-import { domSearch, domSearchAll, sleep } from '../../core/utils';
-import { ScriptSettings } from '../../scripts';
 import { store } from '..';
+import { domSearch, domSearchAll, sleep } from '../../core/utils';
+import { logger } from '../../logger';
+import { ScriptSettings } from '../../scripts';
 
 let stop = false;
 
 /**
  * zhs 视频学习
  */
-export async function study (setting?: ScriptSettings['zhs']['video']) {
+export async function study(setting?: ScriptSettings['zhs']['video']) {
   const { watchTime = 30, restudy = false } = setting || {};
   logger('info', 'zhs 学习任务开始');
   /** 查找任务 */
@@ -44,8 +44,7 @@ export async function study (setting?: ScriptSettings['zhs']['video']) {
         } else {
           logger(
             'debug',
-            `即将播放 -- ${item.querySelector('[class="catalogue_title"]')?.getAttribute('title')} : ${
-              item.querySelector('.time')?.textContent
+            `即将播放 -- ${item.querySelector('[class="catalogue_title"]')?.getAttribute('title')} : ${item.querySelector('.time')?.textContent
             }`
           );
           item.click();
@@ -66,8 +65,8 @@ export async function study (setting?: ScriptSettings['zhs']['video']) {
  * @param setting
  * @returns
  */
-export async function watch (setting?: Pick<ScriptSettings['zhs']['video'], 'playbackRate' | 'volume'>) {
-  const { volume = 0 } = setting || {};
+export async function watch(setting?: Pick<ScriptSettings['zhs']['video'], 'playbackRate' | 'volume'>) {
+  const { volume = 0, playbackRate } = setting || {};
   return new Promise<void>((resolve, reject) => {
     try {
       const video = document.querySelector('video') as HTMLVideoElement;
@@ -77,8 +76,19 @@ export async function watch (setting?: Pick<ScriptSettings['zhs']['video'], 'pla
       video.currentTime = 0;
       // 音量
       video.volume = volume;
-      setTimeout(() => {
+
+      Promise.resolve(async () => {
+        await sleep(1000);
+
         video.play();
+
+        await sleep(1000);
+        const { btn, rate } = domSearch({ btn: '.speedBox', rate: `[rate="${playbackRate}"]` });
+        console.log({ btn, rate });
+        btn?.click();
+        await sleep(1000);
+        rate?.click();
+
         video.onpause = function () {
           if (!video.ended) {
             if (stop) {
@@ -91,7 +101,11 @@ export async function watch (setting?: Pick<ScriptSettings['zhs']['video'], 'pla
         video.onended = function () {
           resolve();
         };
-      }, 1000);
+      }).then((func) => {
+        func();
+      }).catch((err) => {
+        logger('error', err);
+      });
     } catch (e) {
       reject(e);
     }
@@ -101,7 +115,7 @@ export async function watch (setting?: Pick<ScriptSettings['zhs']['video'], 'pla
 /**
  * 关闭zhs共享课测验弹窗
  */
-export async function closeTestDialog () {
+export async function closeTestDialog() {
   const { items } = domSearchAll({ items: '.topic-item' });
   if (items.length !== 0) {
     const { item, btn } = domSearch({ item: '.topic-item', btn: '[aria-label="弹题测验"] .btn' });
@@ -115,7 +129,7 @@ export async function closeTestDialog () {
 }
 
 /** 校内学分课 */
-export async function creditStudy (setting?: ScriptSettings['zhs']['video']) {
+export async function creditStudy(setting?: ScriptSettings['zhs']['video']) {
   const { restudy = false } = setting || {};
 
   /** 查找任务 */
@@ -146,7 +160,7 @@ export async function creditStudy (setting?: ScriptSettings['zhs']['video']) {
 /**
  * 到达学习时间后，自动关闭
  */
-export function autoClose (watchTime: number) {
+export function autoClose(watchTime: number) {
   if (watchTime !== 0) {
     let time = 0;
     // 清空之前的计数器
