@@ -26,7 +26,7 @@ export async function study(setting: ScriptSettings['cx']['video']) {
   }
 
   // 下一章按钮
-  const { next } = domSearch({ next: '.next' }, top?.document);
+  const { next } = domSearch({ next: '.next[onclick^="PCount.next"]' }, top?.document);
 
   // 如果按钮显示
   if (next && next.style.display === 'block') {
