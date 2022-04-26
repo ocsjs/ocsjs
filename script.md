@@ -13,8 +13,10 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
  <img src="https://user-images.githubusercontent.com/50533276/163658182-6479c0c7-0933-4b4f-915d-5315e7b4fa1c.png" width="43%" height="300px">
  <img src="https://user-images.githubusercontent.com/50533276/163658186-16399de1-8776-4961-b0e5-550b0290da29.png" width="56%" height="300px">
 </div>
- 
 
+## 使用须知
+
+如果之前有使用过其他油猴脚本的小伙伴，在使用OCS助手之前，请先关闭其他脚本，避免脚本之间发生冲突。
 
 ## 第一步 安装油猴
 
