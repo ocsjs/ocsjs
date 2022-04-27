@@ -127,6 +127,16 @@ await ocr.load()
 const el = document.querySelector(...)
 // 识别文本
 const text = await ocr.recognize(ocr.suit(el))
+// ...
+```
+
+```js
+// 多个元素
+const els = [...]
+for (const el of els) {
+    const text = await ocr.recognize(OCR.suit(el));
+    // ...
+}
 ```
 
 ### DefineScript
