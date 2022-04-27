@@ -1,3 +1,13 @@
+## [3.4.5](https://github.com/enncy/online-course-script/compare/3.4.4...3.4.5) (2022-04-23)
+
+
+### Bug Fixes
+
+* 修复软件重命名有时会无效的BUG ([48fb520](https://github.com/enncy/online-course-script/commit/48fb520263fabb4740138705bf55d5086e425907))
+* 优化软件启动加载 ([be866d1](https://github.com/enncy/online-course-script/commit/be866d1eb966a64aefe5fd95ffaf2c1c53ae76d8))
+
+
+
 ## [3.4.4](https://github.com/enncy/online-course-script/compare/3.4.3...3.4.4) (2022-04-22)
 
 
