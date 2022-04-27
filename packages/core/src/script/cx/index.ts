@@ -179,18 +179,24 @@ export const CXScript = defineScript({
     },
     {
       name: '文字识别脚本',
-      url: '**/work/doHomeWorkNew**',
+      url: ['**/mycourse/studentstudy**', '**/work/doHomeWorkNew**'],
       async onload() {
         /** 文字识别 */
-        const fonts = CXAnalyses.getSecretFont();
-        if (fonts.length) {
-          const ocr = new OCR({
-            langPath: 'https://cdn.ocs.enncy.cn/resources/tessdata'
+        const ocr = new OCR({
+          langPath: 'https://cdn.ocs.enncy.cn/resources/tessdata'
+        });
 
-          });
+        // 顶层初始化
+        if (window === top) {
           logger('debug', '加载文字识别功能, 如果是初始化请耐心等待...');
           await ocr.load();
           logger('info', '文字识别功能加载成功');
+        }
+
+        const fonts = CXAnalyses.getSecretFont();
+        if (fonts.length) {
+          logger('info', '文字识别功能启动');
+          await ocr.load();
           for (const font of fonts) {
             const text = await ocr.recognize(OCR.suit(font));
             font.innerHTML = text;
