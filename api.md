@@ -93,12 +93,12 @@ pnpm build:core
 
 ### OCR
 
-> 文本识别，解决自定义字体显示繁体字, 乱码的问题
+> 使用 [tesseract.js](https://github.com/naptha/tesseract.js/) 文本识别，解决自定义字体显示繁体字, 乱码的问题
 
 ```js
-const ocr = new OCS.OCR()
+const ocr = new OCS.OCR(options)
 ```
-
+- `opions` API 请看官方文档 : [https://github.com/naptha/tesseract.js/blob/master/docs/api.md](https://github.com/naptha/tesseract.js/blob/master/docs/api.md)
 - `ocr.suit(element)` :  将元素自适应，改变大小，间距，方便OCR识别
 - `ocr.recognize(element)` : 识别文本
 
