@@ -106,9 +106,23 @@ const ocr = new OCS.OCR()
 
 ```js
 const el = document.querySelector(...)
-const ocr = new OCS.OCR()
-// 加载OCS数据文件，这里没有梯子的话可能会用不了
+// 创建OCR对象
+const ocr = new OCR({
+    /**
+      加载数据文件, 这里请配置你的对象存储路径，或者任意CDN，如果不设置路径必须使用梯子才能访问到数据。
+      例如 https://cdn.xxx.cn/tessdata
+      https://cdn.xxx.cn/tessdata 路径下面放置 chi_sim.traineddata.gz
+      chi_sim.traineddata.gz 下载地址请到 http://tessdata.projectnaptha.com/ 下载
+      下载例子 
+      eng : https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz
+      chi_sim : https://tessdata.projectnaptha.com/4.0.0/chi_sim.traineddata.gz
+    */
+    langPath: 'https://cdn.xxx.cn/tessdata' // 只是例子
+});
+// 加载OCR数据文件
 await ocr.load()
+
+await ocr.load();
 const text = await ocr.recognize(ocr.suit(el))
 ```
 
