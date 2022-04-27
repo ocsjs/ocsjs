@@ -86,26 +86,8 @@ pnpm build:core
 ```
 
 # API
-
-
-
-- [类型](#类型)
-	- [DefineScript](#definescript)
-	- [ScriptRoute](#scriptroute)
-	- [ScriptPanel](#scriptpanel)
-	- [AnswererWrapper](#answererwrapper)
-
-- [方法](#方法)
-	- [OCS.start](#start)
-	- [OCS.definescript](#definescript-1)
-
-- [定义](#定义)
-	- [AnswererWrapper 题库配置](#answererwrapper--题库配置)
-
-- [变量](#变量)
-
-
-
+ 
+ 
 
 ## 类型
 
