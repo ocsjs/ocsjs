@@ -1,4 +1,5 @@
-import html2canvas from 'html2canvas';
+import domtoimage from 'dom-to-image';
+
 import Tesseract, { createWorker } from 'tesseract.js';
 
 /**
@@ -7,8 +8,6 @@ import Tesseract, { createWorker } from 'tesseract.js';
  * @see https://github.com/naptha/tesseract.js
  */
 export class OCR {
-  /** 初始化语言 */
-    lang: string;
     worker: Tesseract.Worker;
     /**
      * 默认加载语言
@@ -31,9 +30,8 @@ export class OCR {
       letterSpacing: '8px'
     }
 
-    constructor(lang?: string) {
-      this.lang = lang || OCR.DEFAULT_LANG;
-      this.worker = createWorker();
+    constructor(options: Partial<Tesseract.WorkerOptions> = {}) {
+      this.worker = createWorker(options);
     }
 
     /**
@@ -43,8 +41,8 @@ export class OCR {
     async load(lang?: string) {
       await this.worker.load();
       // 加载语言
-      await this.worker.loadLanguage(lang || this.lang || OCR.DEFAULT_LANG);
-      await this.worker.initialize(lang || this.lang || OCR.DEFAULT_LANG);
+      await this.worker.loadLanguage(lang || OCR.DEFAULT_LANG);
+      await this.worker.initialize(lang || OCR.DEFAULT_LANG);
     }
 
     /**
@@ -78,9 +76,9 @@ export class OCR {
      */
     async recognize(el: HTMLElement): Promise<string> {
       // 图片转base64
-      const canvas = await html2canvas(el);
+      const base64 = await domtoimage.toPng(el);
       // 识别
-      const { data: { text } } = await this.worker.recognize(canvas.toDataURL());
+      const { data: { text } } = await this.worker.recognize(base64);
       return text.replace(/ /g, '');
     }
 

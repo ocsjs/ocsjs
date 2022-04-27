@@ -184,14 +184,18 @@ export const CXScript = defineScript({
         /** 文字识别 */
         const fonts = CXAnalyses.getSecretFont();
         if (fonts.length) {
-          logger('debug', '文字识别启动');
-          const ocr = new OCR();
-          await ocr.load();
+          const ocr = new OCR({
+            langPath: 'https://cdn.ocs.enncy.cn/resources/tessdata'
 
+          });
+          logger('debug', '加载文字识别功能, 如果是初始化请耐心等待...');
+          await ocr.load();
+          logger('info', '文字识别功能加载成功');
           for (const font of fonts) {
             const text = await ocr.recognize(OCR.suit(font));
             font.innerHTML = text;
           }
+          logger('info', '文字识别完成');
         }
       }
     }

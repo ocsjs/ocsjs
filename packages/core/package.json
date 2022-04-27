@@ -16,6 +16,7 @@
     "@types/node-fetch": "^2.6.1",
     "axios": "^0.25.0",
     "chalk": "4.1.0",
+    "dom-to-image": "^2.6.0",
     "html2canvas": "^1.4.1",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.7",
@@ -44,6 +45,7 @@
   },
   "homepage": "https://github.com/enncy/online-course-script#readme",
   "devDependencies": {
+    "@types/dom-to-image": "^2.6.4",
     "@types/string-similarity": "^4.0.0",
     "@types/tampermonkey": "^4.0.5",
     "@vitejs/plugin-vue": "^1.6.1",

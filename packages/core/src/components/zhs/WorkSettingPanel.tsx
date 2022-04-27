@@ -29,7 +29,7 @@ export const WorkSettingPanel = defineComponent({
               type="number"
               onChange={(e: any) => (settings.period = e.target.valueAsNumber)}
               value={settings.period}
-              min="0"
+              min="3"
               step="1"
             ></input>
           </div>

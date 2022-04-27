@@ -101,7 +101,7 @@ export const StudySettingPanel = defineComponent({
             <input
               type="number"
               value={store.setting.cx.work.period}
-              min="0"
+              min="3"
               step="1"
               onChange={(e: any) => {
                 store.setting.cx.work.period = e.target.valueAsNumber;
