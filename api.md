@@ -107,6 +107,8 @@ const ocr = new OCS.OCR()
 ```js
 const el = document.querySelector(...)
 const ocr = new OCS.OCR()
+// 加载OCS数据文件，这里没有梯子的话可能会用不了
+await ocr.load()
 const text = await ocr.recognize(ocr.suit(el))
 ```
 
