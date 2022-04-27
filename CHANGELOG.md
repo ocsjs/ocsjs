@@ -1,3 +1,18 @@
+# [3.5.0](https://github.com/enncy/online-course-script/compare/3.4.5...3.5.0) (2022-04-27)
+
+
+### Bug Fixes
+
+* 修复超星有时不能自动下一章的BUG ([7c5516f](https://github.com/enncy/online-course-script/commit/7c5516f731295ccc2fd73129bf659dd8b339d2f1))
+
+
+### Features
+
+* 繁体字乱码识别功能 ([ec01cd1](https://github.com/enncy/online-course-script/commit/ec01cd168a4f0f4111e7cb6e3c1597b07d7dfd14))
+* 开发智慧树倍速选项 ([83015b7](https://github.com/enncy/online-course-script/commit/83015b73bdb0bda4f23af04b3814b8cd7e21d721))
+
+
+
 ## [3.4.5](https://github.com/enncy/online-course-script/compare/3.4.4...3.4.5) (2022-04-23)
 
 
