@@ -1,3 +1,12 @@
+## [3.5.1](https://github.com/enncy/online-course-script/compare/3.5.0...3.5.1) (2022-04-27)
+
+
+### Bug Fixes
+
+* 优化 OCR 数据加载问题 ([ed958a9](https://github.com/enncy/online-course-script/commit/ed958a9a47de90763daf7b59c7c1fa3abd698b7f))
+
+
+
 # [3.5.0](https://github.com/enncy/online-course-script/compare/3.4.5...3.5.0) (2022-04-27)
 
 
