@@ -106,7 +106,7 @@ const ocr = new OCS.OCR(options)
 
 ```js
 // 创建OCR对象， OCR 对象只需创建一次，每次识别只需调用 recognize 方法即可
-const ocr = new OCR({
+const ocr = new OCS.OCR({
     /**
       加载数据文件, 这里请配置你的对象存储路径，或者任意CDN，如果不设置路径必须使用梯子才能访问到数据。
       例如 https://cdn.xxx.cn/tessdata
