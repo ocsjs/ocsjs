@@ -105,8 +105,7 @@ const ocr = new OCS.OCR()
 例子
 
 ```js
-const el = document.querySelector(...)
-// 创建OCR对象
+// 创建OCR对象， OCR 对象只需创建一次，每次识别只需调用 recognize 方法即可
 const ocr = new OCR({
     /**
       加载数据文件, 这里请配置你的对象存储路径，或者任意CDN，如果不设置路径必须使用梯子才能访问到数据。
@@ -121,6 +120,11 @@ const ocr = new OCR({
 });
 // 加载OCR数据文件
 await ocr.load()
+```
+
+```js
+// 获取元素
+const el = document.querySelector(...)
 // 识别文本
 const text = await ocr.recognize(ocr.suit(el))
 ```
