@@ -109,7 +109,24 @@ pnpm build:core
 
 ## 类型
 
+### OCR
 
+> 文本识别，解决自定义字体显示繁体字, 乱码的问题
+
+```js
+const ocr = new OCS.OCR()
+```
+
+- `ocr.suit(element)` :  将元素自适应，改变大小，间距，方便OCR识别
+- `ocr.recognize(element)` : 识别文本
+
+例子
+
+```js
+const el = document.querySelector(...)
+const ocr = new OCS.OCR()
+const text = await ocr.recognize(ocr.suit(el))
+```
 
 ### DefineScript
 
