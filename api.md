@@ -121,8 +121,7 @@ const ocr = new OCR({
 });
 // 加载OCR数据文件
 await ocr.load()
-
-await ocr.load();
+// 识别文本
 const text = await ocr.recognize(ocr.suit(el))
 ```
 
