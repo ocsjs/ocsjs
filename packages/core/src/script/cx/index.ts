@@ -3,6 +3,7 @@ import { createNote, createSearchResultPanel, createTerminalPanel } from '../../
 import { ExamSettingPanel } from '../../components/cx/ExamSettingPanel';
 import { StudySettingPanel } from '../../components/cx/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/cx/WorkSettingPanel';
+import { OCR } from '../../core';
 import { defineScript } from '../../core/define.script';
 import { sleep } from '../../core/utils';
 import { logger } from '../../logger';
@@ -173,6 +174,24 @@ export const CXScript = defineScript({
           }
         } catch (e) {
           console.log('屏蔽作业考试粘贴限制错误', e);
+        }
+      }
+    },
+    {
+      name: '文字识别脚本',
+      url: '**/work/doHomeWorkNew**',
+      async onload() {
+        /** 文字识别 */
+        const fonts = CXAnalyses.getSecretFont();
+        if (fonts.length) {
+          logger('debug', '文字识别启动');
+          const ocr = new OCR();
+          await ocr.load();
+
+          for (const font of fonts) {
+            const text = await ocr.recognize(OCR.suit(font));
+            font.innerHTML = text;
+          }
         }
       }
     }

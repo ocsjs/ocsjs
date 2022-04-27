@@ -237,9 +237,9 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
     return;
   }
 
-  const { window } = frame.contentWindow;
+  const { window: frameWindow } = frame.contentWindow;
 
-  const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, window.document);
+  const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow.document);
   /** 清空答案 */
   store.workResults = [];
 
@@ -357,17 +357,17 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
 
       if (uploadable) {
         // @ts-ignore 提交
-        window.btnBlueSubmit();
+        frameWindow.btnBlueSubmit();
 
         await sleep(3000);
         /** 确定按钮 */
         // @ts-ignore 确定
-        window.submitCheckTimes();
+        frameWindow.submitCheckTimes();
       } else {
         // @ts-ignore 禁止弹窗
-        window.alert = () => { };
+        frameWindow.alert = () => { };
         // @ts-ignore 暂时保存
-        window.noSubmit();
+        frameWindow.noSubmit();
       }
     }
   });

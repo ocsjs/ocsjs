@@ -38,7 +38,12 @@ const CXAnalyses = {
       // @ts-ignore
       unFinishCount: parseInt(el.parentElement.querySelector('.jobUnfinishCount')?.value || '0')
     }));
+  },
+  /** 检测页面是否使用字体加密 */
+  getSecretFont(doc:Document = document) {
+    return Array.from(doc.querySelectorAll('.Zy_TItle .clearfix.font-cxsecret')) as HTMLElement[];
   }
+
 };
 
 export default CXAnalyses;

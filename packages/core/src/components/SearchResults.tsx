@@ -93,7 +93,11 @@ export const SearchResults = defineComponent({
               <div></div>
                 )}
 
-            <div style="text-align:center; padding-bottom: 4px">📢 鼠标移到任意题目，可以查看搜索详情 📢</div>
+            <div style="text-align:center; padding-bottom: 4px">
+              <span>📢 鼠标移到任意题目，可以查看搜索详情 📢</span><br/>
+              <span>❗如果题目文字变大，则是正在对文本进行文字识别，属于正常情况❗</span>
+            </div>
+
             <hr />
 
             <div>
@@ -119,7 +123,7 @@ export const SearchResults = defineComponent({
             )
           : (
           <div class="search-results-empty" style={{ textAlign: 'center' }}>
-            没有搜索结果
+            暂无搜索结果
             <br />
             如果当前为学习页面，请等待视频，ppt等完成后才会开始自动答题
           </div>

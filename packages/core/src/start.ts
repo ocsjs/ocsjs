@@ -1,10 +1,10 @@
-import { createApp, App as VueApp } from 'vue';
+import { App as VueApp, createApp } from 'vue';
+import App from './App.vue';
 import { DefineScript } from './core/define.script';
-import { dragElement, togglePanel, getCurrentRoutes, onLoaded } from './core/utils';
+import { dragElement, getCurrentRoutes, onLoaded, togglePanel } from './core/utils';
 import { logger } from './logger';
 import { definedScripts } from './main';
 import { store } from './script';
-import App from './App.vue';
 
 export interface StartOptions {
   /**
