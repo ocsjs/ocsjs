@@ -1,3 +1,12 @@
+## [3.5.3](https://github.com/enncy/online-course-script/compare/3.5.2...3.5.3) (2022-04-28)
+
+
+### Bug Fixes
+
+* 优化 OCR ， 解决题目选项没有识别的BUG ([e534658](https://github.com/enncy/online-course-script/commit/e534658665be9863d19fc52ee787f7cad696bdd8))
+
+
+
 ## [3.5.2](https://github.com/enncy/online-course-script/compare/3.5.1...3.5.2) (2022-04-27)
 
 
