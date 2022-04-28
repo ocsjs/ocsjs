@@ -131,7 +131,7 @@ export function searchIFrame (root: Document) {
 /**
  * 检测页面是否准备完毕
  */
-export function onReady (callback: () => void, root: Document = document) {
+export function onComplete (callback: () => void, root: Document = document) {
   function checkReady () {
     if (root.readyState === 'complete') {
       callback();
@@ -144,9 +144,9 @@ export function onReady (callback: () => void, root: Document = document) {
 /**
  * 检测页面是否加载
  */
-export function onLoaded (callback: () => void, root: Document = document) {
+export function onInteractive(callback: () => void, root: Document = document) {
   function checkLoaded () {
-    if (root.readyState === 'complete' || root.readyState === 'interactive') {
+    if (root.readyState === 'interactive') {
       root.removeEventListener('readystatechange', checkLoaded);
       callback();
     }

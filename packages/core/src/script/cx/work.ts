@@ -8,7 +8,7 @@ import { defaultSetting, ScriptSettings } from '../../scripts';
 
 export async function workOrExam(
   setting: ScriptSettings['cx']['work'] | ScriptSettings['cx']['exam'],
-  isExam: boolean
+  type: 'work' | 'exam' = 'work'
 ) {
   const { period, timeout, retry } = defaults(setting, defaultSetting().work);
 
@@ -34,7 +34,7 @@ export async function workOrExam(
     elements: {
       title: 'h3',
       options: '.answerBg .answer_p, .textDIV, .eidtDiv',
-      type: isExam ? 'input[name^="type"]' : 'input[id^="answertype"]'
+      type: type === 'exam' ? 'input[name^="type"]' : 'input[id^="answertype"]'
     },
     /** 默认搜题方法构造器 */
     answerer: (elements, type) => {
@@ -110,14 +110,14 @@ export async function workOrExam(
 
   logger('info', '做题完毕', results);
 
-  // 处理提交
-  await worker.uploadHandler({
-    uploadRate: setting.upload,
-    results,
-    async callback(finishedRate, uploadable) {
-      if (isExam) {
-        logger('info', '为了安全考虑，请自行检查后自行点击提交！');
-      } else {
+  if (type === 'exam') {
+    logger('info', '为了安全考虑，请自行检查后自行点击提交！');
+  } else {
+    // 处理提交
+    await worker.uploadHandler({
+      uploadRate: setting.upload,
+      results,
+      async callback(finishedRate, uploadable) {
         logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : '5秒后将自动保存');
 
         await sleep(5000);
@@ -134,6 +134,6 @@ export async function workOrExam(
           saveWork();
         }
       }
-    }
-  });
+    });
+  }
 }

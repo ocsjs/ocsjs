@@ -1,7 +1,7 @@
+import { store } from '..';
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
-import { urlGlob } from '../../core/utils';
-import { store } from '..';
+import { onComplete, onInteractive, urlGlob } from '../../core/utils';
 
 const supports = [
   ['**chaoxing.com**', 'cx'],
@@ -46,20 +46,27 @@ export const CommonScript = defineScript({
     {
       name: '开启页面右键复制粘贴功能',
       url: supports.map((arr) => arr[0]),
-      onload () {
-        console.log('开启页面右键复制粘贴功能');
-        try {
-          const d = document;
-          const b = document.body;
-          d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
-          b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
-        } catch (err) {
-          console.error('页面右键复制粘贴功能开启失败', err);
+      start () {
+        function enableCopy () {
+          console.log('开启页面右键复制粘贴功能');
+          try {
+            const d = document;
+            const b = document.body;
+            d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
+            b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
+          } catch (err) {
+            console.error('页面右键复制粘贴功能开启失败', err);
+          }
         }
+        onInteractive(() => enableCopy());
+        onComplete(() => {
+          enableCopy();
+          setTimeout(() => enableCopy(), 3000);
+        });
       }
     },
     {
-      name: 'OCS样式切换, 位置定位脚本',
+      name: 'OCS样式切换,位置定位脚本',
       url: supports.map((arr) => arr[0]),
       onload () {
         const target = ['o', 'c', 's'];

@@ -1,7 +1,7 @@
 import { App as VueApp, createApp } from 'vue';
 import App from './App.vue';
 import { DefineScript } from './core/define.script';
-import { dragElement, getCurrentRoutes, onLoaded, togglePanel } from './core/utils';
+import { dragElement, getCurrentRoutes, onComplete, onInteractive, togglePanel } from './core/utils';
 import { logger } from './logger';
 import { definedScripts } from './main';
 import { store } from './script';
@@ -31,7 +31,13 @@ export let loaded = false;
  */
 export function start (options?: StartOptions) {
   if (top === window) {
-    onLoaded(() => {
+    onComplete(() => {
+      if (!loaded) {
+        loaded = true;
+        showPanels(options);
+      }
+    });
+    onInteractive(() => {
       if (!loaded) {
         loaded = true;
         showPanels(options);

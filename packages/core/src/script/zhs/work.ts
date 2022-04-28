@@ -6,7 +6,7 @@ import { ScriptSettings } from '../../scripts';
 
 import { store } from '..';
 
-export async function work(setting: ScriptSettings['zhs']['work']) {
+export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: 'work' | 'exam' = 'work') {
   const { period, timeout, retry } = setting;
 
   if (setting.upload === 'close') {
@@ -26,7 +26,7 @@ export async function work(setting: ScriptSettings['zhs']['work']) {
   const worker = new OCSWorker({
     root: '.examPaper_subject',
     elements: {
-      title: '.subject_describe',
+      title: '.subject_describe,.smallStem_describe',
       options: '.subject_node .nodeLab'
     },
     /** 默认搜题方法构造器 */
@@ -67,36 +67,40 @@ export async function work(setting: ScriptSettings['zhs']['work']) {
 
   logger('info', '做题完毕', results);
 
-  // 处理提交
-  await worker.uploadHandler({
-    uploadRate: setting.upload,
-    results,
-    async callback(finishedRate, uploadable) {
-      logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : '5秒后将自动保存');
+  if (type === 'exam') {
+    logger('info', '为了安全考虑，请自行检查后自行点击提交！');
+  } else {
+    // 处理提交
+    await worker.uploadHandler({
+      uploadRate: setting.upload,
+      results,
+      async callback(finishedRate, uploadable) {
+        logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : '5秒后将自动保存');
 
-      await sleep(5000);
+        await sleep(5000);
 
-      // 保存按钮， 提交按钮
-      const { saveBtn, uploadBtn } = domSearch({
-        saveBtn: '.btnStyleX:not(.btnStyleXSumit)',
-        uploadBtn: '.btnStyleXSumit'
-      });
+        // 保存按钮， 提交按钮
+        const { saveBtn, uploadBtn } = domSearch({
+          saveBtn: '.btnStyleX:not(.btnStyleXSumit)',
+          uploadBtn: '.btnStyleXSumit'
+        });
 
-      if (uploadable) {
-        uploadBtn?.click();
-      } else {
-        saveBtn?.click();
+        if (uploadable) {
+          uploadBtn?.click();
+        } else {
+          saveBtn?.click();
+        }
+
+        await sleep(2000);
+        /** 确定按钮 */
+        const { confirmBtn } = domSearch({
+          confirmBtn: "[role='dialog'] .el-button--primary"
+        });
+
+        confirmBtn?.click();
       }
-
-      await sleep(2000);
-      /** 确定按钮 */
-      const { confirmBtn } = domSearch({
-        confirmBtn: "[role='dialog'] .el-button--primary"
-      });
-
-      confirmBtn?.click();
-    }
-  });
+    });
+  }
 }
 
 /**

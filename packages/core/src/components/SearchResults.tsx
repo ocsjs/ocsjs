@@ -101,7 +101,7 @@ export const SearchResults = defineComponent({
             <hr />
 
             <div>
-              {validResult.value.map((res) => {
+              {validResult.value.map((res, i) => {
                 const title = res.ctx?.elements.title?.[0];
 
                 return (
@@ -111,10 +111,21 @@ export const SearchResults = defineComponent({
                     style={{ color: res.result?.finish ? '' : 'red' }}
                     title={res.ctx?.elements.title?.[0].innerText}
                   >
-                    {StringUtils.of(title?.innerText || '')
-                      .nowrap()
-                      .max(40)
-                      .toString()}
+                    <span style={{
+                      borderRight: '1px solid #cbcbcb',
+                      marginRight: '2px',
+                      paddingRight: '2px',
+                      color: 'darkgrey'
+                    }}>
+                      {i + 1}
+                    </span>
+                    <span>
+                      {StringUtils.of(title?.innerText || '')
+                        .nowrap()
+                        .max(40)
+                        .toString()}
+                    </span>
+
                   </div>
                 );
               })}

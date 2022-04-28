@@ -1,5 +1,6 @@
 import { store } from '..';
 import { createNote, createSearchResultPanel, createTerminalPanel } from '../../components';
+import { ExamSettingPanel } from '../../components/cx/ExamSettingPanel';
 import { StudySettingPanel } from '../../components/zhs/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/zhs/WorkSettingPanel';
 import { defineScript } from '../../core/define.script';
@@ -8,7 +9,7 @@ import { logger } from '../../logger';
 import { defaultSetting } from '../../scripts';
 import { CreditWorkSettingPanel } from './../../components/zhs/CreditWorkSettingPanel';
 import { creditStudy, study } from './study';
-import { creditWork, work } from './work';
+import { creditWork, workOrExam } from './work';
 
 export const ZHSScript = defineScript({
   name: '知道智慧树',
@@ -25,6 +26,34 @@ export const ZHSScript = defineScript({
       }
     },
     {
+      name: '共享课作业脚本',
+      url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
+      async onload (setting = store.setting.zhs.work) {
+        await sleep(5000);
+        if (store.setting.answererWrappers.length === 0) {
+          logger('error', '未设置题库配置！');
+          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+        } else {
+          /** 运行作业脚本 */
+          await workOrExam(setting, 'work');
+        }
+      }
+    },
+    {
+      name: '共享课考试脚本',
+      url: '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*',
+      async onload (setting = store.setting.zhs.exam) {
+        await sleep(5000);
+        if (store.setting.answererWrappers.length === 0) {
+          logger('error', '未设置题库配置！');
+          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+        } else {
+          /** 运行考试脚本 */
+          await workOrExam(setting, 'exam');
+        }
+      }
+    },
+    {
       name: '学分课视频脚本',
       /** 学分共享课（翻转课） */
       url: '**zhihuishu.com/aidedteaching/sourceLearning/**',
@@ -36,20 +65,7 @@ export const ZHSScript = defineScript({
         await creditStudy(setting || defaultSetting().video);
       }
     },
-    {
-      name: '共享课作业脚本',
-      url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
-      async onload (setting = store.setting.zhs.work) {
-        await sleep(5000);
-        if (store.setting.answererWrappers.length === 0) {
-          logger('error', '未设置题库配置！');
-          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
-        } else {
-          /** 运行作业脚本 */
-          await work(setting);
-        }
-      }
-    },
+
     {
       name: '学分课作业脚本',
       url: '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**',
@@ -64,6 +80,7 @@ export const ZHSScript = defineScript({
         }
       }
     }
+
   ],
   panels: [
     {
@@ -84,7 +101,6 @@ export const ZHSScript = defineScript({
         createNote(
           '进入 视频设置面板 可以调整视频设置',
           '点击右侧 作业考试 可以使用作业功能',
-          '注意: 考试功能暂未开放',
           '5秒后自动开始播放视频...'
         ),
       children: [
@@ -93,6 +109,32 @@ export const ZHSScript = defineScript({
           el: () => StudySettingPanel
         },
         createTerminalPanel()
+      ]
+    },
+    {
+      name: '共享课作业助手',
+      url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
+      el: () => createNote('进入 作业设置面板 可以调整作业设置', '5秒后自动开始作业...'),
+      children: [
+        {
+          name: '作业设置',
+          el: () => WorkSettingPanel
+        },
+        createTerminalPanel(),
+        createSearchResultPanel()
+      ]
+    },
+    {
+      name: '共享课考试助手',
+      url: '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*',
+      el: () => createNote('进入 考试设置面板 可以调整考试设置', '5秒后自动开始作业...'),
+      children: [
+        {
+          name: '考试设置',
+          el: () => ExamSettingPanel
+        },
+        createTerminalPanel(),
+        createSearchResultPanel()
       ]
     },
     {
@@ -110,24 +152,6 @@ export const ZHSScript = defineScript({
       ]
     },
     {
-      name: '作业考试助手',
-      url: '**zhihuishu.com/stuExamWeb.html#/webExamList?**',
-      el: () => createNote('点击任意作业可以使用作业功能', '注意: 考试功能暂未开放')
-    },
-    {
-      name: '共享课作业助手',
-      url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
-      el: () => createNote('进入 作业设置面板 可以调整作业设置', '5秒后自动开始作业...'),
-      children: [
-        {
-          name: '作业设置',
-          el: () => WorkSettingPanel
-        },
-        createTerminalPanel(),
-        createSearchResultPanel()
-      ]
-    },
-    {
       name: '学分课作业助手',
       url: '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**',
       el: () => createNote('进入 作业设置面板 可以调整作业设置', '5秒后自动开始作业...'),
@@ -139,6 +163,11 @@ export const ZHSScript = defineScript({
         createTerminalPanel(),
         createSearchResultPanel()
       ]
+    },
+    {
+      name: '作业考试助手',
+      url: '**zhihuishu.com/stuExamWeb.html#/webExamList?**',
+      el: () => createNote('点击任意作业可以使用作业功能', '考试可能不稳定，请大家预留其他搜题方式')
     }
   ]
 });

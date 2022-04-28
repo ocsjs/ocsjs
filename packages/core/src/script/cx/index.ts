@@ -126,7 +126,7 @@ export const CXScript = defineScript({
           confirm('未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行作业脚本 */
-          await workOrExam(setting, false);
+          await workOrExam(setting, 'work');
         }
       }
     },
@@ -151,7 +151,7 @@ export const CXScript = defineScript({
           confirm('未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行考试脚本 */
-          await workOrExam(setting, true);
+          await workOrExam(setting, 'exam');
         }
       }
     },
