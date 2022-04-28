@@ -99,7 +99,7 @@ pnpm build:core
 const ocr = new OCS.OCR(options)
 ```
 - `opions` API 请看官方文档 : [https://github.com/naptha/tesseract.js/blob/master/docs/api.md](https://github.com/naptha/tesseract.js/blob/master/docs/api.md)
-- `ocr.suit(element)` :  将元素自适应，改变大小，间距，方便OCR识别
+- `OCS.OCR.suit(element)` :  将元素自适应，改变大小，间距，方便OCR识别
 - `ocr.recognize(element)` : 识别文本
 
 例子
@@ -126,7 +126,7 @@ await ocr.load()
 // 获取元素
 const el = document.querySelector(...)
 // 识别文本
-const text = await ocr.recognize(ocr.suit(el))
+const text = await ocr.recognize(OCS.OCR.suit(el))
 // ...
 ```
 
