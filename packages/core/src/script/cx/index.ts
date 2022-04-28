@@ -179,7 +179,7 @@ export const CXScript = defineScript({
     },
     {
       name: '文字识别脚本',
-      url: ['**/mycourse/studentstudy**', '**/work/doHomeWorkNew**'],
+      url: ['**/mycourse/studentstudy**', '**/work/doHomeWorkNew**', '**/mooc2/exam/preview**', '**/mooc2/work/dowork**'],
       async onload() {
         /** 文字识别 */
         const ocr = new OCR({
@@ -196,11 +196,13 @@ export const CXScript = defineScript({
         const fonts = CXAnalyses.getSecretFont();
         if (fonts.length) {
           logger('info', '文字识别功能启动');
+          store.isRecognizing = true;
           await ocr.load();
           for (const font of fonts) {
             const text = await ocr.recognize(OCR.suit(font));
             font.innerHTML = text;
           }
+          store.isRecognizing = false;
           logger('info', '文字识别完成');
         }
       }

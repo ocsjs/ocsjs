@@ -1,5 +1,5 @@
 import defaults from 'lodash/defaults';
-import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, StringUtils } from '../../core/utils';
+import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, StringUtils, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
@@ -236,6 +236,9 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
     logger('warn', '元素不可访问');
     return;
   }
+
+  // 等待文字识别
+  await waitForRecognize();
 
   const { window: frameWindow } = frame.contentWindow;
 

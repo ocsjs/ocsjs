@@ -34,4 +34,6 @@ export interface OCSStore {
   videojs: HTMLElement | null
   /** 搜索结果存储 */
   workResults: WorkResult<any>[]
+  /** 是否正在识别文字 */
+  isRecognizing: boolean
 }

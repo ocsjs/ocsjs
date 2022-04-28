@@ -41,7 +41,7 @@ const CXAnalyses = {
   },
   /** 检测页面是否使用字体加密 */
   getSecretFont(doc:Document = document) {
-    return Array.from(doc.querySelectorAll('.Zy_TItle .clearfix.font-cxsecret')) as HTMLElement[];
+    return Array.from(doc.querySelectorAll('.font-cxsecret')) as HTMLElement[];
   }
 
 };

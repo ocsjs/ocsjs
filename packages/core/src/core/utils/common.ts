@@ -1,3 +1,4 @@
+import { store } from '../../script';
 import { DefineScript, GlobPattern, ScriptPanel, ScriptRoute } from '../define.script';
 
 export async function sleep (period: number): Promise<void> {
@@ -89,4 +90,18 @@ export function getNumber (...nums: number[]) {
  */
 export function isInBrowser (): boolean {
   return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+}
+
+/**
+ * 等待文字识别
+ */
+export function waitForRecognize() {
+  return new Promise<void>((resolve) => {
+    const timer = setInterval(() => {
+      if (store.isRecognizing === false) {
+        clearInterval(timer);
+        resolve();
+      }
+    }, 100);
+  });
 }

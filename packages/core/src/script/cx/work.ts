@@ -1,6 +1,6 @@
 import defaults from 'lodash/defaults';
 import { store } from '..';
-import { domSearch, sleep, StringUtils } from '../../core/utils';
+import { domSearch, sleep, StringUtils, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
@@ -24,6 +24,9 @@ export async function workOrExam(
 
   /** 清空内容 */
   store.workResults = [];
+
+  // 等待文字识别
+  await waitForRecognize();
 
   /** 新建答题器 */
   const worker = new OCSWorker({
