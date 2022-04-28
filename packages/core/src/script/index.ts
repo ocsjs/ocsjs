@@ -56,7 +56,8 @@ function createStore () {
     setting: _localStorage.setting,
     currentMedia: null,
     videojs: null,
-    workResults: []
+    workResults: [],
+    isRecognizing: false
   });
 
   /** 监听，并保存到本地 */

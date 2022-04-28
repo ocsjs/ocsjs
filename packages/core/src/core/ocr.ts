@@ -79,7 +79,7 @@ export class OCR {
       const base64 = await domtoimage.toPng(el);
       // 识别
       const { data: { text } } = await this.worker.recognize(base64);
-      return text.replace(/ /g, '');
+      return text.replace(/ |\n/g, '');
     }
 
     /** 关闭识别，释放内存 */

@@ -188,6 +188,7 @@ export const CXScript = defineScript({
 
         // 顶层初始化
         if (window === top) {
+          store.isRecognizing = false;
           logger('debug', '加载文字识别功能, 如果是初始化请耐心等待...');
           await ocr.load();
           logger('info', '文字识别功能加载成功');
