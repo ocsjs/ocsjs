@@ -23,11 +23,11 @@ export class OCR {
       /** 父元素的内边距 */
       padding: '4px',
       /** 字体大小 */
-      fontSize: '32px',
+      fontSize: '48px',
       /** 字体高 */
-      lineHeight: '50px',
+      lineHeight: '64px',
       /** 文字间距 */
-      letterSpacing: '8px'
+      letterSpacing: '12px'
     }
 
     constructor(options: Partial<Tesseract.WorkerOptions> = {}) {
