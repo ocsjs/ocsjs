@@ -1,3 +1,12 @@
+## [3.5.4](https://github.com/enncy/online-course-script/compare/3.5.3...3.5.4) (2022-04-28)
+
+
+### Bug Fixes
+
+* 优化OCR空格问题，还有上个版本OCR锁初始化的问题 ([82a84d7](https://github.com/enncy/online-course-script/commit/82a84d778aa99849f26fdd87447f41c7bdda72e2))
+
+
+
 ## [3.5.3](https://github.com/enncy/online-course-script/compare/3.5.2...3.5.3) (2022-04-28)
 
 
