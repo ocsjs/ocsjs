@@ -1,3 +1,12 @@
+## [3.5.5](https://github.com/enncy/online-course-script/compare/3.5.4...3.5.5) (2022-04-28)
+
+
+### Bug Fixes
+
+* 适当增大了文本便于识别 ([483d68b](https://github.com/enncy/online-course-script/commit/483d68b44720babd1a2f8432661712d869433ad4))
+
+
+
 ## [3.5.4](https://github.com/enncy/online-course-script/compare/3.5.3...3.5.4) (2022-04-28)
 
 
