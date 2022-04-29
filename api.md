@@ -139,6 +139,62 @@ for (const el of els) {
 }
 ```
 
+油猴使用
+ 
+
+```js
+// ==UserScript==
+// @name         文本破解例子
+// @namespace    http://tampermonkey.net/
+// @version      0.1
+// @author       You
+// @match        *://*.chaoxing.com/*
+// @description  下面是引入 OCS 文件
+// @require      https://cdn.jsdelivr.net/npm/ocsjs@3.5.5/dist/index.min.js
+// ==/UserScript==
+
+(async function() {
+    'use strict';
+    /**
+    下面是OCS网课助手提供的OCR类
+
+    你也可以参考 OCS 源码， https://github.com/enncy/online-course-script/blob/3.0/packages/core/src/core/ocr.ts
+    或者 https://github.com/naptha/tesseract.js 提供 的OCR API 等，进行OCR的实现。
+
+    */
+
+    // 判断是否有加密字体
+    const fonts = document.querySelectorAll(".font-cxsecret")
+    if(fonts.length){
+        // 创建OCR对象， OCR 对象只需创建一次，每次识别只需调用 recognize 方法即可
+        const ocr = new OCS.OCR({
+            /**
+              加载数据文件, 这里请配置你的对象存储路径，或者任意CDN，如果不设置路径必须使用梯子才能访问到数据。
+              例如 https://cdn.xxx.cn/tessdata
+              https://cdn.xxx.cn/tessdata 路径下面放置 chi_sim.traineddata.gz
+              chi_sim.traineddata.gz 下载地址请到 http://tessdata.projectnaptha.com/ 下载
+              下载例子
+              eng : https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz
+              chi_sim : https://tessdata.projectnaptha.com/4.0.0/chi_sim.traineddata.gz
+            */
+            langPath: 'https://cdn.ocs.enncy.cn/resource/tessdata' // 只是例子 , 这里为啥不提供我的CDN呢，因为一堆人用的话估计要炸，所以大家还是用自己的服务器或者 对象储存+CDN吧。
+        });
+        // 加载OCR数据文件
+        await ocr.load()
+        for (const font of fonts) {
+            // 字体适应
+            const suitFont = OCS.OCR.suit(font)
+            // 识别
+            const text = await ocr.recognize(suitFont);
+            // 替换文本
+            font.innerHTML = text;
+        }
+    }
+
+    // Your code here...
+})();
+```
+
 ### DefineScript
 
 > 脚本声明，油猴脚本的核心
