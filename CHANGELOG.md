@@ -1,3 +1,12 @@
+## [3.6.1](https://github.com/enncy/online-course-script/compare/3.6.0...3.6.1) (2022-04-30)
+
+
+### Bug Fixes
+
+* 修改环境依赖 ([9c69d35](https://github.com/enncy/online-course-script/commit/9c69d3581a84a8e50d87dd7a5d7ed3f446e45295))
+
+
+
 # [3.6.0](https://github.com/enncy/online-course-script/compare/3.5.5...3.6.0) (2022-04-29)
 
 
