@@ -54,8 +54,11 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 
 ## 第三步 安装脚本
 
-点击绿色按钮安装
-![image](https://user-images.githubusercontent.com/50533276/162660627-ed7eddce-ce37-4f2a-9d0b-67e3b1ce4707.png)
+点击按钮安装
+![image](https://user-images.githubusercontent.com/50533276/166102106-c1dc53a2-fbe4-43a5-aace-3a914e0737f9.png)
+![image](https://user-images.githubusercontent.com/50533276/166102182-af28fa1d-15f8-4c5e-aeca-2096fb7c1a39.png)
+***
+选择安装
 ![image](https://user-images.githubusercontent.com/50533276/162660722-ceeeec1e-d154-48f9-a077-a0e04a89e038.png)
 
 ## 第四步 进入网课页面
