@@ -183,7 +183,9 @@ export const CXScript = defineScript({
       async onload() {
         /** 文字识别 */
         const ocr = new OCR({
-          langPath: 'https://cdn.ocs.enncy.cn/resources/tessdata'
+          langPath: 'https://cdn.ocs.enncy.cn/resources/tessdata',
+          corePath: 'https://cdn.ocs.enncy.cn/resources/tesseract/tesseract-core.wasm.js',
+          workerPath: 'https://cdn.ocs.enncy.cn/resources/tesseract/worker.min.js'
         });
 
         // 顶层初始化
