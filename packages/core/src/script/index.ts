@@ -1,8 +1,7 @@
 import defaultsDeep from 'lodash/defaultsDeep';
 import { reactive, watch } from 'vue';
 import { OCSLocalStorage, OCSStore } from '../core/store';
-import { isInBrowser, onComplete } from '../core/utils';
-import { logger } from '../logger';
+import { isInBrowser } from '../core/utils';
 import { defaultOCSSetting } from '../scripts';
 
 /**
@@ -10,24 +9,11 @@ import { defaultOCSSetting } from '../scripts';
  */
 export let store: OCSStore = {} as OCSStore;
 
-// 环境检测
-if (isInBrowser()) {
-  if (typeof unsafeWindow !== 'undefined') {
-    store = createStore();
-  }
-
-  onComplete(() => {
-    if (typeof unsafeWindow !== 'undefined') {
-      // 统一转向顶层对象
-      // eslint-disable-next-line no-undef
-      store = unsafeWindow.top?.OCS.store || store;
-    } else {
-      logger('warn', '为了确保功能正常使用, 请在油猴环境下运行 https://www.tampermonkey.net/');
-    }
-  });
+export function setStore(val: OCSStore) {
+  store = val;
 }
 
-function createStore () {
+export function createStore () {
   /** 默认存储数据 */
   // eslint-disable-next-line no-undef
   const defaultStore = defaultsDeep(isInBrowser() ? GM_getValue('store', {}) : {}, {
