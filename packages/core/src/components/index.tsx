@@ -157,23 +157,22 @@ export function createWorkerSetting (
                 )
               }}
             >
-              <i class="bi bi-check-circle bi-icon" />
+              <span class="pointer">✅</span>
             </Tooltip>
               )
             : (
             <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
-              <i class="bi bi-x-circle bi-icon" />
+              <span class="pointer">❌</span>
             </Tooltip>
               )}
         </span>
         <span>
           <Tooltip title="点击查看题库配置教程">
-            <i
-              class="bi bi-question-circle bi-icon"
-              onClick={() => {
-                window.open('https://enncy.github.io/online-course-script/answerer-wrappers');
-              }}
-            ></i>
+            <span class="pointer" onClick={() => {
+              window.open('https://enncy.github.io/online-course-script/answerer-wrappers');
+            }}>
+              ❓
+            </span>
           </Tooltip>
         </span>
       </div>
