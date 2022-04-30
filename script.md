@@ -16,7 +16,14 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 
 ## 使用须知
 
-如果之前有使用过其他油猴脚本的小伙伴，在使用OCS助手之前，请先关闭其他脚本，避免脚本之间发生冲突。
+- 如果之前有使用过其他油猴脚本的小伙伴，在使用OCS助手之前，请先关闭其他脚本，避免脚本之间发生冲突。
+- 尽量使用 edge , 或者 chrome 浏览器
+
+<div style="display: flex">
+ <img src="https://user-images.githubusercontent.com/50533276/166101769-cc4cf43a-df3f-479a-bd19-e5d4033961dd.png" width="64" height="64">
+ <img src="https://user-images.githubusercontent.com/50533276/166101774-c62bfc5a-89fc-42e2-9638-484847bb0dd7.png" width="64" height="64">
+</div>
+ 
 
 ## 第一步 安装油猴
 
@@ -36,11 +43,12 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 
 ## 第二步 打开脚本链接
 
-打开以下任意链接：
+打开以下任意链接：(网络不好的请使用脚本猫)
+
+- OCS网课助手 脚本安装地址2(脚本猫) [https://scriptcat.org/script-show-page/367](https://scriptcat.org/script-show-page/367)
 
 - OCS网课助手 脚本安装地址1(greasyfork) [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
-- OCS网课助手 脚本安装地址2(脚本猫) [https://scriptcat.org/script-show-page/367](https://scriptcat.org/script-show-page/367)
 
 如果打不开链接，请看教程：[https://enncy.github.io/online-course-script/script](https://enncy.github.io/online-course-script/script)
 
