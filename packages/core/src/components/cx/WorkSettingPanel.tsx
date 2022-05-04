@@ -23,9 +23,8 @@ export const WorkSettingPanel = defineComponent({
               value={settings.period}
               min="3"
               step="1"
-              onChange={(e: any) => {
-                settings.period = e.target.valueAsNumber;
-              }}
+              onChange={(e: any) => (settings.period = e.target.valueAsNumber)}
+              onInput={(e: any) => (settings.period = e.target.valueAsNumber)}
             />
           </div>
 
@@ -37,9 +36,8 @@ export const WorkSettingPanel = defineComponent({
                 value={settings.timeout}
                 min="0"
                 step="1"
-                onChange={(e: any) => {
-                  settings.timeout = e.target.valueAsNumber;
-                }}
+                onChange={(e: any) => (settings.timeout = e.target.valueAsNumber)}
+                onInput={(e: any) => (settings.timeout = e.target.valueAsNumber)}
               />
             </Tooltip>
           </div>
@@ -52,10 +50,22 @@ export const WorkSettingPanel = defineComponent({
               min="0"
               max="2"
               step="1"
-              onChange={(e: any) => {
-                settings.retry = e.target.valueAsNumber;
-              }}
+              onChange={(e: any) => (settings.retry = e.target.valueAsNumber)}
+              onInput={(e: any) => (settings.retry = e.target.valueAsNumber)}
             />
+          </div>
+          <label>答题完成后等待(秒)</label>
+          <div>
+          <Tooltip title="自动答题完成后的等待时间, 可适当延长方便对题目检查或者使用第三方工具答题。">
+              <input
+                type="number"
+                value={settings.waitForCheck}
+                min="5"
+                step="1"
+                onChange={(e: any) => (settings.waitForCheck = e.target.valueAsNumber)}
+                onInput={(e: any) => (settings.waitForCheck = e.target.valueAsNumber)}
+              />
+            </Tooltip>
           </div>
 
         </div>

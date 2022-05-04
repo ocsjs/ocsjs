@@ -28,6 +28,7 @@ export const WorkSettingPanel = defineComponent({
             <input
               type="number"
               onChange={(e: any) => (settings.period = e.target.valueAsNumber)}
+              onInput={(e: any) => (settings.period = e.target.valueAsNumber)}
               value={settings.period}
               min="3"
               step="1"
@@ -40,6 +41,7 @@ export const WorkSettingPanel = defineComponent({
               <input
                 type="number"
                 onChange={(e: any) => (settings.timeout = e.target.valueAsNumber)}
+                onInput={(e: any) => (settings.timeout = e.target.valueAsNumber)}
                 value={settings.timeout}
                 min="0"
                 step="1"
@@ -52,6 +54,7 @@ export const WorkSettingPanel = defineComponent({
             <input
               type="number"
               onChange={(e: any) => (settings.retry = e.target.valueAsNumber)}
+              onInput={(e: any) => (settings.retry = e.target.valueAsNumber)}
               value={settings.retry}
               min="0"
               max="2"

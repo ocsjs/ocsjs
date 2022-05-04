@@ -11,9 +11,9 @@ export interface Setting {
     restudy: boolean
   }
   work: Record<string, any> &
-  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string }
+  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string, waitForCheck: number }
   exam: Record<string, any> &
-  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string }
+  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string, waitForCheck: number }
 }
 
 export type SupportPlatform = 'zhs' | 'cx'
@@ -45,14 +45,16 @@ export function defaultSetting(): Setting {
       timeout: 30,
       retry: 1,
       stopWhenError: false,
-      upload: 'save'
+      upload: 'save',
+      waitForCheck: 5
     },
     exam: {
       period: 3,
       timeout: 30,
       retry: 1,
       stopWhenError: false,
-      upload: 'save'
+      upload: 'save',
+      waitForCheck: 5
     }
   };
 }

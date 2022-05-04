@@ -221,157 +221,155 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
 
   if (store.setting.cx.video.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
-    return;
-  }
-
-  logger('info', '开始自动答题');
-
-  if (store.setting.answererWrappers.length === 0) {
+  } else if (store.setting.answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
-    return;
-  }
-
-  // @ts-ignore
-  if (!frame.contentWindow) {
+    // @ts-ignore
+  } else if (!frame.contentWindow) {
     logger('warn', '元素不可访问');
-    return;
-  }
+  } else {
+    logger('info', '开始自动答题');
 
-  // 等待文字识别
-  await waitForRecognize();
+    // 等待文字识别
+    await waitForRecognize();
 
-  const { window: frameWindow } = frame.contentWindow;
+    const { window: frameWindow } = frame.contentWindow;
 
-  const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow.document);
-  /** 清空答案 */
-  store.workResults = [];
+    const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow.document);
+    /** 清空答案 */
+    store.workResults = [];
 
-  /** 新建答题器 */
-  const worker = new OCSWorker({
-    root: TiMu,
-    elements: {
-      title: '.Zy_TItle .clearfix',
-      /**
-       * 兼容各种选项
-       *
-       * ul li .after 单选多选
-       * ul li label:not(.after) 判断题
-       * ul li textarea 填空题
-       */
-      options: 'ul li .after,ul li textarea,ul textarea,ul li label:not(.before)',
-      type: 'input[id^="answertype"]'
-    },
-    /** 默认搜题方法构造器 */
-    answerer: (elements, type) => {
-      const title = StringUtils.nowrap(elements.title[0].innerText)
-        .replace(/(\d+)?【.*?题】/, '')
-        .replace(/（\d+.0分）/, '')
-        .trim();
-      if (title) {
-        return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
-      } else {
-        throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-      }
-    },
-    /** 处理cx作业判断题选项是图片的问题 */
-    onElementSearched(elements) {
-      const typeInput = elements.type[0] as HTMLInputElement;
-      const type = parseInt(typeInput.value);
-      if (type === 3) {
-        elements.options.forEach((option) => {
-          const ri = option.querySelector('.ri');
-          const span = document.createElement('span');
-          span.innerText = ri ? '√' : '×';
-          option.appendChild(span);
-        });
-      }
-    },
-    work: {
-      /**
-       * cx 题目类型 ：
-       * 0 单选题
-       * 1 多选题
-       * 2 简答题
-       * 3 判断题
-       * 4 填空题
-       */
-      type({ elements }) {
-        const typeInput = elements.type[0] as HTMLInputElement;
-
-        const type = parseInt(typeInput.value);
-        return type === 0
-          ? 'single'
-          : type === 1
-            ? 'multiple'
-            : type === 2
-              ? 'completion'
-              : type === 3
-                ? 'judgement'
-                : elements.options[0].querySelector('textarea')
-                  ? 'completion'
-                  : undefined;
+    /** 新建答题器 */
+    const worker = new OCSWorker({
+      root: TiMu,
+      elements: {
+        title: '.Zy_TItle .clearfix',
+        /**
+         * 兼容各种选项
+         *
+         * ul li .after 单选多选
+         * ul li label:not(.after) 判断题
+         * ul li textarea 填空题
+         */
+        options: 'ul li .after,ul li textarea,ul textarea,ul li label:not(.before)',
+        type: 'input[id^="answertype"]'
       },
-      /** 自定义处理器 */
-      handler(type, answer, option) {
-        if (type === 'judgement' || type === 'single' || type === 'multiple') {
-          if (!option.parentElement?.querySelector('input')?.checked) {
-            // @ts-ignore
-            option.parentElement?.querySelector('a,label')?.click();
-          }
-        } else if (type === 'completion' && answer.trim()) {
-          const text = option.parentElement?.querySelector('textarea');
-          const textareaFrame = option.parentElement?.querySelector('iframe');
-          if (text) {
-            text.value = answer;
-          }
-          if (textareaFrame?.contentDocument) {
-            textareaFrame.contentDocument.body.innerHTML = answer;
+      /** 默认搜题方法构造器 */
+      answerer: (elements, type) => {
+        const title = StringUtils.nowrap(elements.title[0].innerText)
+          .replace(/(\d+)?【.*?题】/, '')
+          .replace(/（\d+.0分）/, '')
+          .trim();
+        if (title) {
+          return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
+        } else {
+          throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+        }
+      },
+      /** 处理cx作业判断题选项是图片的问题 */
+      onElementSearched(elements) {
+        const typeInput = elements.type[0] as HTMLInputElement;
+        const type = parseInt(typeInput.value);
+        if (type === 3) {
+          elements.options.forEach((option) => {
+            const ri = option.querySelector('.ri');
+            const span = document.createElement('span');
+            span.innerText = ri ? '√' : '×';
+            option.appendChild(span);
+          });
+        }
+      },
+      work: {
+        /**
+         * cx 题目类型 ：
+         * 0 单选题
+         * 1 多选题
+         * 2 简答题
+         * 3 判断题
+         * 4 填空题
+         */
+        type({ elements }) {
+          const typeInput = elements.type[0] as HTMLInputElement;
+
+          const type = parseInt(typeInput.value);
+          return type === 0
+            ? 'single'
+            : type === 1
+              ? 'multiple'
+              : type === 2
+                ? 'completion'
+                : type === 3
+                  ? 'judgement'
+                  : elements.options[0].querySelector('textarea')
+                    ? 'completion'
+                    : undefined;
+        },
+        /** 自定义处理器 */
+        handler(type, answer, option) {
+          if (type === 'judgement' || type === 'single' || type === 'multiple') {
+            if (!option.parentElement?.querySelector('input')?.checked) {
+              // @ts-ignore
+              option.parentElement?.querySelector('a,label')?.click();
+            }
+          } else if (type === 'completion' && answer.trim()) {
+            const text = option.parentElement?.querySelector('textarea');
+            const textareaFrame = option.parentElement?.querySelector('iframe');
+            if (text) {
+              text.value = answer;
+            }
+            if (textareaFrame?.contentDocument) {
+              textareaFrame.contentDocument.body.innerHTML = answer;
+            }
           }
         }
+      },
+      onResult: (res) => {
+        if (res.ctx) {
+          store.workResults.push(res);
+        }
+        console.log(res);
+        logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
+      },
+
+      /** 其余配置 */
+      period: (period || 3) * 1000,
+      timeout: (timeout || 30) * 1000,
+      retry,
+      stopWhenError: false
+    });
+
+    const results = await worker.doWork();
+
+    logger('info', '做题完毕', results);
+
+    // 处理提交
+    await worker.uploadHandler({
+      uploadRate: store.setting.cx.video.upload,
+      results,
+      async callback(finishedRate, uploadable) {
+        logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : ' 5秒后将自动保存');
+
+        await sleep(5000);
+
+        if (uploadable) {
+          // @ts-ignore 提交
+          frameWindow.btnBlueSubmit();
+
+          await sleep(3000);
+          /** 确定按钮 */
+          // @ts-ignore 确定
+          frameWindow.submitCheckTimes();
+        } else {
+          // @ts-ignore 禁止弹窗
+          frameWindow.alert = () => { };
+          // @ts-ignore 暂时保存
+          frameWindow.noSubmit();
+        }
       }
-    },
-    onResult: (res) => {
-      if (res.ctx) {
-        store.workResults.push(res);
-      }
-      console.log(res);
-      logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
-    },
+    });
+  }
 
-    /** 其余配置 */
-    period: (period || 3) * 1000,
-    timeout: (timeout || 30) * 1000,
-    retry,
-    stopWhenError: false
-  });
-
-  const results = await worker.doWork();
-
-  logger('info', '做题完毕', results);
-
-  // 处理提交
-  await worker.uploadHandler({
-    uploadRate: store.setting.cx.video.upload,
-    results,
-    async callback(finishedRate, uploadable) {
-      logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : ' 5秒后将自动保存');
-
-      await sleep(5000);
-
-      if (uploadable) {
-        // @ts-ignore 提交
-        frameWindow.btnBlueSubmit();
-
-        await sleep(3000);
-        /** 确定按钮 */
-        // @ts-ignore 确定
-        frameWindow.submitCheckTimes();
-      } else {
-        // @ts-ignore 禁止弹窗
-        frameWindow.alert = () => { };
-        // @ts-ignore 暂时保存
-        frameWindow.noSubmit();
-      }
-    }
-  });
+  if (setting.waitForCheck) {
+    logger('debug', `正在等待答题检查: 一共 ${setting.waitForCheck} 秒`);
+    await sleep(setting.waitForCheck * 1000);
+  }
 }
