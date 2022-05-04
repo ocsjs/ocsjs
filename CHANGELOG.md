@@ -1,3 +1,12 @@
+## [3.6.2](https://github.com/enncy/online-course-script/compare/3.6.1...3.6.2) (2022-04-30)
+
+
+### Bug Fixes
+
+* 修改 OCR 脚本加载路径, 确保能够访问 work 和 core 脚本 ([9b1544a](https://github.com/enncy/online-course-script/commit/9b1544a8e2b002d78471d387e507967e20281020))
+
+
+
 ## [3.6.1](https://github.com/enncy/online-course-script/compare/3.6.0...3.6.1) (2022-04-30)
 
 
