@@ -1,3 +1,13 @@
+## [3.6.4](https://github.com/enncy/online-course-script/compare/3.6.2...3.6.4) (2022-05-04)
+
+
+### Bug Fixes
+
+* 深度优化OCR ([a21a8ad](https://github.com/enncy/online-course-script/commit/a21a8adf3b209ae5e65aff26c134da2a7b1f0fd2))
+* 修复填空题多个填空不填的BUG ([4a0f031](https://github.com/enncy/online-course-script/commit/4a0f031b244a800b1e6ff39d3b1b99160372e66d))
+
+
+
 ## [3.6.2](https://github.com/enncy/online-course-script/compare/3.6.1...3.6.2) (2022-04-30)
 
 
