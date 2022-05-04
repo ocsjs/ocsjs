@@ -1,9 +1,9 @@
 import { answerSimilar, clearString, removeRedundant, StringUtils } from '../utils';
 import { QuestionResolver, WorkContext } from './interface';
-import { isPlainAnswer } from './utils';
+import { isPlainAnswer, splitAnswer } from './utils';
 
 /** 默认答案题目处理器 */
-export function defaultQuestionResolve<E> (
+export function defaultQuestionResolve<E>(
   ctx: WorkContext<E>
 ): Record<'single' | 'multiple' | 'completion' | 'judgement', QuestionResolver<E>> {
   return {
@@ -12,7 +12,7 @@ export function defaultQuestionResolve<E> (
      *
      * 在多个题库给出的答案中，找出最相似的答案
      */
-    single (results, options, handler) {
+    single(results, options, handler) {
       // 是否为纯ABCD答案
       for (const result of results) {
         for (const answer of result.answers) {
@@ -55,7 +55,7 @@ export function defaultQuestionResolve<E> (
      *
      * 匹配每个题库的答案，找出匹配数量最多的题库，并且选择
      */
-    multiple (results, options, handler) {
+    multiple(results, options, handler) {
       /** 最终的回答列表 */
       const targetAnswers: string[][] = [];
       /** 最终的选项 */
@@ -136,7 +136,7 @@ export function defaultQuestionResolve<E> (
       }
     },
     /** 判断题处理器 */
-    judgement (results, options, handler) {
+    judgement(results, options, handler) {
       for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
         const correctWords = ['是', '对', '正确', '√', '对的', '是的', '正确的', 'true', 'yes', '1'];
         const incorrectWords = [
@@ -184,7 +184,7 @@ export function defaultQuestionResolve<E> (
           return { finish: true, option };
         }
 
-        function matches (target: string, options: string[]) {
+        function matches(target: string, options: string[]) {
           return options.some((option) => RegExp(clearString(option, '√', '×')).test(clearString(target, '√', '×')));
         }
       }
@@ -194,9 +194,17 @@ export function defaultQuestionResolve<E> (
     /** 填空题处理器 */
     completion: function (results, options, handler) {
       for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
-        if (answers.length !== 0 && answers.length === options.length) {
+        let ans = answers;
+        if (ans.length === 1) {
+          ans = splitAnswer(ans[0]);
+        }
+
+        if (ans.length !== 0 && ans.length === options.length) {
           options.forEach((el, i) => {
-            handler('completion', answers[i], el, ctx);
+            /** 延长填写时间，避免一次全部填写 */
+            setTimeout(() => {
+              handler('completion', ans[i], el, ctx);
+            }, 500 * i);
           });
           return { finish: true };
         }

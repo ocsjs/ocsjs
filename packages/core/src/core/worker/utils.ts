@@ -1,8 +1,8 @@
 import { QuestionTypes, WorkContext } from './interface';
 
 /** 默认题目类型解析器 */
-export function defaultWorkTypeResolver (ctx: WorkContext<any>): QuestionTypes | undefined {
-  function count (selector: string) {
+export function defaultWorkTypeResolver(ctx: WorkContext<any>): QuestionTypes | undefined {
+  function count(selector: string) {
     let c = 0;
     for (const option of ctx.elements.options || []) {
       if (option.querySelector(selector) !== null) {
@@ -23,7 +23,7 @@ export function defaultWorkTypeResolver (ctx: WorkContext<any>): QuestionTypes |
 }
 
 /** 判断答案是否为A-Z的文本, 并且字符序号依次递增, 并且 每个字符是否都只出现了一次 */
-export function isPlainAnswer (answer: string) {
+export function isPlainAnswer(answer: string) {
   if (answer.length > 8 || !/[A-Z]/.test(answer)) {
     return false;
   }
@@ -44,4 +44,16 @@ export function isPlainAnswer (answer: string) {
   }
 
   return true;
+}
+
+/** 分割答案 */
+export function splitAnswer(answer: string) {
+  const seprators = ['===', '#', '---', '###', '|'];
+  for (const sep of seprators) {
+    if (answer.split(sep).length > 1) {
+      return answer.split(sep);
+    }
+  }
+
+  return [answer];
 }
