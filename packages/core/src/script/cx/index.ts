@@ -28,7 +28,7 @@ export const CXScript = defineScript({
     {
       name: '版本切换脚本',
       url: updateURLs,
-      async onload () {
+      async onload() {
         if (top === window) {
           if (confirm('OCS网课助手不支持旧版超星, 点击 `确定` 切换到超星新版。')) {
             // 跳转到最新版本的超星
@@ -51,7 +51,7 @@ export const CXScript = defineScript({
     {
       name: '屏蔽倍速限制',
       url: '**/ananas/modules/video/**',
-      start () {
+      start() {
         console.log('屏蔽倍速限制启动');
         rateHack();
       }
@@ -60,7 +60,7 @@ export const CXScript = defineScript({
     {
       name: '任务切换脚本',
       url: '**/mycourse/studentstudy**',
-      onload () {
+      onload() {
         const { restudy } = store.setting.cx.video;
 
         const params = new URLSearchParams(window.location.href);
@@ -97,7 +97,7 @@ export const CXScript = defineScript({
     {
       name: '学习脚本',
       url: '**/knowledge/cards**',
-      async onload (setting = store.setting.cx.video) {
+      async onload(setting = store.setting.cx.video) {
         logger('info', '开始学习');
         await sleep(5000);
         await study(setting);
@@ -107,7 +107,7 @@ export const CXScript = defineScript({
       /** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */
       name: '阅读脚本',
       url: '**/readsvr/book/mooc**',
-      onload () {
+      onload() {
         console.log('阅读脚本启动');
         setTimeout(() => {
           // @ts-ignore
@@ -119,7 +119,7 @@ export const CXScript = defineScript({
     {
       name: '作业脚本',
       url: '**/mooc2/work/dowork**',
-      async onload (setting = store.setting.cx.work) {
+      async onload(setting = store.setting.cx.work) {
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
@@ -133,7 +133,7 @@ export const CXScript = defineScript({
     {
       name: '整卷预览脚本',
       url: '**/exam/test/reVersionTestStartNew**',
-      async onload () {
+      async onload() {
         alert('即将自动切换到整卷预览。。。');
         await sleep(3000);
         // @ts-ignore
@@ -144,7 +144,7 @@ export const CXScript = defineScript({
     {
       name: '考试脚本',
       url: '**/mooc2/exam/preview**',
-      async onload (setting = store.setting.cx.exam) {
+      async onload(setting = store.setting.cx.exam) {
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
@@ -158,7 +158,7 @@ export const CXScript = defineScript({
     {
       name: '屏蔽作业考试填空简答题粘贴限制',
       url: ['**/mooc2/exam/preview**', '**/mooc2/work/dowork**', '**/work/doHomeWorkNew/**'],
-      onload () {
+      onload() {
         try {
           // @ts-ignore
           // eslint-disable-next-line no-undef
@@ -191,7 +191,8 @@ export const CXScript = defineScript({
         // 顶层初始化
         if (window === top) {
           store.isRecognizing = false;
-          logger('debug', '加载文字识别功能, 如果是初始化请耐心等待...');
+          logger('debug', '加载文字识别功能, 如果是初始化请耐心等待..., 大约需要下载20mb的数据文件');
+          // 预加载
           await ocr.load();
           logger('info', '文字识别功能加载成功');
         }
@@ -200,11 +201,21 @@ export const CXScript = defineScript({
         if (fonts.length) {
           logger('info', '文字识别功能启动');
           store.isRecognizing = true;
+          // 加载
           await ocr.load();
-          for (const font of fonts) {
-            const text = await ocr.recognize(OCR.suit(font));
-            font.innerHTML = text;
+          for (let i = 0; i < fonts.length; i++) {
+            try {
+              // 识别
+              const text = await ocr.recognize(OCR.suit(fonts[i]));
+              // 改变文本
+              fonts[i].innerHTML = text;
+              // 复原样式
+              OCR.unsuit(fonts[i]);
+            } catch (e) {
+              console.log('文字识别错误', e);
+            }
           }
+
           store.isRecognizing = false;
           logger('info', '文字识别完成');
         }
