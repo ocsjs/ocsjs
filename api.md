@@ -150,7 +150,7 @@ for (const el of els) {
 // @author       You
 // @match        *://*.chaoxing.com/*
 // @description  下面是引入 OCS 文件
-// @require      https://cdn.jsdelivr.net/npm/ocsjs@3.5.5/dist/index.min.js
+// @require      https://cdn.jsdelivr.net/npm/ocsjs@3.6.4/dist/index.min.js
 // ==/UserScript==
 
 (async function() {
@@ -188,6 +188,8 @@ for (const el of els) {
             const text = await ocr.recognize(suitFont);
             // 替换文本
             font.innerHTML = text;
+	    // 还原字体
+	    OCS.OCR.unsuit(font)
         }
     }
 
