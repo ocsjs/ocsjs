@@ -14,9 +14,7 @@ title: 油猴拓展安装教程
 
 - [谷歌浏览器安装教程](#谷歌浏览器安装教程)
 - [Edge浏览器安装教程](#Edge浏览器安装教程)
-
-4.最后选项解压缩后的文件即可实现油猴安装。
-
+ 
 ## 谷歌浏览器安装教程
   
 
@@ -31,6 +29,8 @@ title: 油猴拓展安装教程
 
 ![image](https://user-images.githubusercontent.com/50533276/161514783-5066d304-3376-4268-8fa1-f2e2bd9a03e6.png)
 
+4.最后选择解压缩后的文件即可实现油猴安装。
+
 
 ## Edge 浏览器安装教程
 
@@ -39,4 +39,6 @@ title: 油猴拓展安装教程
 ![image](https://user-images.githubusercontent.com/50533276/161516973-b4750848-9624-44e4-bef1-103a7f02283b.png)
 
 ![image](https://user-images.githubusercontent.com/50533276/161517243-80a2829f-29e9-4aa3-a34a-f3e19d876516.png)
+
+4.最后选择解压缩后的文件即可实现油猴安装。
 
