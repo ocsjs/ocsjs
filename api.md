@@ -178,7 +178,7 @@ for (const el of els) {
               eng : https://tessdata.projectnaptha.com/4.0.0/eng.traineddata.gz
               chi_sim : https://tessdata.projectnaptha.com/4.0.0/chi_sim.traineddata.gz
             */
-            langPath: 'https://cdn.ocs.enncy.cn/resource/tessdata' // 只是例子 , 这里为啥不提供我的CDN呢，因为一堆人用的话估计要炸，所以大家还是用自己的服务器或者 对象储存+CDN吧。
+            langPath: 'https://cdn.xxx.cn/tessdata' // 只是例子 , 这里为啥不提供我的CDN呢，因为一堆人用的话估计要炸，所以大家还是用自己的服务器或者 对象储存+CDN吧。
         });
         // 加载OCR数据文件
         await ocr.load()
