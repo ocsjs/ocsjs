@@ -183,9 +183,9 @@ for (const el of els) {
         await ocr.load()
         for (const font of fonts) {
             // 字体适应
-            const suitFont = OCS.OCR.suit(font)
+            OCS.OCR.suit(font)
             // 识别
-            const text = await ocr.recognize(suitFont);
+            const text = await ocr.recognize(font);
             // 替换文本
             font.innerHTML = text;
 	    // 还原字体
