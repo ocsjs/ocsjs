@@ -30,6 +30,9 @@ export let loaded = false;
  * 显示面板，检测是否存在需要运行的脚本，并执行
  */
 export function start (options?: StartOptions) {
+  // 初始化 store 变量
+  initStore();
+
   // 加载面板
   if (top === window) {
     onComplete(() => {
@@ -45,8 +48,6 @@ export function start (options?: StartOptions) {
       }
     });
   }
-  // 初始化 store 变量
-  initStore();
 
   // 执行脚本
   executeScripts(options?.scripts || definedScripts);
