@@ -79,6 +79,40 @@ export const ZHSScript = defineScript({
           await creditWork(setting);
         }
       }
+    },
+    {
+      name: '文本识别脚本',
+      url: ['**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**', '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*', '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**'],
+      start() {
+        // @ts-ignore
+        window.Element.prototype.attachShadow = undefined;
+        // @ts-ignore
+        // eslint-disable-next-line no-undef
+        unsafeWindow.Element.prototype.attachShadow = undefined;
+      }
+    },
+    {
+      name: '屏蔽视频检测脚本',
+      url: '**zhihuishu.com/videoStudy.html**',
+      start() {
+        // @ts-ignore
+        Element.prototype._addEventListener = Element.prototype.addEventListener;
+        Element.prototype.addEventListener = function () {
+          const args = [...arguments];
+          const temp = args[1];
+          args[1] = function () {
+            const args2 = [...arguments];
+            args2[0] = new Proxy(args2[0], {
+              get(target: any, p: string | symbol) {
+                return p === 'isTrusted' ? true : target[p];
+              }
+            });
+            return temp(...args2);
+          };
+          // @ts-ignore
+          return this._addEventListener(...args);
+        };
+      }
     }
 
   ],
