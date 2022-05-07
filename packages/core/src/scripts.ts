@@ -16,7 +16,7 @@ export interface Setting {
   Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string, waitForCheck: number }
 }
 
-export type SupportPlatform = 'zhs' | 'cx'
+export type SupportPlatform = 'zhs' | 'cx' |'icve'
 
 export type ScriptSettings = Record<SupportPlatform, Setting> & {
   answererWrappers: AnswererWrapper[]
@@ -25,6 +25,7 @@ export type ScriptSettings = Record<SupportPlatform, Setting> & {
 export const defaultOCSSetting = {
   zhs: defaultSetting(),
   cx: defaultSetting(),
+  icve: defaultSetting(),
   answererWrappers: [] as AnswererWrapper[]
 };
 

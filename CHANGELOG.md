@@ -1,3 +1,12 @@
+# [3.7.0](https://github.com/enncy/online-course-script/compare/3.6.4...3.7.0) (2022-05-04)
+
+
+### Features
+
+* 添加答题等待时间，方便检查或者使用其他答题工具。 ([12f2960](https://github.com/enncy/online-course-script/commit/12f2960a47f3eb22cc9bbf91bf49c2ace54ea89e))
+
+
+
 ## [3.6.4](https://github.com/enncy/online-course-script/compare/3.6.2...3.6.4) (2022-05-04)
 
 

@@ -2,13 +2,13 @@ import { CommonScript } from './script/common';
 import { CXScript } from './script/cx';
 import { store } from './script/index';
 import { ZHSScript } from './script/zhs';
-import { start } from './start';
+import { app, loaded, panel, start } from './start';
 
 export * from './core/index';
 /**
  * ocsjs
  */
-export { store, start };
+export { store, start, app, panel, loaded };
 
 // @ts-ignore vite.define
 export const VERSION = process.env._VERSION_;

@@ -105,3 +105,22 @@ export function waitForRecognize() {
     }, 100);
   });
 }
+
+/**
+ * 显示面板
+ */
+export function showPanel() {
+  // @ts-ignore
+  const panel: HTMLElement = top?.document.querySelector('ocs-panel');
+  if (panel) {
+    if (panel.classList.contains('hide')) {
+      panel.style.top = 'unset';
+      panel.style.bottom = '10%';
+      panel.style.left = '5%';
+    } else {
+      panel.style.top = '20%';
+      panel.style.bottom = 'unset';
+      panel.style.left = '50%';
+    }
+  }
+}

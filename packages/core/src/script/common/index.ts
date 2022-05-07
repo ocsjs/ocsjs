@@ -1,13 +1,14 @@
 import { store } from '..';
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
-import { onComplete, onInteractive, urlGlob } from '../../core/utils';
+import { onComplete, onInteractive, showPanel, urlGlob } from '../../core/utils';
 
 const supports = [
   ['**chaoxing.com**', 'cx'],
   ['**edu.cn**', 'cx'],
   ['**org.cn**', 'cx'],
-  ['**zhihuishu.com**', 'zhs']
+  ['**zhihuishu.com**', 'zhs'],
+  ['**icve.com.cn**', 'icve']
 ];
 
 export const CommonScript = defineScript({
@@ -78,19 +79,7 @@ export const CommonScript = defineScript({
             const contains = stack.join('').includes(target.join(''));
 
             if (contains) {
-              // @ts-ignore
-              const panel: HTMLElement = top?.document.querySelector('ocs-panel');
-              if (panel) {
-                if (panel.classList.contains('hide')) {
-                  panel.style.top = 'unset';
-                  panel.style.bottom = '10%';
-                  panel.style.left = '5%';
-                } else {
-                  panel.style.top = '20%';
-                  panel.style.bottom = 'unset';
-                  panel.style.left = '50%';
-                }
-              }
+              showPanel();
               stack = [];
             }
           } else {
