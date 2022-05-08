@@ -64,7 +64,7 @@ exports.updater = async function (win) {
         /** 解压缩 */
         const zip = new AdmZip(dest);
 
-        new Promise((resolve, reject) => {
+        new Promise((resolve) => {
           zip.extractAllTo(unzipDest, true);
           resolve();
         })

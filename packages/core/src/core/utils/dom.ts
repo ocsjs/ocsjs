@@ -1,4 +1,3 @@
-import { store } from './../../script/index';
 import { RawElements, SearchedElements } from './../worker/interface';
 /**
  * 与 {@link domSearchAll } 相同，区别是这个只返回单个元素，而不是一个元素数组
@@ -6,7 +5,7 @@ import { RawElements, SearchedElements } from './../worker/interface';
  * @param wrapper
  * @returns
  */
-export function domSearch<E extends RawElements> (
+export function domSearch<E extends RawElements>(
   /** 搜索构造器 */
   wrapper: E,
   root: HTMLElement | Document = window.document
@@ -32,7 +31,7 @@ export function domSearch<E extends RawElements> (
  * console.log(title) // 等价于 Array.from(document.body.querySelectorAll('.title'))
  * console.log(btn)// 等价于 Array.from(document.body.querySelectorAll('.btn'))
  */
-export function domSearchAll<E extends RawElements> (
+export function domSearchAll<E extends RawElements>(
   /** 搜索构造器 */
   wrapper: E,
   root: HTMLElement | Document = window.document
@@ -48,19 +47,18 @@ export function domSearchAll<E extends RawElements> (
  * 元素拖拽
  */
 
-export function dragElement (
-  draggable: string | HTMLElement,
-  container: string | HTMLElement,
-  onMove: (x: number, y: number) => void,
-  root: Document | HTMLElement = document
+export function dragElement(
+  draggable: HTMLElement,
+  container: HTMLElement,
+  onMove: (x: number, y: number) => void
 ) {
   let pos1 = 0;
   let pos2 = 0;
   let pos3 = 0;
   let pos4 = 0;
 
-  const draggableEl = typeof draggable === 'string' ? (root.querySelector(draggable) as HTMLElement) : draggable;
-  const containerEl = typeof container === 'string' ? (root.querySelector(container) as HTMLElement) : container;
+  const draggableEl = draggable;
+  const containerEl = container;
 
   if (draggableEl) {
     // if present, the header is where you move the DIV from:
@@ -70,7 +68,7 @@ export function dragElement (
     containerEl.onmousedown = dragMouseDown;
   }
 
-  function dragMouseDown (e: any) {
+  function dragMouseDown(e: any) {
     e = e || window.event;
     e.preventDefault();
 
@@ -82,9 +80,10 @@ export function dragElement (
     document.onmousemove = elementDrag;
   }
 
-  function elementDrag (e: any) {
+  function elementDrag(e: any) {
     e = e || window.event;
     e.preventDefault();
+
     // calculate the new cursor position:
     pos1 = pos3 - e.clientX;
     pos2 = pos4 - e.clientY;
@@ -97,7 +96,7 @@ export function dragElement (
     containerEl.style.bottom = 'unset';
   }
 
-  function closeDragElement (e: any) {
+  function closeDragElement() {
     // stop moving when mouse button is released:
     document.onmouseup = null;
     document.onmousemove = null;
@@ -107,7 +106,7 @@ export function dragElement (
 /**
  *  递归寻找 iframe
  */
-export function searchIFrame (root: Document) {
+export function searchIFrame(root: Document) {
   let list = Array.from(root.querySelectorAll('iframe'));
   const result: HTMLIFrameElement[] = [];
   while (list.length) {
@@ -131,8 +130,8 @@ export function searchIFrame (root: Document) {
 /**
  * 检测页面是否准备完毕
  */
-export function onComplete (callback: () => void, root: Document = document) {
-  function checkReady () {
+export function onComplete(callback: () => void, root: Document = document) {
+  function checkReady() {
     if (root.readyState === 'complete') {
       callback();
       root.removeEventListener('readystatechange', checkReady);
@@ -145,7 +144,7 @@ export function onComplete (callback: () => void, root: Document = document) {
  * 检测页面是否加载
  */
 export function onInteractive(callback: () => void, root: Document = document) {
-  function checkLoaded () {
+  function checkLoaded() {
     if (root.readyState === 'interactive') {
       root.removeEventListener('readystatechange', checkLoaded);
       callback();
@@ -153,63 +152,4 @@ export function onInteractive(callback: () => void, root: Document = document) {
   }
   checkLoaded();
   root.addEventListener('readystatechange', checkLoaded);
-}
-
-/** 显示与隐藏面板 */
-export function togglePanel (show?: boolean) {
-  const { panel } = domSearch({ panel: 'ocs-panel' });
-  if (panel) {
-    const { icon, header, container, footer, tip } = domSearch(
-      {
-        icon: '.ocs-icon',
-        tip: '.ocs-tip',
-        header: '.ocs-panel-header',
-        container: '.ocs-panel-container',
-        footer: '.ocs-panel-footer'
-      },
-      panel
-    );
-
-    const tips = ['', '连续按下ocs重置位置', '双击展开'];
-
-    /** 如果指定了 hide ，则根据 hide 进行显示和隐藏 */
-    if (show !== undefined) {
-      if (show) {
-        showPanel();
-      } else {
-        hidePanel();
-      }
-    } else {
-      /** 否则自动判断是否需要隐藏或者显示 */
-      if (panel.classList.contains('hide')) {
-        showPanel();
-      } else {
-        hidePanel();
-      }
-    }
-
-    function hidePanel () {
-      if (panel && icon && header && container && footer && tip) {
-        panel.classList.add('hide');
-        header.classList.add('hide');
-        container.classList.add('hide');
-        footer.classList.add('hide');
-        icon.style.display = 'block';
-        tip.innerHTML = tip.innerHTML + tips.join('<br>');
-        store.localStorage.hide = true;
-      }
-    }
-
-    function showPanel () {
-      if (panel && icon && header && container && footer && tip) {
-        panel.classList.remove('hide');
-        header.classList.remove('hide');
-        container.classList.remove('hide');
-        footer.classList.remove('hide');
-        icon.style.display = 'none';
-        tip.innerHTML = tip.innerHTML.replace(tips.join('<br>'), '');
-        store.localStorage.hide = false;
-      }
-    }
-  }
 }

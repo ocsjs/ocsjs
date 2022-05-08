@@ -4,7 +4,7 @@ import { store } from '../../script';
 import { WorkSettingPanel } from './WorkSettingPanel';
 
 export const ExamSettingPanel = defineComponent({
-  setup (props, { slots }) {
+  setup () {
     const settings = store.setting.zhs.exam;
 
     return () => (

@@ -1,6 +1,6 @@
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
-import { onComplete, onInteractive, resetPanelPosition } from '../../core/utils';
+import { onComplete, onInteractive } from '../../core/utils';
 
 const supports = ['*'];
 
@@ -48,29 +48,8 @@ export const CommonScript = defineScript({
           setTimeout(() => enableCopy(), 3000);
         });
       }
-    },
-    {
-      name: 'OCS样式切换,位置定位脚本',
-      url: supports,
-      onload() {
-        const target = ['o', 'c', 's'];
-        let stack: string[] = [];
-
-        onkeydown = (e) => {
-          if (target.includes(e.key)) {
-            stack.push(e.key);
-            const contains = stack.join('').includes(target.join(''));
-
-            if (contains) {
-              resetPanelPosition();
-              stack = [];
-            }
-          } else {
-            stack = [];
-          }
-        };
-      }
     }
+
   ],
   panels: [
     {

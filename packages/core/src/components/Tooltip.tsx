@@ -10,6 +10,10 @@ export const Tooltip = defineComponent({
     type: {
       default: 'dark',
       type: String as PropType<'dark' | 'light'>
+    },
+    tooltipStyle: {
+      default: () => {},
+      type: Object as PropType<object>
     }
   },
   data () {
@@ -18,7 +22,7 @@ export const Tooltip = defineComponent({
   render () {
     return (
       <div onMouseenter={() => (this.show = true)} onMouseleave={() => (this.show = false)} style="width: 100%">
-        <span style={{ display: this.show ? 'block' : 'none' }} class={'tooltip ' + this.type}>
+        <div style={{ display: this.show ? 'block' : 'none', ...this.$props.tooltipStyle }} class={'tooltip ' + this.type}>
           {this.$slots.title
             ? (
                 this.$slots.title()
@@ -26,7 +30,7 @@ export const Tooltip = defineComponent({
             : (
             <span innerHTML={this.$props.title?.replace(/\n/g, '<br/>')}></span>
               )}
-        </span>
+        </div>
         <div style="width: 100%">{this.$slots.default?.()}</div>
       </div>
     );

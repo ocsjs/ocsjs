@@ -1,7 +1,7 @@
 import { App as VueApp, createApp } from 'vue';
 import App from './App.vue';
 import { DefineScript } from './core/define.script';
-import { dragElement, getCurrentRoutes, isInBrowser, onComplete, onInteractive, togglePanel } from './core/utils';
+import { getCurrentRoutes, isInBrowser, onComplete, onInteractive } from './core/utils';
 import { logger } from './logger';
 import { definedScripts } from './main';
 import { createStore, setStore, store } from './script';
@@ -29,7 +29,7 @@ export let loaded = false;
 /**
  * 显示面板，检测是否存在需要运行的脚本，并执行
  */
-export function start (options?: StartOptions) {
+export function start(options?: StartOptions) {
   // 初始化 store 变量
   initStore();
 
@@ -62,8 +62,8 @@ function initStore() {
 
     onComplete(() => {
       if (typeof unsafeWindow !== 'undefined') {
-      // 统一转向顶层对象
-      // eslint-disable-next-line no-undef
+        // 统一转向顶层对象
+        // eslint-disable-next-line no-undef
         setStore(unsafeWindow.top?.OCS.store || store);
       } else {
         logger('warn', '为了确保功能正常使用, 请在油猴环境下运行 https://www.tampermonkey.net/');
@@ -75,35 +75,14 @@ function initStore() {
 /**
  * 显示面板
  */
-export function showPanels (options?: StartOptions) {
-  const { draggable } = options || {};
+export function showPanels(options?: StartOptions) {
+  store.startOptions = options;
 
   /** 绑定元素 */
   app = createApp(App);
-  panel = document.createElement('ocs-panel');
+  panel = document.createElement('div');
   document.body.appendChild(panel);
   app.mount(panel);
-
-  if (draggable) {
-    dragElement('ocs-panel .ocs-panel-header', panel, onMove);
-    dragElement('ocs-panel .ocs-panel-footer', panel, onMove);
-    dragElement('.ocs-icon', panel, onMove);
-
-    function onMove (x: number, y: number) {
-      store.localStorage.position.x = x;
-      store.localStorage.position.y = y;
-    }
-  }
-
-  // 设置初始位置
-  if (store.localStorage.position.x && store.localStorage.position.y) {
-    panel.style.left = `${store.localStorage.position.x}px`;
-    panel.style.top = `${store.localStorage.position.y}px`;
-  }
-
-  if (store.localStorage.hide) {
-    togglePanel(false);
-  }
 
   logger('info', `OCS ${store.VERSION} 加载成功`);
 }
@@ -111,7 +90,7 @@ export function showPanels (options?: StartOptions) {
 /**
  * 执行脚本
  */
-export function executeScripts (scripts: DefineScript[]) {
+export function executeScripts(scripts: DefineScript[]) {
   window.addEventListener('unhandledrejection', (event) => {
     logger('error', event.reason.toString());
     console.error(event.reason);
@@ -125,7 +104,7 @@ export function executeScripts (scripts: DefineScript[]) {
       window.addEventListener('load', load);
     }
 
-    function load () {
+    function load() {
       for (const route of routes.filter((route) => route.onload)) {
         route.onload?.();
       }
