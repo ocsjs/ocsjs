@@ -109,11 +109,11 @@ export function waitForRecognize() {
 /**
  * 显示面板
  */
-export function showPanel() {
+export function resetPanelPosition(hide?: boolean) {
   // @ts-ignore
   const panel: HTMLElement = top?.document.querySelector('ocs-panel');
   if (panel) {
-    if (panel.classList.contains('hide')) {
+    if (hide === undefined ? panel.classList.contains('hide') : hide) {
       panel.style.top = 'unset';
       panel.style.bottom = '10%';
       panel.style.left = '5%';

@@ -1,34 +1,17 @@
-import { store } from '..';
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
-import { onComplete, onInteractive, showPanel, urlGlob } from '../../core/utils';
+import { onComplete, onInteractive, resetPanelPosition } from '../../core/utils';
 
-const supports = [
-  ['**chaoxing.com**', 'cx'],
-  ['**edu.cn**', 'cx'],
-  ['**org.cn**', 'cx'],
-  ['**zhihuishu.com**', 'zhs'],
-  ['**icve.com.cn**', 'icve']
-];
+const supports = ['*'];
 
 export const CommonScript = defineScript({
   name: '默认脚本',
   routes: [
-    {
-      name: '网课类型标记',
-      url: supports.map((arr) => arr[0]),
-      start () {
-        for (const arr of supports) {
-          if (urlGlob(arr[0])) {
-            store.localStorage.platform = arr[1];
-          }
-        }
-      }
-    },
+
     {
       name: '禁止弹窗脚本',
-      url: supports.map((arr) => arr[0]),
-      start () {
+      url: supports,
+      start() {
         try {
           console.log('禁止弹窗脚本启动');
           // @ts-ignore
@@ -46,9 +29,9 @@ export const CommonScript = defineScript({
     },
     {
       name: '开启页面右键复制粘贴功能',
-      url: supports.map((arr) => arr[0]),
-      start () {
-        function enableCopy () {
+      url: supports,
+      start() {
+        function enableCopy() {
           console.log('开启页面右键复制粘贴功能');
           try {
             const d = document;
@@ -68,8 +51,8 @@ export const CommonScript = defineScript({
     },
     {
       name: 'OCS样式切换,位置定位脚本',
-      url: supports.map((arr) => arr[0]),
-      onload () {
+      url: supports,
+      onload() {
         const target = ['o', 'c', 's'];
         let stack: string[] = [];
 
@@ -79,7 +62,7 @@ export const CommonScript = defineScript({
             const contains = stack.join('').includes(target.join(''));
 
             if (contains) {
-              showPanel();
+              resetPanelPosition();
               stack = [];
             }
           } else {
@@ -94,7 +77,7 @@ export const CommonScript = defineScript({
       name: 'OCS助手',
       priority: 100,
       default: true,
-      url: supports.map((arr) => arr[0]),
+      url: supports,
       el: () =>
         createNote(
           '提示： 手动点击进入视频，作业，考试页面，即可自动运行',
