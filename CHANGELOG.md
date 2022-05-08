@@ -1,3 +1,17 @@
+## [3.7.2](https://github.com/enncy/online-course-script/compare/3.7.0...3.7.2) (2022-05-07)
+
+
+### Bug Fixes
+
+* 修改 store 初始化位置 ([808eb08](https://github.com/enncy/online-course-script/commit/808eb080a50e75ecef151010b74891ce272938c9))
+
+
+### Features
+
+* 添加智慧树文本识别脚本和屏蔽视频检测脚本 ([85ddac1](https://github.com/enncy/online-course-script/commit/85ddac119874d5b6877dfc8fa29ecdff70fec4ed))
+
+
+
 # [3.7.0](https://github.com/enncy/online-course-script/compare/3.6.4...3.7.0) (2022-05-04)
 
 

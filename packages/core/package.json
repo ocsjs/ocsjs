@@ -17,7 +17,6 @@
     "axios": "^0.25.0",
     "chalk": "4.1.0",
     "dom-to-image": "^2.6.0",
-    "html2canvas": "^1.4.1",
     "lodash": "^4.17.21",
     "node-fetch": "^2.6.7",
     "string-similarity": "^4.0.4",
