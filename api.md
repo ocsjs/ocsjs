@@ -32,8 +32,8 @@
 ## 项目构建
 
 ```sh
-# 全局安装 pnpm ，如果已经安装，则无需执行
-npm i pnpm -g
+# 全局安装 pnpm ，如果已经安装，则无需执行, 请勿安装7.x以上版本。
+npm i pnpm@6.32.6 -g
 # 下载项目
 git clone https://github.com/enncy/online-course-script.git ocs
 # 进入目录
@@ -85,7 +85,18 @@ pnpm build:core
 // @resource     OCS_STYLE file://E:\xxx\xxx\ocs\dist\style.css
 ```
 
+## 项目引入
+
+> 请自行根据版本调整链接
+
+官方CDN: [https://cdn.ocs.enncy.cn/dist/3.7.4/index.min.js](https://cdn.ocs.enncy.cn/dist/3.7.4/index.min.js)
+
+JSD: [https://cdn.jsdelivr.net/npm/ocsjs@3.7.4/dist/index.min.js](https://cdn.jsdelivr.net/npm/ocsjs@3.7.4/dist/index.min.js)
+
+JSD-core: [https://cdn.jsdelivr.net/npm/ocsjs@3.7.4/lib/src/core/index.min.js](https://cdn.jsdelivr.net/npm/ocsjs@3.7.4/lib/src/core/index.min.js)
+
 # API
+ 
  
  
 
