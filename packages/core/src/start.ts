@@ -35,18 +35,36 @@ export function start(options?: StartOptions) {
 
   // 加载面板
   if (top === window) {
+    store.startOptions = options;
+
+    /** 绑定元素 */
+    app = createApp(App);
+    const div = document.createElement('div');
+    const shadowRoot = div.attachShadow({ mode: 'closed' });
+    const style = document.createElement('style');
+    panel = document.createElement('div');
+    style.innerHTML = options?.style || '';
+
     onComplete(() => {
       if (!loaded) {
         loaded = true;
-        showPanels(options);
+        showPanels();
       }
     });
     onInteractive(() => {
       if (!loaded) {
         loaded = true;
-        showPanels(options);
+        showPanels();
       }
     });
+
+    function showPanels() {
+      shadowRoot.appendChild(style);
+      shadowRoot.appendChild(panel!);
+      document.body.appendChild(div);
+      app.mount(panel);
+      logger('info', `OCS ${store.VERSION} 加载成功`);
+    }
   }
 
   // 执行脚本
@@ -70,21 +88,6 @@ function initStore() {
       }
     });
   }
-}
-
-/**
- * 显示面板
- */
-export function showPanels(options?: StartOptions) {
-  store.startOptions = options;
-
-  /** 绑定元素 */
-  app = createApp(App);
-  panel = document.createElement('div');
-  document.body.appendChild(panel);
-  app.mount(panel);
-
-  logger('info', `OCS ${store.VERSION} 加载成功`);
 }
 
 /**

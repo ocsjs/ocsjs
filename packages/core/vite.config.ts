@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
-import { visualizer } from 'rollup-plugin-visualizer';
 import vueJsx from '@vitejs/plugin-vue-jsx';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig } from 'vite';
 import banner from 'vite-plugin-banner';
-import { name, version, author, license, description, homepage } from '../../package.json';
+import { author, description, homepage, license, name, version } from '../../package.json';
 
 const bannerContent = `
 /*!
