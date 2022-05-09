@@ -1,3 +1,7 @@
+## [3.7.3](https://github.com/enncy/online-course-script/compare/3.7.2...3.7.3) (2022-05-08)
+
+
+
 ## [3.7.2](https://github.com/enncy/online-course-script/compare/3.7.0...3.7.2) (2022-05-07)
 
 
