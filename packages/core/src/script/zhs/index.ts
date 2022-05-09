@@ -17,7 +17,7 @@ export const ZHSScript = defineScript({
     {
       name: '共享课视频脚本',
       url: '**zhihuishu.com/videoStudy.html**',
-      async onload (setting = store.setting.zhs.video) {
+      async onload(setting = store.setting.zhs.video) {
         await sleep(5000);
         setting.creditStudy = false;
         // 智慧树视频学习
@@ -28,7 +28,7 @@ export const ZHSScript = defineScript({
     {
       name: '共享课作业脚本',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
-      async onload (setting = store.setting.zhs.work) {
+      async onload(setting = store.setting.zhs.work) {
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
@@ -42,7 +42,7 @@ export const ZHSScript = defineScript({
     {
       name: '共享课考试脚本',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*',
-      async onload (setting = store.setting.zhs.exam) {
+      async onload(setting = store.setting.zhs.exam) {
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
@@ -57,7 +57,7 @@ export const ZHSScript = defineScript({
       name: '学分课视频脚本',
       /** 学分共享课（翻转课） */
       url: '**zhihuishu.com/aidedteaching/sourceLearning/**',
-      async onload (setting = store.setting.zhs.video) {
+      async onload(setting = store.setting.zhs.video) {
         await sleep(5000);
         setting.creditStudy = true;
         // 智慧树视频学习
@@ -69,7 +69,7 @@ export const ZHSScript = defineScript({
     {
       name: '学分课作业脚本',
       url: '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**',
-      async onload (setting = store.setting.zhs.work) {
+      async onload(setting = store.setting.zhs.work) {
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
@@ -95,9 +95,7 @@ export const ZHSScript = defineScript({
       name: '屏蔽视频检测脚本',
       url: '**zhihuishu.com/videoStudy.html**',
       start() {
-        // @ts-ignore
-        Element.prototype._addEventListener = Element.prototype.addEventListener;
-        Element.prototype.addEventListener = function () {
+        function hookAddEventListener() {
           const args = [...arguments];
           const temp = args[1];
           args[1] = function () {
@@ -112,6 +110,11 @@ export const ZHSScript = defineScript({
           // @ts-ignore
           return this._addEventListener(...args);
         };
+        if (Element.prototype.addEventListener !== hookAddEventListener) {
+          // @ts-ignore
+          Element.prototype._addEventListener = Element.prototype.addEventListener;
+          Element.prototype.addEventListener = hookAddEventListener;
+        }
       }
     }
 
