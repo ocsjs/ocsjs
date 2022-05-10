@@ -204,7 +204,7 @@ export const ZHSScript = defineScript({
     {
       name: '作业考试助手',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList?**',
-      el: () => createNote('点击任意作业可以使用作业功能', '考试可能不稳定，请大家预留其他搜题方式')
+      el: () => createNote('点击任意作业可以使用作业功能', '考试可能不稳定，请大家预留其他搜题方式', '考试时如果没有显示考试设置面板，请刷新页面。')
     }
   ]
 });
