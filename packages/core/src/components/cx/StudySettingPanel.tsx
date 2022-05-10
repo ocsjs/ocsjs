@@ -13,7 +13,7 @@ export const StudySettingPanel = defineComponent({
         <div class="ocs-setting-items">
           <label>视频倍速 </label>
           <div>
-            <Tooltip title="高倍速(大于2倍)可能导致: \n- 记录清空\n- 频繁验证码\n超星后台可以看到学习时长\n请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。">
+            <Tooltip title="高倍速(大于1倍)可能导致: \n- 记录清空\n- 频繁验证码\n超星后台可以看到学习时长\n请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。">
               <input
                 style={{ color: settings.playbackRate > 2 ? 'red' : '' }}
                 type="number"
