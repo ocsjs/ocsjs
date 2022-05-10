@@ -66,7 +66,7 @@ export async function study(setting?: ScriptSettings['zhs']['video']) {
  * @returns
  */
 export async function watch(setting?: Pick<ScriptSettings['zhs']['video'], 'playbackRate' | 'volume'>) {
-  const { volume = 0, playbackRate } = setting || {};
+  const { volume = 0, playbackRate = 1 } = setting || {};
   return new Promise<void>((resolve, reject) => {
     try {
       const video = document.querySelector('video') as HTMLVideoElement;
@@ -82,12 +82,7 @@ export async function watch(setting?: Pick<ScriptSettings['zhs']['video'], 'play
 
         video.play();
 
-        await sleep(1000);
-        const { btn, rate } = domSearch({ btn: '.speedBox', rate: `[rate="${playbackRate}"]` });
-        console.log({ btn, rate });
-        btn?.click();
-        await sleep(1000);
-        rate?.click();
+        await switchPlaybackRate(playbackRate);
 
         video.onpause = function () {
           if (!video.ended) {
@@ -110,6 +105,19 @@ export async function watch(setting?: Pick<ScriptSettings['zhs']['video'], 'play
       reject(e);
     }
   });
+}
+
+/**
+ * 切换播放速度
+ * @param playbackRate 播放速度
+ */
+export async function switchPlaybackRate(playbackRate: number) {
+  await sleep(500);
+  const { btn } = domSearch({ btn: '.speedBox' });
+  btn?.click();
+  await sleep(500);
+  const { rate } = domSearch({ rate: `[rate="${playbackRate === 1 ? '1.0' : playbackRate}"]` });
+  rate?.click();
 }
 
 /**

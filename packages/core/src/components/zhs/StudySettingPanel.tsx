@@ -1,6 +1,6 @@
-import { defineComponent } from 'vue';
+import { defineComponent, ref } from 'vue';
 import { store } from '../../script';
-import { autoClose } from '../../script/zhs/study';
+import { autoClose, switchPlaybackRate } from '../../script/zhs/study';
 import { Tooltip } from '../Tooltip';
 
 export const StudySettingPanel = defineComponent({
@@ -9,6 +9,9 @@ export const StudySettingPanel = defineComponent({
     const closeDate = new Date();
     closeDate.setMinutes(closeDate.getMinutes() + settings.watchTime * 60);
     settings.closeDate = closeDate;
+
+    // 切换倍速防抖
+    const switching = ref(false);
 
     return () => (
       <div class="ocs-setting-panel">
@@ -55,8 +58,10 @@ export const StudySettingPanel = defineComponent({
                   <label>视频倍速 </label>
                   <div>
                     <Tooltip title="学分课不允许倍速！">
-                      <input type="number"
-                      value="1">
+                      <input
+                        type="number"
+                        value="1"
+                      >
                       </input>
                     </Tooltip>
                   </div>
@@ -70,8 +75,12 @@ export const StudySettingPanel = defineComponent({
                       max="1.5"
                       min="1"
                       value={settings.playbackRate}
-                      onChange={(e: any) => {
+                      disabled={switching.value}
+                      onChange={async (e:any) => {
+                        switching.value = true;
                         settings.playbackRate = e.target.valueAsNumber;
+                        await switchPlaybackRate(settings.playbackRate);
+                        switching.value = false;
                       }}></input>
                     </Tooltip>
                   </div>
