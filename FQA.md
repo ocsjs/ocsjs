@@ -15,8 +15,16 @@ title: OCS 疑问解答
 
 ### `如何使用自动答题`
 
-自动答题需要你进入学习，作业，考试页面后，根据弹出来的弹窗，进行题库配置。 关于题库配置，请看： [https://enncy.github.io/online-course-script/answerer-wrappers](https://enncy.github.io/online-course-script/answerer-wrappers)
+自动答题需要你进入学习，作业，考试页面后，根据弹出来的弹窗，进行题库配置。 关于题库配置，请看： [https://docs.ocsjs.com/answerer-wrappers](https://docs.ocsjs.com/answerer-wrappers)
 
+
+### `为什么不开始自动答题`
+
+- 请检查自动答题设置是否开启
+- 检查题库配置是否正确
+- 在超星中请查看当前页面是否有任务点的标志，脚本不会运行非任务点的章节，（任务点一般是黄色的小圆点）
+- 请等待脚本识别完成题目与文字后才会开始自动答题
+- 也许已经开始自动答题但是并未搜索到题目，请打开搜索结果仔细查看
 
 ### `为什么搜不到题目`
 
