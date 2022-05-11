@@ -3,7 +3,7 @@ title: OCS 网课助手
 ---
 # ocs 网课助手使用方法
 
-如果仅仅个人使用，可以查看  [脚本教程](https://docs.ocsjs.com/script)
+如果仅仅个人使用，可以查看  [脚本教程](https://docs.ocsjs.com/script){:target="_blank" rel="noopener"}
 
 如果想要管理账号，浏览器多开，自动登录等更多功能使用，请查看 [软件教程](https://docs.ocsjs.com/app) 
 
