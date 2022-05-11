@@ -11,9 +11,9 @@ export const WorkSettingPanel = defineComponent({
       <div class="ocs-setting-panel">
         <div class="ocs-setting-items">
 
-        {slots.upload
-          ? slots.upload()
-          : (
+          {slots.upload
+            ? slots.upload()
+            : (
               createWorkerSetting(
                 '自动答题',
                 {

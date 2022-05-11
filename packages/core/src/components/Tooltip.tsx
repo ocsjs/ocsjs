@@ -1,4 +1,4 @@
-import { defineComponent, PropType } from 'vue';
+import { defineComponent, PropType, ref, toRefs } from 'vue';
 
 export const Tooltip = defineComponent({
   props: {
@@ -16,23 +16,23 @@ export const Tooltip = defineComponent({
       type: Object as PropType<object>
     }
   },
-  data () {
-    return { show: false };
-  },
-  render () {
-    return (
-      <div onMouseenter={() => (this.show = true)} onMouseleave={() => (this.show = false)} style="width: 100%">
-        <div style={{ display: this.show ? 'block' : 'none', ...this.$props.tooltipStyle }} class={'tooltip ' + this.type}>
-          {this.$slots.title
+  setup(props, { slots }) {
+    const { title, type, tooltipStyle } = toRefs(props);
+    const show = ref(false);
+    return () => (
+      <div onMouseenter={() => (show.value = true)} onMouseleave={() => (show.value = false)} style="width: 100%">
+        <div style={{ display: show.value ? 'block' : 'none', ...tooltipStyle.value }} class={'tooltip ' + type.value}>
+          {slots.title
             ? (
-                this.$slots.title()
-              )
+              slots.title()
+            )
             : (
-            <span innerHTML={this.$props.title?.replace(/\n/g, '<br/>')}></span>
-              )}
+              <span innerHTML={title.value?.replace(/\n/g, '<br/>')}></span>
+            )}
         </div>
-        <div style="width: 100%">{this.$slots.default?.()}</div>
+        <div style="width: 100%">{slots.default?.()}</div>
       </div>
     );
   }
+
 });

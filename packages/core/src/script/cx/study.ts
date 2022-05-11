@@ -6,6 +6,7 @@ import { logger } from '../../logger';
 import { defaultSetting, ScriptSettings } from '../../scripts';
 
 import { store } from '..';
+import { message } from '../../components/utils';
 import CXAnalyses from './utils';
 
 /**
@@ -29,11 +30,11 @@ export async function study(setting: ScriptSettings['cx']['video']) {
   const { next } = domSearch({ next: '.next[onclick^="PCount.next"]' }, top?.document);
 
   // 如果按钮显示
-  if (next && next.style.display === 'block') {
+  if (next !== null && next.style.display === 'block') {
     // 如果即将切换到下一章节
     if (CXAnalyses.isInFinalTab()) {
       if (CXAnalyses.isStuckInBreakingMode()) {
-        logger('warn', '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。');
+        message('warn', '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。');
         return;
       }
     }
@@ -43,9 +44,13 @@ export async function study(setting: ScriptSettings['cx']['video']) {
     next.click();
   } else {
     if (CXAnalyses.isInFinalChapter()) {
-      confirm('OCS助手： 全部任务点已完成！');
+      if (CXAnalyses.isFinishedAllChapters()) {
+        message('success', '全部任务点已完成！');
+      } else {
+        message('warn', '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。');
+      }
     } else {
-      logger('error', '下一章按钮不存在，请尝试刷新或者手动切换下一章。');
+      message('error', '下一章按钮不存在，请尝试刷新或者手动切换下一章。');
     }
   }
 }

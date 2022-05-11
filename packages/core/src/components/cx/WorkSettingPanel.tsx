@@ -56,7 +56,7 @@ export const WorkSettingPanel = defineComponent({
           </div>
           <label>答题完成后等待(秒)</label>
           <div>
-          <Tooltip title="自动答题完成后的等待时间, 可适当延长方便对题目检查或者使用第三方工具答题。">
+            <Tooltip title="自动答题完成后的等待时间, 可适当延长方便对题目检查或者使用第三方工具答题。">
               <input
                 type="number"
                 value={settings.waitForCheck}

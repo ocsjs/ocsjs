@@ -1,3 +1,4 @@
+import { AlertType } from '../components/alert';
 import { ScriptSettings } from '../scripts';
 import { StartOptions } from '../start';
 import { WorkResult } from './worker/interface';
@@ -39,4 +40,6 @@ export interface OCSStore {
   isRecognizing: boolean
   /** 启动参数 */
   startOptions: StartOptions | undefined
+  /** 消息 */
+  alerts: AlertType[]
 }

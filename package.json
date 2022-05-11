@@ -12,7 +12,7 @@
     "build:core": "pnpm lint &&  gulp -f ./scripts/build-core.js",
     "build:app": "pnpm lint && pnpm build && gulp -f ./scripts/build-app.js",
     "build": "pnpm lint && gulp -f ./scripts/tsc.js",
-    "lint": "eslint  ./packages --ext .ts,.tsx,.js,.jsx,.vue",
+    "lint": "eslint  ./packages --ext .ts,.tsx,.js,.jsx,.vue --fix",
     "release": "sh ./scripts/release.sh",
     "pub:minor": "npm version minor && pnpm build:core && npm publish",
     "pub:major": "npm version major && pnpm build:core && npm publish",

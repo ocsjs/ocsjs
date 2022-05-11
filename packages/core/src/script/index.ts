@@ -13,7 +13,7 @@ export function setStore(val: OCSStore) {
   store = val;
 }
 
-export function createStore () {
+export function createStore() {
   /** 默认存储数据 */
   // eslint-disable-next-line no-undef
   const defaultStore = defaultsDeep(isInBrowser() ? GM_getValue('store', {}) : {}, {
@@ -43,7 +43,8 @@ export function createStore () {
     currentMedia: null,
     videojs: null,
     workResults: [],
-    isRecognizing: false
+    isRecognizing: false,
+    alerts: []
   });
 
   /** 监听，并保存到本地 */

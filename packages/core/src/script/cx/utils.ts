@@ -31,6 +31,10 @@ const CXAnalyses = {
   isInFinalChapter() {
     return Array.from(top?.document.querySelectorAll('.posCatalog_select') || []).pop()?.classList.contains('posCatalog_active');
   },
+  /** 是否完成全部章节 */
+  isFinishedAllChapters() {
+    return this.getChapterInfos().every((chapter) => chapter.unFinishCount === 0);
+  },
   /** 获取所有章节信息 */
   getChapterInfos() {
     return Array.from(top?.document.querySelectorAll('[onclick^="getTeacherAjax"]') || []).map((el) => ({
@@ -40,7 +44,7 @@ const CXAnalyses = {
     }));
   },
   /** 检测页面是否使用字体加密 */
-  getSecretFont(doc:Document = document) {
+  getSecretFont(doc: Document = document) {
     return Array.from(doc.querySelectorAll('.font-cxsecret')) as HTMLElement[];
   }
 

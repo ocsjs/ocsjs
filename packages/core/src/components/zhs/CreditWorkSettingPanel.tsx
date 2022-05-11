@@ -8,19 +8,19 @@ export const CreditWorkSettingPanel = defineComponent({
     const settings = store.setting.zhs.work;
 
     return () => (
-       <WorkSettingPanel v-slots={{
-         upload: createWorkerSetting(
-           '自动答题',
-           {
-             selected: settings.upload,
-             options: [
-               { value: 'nomove', label: '完成后请自行检查并提交' }
-             ]
-           },
-           (e: any) => (settings.upload = e.target.value)
-         )
-       }}>
-       </WorkSettingPanel>
+      <WorkSettingPanel v-slots={{
+        upload: createWorkerSetting(
+          '自动答题',
+          {
+            selected: settings.upload,
+            options: [
+              { value: 'nomove', label: '完成后请自行检查并提交' }
+            ]
+          },
+          (e: any) => (settings.upload = e.target.value)
+        )
+      }}>
+      </WorkSettingPanel>
     );
   }
 });

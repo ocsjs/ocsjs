@@ -23,6 +23,21 @@
       2,
       "always"
     ],
+    "max-len": [
+      2,
+      {
+        "code": 120,
+        "tabWidth": 2,
+        "ignoreComments": true,
+        "ignoreStrings": true,
+        "ignoreTemplateLiterals": true,
+        "ignoreRegExpLiterals": true
+      }
+    ],
+    "indent": [
+      "error",
+      2
+    ],
     "vue/multi-word-component-names": "off",
     "space-before-function-paren": "off",
     "func-call-spacing": "off"

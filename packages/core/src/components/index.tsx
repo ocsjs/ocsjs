@@ -52,30 +52,30 @@ export function createWorkerSetting (
   let options: any[] = config?.options
     ? config.options
     : [
-        {
-          label: '关闭自动答题',
-          value: 'close'
-        },
-        {
-          label: '完成后自动保存',
-          value: 'save'
-        },
-        {
-          label: '完成后不做任何动作',
-          value: 'nomove'
-        },
-        ...[10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => ({
-          label: `查到大于${rate}%的题目则自动提交`,
-          value: rate,
-          attrs: {
-            title: `例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`
-          }
-        })),
-        {
-          label: '每个题目都查到答案才自动提交',
-          value: 100
+      {
+        label: '关闭自动答题',
+        value: 'close'
+      },
+      {
+        label: '完成后自动保存',
+        value: 'save'
+      },
+      {
+        label: '完成后不做任何动作',
+        value: 'nomove'
+      },
+      ...[10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => ({
+        label: `查到大于${rate}%的题目则自动提交`,
+        value: rate,
+        attrs: {
+          title: `例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`
         }
-      ];
+      })),
+      {
+        label: '每个题目都查到答案才自动提交',
+        value: 100
+      }
+    ];
 
   options = options.map((option) => {
     config.selected = config?.selected || 'close';
@@ -119,52 +119,52 @@ export function createWorkerSetting (
         >
           {store.setting.answererWrappers.length
             ? (
-            <Tooltip
-              v-slots={{
-                title: () => (
-                  <>
-                    <span>解析成功, 一共有 {store.setting.answererWrappers.length} 个题库</span>
-                    <ol>
-                      {store.setting.answererWrappers.map((aw) => (
-                        <li>
-                          <details>
-                            <summary>{aw.name}</summary>
-                            <ul>
-                              <li>
+              <Tooltip
+                v-slots={{
+                  title: () => (
+                    <>
+                      <span>解析成功, 一共有 {store.setting.answererWrappers.length} 个题库</span>
+                      <ol>
+                        {store.setting.answererWrappers.map((aw) => (
+                          <li>
+                            <details>
+                              <summary>{aw.name}</summary>
+                              <ul>
+                                <li>
                                 主页:
-                                <a href={aw.homepage ? aw.homepage : '#'}>{aw.homepage}</a>
-                              </li>
-                              <li>接口: {aw.url}</li>
-                              <li>请求方式: {aw.method}</li>
-                              <li>数据类型: {aw.contentType}</li>
-                              <li>
+                                  <a href={aw.homepage ? aw.homepage : '#'}>{aw.homepage}</a>
+                                </li>
+                                <li>接口: {aw.url}</li>
+                                <li>请求方式: {aw.method}</li>
+                                <li>数据类型: {aw.contentType}</li>
+                                <li>
                                 请求数据:
-                                <ul style={{ paddingLeft: '12px' }}>
-                                  {Reflect.ownKeys(aw.data || {}).map((key) => (
-                                    <li>
-                                      {key.toString()} ={hideToken(aw.data?.[key.toString()] || '')}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </li>
-                              <li>处理方法: {aw.handler}</li>
-                            </ul>
-                          </details>
-                        </li>
-                      ))}
-                    </ol>
-                  </>
-                )
-              }}
-            >
-              <span class="pointer">✅</span>
-            </Tooltip>
-              )
+                                  <ul style={{ paddingLeft: '12px' }}>
+                                    {Reflect.ownKeys(aw.data || {}).map((key) => (
+                                      <li>
+                                        {key.toString()} ={hideToken(aw.data?.[key.toString()] || '')}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </li>
+                                <li>处理方法: {aw.handler}</li>
+                              </ul>
+                            </details>
+                          </li>
+                        ))}
+                      </ol>
+                    </>
+                  )
+                }}
+              >
+                <span class="pointer">✅</span>
+              </Tooltip>
+            )
             : (
-            <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
-              <span class="pointer">❌</span>
-            </Tooltip>
-              )}
+              <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
+                <span class="pointer">❌</span>
+              </Tooltip>
+            )}
         </span>
         <span>
           <Tooltip title="点击查看题库配置教程">

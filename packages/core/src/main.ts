@@ -1,3 +1,4 @@
+import { message } from './components/utils';
 import { CommonScript } from './script/common';
 import { CXScript } from './script/cx';
 import { store } from './script/index';
@@ -8,7 +9,7 @@ export * from './core/index';
 /**
  * ocsjs
  */
-export { store, start, app, panel, loaded };
+export { store, start, app, panel, loaded, message };
 
 // @ts-ignore vite.define
 export const VERSION = process.env._VERSION_;

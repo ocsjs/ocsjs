@@ -26,9 +26,8 @@ export const Terminal = defineComponent({
         }
       }
     });
-  },
-  render () {
-    return (
+
+    return () => (
       <div class="terminal">
         {store.localStorage.logs.map((log: any) => (
           <div>

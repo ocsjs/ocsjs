@@ -5,12 +5,14 @@ import { logger } from '../../logger';
 import { ScriptSettings } from '../../scripts';
 
 import { store } from '..';
+import { message } from '../../components/utils';
 
 export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: 'work' | 'exam' = 'work') {
   const { period, timeout, retry } = setting;
 
   if (setting.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
+    message('warn', '自动答题已被关闭！请在设置开启自动答题！或者忽略此警告');
   } else if (store.setting.answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
   } else {

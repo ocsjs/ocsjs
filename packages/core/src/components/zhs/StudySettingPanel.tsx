@@ -18,59 +18,59 @@ export const StudySettingPanel = defineComponent({
         <div class="ocs-setting-items">
           {settings.creditStudy === false
             ? [
-                <label>自动暂停</label>,
-                <div>
-                  <Tooltip title="播放时间到后, 将会自动暂停。\n如设置为0, 则不会自动暂停\n自动暂停可以帮助你获取智慧树的平时分，每天学习超过半小时就算一次平时分。">
-                    <input
-                      type="number"
-                      value={settings.watchTime}
-                      min="0"
-                      max="24"
-                      step="0.5"
-                      onChange={(e: any) => {
-                        settings.watchTime = e.target.valueAsNumber;
-                        const closeDate = new Date();
-                        closeDate.setMinutes(closeDate.getMinutes() + settings.watchTime * 60);
-                        settings.closeDate = closeDate;
-                        autoClose(e.target.valueAsNumber);
-                      }}
-                    ></input>
-                  </Tooltip>
-                  <span>小时</span>
-                </div>,
+              <label>自动暂停</label>,
+              <div>
+                <Tooltip title="播放时间到后, 将会自动暂停。\n如设置为0, 则不会自动暂停\n自动暂停可以帮助你获取智慧树的平时分，每天学习超过半小时就算一次平时分。">
+                  <input
+                    type="number"
+                    value={settings.watchTime}
+                    min="0"
+                    max="24"
+                    step="0.5"
+                    onChange={(e: any) => {
+                      settings.watchTime = e.target.valueAsNumber;
+                      const closeDate = new Date();
+                      closeDate.setMinutes(closeDate.getMinutes() + settings.watchTime * 60);
+                      settings.closeDate = closeDate;
+                      autoClose(e.target.valueAsNumber);
+                    }}
+                  ></input>
+                </Tooltip>
+                <span>小时</span>
+              </div>,
 
-                <label>暂停时间</label>,
-                <div>
-                  {settings.watchTime === 0
-                    ? (
+              <label>暂停时间</label>,
+              <div>
+                {settings.watchTime === 0
+                  ? (
                     <span>设置为0将不会自动暂停</span>
-                      )
-                    : (
+                  )
+                  : (
                     <span>将在 {settings.closeDate.toLocaleString()} 暂停</span>
-                      )}
-                </div>
-              ]
+                  )}
+              </div>
+            ]
             : []}
 
           {
             settings.creditStudy === true
               ? <>
-                  <label>视频倍速 </label>
-                  <div>
-                    <Tooltip title="学分课不允许倍速！">
-                      <input
-                        type="number"
-                        value="1"
-                      >
-                      </input>
-                    </Tooltip>
-                  </div>
-                </>
+                <label>视频倍速 </label>
+                <div>
+                  <Tooltip title="学分课不允许倍速！">
+                    <input
+                      type="number"
+                      value="1"
+                    >
+                    </input>
+                  </Tooltip>
+                </div>
+              </>
               : <>
-                  <label>视频倍速 </label>
-                  <div>
-                    <Tooltip title="智慧树最高1.5倍速, 超过1.5容易封号！">
-                      <input type="number"
+                <label>视频倍速 </label>
+                <div>
+                  <Tooltip title="智慧树最高1.5倍速, 超过1.5容易封号！">
+                    <input type="number"
                       step="0.25"
                       max="1.5"
                       min="1"
@@ -82,9 +82,9 @@ export const StudySettingPanel = defineComponent({
                         await switchPlaybackRate(settings.playbackRate);
                         switching.value = false;
                       }}></input>
-                    </Tooltip>
-                  </div>
-                </>
+                  </Tooltip>
+                </div>
+              </>
           }
 
           <label>音量调节</label>

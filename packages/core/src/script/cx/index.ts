@@ -3,6 +3,7 @@ import { createNote, createSearchResultPanel, createTerminalPanel } from '../../
 import { ExamSettingPanel } from '../../components/cx/ExamSettingPanel';
 import { StudySettingPanel } from '../../components/cx/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/cx/WorkSettingPanel';
+import { message } from '../../components/utils';
 import { OCR } from '../../core';
 import { defineScript } from '../../core/define.script';
 import { sleep } from '../../core/utils';
@@ -30,20 +31,19 @@ export const CXScript = defineScript({
       url: updateURLs,
       async onload() {
         if (top === window) {
-          if (confirm('OCS网课助手不支持旧版超星, 点击 `确定` 切换到超星新版。')) {
-            // 跳转到最新版本的超星
-            await sleep(1000);
-            const experience = document.querySelector('.experience') as HTMLElement;
-            if (experience) {
-              experience.click();
-            } else {
-              const params = new URLSearchParams(window.location.href);
-              params.set('mooc2', '1');
-              // 兼容考试切换
-              params.set('newMooc', 'true');
-              params.delete('examsystem');
-              window.location.replace(decodeURIComponent(params.toString()));
-            }
+          message('warn', 'OCS网课助手不支持旧版超星, 即将切换到超星新版, 如有其他第三方插件请关闭, 可能有兼容问题频繁频繁切换。');
+          // 跳转到最新版本的超星
+          await sleep(1000);
+          const experience = document.querySelector('.experience') as HTMLElement;
+          if (experience) {
+            experience.click();
+          } else {
+            const params = new URLSearchParams(window.location.href);
+            params.set('mooc2', '1');
+            // 兼容考试切换
+            params.set('newMooc', 'true');
+            params.delete('examsystem');
+            window.location.replace(decodeURIComponent(params.toString()));
           }
         }
       }
@@ -123,7 +123,7 @@ export const CXScript = defineScript({
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
-          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+          message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行作业脚本 */
           await workOrExam(setting, 'work');
@@ -134,7 +134,7 @@ export const CXScript = defineScript({
       name: '整卷预览脚本',
       url: '**/exam/test/reVersionTestStartNew**',
       async onload() {
-        alert('即将自动切换到整卷预览。。。');
+        message('warn', '即将自动切换到整卷预览。。。');
         await sleep(3000);
         // @ts-ignore
         // eslint-disable-next-line no-undef
@@ -148,7 +148,7 @@ export const CXScript = defineScript({
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
-          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+          message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行考试脚本 */
           await workOrExam(setting, 'exam');
@@ -212,6 +212,7 @@ export const CXScript = defineScript({
               // 复原样式
               OCR.unsuit(fonts[i]);
             } catch (e) {
+              logger('error', '文字识别功能出错,可能存在图片无法识别。', e);
               console.log('文字识别错误', e);
             }
           }

@@ -1,5 +1,6 @@
 import defaults from 'lodash/defaults';
 import { store } from '..';
+import { message } from '../../components/utils';
 import { domSearch, sleep, StringUtils, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
@@ -14,6 +15,7 @@ export async function workOrExam(
 
   if (setting.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
+    message('warn', '自动答题已被关闭！请在设置开启自动答题！或者忽略此警告');
   } else if (store.setting.answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
   } else {

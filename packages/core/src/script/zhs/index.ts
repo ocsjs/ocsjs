@@ -1,6 +1,7 @@
 import { store } from '..';
 import { createNote, createSearchResultPanel, createTerminalPanel } from '../../components';
 import { ExamSettingPanel } from '../../components/cx/ExamSettingPanel';
+import { message } from '../../components/utils';
 import { StudySettingPanel } from '../../components/zhs/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/zhs/WorkSettingPanel';
 import { defineScript } from '../../core/define.script';
@@ -32,7 +33,7 @@ export const ZHSScript = defineScript({
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
-          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+          message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行作业脚本 */
           await workOrExam(setting, 'work');
@@ -46,8 +47,10 @@ export const ZHSScript = defineScript({
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
-          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+
+          message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
+          message('warn', '考试时如显示不出考试设置请刷新。');
           /** 运行考试脚本 */
           await workOrExam(setting, 'exam');
         }
@@ -73,7 +76,7 @@ export const ZHSScript = defineScript({
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
-          confirm('未设置题库配置！请在设置面板设置后刷新重试！');
+          message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行作业脚本 */
           await creditWork(setting);

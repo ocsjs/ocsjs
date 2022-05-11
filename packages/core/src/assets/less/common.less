@@ -1,15 +1,12 @@
  /**
-
 panel style
-
 */
  #ocs-panel {
      position: fixed;
      top: 40%;
      left: 50%;
-     transform: translate(-50%);
-     max-width: 800px;
-     min-width: 250px;
+     max-width: 400px;
+     min-width: 300px;
      background: white;
      z-index: 99999999;
      border-radius: 4px;
@@ -84,7 +81,7 @@ panel style
 
      // 底部区域
      .ocs-panel-footer {
-         font-size: 1px;
+         font-size: 12px;
          color: #c5c5c5;
          border-top: 1px solid #c6c6c6;
          margin-top: 8px;
@@ -299,17 +296,66 @@ panel style
          padding: 2px 0px;
      }
 
+     // alert 提示父元素
+     .alert-container {
+         margin-bottom: 4px;
+         position: absolute;
+         z-index: 999999;
+         bottom: 100%;
+         left: 50%;
+         width: 100%;
+         transform: translate(-50%, 0px);
 
-     .alert {
-         background-color: #f36c71cc;
-         color: white;
-         border: 1px solid #f36c71cc;
-         border-radius: 4px;
-         padding: 4px;
-         margin-bottom: 8px;
-         position: relative;
-         z-index: 999;
+         // 关闭按钮
+         .alert-closer {
+             float: right;
+             border-radius: 50%;
+             border: 1px solid;
+             text-align: center;
+             cursor: pointer;
+             font: icon;
+             line-height: 14px;
+             width: 14px;
+         }
+
+         // 提示内容
+         .alert {
+             border-radius: 4px;
+             margin-bottom: 4px;
+             padding: 4px;
+             font-size: 12px;
+
+             &.alert-text {
+                 letter-spacing: 1px;
+             }
+
+             &.error {
+                 background-color: #f9595dc2;
+                 color: white;
+                 border: 1px solid #f36c70;
+             }
+
+             &.info {
+                 background-color: #2196f3a3;
+                 color: white;
+                 border: 1px solid #1890ff;
+             }
+
+             &.success {
+                 background-color: #75d927b0;
+                 color: #fff;
+                 border: 1px solid #6fd91d;
+             }
+
+             &.warn {
+                 background-color: #ffc107db;
+                 color: white;
+                 border: 1px solid #ffc107;
+             }
+         }
+
      }
+
 
 
      .hide-tip {

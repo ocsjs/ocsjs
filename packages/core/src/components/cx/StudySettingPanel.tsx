@@ -46,11 +46,11 @@ export const StudySettingPanel = defineComponent({
               >
                 {settings.line
                   ? (
-                  <option value={settings.line}>指定-{settings.line}</option>
-                    )
+                    <option value={settings.line}>指定-{settings.line}</option>
+                  )
                   : (
-                  <option value="">请指定路线(播放视频后才可选择, 无需保存)</option>
-                    )}
+                    <option value="">请指定路线(播放视频后才可选择, 无需保存)</option>
+                  )}
                 {Array.from(settings.playlines || [{ label: '公网1' }, { label: '公网2' }]).map((line: any) => (
                   <option value={line.label}>{line.label}</option>
                 ))}
@@ -137,7 +137,7 @@ export const StudySettingPanel = defineComponent({
 
           <label>答题完成后等待(秒)</label>
           <div>
-          <Tooltip title="自动答题完成后的等待时间, 可适当延长方便对题目检查或者使用第三方工具答题。">
+            <Tooltip title="自动答题完成后的等待时间, 可适当延长方便对题目检查或者使用第三方工具答题。">
               <input
                 type="number"
                 value={store.setting.cx.work.waitForCheck}

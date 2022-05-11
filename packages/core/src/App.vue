@@ -4,6 +4,20 @@
     ref="panel"
     :class="hide ? 'hide' : ''"
   >
+    <div class="alert-container">
+      <template
+        v-for="(item,index) of store.alerts"
+        :key="index"
+      >
+        <Alert
+          :style="{opacity: 1 - (store.alerts.length - 1 - index) * (1/store.alerts.length)}"
+          :type="item.type"
+          :text="item.text"
+          :index="index"
+        />
+      </template>
+    </div>
+
     <template v-if="hide">
       <Tooltip
         :tooltip-style="{transform: 'translate(-36%, -110%)' , textAlign:'center', fontSize: '12px'}"
@@ -13,7 +27,6 @@
           ref="logo"
           class="ocs-icon"
           src="https://cdn.ocs.enncy.cn/logo.png"
-
           @dblclick="hide = false"
           @click="(e) => e.stopPropagation()"
         >
@@ -76,6 +89,7 @@
 <script setup lang="ts">
 import { computed, Ref } from '@vue/reactivity';
 import { nextTick, onMounted, ref, watch } from 'vue';
+import { Alert } from './components/alert';
 import { Tooltip } from './components/Tooltip';
 import { addFunctionEventListener, dragElement, getCurrentPanels } from './core/utils';
 import { definedScripts } from './main';
