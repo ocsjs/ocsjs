@@ -74,7 +74,7 @@
           <a-menu class="title-menu">
             <TitleLink
               title="教程"
-              url="https://enncy.github.io/online-course-script/"
+              url="https://docs.ocsjs.com/"
             />
             <a-menu-item @click="about">
               关于
@@ -85,7 +85,7 @@
 
             <TitleLink
               title="版本更新"
-              url="https://enncy.github.io/online-course-script/app-version"
+              url="https://docs.ocsjs.com/app-version"
             />
             <TitleLink
               title="脚本更新日志"
@@ -171,9 +171,9 @@ function about () {
           'a',
           {
             href: '#',
-            onClick: () => shell.openExternal('https://enncy.github.io/online-course-script/app-version')
+            onClick: () => shell.openExternal('https://docs.ocsjs.com/app-version')
           },
-          'https://enncy.github.io/online-course-script/app-version'
+          'https://docs.ocsjs.com/app-version'
         )
       ])
     ])

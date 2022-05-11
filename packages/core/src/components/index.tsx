@@ -169,7 +169,7 @@ export function createWorkerSetting (
         <span>
           <Tooltip title="点击查看题库配置教程">
             <span class="pointer" onClick={() => {
-              window.open('https://enncy.github.io/online-course-script/answerer-wrappers');
+              window.open('https://docs.ocsjs.com/answerer-wrappers');
             }}>
               ❓
             </span>

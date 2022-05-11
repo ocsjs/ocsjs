@@ -91,17 +91,17 @@
             <template #suffix>
               <a-popover>
                 <template #content>
-                  <div><b>请直接复制粘贴，不要一个个字输入</b></div>
+                  <div><b>请直接ctrl+cv快捷键复制粘贴, 不要一个个字输入。</b></div>
                   <div>
                     <b>题库配置教程</b> :
                     <a
                       href="#"
                       @click="
                         link(
-                          'https://enncy.github.io/online-course-script/answerer-wrappers'
+                          'https://docs.ocsjs.com/answerer-wrappers'
                         )
                       "
-                    >https://enncy.github.io/online-course-script/answerer-wrappers</a>
+                    >https://docs.ocsjs.com/answerer-wrappers</a>
                   </div>
                 </template>
 
@@ -157,13 +157,13 @@
 </template>
 
 <script setup lang="ts">
+import { LaunchOptions } from '@ocsjs/scripts';
+import { ref } from 'vue';
 import Card from '../../components/Card.vue';
 import Description from '../../components/Description.vue';
 import Path from '../../components/Path.vue';
 import { store } from '../../store';
 import { remote } from '../../utils/remote';
-import { LaunchOptions } from '@ocsjs/scripts';
-import { ref } from 'vue';
 const { shell } = require('electron');
 
 const launchOptions = store.script.launchOptions as LaunchOptions;
