@@ -348,6 +348,17 @@ OCS.start({
 
 ## 定义
 
+### OCSWorker 答题器
+
+> 强大的答题处理器，什么你还在用dom操作去实现每个脚本的答题？我只需要往OCSWorker传入几个参数即可。
+
+具体参数请看代码
+
+实例：[https://github.com/enncy/online-course-script/blob/3.0/packages/core/src/script/zhs/work.ts#L117-L169](https://github.com/enncy/online-course-script/blob/3.0/packages/core/src/script/zhs/work.ts#L117-L169)
+
+你可能会说这不是得50行嘛，确实，但是除了 elements 中的和其他几个参数，剩下的只需要复制粘贴之前的OCSWorker即可，逻辑都是相同的。
+
+
 ### AnswererWrapper  题库配置
 
 
