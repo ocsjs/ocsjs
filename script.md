@@ -17,7 +17,7 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 ## 使用须知
 
 - 如果之前有使用过其他油猴脚本的小伙伴，在使用OCS助手之前，请先关闭其他脚本，避免脚本之间发生冲突。
-- **请务必使用 edge , chrome , 火狐 ， 使用其他浏览器的例如火狐，360，qq浏览器所造成的后果用户自行承担。**
+- **请务必使用 edge , chrome , 火狐 ， 使用其他浏览器的例如 360，qq浏览器所造成的后果用户自行承担。**
 
 <div style="display: flex">
  <img src="https://user-images.githubusercontent.com/50533276/166101769-cc4cf43a-df3f-479a-bd19-e5d4033961dd.png" width="64" height="64">
