@@ -39,7 +39,7 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 -   [谷歌浏览器网上商店(需翻墙)  chrome.google.com](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo)
 -   [Edge 浏览器网上商店 microsoftedge.microsoft.com](https://microsoftedge.microsoft.com/addons/detail/tampermonkey/iikmkjmpaadaobahmlepeloendndfphd?hl=zh-CN)   
 
-安装失败的话查看手动安装教程： [https://enncy.github.io/online-course-script/tampermonkey](https://enncy.github.io/online-course-script/tampermonkey)
+安装失败的话查看手动安装教程： [https://enncy.github.io/online-course-script/tampermonkey](https://docs.ocsjs.com/tampermonkey)
 
 ## 第二步 打开脚本链接
 
@@ -50,7 +50,7 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 - OCS网课助手 脚本安装地址1(greasyfork) [https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B](https://greasyfork.org/zh-CN/scripts/442075-ocs-%E7%BD%91%E8%AF%BE%E5%8A%A9%E6%89%8B)
 
 
-如果打不开链接，请看教程：[https://enncy.github.io/online-course-script/script](https://enncy.github.io/online-course-script/script)
+如果打不开链接，请看教程：[https://enncy.github.io/online-course-script/script](https://docs.ocsjs.com/script)
 
 ## 第三步 安装脚本
 
@@ -63,7 +63,7 @@ OCS助手支持使用油猴浏览器拓展运行网页脚本，可以帮助个�
 
 ## 第四步 进入网课页面
 
-打开任意的 [`网课平台`](https://enncy.github.io/online-course-script/#支持的网课平台) 
+打开任意的 [`网课平台`](https://docs.ocsjs.com/#支持的网课平台) 
 
 ## 第五步 等待加载
 
