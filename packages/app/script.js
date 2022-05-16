@@ -36,6 +36,7 @@ process.on('message', async (message) => {
   try {
     if (action === 'launch') {
       if (browser === undefined) {
+        console.log('\n');
         logger.info('任务启动 : ', action, data, uid, logsPath);
 
         /** @type {import("@ocsjs/scripts").LaunchScriptsOptions} */
@@ -47,15 +48,11 @@ process.on('message', async (message) => {
 
         launchOptions.logger = {
           isEnabled: () => true,
-          log (name, severity, message, args) {
-            const str = [severity, new Date().toLocaleTimeString(), name, message, args].join(' ');
-            console.log(str);
-          }
+          log: () => { }
         };
 
         /** 加载油猴 */
         const pathToExtension = path.join(__dirname, './extensions/Tampermonkey');
-
         launchOptions.args = [`--disable-extensions-except=${pathToExtension}`, `--load-extension=${pathToExtension}`];
 
         const { browser: _browser, page: _page } = await ocs.launchScripts({
@@ -81,7 +78,7 @@ process.on('message', async (message) => {
           _page.on('load', () => injectLocalStorage(_page));
         });
 
-        function injectLocalStorage (page) {
+        function injectLocalStorage(page) {
           if (ocsLocalStorage) {
             page.evaluate((str) => {
               console.log('注入题库配置: ', str);
@@ -123,7 +120,7 @@ process.on('message', async (message) => {
   }
 });
 
-function loggerPrefix (level) {
+function loggerPrefix(level) {
   const extra = level === 'error' ? '错误' : level === 'warn' ? '警告' : undefined;
   return `[OCS${extra ? ' ' + extra : ''}] ${new Date().toLocaleTimeString()}`;
 }

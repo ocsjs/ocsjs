@@ -56,7 +56,7 @@ process.on('uncaughtException', (e) => {
 /**
  * 运行脚本
  */
-export async function launchScripts ({ userDataDir, launchOptions, scripts, sync = true, init }: LaunchScriptsOptions) {
+export async function launchScripts({ userDataDir, launchOptions, scripts, sync = true, init }: LaunchScriptsOptions) {
   let browser: BrowserContext;
 
   if (userDataDir) {
@@ -68,10 +68,11 @@ export async function launchScripts ({ userDataDir, launchOptions, scripts, sync
   } else {
     throw new Error('传入的数据文件夹为空');
   }
-  let page = await browser.newPage();
+  let [page] = browser.pages();
 
   if (init) {
     try {
+      console.log('正在更新脚本...');
       await initScript(browser);
       console.log('脚本更新完毕');
     } catch (e) {
@@ -85,7 +86,7 @@ export async function launchScripts ({ userDataDir, launchOptions, scripts, sync
     }
   } else {
     run();
-    async function run () {
+    async function run() {
       const item = scripts.shift();
       if (item) page = await script(item.name, item.options)(page);
       run();
@@ -99,7 +100,7 @@ export async function launchScripts ({ userDataDir, launchOptions, scripts, sync
     page
   };
 }
-export function script<T extends keyof ScriptOptions> (name: T, options: ScriptOptions[T]) {
+export function script<T extends keyof ScriptOptions>(name: T, options: ScriptOptions[T]) {
   return function (page: Page) {
     return scripts[name](page, options);
   };
@@ -109,21 +110,23 @@ export function script<T extends keyof ScriptOptions> (name: T, options: ScriptO
  * 安装 ocs 脚本
  *
  */
-async function initScript (browser: Browser | BrowserContext) {
+async function initScript(browser: Browser | BrowserContext) {
   /** 获取最新资源信息 */
   const infos = await OCSApi.getInfos();
 
   const page = await browser.newPage();
-  await page.goto(infos.resource.tampermonkey);
+
+  await page.waitForTimeout(2000);
 
   const [installPage] = await Promise.all([
     page.context().waitForEvent('page'),
     // @ts-ignore
-    page.click('.install-link')
+    page.evaluate((userjs: string) => window.location.replace(userjs), infos.resource.userjs)
   ]);
 
-  await installPage.waitForTimeout(3000);
+  console.log('载入脚本', infos.resource.userjs);
 
+  await installPage.waitForTimeout(2000);
   await installPage.click('.ask_action_buttons > input');
   await page.close();
   await installPage.close();

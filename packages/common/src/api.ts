@@ -1,10 +1,11 @@
 import axios from 'axios';
 
 export class OCSApi {
-  static async getInfos (): Promise<{
+  static async getInfos(): Promise<{
     resource: {
       browser: string
       tampermonkey: string
+      userjs: string
     }
     notify: {
       id: string
