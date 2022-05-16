@@ -208,7 +208,7 @@ export const CXScript = defineScript({
               // 识别
               const text = await ocr.recognize(OCR.suit(fonts[i]));
               // 改变文本
-              fonts[i].innerHTML = text;
+              fonts[i].innerText = text;
               // 复原样式
               OCR.unsuit(fonts[i]);
             } catch (e) {

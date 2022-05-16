@@ -45,7 +45,11 @@ const CXAnalyses = {
   },
   /** 检测页面是否使用字体加密 */
   getSecretFont(doc: Document = document) {
-    return Array.from(doc.querySelectorAll('.font-cxsecret')) as HTMLElement[];
+    return Array.from(doc.querySelectorAll('.font-cxsecret')).map(font => {
+      // 这里吧选项按钮和文字分离，如果不分离的话 .font-cxsecret 元素下面还包含选项按钮时，替换时会吧按钮也删除掉导致选项按钮不可用
+      const after = font.querySelector('.after');
+      return after === null ? font : after;
+    }) as HTMLElement[];
   }
 
 };
