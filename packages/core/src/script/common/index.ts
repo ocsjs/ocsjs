@@ -28,19 +28,31 @@ export const CommonScript = defineScript({
       }
     },
     {
-      name: '开启页面右键复制粘贴功能',
+      name: '开启页面复制粘贴功能',
       url: supports,
       start() {
         function enableCopy() {
-          console.log('开启页面右键复制粘贴功能');
+          console.log('开启页面复制粘贴功能');
           try {
             const d = document;
             const b = document.body;
             d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
             b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
           } catch (err) {
-            console.error('页面右键复制粘贴功能开启失败', err);
+            console.error('页面复制粘贴功能开启失败', err);
           }
+
+          const style = document.createElement('style');
+          style.innerHTML = `
+                        html * {
+                          -webkit-user-select: text !important;
+                          -khtml-user-select: text !important;
+                          -moz-user-select: text !important;
+                          -ms-user-select: text !important;
+                          user-select: text !important;
+                        }`;
+
+          document.body.appendChild(style);
         }
         onInteractive(() => enableCopy());
         onComplete(() => {
