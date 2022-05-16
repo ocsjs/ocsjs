@@ -112,44 +112,51 @@ export function waitForRecognize() {
  * @param opts 请求参数
  */
 export function request(url: string, opts: {
+  type: 'fetch' | 'GM_xmlhttpRequest',
   method?: 'get' | 'post';
   headers?: Record<string, string>;
   contentType?: 'json' | 'text',
   body?: string
 }): Promise<string | object> {
   return new Promise((resolve, reject) => {
-    const { contentType = 'json', body, method = 'get', headers = {} } = opts || {};
+    /** 默认参数 */
+    const { contentType = 'json', body, method = 'get', headers = {}, type = 'fetch' } = opts || {};
+    /** 环境变量 */
+    const env = isInBrowser() ? 'browser' : 'node';
 
-    const env = typeof GM_xmlhttpRequest !== 'undefined' ? 'GM' : isInBrowser() ? 'browser' : 'node';
-
-    console.log('request', { url, opts, env });
-
-    if (env === 'GM') {
-      // eslint-disable-next-line no-undef
-      GM_xmlhttpRequest({
-        method: opts.method?.toLocaleUpperCase() as any || 'GET',
-        url,
-        data: JSON.stringify(body || {}),
-        headers: opts.headers || {},
-        responseType: 'json',
-        onload: (response) => {
-          if (contentType === 'json') {
-            resolve(JSON.parse(response.responseText));
-          } else {
-            resolve(response.responseText);
-          }
-        },
-        onerror: reject
-      });
+    /** 如果是跨域模式并且是浏览器环境 */
+    if (type === 'GM_xmlhttpRequest' && env === 'browser') {
+      if (typeof GM_xmlhttpRequest !== 'undefined') {
+        // eslint-disable-next-line no-undef
+        GM_xmlhttpRequest({
+          method: opts.method?.toLocaleUpperCase() as any || 'GET',
+          url,
+          data: JSON.stringify(body || {}),
+          headers: opts.headers || {},
+          responseType: 'json',
+          onload: (response) => {
+            if (contentType === 'json') {
+              resolve(JSON.parse(response.responseText));
+            } else {
+              resolve(response.responseText);
+            }
+          },
+          onerror: reject
+        });
+      } else {
+        reject(new Error('GM_xmlhttpRequest is not defined'));
+      }
     } else {
-      const fet: (...args: any[]) => Promise<Response> = env === 'browser' ? fetch : require('node-fetch').default;
+      const fet: (...args: any[]) => Promise<Response> = env === 'node' ? require('node-fetch').default : fetch;
       fet(url, { contentType, body, method, headers }).then(async (response) => {
         if (contentType === 'json') {
           resolve(await response.json());
         } else {
           resolve(await response.text());
         }
-      }).catch(reject);
+      }).catch((error) => {
+        reject(new Error(error));
+      });
     }
   });
 }

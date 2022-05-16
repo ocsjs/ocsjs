@@ -59,32 +59,41 @@ export const SearchResults = defineComponent({
                     </div>
 
                     {currentSearchResults.value?.map((res) => (
+
                       <div class="search-results-container">
+
                         <span class="search-results-title">
                           <span>题库:</span>
                           <a href={res.homepage ? res.homepage : '#'} target="_blank">
                             {res.name}
                           </a>
-                      一共有 {res.answers.length} 个答案
+                          <span> {res.error ? '此题库请求错误: ' + res.error.message : `一共有 ${res.answers.length} 个答案`} </span>
                         </span>
-                        <div style={{ paddingLeft: '12px' }}>
-                          {res.answers.map((answer) => (
-                            <div class="search-results-item">
-                              <div title={answer.question}>
-                                <span>
-                                  <span style="color: #a7a7a7">题目: </span>
-                                  {StringUtils.of(answer.question).nowrap().max(50).toString()}
-                                </span>
-                              </div>
-                              <div title={answer.answer}>
-                                <span>
-                                  <span style="color: #a7a7a7">回答: </span>
-                                  {StringUtils.of(answer.answer).nowrap().max(50).toString()}
-                                </span>
-                              </div>
+                        {res.error
+                          ? (
+                            <div></div>
+                          )
+                          : (
+                            <div style={{ paddingLeft: '12px' }}>
+                              {res.answers.map((answer) => (
+                                <div class="search-results-item">
+                                  <div title={answer.question}>
+                                    <span>
+                                      <span style="color: #a7a7a7">题目: </span>
+                                      {StringUtils.of(answer.question).nowrap().max(50).toString()}
+                                    </span>
+                                  </div>
+                                  <div title={answer.answer}>
+                                    <span>
+                                      <span style="color: #a7a7a7">回答: </span>
+                                      {StringUtils.of(answer.answer).nowrap().max(50).toString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
+                          )}
+
                       </div>
                     ))}
                   </div>

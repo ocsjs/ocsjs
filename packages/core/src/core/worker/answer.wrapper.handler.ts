@@ -18,6 +18,8 @@ export interface SearchResult {
   /** 请求响应内容 */
   response: any
   data: any
+  /** 错误数据 */
+  error?: Error
 }
 
 /**
@@ -30,10 +32,16 @@ export interface AnswererWrapper {
   name: string
   /** 题库网址 */
   homepage?: string
+  /** 请求数据 */
   data?: Record<string, string>
+  /** 请求方法 */
   method: 'post' | 'get'
   /** 定义 handler 中的参数类型 */
   contentType: 'json' | 'text'
+  /** 请求模式 */
+  type: 'fetch' | 'GM_xmlhttpRequest',
+  /** 附带请求头 */
+  headers: Record<string, string>,
   /**
    * 此选项是个字符串， 使用 [Function(string)](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function) 构造方法进行解析生成方法
    *
@@ -100,60 +108,75 @@ export async function defaultAnswerWrapperHandler(
   const searchResults: SearchResult[] = [];
 
   for (const wrapper of answererWrappers) {
-    let answers: Answer[] = [];
-    let response: Response | undefined;
+    try {
+      let answers: Answer[] = [];
+      let response: Response | undefined;
 
-    const data = Object.create({});
-    wrapper.data = wrapper.data || {};
-    /** 构造一个请求数据 */
-    Reflect.ownKeys(wrapper.data).forEach((key) => {
-      if (wrapper.data) {
-        // 解析data数据
-        Reflect.set(data, key, resolvePlaceHolder(wrapper.data[key.toString()]));
-      }
-    });
-    /** 解析 url 数据 */
-    let url = resolvePlaceHolder(wrapper.url);
+      const data = Object.create({});
+      wrapper.data = wrapper.data || {};
+      /** 构造一个请求数据 */
+      Reflect.ownKeys(wrapper.data).forEach((key) => {
+        if (wrapper.data) {
+          // 解析data数据
+          Reflect.set(data, key, resolvePlaceHolder(wrapper.data[key.toString()]));
+        }
+      });
+      /** 解析 url 数据 */
+      let url = resolvePlaceHolder(wrapper.url);
 
-    /** 请求參數 */
-    url = wrapper.method === 'post' ? url : url + '?' + new URLSearchParams(data).toString();
-    // 发送请求
-    const responseData = await request(url, {
-      method: wrapper.method,
-      contentType: wrapper.contentType,
-      body: wrapper.method === 'post' ? JSON.stringify(data) : undefined
-    });
-    /** 从 handler 获取搜索到的题目和回答 */
+      /** 请求參數 */
+      url = wrapper.method === 'post' ? url : url + '?' + new URLSearchParams(data).toString();
+      // 发送请求
+      const responseData = await request(url, {
+        method: wrapper.method,
+        contentType: wrapper.contentType,
+        body: wrapper.method === 'post' ? JSON.stringify(data) : undefined,
+        type: wrapper.type,
+        headers: wrapper.headers
+      });
+      /** 从 handler 获取搜索到的题目和回答 */
 
-    if (wrapper.handler) {
-      // eslint-disable-next-line no-new-func
-      const info = Function(wrapper.handler)()(responseData);
-      if (info && Array.isArray(info)) {
-        /** 如果返回一个二维数组 */
-        if (info.every((item: any) => Array.isArray(item))) {
-          answers = answers.concat(
-            info.map((item: any) => ({
-              question: item[0],
-              answer: item[1]
-            }))
-          );
-        } else {
-          answers.push({
-            question: info[0],
-            answer: info[1]
-          });
+      if (wrapper.handler) {
+        // eslint-disable-next-line no-new-func
+        const info = Function(wrapper.handler)()(responseData);
+        if (info && Array.isArray(info)) {
+          /** 如果返回一个二维数组 */
+          if (info.every((item: any) => Array.isArray(item))) {
+            answers = answers.concat(
+              info.map((item: any) => ({
+                question: item[0],
+                answer: item[1]
+              }))
+            );
+          } else {
+            answers.push({
+              question: info[0],
+              answer: info[1]
+            });
+          }
         }
       }
-    }
 
-    searchResults.push({
-      url: wrapper.url,
-      name: wrapper.name,
-      homepage: wrapper.homepage,
-      answers,
-      response,
-      data: responseData
-    });
+      searchResults.push({
+        url: wrapper.url,
+        name: wrapper.name,
+        homepage: wrapper.homepage,
+        answers,
+        response,
+        data: responseData
+      });
+    } catch (error) {
+      console.error('请求失败: ', { error });
+      searchResults.push({
+        url: wrapper.url,
+        name: wrapper.name,
+        homepage: wrapper.homepage,
+        answers: [],
+        response: undefined,
+        data: undefined,
+        error: error as any
+      });
+    }
   }
 
   function resolvePlaceHolder(str: string) {

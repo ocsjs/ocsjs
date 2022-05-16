@@ -137,8 +137,19 @@ export function createWorkerSetting (
                                 <li>接口: {aw.url}</li>
                                 <li>请求方式: {aw.method}</li>
                                 <li>数据类型: {aw.contentType}</li>
+                                <li>请求类型: {aw.type}</li>
                                 <li>
-                                请求数据:
+                                  请求头:
+                                  <ul style={{ paddingLeft: '12px' }}>
+                                    {Reflect.ownKeys(aw.headers || {}).map((key) => (
+                                      <li>
+                                        {key.toString()} ={hideToken(aw.headers?.[key.toString()] || '')}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </li>
+                                <li>
+                                  请求数据:
                                   <ul style={{ paddingLeft: '12px' }}>
                                     {Reflect.ownKeys(aw.data || {}).map((key) => (
                                       <li>
