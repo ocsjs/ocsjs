@@ -83,6 +83,7 @@ import { message } from 'ant-design-vue';
 import ATree from 'ant-design-vue/lib/tree';
 import { TreeDataItem } from 'ant-design-vue/lib/tree/Tree';
 import { computed, toRefs } from 'vue';
+import { workspace } from '../../store';
 import { notify } from '../../utils/notify';
 import { remote } from '../../utils/remote';
 import { StringUtils } from '../../utils/string';
@@ -225,6 +226,13 @@ function rename (e: Event, file: FileNode) {
         fs.rmSync(file.path, { recursive: true });
       } else {
         fs.renameSync(file.path, dest);
+        // 更新已打开的文件名
+        const openedFile = workspace.opened.find(f => f.uid === file.uid);
+
+        if (openedFile) {
+          openedFile.path = dest;
+          openedFile.title = name;
+        }
       }
     } else {
       message.error('路径下存在相同名字的文件(夹)！');
