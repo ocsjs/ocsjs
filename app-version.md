@@ -18,7 +18,7 @@
 
 ### ocs-1.3.0
 
-[https://cdn.ocs.enncy.cn/resources/ocs-1.2.1-setup-win-x64.exe](https://cdn.ocs.enncy.cn/resources/ocs-1.2.1-setup-win-x64.exe)
+[https://cdn.ocs.enncy.cn/resources/ocs-1.3.0-setup-win-x64.exe](https://cdn.ocs.enncy.cn/resources/ocs-1.3.0-setup-win-x64.exe)
 
 - 自动获取浏览器路径
 - 新增火狐浏览器支持
