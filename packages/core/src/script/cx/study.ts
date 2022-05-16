@@ -259,13 +259,13 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
         type: 'input[id^="answertype"]'
       },
       /** 默认搜题方法构造器 */
-      answerer: (elements, type) => {
+      answerer: (elements, type, ctx) => {
         const title = StringUtils.nowrap(elements.title[0].innerText)
           .replace(/(\d+)?【.*?题】/, '')
           .replace(/（\d+.0分）/, '')
           .trim();
         if (title) {
-          return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
+          return defaultAnswerWrapperHandler(store.setting.answererWrappers, { type, title, root: ctx.root });
         } else {
           throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
         }

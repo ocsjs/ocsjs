@@ -1,5 +1,5 @@
 import get from 'lodash/get';
-import { isInBrowser } from '../utils';
+import { request } from '../utils';
 
 /** 题目答案 */
 export interface Answer {
@@ -92,55 +92,43 @@ export interface AnswererWrapper {
  * @param answererWrappers 题库配置器数组
  * @returns
  */
-export async function defaultAnswerWrapperHandler (
+export async function defaultAnswerWrapperHandler(
   answererWrappers: AnswererWrapper[],
-  type?: string,
-  title?: string
+  // 上下文解析环境
+  env: any
 ): Promise<SearchResult[]> {
   const searchResults: SearchResult[] = [];
 
   for (const wrapper of answererWrappers) {
     let answers: Answer[] = [];
     let response: Response | undefined;
-    let responseData = '';
 
     const data = Object.create({});
     wrapper.data = wrapper.data || {};
     /** 构造一个请求数据 */
     Reflect.ownKeys(wrapper.data).forEach((key) => {
       if (wrapper.data) {
+        // 解析data数据
         Reflect.set(data, key, resolvePlaceHolder(wrapper.data[key.toString()]));
       }
     });
     /** 解析 url 数据 */
-    const url = resolvePlaceHolder(wrapper.url);
+    let url = resolvePlaceHolder(wrapper.url);
 
-    /** 请求 */
-
-    if (wrapper.method === 'post') {
-      response = await fetch(url, { method: wrapper.method, body: JSON.stringify(data) });
-    } else {
-      const params = new URLSearchParams();
-      Reflect.ownKeys(data).forEach((key) => params.set(key.toString(), data[key.toString()]));
-      response = (await (isInBrowser() ? fetch : require('node-fetch').default)(
-        url + '?' + params.toString(),
-        {
-          method: wrapper.method
-        }
-      )) as Response;
-    }
+    /** 请求參數 */
+    url = wrapper.method === 'post' ? url : url + '?' + new URLSearchParams(data).toString();
+    // 发送请求
+    const responseData = await request(url, {
+      method: wrapper.method,
+      contentType: wrapper.contentType,
+      body: wrapper.method === 'post' ? JSON.stringify(data) : undefined
+    });
     /** 从 handler 获取搜索到的题目和回答 */
 
     if (wrapper.handler) {
-      if (wrapper.contentType === 'json') {
-        responseData = await response.json();
-      } else {
-        responseData = await response.text();
-      }
-
       // eslint-disable-next-line no-new-func
       const info = Function(wrapper.handler)()(responseData);
-      if (info) {
+      if (info && Array.isArray(info)) {
         /** 如果返回一个二维数组 */
         if (info.every((item: any) => Array.isArray(item))) {
           answers = answers.concat(
@@ -168,12 +156,12 @@ export async function defaultAnswerWrapperHandler (
     });
   }
 
-  function resolvePlaceHolder (str: string) {
+  function resolvePlaceHolder(str: string) {
     const matches = str.match(/\${(.*?)}/g) || [];
     matches.forEach((placeHolder) => {
       const value: any =
         /** 获取元素属性 */
-        get({ type, title }, placeHolder.replace(/\${(.*)}/, '$1'));
+        get(env, placeHolder.replace(/\${(.*)}/, '$1'));
       str = str.replace(placeHolder, value);
     });
     return str;

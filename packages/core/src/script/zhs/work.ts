@@ -27,8 +27,13 @@ export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: '
         options: '.subject_node .nodeLab'
       },
       /** 默认搜题方法构造器 */
-      answerer: (elements, type) =>
-        defaultAnswerWrapperHandler(store.setting.answererWrappers, type, elements.title[0].innerText),
+      answerer: (elements, type, ctx) =>
+        defaultAnswerWrapperHandler(store.setting.answererWrappers,
+          {
+            type,
+            title: elements.title[0].innerText,
+            root: ctx.root
+          }),
       work: {
         /** 自定义处理器 */
         handler(type, answer, option) {
@@ -122,11 +127,11 @@ export async function creditWork(setting: ScriptSettings['zhs']['work']) {
         questionTit: '.questionTit'
       },
       /** 默认搜题方法构造器 */
-      answerer: (elements, type) => {
+      answerer: (elements, type, ctx) => {
         const title = StringUtils.nowrap(elements.title[0].innerText)
           .trim();
         if (title) {
-          return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
+          return defaultAnswerWrapperHandler(store.setting.answererWrappers, { type, title, root: ctx.root });
         } else {
           throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
         }

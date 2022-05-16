@@ -139,7 +139,8 @@ export type CustomWork<E extends RawElements> = (ctx: WorkContext<E>) => Resolve
 
 export type AnswererType<E> = (
   elements: SearchedElements<E, HTMLElement[]>,
-  type?: string
+  type: string | undefined,
+  ctx: WorkContext<SearchedElements<E, HTMLElement[]>>
 ) => SearchResult[] | Promise<SearchResult[]>
 
 /**

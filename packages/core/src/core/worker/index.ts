@@ -14,14 +14,14 @@ import { defaultWorkTypeResolver } from './utils';
 export class OCSWorker<E extends RawElements = RawElements> {
   opts: WorkOptions<E>
 
-  constructor (opts: WorkOptions<E>) {
+  constructor(opts: WorkOptions<E>) {
     this.opts = opts;
   }
 
   currentContext?: WorkContext<E>
 
   /** 启动答题器  */
-  async doWork () {
+  async doWork() {
     const results: WorkResult<E>[] = [];
     let result: ResolverResult;
 
@@ -60,7 +60,7 @@ export class OCSWorker<E extends RawElements = RawElements> {
         }
 
         /** 查找题目 */
-        const searchResults = await this.doAnswer(elements, type);
+        const searchResults = await this.doAnswer(elements, type, this.currentContext);
 
         if (!searchResults) {
           throw new Error('答案获取失败, 请重新运行, 或者忽略此题。');
@@ -137,13 +137,13 @@ export class OCSWorker<E extends RawElements = RawElements> {
   }
 
   /** 获取答案 */
-  private async doAnswer (elements: WorkContext<E>['elements'], type?: string) {
+  private async doAnswer(elements: WorkContext<E>['elements'], type: string | undefined, ctx: WorkContext<E>) {
     let { timeout = 60 * 1000, retry = 2 } = this.opts;
     /** 解析选项，可以自定义查题器 */
 
     const answer = async () => {
       return await Promise.race([
-        this.opts.answerer(elements, type),
+        this.opts.answerer(elements, type, ctx),
         /** 最长请求时间 */
         sleep(timeout)
       ]);
@@ -162,7 +162,7 @@ export class OCSWorker<E extends RawElements = RawElements> {
   }
 
   /** 答题结果处理器 */
-  async uploadHandler (options: {
+  async uploadHandler(options: {
     // doWork 的返回值结果
     results: WorkResult<E>[]
     // 上传百分比

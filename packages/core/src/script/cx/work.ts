@@ -34,12 +34,12 @@ export async function workOrExam(
         type: type === 'exam' ? 'input[name^="type"]' : 'input[id^="answertype"]'
       },
       /** 默认搜题方法构造器 */
-      answerer: (elements, type) => {
+      answerer: (elements, type, ctx) => {
         const title: string = StringUtils.nowrap(elements.title[0].innerText)
           .replace(/\d+\. \(.*?(题|分)\)/, '')
           .trim();
         if (title) {
-          return defaultAnswerWrapperHandler(store.setting.answererWrappers, type, title);
+          return defaultAnswerWrapperHandler(store.setting.answererWrappers, { type, title, root: ctx.root });
         } else {
           throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
         }
