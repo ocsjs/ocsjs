@@ -12,6 +12,19 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
     {% include head-custom.html %}
+    <style>
+      .page-header-container{
+        text-align: left;
+        width: fit-content;
+        margin: 0 auto;
+      }
+      @media screen and (max-width: 700px) {
+        .page-header-container{
+          width: 100%;
+        }
+      }
+
+    </style>
   </head>
   <body>
     <a id="skip-to-content" href="#content">Skip to the content.</a>
@@ -19,7 +32,7 @@
     <header class="page-header" role="banner">
       <h1 class="project-name">{{ page.title | default: site.title | default: site.github.repository_name }}</h1>
       <h2 class="project-tagline">{{ page.description | default: site.description | default: site.github.project_tagline }}</h2>
-      <div style="text-align: left;width: fit-content;margin: 0 auto;">
+      <div class="page-header-container">
         <div>
           <span>必看：</span>
           <a href="https://docs.ocsjs.com/" class="btn">🏠主页</a>
