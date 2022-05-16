@@ -1,3 +1,19 @@
+# [3.8.0](https://github.com/enncy/online-course-script/compare/3.7.4...3.8.0) (2022-05-11)
+
+
+### Bug Fixes
+
+* 避免重复劫持函数导致页面内存移除 ([067ee58](https://github.com/enncy/online-course-script/commit/067ee58e6ffa74657a8adf213ad32fcda0799243))
+* 修复智慧树倍速不能立刻改变的BUG ([39d7402](https://github.com/enncy/online-course-script/commit/39d7402d804ad5adb8556150d58ae9277f97229f))
+
+
+### Features
+
+* + 新增消息提示 + 修复火狐底部版本不显示的BUG  + 优化eslint代码 + 增加文字识别错误提示 + 将原有弹出框修改为消息提示 + 增加API:message ([534bee3](https://github.com/enncy/online-course-script/commit/534bee3b6e449b9c725cbdec9efa27979c6545ed))
+* 使用ShadowRoot对脚本进行加固 ([346d9d1](https://github.com/enncy/online-course-script/commit/346d9d109499e303704f7a05414631d9c7e3b11c))
+
+
+
 ## [3.7.4](https://github.com/enncy/online-course-script/compare/3.7.3...3.7.4) (2022-05-09)
 
 
