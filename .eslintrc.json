@@ -38,6 +38,7 @@
       "error",
       2
     ],
+    "camelcase": "off",
     "vue/multi-word-component-names": "off",
     "space-before-function-paren": "off",
     "func-call-spacing": "off"
