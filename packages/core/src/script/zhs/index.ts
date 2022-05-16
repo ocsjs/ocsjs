@@ -41,16 +41,19 @@ export const ZHSScript = defineScript({
       }
     },
     {
+      name: '共享课考试提醒脚本',
+      url: '**zhihuishu.com/stuExamWeb.html#/webExamList?**',
+      onload: () => message('warn', '考试时如果没有显示考试设置面板，请刷新页面。')
+    },
+    {
       name: '共享课考试脚本',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*',
       async onload(setting = store.setting.zhs.exam) {
         await sleep(5000);
         if (store.setting.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
-
           message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
-          message('warn', '考试时如显示不出考试设置请刷新。');
           /** 运行考试脚本 */
           await workOrExam(setting, 'exam');
         }
