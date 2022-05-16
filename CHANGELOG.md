@@ -1,3 +1,36 @@
+## [3.9.6](https://github.com/enncy/online-course-script/compare/3.9.5...3.9.6) (2022-05-16)
+
+
+### Bug Fixes
+
+* 修复日志记录问题 ([c9f2147](https://github.com/enncy/online-course-script/commit/c9f21473a755a9af6e7bbeed4095f2209d64cb6e))
+* **app:** 修复软件文件重命名时，运行文件名不同步的BUG ([28a1af1](https://github.com/enncy/online-course-script/commit/28a1af141217c83cc891952731b585153d6d3d59))
+* **app:** 修复智慧树登录后白屏错误的BUG ([9622f7e](https://github.com/enncy/online-course-script/commit/9622f7e4c809e64be76c2cd4309e01f1ba9a4e44))
+
+
+### Features
+
+* **app:** 新增软件自动选择浏览器路径功能 ([eb56f67](https://github.com/enncy/online-course-script/commit/eb56f67e6885badcfa252fc716ac6e203560fc2a))
+* **app:** 新增自定义脚本载入路径功能, 路径将托管到官方服务器 ([289cefe](https://github.com/enncy/online-course-script/commit/289cefecae8b7c3ed900bba1cb99150438a0a842))
+
+
+
+## [3.9.5](https://github.com/enncy/online-course-script/compare/3.8.0...3.9.5) (2022-05-16)
+
+
+### Bug Fixes
+
+* 修复新增 shadowroot 后，复制粘贴脚本失效的BUG ([081a99e](https://github.com/enncy/online-course-script/commit/081a99ee62a47f427e02b33e3497e5f95e6dedfa))
+* 优化超星识别时可能遇到选项按钮被删除的BUG ([ef396b4](https://github.com/enncy/online-course-script/commit/ef396b4a3bc9f10284529c3cbb857edba9c927ca))
+
+
+### Features
+
+* 新增 AnswererWrapper 参数: headers 和 type ([8c970bb](https://github.com/enncy/online-course-script/commit/8c970bb52a9b6ef83618b7f1dc2d55fa26045024))
+* 新增题库配置跨域模块，可对不同域名的服务器进行跨域访问，并且新增 root 环境变量，可访问元素题目的跟节点元素对象。 ([4e8ea1c](https://github.com/enncy/online-course-script/commit/4e8ea1c6bdc84a1b0ce84b24af48a91cff0830af))
+
+
+
 # [3.8.0](https://github.com/enncy/online-course-script/compare/3.7.4...3.8.0) (2022-05-11)
 
 
