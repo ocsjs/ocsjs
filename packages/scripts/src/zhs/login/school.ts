@@ -10,11 +10,11 @@ export interface ZHSSchoolLoginOptions {
   password: string
 }
 
-export async function schoolLogin (page: Page, opts: ZHSSchoolLoginOptions) {
+export async function schoolLogin(page: Page, opts: ZHSSchoolLoginOptions) {
   const { schoolname, password, code } = opts;
 
   await page.goto(
-    'https://passport.zhihuishu.com/login?service=https://onlineservice.zhihuishu.com/login/gologin#studentID'
+    'https://passport.zhihuishu.com/login#studentID'
   );
   await page.fill('#quickSearch', schoolname);
   // 显示学校列表

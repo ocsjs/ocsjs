@@ -6,10 +6,10 @@ export interface ZHSPhoneLoginOptions {
   password: string
 }
 
-export async function phoneLogin (page: Page, opts: ZHSPhoneLoginOptions) {
+export async function phoneLogin(page: Page, opts: ZHSPhoneLoginOptions) {
   const { phone, password } = opts;
   await page.goto(
-    'https://passport.zhihuishu.com/login?service=https://onlineservice.zhihuishu.com/login/gologin#signin'
+    'https://passport.zhihuishu.com/login'
   );
   await page.fill('#lUsername', phone);
   await page.fill('#lPassword', password);
