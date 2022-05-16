@@ -23,32 +23,38 @@
       <Card title="默认设置">
         <Description label="指定浏览器">
           <a-select
+            v-model:value="selectedBrowser.path"
             size="small"
             class="w-100"
-            :default-value="browserType"
             @change="onBrowserTypeChange"
           >
-            <a-select-option value="diy">
-              自定义浏览器
-            </a-select-option>
             <template
-              v-for="(key, index) in keys"
+              v-for="(browser, index) in store.validBrowsers"
               :key="index"
             >
-              <a-select-option :value="(store.validBrowserPaths as any)[key]">
-                {{ key }}
+              <a-select-option
+                :value="browser.path"
+              >
+                {{ browser.name }}
               </a-select-option>
             </template>
+            <a-select-option
+              key="diy"
+              value="diy"
+            >
+              自定义浏览器
+            </a-select-option>
           </a-select>
         </Description>
         <Description
-          v-if="browserType === 'diy'"
+          v-if="selectedBrowser.path === 'diy'"
           label="自定义浏览器路径"
         >
           <a-input
             v-model:value="launchOptions.executablePath"
             size="small"
             class="w-100"
+            @blur="onDiy"
           >
             <template #suffix>
               <a-popover>
@@ -72,12 +78,6 @@
               </a-popover>
             </template>
           </a-input>
-        </Description>
-        <Description
-          v-else
-          label="默认路径"
-        >
-          {{ launchOptions.executablePath }}
         </Description>
 
         <Description label="默认题库设置">
@@ -158,9 +158,11 @@
 
 <script setup lang="ts">
 import { LaunchOptions } from '@ocsjs/scripts';
-import { ref } from 'vue';
+import { message } from 'ant-design-vue';
+import { nextTick, onMounted, ref } from 'vue';
 import Card from '../../components/Card.vue';
 import Description from '../../components/Description.vue';
+import { fs } from '../../components/file/File';
 import Path from '../../components/Path.vue';
 import { store } from '../../store';
 import { remote } from '../../utils/remote';
@@ -168,39 +170,44 @@ const { shell } = require('electron');
 
 const launchOptions = store.script.launchOptions as LaunchOptions;
 
-const keys = Reflect.ownKeys(store.validBrowserPaths);
+console.log('可用浏览器', store.validBrowsers);
 
+// 题库配置
 const answererWrapper = ref(
   store.script.localStorage?.setting?.answererWrappers
     ? JSON.stringify(store.script.localStorage?.setting?.answererWrappers)
     : ''
 );
 
-const browserType = ref(
-  keys.find(
-    (key) => (store.validBrowserPaths as any)[key] === launchOptions.executablePath
-  ) || 'diy'
-);
+// 浏览器类型
+const selectedBrowser = ref(store.validBrowsers.find(
+  (browser) => browser.path === launchOptions.executablePath
+) || {
+  name: '自定义浏览器',
+  path: 'diy'
+});
 
-function reset() {
-  store.version = undefined;
+console.log(selectedBrowser);
 
-  remote.app.call('relaunch');
-  remote.app.call('exit', 0);
-}
-
+/**
+ * 监听浏览器类型变化
+ */
 function onBrowserTypeChange(val: string) {
   launchOptions.executablePath = val === 'diy' ? '' : val;
-  browserType.value =
-    keys.find(
-      (key) => (store.validBrowserPaths as any)[key] === launchOptions.executablePath
-    ) || 'diy';
 }
 
-function link(url: string) {
-  shell.openExternal(url);
+/**
+ * 监听自定义浏览器编辑
+ */
+function onDiy() {
+  if (launchOptions.executablePath && !fs.existsSync(launchOptions.executablePath)) {
+    message.error('自定义的浏览器路径不存在, 请点击右侧按钮查看教程。');
+  }
 }
 
+/**
+ * 监听题库配置的变化
+ */
 function onAWChange(e: Event) {
   // @ts-ignore
   const val = e.target.value;
@@ -209,6 +216,27 @@ function onAWChange(e: Event) {
 
   answererWrapper.value = val;
 }
+
+/** 如果尚未选择，并且没有自定义路径的话，自动选择第一个 */
+onMounted(() => {
+  nextTick(() => {
+    if (store.validBrowsers.length !== 0 && launchOptions.executablePath === '' && selectedBrowser.value.path === 'diy') {
+      launchOptions.executablePath = store.validBrowsers[0].path;
+    }
+  });
+});
+
+function link(url: string) {
+  shell.openExternal(url);
+}
+
+/** 重置设置 */
+function reset() {
+  store.version = undefined;
+  remote.app.call('relaunch');
+  remote.app.call('exit', 0);
+}
+
 </script>
 
 <style scope lang="less">

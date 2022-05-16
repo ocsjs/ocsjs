@@ -6,7 +6,7 @@ import { remote } from '../utils/remote';
 import { FileNode } from './../components/file/File';
 
 const Store = require('electron-store');
-const { getValidBrowserPaths } = require('@ocsjs/common') as typeof import('@ocsjs/common');
+const { getValidBrowsers } = require('@ocsjs/common') as typeof import('@ocsjs/common');
 
 const s = new Store();
 
@@ -61,7 +61,7 @@ export const store = reactive({
   /** 列表展开的 key */
   expandedKeys: s.get('expandedKeys') || [],
   notify: s.get('notify') || [],
-  validBrowserPaths: (s.get('validBrowserPaths') as ReturnType<typeof getValidBrowserPaths>) || getValidBrowserPaths()
+  validBrowsers: (s.get('validBrowser') as ReturnType<typeof getValidBrowsers>) || getValidBrowsers()
 });
 
 watch(store, (newStore) => {
