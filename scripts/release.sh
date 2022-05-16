@@ -15,15 +15,15 @@ read -p "确认发布版本 $version ? [y/n]: " isRelease
 if [ "$isRelease" = "y" ]; then
     # 发布
     echo "版本发布 $version"
-
+    
     # 代码检查
     npm run lint
-    # 更新日志
-    npm run changelog
     # 更新版本
     npm version "$version" --no-git-tag-version
     # 构建
     npm run build:core
+    # 更新日志
+    npm run changelog
     # 保存
     git add --all
     git commit -m "version release $version"
@@ -31,10 +31,10 @@ if [ "$isRelease" = "y" ]; then
     # 发布
     npm publish
     echo "$version 发布成功"
-elif [ "$isRelease" = "n" ]; then
+    elif [ "$isRelease" = "n" ]; then
     echo "取消发布"
-else 
+else
     echo "输入有误"
 fi
 
- 
+
