@@ -62,7 +62,6 @@ export const StudySettingPanel = defineComponent({
           <label>音量调节</label>
           <div>
             <input
-              class="ocs-setting-item"
               type="range"
               min="0"
               max="1"
@@ -80,7 +79,7 @@ export const StudySettingPanel = defineComponent({
           <div>
             <Tooltip title="遇到看过的视频,音频,ppt会重新播放，并且从第一个章节开始。">
               <input
-                class="ocs-setting-item"
+                class="input-switch"
                 type="checkbox"
                 checked={settings.restudy}
                 onChange={(e: any) => {
@@ -88,6 +87,14 @@ export const StudySettingPanel = defineComponent({
                 }}
               />
             </Tooltip>
+          </div>
+
+          <label>启动任务点</label>
+          <div>
+            PPT<input type='checkbox' />
+            音视频<input type='checkbox' />
+            阅读<input type='checkbox' />
+            章节测试<input type='checkbox' />
           </div>
           <hr />
           <hr />

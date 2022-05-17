@@ -133,37 +133,44 @@ panel style
              outline: none;
              border: none;
              border-bottom: 1px solid #e4e4e4;
-             background: #f5f5f5;
+             background: #f5f5f5a6;
              padding-left: 2px;
              text-align: center;
+             padding: 0px;
+             margin: 0px;
          }
 
          /** check box 的样式 */
-         input[type="checkbox"] {
+         .input-switch {
              appearance: none;
-             width: 32px;
+             width: fit-content;
+             min-width: 32px;
              height: 16px;
              background: #c5c5c5;
              border-radius: 100px;
              display: flex;
              align-items: center;
-             padding: 0px 2px;
+             padding: 2px 4PX;
              transition: all .2s ease-in-out;
 
              &:checked {
                  background: #1890ff !important;
-                 justify-content: flex-end;
              }
+
+             &:checked::before {
+                 transform: translate(100%, 0px);
+             }
+
 
              &::before {
                  background-color: #fff;
                  border-radius: 9px;
                  box-shadow: 0 2px 4px #00230b33;
-
                  width: 12px;
                  height: 12px;
                  content: "";
              }
+
          }
 
          input:not([type="checkbox"], [type="radio"]) {
@@ -327,14 +334,15 @@ panel style
 
              .alert-text {
                  letter-spacing: 1px;
-                 text-shadow: 0 0 2px #545454;
+                 font-weight: bold;
              }
 
              &.error {
-                 background-color: #f9595dc2;
-                 color: white;
+                 background-color: #ff000699;
+                 color: #fff;
                  border: 1px solid #f36c70;
              }
+
 
              &.info {
                  background-color: #2196f3a3;
@@ -343,14 +351,14 @@ panel style
              }
 
              &.success {
-                 background-color: #75d927b0;
+                 background-color: #84d346d1;
                  color: #fff;
                  border: 1px solid #6fd91d;
              }
 
              &.warn {
-                 background-color: #ffc107db;
-                 color: white;
+                 background-color: #fbbf30e6;
+                 color: #725206;
                  border: 1px solid #ffc107;
              }
          }

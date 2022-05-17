@@ -110,6 +110,7 @@ export const StudySettingPanel = defineComponent({
           <div>
             <Tooltip title="将播放过的视频再播放一遍。">
               <input
+                class="input-switch"
                 type="checkbox"
                 checked={settings.restudy}
                 onChange={(e: any) => (settings.restudy = e.target.checked)}
