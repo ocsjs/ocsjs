@@ -1,8 +1,9 @@
 import md5 from 'md5';
-import { Typr, TyprU } from 'typr-ts';
 import { request } from '../../core/utils';
 import { logger, OCR, store } from '../../main';
 import CXAnalyses from './utils';
+// @ts-ignore
+import Typr from 'typr.js';
 
 /**
  * 繁体字识别-字典匹配
@@ -35,9 +36,9 @@ export async function mapRecognize() {
         // 匹配解密字体
         const match: any = {};
         for (let i = 19968; i < 40870; i++) { // 中文[19968, 40869]
-          const Glyph = TyprU.codeToGlyph(code, i);
+          const Glyph = Typr.U.codeToGlyph(code, i);
           if (!Glyph) continue;
-          const path = TyprU.glyphToPath(code, Glyph);
+          const path = Typr.U.glyphToPath(code, Glyph);
           const hex = md5(JSON.stringify(path)).slice(24); // 8位即可区分
           match[i.toString()] = fontMap[hex];
         }
@@ -49,7 +50,9 @@ export async function mapRecognize() {
           for (const key in match) {
             const word = String.fromCharCode(parseInt(key));
             const value = String.fromCharCode(match[key]);
-            html = html.replaceAll(word, value);
+            while (html.indexOf(word) !== -1) {
+              html = html.replace(word, value);
+            }
           }
           el.innerHTML = html;
           el.classList.remove('font-cxsecret'); // 移除字体加密
@@ -58,6 +61,7 @@ export async function mapRecognize() {
     }
   }
 }
+
 /** 繁体字识别-OCR文字识别 */
 export async function ocrRecognize() {
   const ocr = new OCR({
