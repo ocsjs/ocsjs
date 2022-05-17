@@ -7,6 +7,7 @@ import { store } from '../store';
 import { SearchResults } from './SearchResults';
 import { Terminal } from './Terminal';
 import { Tooltip } from './Tooltip';
+import { message } from './utils';
 
 /**
  * 创建提示面板
@@ -195,11 +196,14 @@ function parseAnswererWrappers (value: string): AnswererWrapper[] {
   try {
     const aw = JSON.parse(value);
     if (aw && Array.isArray(aw)) {
+      message('success', '题库配置成功！');
       return aw;
     } else {
+      message('error', '题库配置格式错误！');
       return [];
     }
   } catch (e) {
+    message('error', '题库配置格式错误！');
     return [];
   }
 }
