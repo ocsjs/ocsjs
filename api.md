@@ -89,7 +89,7 @@ pnpm build:core
 
 > 请自行根据版本调整链接
 
-官方CDN: [https://cdn.ocs.enncy.cn/dist/3.7.4/index.min.js](https://cdn.ocs.enncy.cn/dist/3.7.4/index.min.js)
+官方CDN: [https://cdn.ocs.enncy.cn/dist/3.7.4/index.min.js](https://cdn.ocs.enncy.cn/dist/3.10.0/index.min.js)
 
 JSD: [https://cdn.jsdelivr.net/npm/ocsjs@3.7.4/dist/index.min.js](https://cdn.jsdelivr.net/npm/ocsjs@3.7.4/dist/index.min.js)
 
@@ -269,8 +269,10 @@ for (const el of els) {
 - `name`: `string `    题库名字
 - `homepage`?: `string`     题库网址
 - `data`?: `Record<string, string>`     传递的参数, get 请求将会添加到 url 后面， post 请求会生成请求体
-- `method`: `"post" | "get"`     请求方法
-- `contentType`: `"json" | "text"`     定义 handler 中的参数类型
+- `method`: `"post" | "get"`   默认 `get` ,    请求方法
+- `contentType`: `"json" | "text"`  默认 `json` ,     定义 handler 中的参数类型
+- `type`: `"fetch"|"GM_xmlhttpRequest"`  默认 `fetch` ,   请求类型, `fetch` 是用浏览器原生API， `GM_xmlhttpRequest` 使用油猴自带API , 可进行跨域。
+- `headers`?: `Record<string, string>`  默认 `{}` ,
 - `handler`: `string `
   此选项是个字符串， 使用 [Function(string)](https://developer.mozilla.org/zh-CN/docs/Web/JavaScript/Reference/Global_Objects/Function) 构造方法进行解析生成方法
   方法传入一个参数 : 请求获取到的文本 ，可以使用 contentType 定义文本类型
