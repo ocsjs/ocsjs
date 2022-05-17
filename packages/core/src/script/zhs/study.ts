@@ -1,5 +1,6 @@
 import { domSearch, domSearchAll, sleep } from '../../core/utils';
 import { logger } from '../../logger';
+import { message } from '../../main';
 import { ScriptSettings } from '../../scripts';
 import { store } from '../../store';
 
@@ -180,6 +181,7 @@ export function autoClose(watchTime: number) {
         const video: HTMLVideoElement = document.querySelector('video') as any;
         video.pause();
         stop = true;
+        message('warn', '脚本已自动暂停，已获得今日平时分，如需继续学习请刷新页面并调整学习时间。');
       } else {
         time += 1000;
       }
