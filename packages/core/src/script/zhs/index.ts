@@ -1,14 +1,13 @@
-import { store } from '..';
 import { createNote, createSearchResultPanel, createTerminalPanel } from '../../components';
 import { ExamSettingPanel } from '../../components/cx/ExamSettingPanel';
 import { message } from '../../components/utils';
+import { CreditWorkSettingPanel } from '../../components/zhs/CreditWorkSettingPanel';
 import { StudySettingPanel } from '../../components/zhs/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/zhs/WorkSettingPanel';
 import { defineScript } from '../../core/define.script';
 import { sleep } from '../../core/utils';
 import { logger } from '../../logger';
-import { defaultSetting } from '../../scripts';
-import { CreditWorkSettingPanel } from './../../components/zhs/CreditWorkSettingPanel';
+import { store } from '../../store';
 import { creditStudy, study } from './study';
 import { creditWork, workOrExam } from './work';
 
@@ -23,7 +22,7 @@ export const ZHSScript = defineScript({
         setting.creditStudy = false;
         // 智慧树视频学习
         logger('info', '开始智慧树共享课视频学习');
-        await study(setting || defaultSetting().video);
+        await study(setting);
       }
     },
     {
@@ -68,7 +67,7 @@ export const ZHSScript = defineScript({
         setting.creditStudy = true;
         // 智慧树视频学习
         logger('info', '开始智慧树学分课视频学习');
-        await creditStudy(setting || defaultSetting().video);
+        await creditStudy(setting);
       }
     },
 
@@ -88,7 +87,11 @@ export const ZHSScript = defineScript({
     },
     {
       name: '文本识别脚本',
-      url: ['**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**', '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*', '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**'],
+      url: [
+        '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
+        '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*',
+        '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**'
+      ],
       start() {
         // @ts-ignore
         window.Element.prototype.attachShadow = undefined;

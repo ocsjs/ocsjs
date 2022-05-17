@@ -4,7 +4,7 @@ import { DefineScript } from './core/define.script';
 import { getCurrentRoutes, isInBrowser, onComplete, onInteractive } from './core/utils';
 import { logger } from './logger';
 import { definedScripts } from './main';
-import { createStore, setStore, store } from './script';
+import { createStore, setStore, store } from './store';
 
 export interface StartOptions {
   /**

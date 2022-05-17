@@ -1,6 +1,6 @@
-import { store } from '..';
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
+import { store } from '../../store';
 
 export const ICVEScript = defineScript({
   name: '职教云',
@@ -8,7 +8,7 @@ export const ICVEScript = defineScript({
     {
       name: '学习脚本',
       url: '**icve.com.cn/study/process/process.html**',
-      onload (setting = store.setting.icve) {
+      onload(setting = store.setting.icve) {
 
       }
     }

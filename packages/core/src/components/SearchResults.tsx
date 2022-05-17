@@ -1,5 +1,5 @@
 import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
-import { store } from '../script';
+import { store } from '../store';
 
 import { StringUtils } from '../core/utils';
 import { WorkResult } from '../core/worker/interface';
@@ -39,7 +39,9 @@ export const SearchResults = defineComponent({
                 ? (
                   <div class="search-result-modal" onClick={(e) => e.stopPropagation()}>
                     <div>
-                      <span style={{ float: 'right', cursor: 'pointer' }} onClick={() => (currentResult.value = undefined)}>
+                      <span
+                        style={{ float: 'right', cursor: 'pointer' }}
+                        onClick={() => (currentResult.value = undefined)}>
                     ❌
                       </span>
 

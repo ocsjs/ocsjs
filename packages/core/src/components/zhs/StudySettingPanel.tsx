@@ -1,14 +1,19 @@
 import { defineComponent, ref } from 'vue';
-import { store } from '../../script';
 import { autoClose, switchPlaybackRate } from '../../script/zhs/study';
+import { store } from '../../store';
 import { Tooltip } from '../Tooltip';
 
 export const StudySettingPanel = defineComponent({
   setup () {
     const settings = store.setting.zhs.video;
-    const closeDate = new Date();
-    closeDate.setMinutes(closeDate.getMinutes() + settings.watchTime * 60);
-    settings.closeDate = closeDate;
+    showCloseDate();
+
+    /** 显示关闭时间 */
+    function showCloseDate() {
+      const closeDate = new Date();
+      closeDate.setMinutes(closeDate.getMinutes() + settings.watchTime * 60);
+      settings.closeDate = closeDate;
+    }
 
     // 切换倍速防抖
     const switching = ref(false);
@@ -29,9 +34,7 @@ export const StudySettingPanel = defineComponent({
                     step="0.5"
                     onChange={(e: any) => {
                       settings.watchTime = e.target.valueAsNumber;
-                      const closeDate = new Date();
-                      closeDate.setMinutes(closeDate.getMinutes() + settings.watchTime * 60);
-                      settings.closeDate = closeDate;
+                      showCloseDate();
                       autoClose(e.target.valueAsNumber);
                     }}
                   ></input>

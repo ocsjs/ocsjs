@@ -4,8 +4,8 @@ import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.ha
 import { logger } from '../../logger';
 import { ScriptSettings } from '../../scripts';
 
-import { store } from '..';
 import { message } from '../../components/utils';
+import { store } from '../../store';
 
 export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: 'work' | 'exam' = 'work') {
   const { period, timeout, retry } = setting;

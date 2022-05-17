@@ -1,4 +1,4 @@
-import { store } from '../../script';
+import { store } from '../../store';
 import { DefineScript, GlobPattern, ScriptPanel, ScriptRoute } from '../define.script';
 
 export async function sleep(period: number): Promise<void> {

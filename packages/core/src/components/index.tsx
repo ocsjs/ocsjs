@@ -3,7 +3,7 @@ import { ScriptPanelChild } from '../core/define.script';
 
 import { StringUtils } from '../core/utils';
 import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
-import { store } from '../script';
+import { store } from '../store';
 import { SearchResults } from './SearchResults';
 import { Terminal } from './Terminal';
 import { Tooltip } from './Tooltip';

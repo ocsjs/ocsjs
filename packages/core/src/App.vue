@@ -93,7 +93,7 @@ import { Alert } from './components/alert';
 import { Tooltip } from './components/Tooltip';
 import { addFunctionEventListener, dragElement, getCurrentPanels } from './core/utils';
 import { definedScripts } from './main';
-import { store } from './script';
+import { store } from './store';
 
 const panels = ref(getCurrentPanels(definedScripts));
 

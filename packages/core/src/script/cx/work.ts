@@ -1,17 +1,16 @@
-import defaults from 'lodash/defaults';
-import { store } from '..';
 import { message } from '../../components/utils';
 import { domSearch, sleep, StringUtils, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
-import { defaultSetting, ScriptSettings } from '../../scripts';
+import { ScriptSettings } from '../../scripts';
+import { store } from '../../store';
 
 export async function workOrExam(
   setting: ScriptSettings['cx']['work'] | ScriptSettings['cx']['exam'],
   type: 'work' | 'exam' = 'work'
 ) {
-  const { period, timeout, retry } = defaults(setting, defaultSetting().work);
+  const { period, timeout, retry } = setting;
 
   if (setting.upload === 'close') {
     logger('warn', '自动答题已被关闭！');

@@ -1,7 +1,7 @@
 import { defineComponent, nextTick, onMounted, watch } from 'vue';
 
 import { domSearch } from '../core/utils';
-import { store } from '../script';
+import { store } from '../store';
 
 export const Terminal = defineComponent({
   setup () {

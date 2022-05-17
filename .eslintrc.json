@@ -29,9 +29,7 @@
         "code": 120,
         "tabWidth": 2,
         "ignoreComments": true,
-        "ignoreStrings": true,
-        "ignoreTemplateLiterals": true,
-        "ignoreRegExpLiterals": true
+        "ignoreStrings": true
       }
     ],
     "indent": [

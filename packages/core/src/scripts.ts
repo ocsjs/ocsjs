@@ -1,61 +1,111 @@
 import { AnswererWrapper } from './core/worker/answer.wrapper.handler';
 import { WorkOptions } from './core/worker/interface';
 
-export interface Setting {
+export type CommonWorkSetting = Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry' | 'stopWhenError'> & {
+  /** 提交模式 */
+  upload: string,
+  /** 答题后等待的时间 */
+  waitForCheck: number,
+}
+
+export interface CXSetting {
+  common: {
+    /** 繁体字识别 */
+    recognize: 'map' | 'ocr' | 'close'
+  },
   video: {
-    [x: string]: any
-    watchTime: number
+    /** 播放速度 */
     playbackRate: number
     /** 音量 */
     volume: number
-    restudy: boolean
+    /** 复习模式 */
+    restudy: boolean,
+    /** 章节测试自动答题 */
+    upload: 'close'
+    /** 播放路线列表 */
+    playlines: string[]
+    /** 播放路线 */
+    line: string
   }
-  work: Record<string, any> &
-  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string, waitForCheck: number }
-  exam: Record<string, any> &
-  Pick<WorkOptions<any>, 'period' | 'timeout' | 'retry'> & { upload: string, waitForCheck: number }
+  work: CommonWorkSetting
+  exam: CommonWorkSetting
 }
 
-export type SupportPlatform = 'zhs' | 'cx' |'icve'
+export interface ZHSSetting {
+  video: {
+    /** 观看时间 */
+    watchTime: number
+    /** 观看计时器 */
+    interval: any
+    /** 关闭时间 */
+    closeDate: Date
+    /** 播放速度 */
+    playbackRate: number
+    /** 音量 */
+    volume: number
+    /** 复习模式 */
+    restudy: boolean,
+    /** 学分课学习模式 */
+    creditStudy: boolean
+  }
+  work: CommonWorkSetting
+  exam: CommonWorkSetting
+}
 
-export type ScriptSettings = Record<SupportPlatform, Setting> & {
+export interface ScriptSettings {
+  zhs: ZHSSetting
+  cx: CXSetting
+  icve: any
   answererWrappers: AnswererWrapper[]
 }
 
-export const defaultOCSSetting = {
-  zhs: defaultSetting(),
-  cx: defaultSetting(),
-  icve: defaultSetting(),
-  answererWrappers: [] as AnswererWrapper[]
+/**
+ * 默认自动答题设置
+ */
+export const defaultWorkSetting: CommonWorkSetting = {
+  /** 答题间隔时间 */
+  period: 3,
+  /** 答题请求超时时间 */
+  timeout: 30,
+  /** 请求重试次数 */
+  retry: 1,
+  /** 当错误时停止答题 */
+  stopWhenError: false,
+  /** 提交模式 */
+  upload: 'save',
+  /** 答题完成后延迟时间 */
+  waitForCheck: 5
 };
 
-/**
- * 默认设置
- */
-export function defaultSetting(): Setting {
-  return {
+export const defaultOCSSetting: ScriptSettings = {
+  zhs: {
     video: {
       watchTime: 0,
+      interval: undefined,
+      closeDate: new Date(0),
       playbackRate: 1,
       restudy: false,
       volume: 0,
-      upload: 'close'
+      creditStudy: false
     },
-    work: {
-      period: 3,
-      timeout: 30,
-      retry: 1,
-      stopWhenError: false,
-      upload: 'save',
-      waitForCheck: 5
+    work: defaultWorkSetting,
+    exam: defaultWorkSetting
+  },
+  cx: {
+    common: {
+      recognize: 'map'
     },
-    exam: {
-      period: 3,
-      timeout: 30,
-      retry: 1,
-      stopWhenError: false,
-      upload: 'save',
-      waitForCheck: 5
-    }
-  };
-}
+    video: {
+      playbackRate: 1,
+      restudy: false,
+      volume: 0,
+      upload: 'close',
+      playlines: ['公网1', '公网2'],
+      line: '公网1'
+    },
+    work: defaultWorkSetting,
+    exam: defaultWorkSetting
+  },
+  icve: {},
+  answererWrappers: [] as AnswererWrapper[]
+};

@@ -23,6 +23,7 @@ export interface OCSLocalStorage {
     extra: string
     text: string
   }[]
+
 }
 
 export interface OCSStore {
@@ -42,4 +43,10 @@ export interface OCSStore {
   startOptions: StartOptions | undefined
   /** 消息 */
   alerts: AlertType[]
+  /**
+ * 字体字典库 用于繁体字识别
+ * author wyn665817
+ * @see https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
+ */
+  fontMap: any
 }

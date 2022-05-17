@@ -1,12 +1,11 @@
-import defaults from 'lodash/defaults';
 import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, StringUtils, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
-import { defaultSetting, ScriptSettings } from '../../scripts';
+import { ScriptSettings } from '../../scripts';
 
-import { store } from '..';
 import { message } from '../../components/utils';
+import { store } from '../../store';
 import CXAnalyses from './utils';
 
 /**
@@ -137,7 +136,7 @@ export function switchPlayLine(
   // @ts-ignore
   if (videojs?.player) {
     // @ts-ignore  播放路线列表
-    const playlines = Array.from(videojs.player.controlBar.options_.playerOptions.playlines);
+    const playlines: string[] = Array.from(videojs.player.controlBar.options_.playerOptions.playlines);
     // 播放菜单元素
     const menus: HTMLElement[] = Array.from(
       // @ts-ignore
@@ -222,7 +221,7 @@ async function pptTask(frame?: HTMLIFrameElement) {
  * 章节测验
  */
 async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTMLIFrameElement) {
-  const { period, timeout, retry } = defaults(setting, defaultSetting().work);
+  const { period, timeout, retry } = setting;
 
   if (store.setting.cx.video.upload === 'close') {
     logger('warn', '自动答题已被关闭！');

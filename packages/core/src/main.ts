@@ -1,9 +1,9 @@
 import { message } from './components/utils';
 import { CommonScript } from './script/common';
 import { CXScript } from './script/cx';
-import { store } from './script/index';
 import { ZHSScript } from './script/zhs';
 import { app, loaded, panel, start } from './start';
+import { store } from './store';
 
 export * from './core/index';
 /**

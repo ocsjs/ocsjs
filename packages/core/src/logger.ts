@@ -1,4 +1,4 @@
-import { store } from './script';
+import { store } from './store';
 
 export function loggerPrefix(level: 'info' | 'error' | 'warn' | 'debug') {
   const extra = level === 'error' ? '[错误]' : level === 'warn' ? '[警告]' : undefined;

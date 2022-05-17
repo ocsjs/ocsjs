@@ -1,8 +1,8 @@
 import defaultsDeep from 'lodash/defaultsDeep';
 import { reactive, watch } from 'vue';
-import { OCSLocalStorage, OCSStore } from '../core/store';
-import { isInBrowser } from '../core/utils';
-import { defaultOCSSetting } from '../scripts';
+import { OCSLocalStorage, OCSStore } from './core/types';
+import { isInBrowser } from './core/utils';
+import { defaultOCSSetting } from './scripts';
 
 /**
  * OCS 响应式存储对象, 在除油猴环境下的其他环境为 `{}`
@@ -44,7 +44,8 @@ export function createStore() {
     videojs: null,
     workResults: [],
     isRecognizing: false,
-    alerts: []
+    alerts: [],
+    fontMap: {}
   });
 
   /** 监听，并保存到本地 */

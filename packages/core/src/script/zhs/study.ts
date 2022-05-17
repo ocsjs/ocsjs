@@ -1,7 +1,7 @@
-import { store } from '..';
 import { domSearch, domSearchAll, sleep } from '../../core/utils';
 import { logger } from '../../logger';
 import { ScriptSettings } from '../../scripts';
+import { store } from '../../store';
 
 let stop = false;
 
