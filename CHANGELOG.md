@@ -1,3 +1,13 @@
+# [3.10.0](https://github.com/enncy/online-course-script/compare/3.9.6...3.10.0) (2022-05-17)
+
+
+### Features
+
+* **core:** 新增超星繁体字识别选项 - 字典识别 ([2a241d6](https://github.com/enncy/online-course-script/commit/2a241d6fe987316b335e57dd9b8b19be188f1805))
+* **core:** 新增超星强制答题功能 ([e7c4fc0](https://github.com/enncy/online-course-script/commit/e7c4fc060c30b341c17fefa0148fde5170069c87))
+
+
+
 ## [3.9.6](https://github.com/enncy/online-course-script/compare/3.9.5...3.9.6) (2022-05-16)
 
 
