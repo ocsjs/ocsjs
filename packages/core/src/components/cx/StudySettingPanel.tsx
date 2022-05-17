@@ -82,19 +82,21 @@ export const StudySettingPanel = defineComponent({
                 class="input-switch"
                 type="checkbox"
                 checked={settings.restudy}
-                onChange={(e: any) => {
-                  settings.restudy = e.target.checked;
-                }}
+                onChange={(e: any) => (settings.restudy = e.target.checked)}
               />
             </Tooltip>
           </div>
 
-          <label>启动任务点</label>
+          <label>强制答题</label>
           <div>
-            PPT<input type='checkbox' />
-            音视频<input type='checkbox' />
-            阅读<input type='checkbox' />
-            章节测试<input type='checkbox' />
+            <Tooltip title="当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)">
+              <input
+                class="input-switch"
+                type="checkbox"
+                checked={settings.forceWork}
+                onChange={(e: any) => (settings.forceWork = e.target.checked)}
+              />
+            </Tooltip>
           </div>
           <hr />
           <hr />

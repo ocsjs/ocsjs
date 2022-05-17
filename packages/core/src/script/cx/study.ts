@@ -60,11 +60,11 @@ export async function study(setting: ScriptSettings['cx']['video']) {
 function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void> | undefined)[] {
   return searchIFrame(document)
     .map((frame) => {
-      const { media, ppt, chapterTest } = domSearch(
+      const { media, read, chapterTest } = domSearch(
         {
           media: 'video,audio',
           chapterTest: '.TiMu',
-          ppt: '#img.imglook'
+          read: '#img.imglook'
         },
         frame.contentDocument || document
       );
@@ -72,13 +72,13 @@ function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void
       function getJob() {
         return media
           ? mediaTask(setting, media as any, frame)
-          : ppt
-            ? pptTask(frame)
+          : read
+            ? readTask(frame)
             : chapterTest
               ? chapterTestTask(store.setting.cx.work, frame)
               : undefined;
       }
-      if (media || ppt || chapterTest) {
+      if (media || read || chapterTest) {
         return () => {
           // @ts-ignore
           let _parent = frame.contentWindow;
@@ -101,6 +101,9 @@ function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void
                 return getJob();
               } else if (attachments[jobIndex]?.job === true) {
                 logger('debug', jobName, '即将开始。');
+                return getJob();
+              } else if (chapterTest && setting.forceWork) {
+                logger('debug', jobName, '开启强制答题。');
                 return getJob();
               } else {
                 logger('debug', jobName, '已经完成，即将跳过。');
@@ -210,7 +213,7 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
 /**
  * 阅读 ppt
  */
-async function pptTask(frame?: HTMLIFrameElement) {
+async function readTask(frame?: HTMLIFrameElement) {
   // @ts-ignore
   const finishJob = frame?.contentWindow?.finishJob;
   if (finishJob) finishJob();

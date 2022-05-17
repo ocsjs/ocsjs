@@ -26,6 +26,8 @@ export interface CXSetting {
     playlines: string[]
     /** 播放路线 */
     line: string
+    /** 强制答题 */
+    forceWork: boolean,
   }
   work: CommonWorkSetting
   exam: CommonWorkSetting
@@ -101,7 +103,8 @@ export const defaultOCSSetting: ScriptSettings = {
       volume: 0,
       upload: 'close',
       playlines: ['公网1', '公网2'],
-      line: '公网1'
+      line: '公网1',
+      forceWork: false
     },
     work: defaultWorkSetting,
     exam: defaultWorkSetting
