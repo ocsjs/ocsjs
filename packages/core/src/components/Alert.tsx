@@ -27,7 +27,7 @@ export const Alert = defineComponent({
 
     return () => (
       <div class={['alert', type.value].join(' ')}>
-        <span >{ type.value === 'info' ? 'ℹ️' : type.value === 'error' ? '❗' : type.value === 'success' ? '✅' : type.value === 'warn' ? '⚠️' : '❕' }</span>
+        <span style="text-shadow: 0 0 BLACK;">{ type.value === 'info' ? 'ℹ️' : type.value === 'error' ? '❗' : type.value === 'success' ? '✅' : type.value === 'warn' ? '⚠️' : '❕' }</span>
         <div style="display: inline">
           <span
             class="alert-closer"
