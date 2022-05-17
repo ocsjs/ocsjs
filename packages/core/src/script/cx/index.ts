@@ -1,14 +1,14 @@
-import { store } from '..';
 import { createNote, createSearchResultPanel, createTerminalPanel } from '../../components';
 import { ExamSettingPanel } from '../../components/cx/ExamSettingPanel';
 import { StudySettingPanel } from '../../components/cx/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/cx/WorkSettingPanel';
 import { message } from '../../components/utils';
-import { OCR } from '../../core';
 import { defineScript } from '../../core/define.script';
 import { sleep } from '../../core/utils';
 import { logger } from '../../logger';
+import { store } from '../../store';
 import { rateHack } from './rate.hack';
+import { mapRecognize, ocrRecognize } from './recognize';
 import { study } from './study';
 import CXAnalyses from './utils';
 import { workOrExam } from './work';
@@ -178,47 +178,20 @@ export const CXScript = defineScript({
       }
     },
     {
-      name: '文字识别脚本',
-      url: ['**/mycourse/studentstudy**', '**/work/doHomeWorkNew**', '**/mooc2/exam/preview**', '**/mooc2/work/dowork**'],
+      name: '繁体字识别脚本',
+      url: [
+        '**/mycourse/studentstudy**',
+        '**/work/doHomeWorkNew**',
+        '**/mooc2/exam/preview**',
+        '**/mooc2/work/dowork**'
+      ],
       async onload() {
-        /** 文字识别 */
-        const ocr = new OCR({
-          langPath: 'https://cdn.ocs.enncy.cn/resources/tessdata',
-          corePath: 'https://cdn.ocs.enncy.cn/resources/tesseract/tesseract-core.wasm.js',
-          workerPath: 'https://cdn.ocs.enncy.cn/resources/tesseract/worker.min.js'
-        });
-
-        // 顶层初始化
-        if (window === top) {
-          store.isRecognizing = false;
-          logger('debug', '加载文字识别功能, 如果是初始化请耐心等待..., 大约需要下载20mb的数据文件');
-          // 预加载
-          await ocr.load();
-          logger('info', '文字识别功能加载成功');
-        }
-
-        const fonts = CXAnalyses.getSecretFont();
-        if (fonts.length) {
-          logger('info', '文字识别功能启动');
-          store.isRecognizing = true;
-          // 加载
-          await ocr.load();
-          for (let i = 0; i < fonts.length; i++) {
-            try {
-              // 识别
-              const text = await ocr.recognize(OCR.suit(fonts[i]));
-              // 改变文本
-              fonts[i].innerText = text;
-              // 复原样式
-              OCR.unsuit(fonts[i]);
-            } catch (e) {
-              logger('error', '文字识别功能出错,可能存在图片无法识别。', e);
-              console.log('文字识别错误', e);
-            }
-          }
-
-          store.isRecognizing = false;
-          logger('info', '文字识别完成');
+        if (store.setting.cx.common.recognize === 'map') {
+          mapRecognize();
+        } else if (store.setting.cx.common.recognize === 'ocr') {
+          ocrRecognize();
+        } else {
+          logger('debug', '繁体字识别已被关闭，可能会导致繁体字出现。');
         }
       }
     }

@@ -9,13 +9,15 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "lib": [
-      "DOM"
+      "DOM",
+      "es2021"
     ],
     "jsx": "preserve",
     "resolveJsonModule": true
   },
   "include": [
     "./src/core/index.ts",
-    "./src/**/*.ts"
+    "./src/**/*.ts",
+    "src/script/zhs/index.ts"
   ]
 }
