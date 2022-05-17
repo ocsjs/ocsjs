@@ -9,8 +9,8 @@ const bannerContent = `
 /*!
  * ${name} ${version} ( ${homepage} )
  * ${description}
- * 版权所有 ${author}
- * 开源协议 ${license}
+ * copyright ${author}
+ * license ${license}
  */
 `;
 
