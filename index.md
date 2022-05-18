@@ -18,7 +18,7 @@ title: OCS 网课助手
 # 交流群
 
 -   OCS 助手交流群  976662217 （已满）
--   [OCS 助手交流群（2）]  940881245 （已满）
+-   OCS 助手交流群（2）  940881245 （已满）
 -   [OCS 助手交流群（3）](https://qm.qq.com/cgi-bin/qm/qr?k=Y9NXoI1MYzuMaEm3_tvMPY8jPxPCxiCk&jump_from=webapi) 688788798
 -   [OCS 软件内测群](https://qm.qq.com/cgi-bin/qm/qr?k=yesrH-t4_-pCsn29uRuGRz7ShDLZ16d8&jump_from=webapi) 641347645
 
