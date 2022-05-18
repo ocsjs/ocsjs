@@ -23,10 +23,10 @@
       <Card title="默认设置">
         <Description label="指定浏览器">
           <a-select
-            v-model:value="selectedBrowser.path"
+            v-model:value="selectedPath"
+            :title="launchOptions.executablePath"
             size="small"
             class="w-100"
-            @change="onBrowserTypeChange"
           >
             <template
               v-for="(browser, index) in store.validBrowsers"
@@ -47,7 +47,7 @@
           </a-select>
         </Description>
         <Description
-          v-if="selectedBrowser.path === 'diy'"
+          v-if="selectedPath === 'diy'"
           label="自定义浏览器路径"
         >
           <a-input
@@ -159,7 +159,7 @@
 <script setup lang="ts">
 import { LaunchOptions } from '@ocsjs/scripts';
 import { message } from 'ant-design-vue';
-import { nextTick, onMounted, ref } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import Card from '../../components/Card.vue';
 import Description from '../../components/Description.vue';
 import { fs } from '../../components/file/File';
@@ -179,22 +179,14 @@ const answererWrapper = ref(
     : ''
 );
 
-// 浏览器类型
-const selectedBrowser = ref(store.validBrowsers.find(
-  (browser) => browser.path === launchOptions.executablePath
-) || {
-  name: '自定义浏览器',
-  path: 'diy'
-});
-
-console.log(selectedBrowser);
+const selectedPath = ref('diy');
 
 /**
  * 监听浏览器类型变化
  */
-function onBrowserTypeChange(val: string) {
-  launchOptions.executablePath = val === 'diy' ? '' : val;
-}
+watch(selectedPath, () => {
+  launchOptions.executablePath = selectedPath.value === 'diy' ? '' : selectedPath.value;
+});
 
 /**
  * 监听自定义浏览器编辑
@@ -220,9 +212,13 @@ function onAWChange(e: Event) {
 /** 如果尚未选择，并且没有自定义路径的话，自动选择第一个 */
 onMounted(() => {
   nextTick(() => {
-    if (store.validBrowsers.length !== 0 && launchOptions.executablePath === '' && selectedBrowser.value.path === 'diy') {
+    if (store.validBrowsers.length !== 0 && launchOptions.executablePath === '') {
       launchOptions.executablePath = store.validBrowsers[0].path;
     }
+
+    selectedPath.value = store.validBrowsers.find(
+      (browser) => browser.path === launchOptions.executablePath
+    )?.path || 'diy';
   });
 });
 

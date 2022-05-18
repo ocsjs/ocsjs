@@ -1,5 +1,5 @@
 import { OCSApi } from '@ocsjs/common';
-import { Browser, BrowserContext, chromium, LaunchOptions, Page } from 'playwright';
+import { Browser, BrowserContext, BrowserType, chromium, LaunchOptions, Page, webkit } from 'playwright';
 import { CX, ZHS } from '.';
 import { ScriptFunction, ScriptOptions } from './types';
 
@@ -58,9 +58,19 @@ process.on('uncaughtException', (e) => {
  */
 export async function launchScripts({ userDataDir, launchOptions, scripts, sync = true, init }: LaunchScriptsOptions) {
   let browser: BrowserContext;
+  let target: BrowserType;
+
+  /** 确定浏览器类型 */
+  if (launchOptions.executablePath?.includes('Firefox')) {
+    throw new Error('暂不支持 firefox 浏览器，请切换其他浏览器重试。');
+  } else if (launchOptions.executablePath?.includes('Safari')) {
+    target = webkit;
+  } else {
+    target = chromium;
+  }
 
   if (userDataDir) {
-    browser = await chromium.launchPersistentContext(userDataDir, {
+    browser = await target.launchPersistentContext(userDataDir, {
       viewport: null,
       ignoreHTTPSErrors: true,
       ...launchOptions

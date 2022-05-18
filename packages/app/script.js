@@ -53,7 +53,8 @@ process.on('message', async (message) => {
 
         /** 加载油猴 */
         const pathToExtension = path.join(__dirname, './extensions/Tampermonkey');
-        launchOptions.args = [`--disable-extensions-except=${pathToExtension}`, `--load-extension=${pathToExtension}`];
+        launchOptions.args =
+          [`--disable-extensions-except=${pathToExtension}`, `--load-extension="${pathToExtension}"`];
 
         const { browser: _browser, page: _page } = await ocs.launchScripts({
           userDataDir,
@@ -103,7 +104,7 @@ process.on('message', async (message) => {
     } else if (action === 'close') {
       console.log(bgBlueBright(loggerPrefix('info')), '任务已关闭!');
       logger.info('任务已关闭!');
-      await browser.close();
+      await browser?.close();
       browser = undefined;
       page = undefined;
     } else if (action === 'call') {
