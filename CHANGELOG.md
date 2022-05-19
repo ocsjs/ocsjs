@@ -1,3 +1,13 @@
+## [3.10.1](https://github.com/enncy/online-course-script/compare/3.10.0...3.10.1) (2022-05-19)
+
+
+### Bug Fixes
+
+* **app:** 修复软件浏览器选择BUG，并停止火狐浏览器使用。 ([5e2559b](https://github.com/enncy/online-course-script/commit/5e2559bfdea087806246120da566410b54a39c0b))
+* **core:** 修改 typr 库，减少部分打包体积。 ([51e26de](https://github.com/enncy/online-course-script/commit/51e26debe37c9ad45e181a9d67528244863e7b33))
+
+
+
 # [3.10.0](https://github.com/enncy/online-course-script/compare/3.9.6...3.10.0) (2022-05-17)
 
 
