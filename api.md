@@ -278,9 +278,9 @@ for (const el of els) {
   方法传入一个参数 : 请求获取到的文本 ，可以使用 contentType 定义文本类型
   对返回的数据进行自定义解析
   并且返回一个数组 : `[题目, 答案]`
-  或者二维数据 : `[[题目1, 答案1],[题目2, 答案2], ...`
+  或者二维数组 : `[[题目1, 答案1],[题目2, 答案2], ...`
   如果搜不到则返回 undefined
-  例子：`return (res)=> res.code === 0 ? undefined : [res.question, undefined]`
+  例子：`return (res)=> res.code === 0 ? undefined : [res.question, undefined]`  如果错误时你想带点提示，可以 `return (res)=> res.code === 0 ? ['抱歉找不到答案',undefined] : [res.question, undefined]`
 
   
 ## 方法
@@ -406,7 +406,7 @@ defaultAnswerWrapperHandler(
     - 可以解析 
         - $title: 题目标题
         - $type: 题目类型
-    - 可以解析 [`localStorage.OCS`](#OCSLocalStorage) 的任意属性
+        - $root: 题目元素，具体元素请看各脚本的代码实现。
 
 所以最终填写的 `题库配置` 为：  （不要使用这个，这个只是例子！！！！）
 ```json
