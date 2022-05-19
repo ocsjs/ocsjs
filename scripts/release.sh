@@ -17,17 +17,17 @@ if [ "$isRelease" = "y" ]; then
     echo "版本发布 $version"
     
     # 代码检查
-    npm run lint
+    npm run lint &&
     # 更新版本
-    npm version "$version" --no-git-tag-version
+    npm version "$version" --no-git-tag-version &&
     # 构建
-    npm run build:core
+    npm run build:core &&
     # 更新日志
-    npm run changelog
+    npm run changelog &&
     # 保存
-    git add --all
-    git commit -m "version release $version"
-    git tag "$version"
+    git add --all &&
+    git commit -m "version release $version" &&
+    git tag "$version" &&
     # 发布
     npm publish
     echo "$version 发布成功"
