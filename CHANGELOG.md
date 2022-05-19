@@ -1,3 +1,12 @@
+## [3.10.2](https://github.com/enncy/online-course-script/compare/3.10.1...3.10.2) (2022-05-19)
+
+
+### Bug Fixes
+
+* **core:** 还原文件，修改 release 执行错误但继续打包发布的BUG ([201ae0f](https://github.com/enncy/online-course-script/commit/201ae0f6face34db36c9edffe0e323e744ea0106))
+
+
+
 ## [3.10.1](https://github.com/enncy/online-course-script/compare/3.10.0...3.10.1) (2022-05-19)
 
 
