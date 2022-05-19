@@ -3,6 +3,12 @@
 * TOC
 {:toc}
 
+## 技术栈
+
+脚本: typescript + vue + tsx
+
+软件: typescript + electron + vue + ant design vue + playwright
+
   
 ## 项目结构
 
