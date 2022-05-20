@@ -203,6 +203,7 @@ function parseAnswererWrappers (value: string): AnswererWrapper[] {
       return [];
     }
   } catch (e) {
+    console.log(e);
     message('error', '题库配置格式错误！');
     return [];
   }

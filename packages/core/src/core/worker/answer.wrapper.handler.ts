@@ -130,7 +130,7 @@ export async function defaultAnswerWrapperHandler(
       const responseData = await request(url, {
         method: wrapper.method,
         contentType: wrapper.contentType,
-        body: wrapper.method === 'post' ? JSON.stringify(data) : undefined,
+        body: wrapper.method === 'post' ? new URLSearchParams(data) : undefined,
         type: wrapper.type,
         headers: wrapper.headers
       });
@@ -180,13 +180,16 @@ export async function defaultAnswerWrapperHandler(
   }
 
   function resolvePlaceHolder(str: string) {
-    const matches = str.match(/\${(.*?)}/g) || [];
-    matches.forEach((placeHolder) => {
-      const value: any =
-        /** 获取元素属性 */
-        get(env, placeHolder.replace(/\${(.*)}/, '$1'));
-      str = str.replace(placeHolder, value);
-    });
+    if (typeof str === 'string') {
+      const matches = str.match(/\${(.*?)}/g) || [];
+      matches.forEach((placeHolder) => {
+        const value: any =
+          /** 获取元素属性 */
+          get(env, placeHolder.replace(/\${(.*)}/, '$1'));
+        str = str.replace(placeHolder, value);
+      });
+    }
+
     return str;
   }
 

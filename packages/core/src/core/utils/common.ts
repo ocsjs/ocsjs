@@ -116,13 +116,14 @@ export function request(url: string, opts: {
   method?: 'get' | 'post';
   headers?: Record<string, string>;
   contentType?: 'json' | 'text',
-  body?: string
+  body?: string | URLSearchParams
 }): Promise<string | object> {
   return new Promise((resolve, reject) => {
     /** 默认参数 */
     const { contentType = 'json', body, method = 'get', headers = {}, type = 'fetch' } = opts || {};
     /** 环境变量 */
     const env = isInBrowser() ? 'browser' : 'node';
+    // console.log('request', { url, opts });
 
     /** 如果是跨域模式并且是浏览器环境 */
     if (type === 'GM_xmlhttpRequest' && env === 'browser') {
@@ -131,7 +132,7 @@ export function request(url: string, opts: {
         GM_xmlhttpRequest({
           method: opts.method?.toLocaleUpperCase() as any || 'GET',
           url,
-          data: JSON.stringify(body || {}),
+          data: body?.toString(),
           headers: opts.headers || {},
           responseType: 'json',
           onload: (response) => {
