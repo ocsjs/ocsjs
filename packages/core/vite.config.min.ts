@@ -24,13 +24,20 @@ export default defineConfig({
     /** 清空输出路径 */
     emptyOutDir: true,
     /** 是否压缩代码 */
-    minify: false,
+    minify: true,
     /** 打包库， 全局名字为 OCS */
     lib: {
       entry: './index.ts',
       name: 'OCS',
-      fileName: () => 'index.js',
+      fileName: () => 'index.min.js',
       formats: ['umd']
+    },
+    rollupOptions: {
+      output: {
+        assetFileNames: (assetInfo) => {
+          return assetInfo.name === 'style.css' ? 'style.min.css' : assetInfo.name;
+        }
+      }
     }
   },
   define: {
