@@ -1,3 +1,4 @@
+
 import { store } from '../../store';
 import { DefineScript, GlobPattern, ScriptPanel, ScriptRoute } from '../define.script';
 
@@ -114,32 +115,35 @@ export function waitForRecognize() {
 export function request(url: string, opts: {
   type: 'fetch' | 'GM_xmlhttpRequest',
   method?: 'get' | 'post';
-  headers?: Record<string, string>;
   contentType?: 'json' | 'text',
-  body?: string | URLSearchParams
+  headers?: Record<string, string>;
+  data?: Record<string, string>;
 }): Promise<string | object> {
   return new Promise((resolve, reject) => {
     /** 默认参数 */
-    const { contentType = 'json', body, method = 'get', headers = {}, type = 'fetch' } = opts || {};
+    const { contentType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
     /** 环境变量 */
     const env = isInBrowser() ? 'browser' : 'node';
-    // console.log('request', { url, opts });
 
     /** 如果是跨域模式并且是浏览器环境 */
     if (type === 'GM_xmlhttpRequest' && env === 'browser') {
       if (typeof GM_xmlhttpRequest !== 'undefined') {
         // eslint-disable-next-line no-undef
         GM_xmlhttpRequest({
-          method: opts.method?.toLocaleUpperCase() as any || 'GET',
           url,
-          data: body?.toString(),
-          headers: opts.headers || {},
+          method: method === 'get' ? 'GET' : 'POST',
+          data: new URLSearchParams(data).toString(),
+          headers: headers,
           responseType: 'json',
           onload: (response) => {
-            if (contentType === 'json') {
-              resolve(JSON.parse(response.responseText));
+            if (response.status === 200) {
+              if (contentType === 'json') {
+                resolve(JSON.parse(response.responseText));
+              } else {
+                resolve(response.responseText);
+              }
             } else {
-              resolve(response.responseText);
+              reject(response.responseText);
             }
           },
           onerror: reject
@@ -149,7 +153,8 @@ export function request(url: string, opts: {
       }
     } else {
       const fet: (...args: any[]) => Promise<Response> = env === 'node' ? require('node-fetch').default : fetch;
-      fet(url, { contentType, body, method, headers }).then(async (response) => {
+
+      fet(url, { contentType, body: method === 'post' ? data : undefined, method, headers }).then(async (response) => {
         if (contentType === 'json') {
           resolve(await response.json());
         } else {
