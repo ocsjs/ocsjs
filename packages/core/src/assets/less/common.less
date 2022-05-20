@@ -272,6 +272,7 @@ panel style
          border-radius: 4px;
          box-shadow: 0px 0px 4px black;
          white-space: nowrap;
+         z-index: 9999999;
 
          a {
              color: #1890ff;
@@ -325,12 +326,19 @@ panel style
              width: 14px;
          }
 
+         // 隐藏模式下的提示样式
+         .hide .alert {
+             width: 200px;
+             transform: translate(-82px, 0px);
+         }
+
          // 提示内容
          .alert {
              border-radius: 4px;
              margin-bottom: 4px;
              padding: 4px;
              font-size: 12px;
+
 
              .alert-text {
                  letter-spacing: 1px;
