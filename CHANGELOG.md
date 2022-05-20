@@ -1,3 +1,12 @@
+## [3.10.6](https://github.com/enncy/online-course-script/compare/3.10.4...3.10.6) (2022-05-20)
+
+
+### Bug Fixes
+
+* **core:** 修复题库配置解析器BUG ([3986a49](https://github.com/enncy/online-course-script/commit/3986a49a1323bc17f8cca54763586c23f6e03907))
+
+
+
 ## [3.10.4](https://github.com/enncy/online-course-script/compare/3.10.2...3.10.4) (2022-05-20)
 
 
