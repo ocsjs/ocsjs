@@ -2,7 +2,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 import { ValidBrowser } from './interface';
 
-// 获取 chrome 路径
+// 获取可用浏览器路径
 export function getValidBrowsers(): ValidBrowser[] {
   return [
     {
@@ -17,7 +17,7 @@ export function getValidBrowsers(): ValidBrowser[] {
       name: '火狐浏览器(Firefox)',
       path: resolveBrowserPath('Mozilla Firefox\\firefox.exe')
     }
-  ];
+  ].filter((b) => b.path);
 }
 
 function resolveBrowserPath(commonPath: string) {
