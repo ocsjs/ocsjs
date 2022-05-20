@@ -8,22 +8,26 @@ export const ExamSettingPanel = defineComponent({
     const settings = store.setting.cx.exam;
 
     return () => (
-      <CommonWorkSettingPanel settings={settings} v-slots={{
-        upload: createWorkerSetting(
-          '自动答题',
-          {
-            selected: 'close',
-            options: [
+      <div class="ocs-setting-panel">
+        <div class="ocs-setting-items">
+          <CommonWorkSettingPanel settings={settings} v-slots={{
+            upload: createWorkerSetting(
+              '自动答题',
               {
-                label: '请自行检查后自行点击提交',
-                value: 'close'
-              }
-            ]
-          },
-          (e: any) => (settings.upload = e.target.value)
-        )
-      }}>
-      </CommonWorkSettingPanel>
+                selected: 'close',
+                options: [
+                  {
+                    label: '请自行检查后自行点击提交',
+                    value: 'close'
+                  }
+                ]
+              },
+              (e: any) => (settings.upload = e.target.value)
+            )
+          }}>
+          </CommonWorkSettingPanel>
+        </div>
+      </div>
 
     );
   }
