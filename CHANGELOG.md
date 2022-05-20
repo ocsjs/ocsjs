@@ -1,3 +1,14 @@
+## [3.10.4](https://github.com/enncy/online-course-script/compare/3.10.2...3.10.4) (2022-05-20)
+
+
+### Bug Fixes
+
+* **app:** 修复浏览器报错BUG ([fd3780c](https://github.com/enncy/online-course-script/commit/fd3780c2d9fdb58016b06f090696056934888f89))
+* **core:** 修复超星考试页面样式问题 ([03fa9be](https://github.com/enncy/online-course-script/commit/03fa9bed5e176377e921deffbacf0212ccd85e34))
+* **core:** 修复题库配置BUG ([2b8c939](https://github.com/enncy/online-course-script/commit/2b8c9391cecb7aed7e55b47694772feaed2e45fc))
+
+
+
 ## [3.10.2](https://github.com/enncy/online-course-script/compare/3.10.1...3.10.2) (2022-05-19)
 
 
