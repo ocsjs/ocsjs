@@ -1,3 +1,17 @@
+## [3.12.2](https://github.com/enncy/online-course-script/compare/3.12.0...3.12.2) (2022-05-21)
+
+
+### Bug Fixes
+
+* **core:** 修复某些填空题识别不出的BUG ([c2c1c3d](https://github.com/enncy/online-course-script/commit/c2c1c3d2a7fafbe569b25531070b1803e07ccfe6))
+
+
+### Features
+
+* **core:** 新增自动答题选项：强制提交 ([e0ff3a2](https://github.com/enncy/online-course-script/commit/e0ff3a2c64d9e9de061889d2ad145ed29a492cb1))
+
+
+
 # [3.12.0](https://github.com/enncy/online-course-script/compare/3.11.0...3.12.0) (2022-05-21)
 
 
