@@ -20,17 +20,20 @@ export const Tooltip = defineComponent({
     const { title, type, tooltipStyle } = toRefs(props);
     const show = ref(false);
     return () => (
-      <div onMouseenter={() => (show.value = true)} onMouseleave={() => (show.value = false)} style="width: 100%">
+      <div style={
+        {
+          width: '100%',
+          display: 'flex',
+          alignItems: 'flex-start'
+        }
+      }
+      >
         <div style={{ display: show.value ? 'block' : 'none', ...tooltipStyle.value }} class={'tooltip ' + type.value}>
           {slots.title
-            ? (
-              slots.title()
-            )
-            : (
-              <span innerHTML={title.value?.replace(/\n/g, '<br/>')}></span>
-            )}
+            ? (slots.title())
+            : (<span innerHTML={title.value?.replace(/\n/g, '<br/>')}></span>)}
         </div>
-        <div style="width: 100%">{slots.default?.()}</div>
+        <div style="width: 100%" onMouseenter={() => (show.value = true)} onMouseleave={() => (show.value = false)} >{slots.default?.()}</div>
       </div>
     );
   }
