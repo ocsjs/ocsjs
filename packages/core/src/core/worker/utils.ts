@@ -48,10 +48,18 @@ export function isPlainAnswer(answer: string) {
 
 /** 分割答案 */
 export function splitAnswer(answer: string) {
-  const seprators = ['===', '#', '---', '###', '|'];
-  for (const sep of seprators) {
-    if (answer.split(sep).length > 1) {
-      return answer.split(sep);
+  try {
+    // 如果是 json 格式的多选答案
+    const json = JSON.parse(answer);
+    if (Array.isArray(json)) {
+      return json.map(String).filter((el) => el.trim().length > 0);
+    }
+  } catch {
+    const seprators = ['===', '#', '---', '###', '|', ';'];
+    for (const sep of seprators) {
+      if (answer.split(sep).length > 1) {
+        return answer.split(sep).filter((el) => el.trim().length > 0);
+      }
     }
   }
 
