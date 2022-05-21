@@ -25,7 +25,7 @@
 
 {{script}}
 
-const OCS_STYLE = `{{style}}`
+const OCS_STYLE = `{{style}}`;
 
 /* eslint no-undef: 0 */
 
