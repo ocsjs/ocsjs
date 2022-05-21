@@ -55,22 +55,29 @@ export function createWorkerSetting (
     : [
       {
         label: '关闭自动答题',
-        value: 'close'
+        value: 'close',
+        title: '关闭自动答题后, 脚本将忽略答题, 自动进入下一节。'
       },
       {
         label: '完成后自动保存',
-        value: 'save'
+        value: 'save',
+        title: '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'
       },
       {
         label: '完成后不做任何动作',
-        value: 'nomove'
+        value: 'nomove',
+        title: '完成后既不保存也不提交, 等待时间过后将会自动下一节, 适合在测试脚本时使用。'
+      },
+      {
+        label: '强制自动提交',
+        value: 'force',
+        title: '不管答案是否正确直接强制自动提交，如需开启，请配合随机作答谨慎使用。'
+
       },
       ...[10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => ({
         label: `查到大于${rate}%的题目则自动提交`,
         value: rate,
-        attrs: {
-          title: `例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`
-        }
+        title: `例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`
       })),
       {
         label: '每个题目都查到答案才自动提交',
@@ -91,13 +98,15 @@ export function createWorkerSetting (
     <>
       <label>{label}</label>
       <div>
-        <select title="答题设置" onChange={changeHandler}>
-          {options.map((option) => (
-            <option value={option.value} selected={option.selected}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+        <Tooltip title="答题设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。">
+          <select onChange={changeHandler}>
+            {options.map((option) => (
+              <option title={option.title} value={option.value} selected={option.selected}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </Tooltip>
       </div>
 
       <label>题库配置</label>

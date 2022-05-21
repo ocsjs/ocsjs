@@ -185,7 +185,11 @@ export class OCSWorker<E extends RawElements = RawElements> {
     }
     const rate = results.length === 0 ? 0 : (finished / results.length) * 100;
     if (uploadRate !== 'nomove') {
-      await callback(rate, uploadRate === 'save' ? false : rate >= parseFloat(uploadRate));
+      if (uploadRate === 'force') {
+        await callback(rate, true);
+      } else {
+        await callback(rate, uploadRate === 'save' ? false : rate >= parseFloat(uploadRate));
+      }
     }
   }
 }

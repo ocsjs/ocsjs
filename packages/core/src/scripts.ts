@@ -21,7 +21,7 @@ export interface CXSetting {
     /** 复习模式 */
     restudy: boolean,
     /** 章节测试自动答题 */
-    upload: 'close'
+    upload: string
     /** 播放路线列表 */
     playlines: string[]
     /** 播放路线 */
