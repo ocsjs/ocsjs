@@ -1,0 +1,47 @@
+// ==UserScript==
+// @name					OCS 网课助手
+// @version					{{version}}
+// @description				ocs 网课助手，支持各平台网课学习，支持超星学习通，知道智慧树，等网课的学习，作业，考试功能。
+// @author					enncy
+// @antifeature				payment
+// @license					MIT
+// @namespace				https://enncy.cn
+// @homepage				https://enncy.github.io/online-course-script/
+// @source					https://github.com/enncy/online-course-script/
+// @icon					https://cdn.ocs.enncy.cn/logo.ico
+// @connect					enncy.cn
+// @connect					icodef.com
+// @match					*://*.chaoxing.com/*
+// @match					*://*.edu.cn/*
+// @match					*://*.org.cn/*
+// @match					*://*.zhihuishu.com/*
+// @grant					unsafeWindow
+// @grant					GM_xmlhttpRequest
+// @grant					GM_setValue
+// @grant					GM_getValue
+// @run-at					document-start
+// ==/UserScript==
+
+
+{{script}}
+
+const OCS_STYLE = `{{style}}`
+
+/* eslint no-undef: 0 */
+
+(function () {
+    "use strict";
+
+    // 将OCS对象加入到全局属性
+    unsafeWindow.OCS = OCS;
+    // 运行脚本
+    OCS.start({
+        // 加载样式
+        style: OCS_STYLE,
+        // 支持拖动
+        draggable: true,
+        // 加载默认脚本列表，默认 OCS.definedScripts
+        scripts: OCS.definedScripts,
+    });
+})();
+
