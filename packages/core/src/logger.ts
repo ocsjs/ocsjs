@@ -24,10 +24,7 @@ export function createLog(level: 'info' | 'error' | 'warn' | 'debug', ...msg: an
 export function logger(level: 'info' | 'error' | 'warn' | 'debug', ...msg: any[]) {
   if (level === 'error') {
     console.error(...createLog(level, msg));
-  } else {
-    console.log(...createLog(level, msg));
   }
-
   if (document) {
     const extra =
       level === 'info'

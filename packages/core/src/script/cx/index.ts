@@ -73,7 +73,6 @@ export const CXScript = defineScript({
         }
 
         let chapters = CXAnalyses.getChapterInfos();
-        console.log('chapters', chapters);
 
         // 如果不是复习模式，则寻找需要运行的任务
         if (!restudy) {

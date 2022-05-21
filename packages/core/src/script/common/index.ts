@@ -13,7 +13,6 @@ export const CommonScript = defineScript({
       url: supports,
       start() {
         try {
-          console.log('禁止弹窗脚本启动');
           // @ts-ignore
           if (typeof unsafeWindow !== 'undefined') {
             // @ts-ignore
@@ -32,7 +31,6 @@ export const CommonScript = defineScript({
       url: supports,
       start() {
         function enableCopy() {
-          console.log('开启页面复制粘贴功能');
           try {
             const d = document;
             const b = document.body;
