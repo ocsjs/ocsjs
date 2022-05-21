@@ -42,6 +42,7 @@ export class OCSWorker<E extends RawElements = RawElements> {
         /**  dom 搜索 */
         const elements: WorkContext<E>['elements'] = domSearchAll<E>(this.opts.elements, el);
 
+        /** 执行元素搜索钩子 */
         this.opts.onElementSearched?.(elements);
 
         /** 改变上下文 */

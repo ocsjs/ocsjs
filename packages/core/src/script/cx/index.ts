@@ -194,6 +194,19 @@ export const CXScript = defineScript({
           logger('debug', '繁体字识别已被关闭，可能会导致繁体字出现。');
         }
       }
+    },
+    {
+      name: '图片识别脚本',
+      url: [
+        '**/work/doHomeWorkNew**',
+        '**/mooc2/exam/preview**',
+        '**/mooc2/work/dowork**'
+      ],
+      onload() {
+        document.body.querySelectorAll('img').forEach((img) => {
+          img.after(document.createTextNode(img.src));
+        });
+      }
     }
   ],
   panels: [

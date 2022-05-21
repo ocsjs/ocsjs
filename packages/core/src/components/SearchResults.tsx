@@ -38,14 +38,19 @@ export const SearchResults = defineComponent({
               {currentResult.value
                 ? (
                   <div class="search-result-modal" onClick={(e) => e.stopPropagation()}>
-                    <div>
+                    <div class="search-result-header">
                       <span
                         style={{ float: 'right', cursor: 'pointer' }}
                         onClick={() => (currentResult.value = undefined)}>
-                    ❌
+                        ❌
                       </span>
-
-                      {currentTitle.value}
+                      {/* 判断是否有网络图片格式的文本，有则替换成 img 标签 */}
+                      <span innerHTML={
+                        currentTitle.value
+                          .replace(/https?:\/\/.*?\.(png|jpg|jpeg|gif)/g,
+                            (match) => (`<img src="${match}" />`))
+                      }>
+                      </span>
                     </div>
                     <hr />
                     <div class="search-results-error" style={{ color: 'red', padding: '0px 0px 0px 8px' }}>
@@ -60,44 +65,53 @@ export const SearchResults = defineComponent({
                       </span>
                     </div>
 
-                    {currentSearchResults.value?.map((res) => (
+                    <div class="search-results-containers">
+                      {currentSearchResults.value?.map((res) => (
 
-                      <div class="search-results-container">
+                        <div class="search-results-container">
 
-                        <span class="search-results-title">
-                          <span>题库:</span>
-                          <a href={res.homepage ? res.homepage : '#'} target="_blank">
-                            {res.name}
-                          </a>
-                          <span> {res.error ? '此题库请求错误: ' + res.error.message : `一共有 ${res.answers.length} 个答案`} </span>
-                        </span>
-                        {res.error
-                          ? (
-                            <div></div>
-                          )
-                          : (
-                            <div style={{ paddingLeft: '12px' }}>
-                              {res.answers.map((answer) => (
-                                <div class="search-results-item">
-                                  <div title={answer.question}>
-                                    <span>
-                                      <span style="color: #a7a7a7">题目: </span>
-                                      {StringUtils.of(answer.question).nowrap().max(50).toString()}
-                                    </span>
+                          <span class="search-results-title">
+                            <span>题库:</span>
+                            <a href={res.homepage ? res.homepage : '#'} target="_blank">
+                              {res.name}
+                            </a>
+                            <span> {res.error ? '此题库请求错误: ' + res.error.message : `一共有 ${res.answers.length} 个答案`} </span>
+                          </span>
+                          {res.error
+                            ? (
+                              <div></div>
+                            )
+                            : (
+                              <div style={{ paddingLeft: '12px' }}>
+                                {res.answers.map((answer) => (
+                                  <div class="search-results-item">
+                                    <div title={answer.question}>
+                                      <span>
+                                        <span style="color: #a7a7a7">题目: </span>
+                                        <div innerHTML={
+                                          answer.question?.replace(/https?:\/\/.*?\.(png|jpg|jpeg|gif)/g,
+                                            (match) => (`<img src="${match}" />`))
+                                        }></div>
+                                      </span>
+                                    </div>
+                                    <div title={answer.answer}>
+                                      <span>
+                                        <span style="color: #a7a7a7">回答: </span>
+                                        {/* 判断是否有网络图片格式的文本，有则替换成 img 标签 */}
+                                        <div innerHTML={
+                                          answer.answer?.replace(/https?:\/\/.*?\.(png|jpg|jpeg|gif)/g,
+                                            (match) => (`<img src="${match}" />`))
+                                        }></div>
+                                      </span>
+                                    </div>
                                   </div>
-                                  <div title={answer.answer}>
-                                    <span>
-                                      <span style="color: #a7a7a7">回答: </span>
-                                      {StringUtils.of(answer.answer).nowrap().max(50).toString()}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          )}
+                                ))}
+                              </div>
+                            )}
 
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )
                 : (

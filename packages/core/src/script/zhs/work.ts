@@ -49,6 +49,7 @@ export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: '
           }
         }
       },
+      /** 完成答题后 */
       onResult: (res) => {
         if (res.ctx) {
           store.workResults.push(res);

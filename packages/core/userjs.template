@@ -3,7 +3,6 @@
 // @version					{{version}}
 // @description				ocs 网课助手，支持各平台网课学习，支持超星学习通，知道智慧树，等网课的学习，作业，考试功能。
 // @author					enncy
-// @antifeature				payment
 // @license					MIT
 // @namespace				https://enncy.cn
 // @homepage				https://enncy.github.io/online-course-script/

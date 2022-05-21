@@ -272,19 +272,7 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
           throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
         }
       },
-      /** 处理cx作业判断题选项是图片的问题 */
-      onElementSearched(elements) {
-        const typeInput = elements.type[0] as HTMLInputElement;
-        const type = parseInt(typeInput.value);
-        if (type === 3) {
-          elements.options.forEach((option) => {
-            const ri = option.querySelector('.ri');
-            const span = document.createElement('span');
-            span.innerText = ri ? '√' : '×';
-            option.appendChild(span);
-          });
-        }
-      },
+
       work: {
         /**
          * cx 题目类型 ：
@@ -329,6 +317,21 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
           }
         }
       },
+      /** 元素搜索完成后 */
+      onElementSearched(elements) {
+        const typeInput = elements.type[0] as HTMLInputElement;
+        const type = parseInt(typeInput.value);
+        /** 判断题 */
+        if (type === 3) {
+          elements.options.forEach((option) => {
+            const ri = option.querySelector('.ri');
+            const span = document.createElement('span');
+            span.innerText = ri ? '√' : '×';
+            option.appendChild(span);
+          });
+        }
+      },
+      /** 完成答题后 */
       onResult: (res) => {
         if (res.ctx) {
           store.workResults.push(res);

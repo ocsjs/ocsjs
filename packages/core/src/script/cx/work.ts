@@ -86,6 +86,7 @@ export async function workOrExam(
           }
         }
       },
+      /** 完成答题后 */
       onResult: (res) => {
         if (res.ctx) {
           store.workResults.push(res);
