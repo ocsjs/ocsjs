@@ -306,10 +306,10 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
               option.parentElement?.querySelector('a,label')?.click();
             }
           } else if (type === 'completion' && answer.trim()) {
-            const text = option.parentElement?.querySelector('textarea');
+            const textarea = option.parentElement?.querySelector('textarea');
             const textareaFrame = option.parentElement?.querySelector('iframe');
-            if (text) {
-              text.value = answer;
+            if (textarea) {
+              textarea.value = answer;
             }
             if (textareaFrame?.contentDocument) {
               textareaFrame.contentDocument.body.innerHTML = answer;
@@ -332,12 +332,43 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
         }
       },
       /** 完成答题后 */
-      onResult: (res) => {
+      onResult: async (res) => {
         if (res.ctx) {
           store.workResults.push(res);
         }
-        console.log(res);
-        logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
+        const randomWork = store.setting.cx.video.randomWork;
+        // 没有完成时随机作答
+        if (!res.result?.finish && randomWork.enable) {
+          const options = res.ctx?.elements?.options || [];
+          const type = res.type;
+
+          if (randomWork.choice && (type === 'judgement' || type === 'single' || type === 'multiple')) {
+            const option = options[Math.floor(Math.random() * options.length)];
+            // @ts-ignore 随机选择选项
+            option.parentElement?.querySelector('a,label')?.click();
+          } else if (randomWork.complete && type === 'completion') {
+            // 随机填写答案
+            for (const option of options) {
+              const textarea = option.parentElement?.querySelector('textarea');
+              const completeTexts = randomWork.completeTexts
+                .filter(Boolean);
+              const text = completeTexts[Math.floor(Math.random() * completeTexts.length)];
+              const textareaFrame = option.parentElement?.querySelector('iframe');
+
+              if (textarea) {
+                textarea.value = text;
+              }
+              if (textareaFrame?.contentDocument) {
+                textareaFrame.contentDocument.body.innerHTML = text;
+              }
+
+              await sleep(500);
+            }
+          }
+          logger('info', '正在随机作答');
+        } else {
+          logger('info', '答题', res.result?.finish ? '完成' : '未完成');
+        }
       },
 
       /** 其余配置 */

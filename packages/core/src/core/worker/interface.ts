@@ -37,6 +37,8 @@ export interface WorkResult<E extends RawElements> {
   result?: ResolverResult
   error?: Error
   ctx?: WorkContext<E>
+  type: 'single' | 'multiple' | 'completion' | 'judgement' | undefined
+
 }
 
 /** 答案题目处理器 */

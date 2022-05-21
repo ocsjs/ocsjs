@@ -98,6 +98,8 @@ export const CommonWorkSettingPanel = defineComponent({
             />
           </Tooltip>
         </div>
+
+        {slots.extra?.()}
       </>
 
     );

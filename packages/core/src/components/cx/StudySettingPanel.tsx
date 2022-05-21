@@ -87,17 +87,6 @@ export const StudySettingPanel = defineComponent({
             </Tooltip>
           </div>
 
-          <label>强制答题</label>
-          <div>
-            <Tooltip title="当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)">
-              <input
-                class="input-switch"
-                type="checkbox"
-                checked={settings.forceWork}
-                onChange={(e: any) => (settings.forceWork = e.target.checked)}
-              />
-            </Tooltip>
-          </div>
           <hr />
           <hr />
 
@@ -106,6 +95,72 @@ export const StudySettingPanel = defineComponent({
               '自动答题',
               { selected: settings.upload },
               (e: any) => (settings.upload = e.target.value)
+            ),
+            extra: (
+              <>
+                <label>强制答题</label>
+                <div>
+                  <Tooltip title="当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)">
+                    <input
+                      class="input-switch"
+                      type="checkbox"
+                      checked={settings.forceWork}
+                      onChange={(e: any) => (settings.forceWork = e.target.checked)}
+                    />
+                  </Tooltip>
+                </div>
+                <label>随机作答</label>
+                <Tooltip title="随机作答 未完成/未匹配 的题目，开启后可自定义选项">
+                  <input
+                    class="input-switch"
+                    type="checkbox"
+                    checked={settings.randomWork.enable}
+                    onChange={(e: any) => (settings.randomWork.enable = e.target.checked)}
+                  />
+                </Tooltip>
+                {settings.randomWork.enable &&
+                (
+                  <>
+                    <label>选择随机</label>
+                    <Tooltip title="随机作答 单选/多选/判断 题">
+                      <input
+                        class="input-switch"
+                        type="checkbox"
+                        checked={settings.randomWork.choice}
+                        onChange={(e: any) => (settings.randomWork.choice = e.target.checked)}
+                      />
+                    </Tooltip>
+                    <label>填空随机</label>
+                    <Tooltip title="随机作答填空题">
+                      <input
+                        class="input-switch"
+                        type="checkbox"
+                        checked={settings.randomWork.complete}
+                        onChange={(e: any) => (settings.randomWork.complete = e.target.checked)}
+                      />
+                    </Tooltip>
+                    {settings.randomWork.complete && (
+                      <>
+                        <label>填空随机文案</label>
+                        <Tooltip title="每行一个，随机填入">
+                          <textarea
+                            value={settings.randomWork.completeTexts
+                              .map(String)
+                              .filter((s:any) => s.trim().length > 0)
+                              .join('\n')}
+                            onInput={(e: any) =>
+                              (settings.randomWork.completeTexts = e.target.value
+                                .map(String)
+                                .filter((s:any) => s.trim().length > 0)
+                                .split('\n')
+                              )}
+                          />
+                        </Tooltip>
+                      </>
+                    )}
+                  </>
+                )}
+              </>
             )
           }}>
           </CommonWorkSettingPanel>
