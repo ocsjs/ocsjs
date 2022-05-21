@@ -294,7 +294,9 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
                 ? 'completion'
                 : type === 3
                   ? 'judgement'
-                  : elements.options[0].querySelector('textarea')
+                  : elements.options[0].tagName === 'TEXTAREA' ||
+                    elements.options[0].querySelector('textarea') ||
+                    elements.options[0].parentElement?.querySelector('textarea')
                     ? 'completion'
                     : undefined;
         },
@@ -387,7 +389,8 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
       uploadRate: store.setting.cx.video.upload,
       results,
       async callback(finishedRate, uploadable) {
-        logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : ' 5秒后将自动保存');
+        const name = store.setting.cx.video.upload === 'force' ? '强制提交' : '自动提交';
+        logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将' + name : ' 5秒后将自动保存');
 
         await sleep(5000);
 
