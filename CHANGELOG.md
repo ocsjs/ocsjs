@@ -1,3 +1,17 @@
+# [3.11.0](https://github.com/enncy/online-course-script/compare/3.10.6...3.11.0) (2022-05-21)
+
+
+### Bug Fixes
+
+* **core:** 新增未经压缩代码的打包 ([4099fc4](https://github.com/enncy/online-course-script/commit/4099fc428d6cfa3b835bf7c89f29bb63b11ad090))
+
+
+### Features
+
+* **core:** 新增userjs未经压缩代码打包 ([42badc8](https://github.com/enncy/online-course-script/commit/42badc85967abb2486c3a6895b8ffd8f9155f05a))
+
+
+
 ## [3.10.6](https://github.com/enncy/online-course-script/compare/3.10.4...3.10.6) (2022-05-20)
 
 
