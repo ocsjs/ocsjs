@@ -5,32 +5,55 @@ panel style
      position: fixed;
      top: 40%;
      left: 50%;
-     max-width: 500px;
      min-width: 300px;
      background: white;
      z-index: 99999999;
-     border-radius: 4px;
      text-align: left;
-     box-shadow: 0px 2px 6px #848484;
+     box-shadow: 0 0 24px -10px #000000;
+     border-radius: 6px;
+     border: 1px solid #a3a3a3;
+     font-family: Avenir, Helvetica, Arial, sans-serif;
+     -webkit-font-smoothing: antialiased;
+     -moz-osx-font-smoothing: grayscale;
+     color: #636363;
 
      // 头部
      .ocs-panel-header {
          display: flex;
-         padding: 6px 4px;
-         border-bottom: 1px solid #c6c6c6;
+         padding: 2px;
+         background: #f7f7f7;
+         border-radius: 6px;
+         border-bottom-left-radius: unset;
+         border-bottom-right-radius: unset;
+         box-shadow: 0px 0px 4px #c7c7c7;
 
          // 标题
          .title {
              cursor: pointer !important;
              font-size: 14px;
-             margin: 0px 8px;
-             padding: 0;
+             padding: 2px 8px;
              white-space: nowrap;
+             color: rgba(0, 0, 0, 0.509);
 
              &.active {
-                 font-weight: bold;
+                 background: white;
+                 color: black;
+
+                 span::after {
+                     content: "";
+                     border-bottom: 2px solid #0099ff;
+                     display: block;
+                     width: 24px;
+                     justify-content: center;
+                     margin: 0 auto;
+                 }
+             }
+
+             &:hover {
+                 background: white;
              }
          }
+
 
          &.hide {
              display: none;
@@ -41,7 +64,6 @@ panel style
      .ocs-panel-container {
          font-size: 12px;
          padding: 4px;
-         max-height: 550px;
          overflow: auto;
 
          ul li {
@@ -83,10 +105,13 @@ panel style
      .ocs-panel-footer {
          font-size: 12px;
          color: #c5c5c5;
-         border-top: 1px solid #c6c6c6;
          margin-top: 8px;
          text-align: right;
          padding: 0px 4px;
+         box-shadow: 0px 0px 4px #c7c7c7;
+         border-radius: 6px;
+         border-top-left-radius: unset;
+         border-top-right-radius: unset;
 
          &.hide {
              border-top: none;
@@ -133,7 +158,7 @@ panel style
              outline: none;
              border: none;
              border-bottom: 1px solid #e4e4e4;
-             background: #f5f5f5a6;
+             background: #fbfbfb;
              padding-left: 2px;
              text-align: center;
              padding: 0px;
