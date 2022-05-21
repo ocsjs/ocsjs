@@ -48,7 +48,7 @@
             :class="item.name === activeKey ? 'active' : ''"
             @click="activeKey = item.name"
           >
-            {{ item.name }}
+            <span>{{ item.name }}</span>
           </div>
         </template>
       </div>
