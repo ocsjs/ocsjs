@@ -1,3 +1,20 @@
+# [3.12.0](https://github.com/enncy/online-course-script/compare/3.11.0...3.12.0) (2022-05-21)
+
+
+### Bug Fixes
+
+* **core:** 删除多余输出 ([8cee017](https://github.com/enncy/online-course-script/commit/8cee0173c670633d665bddd24c4884fa3ad3f621))
+* **core:** 修改userjs打包代码未加分号报错 BUG ([e0ec319](https://github.com/enncy/online-course-script/commit/e0ec319150ec2f42a4a1256ae9250a3bfd1ae779))
+* **core:** 优化多选题答案分割判断 ([7da6f92](https://github.com/enncy/online-course-script/commit/7da6f92074a4a9ced316be312aa664ea3f75af52))
+
+
+### Features
+
+* **core:** 新增随机作答功能 ([ecc2a87](https://github.com/enncy/online-course-script/commit/ecc2a87c24e2e81e82a6f1d4fe737b3ccab69b8c))
+* **core:** 新增图片题识别脚本，新增搜索结果显示题目图片和答案图片 ([fd483c3](https://github.com/enncy/online-course-script/commit/fd483c3bbbe9af689e3b006c21ae12cdeccdd73a))
+
+
+
 # [3.11.0](https://github.com/enncy/online-course-script/compare/3.10.6...3.11.0) (2022-05-21)
 
 
