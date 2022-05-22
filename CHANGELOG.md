@@ -1,3 +1,12 @@
+## [3.12.3](https://github.com/enncy/online-course-script/compare/3.12.2...3.12.3) (2022-05-22)
+
+
+### Bug Fixes
+
+* **core:** 修复误删最大长宽导致的超出页面范围 ([9b0bcd4](https://github.com/enncy/online-course-script/commit/9b0bcd4d0f26fb8591950e73563be78a5c3d876d))
+
+
+
 ## [3.12.2](https://github.com/enncy/online-course-script/compare/3.12.0...3.12.2) (2022-05-21)
 
 
