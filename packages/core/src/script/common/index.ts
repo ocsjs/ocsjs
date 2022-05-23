@@ -58,8 +58,23 @@ export const CommonScript = defineScript({
           setTimeout(() => enableCopy(), 3000);
         });
       }
+    },
+    {
+      name: '页面反调试脚本',
+      url: supports,
+      start() {
+        const _constructor = Function.prototype.constructor;
+        // eslint-disable-next-line no-extend-native
+        Function.prototype.constructor = function (...args: any[]) { // Hook 住 Function.prototype.constructor
+          if (args[0] && args[0].includes('debugger')) {
+            const content = Function.prototype.constructor.caller.toString().replace(/debugger/g, '');
+            // eslint-disable-next-line no-new-func
+            this.caller = new Function(content);
+          }
+          return _constructor.apply(this, arguments);
+        };
+      }
     }
-
   ],
   panels: [
     {
