@@ -1,5 +1,5 @@
 import { defineComponent, ref } from 'vue';
-import { autoClose, switchPlaybackRate } from '../../script/zhs/study';
+import { autoClose, fixedVideoProgress, switchPlaybackRate } from '../../script/zhs/study';
 import { store } from '../../store';
 import { Tooltip } from '../Tooltip';
 
@@ -104,6 +104,21 @@ export const StudySettingPanel = defineComponent({
               }}
             ></input>
             <span> {Math.round(settings.volume * 100)}% </span>
+          </div>
+
+          <label>显示视频进度</label>
+          <div>
+            <Tooltip title="固定进度条，防止进度条消失。">
+              <input
+                class="input-switch"
+                type="checkbox"
+                checked={settings.showProgress}
+                onChange={(e: any) => {
+                  settings.showProgress = e.target.checked;
+                  fixedVideoProgress(e.target.checked);
+                }}
+              />
+            </Tooltip>
           </div>
 
           <label>复习模式</label>

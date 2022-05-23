@@ -126,6 +126,21 @@ function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void
 }
 
 /**
+ * 永久固定显示视频进度
+ */
+export function fixedVideoProgress(fixed: boolean) {
+  const videojs = store.videojs;
+
+  if (videojs) {
+    const { bar } = domSearch({ bar: '.vjs-control-bar' }, videojs);
+    if (bar) {
+      console.log('fixedVideoProgress', { bar, fixed });
+      bar.style.opacity = fixed ? '1' : '0';
+    }
+  }
+}
+
+/**
  *  视频路线切换
  */
 export function switchPlayLine(
@@ -173,6 +188,12 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
 
   // @ts-ignore
   const { videojs } = domSearch({ videojs: '#video' }, frame.contentDocument || document);
+
+  if (!videojs) {
+    message('error', '视频检测不到，请尝试刷新或者手动切换下一章。');
+    return;
+  }
+
   store.videojs = videojs;
   store.currentMedia = media;
 
@@ -180,6 +201,9 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
     // 切换路线
     setTimeout(() => switchPlayLine(setting, videojs, media, setting.line), 3000);
   }
+
+  // 是否固定视频进度
+  fixedVideoProgress(setting.showProgress);
 
   /**
    * 视频播放

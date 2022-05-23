@@ -8,6 +8,9 @@ export type CommonWorkSetting = Pick<WorkOptions<any>, 'period' | 'timeout' | 'r
   waitForCheck: number,
 }
 
+/**
+ * 超星设置
+ */
 export interface CXSetting {
   common: {
     /** 繁体字识别 */
@@ -16,6 +19,8 @@ export interface CXSetting {
   video: {
     /** 播放速度 */
     playbackRate: number
+    /** 显示视频进度 */
+    showProgress: boolean
     /** 音量 */
     volume: number
     /** 复习模式 */
@@ -44,6 +49,9 @@ export interface CXSetting {
   exam: CommonWorkSetting
 }
 
+/**
+ * 智慧树设置
+ */
 export interface ZHSSetting {
   video: {
     /** 观看时间 */
@@ -54,6 +62,8 @@ export interface ZHSSetting {
     closeDate: Date
     /** 播放速度 */
     playbackRate: number
+    /** 显示视频进度 */
+    showProgress: boolean
     /** 音量 */
     volume: number
     /** 复习模式 */
@@ -97,6 +107,7 @@ export const defaultOCSSetting: ScriptSettings = {
       interval: undefined,
       closeDate: new Date(0),
       playbackRate: 1,
+      showProgress: true,
       restudy: false,
       volume: 0,
       creditStudy: false
@@ -110,6 +121,7 @@ export const defaultOCSSetting: ScriptSettings = {
     },
     video: {
       playbackRate: 1,
+      showProgress: true,
       restudy: false,
       volume: 0,
       upload: 'close',

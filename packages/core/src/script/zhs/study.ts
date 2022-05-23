@@ -71,6 +71,9 @@ export async function watch(setting?: Pick<ScriptSettings['zhs']['video'], 'play
   return new Promise<void>((resolve, reject) => {
     try {
       const video = document.querySelector('video') as HTMLVideoElement;
+      // 保存视频元素
+      store.currentMedia = video;
+
       // 设置当前视频
       store.currentMedia = video;
       // 如果已经播放完了，则重置视频进度
@@ -189,5 +192,20 @@ export function autoClose(watchTime: number) {
   } else {
     // 清空的计数器
     clearInterval(store.setting.zhs.video.interval);
+  }
+}
+
+/**
+ * 永久固定显示视频进度
+ */
+export function fixedVideoProgress(fixed: boolean) {
+  const currentMedia = store.currentMedia;
+
+  if (currentMedia) {
+    const { bar } = domSearch({ bar: '.controlsBar' });
+    console.log('fixedVideoProgress', { bar, fixed });
+    if (bar) {
+      bar.style.display = fixed ? 'block' : 'none';
+    }
   }
 }

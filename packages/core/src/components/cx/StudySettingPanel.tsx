@@ -1,6 +1,6 @@
 import { defineComponent } from 'vue';
 import { createWorkerSetting } from '..';
-import { switchPlayLine } from '../../script/cx/study';
+import { fixedVideoProgress, switchPlayLine } from '../../script/cx/study';
 import { store } from '../../store';
 import { Tooltip } from '../Tooltip';
 import { CommonWorkSettingPanel } from './CommonWorkSettingPanel';
@@ -73,6 +73,21 @@ export const StudySettingPanel = defineComponent({
               }}
             />
             <span> {Math.round(settings.volume * 100)}% </span>
+          </div>
+
+          <label>显示视频进度</label>
+          <div>
+            <Tooltip title="固定进度条，防止进度条消失。">
+              <input
+                class="input-switch"
+                type="checkbox"
+                checked={settings.showProgress}
+                onChange={(e: any) => {
+                  settings.showProgress = e.target.checked;
+                  fixedVideoProgress(e.target.checked);
+                }}
+              />
+            </Tooltip>
           </div>
 
           <label>复习模式</label>
