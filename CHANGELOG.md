@@ -1,3 +1,14 @@
+# [3.13.0](https://github.com/enncy/online-course-script/compare/3.12.3...3.13.0) (2022-05-23)
+
+
+### Features
+
+* **core:** 添加页面反调试脚本 ([1174617](https://github.com/enncy/online-course-script/commit/1174617cee99dd4d2e546d79279160ba1afea40e))
+* **core:** 新增超星视频中答题功能 ([3f925cb](https://github.com/enncy/online-course-script/commit/3f925cba72910fce0353df421dec75a137f24e4e))
+* **core:** 新增网课视频选项：显示视频进度 ([b6086df](https://github.com/enncy/online-course-script/commit/b6086df349fa50434e199c88c8fff6414bed4c14))
+
+
+
 ## [3.12.3](https://github.com/enncy/online-course-script/compare/3.12.2...3.12.3) (2022-05-22)
 
 
