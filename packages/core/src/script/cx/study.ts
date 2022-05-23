@@ -190,10 +190,38 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
       media.play();
       media.playbackRate = playbackRate;
 
-      function playFunction() {
+      async function playFunction() {
         // @ts-ignore
         if (!media.ended && !media.__played__) {
-          setTimeout(() => media.play(), 1000);
+          const { tkTopics, opts, submit } = domSearchAll({
+            tkTopics: '.tkTopic',
+            opts: '.ans-videoquiz-opt input',
+            submit: '#videoquiz-submit'
+          }, videojs || document);
+
+          // 判断是否存在答题弹窗
+          if (tkTopics.length) {
+            logger('debug', '视频答题启动');
+            await sleep(1000);
+            for (const opt of opts) {
+              // @ts-ignore
+              if (!opt.checked) {
+                opt.click();
+                break;
+              }
+            }
+            await sleep(1000);
+            // 提交
+            submit[0].click();
+          } else {
+            // 重新播放
+            await sleep(1000);
+            media.play();
+          }
+
+          await sleep(3000);
+          // 继续检测
+          await playFunction();
         } else {
           // @ts-ignore
           media.__played__ = true;
