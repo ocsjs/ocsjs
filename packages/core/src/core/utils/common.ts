@@ -120,49 +120,57 @@ export function request(url: string, opts: {
   data?: Record<string, string>;
 }): Promise<string | object> {
   return new Promise((resolve, reject) => {
-    /** 默认参数 */
-    const { contentType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
-    /** 环境变量 */
-    const env = isInBrowser() ? 'browser' : 'node';
+    try {
+      /** 默认参数 */
+      const { contentType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
+      /** 环境变量 */
+      const env = isInBrowser() ? 'browser' : 'node';
 
-    /** 如果是跨域模式并且是浏览器环境 */
-    if (type === 'GM_xmlhttpRequest' && env === 'browser') {
-      if (typeof GM_xmlhttpRequest !== 'undefined') {
-        // eslint-disable-next-line no-undef
-        GM_xmlhttpRequest({
-          url,
-          method: method === 'get' ? 'GET' : 'POST',
-          data: new URLSearchParams(data).toString(),
-          headers: headers,
-          responseType: 'json',
-          onload: (response) => {
-            if (response.status === 200) {
-              if (contentType === 'json') {
-                resolve(JSON.parse(response.responseText));
+      /** 如果是跨域模式并且是浏览器环境 */
+      if (type === 'GM_xmlhttpRequest' && env === 'browser') {
+        if (typeof GM_xmlhttpRequest !== 'undefined') {
+          // eslint-disable-next-line no-undef
+          GM_xmlhttpRequest({
+            url,
+            method: method === 'get' ? 'GET' : 'POST',
+            data: new URLSearchParams(data).toString(),
+            headers: headers,
+            responseType: 'json',
+            onload: (response) => {
+              if (response.status === 200) {
+                if (contentType === 'json') {
+                  try {
+                    resolve(JSON.parse(response.responseText));
+                  } catch (error) {
+                    reject(error);
+                  }
+                } else {
+                  resolve(response.responseText);
+                }
               } else {
-                resolve(response.responseText);
+                reject(response.responseText);
               }
-            } else {
-              reject(response.responseText);
-            }
-          },
-          onerror: reject
-        });
-      } else {
-        reject(new Error('GM_xmlhttpRequest is not defined'));
-      }
-    } else {
-      const fet: (...args: any[]) => Promise<Response> = env === 'node' ? require('node-fetch').default : fetch;
-
-      fet(url, { contentType, body: method === 'post' ? data : undefined, method, headers }).then(async (response) => {
-        if (contentType === 'json') {
-          resolve(await response.json());
+            },
+            onerror: reject
+          });
         } else {
-          resolve(await response.text());
+          reject(new Error('GM_xmlhttpRequest is not defined'));
         }
-      }).catch((error) => {
-        reject(new Error(error));
-      });
+      } else {
+        const fet: (...args: any[]) => Promise<Response> = env === 'node' ? require('node-fetch').default : fetch;
+
+        fet(url, { contentType, body: method === 'post' ? data : undefined, method, headers }).then((response) => {
+          if (contentType === 'json') {
+            response.json().then(resolve).catch(reject);
+          } else {
+            response.text().then(resolve).catch(reject);
+          }
+        }).catch((error) => {
+          reject(new Error(error));
+        });
+      }
+    } catch (error) {
+      reject(error);
     }
   });
 }
