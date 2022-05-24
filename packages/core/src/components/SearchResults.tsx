@@ -75,7 +75,7 @@ export const SearchResults = defineComponent({
                             <a href={res.homepage ? res.homepage : '#'} target="_blank">
                               {res.name}
                             </a>
-                            <span> {res.error ? '此题库请求错误: ' + res.error.message : `一共有 ${res.answers.length} 个答案`} </span>
+                            <span> {res.error ? '此题库请求错误: ' + res.error.message : `一共有 ${res.answers.length} 个结果`} </span>
                           </span>
                           {res.error
                             ? (
