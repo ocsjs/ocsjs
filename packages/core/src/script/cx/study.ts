@@ -241,15 +241,15 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
             await sleep(1000);
             // 提交
             submit[0].click();
+
+            await sleep(3000);
+            // 继续检测
+            await playFunction();
           } else {
             // 重新播放
             await sleep(1000);
             media.play();
           }
-
-          await sleep(3000);
-          // 继续检测
-          await playFunction();
         } else {
           // @ts-ignore
           media.__played__ = true;
