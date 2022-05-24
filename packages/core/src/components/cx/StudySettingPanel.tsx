@@ -37,7 +37,7 @@ export const StudySettingPanel = defineComponent({
             <Tooltip title="如果当前视频卡顿严重，可以尝试切换路线。">
               <select
                 id="video-line"
-                value={settings.line || ''}
+                value={settings.line || '默认路线'}
                 onChange={(e: any) => {
                   settings.line = e.target.value;
                   if (store.videojs && store.currentMedia) {
@@ -45,15 +45,8 @@ export const StudySettingPanel = defineComponent({
                   }
                 }}
               >
-                {settings.line
-                  ? (
-                    <option value={settings.line}>指定-{settings.line}</option>
-                  )
-                  : (
-                    <option value="">请指定路线(播放视频后才可选择, 无需保存)</option>
-                  )}
-                {Array.from(settings.playlines || [{ label: '公网1' }, { label: '公网2' }]).map((line: any) => (
-                  <option value={line.label}>{line.label}</option>
+                {settings.playlines.map((line: any) => (
+                  <option value={line}>{line}</option>
                 ))}
               </select>
             </Tooltip>

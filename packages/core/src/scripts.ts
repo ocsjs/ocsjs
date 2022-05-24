@@ -125,8 +125,8 @@ export const defaultOCSSetting: ScriptSettings = {
       restudy: false,
       volume: 0,
       upload: 'close',
-      playlines: ['公网1', '公网2'],
-      line: '公网1',
+      playlines: ['默认路线', '公网1', '公网2'],
+      line: '默认路线',
       forceWork: false,
       randomWork: {
         enable: false,

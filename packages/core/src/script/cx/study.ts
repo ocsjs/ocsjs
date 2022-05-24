@@ -149,31 +149,35 @@ export function switchPlayLine(
   media: HTMLMediaElement,
   line: string
 ) {
-  const { playbackRate = 1 } = setting;
+  if (setting.line === '默认路线') {
+    logger('debug', '当前播放路线为: 默认路线，如觉得视频卡顿，请尝试切换其他路线。');
+  } else {
+    const { playbackRate = 1 } = setting;
 
-  // @ts-ignore
-  if (videojs?.player) {
-    // @ts-ignore  播放路线列表
-    const playlines: string[] = Array.from(videojs.player.controlBar.options_.playerOptions.playlines);
-    // 播放菜单元素
-    const menus: HTMLElement[] = Array.from(
-      // @ts-ignore
-      videojs.player.controlBar.videoJsPlayLine.querySelectorAll('ul li')
-    );
+    // @ts-ignore
+    if (videojs?.player) {
+      // @ts-ignore  播放路线列表
+      const playlines: { label: string }[] = Array.from(videojs.player.controlBar.options_.playerOptions.playlines);
+      // 播放菜单元素
+      const menus: HTMLElement[] = Array.from(
+        // @ts-ignore
+        videojs.player.controlBar.videoJsPlayLine.querySelectorAll('ul li')
+      );
 
-    setting.playlines = playlines;
+      setting.playlines = ['默认路线'].concat(playlines.map(line => line.label));
 
-    logger('info', '切换路线中： ' + line);
-    selectLine(line);
+      logger('debug', '切换路线中： ' + line);
+      selectLine(line);
 
-    function selectLine(line: string) {
-      for (const menu of menus) {
-        if (menu.textContent?.includes(line)) {
-          menu.click();
-          setting.line = line;
-          /** 重新选择倍速 */
-          setTimeout(() => (media.playbackRate = playbackRate), 3000);
-          break;
+      function selectLine(line: string) {
+        for (const menu of menus) {
+          if (menu.textContent?.includes(line)) {
+            menu.click();
+            setting.line = line;
+            /** 重新选择倍速 */
+            setTimeout(() => (media.playbackRate = playbackRate), 3000);
+            break;
+          }
         }
       }
     }
