@@ -1,11 +1,13 @@
-## [3.13.3](https://github.com/enncy/online-course-script/compare/3.13.0...3.13.3) (2022-05-24)
+## [3.13.5](https://github.com/enncy/online-course-script/compare/3.13.0...3.13.5) (2022-05-24)
 
 
 ### Bug Fixes
 
 * **core:** 修复不能关闭路线切换的BUG ([a5694f1](https://github.com/enncy/online-course-script/commit/a5694f1acecb7962c0e39d5b6890b5b86b365d03))
+* **core:** 修复视频频繁停止导致的频繁验证码 ([62f708e](https://github.com/enncy/online-course-script/commit/62f708e9e1a3e15582efd0618ca085b9aa578535))
 * **core:** 修复题库配置报错异常未捕获的BUG ([4e04da0](https://github.com/enncy/online-course-script/commit/4e04da0ccfd938e58d4f0239be861a882fb01d56))
 * **core:** 修改搜索结果文案 ([00f185e](https://github.com/enncy/online-course-script/commit/00f185e2cba817cbe4d58e28c1d8248bdd656b9d))
+* **root:** 优化构建发布release.sh文件 ([a855740](https://github.com/enncy/online-course-script/commit/a855740f0b8ffa107f5f580f2123c70baedb16f7))
 
 
 
