@@ -1,3 +1,12 @@
+## [3.13.6](https://github.com/enncy/online-course-script/compare/3.13.5...3.13.6) (2022-05-25)
+
+
+### Bug Fixes
+
+* **core:** 修复超星视频答题永远只选2个选项的BUG ([1209ee7](https://github.com/enncy/online-course-script/commit/1209ee7362a3bd10e7745393a944f686b0fca431))
+
+
+
 ## [3.13.5](https://github.com/enncy/online-course-script/compare/3.13.0...3.13.5) (2022-05-24)
 
 
