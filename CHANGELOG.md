@@ -1,3 +1,12 @@
+## [3.13.7](https://github.com/enncy/online-course-script/compare/3.13.6...3.13.7) (2022-05-25)
+
+
+### Bug Fixes
+
+* **core:** 暂时删除视频答题功能 ([b8eeba5](https://github.com/enncy/online-course-script/commit/b8eeba52b2d8a8fdd16a90a9f7a3f73d9d8cc722))
+
+
+
 ## [3.13.6](https://github.com/enncy/online-course-script/compare/3.13.5...3.13.6) (2022-05-25)
 
 
