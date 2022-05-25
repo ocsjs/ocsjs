@@ -233,8 +233,10 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
             await sleep(1000);
             for (const opt of opts) {
               // @ts-ignore
-              if (!opt.checked) {
+              if (!opt.checked && !opt._checked) {
                 opt.click();
+                // @ts-ignore
+                opt._checked = true;
                 break;
               }
             }
