@@ -221,37 +221,9 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
       async function playFunction() {
         // @ts-ignore
         if (!media.ended && !media.__played__) {
-          const { tkTopics, opts, submit } = domSearchAll({
-            tkTopics: '.tkTopic',
-            opts: '.ans-videoquiz-opt input',
-            submit: '#videoquiz-submit'
-          }, videojs || document);
-
-          // 判断是否存在答题弹窗
-          if (tkTopics.length) {
-            logger('debug', '视频答题启动');
-            await sleep(1000);
-            for (const opt of opts) {
-              // @ts-ignore
-              if (!opt.checked && !opt._checked) {
-                opt.click();
-                // @ts-ignore
-                opt._checked = true;
-                break;
-              }
-            }
-            await sleep(1000);
-            // 提交
-            submit[0].click();
-
-            await sleep(3000);
-            // 继续检测
-            await playFunction();
-          } else {
-            // 重新播放
-            await sleep(1000);
-            media.play();
-          }
+          // 重新播放
+          await sleep(1000);
+          media.play();
         } else {
           // @ts-ignore
           media.__played__ = true;
