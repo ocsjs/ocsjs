@@ -1,5 +1,5 @@
-# OCS 网课助手文档仓库
+# OCS 网课助手文档仓库 (旧版)
 
-## [docs.ocsjs.com](https://docs.ocsjs.com) 
+## 文档仓库已经迁移至 
 
-如果您有任何的建议可以直接提交PR，或者联系作者邮箱进行文档的整改。
+[https://github.com/enncy/ocs-docs](https://github.com/enncy/ocs-docs)
