@@ -85,7 +85,7 @@
 
             <TitleLink
               title="版本更新"
-              url="https://docs.ocsjs.com/app-version"
+              url="https://docs.ocsjs.com/docs/资源下载/app-downloads"
             />
             <TitleLink
               title="脚本更新日志"
@@ -171,9 +171,9 @@ function about () {
           'a',
           {
             href: '#',
-            onClick: () => shell.openExternal('https://docs.ocsjs.com/app-version')
+            onClick: () => shell.openExternal('https://docs.ocsjs.com/docs/资源下载/app-downloads')
           },
-          'https://docs.ocsjs.com/app-version'
+          'https://docs.ocsjs.com/docs/资源下载/app-downloads'
         )
       ])
     ])

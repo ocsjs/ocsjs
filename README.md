@@ -16,8 +16,7 @@
 
 -   [使用方法](https://docs.ocsjs.com)
 -   [功能列表](https://docs.ocsjs.com/feat-list)
--   [项目开发](https://docs.ocsjs.com/api)
--   [赞助名单](https://docs.ocsjs.com/sponsors)
--   [疑难问答](https://docs.ocsjs.com/FQA)
+-   [项目开发](https://docs.ocsjs.com/docs/更多/api)
+-   [疑难问答](https://docs.ocsjs.com/docs/更多/FQA)
 -   [更新日志](CHANGELOG.md)
  

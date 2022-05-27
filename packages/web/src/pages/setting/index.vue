@@ -98,10 +98,10 @@
                       href="#"
                       @click="
                         link(
-                          'https://docs.ocsjs.com/answerer-wrappers'
+                          'https://docs.ocsjs.com/docs/work'
                         )
                       "
-                    >https://docs.ocsjs.com/answerer-wrappers</a>
+                    >https://docs.ocsjs.com/docs/work</a>
                   </div>
                 </template>
 
