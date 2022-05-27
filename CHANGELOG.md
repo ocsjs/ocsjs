@@ -1,3 +1,12 @@
+## [3.13.8](https://github.com/enncy/online-course-script/compare/3.13.7...3.13.8) (2022-05-27)
+
+
+### Bug Fixes
+
+* **core:** 更新教程链接 ([f07fe39](https://github.com/enncy/online-course-script/commit/f07fe3906a1bbfe360d5174cf2bfacbfe319bb88))
+
+
+
 ## [3.13.7](https://github.com/enncy/online-course-script/compare/3.13.6...3.13.7) (2022-05-25)
 
 
