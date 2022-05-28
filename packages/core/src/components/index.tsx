@@ -1,7 +1,6 @@
 import { defineComponent, VNodeProps } from 'vue';
 import { ScriptPanelChild } from '../core/define.script';
 
-import { StringUtils } from '../core/utils';
 import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
 import { store } from '../store';
 import { SearchResults } from './SearchResults';
@@ -93,7 +92,6 @@ export function createWorkerSetting (
     return option;
   });
 
-  // 根据以上 vnode 变量，生成 jsx 渲染函数
   return (
     <>
       <label>{label}</label>
@@ -109,94 +107,69 @@ export function createWorkerSetting (
         </Tooltip>
       </div>
 
-      <label>题库配置</label>
-      <div>
-        <Tooltip title="请复制粘贴题库配置, 点击右侧问号查看教程 ">
-          <input
-            type="text"
-            placeholder="点击右侧问号查看教程 => "
-            value={store.setting.answererWrappers.length === 0 ? '' : JSON.stringify(store.setting.answererWrappers)}
-            onPaste={(e) => {
-              store.setting.answererWrappers = parseAnswererWrappers(e.clipboardData?.getData('text') || '');
-            }}
-          ></input>
-        </Tooltip>
+      {
+        config.selected === 'close'
+          ? null
+          : (
+            <>
+              <label>题库配置</label>
+              <div>
+                <Tooltip title="请复制粘贴题库配置, 点击右侧问号查看教程\n(如需覆盖直接复制粘贴新的即可) ">
+                  <input
+                    type="text"
+                    placeholder="点击右侧问号查看教程 => "
+                    value={store.setting.answererWrappers.length === 0 ? '' : JSON.stringify(store.setting.answererWrappers)}
+                    onPaste={async(e) => {
+                      const text = e.clipboardData?.getData('text') || await navigator.clipboard.readText() || '';
+                      store.setting.answererWrappers = parseAnswererWrappers(text);
+                    }}
+                  ></input>
+                </Tooltip>
 
-        <span
-          style={{
-            color: store.setting.answererWrappers.length ? 'green' : 'red'
-          }}
-        >
-          {store.setting.answererWrappers.length
-            ? (
-              <Tooltip
-                v-slots={{
-                  title: () => (
-                    <>
-                      <span>解析成功, 一共有 {store.setting.answererWrappers.length} 个题库</span>
-                      <ol>
-                        {store.setting.answererWrappers.map((aw) => (
-                          <li>
-                            <details>
-                              <summary>{aw.name}</summary>
-                              <ul>
-                                <li>
-                                主页:
-                                  <a href={aw.homepage ? aw.homepage : '#'}>{aw.homepage}</a>
-                                </li>
-                                <li>接口: {aw.url}</li>
-                                <li>请求方式: {aw.method}</li>
-                                <li>数据类型: {aw.contentType}</li>
-                                <li>请求类型: {aw.type}</li>
-                                <li>
-                                  请求头:
-                                  <ul style={{ paddingLeft: '12px' }}>
-                                    {Reflect.ownKeys(aw.headers || {}).map((key) => (
-                                      <li>
-                                        {key.toString()} ={hideToken(aw.headers?.[key.toString()] || '')}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </li>
-                                <li>
-                                  请求数据:
-                                  <ul style={{ paddingLeft: '12px' }}>
-                                    {Reflect.ownKeys(aw.data || {}).map((key) => (
-                                      <li>
-                                        {key.toString()} ={hideToken(aw.data?.[key.toString()] || '')}
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </li>
-                                <li>处理方法: {aw.handler}</li>
-                              </ul>
-                            </details>
-                          </li>
-                        ))}
-                      </ol>
-                    </>
-                  )
-                }}
-              >
-                <span class="pointer">✅</span>
-              </Tooltip>
-            )
-            : (
-              <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
-                <span class="pointer">❌</span>
-              </Tooltip>
-            )}
-        </span>
-        <span>
-          <Tooltip title="点击查看题库配置教程">
-            <span class="pointer" onClick={() => {
-              window.open('https://docs.ocsjs.com/docs/work');
-            }}>
+                <span
+                  style={{
+                    color: store.setting.answererWrappers.length ? 'green' : 'red'
+                  }}
+                >
+                  {store.setting.answererWrappers.length
+                    ? (
+                      <Tooltip
+                        v-slots={{
+                          title: () => (
+                            <>
+                              <span>解析成功, 一共有 {store.setting.answererWrappers.length} 个题库</span>
+                              <ol>
+                                {store.setting.answererWrappers.map((aw) => (
+                                  <li>{aw.name}</li>
+                                ))}
+                              </ol>
+                            </>
+                          )
+                        }}
+                      >
+                        <span class="pointer">✅</span>
+                      </Tooltip>
+                    )
+                    : (
+                      <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
+                        <span class="pointer">❌</span>
+                      </Tooltip>
+                    )}
+                </span>
+                <span>
+                  <Tooltip title="点击查看题库配置教程">
+                    <span class="pointer" onClick={() => {
+                      window.open('https://docs.ocsjs.com/docs/work');
+                    }}>
               ❓
-            </span>
-          </Tooltip>
-        </span>
-      </div>
+                    </span>
+                  </Tooltip>
+                </span>
+              </div>
+            </>
+          )
+      }
+
     </>
   );
 }
@@ -216,16 +189,6 @@ function parseAnswererWrappers (value: string): AnswererWrapper[] {
     message('error', '题库配置格式错误！');
     return [];
   }
-}
-
-/** 隐藏 token， 只保留头尾的几个字符串 */
-function hideToken (token: string) {
-  return /[0-9a-f]{8}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{4}[0-9a-f]{12}/.test(token) ||
-    /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/.test(token)
-    ? StringUtils.of(token)
-      .hide(4, token.length - 4)
-      .toString()
-    : token;
 }
 
 /**

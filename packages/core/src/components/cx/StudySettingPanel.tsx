@@ -16,13 +16,12 @@ export const StudySettingPanel = defineComponent({
           <div>
             <Tooltip title="高倍速(大于1倍)可能导致: \n- 记录清空\n- 频繁验证码\n超星后台可以看到学习时长\n请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。">
               <input
-                style={{ color: settings.playbackRate > 2 ? 'red' : '' }}
-                type="number"
+                type="range"
                 value={settings.playbackRate}
                 min="1"
                 max="16"
                 step="1"
-                onChange={(e: any) => {
+                onInput={(e: any) => {
                   settings.playbackRate = e.target.valueAsNumber;
                   if (store.currentMedia) {
                     store.currentMedia.playbackRate = e.target.valueAsNumber;
@@ -30,6 +29,23 @@ export const StudySettingPanel = defineComponent({
                 }}
               ></input>
             </Tooltip>
+            <span style={{ color: settings.playbackRate > 2 ? 'red' : '' }}>{settings.playbackRate}x</span>
+          </div>
+
+          <label>音量调节</label>
+          <div>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              value={settings.volume}
+              onInput={(e: any) => {
+                settings.volume = e.target.valueAsNumber;
+                if (store.currentMedia) store.currentMedia.volume = e.target.valueAsNumber;
+              }}
+            />
+            <span> {Math.round(settings.volume * 100)}% </span>
           </div>
 
           <label>播放路线</label>
@@ -50,22 +66,6 @@ export const StudySettingPanel = defineComponent({
                 ))}
               </select>
             </Tooltip>
-          </div>
-
-          <label>音量调节</label>
-          <div>
-            <input
-              type="range"
-              min="0"
-              max="1"
-              step="0.05"
-              value={settings.volume}
-              onInput={(e: any) => {
-                settings.volume = e.target.valueAsNumber;
-                if (store.currentMedia) store.currentMedia.volume = e.target.valueAsNumber;
-              }}
-            />
-            <span> {Math.round(settings.volume * 100)}% </span>
           </div>
 
           <label>显示视频进度</label>
@@ -98,35 +98,38 @@ export const StudySettingPanel = defineComponent({
           <hr />
           <hr />
 
-          <CommonWorkSettingPanel settings={store.setting.cx.work} v-slots={{
-            upload: createWorkerSetting(
-              '自动答题',
-              { selected: settings.upload },
-              (e: any) => (settings.upload = e.target.value)
-            ),
-            extra: (
-              <>
-                <label>强制答题</label>
-                <div>
-                  <Tooltip title="当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)">
+          <CommonWorkSettingPanel
+            settings={store.setting.cx.work}
+            upload={settings.upload}
+            v-slots={{
+              upload: createWorkerSetting(
+                '自动答题',
+                { selected: settings.upload },
+                (e: any) => (settings.upload = e.target.value)
+              ),
+              extra: (
+                <>
+                  <label>强制答题</label>
+                  <div>
+                    <Tooltip title="当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)">
+                      <input
+                        class="input-switch"
+                        type="checkbox"
+                        checked={settings.forceWork}
+                        onChange={(e: any) => (settings.forceWork = e.target.checked)}
+                      />
+                    </Tooltip>
+                  </div>
+                  <label>随机作答</label>
+                  <Tooltip title="随机作答 未完成/未匹配 的题目，开启后可自定义选项">
                     <input
                       class="input-switch"
                       type="checkbox"
-                      checked={settings.forceWork}
-                      onChange={(e: any) => (settings.forceWork = e.target.checked)}
+                      checked={settings.randomWork.enable}
+                      onChange={(e: any) => (settings.randomWork.enable = e.target.checked)}
                     />
                   </Tooltip>
-                </div>
-                <label>随机作答</label>
-                <Tooltip title="随机作答 未完成/未匹配 的题目，开启后可自定义选项">
-                  <input
-                    class="input-switch"
-                    type="checkbox"
-                    checked={settings.randomWork.enable}
-                    onChange={(e: any) => (settings.randomWork.enable = e.target.checked)}
-                  />
-                </Tooltip>
-                {settings.randomWork.enable &&
+                  {settings.randomWork.enable &&
                 (
                   <>
                     <label>选择随机</label>
@@ -168,9 +171,9 @@ export const StudySettingPanel = defineComponent({
                     )}
                   </>
                 )}
-              </>
-            )
-          }}>
+                </>
+              )
+            }}>
           </CommonWorkSettingPanel>
 
         </div>

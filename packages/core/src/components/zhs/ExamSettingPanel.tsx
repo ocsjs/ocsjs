@@ -10,7 +10,7 @@ export const ExamSettingPanel = defineComponent({
     return () => (
       <div class="ocs-setting-panel">
         <div class="ocs-setting-items">
-          <CommonWorkSettingPanel settings={settings} v-slots={{
+          <CommonWorkSettingPanel settings={settings} upload={settings.upload} v-slots={{
             upload: createWorkerSetting(
               '自动答题',
               {

@@ -62,18 +62,20 @@ export const StudySettingPanel = defineComponent({
                 <div>
                   <Tooltip title="学分课不允许倍速！">
                     <input
-                      type="number"
+                      type="range"
                       value="1"
+                      disabled
                     >
                     </input>
                   </Tooltip>
+                  <span>1x</span>
                 </div>
               </>
               : <>
                 <label>视频倍速 </label>
                 <div>
                   <Tooltip title="智慧树最高1.5倍速, 超过1.5容易封号！">
-                    <input type="number"
+                    <input type="range"
                       step="0.25"
                       max="1.5"
                       min="1"
@@ -86,6 +88,7 @@ export const StudySettingPanel = defineComponent({
                         switching.value = false;
                       }}></input>
                   </Tooltip>
+                  <span>{settings.playbackRate}x</span>
                 </div>
               </>
           }

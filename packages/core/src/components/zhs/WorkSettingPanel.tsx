@@ -10,7 +10,7 @@ export const WorkSettingPanel = defineComponent({
     return () => (
       <div class="ocs-setting-panel">
         <div class="ocs-setting-items">
-          <CommonWorkSettingPanel settings={settings} > </CommonWorkSettingPanel>
+          <CommonWorkSettingPanel settings={settings} upload={settings.upload} > </CommonWorkSettingPanel>
         </div>
       </div>
 
