@@ -63,33 +63,35 @@ export const CXScript = defineScript({
       onload() {
         const { restudy } = store.setting.cx.video;
 
-        const params = new URLSearchParams(window.location.href);
-        const mooc = params.get('mooc2');
-        /** 切换新版 */
-        if (mooc === null) {
-          params.set('mooc2', '1');
-          window.location.replace(decodeURIComponent(params.toString()));
-          return;
-        }
-
-        let chapters = CXAnalyses.getChapterInfos();
-
-        // 如果不是复习模式，则寻找需要运行的任务
-        if (!restudy) {
-          chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
-        }
-
-        if (chapters.length === 0) {
-          logger('warn', '页面任务点数量为空! 请刷新重试!');
+        if (restudy) {
+          logger('debug', '当前为复习模式，将会从当前章节往下学习!');
         } else {
+          // 如果不是复习模式，则寻找需要运行的任务
           const params = new URLSearchParams(window.location.href);
-          const courseId = params.get('courseId');
-          const classId = params.get('clazzid');
-          setTimeout(() => {
-            // @ts-ignore 进入需要进行的章节
-            // eslint-disable-next-line no-undef
-            getTeacherAjax(courseId, classId, chapters[0].chapterId);
-          }, 1000);
+          const mooc = params.get('mooc2');
+          /** 切换新版 */
+          if (mooc === null) {
+            params.set('mooc2', '1');
+            window.location.replace(decodeURIComponent(params.toString()));
+            return;
+          }
+
+          let chapters = CXAnalyses.getChapterInfos();
+
+          chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
+
+          if (chapters.length === 0) {
+            logger('warn', '页面任务点数量为空! 请刷新重试!');
+          } else {
+            const params = new URLSearchParams(window.location.href);
+            const courseId = params.get('courseId');
+            const classId = params.get('clazzid');
+            setTimeout(() => {
+              // @ts-ignore 进入需要进行的章节
+              // eslint-disable-next-line no-undef
+              getTeacherAjax(courseId, classId, chapters[0].chapterId);
+            }, 1000);
+          }
         }
       }
     },
