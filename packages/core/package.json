@@ -7,11 +7,7 @@
   "files": [
     "lib"
   ],
-  "scripts": {
-    "dev": "vite",
-    "build": "gulp",
-    "serve": "vite preview"
-  },
+  "scripts": {},
   "dependencies": {
     "@types/md5": "^2.3.2",
     "@types/node-fetch": "^2.6.1",

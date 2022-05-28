@@ -20,7 +20,7 @@ export default defineConfig({
     /** 取消css代码分离 */
     cssCodeSplit: false,
     /** 输出路径 */
-    outDir: './dist',
+    outDir: '../../dist',
     /** 清空输出路径 */
     emptyOutDir: true,
     /** 是否压缩代码 */
