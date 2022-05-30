@@ -26,6 +26,7 @@
     "fs-extra": "^10.0.1",
     "node-forge": "1.0.0",
     "semver": "^7.3.5",
+    "tesseract.js": "^2.1.5",
     "trash": "7.2.0"
   },
   "repository": {

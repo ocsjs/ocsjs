@@ -1,3 +1,27 @@
+# [3.15.0](https://github.com/enncy/online-course-script/compare/3.13.8...3.15.0) (2022-05-30)
+
+
+### Bug Fixes
+
+* **core:** 脚本学习核心修改，适配 useSettings 和 useContext 两个 API ([b4e38b1](https://github.com/enncy/online-course-script/commit/b4e38b144cdd23504432a17950aafcbbcd6723c2))
+* **core:** 删除全局变量 OCS ([c74195d](https://github.com/enncy/online-course-script/commit/c74195d0d3192e6854c8da0d32262634f4470de2))
+* **core:** 修复超星复习模式自动切换的BUG ([64c63cc](https://github.com/enncy/online-course-script/commit/64c63cc19bf0f97de7409a1f3c87ab4321726365))
+* **core:** 移除页面反调试脚本至超星 ([77cb19c](https://github.com/enncy/online-course-script/commit/77cb19c73df4fdacaac7120bdd748a49a06c8091))
+* **core:** 因全局变量删除，且需要封装 store 中多个变量的处理，以及防止变量污染，新增了 useContext 和 useSettings 的API，相应涉及代码同步更新。 ([6d9fa51](https://github.com/enncy/online-course-script/commit/6d9fa5112e81ce278f16a8248c3f9dfe3fed8e13))
+* **core:** 优化智慧树脚本，适配 useContext 和 useSettings 两个 API ([a24d991](https://github.com/enncy/online-course-script/commit/a24d991e8a289dd524ae577036a4e165b92afbd1))
+
+
+### Features
+
+* **core:** 搜索结果页面新增复制题目按钮 ([4cbd032](https://github.com/enncy/online-course-script/commit/4cbd03217678a9426806f98828d76f2da664ba20))
+* **core:** 新增智慧树视频反反混淆脚本 ([5de857f](https://github.com/enncy/online-course-script/commit/5de857fb12f229fbed1284d507bac87500e5b6ce))
+* **core:** 新增智慧职教（职教云）脚本 ([59c0cc2](https://github.com/enncy/online-course-script/commit/59c0cc2b66fa1af2418e682bec014342f3ed0e7f))
+* **core:** 新增j脚本热更新功能，大大提升开发效率 ([42ba110](https://github.com/enncy/online-course-script/commit/42ba110b2cc8e54e043b73979216a8f22c9017fe))
+* **core:** 优化智慧树文字识别脚本 ([608e760](https://github.com/enncy/online-course-script/commit/608e76076d63d3b22c55c0baaf2df008e0b32313))
+* **core:** 智慧职教（职教云）发布 ([f0eb02f](https://github.com/enncy/online-course-script/commit/f0eb02f2ada42fb64a5f3767689ddf7af0c303e9))
+
+
+
 ## [3.13.8](https://github.com/enncy/online-course-script/compare/3.13.7...3.13.8) (2022-05-27)
 
 
