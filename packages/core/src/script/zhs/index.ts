@@ -7,7 +7,7 @@ import { WorkSettingPanel } from '../../components/zhs/WorkSettingPanel';
 import { defineScript } from '../../core/define.script';
 import { sleep } from '../../core/utils';
 import { logger } from '../../logger';
-import { store } from '../../store';
+import { useContext, useSettings } from '../../store';
 import { creditStudy, study } from './study';
 import { creditWork, workOrExam } from './work';
 
@@ -17,44 +17,47 @@ export const ZHSScript = defineScript({
     {
       name: '共享课视频脚本',
       url: '**zhihuishu.com/videoStudy.html**',
-      async onload(setting = store.setting.zhs.video) {
+      async onload() {
+        const settings = useSettings().zhs.video;
         await sleep(5000);
-        setting.creditStudy = false;
+        settings.creditStudy = false;
         // 智慧树视频学习
         logger('info', '开始智慧树共享课视频学习');
-        await study(setting);
+        await study();
       }
     },
     {
       name: '共享课作业脚本',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
-      async onload(setting = store.setting.zhs.work) {
+      async onload() {
         await sleep(5000);
-        if (store.setting.answererWrappers.length === 0) {
+        const { common } = useSettings();
+        if (common.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
           message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行作业脚本 */
-          await workOrExam(setting, 'work');
+          await workOrExam('work');
         }
       }
     },
     {
-      name: '共享课考试提醒脚本',
-      url: '**zhihuishu.com/stuExamWeb.html#/webExamList?**',
-      onload: () => message('warn', '考试时如果没有显示考试设置面板，请刷新页面。')
+      name: '共享课作业考试提醒脚本',
+      url: ['**zhihuishu.com/stuExamWeb.html#/webExamList?**'],
+      onload: () => message('warn', '考试功能属于测试阶段，可能无法使用，大家预留好其他搜题方式。')
     },
     {
       name: '共享课考试脚本',
       url: '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*',
-      async onload(setting = store.setting.zhs.exam) {
+      async onload() {
+        const { common } = useSettings();
         await sleep(5000);
-        if (store.setting.answererWrappers.length === 0) {
+        if (common.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
           message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行考试脚本 */
-          await workOrExam(setting, 'exam');
+          await workOrExam('exam');
         }
       }
     },
@@ -62,26 +65,28 @@ export const ZHSScript = defineScript({
       name: '学分课视频脚本',
       /** 学分共享课（翻转课） */
       url: '**zhihuishu.com/aidedteaching/sourceLearning/**',
-      async onload(setting = store.setting.zhs.video) {
+      async onload() {
+        const settings = useSettings().zhs.video;
         await sleep(5000);
-        setting.creditStudy = true;
+        settings.creditStudy = true;
         // 智慧树视频学习
         logger('info', '开始智慧树学分课视频学习');
-        await creditStudy(setting);
+        await creditStudy(settings);
       }
     },
 
     {
       name: '学分课作业脚本',
       url: '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**',
-      async onload(setting = store.setting.zhs.work) {
+      async onload() {
+        const { common } = useSettings();
         await sleep(5000);
-        if (store.setting.answererWrappers.length === 0) {
+        if (common.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
           message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行作业脚本 */
-          await creditWork(setting);
+          await creditWork();
         }
       }
     },
@@ -147,7 +152,7 @@ export const ZHSScript = defineScript({
     {
       name: '屏蔽视频检测脚本',
       url: '**zhihuishu.com/videoStudy.html**',
-      start() {
+      onstart() {
         function hookAddEventListener() {
           const args = [...arguments];
           const temp = args[1];
