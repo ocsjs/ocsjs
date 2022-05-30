@@ -89,10 +89,49 @@ export const ZHSScript = defineScript({
       name: '文本识别脚本',
       url: [
         '**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
-        '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*',
-        '**zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList**'
+        '**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*'
       ],
-      start() {
+      async onload() {
+        const { zhs } = useContext();
+        zhs.isRecognizing = true;
+
+        const interval = setInterval(() => {
+          const scripts = Array.from(document.querySelectorAll('script'));
+          for (const script of scripts) {
+            const params = new URLSearchParams(script.src.substring(script.src.indexOf('?') + 1));
+            const json = params.get('json');
+            if (json) {
+              let dtos = [];
+              try { dtos = JSON.parse(JSON.parse(JSON.parse(json).data[0].data).data); } catch { }
+              if (dtos.length === 0) {
+                try { dtos = JSON.parse(JSON.parse(json).data[0].data).data; } catch { }
+              }
+              try {
+                const questionDtos = dtos.rt.examBase.workExamParts.map((p: any) => p.questionDtos).flat();
+                questionDtos.map((d: any) => {
+                  d.eid = d.eid.replace(/\\|\/|\?|\*|"|'|<|>|\{|\}|\[|\]|:|\^|\$|!|~|`|=|\+|/g, '');
+                  return d;
+                }).forEach((d: any) => {
+                  const desc = document.querySelector('#anchor_' + d.eid)?.parentNode?.parentNode?.querySelector('.subject_describe');
+                  if (desc) desc.innerHTML = d.name;
+                });
+                zhs.isRecognizing = false;
+                clearInterval(interval);
+                break;
+              } catch { }
+            }
+          }
+        }, 3000);
+      }
+    },
+    {
+      name: '页面反反混淆功能',
+      url: '**zhihuishu.com/videoStudy.html**',
+      priority: 999,
+      onstart() {
+        // @ts-ignore
+        // eslint-disable-next-line no-extend-native
+        RegExp.prototype._test = RegExp.prototype.test;
         // @ts-ignore
         window.Element.prototype.attachShadow = undefined;
         // @ts-ignore
