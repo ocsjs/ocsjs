@@ -13,7 +13,7 @@ export interface ScriptRoute {
   /** 等待页面加载完毕调用 */
   onload?: (...args: any[]) => any
   /** 加载时 立即执行 */
-  start?: (...args: any[]) => any
+  onstart?: (...args: any[]) => any
   /** 优先级, 默认0 */
   priority?: number
 }
@@ -50,7 +50,7 @@ export interface DefineScript {
 
 export const scripts: DefineScript[] = [];
 
-export function defineScript (options: DefineScript) {
+export function defineScript(options: DefineScript) {
   scripts.push(options);
   return options;
 }

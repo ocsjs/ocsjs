@@ -65,7 +65,6 @@ export function start(options?: StartOptions) {
       app.mount(panel);
       logger('info', `OCS ${useStore('VERSION')} 加载成功`);
     }
-    });
   }
 }
 
@@ -93,8 +92,8 @@ export function executeScripts(scripts: DefineScript[]) {
     }
 
     /** 立即执行 */
-    for (const route of routes.filter((route) => route.start)) {
-      route.start?.();
+    for (const route of routes.filter((route) => route.onstart)) {
+      route.onstart?.();
     }
   } catch (e) {
     logger('error', e);
