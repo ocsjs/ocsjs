@@ -203,6 +203,13 @@ panel style
          input:not([type="checkbox"], [type="radio"]) {
              width: 100%;
          }
+
+         input[type='checkbox'],
+         input[type='radio'],
+         input[type='range'] {
+             accent-color: #0e8ee2;
+             ;
+         }
      }
 
      // 按钮
@@ -217,6 +224,7 @@ panel style
          font-size: 12px;
          border-radius: 4px;
          margin: 2px;
+
      }
 
      // 普通按钮
@@ -230,6 +238,14 @@ panel style
          border-radius: 4px;
          font-size: 12px;
          margin: 2px;
+     }
+
+     // 按钮禁用状态
+     button[disabled] {
+         background: #e4e4e4;
+         color: #a5a5a5;
+         border: 1px solid #e4e4e4;
+         cursor: not-allowed;
      }
 
      // 终端样式
