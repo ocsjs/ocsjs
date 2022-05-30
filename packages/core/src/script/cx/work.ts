@@ -3,26 +3,26 @@ import { domSearch, sleep, StringUtils, waitForRecognize } from '../../core/util
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
-import { ScriptSettings } from '../../scripts';
-import { store } from '../../store';
+import { useSettings, useContext } from '../../store';
 
 export async function workOrExam(
-  setting: ScriptSettings['cx']['work'] | ScriptSettings['cx']['exam'],
   type: 'work' | 'exam' = 'work'
 ) {
-  const { period, timeout, retry } = setting;
+  const { period, timeout, retry, upload, waitForCheck } = useSettings().cx.work;
+  const { answererWrappers } = useSettings().common;
 
-  if (setting.upload === 'close') {
+  if (upload === 'close') {
     logger('warn', '自动答题已被关闭！');
     message('warn', '自动答题已被关闭！请在设置开启自动答题！或者忽略此警告');
-  } else if (store.setting.answererWrappers.length === 0) {
+  } else if (answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
   } else {
+    const { common } = useContext();
     /** 清空内容 */
-    store.workResults = [];
+    common.workResults = [];
 
     // 等待文字识别
-    await waitForRecognize();
+    await waitForRecognize('cx');
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -38,7 +38,7 @@ export async function workOrExam(
           .replace(/\d+\. \(.*?(题|分)\)/, '')
           .trim();
         if (title) {
-          return defaultAnswerWrapperHandler(store.setting.answererWrappers, { type, title, root: ctx.root });
+          return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
         } else {
           throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
         }
@@ -89,7 +89,7 @@ export async function workOrExam(
       /** 完成答题后 */
       onResult: (res) => {
         if (res.ctx) {
-          store.workResults.push(res);
+          common.workResults.push(res);
         }
         console.log(res);
         logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
@@ -112,7 +112,7 @@ export async function workOrExam(
     } else {
       // 处理提交
       await worker.uploadHandler({
-        uploadRate: setting.upload,
+        uploadRate: upload,
         results,
         async callback(finishedRate, uploadable) {
           logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : '5秒后将自动保存');
@@ -135,8 +135,8 @@ export async function workOrExam(
     }
   }
 
-  if (setting.waitForCheck) {
-    logger('debug', `正在等待答题检查: 一共 ${setting.waitForCheck} 秒`);
-    await sleep(setting.waitForCheck * 1000);
+  if (waitForCheck) {
+    logger('debug', `正在等待答题检查: 一共 ${waitForCheck} 秒`);
+    await sleep(waitForCheck * 1000);
   }
 }

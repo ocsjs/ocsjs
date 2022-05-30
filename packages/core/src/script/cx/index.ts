@@ -6,7 +6,8 @@ import { message } from '../../components/utils';
 import { defineScript } from '../../core/define.script';
 import { sleep } from '../../core/utils';
 import { logger } from '../../logger';
-import { store } from '../../store';
+import { initStore, useSettings } from '../../store';
+
 import { rateHack } from './rate.hack';
 import { mapRecognize, ocrRecognize } from './recognize';
 import { study } from './study';
@@ -26,6 +27,16 @@ const updateURLs = [
 export const CXScript = defineScript({
   name: '超星学习通',
   routes: [
+    {
+      name: 'OCS注入脚本',
+      url: updateURLs.concat('**/mycourse/studentstudy**'),
+      priority: 999,
+      onstart() {
+        // @ts-ignore
+        // eslint-disable-next-line no-undef
+        unsafeWindow.top.OCS = OCS;
+      }
+    },
     {
       name: '版本切换脚本',
       url: updateURLs,
@@ -51,7 +62,7 @@ export const CXScript = defineScript({
     {
       name: '屏蔽倍速限制',
       url: '**/ananas/modules/video/**',
-      start() {
+      onstart() {
         console.log('屏蔽倍速限制启动');
         rateHack();
       }
@@ -61,7 +72,8 @@ export const CXScript = defineScript({
       name: '任务切换脚本',
       url: '**/mycourse/studentstudy**',
       onload() {
-        const { restudy } = store.setting.cx.video;
+        // 开始任务切换
+        const { restudy } = useSettings().cx.study;
 
         if (restudy) {
           logger('debug', '当前为复习模式，将会从当前章节往下学习!');
@@ -98,10 +110,14 @@ export const CXScript = defineScript({
     {
       name: '学习脚本',
       url: '**/knowledge/cards**',
-      async onload(setting = store.setting.cx.video) {
+      async onload() {
+        // 注入OCS
+        // @ts-ignore
+        // eslint-disable-next-line no-undef
+        initStore(unsafeWindow?.top.OCS.getStore());
         logger('info', '开始学习');
         await sleep(5000);
-        await study(setting);
+        await study();
       }
     },
     {
@@ -120,14 +136,15 @@ export const CXScript = defineScript({
     {
       name: '作业脚本',
       url: '**/mooc2/work/dowork**',
-      async onload(setting = store.setting.cx.work) {
+      async onload() {
         await sleep(5000);
-        if (store.setting.answererWrappers.length === 0) {
+        const { common } = useSettings();
+        if (common.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
           message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行作业脚本 */
-          await workOrExam(setting, 'work');
+          await workOrExam('work');
         }
       }
     },
@@ -145,14 +162,15 @@ export const CXScript = defineScript({
     {
       name: '考试脚本',
       url: '**/mooc2/exam/preview**',
-      async onload(setting = store.setting.cx.exam) {
+      async onload() {
         await sleep(5000);
-        if (store.setting.answererWrappers.length === 0) {
+        const { common } = useSettings();
+        if (common.answererWrappers.length === 0) {
           logger('error', '未设置题库配置！');
           message('error', '未设置题库配置！请在设置面板设置后刷新重试！');
         } else {
           /** 运行考试脚本 */
-          await workOrExam(setting, 'exam');
+          await workOrExam('exam');
         }
       }
     },
@@ -187,9 +205,10 @@ export const CXScript = defineScript({
         '**/mooc2/work/dowork**'
       ],
       async onload() {
-        if (store.setting.cx.common.recognize === 'map') {
+        const { recognize } = useSettings().cx.common;
+        if (recognize === 'map') {
           mapRecognize();
-        } else if (store.setting.cx.common.recognize === 'ocr') {
+        } else if (recognize === 'ocr') {
           ocrRecognize();
         } else {
           logger('debug', '繁体字识别已被关闭，可能会导致繁体字出现。');

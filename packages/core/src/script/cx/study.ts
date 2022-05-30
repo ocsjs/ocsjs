@@ -3,18 +3,19 @@ import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
 import { ScriptSettings } from '../../scripts';
-
 import { message } from '../../components/utils';
-import { store } from '../../store';
 import CXAnalyses from './utils';
+import { useSettings, useContext, useStore } from '../../store';
 
 /**
  * cx 任务学习
  */
-export async function study(setting: ScriptSettings['cx']['video']) {
+export async function study() {
   logger('debug', '即将开始');
 
-  const tasks = searchTask(setting);
+  const { cx: setting } = useSettings();
+
+  const tasks = searchTask(setting.study);
 
   for (const task of tasks) {
     try {
@@ -57,7 +58,7 @@ export async function study(setting: ScriptSettings['cx']['video']) {
 /**
  * 搜索任务点
  */
-function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void> | undefined)[] {
+function searchTask(setting: ScriptSettings['cx']['study']): (() => Promise<void> | undefined)[] {
   return searchIFrame(document)
     .map((frame) => {
       const { media, read, chapterTest } = domSearch(
@@ -75,7 +76,7 @@ function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void
           : read
             ? readTask(frame)
             : chapterTest
-              ? chapterTestTask(store.setting.cx.work, frame)
+              ? chapterTestTask(frame)
               : undefined;
       }
       if (media || read || chapterTest) {
@@ -129,7 +130,7 @@ function searchTask(setting: ScriptSettings['cx']['video']): (() => Promise<void
  * 永久固定显示视频进度
  */
 export function fixedVideoProgress(fixed: boolean) {
-  const videojs = store.videojs;
+  const videojs = useContext().cx.videojs;
 
   if (videojs) {
     const { bar } = domSearch({ bar: '.vjs-control-bar' }, videojs);
@@ -144,7 +145,7 @@ export function fixedVideoProgress(fixed: boolean) {
  *  视频路线切换
  */
 export function switchPlayLine(
-  setting: ScriptSettings['cx']['video'],
+  setting: ScriptSettings['cx']['study'],
   videojs: HTMLElement,
   media: HTMLMediaElement,
   line: string
@@ -187,7 +188,7 @@ export function switchPlayLine(
 /**
  * 播放视频和音频
  */
-function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaElement, frame: HTMLIFrameElement) {
+function mediaTask(setting: ScriptSettings['cx']['study'], media: HTMLMediaElement, frame: HTMLIFrameElement) {
   const { playbackRate = 1, volume = 0 } = setting;
 
   // @ts-ignore
@@ -198,8 +199,10 @@ function mediaTask(setting: ScriptSettings['cx']['video'], media: HTMLMediaEleme
     return;
   }
 
-  store.videojs = videojs;
-  store.currentMedia = media;
+  const { cx, common } = useStore('context');
+
+  cx.videojs = videojs;
+  common.currentMedia = media;
 
   if (videojs && setting.line) {
     // 切换路线
@@ -253,12 +256,16 @@ async function readTask(frame?: HTMLIFrameElement) {
 /**
  * 章节测验
  */
-async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTMLIFrameElement) {
-  const { period, timeout, retry } = setting;
+async function chapterTestTask(frame: HTMLIFrameElement) {
+  const { period, timeout, retry, waitForCheck } = useSettings().cx.work;
+  const { answererWrappers } = useSettings().common;
+  const { study } = useSettings().cx;
 
-  if (store.setting.cx.video.upload === 'close') {
+  const ctx = useContext();
+
+  if (study.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
-  } else if (store.setting.answererWrappers.length === 0) {
+  } else if (answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
     // @ts-ignore
   } else if (!frame.contentWindow) {
@@ -267,13 +274,14 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
     logger('info', '开始自动答题');
 
     // 等待文字识别
-    await waitForRecognize();
+    await waitForRecognize('cx');
 
     const { window: frameWindow } = frame.contentWindow;
 
     const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow.document);
+
     /** 清空答案 */
-    store.workResults = [];
+    ctx.common.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -297,7 +305,7 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
           .replace(/（\d+.0分）/, '')
           .trim();
         if (title) {
-          return defaultAnswerWrapperHandler(store.setting.answererWrappers, { type, title, root: ctx.root });
+          return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
         } else {
           throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
         }
@@ -366,9 +374,9 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
       /** 完成答题后 */
       onResult: async (res) => {
         if (res.ctx) {
-          store.workResults.push(res);
+          ctx.common.workResults.push(res);
         }
-        const randomWork = store.setting.cx.video.randomWork;
+        const randomWork = study.randomWork;
         // 没有完成时随机作答
         if (!res.result?.finish && randomWork.enable) {
           const options = res.ctx?.elements?.options || [];
@@ -416,10 +424,10 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
 
     // 处理提交
     await worker.uploadHandler({
-      uploadRate: store.setting.cx.video.upload,
+      uploadRate: study.upload,
       results,
       async callback(finishedRate, uploadable) {
-        const name = store.setting.cx.video.upload === 'force' ? '强制提交' : '自动提交';
+        const name = study.upload === 'force' ? '强制提交' : '自动提交';
         logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将' + name : ' 5秒后将自动保存');
 
         await sleep(5000);
@@ -442,8 +450,8 @@ async function chapterTestTask(setting: ScriptSettings['cx']['work'], frame: HTM
     });
   }
 
-  if (setting.waitForCheck) {
-    logger('debug', `正在等待答题检查: 一共 ${setting.waitForCheck} 秒`);
-    await sleep(setting.waitForCheck * 1000);
+  if (waitForCheck) {
+    logger('debug', `正在等待答题检查: 一共 ${waitForCheck} 秒`);
+    await sleep(waitForCheck * 1000);
   }
 }

@@ -1,23 +1,26 @@
-import { domSearch, sleep, StringUtils } from '../../core/utils';
+import { domSearch, sleep, StringUtils, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
-import { ScriptSettings } from '../../scripts';
-
 import { message } from '../../components/utils';
-import { store } from '../../store';
+import { useSettings, useContext } from '../../store';
 
-export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: 'work' | 'exam' = 'work') {
-  const { period, timeout, retry } = setting;
+export async function workOrExam(type: 'work' | 'exam' = 'work') {
+  const { period, timeout, retry, upload } = useSettings().zhs.work;
+  const { answererWrappers } = useSettings().common;
 
-  if (setting.upload === 'close') {
+  if (upload === 'close') {
     logger('warn', '自动答题已被关闭！');
     message('warn', '自动答题已被关闭！请在设置开启自动答题！或者忽略此警告');
-  } else if (store.setting.answererWrappers.length === 0) {
+  } else if (answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
   } else {
+    /** 等待文字识别中 */
+    waitForRecognize('zhs');
+
+    const { common } = useContext();
     /** 清空答案 */
-    store.workResults = [];
+    common.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -28,7 +31,7 @@ export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: '
       },
       /** 默认搜题方法构造器 */
       answerer: (elements, type, ctx) =>
-        defaultAnswerWrapperHandler(store.setting.answererWrappers,
+        defaultAnswerWrapperHandler(answererWrappers,
           {
             type,
             title: elements.title[0].innerText,
@@ -52,7 +55,7 @@ export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: '
       /** 完成答题后 */
       onResult: (res) => {
         if (res.ctx) {
-          store.workResults.push(res);
+          common.workResults.push(res);
         }
         console.log(res);
         logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
@@ -75,7 +78,7 @@ export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: '
     } else {
       // 处理提交
       await worker.uploadHandler({
-        uploadRate: setting.upload,
+        uploadRate: upload,
         results,
         async callback(finishedRate, uploadable) {
           logger('info', '完成率 : ', finishedRate, ' , ', uploadable ? '5秒后将自动提交' : '5秒后将自动保存');
@@ -110,15 +113,17 @@ export async function workOrExam(setting: ScriptSettings['zhs']['work'], type: '
 /**
  * 学分课的作业
  */
-export async function creditWork(setting: ScriptSettings['zhs']['work']) {
-  const { period, timeout, retry, stopWhenError } = setting;
+export async function creditWork() {
+  const { period, timeout, retry, upload } = useSettings().zhs.work;
+  const { answererWrappers } = useSettings().common;
 
-  if (setting.upload === 'close') {
+  if (upload === 'close') {
     logger('warn', '自动答题已被关闭！');
-  } else if (store.setting.answererWrappers.length === 0) {
+  } else if (answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
   } else {
     logger('info', '即将开始做题...');
+    const { common } = useContext();
 
     const worker = new OCSWorker({
       root: '.questionBox',
@@ -132,7 +137,7 @@ export async function creditWork(setting: ScriptSettings['zhs']['work']) {
         const title = StringUtils.nowrap(elements.title[0].innerText)
           .trim();
         if (title) {
-          return defaultAnswerWrapperHandler(store.setting.answererWrappers, { type, title, root: ctx.root });
+          return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
         } else {
           throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
         }
@@ -163,7 +168,7 @@ export async function creditWork(setting: ScriptSettings['zhs']['work']) {
             };
           }
 
-          store.workResults.push(res);
+          common.workResults.push(res);
         }
         console.log(res);
         logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
@@ -171,7 +176,7 @@ export async function creditWork(setting: ScriptSettings['zhs']['work']) {
       period: (period || 3) * 1000,
       timeout: (timeout || 30) * 1000,
       retry,
-      stopWhenError
+      stopWhenError: false
     });
 
     const getBtn = () => document.querySelector('span.Topicswitchingbtn:nth-child(2)') as HTMLElement;

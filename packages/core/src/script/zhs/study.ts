@@ -2,7 +2,7 @@ import { domSearch, domSearchAll, sleep } from '../../core/utils';
 import { logger } from '../../logger';
 import { message } from '../../main';
 import { ScriptSettings } from '../../scripts';
-import { store } from '../../store';
+import { useContext, useSettings } from '../../store';
 
 let stop = false;
 
@@ -71,11 +71,12 @@ export async function watch(setting?: Pick<ScriptSettings['zhs']['video'], 'play
   return new Promise<void>((resolve, reject) => {
     try {
       const video = document.querySelector('video') as HTMLVideoElement;
+      const { common } = useContext();
       // 保存视频元素
-      store.currentMedia = video;
+      common.currentMedia = video;
 
       // 设置当前视频
-      store.currentMedia = video;
+      common.currentMedia = video;
       // 如果已经播放完了，则重置视频进度
       video.currentTime = 0;
       // 音量
@@ -173,14 +174,15 @@ export async function creditStudy(setting?: ScriptSettings['zhs']['video']) {
  * 到达学习时间后，自动关闭
  */
 export function autoClose(watchTime: number) {
+  const settings = useSettings().zhs.video;
   if (watchTime !== 0) {
     let time = 0;
     // 清空之前的计数器
-    clearInterval(store.setting.zhs.video.interval);
+    clearInterval(settings.interval);
     // 开始计时
-    store.setting.zhs.video.interval = setInterval(() => {
+    settings.interval = setInterval(() => {
       if (time >= watchTime * 60 * 60 * 1000) {
-        clearInterval(store.setting.zhs.video.interval);
+        clearInterval(settings.interval);
         const video: HTMLVideoElement = document.querySelector('video') as any;
         video.pause();
         stop = true;
@@ -191,7 +193,7 @@ export function autoClose(watchTime: number) {
     }, 1000);
   } else {
     // 清空的计数器
-    clearInterval(store.setting.zhs.video.interval);
+    clearInterval(settings.interval);
   }
 }
 
@@ -199,11 +201,9 @@ export function autoClose(watchTime: number) {
  * 永久固定显示视频进度
  */
 export function fixedVideoProgress(fixed: boolean) {
-  const currentMedia = store.currentMedia;
-
-  if (currentMedia) {
-    const { bar } = domSearch({ bar: '.controlsBar' });
-    console.log('fixedVideoProgress', { bar, fixed });
+  const { common } = useContext();
+  const { bar } = domSearch({ bar: '.controlsBar' });
+  if (common.currentMedia && bar) {
     if (bar) {
       bar.style.display = fixed ? 'block' : 'none';
     }
