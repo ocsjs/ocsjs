@@ -14,26 +14,28 @@ export const Tooltip = defineComponent({
     tooltipStyle: {
       default: () => {},
       type: Object as PropType<object>
+    },
+    containerStyle: {
+      default: () => {},
+      type: Object as PropType<object>
     }
   },
   setup(props, { slots }) {
-    const { title, type, tooltipStyle } = toRefs(props);
+    const { title, type, tooltipStyle, containerStyle } = toRefs(props);
     const show = ref(false);
     return () => (
-      <div style={
-        {
-          width: '100%',
-          display: 'flex',
-          alignItems: 'flex-start'
-        }
-      }
-      >
+      <div style={{ width: '100%', ...containerStyle.value }}>
         <div style={{ display: show.value ? 'block' : 'none', ...tooltipStyle.value }} class={'tooltip ' + type.value}>
           {slots.title
             ? (slots.title())
             : (<span innerHTML={title.value?.replace(/\n/g, '<br/>')}></span>)}
         </div>
-        <div style="width: 100%" onMouseenter={() => (show.value = true)} onMouseleave={() => (show.value = false)} >{slots.default?.()}</div>
+        <div
+          onMouseenter={() => (show.value = true)}
+          onMouseleave={() => (show.value = false)}
+        >
+          {slots.default?.()}
+        </div>
       </div>
     );
   }
