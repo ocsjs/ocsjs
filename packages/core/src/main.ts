@@ -3,13 +3,13 @@ import { CommonScript } from './script/common';
 import { CXScript } from './script/cx';
 import { ZHSScript } from './script/zhs';
 import { app, loaded, panel, start } from './start';
-import { store } from './store';
+import { getStore } from './store';
 
 export * from './core/index';
 /**
  * ocsjs
  */
-export { store, start, app, panel, loaded, message };
+export { getStore, start, app, panel, loaded, message };
 
 // @ts-ignore vite.define
 export const VERSION = process.env._VERSION_;

@@ -1,18 +1,18 @@
 import { defineComponent } from 'vue';
 import { createWorkerSetting } from '..';
-import { store } from '../../store';
+import { useSettings } from '../../store';
+
 import { CommonWorkSettingPanel } from './CommonWorkSettingPanel';
 
 export const ExamSettingPanel = defineComponent({
   setup () {
-    const settings = store.setting.cx.exam;
+    const settings = useSettings().cx.exam;
 
     return () => (
       <div class="ocs-setting-panel">
         <div class="ocs-setting-items">
           <CommonWorkSettingPanel
             settings={settings}
-            upload={settings.upload}
             v-slots={{
               upload: createWorkerSetting(
                 '自动答题',
@@ -21,7 +21,7 @@ export const ExamSettingPanel = defineComponent({
                   options: [
                     {
                       label: '请自行检查后自行点击提交',
-                      value: 'other'
+                      value: 'close'
                     }
                   ]
                 },

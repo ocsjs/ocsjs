@@ -1,18 +1,20 @@
 import md5 from 'md5';
 import { request } from '../../core/utils';
-import { logger, OCR, store } from '../../main';
+import { logger, OCR } from '../../main';
 import CXAnalyses from './utils';
 // @ts-ignore
 import Typr from 'typr.js';
+import { useContext } from '../../store';
 
 /**
  * 繁体字识别-字典匹配
  * @see 参考 https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
  */
 export async function mapRecognize() {
+  const { cx } = useContext();
   // 顶层初始化
   if (window === top) {
-    store.isRecognizing = false;
+    cx.isRecognizing = false;
     logger('debug', '正在加载字典库...');
     // 预加载字体库
     const res = await request('https://cdn.ocs.enncy.cn/resources/font/table.json', {
@@ -20,12 +22,12 @@ export async function mapRecognize() {
       method: 'get',
       contentType: 'json'
     });
-    store.fontMap = res;
+    cx.fontMap = res;
     logger('info', '字典库加载成功');
   } else {
     /** 判断是否有繁体字 */
     const fontFaceEl = Array.from(document.head.querySelectorAll('style')).find((style) => style.textContent?.includes('font-cxsecret'));
-    const fontMap = store.fontMap;
+    const fontMap = cx.fontMap;
     if (fontFaceEl) {
       // 解析font-cxsecret字体
       const font = fontFaceEl.textContent?.match(/base64,([\w\W]+?)'/)?.[1];
@@ -70,9 +72,11 @@ export async function ocrRecognize() {
     workerPath: 'https://cdn.ocs.enncy.cn/resources/tesseract/worker.min.js'
   });
 
+  const { cx } = useContext();
+
   // 顶层初始化
   if (window === top) {
-    store.isRecognizing = false;
+    cx.isRecognizing = false;
     logger('debug', '加载文字识别功能, 如果是初始化请耐心等待..., 大约需要下载20mb的数据文件');
     // 预加载
     await ocr.load();
@@ -82,7 +86,7 @@ export async function ocrRecognize() {
   const fonts = CXAnalyses.getSecretFont();
   if (fonts.length) {
     logger('info', '文字识别功能启动');
-    store.isRecognizing = true;
+    cx.isRecognizing = true;
     // 加载
     await ocr.load();
     for (let i = 0; i < fonts.length; i++) {
@@ -99,7 +103,7 @@ export async function ocrRecognize() {
       }
     }
 
-    store.isRecognizing = false;
+    cx.isRecognizing = false;
     logger('info', '文字识别完成');
   }
 }

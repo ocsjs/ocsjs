@@ -6,11 +6,11 @@
   >
     <div class="alert-container">
       <template
-        v-for="(item,index) of store.alerts"
+        v-for="(item,index) of ctx.common.alerts"
         :key="index"
       >
         <Alert
-          :style="{opacity: 1 - (store.alerts.length - 1 - index) * (1/store.alerts.length)}"
+          :style="{opacity: 1 - (ctx.common.alerts.length - 1 - index) * (1/ctx.common.alerts.length)}"
           :type="item.type"
           :text="item.text"
           :index="index"
@@ -21,7 +21,7 @@
     <template v-if="hide">
       <Tooltip
         :tooltip-style="{transform: 'translate(-36%, -110%)' , textAlign:'center', fontSize: '12px'}"
-        :title="`OCS 网课助手 ${store.VERSION}<br>单击拖动<br>双击展开<br>连续按下ocs三个键可复原位置<br>想要完全隐藏可移出屏幕`"
+        :title="`OCS 网课助手 ${useStore('VERSION')}<br>单击拖动<br>双击展开<br>连续按下ocs三个键可复原位置<br>想要完全隐藏可移出屏幕`"
       >
         <img
           ref="logo"
@@ -80,7 +80,7 @@
           class="hide-btn"
           @click="hide = true"
         > 点击缩小 </span>
-        <span> OCS 网课助手 {{ store.VERSION }} </span>
+        <span> OCS 网课助手 {{ useStore('VERSION') }} </span>
       </div>
     </template>
   </div>
@@ -93,11 +93,15 @@ import { Alert } from './components/alert';
 import { Tooltip } from './components/Tooltip';
 import { addFunctionEventListener, dragElement, getCurrentPanels } from './core/utils';
 import { definedScripts } from './main';
-import { store } from './store';
+import { useContext, useStore } from './store';
+
+const ctx = useContext();
+
+const local = useStore('localStorage');
 
 const panels = ref(getCurrentPanels(definedScripts));
 
-const hide = ref(store.localStorage.hide);
+const hide = ref(local.hide);
 
 /**
  * 对面板进行处理
@@ -137,7 +141,7 @@ watch(currentPanels, () => {
 });
 
 watch(hide, () => {
-  store.localStorage.hide = hide.value;
+  local.hide = hide.value;
   nextTick(() => {
     enablePanelDrag();
   });
@@ -148,7 +152,7 @@ onMounted(() => {
     listenResetEvent();
     enablePanelDrag();
     listenHistoryChange();
-    let { x, y } = store.localStorage.position;
+    let { x, y } = local.position;
     // 设置初始位置
     if (panel.value && x && y) {
       // 判断移动后的坐标是否超出了屏幕，如果超出则重置为初始位置
@@ -178,7 +182,7 @@ onMounted(() => {
  * 启用面板拖拽
  */
 function enablePanelDrag() {
-  if (panel.value && store.startOptions?.draggable) {
+  if (panel.value && ctx.common.startOptions?.draggable) {
     if (logo.value) {
       dragElement(logo.value, panel.value, onMove);
     }
@@ -190,8 +194,8 @@ function enablePanelDrag() {
 }
 
 function onMove(x: number, y: number) {
-  store.localStorage.position.x = x;
-  store.localStorage.position.y = y;
+  local.position.x = x;
+  local.position.y = y;
 }
 
 /**

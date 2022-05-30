@@ -1,10 +1,11 @@
-import { store } from '../main';
+
+import { useContext } from '../store';
 import { AlertType } from './alert';
 
 export function message(type: AlertType['type'], text: string) {
-  if (store.alerts.length > 3) {
-    store.alerts.shift();
+  const { common } = useContext();
+  if (common.alerts.length > 3) {
+    common.alerts.shift();
   }
-
-  store.alerts.push({ type, text, key: store.alerts.length });
+  common.alerts.push({ type, text, key: common.alerts.length });
 }

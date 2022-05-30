@@ -27,26 +27,40 @@ export interface OCSLocalStorage {
 }
 
 export interface OCSStore {
+  localStorage: OCSLocalStorage
   /** 版本号 */
   VERSION: string
   setting: ScriptSettings
-  localStorage: OCSLocalStorage
-  /** 当前视频 */
-  currentMedia: HTMLMediaElement | null
-  /** 超星 videojs 元素 */
-  videojs: HTMLElement | null
-  /** 搜索结果存储 */
-  workResults: WorkResult<any>[]
-  /** 是否正在识别文字 */
-  isRecognizing: boolean
-  /** 启动参数 */
-  startOptions: StartOptions | undefined
-  /** 消息 */
-  alerts: AlertType[]
-  /**
- * 字体字典库 用于繁体字识别
- * author wyn665817
- * @see https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
- */
-  fontMap: any
+  context: {
+    common: {
+      /** 当前视频 */
+      currentMedia: HTMLMediaElement | null
+      /** 搜索结果存储 */
+      workResults: WorkResult<any>[]
+      /** 启动参数 */
+      startOptions: StartOptions | undefined
+      /** 消息 */
+      alerts: AlertType[]
+    },
+    /**
+   * 各脚本预留存储字段
+   */
+    cx: {
+      /** 超星 videojs 元素 */
+      videojs: HTMLElement | null
+      /** 是否正在识别文字 */
+      isRecognizing: boolean
+      /**
+     * 字体字典库 用于繁体字识别
+     * author wyn665817
+     * @see https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
+     */
+      fontMap: any
+    },
+    zhs: {
+      /** 是否正在识别文字 */
+      isRecognizing: boolean
+    }
+
+  }
 }

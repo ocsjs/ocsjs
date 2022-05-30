@@ -1,13 +1,16 @@
 import { defineComponent } from 'vue';
 import { createWorkerSetting } from '..';
+
 import { fixedVideoProgress, switchPlayLine } from '../../script/cx/study';
-import { store } from '../../store';
+import { useContext, useSettings } from '../../store';
 import { Tooltip } from '../Tooltip';
 import { CommonWorkSettingPanel } from './CommonWorkSettingPanel';
 
 export const StudySettingPanel = defineComponent({
   setup () {
-    const settings = store.setting.cx.video;
+    const settings = useSettings().cx.study;
+    const ctx = useContext();
+    const workSettings = useSettings().cx.work;
 
     return () => (
       <div class="ocs-setting-panel">
@@ -23,8 +26,8 @@ export const StudySettingPanel = defineComponent({
                 step="1"
                 onInput={(e: any) => {
                   settings.playbackRate = e.target.valueAsNumber;
-                  if (store.currentMedia) {
-                    store.currentMedia.playbackRate = e.target.valueAsNumber;
+                  if (ctx.common.currentMedia) {
+                    ctx.common.currentMedia.playbackRate = e.target.valueAsNumber;
                   }
                 }}
               ></input>
@@ -42,7 +45,7 @@ export const StudySettingPanel = defineComponent({
               value={settings.volume}
               onInput={(e: any) => {
                 settings.volume = e.target.valueAsNumber;
-                if (store.currentMedia) store.currentMedia.volume = e.target.valueAsNumber;
+                if (ctx.common.currentMedia) ctx.common.currentMedia.volume = e.target.valueAsNumber;
               }}
             />
             <span> {Math.round(settings.volume * 100)}% </span>
@@ -56,8 +59,8 @@ export const StudySettingPanel = defineComponent({
                 value={settings.line || '默认路线'}
                 onChange={(e: any) => {
                   settings.line = e.target.value;
-                  if (store.videojs && store.currentMedia) {
-                    switchPlayLine(settings, store.videojs, store.currentMedia, e.target.value);
+                  if (ctx.cx.videojs && ctx.common.currentMedia) {
+                    switchPlayLine(settings, ctx.cx.videojs, ctx.common.currentMedia, e.target.value);
                   }
                 }}
               >
@@ -99,8 +102,7 @@ export const StudySettingPanel = defineComponent({
           <hr />
 
           <CommonWorkSettingPanel
-            settings={store.setting.cx.work}
-            upload={settings.upload}
+            settings={workSettings}
             v-slots={{
               upload: createWorkerSetting(
                 '自动答题',

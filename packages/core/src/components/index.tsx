@@ -2,7 +2,7 @@ import { defineComponent, VNodeProps } from 'vue';
 import { ScriptPanelChild } from '../core/define.script';
 
 import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
-import { store } from '../store';
+import { useSettings } from '../store';
 import { SearchResults } from './SearchResults';
 import { Terminal } from './Terminal';
 import { Tooltip } from './Tooltip';
@@ -92,12 +92,17 @@ export function createWorkerSetting (
     return option;
   });
 
+  const { common } = useSettings();
+
   return (
     <>
       <label>{label}</label>
       <div>
         <Tooltip title="答题设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。">
-          <select onChange={changeHandler}>
+
+          <select onChange={(e) => {
+            changeHandler(e);
+          }}>
             {options.map((option) => (
               <option title={option.title} value={option.value} selected={option.selected}>
                 {option.label}
@@ -107,68 +112,61 @@ export function createWorkerSetting (
         </Tooltip>
       </div>
 
-      {
-        config.selected === 'close'
-          ? null
-          : (
-            <>
-              <label>题库配置</label>
-              <div>
-                <Tooltip title="请复制粘贴题库配置, 点击右侧问号查看教程\n(如需覆盖直接复制粘贴新的即可) ">
-                  <input
-                    type="text"
-                    placeholder="点击右侧问号查看教程 => "
-                    value={store.setting.answererWrappers.length === 0 ? '' : JSON.stringify(store.setting.answererWrappers)}
-                    onPaste={async(e) => {
-                      const text = e.clipboardData?.getData('text') || await navigator.clipboard.readText() || '';
-                      store.setting.answererWrappers = parseAnswererWrappers(text);
-                    }}
-                  ></input>
-                </Tooltip>
+      <label>题库配置</label>
+      <div>
+        <Tooltip title="请复制粘贴题库配置, 点击右侧问号查看教程\n(如需覆盖直接复制粘贴新的即可) ">
+          <input
+            type="text"
+            placeholder="点击右侧问号查看教程 => "
+            value={ common.answererWrappers.length === 0 ? '' : JSON.stringify(common.answererWrappers)}
+            onPaste={async(e) => {
+              const text = e.clipboardData?.getData('text') || await navigator.clipboard.readText() || '';
+              common.answererWrappers = parseAnswererWrappers(text);
+              console.log('common', { common });
+            }}
+          ></input>
+        </Tooltip>
 
-                <span
-                  style={{
-                    color: store.setting.answererWrappers.length ? 'green' : 'red'
-                  }}
-                >
-                  {store.setting.answererWrappers.length
-                    ? (
-                      <Tooltip
-                        v-slots={{
-                          title: () => (
-                            <>
-                              <span>解析成功, 一共有 {store.setting.answererWrappers.length} 个题库</span>
-                              <ol>
-                                {store.setting.answererWrappers.map((aw) => (
-                                  <li>{aw.name}</li>
-                                ))}
-                              </ol>
-                            </>
-                          )
-                        }}
-                      >
-                        <span class="pointer">✅</span>
-                      </Tooltip>
-                    )
-                    : (
-                      <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
-                        <span class="pointer">❌</span>
-                      </Tooltip>
-                    )}
-                </span>
-                <span>
-                  <Tooltip title="点击查看题库配置教程">
-                    <span class="pointer" onClick={() => {
-                      window.open('https://docs.ocsjs.com/docs/work');
-                    }}>
+        <span
+          style={{
+            color: common.answererWrappers.length ? 'green' : 'red'
+          }}
+        >
+          { common.answererWrappers.length
+            ? (
+              <Tooltip
+                v-slots={{
+                  title: () => (
+                    <>
+                      <span>解析成功, 一共有 { common.answererWrappers.length} 个题库</span>
+                      <ol>
+                        { common.answererWrappers.map((aw) => (
+                          <li>{aw.name}</li>
+                        ))}
+                      </ol>
+                    </>
+                  )
+                }}
+              >
+                <span class="pointer">✅</span>
+              </Tooltip>
+            )
+            : (
+              <Tooltip title="题库没有配置, 自动答题功能将不能使用 !">
+                <span class="pointer">❌</span>
+              </Tooltip>
+            )}
+        </span>
+        <span>
+          <Tooltip title="点击查看题库配置教程">
+            <span class="pointer" onClick={() => {
+              window.open('https://docs.ocsjs.com/docs/work');
+            }}>
               ❓
-                    </span>
-                  </Tooltip>
-                </span>
-              </div>
-            </>
-          )
-      }
+            </span>
+          </Tooltip>
+        </span>
+      </div>
 
     </>
   );
@@ -176,19 +174,28 @@ export function createWorkerSetting (
 
 function parseAnswererWrappers (value: string): AnswererWrapper[] {
   try {
-    const aw = JSON.parse(value);
+    const aw: AnswererWrapper[] = JSON.parse(value);
     if (aw && Array.isArray(aw)) {
-      message('success', '题库配置成功！');
+      if (aw.length) {
+        if (aw.every((item) => item.url && item.handler)) {
+          message('success', '题库配置成功！');
+          return aw;
+        } else {
+          message('error', '题库缺少必要参数: `url` 或 `handler` ');
+        }
+      } else {
+        message('error', '题库为空！');
+      }
       return aw;
     } else {
       message('error', '题库配置格式错误！');
-      return [];
     }
   } catch (e) {
     console.log(e);
     message('error', '题库配置格式错误！');
-    return [];
   }
+
+  return [];
 }
 
 /**

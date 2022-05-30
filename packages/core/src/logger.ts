@@ -1,4 +1,4 @@
-import { store } from './store';
+import { useStore } from './store';
 
 export function loggerPrefix(level: 'info' | 'error' | 'warn' | 'debug') {
   const extra = level === 'error' ? '[错误]' : level === 'warn' ? '[警告]' : undefined;
@@ -40,7 +40,8 @@ export function logger(level: 'info' | 'error' | 'warn' | 'debug', ...msg: any[]
       const type = typeof s;
       return type === 'function' ? '[Function]' : type === 'object' ? '[Object]' : type === 'undefined' ? '无' : s;
     });
-    const logs = store.localStorage.logs;
+    const logs = useStore('localStorage').logs;
+
     if (logs.length > 50) {
       logs.shift();
     }

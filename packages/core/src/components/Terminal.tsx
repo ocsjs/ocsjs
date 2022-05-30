@@ -1,16 +1,18 @@
 import { defineComponent, nextTick, onMounted, watch } from 'vue';
 
 import { domSearch } from '../core/utils';
-import { store } from '../store';
+import { useStore } from '../store';
 
 export const Terminal = defineComponent({
   setup () {
+    const local = useStore('localStorage');
+
     onMounted(() => {
       // 控制台元素
       const { terminal } = domSearch({ terminal: '.terminal' });
       // 监听改变，并且滚动到最下方
       watch(
-        () => store.localStorage.logs,
+        () => local.logs,
         // eslint-disable-next-line vue/valid-next-tick
         () => nextTick(() => scroll())
       );
@@ -29,7 +31,7 @@ export const Terminal = defineComponent({
 
     return () => (
       <div class="terminal">
-        {store.localStorage.logs.map((log: any) => (
+        {local.logs.map((log: any) => (
           <div>
             <span style={{ color: 'gray' }}>{new Date(log.time).toLocaleTimeString('zh-CN')}</span>
             <span> </span>

@@ -1,11 +1,14 @@
 import { defineComponent, ref } from 'vue';
+
 import { autoClose, fixedVideoProgress, switchPlaybackRate } from '../../script/zhs/study';
-import { store } from '../../store';
+import { useContext, useSettings } from '../../store';
 import { Tooltip } from '../Tooltip';
 
 export const StudySettingPanel = defineComponent({
   setup () {
-    const settings = store.setting.zhs.video;
+    const settings = useSettings().zhs.video;
+    const ctx = useContext();
+
     showCloseDate();
 
     /** 显示关闭时间 */
@@ -103,7 +106,7 @@ export const StudySettingPanel = defineComponent({
               value={settings.volume}
               onInput={(e: any) => {
                 settings.volume = e.target.valueAsNumber;
-                if (store.currentMedia) store.currentMedia.volume = e.target.valueAsNumber;
+                if (ctx.common.currentMedia) ctx.common.currentMedia.volume = e.target.valueAsNumber;
               }}
             ></input>
             <span> {Math.round(settings.volume * 100)}% </span>
