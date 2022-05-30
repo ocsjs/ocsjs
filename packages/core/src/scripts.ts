@@ -16,7 +16,7 @@ export interface CXSetting {
     /** 繁体字识别 */
     recognize: 'map' | 'ocr' | 'close'
   },
-  video: {
+  study: {
     /** 播放速度 */
     playbackRate: number
     /** 显示视频进度 */
@@ -44,7 +44,9 @@ export interface CXSetting {
       /** 填空随机文案 */
       completeTexts: string[]
     },
-  }
+  },
+  // 历史遗留字段
+  video: undefined;
   work: CommonWorkSetting
   exam: CommonWorkSetting
 }
@@ -75,10 +77,44 @@ export interface ZHSSetting {
   exam: CommonWorkSetting
 }
 
+type ICVECell = {
+  /** 是否为学习任务 */
+  isTask: boolean
+  /** 链接 */
+  href: string
+  Id: string
+  categoryName: '视频' | 'ppt'
+  cellName: string
+  stuCellPercent: number
+}
+
+export interface ICVESetting {
+  study: {
+    /** 播放速度 */
+    playbackRate: number
+    /** 音量 */
+    volume: number
+    /** 显示视频进度 */
+    showProgress: boolean
+    /** ppt翻阅速度 */
+    pptRate: number
+    /** 是否正在学习中 */
+    isStarting: boolean
+    /** 当前任务 */
+    currentTask: ICVECell | undefined
+    /** 任务章节 */
+    cells: ICVECell[]
+  }
+}
+
 export interface ScriptSettings {
   zhs: ZHSSetting
   cx: CXSetting
-  icve: any
+  icve: ICVESetting
+  common: {
+    answererWrappers: AnswererWrapper[]
+  }
+  // 历史遗留字段
   answererWrappers: AnswererWrapper[]
 }
 
@@ -119,7 +155,7 @@ export const defaultOCSSetting: ScriptSettings = {
     common: {
       recognize: 'map'
     },
-    video: {
+    study: {
       playbackRate: 1,
       showProgress: true,
       restudy: false,
@@ -135,9 +171,24 @@ export const defaultOCSSetting: ScriptSettings = {
         completeTexts: ['不会', '不知道', '不清楚', '不懂', '不会写']
       }
     },
+    video: undefined,
     work: defaultWorkSetting,
     exam: defaultWorkSetting
   },
-  icve: {},
+  icve: {
+    study: {
+      playbackRate: 1,
+      volume: 0,
+      showProgress: true,
+      pptRate: 5,
+      isStarting: false,
+      currentTask: undefined,
+      cells: []
+    }
+  },
+  common: {
+    answererWrappers: [] as AnswererWrapper[]
+  },
+  // 历史遗留字段
   answererWrappers: [] as AnswererWrapper[]
 };
