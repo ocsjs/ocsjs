@@ -133,10 +133,15 @@ export const ZHSScript = defineScript({
         // eslint-disable-next-line no-extend-native
         RegExp.prototype._test = RegExp.prototype.test;
         // @ts-ignore
-        window.Element.prototype.attachShadow = undefined;
-        // @ts-ignore
-        // eslint-disable-next-line no-undef
-        unsafeWindow.Element.prototype.attachShadow = undefined;
+        // eslint-disable-next-line no-extend-native
+        RegExp.prototype.test = function (s) {
+          if (this.source.includes('function') || this.source.includes('native code')) {
+            console.log(this.source);
+            return true;
+          }
+          // @ts-ignore
+          return this._test(s);
+        };
       }
     },
     {
