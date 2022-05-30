@@ -1,13 +1,14 @@
 import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
-import { store } from '../store';
-
 import { StringUtils } from '../core/utils';
 import { WorkResult } from '../core/worker/interface';
+import { useContext } from '../store';
+import { Tooltip } from './Tooltip';
 
 export const SearchResults = defineComponent({
   setup () {
+    const { common } = useContext();
     // 判断是否有搜索结果
-    const validResult = computed(() => store.workResults);
+    const validResult = computed(() => common.workResults);
     const hasResult = computed(() => validResult.value.length > 0);
     // 当前搜索对象
     const currentResult: Ref<WorkResult<any> | undefined> = ref(undefined);
@@ -22,7 +23,7 @@ export const SearchResults = defineComponent({
 
     onMounted(() => {
       // 清空搜索结果
-      store.workResults = [];
+      common.workResults = [];
 
       // 监听页面点击事件，然后关闭搜索悬浮窗
       document.addEventListener('click', () => {
@@ -129,22 +130,53 @@ export const SearchResults = defineComponent({
                 {validResult.value.map((res, i) => {
                   const title = res.ctx?.elements.title?.[0];
 
+                  const isCopy = ref(false);
+
                   return (
                     <div
                       class="search-results-title"
                       onMouseenter={() => (currentResult.value = res)}
                       style={{ color: res.result?.finish ? '' : 'red' }}
                       title={res.ctx?.elements.title?.[0].innerText}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
                     >
+                      <span
+                        style={{
+                          borderRight: '1px solid #cbcbcb',
+                          marginRight: '2px',
+                          textShadow: 'black 0px 0px',
+                          fontSize: '14px',
+                          display: 'inline-block',
+                          cursor: 'pointer'
+                        }}
+                        onClick={() => {
+                          if (isCopy.value === false) {
+                            isCopy.value = true;
+                            navigator.clipboard.writeText(title?.innerText.trim() || '');
+                            setTimeout(() => {
+                              isCopy.value = false;
+                            }, 500);
+                          }
+                        }}
+                      >
+                        <Tooltip title='复制题目'>
+                          {isCopy.value ? '✅' : '📄'}
+                        </Tooltip>
+
+                      </span>
+
                       <span style={{
                         borderRight: '1px solid #cbcbcb',
                         marginRight: '2px',
                         paddingRight: '2px',
-                        color: 'darkgrey'
+                        color: 'darkgrey',
+                        userSelect: 'none'
                       }}>
                         {i + 1}
                       </span>
-                      <span>
+                      <span >
                         {StringUtils.of(title?.innerText || '')
                           .nowrap()
                           .max(40)
