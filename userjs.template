@@ -30,9 +30,7 @@ const OCS_STYLE = `{{style}}`;
 
 (function () {
     "use strict";
-
-    // 将OCS对象加入到全局属性
-    unsafeWindow.OCS = OCS;
+ 
     // 运行脚本
     OCS.start({
         // 加载样式
