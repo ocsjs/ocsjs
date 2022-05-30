@@ -14,6 +14,7 @@
 // @match					*://*.edu.cn/*
 // @match					*://*.org.cn/*
 // @match					*://*.zhihuishu.com/*
+// @match                   *://*.icve.com.cn/*
 // @grant					unsafeWindow
 // @grant					GM_xmlhttpRequest
 // @grant					GM_setValue

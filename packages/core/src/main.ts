@@ -1,6 +1,7 @@
 import { message } from './components/utils';
 import { CommonScript } from './script/common';
 import { CXScript } from './script/cx';
+import { ICVEScript } from './script/icve';
 import { ZHSScript } from './script/zhs';
 import { app, loaded, panel, start } from './start';
 import { getStore } from './store';
@@ -15,4 +16,4 @@ export { getStore, start, app, panel, loaded, message };
 export const VERSION = process.env._VERSION_;
 
 /** 默认脚本列表 */
-export const definedScripts = [CommonScript, CXScript, ZHSScript];
+export const definedScripts = [CommonScript, CXScript, ZHSScript, ICVEScript];
