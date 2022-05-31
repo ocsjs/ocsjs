@@ -1,3 +1,19 @@
+# [3.16.0](https://github.com/enncy/online-course-script/compare/3.15.0...3.16.0) (2022-05-31)
+
+
+### Bug Fixes
+
+* **core:** 将 unsafeWindow 全局变量封装成 useUnsafeWindow ([1c0f0bb](https://github.com/enncy/online-course-script/commit/1c0f0bbf71661249b81bfed12472fd7bc389ebf2))
+* **core:** 将超星视频进度步数调整为0.25，倍速颗粒度控制更高。 ([1702aa9](https://github.com/enncy/online-course-script/commit/1702aa9484bc5007a8f04cb0f1600af72ab28477))
+* **core:** 修复智慧树倍速失效的BUG ([7943442](https://github.com/enncy/online-course-script/commit/79434421cc1b9c28c547b7c45b08ea762459dd26))
+
+
+### Features
+
+* **core:** 新增超星直播回放视频脚本 ([3788a6f](https://github.com/enncy/online-course-script/commit/3788a6fc5bb852b4847025b4df88a5b9499ce4de))
+
+
+
 # [3.15.0](https://github.com/enncy/online-course-script/compare/3.13.8...3.15.0) (2022-05-30)
 
 
