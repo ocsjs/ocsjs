@@ -4,9 +4,10 @@ import { StudySettingPanel } from '../../components/cx/StudySettingPanel';
 import { WorkSettingPanel } from '../../components/cx/WorkSettingPanel';
 import { message } from '../../components/utils';
 import { defineScript } from '../../core/define.script';
-import { sleep } from '../../core/utils';
+import { domSearch, sleep, useUnsafeWindow } from '../../core/utils';
 import { logger } from '../../logger';
-import { initStore, useSettings } from '../../store';
+import { initStore, setStore, useSettings } from '../../store';
+import { LiveSettingPanel } from '../../components/cx/LiveSettingPanel';
 
 import { rateHack } from './rate.hack';
 import { mapRecognize, ocrRecognize } from './recognize';
@@ -29,12 +30,11 @@ export const CXScript = defineScript({
   routes: [
     {
       name: 'OCS注入脚本',
-      url: updateURLs.concat('**/mycourse/studentstudy**'),
+      url: updateURLs.concat(['**/mycourse/studentstudy**']),
       priority: 999,
       onstart() {
         // @ts-ignore
-        // eslint-disable-next-line no-undef
-        unsafeWindow.top.OCS = OCS;
+        useUnsafeWindow().top.OCS = window.OCS;
       }
     },
     {
@@ -113,8 +113,7 @@ export const CXScript = defineScript({
       async onload() {
         // 注入OCS
         // @ts-ignore
-        // eslint-disable-next-line no-undef
-        initStore(unsafeWindow?.top.OCS.getStore());
+        initStore(useUnsafeWindow()?.top.OCS.getStore());
         logger('info', '开始学习');
         await sleep(5000);
         await study();
@@ -227,6 +226,29 @@ export const CXScript = defineScript({
           img.after(document.createTextNode(img.src));
         });
       }
+    },
+    {
+      name: '直播回放脚本',
+      url: '**zhibo.chaoxing.com**',
+      onload() {
+        const video = document.querySelector('video');
+        if (video) {
+          // eslint-disable-next-line no-undef
+          GM_addValueChangeListener('store', (_, __, newValue) => {
+            setStore(newValue);
+            const settings = useSettings().cx.live;
+            video.volume = settings.volume;
+            video.playbackRate = settings.playbackRate;
+            const { bar } = domSearch({ bar: '.vjs-control-bar' });
+            if (bar) {
+              bar.style.opacity = settings.showProgress ? '1' : '0';
+            }
+          });
+        }
+
+        console.info = () => { };
+        console.log = () => { };
+      }
     }
   ],
   panels: [
@@ -240,6 +262,17 @@ export const CXScript = defineScript({
       url: '**/space/index**',
 
       el: () => createNote('提示您:', '请点击任意的课程进入。')
+    },
+    {
+      name: '直播小助手',
+      url: '**zhibo.chaoxing.com**',
+      el: () => createNote('提示您:', '进入直播设置调整倍速及音量'),
+      children: [
+        {
+          name: '直播设置',
+          el: () => LiveSettingPanel
+        }
+      ]
     },
     {
       name: '学习助手',

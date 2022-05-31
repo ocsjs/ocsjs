@@ -47,6 +47,15 @@ export interface CXSetting {
   },
   // 历史遗留字段
   video: undefined;
+  /** 直播回放课 */
+  live: {
+    /** 播放速度 */
+    playbackRate: number
+    /** 显示视频进度 */
+    showProgress: boolean
+    /** 音量 */
+    volume: number
+  },
   work: CommonWorkSetting
   exam: CommonWorkSetting
 }
@@ -172,6 +181,11 @@ export const defaultOCSSetting: ScriptSettings = {
       }
     },
     video: undefined,
+    live: {
+      playbackRate: 1,
+      showProgress: true,
+      volume: 1
+    },
     work: defaultWorkSetting,
     exam: defaultWorkSetting
   },
