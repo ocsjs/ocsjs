@@ -71,7 +71,7 @@ export const ZHSScript = defineScript({
         settings.creditStudy = true;
         // 智慧树视频学习
         logger('info', '开始智慧树学分课视频学习');
-        await creditStudy(settings);
+        await creditStudy();
       }
     },
 
