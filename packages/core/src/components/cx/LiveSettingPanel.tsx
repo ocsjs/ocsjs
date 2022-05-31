@@ -16,7 +16,7 @@ export const LiveSettingPanel = defineComponent({
               value={settings.playbackRate}
               min="1"
               max="16"
-              step="1"
+              step="0.25"
               onInput={(e: any) => {
                 settings.playbackRate = e.target.valueAsNumber;
                 if (ctx.common.currentMedia) {
@@ -24,7 +24,7 @@ export const LiveSettingPanel = defineComponent({
                 }
               }}
             ></input>
-            <span style={{ color: settings.playbackRate > 2 ? 'red' : '' }}>{settings.playbackRate}x</span>
+            <span style={{ color: settings.playbackRate > 2 ? 'red' : '' }}>{settings.playbackRate.toFixed(2)}x</span>
           </div>
 
           <label>音量调节</label>
