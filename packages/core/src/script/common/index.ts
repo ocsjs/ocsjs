@@ -1,6 +1,6 @@
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
-import { onComplete, onInteractive } from '../../core/utils';
+import { onComplete, onInteractive, useUnsafeWindow } from '../../core/utils';
 
 const supports = ['*'];
 
@@ -14,10 +14,10 @@ export const CommonScript = defineScript({
       onstart() {
         try {
           // @ts-ignore
-          if (typeof unsafeWindow !== 'undefined') {
+          if (typeof useUnsafeWindow() !== 'undefined') {
             // @ts-ignore
             // eslint-disable-next-line no-undef
-            unsafeWindow.alert = console.log;
+            useUnsafeWindow().alert = console.log;
           }
           window.alert = self.alert = console.log;
         } catch (e) {

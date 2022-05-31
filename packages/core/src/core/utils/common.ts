@@ -106,3 +106,11 @@ export function waitForRecognize(type: 'cx' | 'zhs') {
     }, 100);
   });
 }
+
+/**
+ * 使用 unsafeWindow
+ */
+export function useUnsafeWindow() {
+  // eslint-disable-next-line no-undef
+  return typeof unsafeWindow !== 'undefined' ? unsafeWindow : undefined;
+}

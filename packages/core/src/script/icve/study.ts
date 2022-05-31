@@ -1,4 +1,4 @@
-import { domSearch, domSearchAll, sleep } from '../../core/utils';
+import { domSearch, domSearchAll, sleep, useUnsafeWindow } from '../../core/utils';
 import { logger, message } from '../../main';
 import { useSettings, useContext } from '../../store';
 
@@ -25,8 +25,7 @@ export async function study() {
   const { icve: settings } = useSettings();
   const { common } = useContext();
   // @ts-ignore
-  // eslint-disable-next-line no-undef
-  const fixTime = unsafeWindow._fixTime;
+  const fixTime = useUnsafeWindow()._fixTime;
   const { ppt, video, iframe, link } = domSearch({
     // ppt
     ppt: '.MPreview-ppt',
@@ -61,8 +60,7 @@ export async function study() {
   } else if (iframe) {
     logger('info', '开始播放PPT');
     // @ts-ignore
-    // eslint-disable-next-line no-undef
-    unsafeWindow.addEventListener('message', listenTaskFinish);
+    useUnsafeWindow().addEventListener('message', listenTaskFinish);
 
     /** 等待阅读任务完成 */
     function listenTaskFinish(e: MessageEvent) {
@@ -75,8 +73,7 @@ export async function study() {
       if (type === 'read-finish') {
         logger('info', '阅读脚本完成');
         nextTask();
-        // eslint-disable-next-line no-undef
-        unsafeWindow.removeEventListener('message', listenTaskFinish);
+        useUnsafeWindow()?.removeEventListener('message', listenTaskFinish);
       }
     }
   } else if (ppt) {
@@ -135,12 +132,10 @@ export async function loadTasks() {
   icve.study.cells = [];
 
   // @ts-ignore
-  // eslint-disable-next-line no-undef
-  const _template = unsafeWindow.template;
+  const _template = useUnsafeWindow().template;
 
   // @ts-ignore 页面元素加载回调
-  // eslint-disable-next-line no-undef
-  unsafeWindow.template = function (type: TemplateType, data: any) {
+  useUnsafeWindow().template = function (type: TemplateType, data: any) {
     // 解除加载状态
     loading = false;
     if (type === 'cell_html' && data.code) {
@@ -155,8 +150,8 @@ export async function loadTasks() {
   };
 
   // @ts-ignore
-  // eslint-disable-next-line no-undef
-  const fixTime = unsafeWindow._fixTime;
+
+  const fixTime = useUnsafeWindow()._fixTime;
 
   /** 加载列表 */
   const { moduleTriggers } = domSearchAll({ moduleTriggers: '.moduleList .openOrCloseModule' });

@@ -1,7 +1,7 @@
 import defaultsDeep from 'lodash/defaultsDeep';
 import { reactive, watch } from 'vue';
 import { OCSLocalStorage, OCSStore } from './core/types';
-import { isInBrowser, onComplete } from './core/utils';
+import { isInBrowser, onComplete, useUnsafeWindow } from './core/utils';
 import { logger } from './logger';
 import { defaultOCSSetting } from './scripts';
 
@@ -12,7 +12,7 @@ let store: OCSStore = {} as OCSStore;
 
 // 环境检测
 if (isInBrowser()) {
-  if (typeof unsafeWindow !== 'undefined') {
+  if (typeof useUnsafeWindow() !== 'undefined') {
     setStore(createStore());
   }
 }
@@ -81,7 +81,7 @@ export function createStore() {
 
 export function initStore(original: OCSStore) {
   onComplete(() => {
-    if (typeof unsafeWindow !== 'undefined') {
+    if (typeof useUnsafeWindow() !== 'undefined') {
       try {
         // 统一转向顶层对象
         // eslint-disable-next-line no-undef

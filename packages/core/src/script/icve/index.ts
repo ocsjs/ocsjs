@@ -31,7 +31,7 @@ export const ICVEScript = defineScript({
         await sleep(5000);
         // @ts-ignore
         // eslint-disable-next-line no-undef
-        const { gc, Presentation } = unsafeWindow;
+        const { gc, Presentation } = useUnsafeWindow();
         // @ts-ignore
         const { TotalSlides } = Presentation.GetContentDetails();
         // @ts-ignore
@@ -43,7 +43,7 @@ export const ICVEScript = defineScript({
         }
         // @ts-ignore
         // eslint-disable-next-line no-undef
-        unsafeWindow.sendToParent({ type: 'read-finish' });
+        sendToParent({ type: 'read-finish' });
       }
     }
 
