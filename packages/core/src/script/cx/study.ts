@@ -131,11 +131,9 @@ function searchTask(setting: ScriptSettings['cx']['study']): (() => Promise<void
  */
 export function fixedVideoProgress(fixed: boolean) {
   const videojs = useContext().cx.videojs;
-
   if (videojs) {
     const { bar } = domSearch({ bar: '.vjs-control-bar' }, videojs);
     if (bar) {
-      console.log('fixedVideoProgress', { bar, fixed });
       bar.style.opacity = fixed ? '1' : '0';
     }
   }
@@ -192,7 +190,7 @@ function mediaTask(setting: ScriptSettings['cx']['study'], media: HTMLMediaEleme
   const { playbackRate = 1, volume = 0 } = setting;
 
   // @ts-ignore
-  const { videojs } = domSearch({ videojs: '#video' }, frame.contentDocument || document);
+  const { videojs } = domSearch({ videojs: '#video,#audio' }, frame.contentDocument || document);
 
   if (!videojs) {
     message('error', '视频检测不到，请尝试刷新或者手动切换下一章。');
