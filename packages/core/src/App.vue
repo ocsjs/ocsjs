@@ -26,7 +26,7 @@
         <img
           ref="logo"
           class="ocs-icon"
-          src="https://cdn.ocs.enncy.cn/logo.png"
+          src="https://cdn.ocsjs.com/logo.png"
           @dblclick="hide = false"
           @click="(e) => e.stopPropagation()"
         >

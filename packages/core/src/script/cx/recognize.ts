@@ -17,7 +17,7 @@ export async function mapRecognize() {
     cx.isRecognizing = false;
     logger('debug', '正在加载字典库...');
     // 预加载字体库
-    const res = await request('https://cdn.ocs.enncy.cn/resources/font/table.json', {
+    const res = await request('https://cdn.ocsjs.com/resources/font/table.json', {
       type: 'fetch',
       method: 'get',
       contentType: 'json'
@@ -67,9 +67,9 @@ export async function mapRecognize() {
 /** 繁体字识别-OCR文字识别 */
 export async function ocrRecognize() {
   const ocr = new OCR({
-    langPath: 'https://cdn.ocs.enncy.cn/resources/tessdata',
-    corePath: 'https://cdn.ocs.enncy.cn/resources/tesseract/tesseract-core.wasm.js',
-    workerPath: 'https://cdn.ocs.enncy.cn/resources/tesseract/worker.min.js'
+    langPath: 'https://cdn.ocsjs.com/resources/tessdata',
+    corePath: 'https://cdn.ocsjs.com/resources/tesseract/tesseract-core.wasm.js',
+    workerPath: 'https://cdn.ocsjs.com/resources/tesseract/worker.min.js'
   });
 
   const { cx } = useContext();

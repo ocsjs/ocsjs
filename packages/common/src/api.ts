@@ -17,7 +17,7 @@ export class OCSApi {
       url: string
     }[]
   }> {
-    const { data } = await axios.get('https://cdn.ocs.enncy.cn/infos.json?t=' + Date.now());
+    const { data } = await axios.get('https://cdn.ocsjs.com/infos.json?t=' + Date.now());
     return data;
   }
 }

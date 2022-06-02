@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name					OCS 网课助手
 // @version					{{version}}
-// @description				ocs 网课助手，支持各平台网课学习，支持超星学习通，知道智慧树，等网课的学习，作业，考试功能。
+// @description				OCS 网课助手，支持各平台网课学习，支持超星学习通，知道智慧树，智慧职教（职教云），等网课的学习，作业，考试功能。
 // @author					enncy
 // @license					MIT
 // @namespace				https://enncy.cn
 // @homepage				https://enncy.github.io/online-course-script/
 // @source					https://github.com/enncy/online-course-script/
-// @icon					https://cdn.ocs.enncy.cn/logo.ico
+// @icon					https://cdn.ocsjs.com/logo.ico
 // @connect					enncy.cn
 // @connect					icodef.com
 // @match					*://*.chaoxing.com/*
