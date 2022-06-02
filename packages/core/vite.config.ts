@@ -7,7 +7,7 @@ import { author, description, homepage, license, name, version } from '../../pac
 
 const bannerContent = `
 /*!
- * ${name} ${version} ( ${homepage} )
+ * ${name} ( ${homepage} )
  * ${description}
  * copyright ${author}
  * license ${license}
