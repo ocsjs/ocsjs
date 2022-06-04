@@ -85,8 +85,8 @@
             size="small"
             class="w-100"
             type="text"
-            :value="answererWrapper"
-            @change="onAWChange($event)"
+            :value="answererWrappers"
+            @paste="onAWChange($event)"
           >
             <template #suffix>
               <a-popover>
@@ -173,9 +173,9 @@ const launchOptions = store.script.launchOptions as LaunchOptions;
 console.log('可用浏览器', store.validBrowsers);
 
 // 题库配置
-const answererWrapper = ref(
-  store.script.localStorage?.setting?.answererWrappers
-    ? JSON.stringify(store.script.localStorage?.setting?.answererWrappers)
+const answererWrappers = ref(
+  store.setting.answererWrappers
+    ? JSON.stringify(store.setting.answererWrappers)
     : ''
 );
 
@@ -200,13 +200,25 @@ function onDiy() {
 /**
  * 监听题库配置的变化
  */
-function onAWChange(e: Event) {
+async function onAWChange(e: ClipboardEvent) {
   // @ts-ignore
-  const val = e.target.value;
-
-  store.script.localStorage.setting.answererWrappers = val ? JSON.parse(val) : '';
-
-  answererWrapper.value = val;
+  const val = e.clipboardData.getData('text') || await navigator.clipboard.readText();
+  try {
+    const aw = JSON.parse(val);
+    if (typeof aw === 'object' || Array.isArray(aw)) {
+      store.setting.answererWrappers = aw;
+      answererWrappers.value = val;
+      message.success('题库配置保存成功');
+    } else {
+      answererWrappers.value = '';
+      message.error('题库配置格式错误');
+      store.setting.answererWrappers = [];
+    }
+  } catch {
+    answererWrappers.value = '';
+    message.error('题库配置格式错误');
+    store.setting.answererWrappers = [];
+  }
 }
 
 /** 如果尚未选择，并且没有自定义路径的话，自动选择第一个 */
@@ -228,7 +240,7 @@ function link(url: string) {
 
 /** 重置设置 */
 function reset() {
-  store.version = undefined;
+  store.version = '';
   remote.app.call('relaunch');
   remote.app.call('exit', 0);
 }
