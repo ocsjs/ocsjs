@@ -13,6 +13,7 @@ import { handleFile, initOpenFiles, setAutoLaunch, setZoomFactor } from './store
 import { fetchRemoteNotify } from './utils';
 import { notify } from './utils/notify';
 import { remote } from './utils/remote';
+
 const { ipcRenderer } = require('electron');
 
 onMounted(() => {
@@ -50,7 +51,7 @@ onMounted(() => {
 
 .main {
   display: grid;
-  grid-template-rows: 28px auto;
+  grid-template-rows: 28px calc(100vh - 28px);
   grid-template-areas:
     'header'
     'main ';

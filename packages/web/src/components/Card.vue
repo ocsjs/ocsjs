@@ -1,6 +1,6 @@
 <template>
   <div class="text-start">
-    <div class="bg-white rounded p-3 pt-1">
+    <div class="bg-white rounded pt-1">
       <p
         v-if="title"
         class="mb-2 title fw-bold border-bottom"
