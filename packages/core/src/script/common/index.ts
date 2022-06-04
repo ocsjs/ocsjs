@@ -1,6 +1,7 @@
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
 import { getRemoteSetting, onComplete, onInteractive, useUnsafeWindow } from '../../core/utils';
+import { logger } from '../../logger';
 import { useSettings } from '../../store';
 
 const supports = ['*'];
@@ -63,12 +64,15 @@ export const CommonScript = defineScript({
       name: '获取软件题库配置脚本',
       url: supports,
       async onload() {
-        const { common } = useSettings();
-        if (common.answererWrappers.length) {
-          const setting = await getRemoteSetting(15319);
-          if (setting?.answererWrappers) {
-            const { common } = useSettings();
-            common.answererWrappers = setting.answererWrappers;
+        if (top === self) {
+          const { common } = useSettings();
+          if (common.answererWrappers.length === 0) {
+            const setting = await getRemoteSetting(15319);
+            if (setting?.answererWrappers) {
+              logger('debug', '成功读取本地题库配置');
+              const { common } = useSettings();
+              common.answererWrappers = setting.answererWrappers;
+            }
           }
         }
       }

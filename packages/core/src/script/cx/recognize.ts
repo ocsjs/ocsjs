@@ -18,7 +18,7 @@ export async function mapRecognize() {
     logger('debug', '正在加载字典库...');
     // 预加载字体库
     const res = await request('https://cdn.ocsjs.com/resources/font/table.json', {
-      type: 'fetch',
+      type: 'GM_xmlhttpRequest',
       method: 'get',
       contentType: 'json'
     });

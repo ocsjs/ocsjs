@@ -123,12 +123,11 @@ export async function getRemoteSetting(port: number) {
   let count = 3;
   while (count > 0) {
     try {
-      const res = await request(`http://localhost:${port}/setting`, {
+      return await request(`http://localhost:${port}/setting`, {
         type: 'GM_xmlhttpRequest',
         method: 'get',
         contentType: 'json'
       });
-      return res;
     } catch { }
     count--;
   }

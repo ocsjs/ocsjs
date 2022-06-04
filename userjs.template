@@ -10,6 +10,8 @@
 // @icon					https://cdn.ocsjs.com/logo.ico
 // @connect					enncy.cn
 // @connect					icodef.com
+// @connect                 ocsjs.com
+// @connect                 localhost
 // @match					*://*.chaoxing.com/*
 // @match					*://*.edu.cn/*
 // @match					*://*.org.cn/*
