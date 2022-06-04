@@ -5,13 +5,13 @@ import { isInBrowser } from './common';
  * @param url 请求地址
  * @param opts 请求参数
  */
-export function request(url: string, opts: {
+export function request<T extends 'json' | 'text'>(url: string, opts: {
   type: 'fetch' | 'GM_xmlhttpRequest',
   method?: 'get' | 'post';
-  contentType?: 'json' | 'text',
+  contentType?: T,
   headers?: Record<string, string>;
   data?: Record<string, string>;
-}): Promise<string | object> {
+}): Promise<T extends 'json' ? Record<string, any> : string> {
   return new Promise((resolve, reject) => {
     try {
       /** 默认参数 */
@@ -38,7 +38,7 @@ export function request(url: string, opts: {
                     reject(error);
                   }
                 } else {
-                  resolve(response.responseText);
+                  resolve(response.responseText as any);
                 }
               } else {
                 reject(response.responseText);
@@ -56,6 +56,7 @@ export function request(url: string, opts: {
           if (contentType === 'json') {
             response.json().then(resolve).catch(reject);
           } else {
+            // @ts-ignore
             response.text().then(resolve).catch(reject);
           }
         }).catch((error) => {
