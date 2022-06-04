@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@ant-design/icons-vue": "6.0.1",
+    "@ocsjs/app": "workspace:^1.3.5",
     "@ocsjs/common": "workspace:^1.0.0",
     "@ocsjs/scripts": "workspace:^1.0.0",
     "ant-design-vue": "^2.2.8",

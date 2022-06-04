@@ -9,6 +9,7 @@
   ],
   "scripts": {},
   "dependencies": {
+    "@ocsjs/common": "workspace:^1.0.0",
     "@types/md5": "^2.3.2",
     "@types/node-fetch": "^2.6.1",
     "axios": "^0.25.0",

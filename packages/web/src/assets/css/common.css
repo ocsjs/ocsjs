@@ -15,7 +15,7 @@ html,
   font-family: Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: #2c3e50;
+  color: #504949;
   /** 禁用动画 */
 }
 #app * {
@@ -74,4 +74,11 @@ html,
 }
 .ant-notification .ant-notification-notice-description {
   overflow: auto;
+}
+code {
+  padding: 2px 4px !important;
+  font-size: 90% !important;
+  color: #323030;
+  background-color: #eaeaea;
+  border-radius: 4px;
 }

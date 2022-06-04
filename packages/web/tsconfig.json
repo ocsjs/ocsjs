@@ -13,7 +13,8 @@
       "esnext",
       "dom"
     ],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "outDir": "./lib"
   },
   "include": [
     "src/**/*.ts",
