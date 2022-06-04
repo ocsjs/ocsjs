@@ -13,9 +13,8 @@
         :key="index"
       >
         <li
-          :data-route-name="item.name"
-          :class="item.path === '/' ? token : ''"
-          @click="router.push(item.path), active($event)"
+          :class="item.path === currentRoute.path ? 'active' : ''"
+          @click="router.push(item.path) "
         >
           {{ item.meta?.title || '' }}
         </li>
@@ -121,7 +120,8 @@
 <script setup lang="ts">
 import { Modal } from 'ant-design-vue';
 import favicon from 'root/public/favicon.ico';
-import { h, ref, watch } from 'vue';
+import { h, nextTick, onMounted, ref, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import { config } from '../config';
 import { router, routes } from '../route';
 import { fetchRemoteNotify, formatDate } from '../utils';
@@ -131,19 +131,7 @@ import TitleLink from './TitleLink.vue';
 
 const { shell } = require('electron');
 
-const token = 'active';
-
-function active (event: MouseEvent) {
-  const el = document.elementFromPoint(event.x, event.y);
-
-  document.querySelectorAll('.title ul li').forEach((el) => {
-    el.classList.remove(token);
-  });
-
-  if (!el?.classList.contains(token)) {
-    el?.classList.add(token);
-  }
-}
+const currentRoute = useRouter().currentRoute;
 
 function relaunch () {
   remote.app.call('relaunch');
@@ -158,7 +146,7 @@ function allNotify () {
   fetchRemoteNotify(true);
 }
 
-function about () {
+async function about () {
   Modal.info({
     title: '关于',
     closable: true,
