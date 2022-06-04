@@ -1,4 +1,4 @@
-import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, StringUtils, waitForRecognize } from '../../core/utils';
+import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
@@ -6,6 +6,7 @@ import { ScriptSettings } from '../../scripts';
 import { message } from '../../components/utils';
 import CXAnalyses from './utils';
 import { useSettings, useContext, useStore } from '../../store';
+import { StringUtils } from '@ocsjs/common';
 
 /**
  * cx 任务学习
@@ -299,8 +300,10 @@ async function chapterTestTask(frame: HTMLIFrameElement) {
       /** 默认搜题方法构造器 */
       answerer: (elements, type, ctx) => {
         const title = StringUtils.nowrap(elements.title[0].innerText)
-          .replace(/(\d+)?【.*?题】/, '')
-          .replace(/（\d+.0分）/, '')
+          .trim()
+          .replace(/\(..题, .+?分\)/, '')
+          .replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
+          .replace(/^\d+\.?/, '')
           .trim();
         if (title) {
           return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });

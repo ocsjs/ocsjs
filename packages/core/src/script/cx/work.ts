@@ -1,9 +1,10 @@
 import { message } from '../../components/utils';
-import { domSearch, sleep, StringUtils, waitForRecognize } from '../../core/utils';
+import { domSearch, sleep, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
 import { useSettings, useContext } from '../../store';
+import { StringUtils } from '@ocsjs/common';
 
 export async function workOrExam(
   type: 'work' | 'exam' = 'work'
@@ -35,8 +36,12 @@ export async function workOrExam(
       /** 默认搜题方法构造器 */
       answerer: (elements, type, ctx) => {
         const title: string = StringUtils.nowrap(elements.title[0].innerText)
-          .replace(/\d+\. \(.*?(题|分)\)/, '')
+          .trim()
+          .replace(/\(..题, .+?分\)/, '')
+          .replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
+          .replace(/^\d+\.?/, '')
           .trim();
+
         if (title) {
           return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
         } else {
