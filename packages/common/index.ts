@@ -1,2 +1,2 @@
-export * from './src/utils';
+export * from './src/utils/index';
 export * from './src/api';

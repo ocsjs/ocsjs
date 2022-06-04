@@ -1,6 +1,6 @@
 import { Button, notification } from 'ant-design-vue';
 import { h, VNodeTypes } from 'vue';
-import { StringUtils } from './string';
+const { StringUtils } = require('@ocsjs/common');
 const { clipboard } = require('electron');
 
 interface NotifyOptions {
@@ -11,14 +11,14 @@ interface NotifyOptions {
   close?: boolean
 }
 
-export function notify (title: string, msg: any, key: string, options?: NotifyOptions) {
+export function notify(title: string, msg: any, key: string, options?: NotifyOptions) {
   if (options?.type === 'error') {
     console.error(title, msg);
   }
   notification[options?.type || 'info']({
     key,
     message: title,
-    description: h('span', { title: String(msg) }, StringUtils.maximum(String(msg), 100)),
+    description: h('span', { title: String(msg) }, StringUtils.max(String(msg), 100)),
     duration: options?.duration || (options?.type === 'error' ? 60 : 10),
     btn:
       options?.btn ||
@@ -32,7 +32,7 @@ export function notify (title: string, msg: any, key: string, options?: NotifyOp
 /**
  * 创建关闭按钮
  */
-function createCloseButton (key: string) {
+function createCloseButton(key: string) {
   return h(
     Button,
     {
@@ -49,7 +49,7 @@ function createCloseButton (key: string) {
 /**
  * 创建复制信息按钮
  */
-function cerateCopyButton (title: string, msg: any, key: string, options?: NotifyOptions) {
+function cerateCopyButton(title: string, msg: any, key: string, options?: NotifyOptions) {
   return h(
     Button,
     {

@@ -1,9 +1,10 @@
-import { domSearch, sleep, StringUtils, waitForRecognize } from '../../core/utils';
+import { domSearch, sleep, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
 import { message } from '../../components/utils';
 import { useSettings, useContext } from '../../store';
+import { StringUtils } from '@ocsjs/common';
 
 export async function workOrExam(type: 'work' | 'exam' = 'work') {
   const { period, timeout, retry, upload } = useSettings().zhs.work;

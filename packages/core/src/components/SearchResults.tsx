@@ -1,8 +1,8 @@
 import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
-import { StringUtils } from '../core/utils';
 import { WorkResult } from '../core/worker/interface';
 import { useContext } from '../store';
 import { Tooltip } from './Tooltip';
+import { StringUtils } from '@ocsjs/common';
 
 export const SearchResults = defineComponent({
   setup () {

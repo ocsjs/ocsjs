@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
-import { ValidBrowser } from './interface';
+import { ValidBrowser } from '../interface';
 
 // 获取可用浏览器路径
 export function getValidBrowsers(): ValidBrowser[] {
