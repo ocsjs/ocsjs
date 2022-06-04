@@ -188,7 +188,7 @@
 <script setup lang="ts">
 import { LaunchScriptsOptions } from '@ocsjs/scripts';
 import { message } from 'ant-design-vue';
-import { computed, onUnmounted, reactive, ref, toRefs, watch } from 'vue';
+import { computed, reactive, ref, toRefs, watch } from 'vue';
 import { Form, scriptForms } from '.';
 import { store, workspace } from '../../store';
 import { debounce } from '../../utils/index';
@@ -326,9 +326,6 @@ function openEditor () {
   childProcess.exec(`notepad "${file.value.path}"`);
 }
 
-onUnmounted(() => {
-  data.process.close();
-});
 </script>
 
 <style scope lang="less">
