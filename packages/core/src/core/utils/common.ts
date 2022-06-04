@@ -1,5 +1,6 @@
 import { useContext } from '../../store';
 import { DefineScript, GlobPattern, ScriptPanel, ScriptRoute } from '../define.script';
+import { request } from './request';
 
 export async function sleep(period: number): Promise<void> {
   return new Promise((resolve) => {
@@ -113,4 +114,22 @@ export function waitForRecognize(type: 'cx' | 'zhs') {
 export function useUnsafeWindow() {
   // eslint-disable-next-line no-undef
   return typeof unsafeWindow !== 'undefined' ? unsafeWindow : undefined;
+}
+
+/**
+ * 获取可用设置
+ */
+export async function getRemoteSetting(port: number) {
+  let count = 3;
+  while (count > 0) {
+    try {
+      const res = await request(`http://localhost:${port}/setting`, {
+        type: 'GM_xmlhttpRequest',
+        method: 'get',
+        contentType: 'json'
+      });
+      return res;
+    } catch { }
+    count--;
+  }
 }

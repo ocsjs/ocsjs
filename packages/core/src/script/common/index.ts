@@ -1,6 +1,7 @@
 import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
-import { onComplete, onInteractive, useUnsafeWindow } from '../../core/utils';
+import { getRemoteSetting, onComplete, onInteractive, useUnsafeWindow } from '../../core/utils';
+import { useSettings } from '../../store';
 
 const supports = ['*'];
 
@@ -57,6 +58,19 @@ export const CommonScript = defineScript({
           enableCopy();
           setTimeout(() => enableCopy(), 3000);
         });
+      }
+    }, {
+      name: '获取软件题库配置脚本',
+      url: supports,
+      async onload() {
+        const { common } = useSettings();
+        if (common.answererWrappers.length) {
+          const setting = await getRemoteSetting(15319);
+          if (setting?.answererWrappers) {
+            const { common } = useSettings();
+            common.answererWrappers = setting.answererWrappers;
+          }
+        }
       }
     }
   ],
