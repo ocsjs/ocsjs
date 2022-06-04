@@ -48,7 +48,7 @@
               <span
                 class="file-title"
                 :title="file.path"
-                v-html="StringUtils.maximum(file.title, 40)"
+                v-html="StringUtils.max(file.title, 40)"
               />
 
               <Icon
@@ -70,7 +70,7 @@
         <span
           class="file-title"
           :title="file.path"
-          v-html="StringUtils.maximum(file.title, 40)"
+          v-html="StringUtils.max(file.title, 40)"
         />
       </template>
     </template>
@@ -86,7 +86,7 @@ import { computed, toRefs } from 'vue';
 import { workspace } from '../../store';
 import { notify } from '../../utils/notify';
 import { remote } from '../../utils/remote';
-import { StringUtils } from '../../utils/string';
+
 import Icon from '../Icon.vue';
 import { FileNode, fs, fsExtra, loopFiles, path } from './File';
 import FileMenu from './FileMenu.vue';
@@ -95,6 +95,7 @@ interface FileTreeProps {
   files: FileNode[]
   draggable: boolean
 }
+const { StringUtils } = require('@ocsjs/common');
 const props = withDefaults(defineProps<FileTreeProps>(), {});
 const emits = defineEmits<{
   (e: 'select', ...args: any): void
@@ -275,9 +276,6 @@ function renameDir (dir: string, dest: string) {
     text-align: left;
     padding: 0px 0px 12px 0px;
 
-    .ocsicon {
-      transform: translate(0.5px, -5px);
-    }
   }
 
   .ant-tree-switcher {

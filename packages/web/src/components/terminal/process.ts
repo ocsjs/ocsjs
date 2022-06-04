@@ -18,8 +18,9 @@ export class Process {
   options?: LaunchScriptsOptions
   uid: string
   logsPath: string
+  screenshots: any[] = []
 
-  constructor (uid: string, logsPath: string) {
+  constructor(uid: string, logsPath: string) {
     this.uid = uid;
     this.logsPath = logsPath;
   }
@@ -32,6 +33,11 @@ export class Process {
     const shell = childProcess.fork(target, { stdio: ['ipc'] });
     shell.stdout?.on('data', (data: any) => xterm.write(data));
     shell.stderr?.on('data', (data: any) => remote.logger.call('error', String(data)));
+    shell.on('message', (message: any) => {
+      if (message.action === 'screenshot') {
+        this.screenshots = message.data;
+      }
+    });
     this.shell = shell;
   }
 
@@ -40,7 +46,7 @@ export class Process {
    * @param action 事件名
    * @param data 数据
    */
-  send (
+  send(
     action: 'launch' | 'close' | 'call',
     data: LaunchScriptsOptions | { name: keyof Page; args: any[] } | undefined
   ) {
@@ -57,15 +63,14 @@ export class Process {
   }
 
   /** 启动文件 */
-  launch (options: LaunchScriptsOptions) {
-    const opts = JSON.parse(JSON.stringify(options));
+  launch(options: LaunchScriptsOptions) {
+    const opts: LaunchScriptsOptions = JSON.parse(JSON.stringify(options));
 
     /** 解析默认字段 */
     opts.launchOptions.executablePath =
       opts.launchOptions.executablePath === 'default'
         ? store.script.launchOptions.executablePath
         : opts.launchOptions.executablePath;
-    opts.localStorage = opts.localStorage === 'default' ? store.script.localStorage : opts.localStorage;
 
     opts.userScripts = store.userScripts.filter(s => s.runAtAll || s.runAtFiles.includes(this.uid));
 
@@ -75,13 +80,13 @@ export class Process {
   }
 
   /** 关闭进程 */
-  close () {
+  close() {
     this.send('close', undefined);
     this.launched = false;
   }
 
   /** 显示当前的浏览器  */
-  bringToFront () {
+  bringToFront() {
     if (this.launched && this.options) {
       childProcess.exec(
         `"${this.options.launchOptions.executablePath}" --user-data-dir="${this.options.userDataDir}" "about:blank"`

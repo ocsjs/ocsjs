@@ -3,68 +3,74 @@
     <div class="file">
       <div class="form-header text-start border-bottom">
         <div class="file-title">
-          <span>
+          <a-space :size="12">
             {{ file.title }}
-          </span>
-          <a-space
-            class="actions"
-            :size="12"
-          >
             <a
               class="link"
               @click="closeEditor"
-            >关闭</a>
+            >关闭编辑</a>
             <a
               class="link"
               @click="openEditor"
-            >打开</a>
-            <Icon
-              title="设置"
-              type="icon-edit-square"
-              :style="{
-                color: data.activeKey === 'setting' ? '#1890ff' : ''
-              }"
-              @click="data.activeKey = 'setting'"
-            />
-            <Icon
-              title="源文件"
-              type="icon-file-text"
-              :style="{
-                color: data.activeKey === 'content' ? '#1890ff' : ''
-              }"
-              @click="data.activeKey = 'content'"
-            />
-
-            <Icon
-              title="控制台"
-              type="icon-codelibrary"
-              :style="{
-                color: data.activeKey === 'terminal' ? '#1890ff' : ''
-              }"
-              @click="data.activeKey = 'terminal'"
-            />
-            <Icon
-              :title="file.stat.running ? '关闭' : '运行'"
-              :type="file.stat.running ? 'icon-close-circle' : 'icon-play-circle'"
-              :style="{
-                color: file.stat.running ? '#f5222d' : '#1890ff'
-              }"
-              @click="submitData"
-            />
-
-            <template v-if="data.process.launched">
-              <Icon
-                type="icon-totop"
-                title="显示当前的浏览器"
-                @click="data.process.bringToFront()"
-              />
-            </template>
+            >打开文件</a>
           </a-space>
         </div>
+        <a-space
+          class="actions"
+          :size="24"
+        >
+          <Icon
+            title="设置"
+            type="icon-edit-square"
+            :style="{
+              color: data.activeKey === 'setting' ? '#1890ff' : ''
+            }"
+            @click="data.activeKey = 'setting'"
+          />
+          <Icon
+            title="源文件"
+            type="icon-file-text"
+            :style="{
+              color: data.activeKey === 'content' ? '#1890ff' : ''
+            }"
+            @click="data.activeKey = 'content'"
+          />
 
-        <div class="file-path info text-secondary">
-          {{ file.path }}
-        </div>
+          <Icon
+            title="控制台"
+            type="icon-codelibrary"
+            :style="{
+              color: data.activeKey === 'terminal' ? '#1890ff' : ''
+            }"
+            @click="data.activeKey = 'terminal'"
+          />
+
+          <Icon
+            title="实时图像"
+            type="icon-image"
+            :style="{
+              color: data.activeKey === 'screenshot' ? '#1890ff' : ''
+            }"
+            @click="data.activeKey = 'screenshot'"
+          />
+
+          <Icon
+            :title="file.stat.running ? '关闭' : '运行'"
+            :type="file.stat.running ? 'icon-close-circle' : 'icon-play-circle'"
+            :style="{
+              color: file.stat.running ? '#f5222d' : '#1890ff'
+            }"
+            @click="submitData"
+          />
+
+          <template v-if="data.process.launched">
+            <Icon
+              type="icon-totop"
+              title="显示当前的浏览器"
+              @click="data.process.bringToFront()"
+            />
+          </template>
+        </a-space>
       </div>
 
       <div class="form-container">
@@ -73,6 +79,11 @@
           class="h-100"
           lang="json"
           :code="data.content"
+        />
+        <ScreenShot
+          v-show="data.activeKey === 'screenshot'"
+          class="h-100"
+          :screenshots="data.process.screenshots"
         />
 
         <div
@@ -95,6 +106,7 @@
         <Card
           v-show="data.activeKey === 'setting'"
           title="启动设置"
+          class="p-3"
         >
           <div class="form">
             <label>加载本地脚本</label>
@@ -108,7 +120,7 @@
           </div>
 
           <div class="form">
-            <label>登录类型</label>
+            <label>启动类型</label>
             <a-select
               v-model:value="data.options.scripts[0].name"
               style="width: 100%"
@@ -199,8 +211,9 @@ import { ITerminal } from '../terminal';
 import { Process } from '../terminal/process';
 import Terminal from '../terminal/Terminal.vue';
 import { FileNode, fs, validFileContent } from './File';
+import ScreenShot from './ScreenShot.vue';
 
-const { scriptNames } = require('@ocsjs/scripts');
+const { scriptNames } = require('@ocsjs/scripts') as typeof import('@ocsjs/scripts');
 const childProcess = require('child_process') as typeof import('child_process');
 
 interface FormCreateProps {
@@ -220,7 +233,7 @@ if (typeof result === 'string') {
 }
 
 const data = reactive<{
-  activeKey: 'setting' | 'terminal' | 'content'
+  activeKey: 'setting' | 'terminal' | 'content' | 'screenshot'
   content: string
   options?: LaunchScriptsOptions
   error?: { message: string; line: number }
@@ -262,7 +275,7 @@ const dataForm = ref();
 const loginTypeForms = computed(() => {
   if (data.options) {
     const target = scriptForms[data.options.scripts[0].name] as Form<any>;
-    const keys = Reflect.ownKeys(target);
+    const keys = Reflect.ownKeys(target || {});
     return keys.map((key) => ({
       name: key,
       title: target[key].title,
@@ -277,6 +290,7 @@ const loginTypeForms = computed(() => {
 /** 登录脚本名更新时，重置options内容 */
 function onScriptChange () {
   if (data.options) {
+    // @ts-ignore
     data.options.scripts[0].options = {};
   }
 }
@@ -295,15 +309,16 @@ function submitData () {
 }
 
 /** 运行文件 */
-function run () {
+async function run () {
   if (data.options) {
     data.activeKey = 'terminal';
     file.value.stat.running = !file.value.stat.running;
 
     if (file.value.stat.running) {
       /** 如未初始化控制台面板，则先初始化 */
-      if (data.process.shell === undefined) data.process.init(data.xterm);
-      /**  初始化文件 */
+      if (data.process.shell === undefined) {
+        await data.process.init(data.xterm);
+      }
 
       /** 运行 */
       data.process.launch(data.options);
@@ -347,15 +362,14 @@ function openEditor () {
 
 .file {
   height: 100%;
-
   display: grid;
   grid-template-rows: min-content auto;
 }
 
 .form-header {
   background-color: white;
-  padding: 12px;
-  height: fit-content;
+  padding: 4px 12px;
+  height: 80px;
   overflow: auto;
 
   .info {
@@ -364,9 +378,9 @@ function openEditor () {
   }
 
   .file-title {
-    font-size: 24px;
+    font-size: 20px;
     font-weight: bold;
-    display: inline-flex;
+    display:  flex;
     white-space: nowrap;
     width: 100%;
 
@@ -379,21 +393,22 @@ function openEditor () {
     width: 100%;
     display: inline-flex;
     align-items: center;
-    justify-content: flex-end;
+    justify-content: flex-start;
 
     & * {
       font-size: 24px;
       cursor: pointer;
     }
+
   }
 }
 
 .form-container {
+  height: calc(100vh - 110px);
   overflow: auto;
 }
 
 .iterminal {
-  height: fit-content;
   background: #32302f;
   color: #ededed;
   text-align: left;
