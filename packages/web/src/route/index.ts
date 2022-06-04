@@ -1,4 +1,4 @@
-import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router';
+import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import { config } from '../config';
 
 /**
@@ -8,7 +8,7 @@ import { config } from '../config';
 export const routes: RouteRecordRaw[] = Reflect.ownKeys(config.routes).map((key) => Reflect.get(config.routes, key));
 
 export const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes
 });
 
