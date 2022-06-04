@@ -1,6 +1,6 @@
-import { OCSApi } from '@ocsjs/common';
-import { Browser, BrowserContext, BrowserType, chromium, LaunchOptions, Page, webkit } from 'playwright';
+import { BrowserContext, BrowserType, chromium, LaunchOptions, Page, webkit } from 'playwright';
 import { CX, ZHS } from '.';
+import { openLink } from './common';
 import { ScriptFunction, ScriptOptions } from './types';
 
 export { LaunchOptions };
@@ -17,12 +17,10 @@ export interface LaunchScriptsOptions {
   launchOptions: LaunchOptions
   /** 脚本列表 */
   scripts: Script[]
-  /** 是否等待脚本执行，否：直接返回 browser 和 page 对象 */
-  sync?: boolean
-  /** 是否初始化油猴脚本 */
+  /** 是否载入本地脚本 */
   init?: boolean
-  /** 注入到 localStorage.OCS 的变量 */
-  localStorage: any
+  /** 用户脚本列表 */
+  userScripts: { url: string }[]
 }
 
 export const scriptNames = [
@@ -54,13 +52,25 @@ process.on('uncaughtException', (e) => {
 /**
  * 运行脚本
  */
-export async function launchScripts({ userDataDir, launchOptions, scripts, sync = true, init }: LaunchScriptsOptions) {
+export async function launchScripts({
+  userDataDir,
+  launchOptions,
+  scripts,
+  init,
+  userScripts,
+  onLaunch,
+  onError
+}: LaunchScriptsOptions & {
+  onLaunch?: (browser: BrowserContext, page: Page) => void,
+  onError?: (msg: string) => void
+}) {
   let browser: BrowserContext;
   let target: BrowserType;
 
   /** 确定浏览器类型 */
   if (launchOptions.executablePath?.includes('Firefox')) {
-    throw new Error('暂不支持 firefox 浏览器，请切换其他浏览器重试。');
+    onError?.('暂不支持 firefox 浏览器，请切换其他浏览器重试。');
+    return;
   } else if (launchOptions.executablePath?.includes('Safari')) {
     target = webkit;
   } else {
@@ -74,34 +84,40 @@ export async function launchScripts({ userDataDir, launchOptions, scripts, sync 
       ...launchOptions
     });
   } else {
-    throw new Error('传入的数据文件夹为空');
+    onError?.('传入的数据文件夹为空');
+    return;
   }
   let [page] = browser.pages();
 
+  onLaunch?.(browser, page);
+
+  /** 载入本地脚本 */
   if (init) {
+    for (const userjs of userScripts) {
+      try {
+        if (!page.isClosed()) {
+          console.log('载入脚本: ' + userjs.url);
+          await initScript(userjs.url, page);
+        }
+      } catch (e) {
+        // @ts-ignore
+        onError?.('脚本载入失败，请手动更新，或者忽略。' + e.message);
+      }
+    }
+  }
+  /** 置顶当前页面 */
+  if (!page.isClosed()) await page.bringToFront();
+  /** 开始执行文件 */
+  for (const item of scripts) {
     try {
-      console.log('正在更新脚本...');
-      await initScript(browser);
-      console.log('脚本更新完毕');
-    } catch (e) {
-      console.log('自动更新脚本失败，请手动更新，或者忽略。', (e as any)?.message);
+      if (!page.isClosed()) {
+        page = await script(item.name, item.options)(page);
+      }
+    } catch (err) {
+      // @ts-ignore
+      onError?.(item.name + '失败, 请重试。' + err.message);
     }
   }
-
-  if (sync) {
-    for (const item of scripts) {
-      page = await script(item.name, item.options)(page);
-    }
-  } else {
-    run();
-    async function run() {
-      const item = scripts.shift();
-      if (item) page = await script(item.name, item.options)(page);
-      run();
-    }
-  }
-
-  await page.bringToFront();
 
   return {
     browser,
@@ -115,27 +131,23 @@ export function script<T extends keyof ScriptOptions>(name: T, options: ScriptOp
 }
 
 /**
- * 安装 ocs 脚本
+ * 安装/更新脚本
  *
  */
-async function initScript(browser: Browser | BrowserContext) {
+async function initScript(url: string, page: Page) {
   /** 获取最新资源信息 */
-  const infos = await OCSApi.getInfos();
 
-  const page = await browser.newPage();
-
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(3000);
 
   const [installPage] = await Promise.all([
     page.context().waitForEvent('page'),
     // @ts-ignore
-    page.evaluate((userjs: string) => window.location.replace(userjs), infos.resource.userjs)
+    page.evaluate((url: string) => window.location.replace(url), url)
   ]);
 
-  console.log('载入脚本', infos.resource.userjs);
-
-  await installPage.waitForTimeout(2000);
-  await installPage.click('.ask_action_buttons > input');
-  await page.close();
-  await installPage.close();
+  await installPage.waitForTimeout(3000);
+  await installPage.evaluate(() => {
+    const input = document.querySelector('input');
+    input?.click();
+  });
 }
