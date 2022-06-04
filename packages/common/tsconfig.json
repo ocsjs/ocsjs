@@ -8,6 +8,5 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "declaration": true
-  },
-  "compileOnSave": true
+  }
 }

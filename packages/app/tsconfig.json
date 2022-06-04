@@ -9,5 +9,15 @@
     "skipLibCheck": true,
     "outDir": "./lib",
     "declaration": true
-  }
+  },
+  "include": [
+    "**/*.ts",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "extensions",
+    "**/*.spec.ts",
+    "**/*.d.ts",
+  ]
 }

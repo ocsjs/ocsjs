@@ -1,13 +1,13 @@
 {
   "name": "@ocsjs/app",
-  "version": "1.3.5",
+  "version": "1.4.0",
   "description": "app package of ocs",
   "main": "./lib/index.js",
   "types": "./lib/types.d.ts",
   "scripts": {
     "dev": "tsc && chcp 65001 && electron .",
-    "pack": "electron-builder --config ./electron.builder.json --dir",
-    "dist": "electron-builder --config ./electron.builder.json"
+    "pack": "tsc && electron-builder --config ./electron.builder.json --dir",
+    "dist": "tsc && electron-builder --config ./electron.builder.json"
   },
   "devDependencies": {
     "@types/adm-zip": "^0.4.34",

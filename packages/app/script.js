@@ -2,8 +2,9 @@
 
 const { LoggerCore } = require('./lib/src/logger.core');
 const { ScriptWorker } = require('./lib/src/worker/index');
+const path = require('path');
 
-const worker = new ScriptWorker();
+const worker = new ScriptWorker(path.resolve('./resources/app/extensions/Tampermonkey'));
 
 worker.on('screenshot', (screenshots) => {
   process.send({ action: 'screenshot', data: screenshots });

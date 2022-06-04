@@ -10,7 +10,6 @@ import { globalListenerRegister } from './src/tasks/global.listener';
 import { task } from './src/utils';
 import { handleError } from './src/tasks/error.handler';
 import { updater } from './src/tasks/updater';
-import path from 'path';
 import { startupServer } from './src/tasks/startup.server';
 
 /** 获取单进程锁 */
@@ -40,7 +39,7 @@ function bootstrap() {
         task('注册app事件监听器', () => globalListenerRegister(window));
 
         if (app.isPackaged) {
-          await window.loadFile(path.resolve('./public/index.html'));
+          await window.loadFile('./public/index.html');
         } else {
           await window.loadURL('http://localhost:3000');
         }

@@ -31,7 +31,8 @@ export const store = reactive<AppStore & {
   win: {
     size: number
   },
-  userScripts: StoreUserScript[]
+  userScripts: StoreUserScript[],
+  expandedKeys: string[]
 }>(defaultsDeep(s.store, {
   name: 'ocs',
   version: '0.0.1',

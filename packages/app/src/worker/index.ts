@@ -1,7 +1,6 @@
 import { BrowserContext, Page } from 'playwright';
 import { launchScripts, LaunchScriptsOptions } from '@ocsjs/scripts';
 import EventEmitter from 'events';
-import path from 'path';
 import { Instance as Chalk } from 'chalk';
 import { LoggerCore } from '../logger.core';
 import { ScriptWorkerAction, ScriptWorkerActions } from './types';
@@ -16,15 +15,16 @@ export class ScriptWorker extends EventEmitter {
   page?: Page
   logger?: LoggerCore
   /** 拓展路径 */
-  extensionPath: string = path.resolve('./extensions/Tampermonkey')
+  extensionPath: string
   /**
    * 可关闭的页面
    * 在启动程序完成后会处理多余的可关闭页面
    */
   closeablePages: string[] = ['tampermonkey.net/index.php']
 
-  constructor() {
+  constructor(extensionPath: string) {
     super();
+    this.extensionPath = extensionPath;
     process.on('unhandledRejection', (e) => this.error('未处理的错误!', e));
     process.on('uncaughtException', (e) => this.error('未处理的错误!', e));
   }
@@ -40,6 +40,7 @@ export class ScriptWorker extends EventEmitter {
     enableLogger: true
   })
   async launch(options: LaunchScriptsOptions) {
+    this.debug('加载油猴：', this.extensionPath);
     /** 加载油猴 */
     options.launchOptions.args =
       [`--disable-extensions-except=${this.extensionPath}`, `--load-extension="${this.extensionPath}"`];
