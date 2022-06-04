@@ -97,7 +97,7 @@
           title="启动设置"
         >
           <div class="form">
-            <label>自动更新OCS脚本</label>
+            <label>加载本地脚本</label>
             <span class="w-100 text-start">
               <a-switch
                 v-model:checked="data.options.init"

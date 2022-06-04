@@ -67,8 +67,7 @@ export class Process {
         : opts.launchOptions.executablePath;
     opts.localStorage = opts.localStorage === 'default' ? store.script.localStorage : opts.localStorage;
 
-    // opts.localStorage.setting.answererWrappers = JSON.parse(opts.localStorage.setting.answererWrappers);
-    console.log('opts', opts);
+    opts.userScripts = store.userScripts.filter(s => s.runAtAll || s.runAtFiles.includes(this.uid));
 
     this.send('launch', opts);
     this.launched = true;

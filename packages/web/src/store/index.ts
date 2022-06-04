@@ -1,11 +1,14 @@
-import { LaunchOptions } from 'playwright';
+
 import { reactive, watch } from 'vue';
 import { fs, showFile } from '../components/file/File';
 import { Project } from '../components/project';
 import { remote } from '../utils/remote';
 import { FileNode } from './../components/file/File';
+import defaultsDeep from 'lodash/defaultsDeep';
+import { AppStore, UserScripts } from '@ocsjs/app';
+import { CommonUserScript } from '../types/user.script';
 
-const Store = require('electron-store');
+const Store = require('electron-store') as typeof import('electron-store');
 const { getValidBrowsers } = require('@ocsjs/common') as typeof import('@ocsjs/common');
 
 const s = new Store();
@@ -21,48 +24,53 @@ export const workspace = reactive<{
   opened: []
 });
 
-export const store = reactive({
-  name: s.get('name'),
-  version: s.get('version'),
-  // 工作路径
-  workspace: s.get('workspace'),
-  'config-path': s.get('config-path'),
-  'user-data-path': s.get('user-data-path'),
-  'exe-path': s.get('exe-path'),
-  'logs-path': s.get('logs-path'),
-  path: s.get('path'),
-  /** 开机自启 */
-  'auto-launch': s.get('auto-launch'),
-  /** 文件编辑 */
-  files: Array.from(s.get('files') || []),
+export type StoreUserScript = { info: CommonUserScript } & Omit<UserScripts, 'info'>
 
+export const store = reactive<AppStore & {
+  files: string[],
+  win: {
+    size: number
+  },
+  userScripts: StoreUserScript[]
+}>(defaultsDeep(s.store, {
+  name: 'ocs',
+  version: '0.0.1',
+  // 工作路径
+  workspace: '',
+  'config-path': '',
+  'user-data-path': '',
+  'exe-path': '',
+  'logs-path': '',
+  path: '',
+  /** 开机自启 */
+  'auto-launch': false,
+  /** 文件编辑 */
+  files: [],
   /** win setting */
   win: {
-    /** 窗口大小 */
-    size: s.get('win')?.size || 1.0
+    size: 1
   },
-  /** 服务器 */
-  server: {
-    port: s.get('server')?.port
-  },
-  /** 脚本默认设置 */
+  /** 用戶脚本 */
+  userScripts: [],
+  /** 启动浏览器脚本设置 */
   script: {
     /** 是否使用 --user-data-dir (false 为无痕浏览) */
-    userDataDir: s.get('script')?.userDataDir || false,
-    launchOptions:
-      s.get('script')?.launchOptions ||
-      ({
-        headless: false
-      } as LaunchOptions),
-    localStorage: s.get('script')?.localStorage || {
-      setting: {}
+    userDataDir: false,
+    launchOptions: {
+      headless: false
     }
   },
+  /** 浏览器脚本默认设置 */
+  setting: {
+    /** 题库配置 */
+    answererWrappers: []
+  },
+  alwaysOnTop: false,
   /** 列表展开的 key */
-  expandedKeys: s.get('expandedKeys') || [],
-  notify: s.get('notify') || [],
-  validBrowsers: (s.get('validBrowser') as ReturnType<typeof getValidBrowsers>) || getValidBrowsers()
-});
+  expandedKeys: [],
+  notify: [],
+  validBrowsers: getValidBrowsers()
+} as AppStore));
 
 watch(store, (newStore) => {
   s.store = JSON.parse(JSON.stringify(newStore));
