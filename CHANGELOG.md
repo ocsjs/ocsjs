@@ -1,3 +1,30 @@
+## [3.16.7](https://github.com/enncy/online-course-script/compare/3.16.0...3.16.7) (2022-06-04)
+
+
+### Bug Fixes
+
+* **app:** 修复软件标题栏重载时不自动切换的BUG ([25f45ce](https://github.com/enncy/online-course-script/commit/25f45ce643c3e30a32d2f9e89a425e7ec6e57d8b))
+* **app:** 修复软件运行途中删除文件会导致所有浏览器关闭的BUG ([45a2c22](https://github.com/enncy/online-course-script/commit/45a2c226ca1033f2ac9c95f3498772eb06856529))
+* **app:** 修改app加载文件以及油猴插件路径问题 ([cbf6930](https://github.com/enncy/online-course-script/commit/cbf69306236d0b91d822ea27345cae3e4579a1ab))
+* **app:** 优化 app remote 模块，修改成异步通信，修复同步通信导致的页面卡死问题。 ([9a81721](https://github.com/enncy/online-course-script/commit/9a817212ae1a57e88a8738425de8c51218bfeefa))
+* **core:** 删除超星在作业考试中题目多余内容导致的正确率下降 ([5ff27e5](https://github.com/enncy/online-course-script/commit/5ff27e5558500671d9cb30d96d1175be86e48dd1))
+* **core:** 修复超星音频任务不能播放的BUG ([2777c69](https://github.com/enncy/online-course-script/commit/2777c691322b8d511b56e44e08384ed15f29827e))
+* **core:** 修复跨域问题 ([8ad21bf](https://github.com/enncy/online-course-script/commit/8ad21bfcbd4130ab71a15813beabeec045223ef2))
+* **core:** 修改cdn地址 ([013e3ba](https://github.com/enncy/online-course-script/commit/013e3ba037b38b88a4728c4cbd478cd4e518953e))
+* **core:** 优化题库配置字段 ([d674f00](https://github.com/enncy/online-course-script/commit/d674f007c62c3882ad9426d8ee93c8360eef9347))
+
+
+### Features
+
+* **app:** 删除超星智慧树的其他登录，新增自定义链接进入。 ([5851511](https://github.com/enncy/online-course-script/commit/58515115728dfacfee83e1c67c3bb1efcb4ddb59))
+* **app:** 文件中新增图片预览一栏，定时更新页面图像，无需在多个浏览器中切换查看。 ([526dbd6](https://github.com/enncy/online-course-script/commit/526dbd63e7bfa57828d1950517644801021db91b))
+* **app:** 新增用户脚本，可自定义网络脚本添加到本地脚本，并自动载入本地脚本，极大拓展软件功能。 ([7926b35](https://github.com/enncy/online-course-script/commit/7926b354ffc9f14dc2404f45dd869da96495a7f2))
+* **app:** 修改app主进程从 commonjs 改成 ts ([3e29f82](https://github.com/enncy/online-course-script/commit/3e29f821cd1f5414c68ae0f944c512f8e94bdfb3))
+* **app:** 优化 script 工作线程，规范代码，修复人工错误导致的无限递归。 ([156b2f7](https://github.com/enncy/online-course-script/commit/156b2f71ed4d42fae620b89c179f3b86ebaf2064))
+* **core and app:** 新增软件服务端，使脚本可读取软件信息。 ([6f4ff54](https://github.com/enncy/online-course-script/commit/6f4ff54bb3a83fcb273a48ef41b5ba973d6d2f01))
+
+
+
 # [3.16.0](https://github.com/enncy/online-course-script/compare/3.15.0...3.16.0) (2022-05-31)
 
 
