@@ -1,10 +1,10 @@
-const { app } = require('electron');
-const { Logger } = require('../logger');
+import { app } from 'electron';
+import { Logger } from '../logger';
 
 /**
  * 处理错误
  */
-exports.handleError = function () {
+export function handleError() {
   const logger = Logger('error');
 
   app.on('render-process-gone', (e, c, details) => {
@@ -22,4 +22,4 @@ exports.handleError = function () {
   process.on('unhandledRejection', (e) => {
     logger.error('unhandledRejection', e);
   });
-};
+}

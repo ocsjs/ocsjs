@@ -1,15 +1,14 @@
-// @ts-check
 /** 异步任务 */
 
-const { default: axios } = require('axios');
-const { createWriteStream } = require('fs');
-const { finished } = require('stream/promises');
-const { Logger } = require('./logger');
+import axios from 'axios';
+import { createWriteStream } from 'fs';
+import { finished } from 'stream/promises';
+import { Logger } from './logger';
 
 const taskLogger = Logger('task');
 const logger = Logger('utils');
 
-exports.task = async function (name, func) {
+export async function task(name: string, func: any) {
   const time = Date.now();
   const res = await func();
   taskLogger.info(name, ' 耗时:', Date.now() - time);
@@ -18,12 +17,8 @@ exports.task = async function (name, func) {
 
 /**
  * 下载文件
- * @param {string} fileURL 文件路径
- * @param {string} outputURL 输出路径
- * @param {(rate,totalLength,chunkLength)=>void} rateHandler 速率监听器
- * @returns
  */
-exports.downloadFile = async function (fileURL, outputURL, rateHandler) {
+export async function downloadFile(fileURL: string, outputURL: string, rateHandler: any) {
   logger.info('downloadFile', fileURL, outputURL);
 
   const { data, headers } = await axios.get(fileURL, {
@@ -31,7 +26,7 @@ exports.downloadFile = async function (fileURL, outputURL, rateHandler) {
   });
   const totalLength = parseInt(headers['content-length']);
   let chunkLength = 0;
-  data.on('data', (chunk) => {
+  data.on('data', (chunk: any) => {
     chunkLength += String(chunk).length;
     const rate = ((chunkLength / totalLength) * 100).toFixed(2);
     rateHandler(rate, totalLength, chunkLength);

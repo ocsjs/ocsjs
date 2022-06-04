@@ -1,27 +1,27 @@
-// @ts-check
 
-const { app, dialog, clipboard } = require('electron');
-const semver = require('semver');
-const { Logger } = require('../logger');
-const AdmZip = require('adm-zip');
-const path = require('path');
-const { downloadFile } = require('../utils');
-const { OCSApi } = require('@ocsjs/common');
-const { writeFileSync, rmSync } = require('fs');
+import { app, dialog, clipboard, BrowserWindow } from 'electron';
+import { lt } from 'semver';
+import { Logger } from '../logger';
+import AdmZip from 'adm-zip';
+import { join } from 'path';
+import { downloadFile } from '../utils';
+import { OCSApi } from '@ocsjs/common';
+import { writeFileSync, rmSync } from 'fs';
 
-exports.updater = async function (win) {
+export async function updater(win: BrowserWindow) {
   const logger = Logger('updater');
   const infos = await OCSApi.getInfos();
 
   const versions = infos.versions || [];
 
-  const newVersion = versions.find((version) => semver.lt(app.getVersion(), version.tag));
+  const newVersion = versions.find((version) => lt(app.getVersion(), version.tag));
 
   logger.info('updater', { versions, newVersion });
 
   /** 自动更新 */
   if (newVersion) {
     const { url, tag, description } = newVersion;
+    // @ts-ignore
     const { response } = await dialog.showMessageBox(null, {
       title: 'OCS软件自动更新程序',
       message: [
@@ -34,7 +34,7 @@ exports.updater = async function (win) {
         '是否更新 ?'
       ].join('\n'),
       buttons: ['下次一定', '立即更新'],
-      icon: path.join(app.getAppPath(), './public/favicon.ico'),
+      icon: join(app.getAppPath(), './public/favicon.ico'),
       noLink: true,
       defaultId: 1
     });
@@ -42,11 +42,11 @@ exports.updater = async function (win) {
     if (response === 1) {
       const appPath = app.getAppPath();
       /** 日志路径 */
-      const logPath = path.join(appPath, `../update-${tag}.log`);
+      const logPath = join(appPath, `../update-${tag}.log`);
       /** 安装路径 */
-      const dest = path.join(appPath, `../app-${tag}.zip`);
+      const dest = join(appPath, `../app-${tag}.zip`);
       /** 解压路径 */
-      const unzipDest = path.join(appPath, './');
+      const unzipDest = join(appPath, './');
 
       /** 删除app */
       rmSync(unzipDest, { recursive: true, force: true });
@@ -57,18 +57,19 @@ exports.updater = async function (win) {
       logger.info('解压路径 : ' + unzipDest);
       try {
         /** 下载最新版本 */
-        await downloadFile(url, dest, (rate, totalLength, chunkLength) => {
+        await downloadFile(url, dest, (rate: any, totalLength: any, chunkLength: any) => {
           win?.webContents?.send('update', tag, rate, totalLength, chunkLength);
         });
 
         /** 解压缩 */
         const zip = new AdmZip(dest);
 
-        new Promise((resolve) => {
+        new Promise<void>((resolve) => {
           zip.extractAllTo(unzipDest, true);
           resolve();
         })
           .then(() => {
+            // @ts-ignore
             dialog.showMessageBox(null, {
               title: 'OCS更新程序',
               message: '即将重启软件...',
@@ -82,6 +83,7 @@ exports.updater = async function (win) {
           })
           .catch((err) => logger.error('更新失败', err));
       } catch (e) {
+        // @ts-ignore
         const { response } = await dialog.showMessageBox(null, {
           title: 'OCS更新程序',
           message: 'OCS更新失败:\n' + e,
@@ -97,4 +99,4 @@ exports.updater = async function (win) {
       }
     }
   }
-};
+}

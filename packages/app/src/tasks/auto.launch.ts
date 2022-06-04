@@ -1,8 +1,8 @@
-const { app } = require('electron');
-const Store = require('electron-store');
+import { app } from 'electron';
+import Store from 'electron-store';
 
 /** 配置自动启动 */
-function autoLaunch () {
+export function autoLaunch() {
   if (app.isPackaged) {
     const store = new Store();
     app.setLoginItemSettings({
@@ -10,5 +10,3 @@ function autoLaunch () {
     });
   }
 }
-
-exports.autoLaunch = autoLaunch;
