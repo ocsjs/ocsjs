@@ -27,9 +27,8 @@ export class Process {
   /**
    * 使用 child_process 运行 ocs 命令
    */
-  init (xterm: ITerminal) {
-    const target = path.join(remote.app.call('getAppPath'), './script.js');
-
+  async init(xterm: ITerminal) {
+    const target = path.join(await remote.app.call('getAppPath'), './script.js');
     const shell = childProcess.fork(target, { stdio: ['ipc'] });
     shell.stdout?.on('data', (data: any) => xterm.write(data));
     shell.stderr?.on('data', (data: any) => remote.logger.call('error', String(data)));

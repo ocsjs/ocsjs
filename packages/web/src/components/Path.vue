@@ -40,9 +40,9 @@ const { shell } = require('electron');
 
 const realPath = ref(store.get(name.value) ? path.resolve(store.get(name.value)) : '无');
 
-function change (name: string) {
+async function change (name: string) {
   if (setting.value) {
-    const res = remote.dialog.call('showOpenDialogSync', {
+    const res = await remote.dialog.call('showOpenDialogSync', {
       properties: ['openDirectory'],
       defaultPath: realPath.value
     });

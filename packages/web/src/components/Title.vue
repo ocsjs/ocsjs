@@ -150,8 +150,8 @@ function relaunch () {
   remote.app.call('quit');
 }
 
-function openLog () {
-  shell.openPath(path.join(remote.app.call('getPath', 'logs'), formatDate()));
+async function openLog () {
+  shell.openPath(path.join(await remote.app.call('getPath', 'logs'), formatDate()));
 }
 
 function allNotify () {
@@ -164,7 +164,7 @@ function about () {
     closable: true,
     maskClosable: true,
     content: h('ul', [
-      h('li', '软件版本 : ' + remote.app.call('getVersion')),
+      h('li', '软件版本 : ' + await remote.app.call('getVersion')),
       h('li', [
         h('span', '版本详情 : '),
         h(
@@ -179,8 +179,13 @@ function about () {
     ])
   });
 }
+const max = ref<boolean>(false);
 
-const max = ref<boolean>(remote.win.call('isMaximized'));
+onMounted(() => {
+  nextTick(async() => {
+    max.value = await remote.win.call('isMaximized');
+  });
+});
 
 watch(max, () => {
   if (max.value) {
