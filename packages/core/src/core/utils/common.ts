@@ -120,15 +120,16 @@ export function useUnsafeWindow() {
  * 获取可用设置
  */
 export async function getRemoteSetting(port: number) {
-  let count = 3;
-  while (count > 0) {
+  for (let count = 3; count > 0; count--) {
     try {
       return await request(`http://localhost:${port}/setting`, {
         type: 'GM_xmlhttpRequest',
         method: 'get',
         contentType: 'json'
       });
-    } catch { }
-    count--;
+    } catch (err) {
+      console.log('获取本地题库配置失败，等待下一次重试。', err);
+    }
+    await sleep(60 * 1000);
   }
 }
