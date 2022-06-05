@@ -18,9 +18,6 @@ const bannerContent = `
 export default defineConfig({
 
   build: {
-    rollupOptions: {
-      external: '@ocsjs/common'
-    },
     /** 取消css代码分离 */
     cssCodeSplit: false,
     /** 输出路径 */

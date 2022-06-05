@@ -1,11 +1,6 @@
 import { defineComponent, PropType, toRefs } from 'vue';
 import { useContext } from '../store';
-
-export interface AlertType {
-  key: any;
-  type: 'info' | 'success' | 'warn' | 'error';
-  text: string
-}
+import { AlertType } from './types';
 
 export const Alert = defineComponent({
   props: {

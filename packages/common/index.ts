@@ -1,2 +1,2 @@
-export * from './src/utils/index';
-export * from './src/api';
+export { OCSApi } from './src/api';
+export { getValidBrowsers, StringUtils } from './src/utils';

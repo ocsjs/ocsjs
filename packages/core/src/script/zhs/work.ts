@@ -4,7 +4,7 @@ import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.ha
 import { logger } from '../../logger';
 import { message } from '../../components/utils';
 import { useSettings, useContext } from '../../store';
-import { StringUtils } from '@ocsjs/common';
+import { StringUtils } from '@ocsjs/common/src/utils/string';
 
 export async function workOrExam(type: 'work' | 'exam' = 'work') {
   const { period, timeout, retry, upload } = useSettings().zhs.work;

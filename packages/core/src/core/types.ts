@@ -1,4 +1,5 @@
-import { AlertType } from '../components/alert';
+
+import { AlertType } from '../components/types';
 import { ScriptSettings } from '../scripts';
 import { StartOptions } from '../start';
 import { WorkResult } from './worker/interface';

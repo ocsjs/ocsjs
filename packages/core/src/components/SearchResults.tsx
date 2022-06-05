@@ -2,7 +2,7 @@ import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
 import { WorkResult } from '../core/worker/interface';
 import { useContext } from '../store';
 import { Tooltip } from './Tooltip';
-import { StringUtils } from '@ocsjs/common';
+import { StringUtils } from '@ocsjs/common/src/utils/string';
 
 export const SearchResults = defineComponent({
   setup () {

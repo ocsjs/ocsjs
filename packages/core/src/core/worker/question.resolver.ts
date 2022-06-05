@@ -1,8 +1,7 @@
 import { answerSimilar, clearString, removeRedundant } from '../utils';
 import { QuestionResolver, WorkContext } from './interface';
 import { isPlainAnswer, splitAnswer } from './utils';
-import { StringUtils } from '@ocsjs/common';
-
+import { StringUtils } from '@ocsjs/common/src/utils/string';
 /** 默认答案题目处理器 */
 export function defaultQuestionResolve<E>(
   ctx: WorkContext<E>

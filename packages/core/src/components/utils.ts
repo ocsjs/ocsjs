@@ -1,6 +1,6 @@
 
 import { useContext } from '../store';
-import { AlertType } from './alert';
+import { AlertType } from './types';
 
 export function message(type: AlertType['type'], text: string) {
   const { common } = useContext();

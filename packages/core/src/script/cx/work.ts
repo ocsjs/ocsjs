@@ -4,7 +4,7 @@ import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
 import { useSettings, useContext } from '../../store';
-import { StringUtils } from '@ocsjs/common';
+import { StringUtils } from '@ocsjs/common/src/utils/string';
 
 export async function workOrExam(
   type: 'work' | 'exam' = 'work'

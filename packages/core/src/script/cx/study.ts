@@ -6,7 +6,7 @@ import { ScriptSettings } from '../../scripts';
 import { message } from '../../components/utils';
 import CXAnalyses from './utils';
 import { useSettings, useContext, useStore } from '../../store';
-import { StringUtils } from '@ocsjs/common';
+import { StringUtils } from '@ocsjs/common/src/utils/string';
 
 /**
  * cx 任务学习
