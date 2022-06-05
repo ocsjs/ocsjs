@@ -229,9 +229,17 @@ export const CXScript = defineScript({
     {
       name: '直播回放脚本',
       url: '**zhibo.chaoxing.com**',
-      onload() {
+      async onload() {
+        /** 移除页面输出 */
+        // @ts-ignore
+        useUnsafeWindow().console.info = () => { };
+        // @ts-ignore
+        useUnsafeWindow().console.log = () => { };
+
+        await sleep(5000);
         const video = document.querySelector('video');
         if (video) {
+          video.play();
           setLive(video);
           // eslint-disable-next-line no-undef
           GM_addValueChangeListener('store', (_, __, newValue) => {
@@ -240,6 +248,7 @@ export const CXScript = defineScript({
           });
         }
 
+        /** 设置直播 */
         function setLive(video: HTMLVideoElement) {
           const settings = useSettings().cx.live;
           video.volume = settings.volume;
@@ -249,9 +258,6 @@ export const CXScript = defineScript({
             bar.style.opacity = settings.showProgress ? '1' : '0';
           }
         }
-
-        console.info = () => { };
-        console.log = () => { };
       }
     }
   ],
@@ -268,7 +274,7 @@ export const CXScript = defineScript({
       el: () => createNote('提示您:', '请点击任意的课程进入。')
     },
     {
-      name: '直播小助手',
+      name: '直播回放小助手',
       url: '**zhibo.chaoxing.com**',
       el: () => createNote('提示您:', '进入直播设置调整倍速及音量'),
       children: [
