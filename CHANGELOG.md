@@ -1,3 +1,16 @@
+## [3.16.11](https://github.com/enncy/online-course-script/compare/3.16.7...3.16.11) (2022-06-05)
+
+
+### Bug Fixes
+
+* **core:** 持续优化超星直播回放脚本 ([1d3b399](https://github.com/enncy/online-course-script/commit/1d3b399e790616cfade8aed6e3d81dcc2402da5d))
+* **core:** 修复 StringUtils 导入问题 ([50b83dd](https://github.com/enncy/online-course-script/commit/50b83dd3942cf6801da203b168c55ae70d63c3be))
+* **core:** 优化超星直播回放 ([0727bea](https://github.com/enncy/online-course-script/commit/0727bea2c3d9c549770cfa9f5f305afdea91825f))
+* **core:** 优化获取远程本地软件题库配置功能 ([09986b5](https://github.com/enncy/online-course-script/commit/09986b5acaa066c2b259a0e1b69f38ece2898b0c))
+* **root:** 修复 release.sh 打包文件错误时仍然执行的BUG ([6f14bd8](https://github.com/enncy/online-course-script/commit/6f14bd854954f1415705d4086d41eb852d1854d0))
+
+
+
 ## [3.16.7](https://github.com/enncy/online-course-script/compare/3.16.0...3.16.7) (2022-06-04)
 
 
