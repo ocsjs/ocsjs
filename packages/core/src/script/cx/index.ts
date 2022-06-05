@@ -8,7 +8,6 @@ import { domSearch, sleep, useUnsafeWindow } from '../../core/utils';
 import { logger } from '../../logger';
 import { initStore, setStore, useSettings } from '../../store';
 import { LiveSettingPanel } from '../../components/cx/LiveSettingPanel';
-
 import { rateHack } from './rate.hack';
 import { mapRecognize, ocrRecognize } from './recognize';
 import { study } from './study';
@@ -233,17 +232,22 @@ export const CXScript = defineScript({
       onload() {
         const video = document.querySelector('video');
         if (video) {
+          setLive(video);
           // eslint-disable-next-line no-undef
           GM_addValueChangeListener('store', (_, __, newValue) => {
             setStore(newValue);
-            const settings = useSettings().cx.live;
-            video.volume = settings.volume;
-            video.playbackRate = settings.playbackRate;
-            const { bar } = domSearch({ bar: '.vjs-control-bar' });
-            if (bar) {
-              bar.style.opacity = settings.showProgress ? '1' : '0';
-            }
+            setLive(video);
           });
+        }
+
+        function setLive(video: HTMLVideoElement) {
+          const settings = useSettings().cx.live;
+          video.volume = settings.volume;
+          video.playbackRate = settings.playbackRate;
+          const { bar } = domSearch({ bar: '.vjs-control-bar' });
+          if (bar) {
+            bar.style.opacity = settings.showProgress ? '1' : '0';
+          }
         }
 
         console.info = () => { };
