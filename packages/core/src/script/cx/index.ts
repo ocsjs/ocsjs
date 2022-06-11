@@ -6,13 +6,15 @@ import { message } from '../../components/utils';
 import { defineScript } from '../../core/define.script';
 import { domSearch, sleep, useUnsafeWindow } from '../../core/utils';
 import { logger } from '../../logger';
-import { initStore, setStore, useSettings } from '../../store';
+import { useContext, useSettings } from '../../store';
 import { LiveSettingPanel } from '../../components/cx/LiveSettingPanel';
 import { rateHack } from './rate.hack';
 import { mapRecognize, ocrRecognize } from './recognize';
-import { study } from './study';
+import { study, switchPlayLine } from './study';
 import CXAnalyses from './utils';
 import { workOrExam } from './work';
+import { watch } from 'vue';
+import { CXSetting } from '../../scripts';
 
 /** 需切换版本的 url 页面 */
 const updateURLs = [
@@ -27,15 +29,6 @@ const updateURLs = [
 export const CXScript = defineScript({
   name: '超星学习通',
   routes: [
-    {
-      name: 'OCS注入脚本',
-      url: updateURLs.concat(['**/mycourse/studentstudy**']),
-      priority: 999,
-      onstart() {
-        // @ts-ignore
-        useUnsafeWindow().top.OCS = window.OCS;
-      }
-    },
     {
       name: '版本切换脚本',
       url: updateURLs,
@@ -110,11 +103,37 @@ export const CXScript = defineScript({
       name: '学习脚本',
       url: '**/knowledge/cards**',
       async onload() {
-        // 注入OCS
-        // @ts-ignore
-        initStore(useUnsafeWindow()?.top.OCS.getStore());
         logger('info', '开始学习');
         await sleep(5000);
+
+        const settings = useSettings().cx.study;
+
+        /** 监听跨域顶层的设置修改 */
+        watch([() => settings.playbackRate, () => settings.volume], () => {
+          // 实时更新媒体设置
+          const ctx = useContext();
+          if (ctx.common.currentMedia) {
+            // 倍速设置
+            ctx.common.currentMedia.playbackRate = settings.playbackRate;
+            // 音量设置
+            ctx.common.currentMedia.volume = settings.volume;
+            if (ctx.cx.videojs && settings.line) {
+              // 切换线路
+              switchPlayLine(settings, ctx.cx.videojs, ctx.common.currentMedia, settings.line);
+            }
+          }
+        });
+
+        /** 监听跨域顶层的设置修改 */
+        watch([() => settings.line], () => {
+          // 实时更新媒体设置
+          const ctx = useContext();
+          if (ctx.common.currentMedia && ctx.cx.videojs && settings.line) {
+            // 切换线路
+            switchPlayLine(settings, ctx.cx.videojs, ctx.common.currentMedia, settings.line);
+          }
+        });
+
         await study();
       }
     },
@@ -238,19 +257,18 @@ export const CXScript = defineScript({
 
         await sleep(5000);
         const video = document.querySelector('video');
+        const settings = useSettings().cx.live;
+
         if (video) {
           video.play();
-          setLive(video);
-          // eslint-disable-next-line no-undef
-          GM_addValueChangeListener('store', (_, __, newValue) => {
-            setStore(newValue);
-            setLive(video);
+          setLive(video, settings);
+          watch(settings, () => {
+            setLive(video, settings);
           });
         }
 
         /** 设置直播 */
-        function setLive(video: HTMLVideoElement) {
-          const settings = useSettings().cx.live;
+        function setLive(video: HTMLVideoElement, settings: CXSetting['live']) {
           video.volume = settings.volume;
           video.playbackRate = settings.playbackRate;
           const { bar } = domSearch({ bar: '.vjs-control-bar' });
@@ -281,7 +299,8 @@ export const CXScript = defineScript({
         {
           name: '直播设置',
           el: () => LiveSettingPanel
-        }
+        },
+        createTerminalPanel()
       ]
     },
     {

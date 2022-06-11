@@ -46,7 +46,7 @@ export function getCurrentRoutes(scripts: DefineScript[]): ScriptRoute[] {
  * 当前面板
  */
 export function getCurrentPanels(scripts: DefineScript[]) {
-  let panels: Pick<ScriptPanel, 'name' | 'el' | 'default' | 'priority'>[] = [];
+  let panels: Pick<ScriptPanel, 'name' | 'el' | 'default' | 'priority' | 'hide'>[] = [];
   for (const script of scripts) {
     for (const panel of script.panels || []) {
       if (urlMatch(panel.url)) {
@@ -132,4 +132,15 @@ export async function getRemoteSetting(port: number) {
     }
     await sleep(60 * 1000);
   }
+}
+
+/**
+ * 使元素变成纯文本对象，（跨域时对象上下文会被销毁）
+ */
+export function elementToRawObject(el: HTMLElement) {
+  return {
+    innerText: el.innerText,
+    innerHTML: el.innerHTML,
+    textContent: el.textContent
+  } as any;
 }

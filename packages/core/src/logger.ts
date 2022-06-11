@@ -1,3 +1,4 @@
+import { isInBrowser } from './core/utils';
 import { useStore } from './store';
 
 export function loggerPrefix(level: 'info' | 'error' | 'warn' | 'debug') {
@@ -25,7 +26,7 @@ export function logger(level: 'info' | 'error' | 'warn' | 'debug', ...msg: any[]
   if (level === 'error') {
     console.error(...createLog(level, msg));
   }
-  if (document) {
+  if (isInBrowser()) {
     const extra =
       level === 'info'
         ? '信息'
@@ -40,13 +41,13 @@ export function logger(level: 'info' | 'error' | 'warn' | 'debug', ...msg: any[]
       const type = typeof s;
       return type === 'function' ? '[Function]' : type === 'object' ? '[Object]' : type === 'undefined' ? '无' : s;
     });
-    const logs = useStore('localStorage').logs;
+    const local = useStore('localStorage');
 
-    if (logs.length > 50) {
-      logs.shift();
+    if (local.logs.length > 50) {
+      local.logs.shift();
     }
 
-    logs.push({
+    local.logs.push({
       time: Date.now(),
       level,
       extra,

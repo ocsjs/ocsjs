@@ -1,9 +1,9 @@
 import { message } from '../../components/utils';
-import { domSearch, sleep, waitForRecognize } from '../../core/utils';
+import { domSearch, elementToRawObject, sleep, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
-import { useSettings, useContext } from '../../store';
+import { useSettings, useStore } from '../../store';
 import { StringUtils } from '@ocsjs/common/src/utils/string';
 
 export async function workOrExam(
@@ -18,9 +18,9 @@ export async function workOrExam(
   } else if (answererWrappers.length === 0) {
     logger('warn', '题库配置为空，请设置。');
   } else {
-    const { common } = useContext();
+    const local = useStore('localStorage');
     /** 清空内容 */
-    common.workResults = [];
+    local.workResults = [];
 
     // 等待文字识别
     await waitForRecognize('cx');
@@ -91,10 +91,14 @@ export async function workOrExam(
           }
         }
       },
+      onElementSearched(elements) {
+        // 处理题目跨域丢失问题
+        elements.title = elements.title.map(elementToRawObject);
+      },
       /** 完成答题后 */
       onResult: (res) => {
         if (res.ctx) {
-          common.workResults.push(res);
+          local.workResults.push(res);
         }
         console.log(res);
         logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');

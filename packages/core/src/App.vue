@@ -6,11 +6,11 @@
   >
     <div class="alert-container">
       <template
-        v-for="(item,index) of ctx.common.alerts"
+        v-for="(item,index) of local.alerts"
         :key="index"
       >
         <Alert
-          :style="{opacity: 1 - (ctx.common.alerts.length - 1 - index) * (1/ctx.common.alerts.length)}"
+          :style="{opacity: 1 - (local.alerts.length - 1 - index) * (1/local.alerts.length)}"
           :type="item.type"
           :text="item.text"
           :index="index"
@@ -39,7 +39,7 @@
         class="ocs-panel-header draggable"
       >
         <template
-          v-for="(item, index) in currentPanels"
+          v-for="(item, index) in currentPanels.filter(p=>p.hide !== true)"
           :key="index"
         >
           <div
@@ -59,7 +59,7 @@
         class="ocs-panel-container"
       >
         <template
-          v-for="(item, index) in currentPanels"
+          v-for="(item, index) in currentPanels.filter(p=>p.hide !== true)"
           :key="index"
         >
           <div
@@ -88,6 +88,7 @@
 
 <script setup lang="ts">
 import { computed, Ref } from '@vue/reactivity';
+import debounce from 'lodash/debounce';
 import { nextTick, onMounted, ref, watch } from 'vue';
 import { Alert } from './components/alert';
 import { Tooltip } from './components/Tooltip';
@@ -120,7 +121,8 @@ const currentPanels = computed(() => {
 /**
  * 当前面板的 key
  */
-const activeKey = ref(currentPanels.value[0]?.name);
+const activeKey = ref(currentPanels.value
+  .find((p) => p.name === local.activeKey)?.name || currentPanels.value[0]?.name);
 /**
  * 元素
  */
@@ -140,6 +142,10 @@ watch(currentPanels, () => {
   }
 });
 
+watch(activeKey, () => {
+  local.activeKey = activeKey.value;
+});
+
 watch(hide, () => {
   local.hide = hide.value;
   nextTick(() => {
@@ -148,6 +154,9 @@ watch(hide, () => {
 });
 
 onMounted(() => {
+  // 清理提醒
+  local.alerts = [];
+
   nextTick(() => {
     listenResetEvent();
     enablePanelDrag();
@@ -178,6 +187,11 @@ onMounted(() => {
   });
 });
 
+const onMove = debounce(function(x: number, y: number) {
+  local.position.x = x;
+  local.position.y = y;
+}, 100);
+
 /**
  * 启用面板拖拽
  */
@@ -191,11 +205,6 @@ function enablePanelDrag() {
       dragElement(panelFooter.value, panel.value, onMove);
     }
   }
-}
-
-function onMove(x: number, y: number) {
-  local.position.x = x;
-  local.position.y = y;
 }
 
 /**

@@ -2,6 +2,7 @@ import { createNote } from '../../components';
 import { defineScript } from '../../core/define.script';
 import { getRemoteSetting, onComplete, onInteractive, useUnsafeWindow } from '../../core/utils';
 import { logger } from '../../logger';
+import { definedScripts } from '../../main';
 import { useSettings } from '../../store';
 
 const supports = ['*'];
@@ -65,13 +66,13 @@ export const CommonScript = defineScript({
       url: supports,
       async onload() {
         if (top === self) {
-          const { common } = useSettings();
-          if (common.answererWrappers.length === 0) {
+          const settings = useSettings();
+          if (settings.common.answererWrappers.length === 0) {
             const setting = await getRemoteSetting(15319);
             if (setting?.answererWrappers) {
               logger('debug', '成功读取本地题库配置');
-              const { common } = useSettings();
-              common.answererWrappers = setting.answererWrappers;
+              const settings = useSettings();
+              settings.common.answererWrappers = setting.answererWrappers;
             }
           }
         }
@@ -86,9 +87,11 @@ export const CommonScript = defineScript({
       url: supports,
       el: () =>
         createNote(
-          '提示： 手动点击进入视频，作业，考试页面，即可自动运行',
-          '注意！ 请将浏览器页面保持最大化，或者缩小，但是不能最小化，可能导致视频播放错误！',
-          '拖动上方标题栏可以进行拖拽'
+          '⭐ 脚本列表：' + definedScripts.map(s => s.name).join(', '),
+          '📢 手动点击进入视频，作业，考试页面，即可自动运行',
+          '📢 如果进入后未显示任何设置或者未运行，则您当前的页面或者网课没有脚本哦。',
+          '⚠️ 请将浏览器页面保持最大化，或者缩小窗口，不能最小化，可能导致视频，ppt等任务不能运行！',
+          '💡 拖动上方标题栏可以进行拖拽哦!'
         )
     }
   ]

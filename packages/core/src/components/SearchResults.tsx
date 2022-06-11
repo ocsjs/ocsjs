@@ -1,15 +1,14 @@
 import { computed, defineComponent, onMounted, Ref, ref } from 'vue';
 import { WorkResult } from '../core/worker/interface';
-import { useContext } from '../store';
+import { useStore } from '../store';
 import { Tooltip } from './Tooltip';
 import { StringUtils } from '@ocsjs/common/src/utils/string';
 
 export const SearchResults = defineComponent({
   setup () {
-    const { common } = useContext();
+    const local = useStore('localStorage');
     // 判断是否有搜索结果
-    const validResult = computed(() => common.workResults);
-    const hasResult = computed(() => validResult.value.length > 0);
+    const hasResult = computed(() => local.workResults.length > 0);
     // 当前搜索对象
     const currentResult: Ref<WorkResult<any> | undefined> = ref(undefined);
     //  当前展示的结果
@@ -22,9 +21,6 @@ export const SearchResults = defineComponent({
     );
 
     onMounted(() => {
-      // 清空搜索结果
-      common.workResults = [];
-
       // 监听页面点击事件，然后关闭搜索悬浮窗
       document.addEventListener('click', () => {
         currentResult.value = undefined;
@@ -127,7 +123,7 @@ export const SearchResults = defineComponent({
               <hr />
 
               <div>
-                {validResult.value.map((res, i) => {
+                {local.workResults.map((res, i) => {
                   const title = res.ctx?.elements.title?.[0];
 
                   const isCopy = ref(false);

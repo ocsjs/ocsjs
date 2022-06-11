@@ -8,7 +8,6 @@ import { WorkResult } from './worker/interface';
  * OCS 本地存储类型
  */
 export interface OCSLocalStorage {
-  [x: string]: any
   /** 网课平台类型 */
   platform?: string
   /** 本地设置 */
@@ -17,6 +16,8 @@ export interface OCSLocalStorage {
   hide: boolean
   /** 面板位置 */
   position: { x: number; y: number }
+  /** 面板当前的页面 */
+  activeKey: string
   /** 日志存储 */
   logs: {
     time: number
@@ -24,7 +25,10 @@ export interface OCSLocalStorage {
     extra: string
     text: string
   }[]
-
+  /** 消息 */
+  alerts: AlertType[]
+  /** 搜索结果存储 */
+  workResults: WorkResult<any>[]
 }
 
 export interface OCSStore {
@@ -36,12 +40,8 @@ export interface OCSStore {
     common: {
       /** 当前视频 */
       currentMedia: HTMLMediaElement | null
-      /** 搜索结果存储 */
-      workResults: WorkResult<any>[]
       /** 启动参数 */
       startOptions: StartOptions | undefined
-      /** 消息 */
-      alerts: AlertType[]
     },
     /**
    * 各脚本预留存储字段

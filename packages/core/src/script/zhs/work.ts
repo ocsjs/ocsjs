@@ -1,9 +1,9 @@
-import { domSearch, sleep, waitForRecognize } from '../../core/utils';
+import { domSearch, elementToRawObject, sleep, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
 import { message } from '../../components/utils';
-import { useSettings, useContext } from '../../store';
+import { useSettings, useStore } from '../../store';
 import { StringUtils } from '@ocsjs/common/src/utils/string';
 
 export async function workOrExam(type: 'work' | 'exam' = 'work') {
@@ -19,9 +19,9 @@ export async function workOrExam(type: 'work' | 'exam' = 'work') {
     /** 等待文字识别中 */
     waitForRecognize('zhs');
 
-    const { common } = useContext();
+    const local = useStore('localStorage');
     /** 清空答案 */
-    common.workResults = [];
+    local.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -53,10 +53,14 @@ export async function workOrExam(type: 'work' | 'exam' = 'work') {
           }
         }
       },
+      onElementSearched(elements) {
+        // 处理题目跨域丢失问题
+        elements.title = elements.title.map(elementToRawObject);
+      },
       /** 完成答题后 */
       onResult: (res) => {
         if (res.ctx) {
-          common.workResults.push(res);
+          local.workResults.push(res);
         }
         console.log(res);
         logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
@@ -124,7 +128,9 @@ export async function creditWork() {
     logger('warn', '题库配置为空，请设置。');
   } else {
     logger('info', '即将开始做题...');
-    const { common } = useContext();
+    const local = useStore('localStorage');
+    /** 清空答案 */
+    local.workResults = [];
 
     const worker = new OCSWorker({
       root: '.questionBox',
@@ -158,6 +164,10 @@ export async function creditWork() {
           }
         }
       },
+      onElementSearched(elements) {
+        // 处理题目跨域丢失问题
+        elements.title = elements.title.map(elementToRawObject);
+      },
       onResult: (res) => {
         if (res.ctx) {
           // 浅拷贝并且只保留 innerText ， 防止元素对象变化导致显示的题目全部是一个同样的值。
@@ -169,7 +179,7 @@ export async function creditWork() {
             };
           }
 
-          common.workResults.push(res);
+          local.workResults.push(res);
         }
         console.log(res);
         logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');

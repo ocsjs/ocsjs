@@ -1,4 +1,4 @@
-import { domSearch, domSearchAll, getNumber, searchIFrame, sleep, waitForRecognize } from '../../core/utils';
+import { domSearch, domSearchAll, elementToRawObject, getNumber, searchIFrame, sleep, waitForRecognize } from '../../core/utils';
 import { OCSWorker } from '../../core/worker';
 import { defaultAnswerWrapperHandler } from '../../core/worker/answer.wrapper.handler';
 import { logger } from '../../logger';
@@ -197,11 +197,10 @@ function mediaTask(setting: ScriptSettings['cx']['study'], media: HTMLMediaEleme
     message('error', '视频检测不到，请尝试刷新或者手动切换下一章。');
     return;
   }
-
-  const { cx, common } = useStore('context');
-
-  cx.videojs = videojs;
-  common.currentMedia = media;
+  // 存储元素
+  const ctx = useContext();
+  ctx.cx.videojs = videojs;
+  ctx.common.currentMedia = media;
 
   if (videojs && setting.line) {
     // 切换路线
@@ -260,7 +259,7 @@ async function chapterTestTask(frame: HTMLIFrameElement) {
   const { answererWrappers } = useSettings().common;
   const { study } = useSettings().cx;
 
-  const ctx = useContext();
+  const local = useStore('localStorage');
 
   if (study.upload === 'close') {
     logger('warn', '自动答题已被关闭！');
@@ -280,7 +279,7 @@ async function chapterTestTask(frame: HTMLIFrameElement) {
     const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow.document);
 
     /** 清空答案 */
-    ctx.common.workResults = [];
+    local.workResults = [];
 
     /** 新建答题器 */
     const worker = new OCSWorker({
@@ -360,6 +359,9 @@ async function chapterTestTask(frame: HTMLIFrameElement) {
       },
       /** 元素搜索完成后 */
       onElementSearched(elements) {
+        // 处理题目跨域丢失问题
+        elements.title = elements.title.map(elementToRawObject);
+
         const typeInput = elements.type[0] as HTMLInputElement;
         const type = parseInt(typeInput.value);
         /** 判断题 */
@@ -375,7 +377,7 @@ async function chapterTestTask(frame: HTMLIFrameElement) {
       /** 完成答题后 */
       onResult: async (res) => {
         if (res.ctx) {
-          ctx.common.workResults.push(res);
+          local.workResults.push(res);
         }
         const randomWork = study.randomWork;
         // 没有完成时随机作答

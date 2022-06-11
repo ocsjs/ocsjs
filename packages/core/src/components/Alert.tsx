@@ -1,5 +1,5 @@
 import { defineComponent, PropType, toRefs } from 'vue';
-import { useContext } from '../store';
+import { useStore } from '../store';
 import { AlertType } from './types';
 
 export const Alert = defineComponent({
@@ -19,7 +19,7 @@ export const Alert = defineComponent({
   },
   setup(props) {
     const { type, text, index } = toRefs(props);
-    const { common } = useContext();
+    const local = useStore('localStorage');
 
     return () => (
       <div class={['alert', type.value].join(' ')}>
@@ -27,7 +27,7 @@ export const Alert = defineComponent({
         <div style="display: inline">
           <span
             class="alert-closer"
-            onClick={() => (common.alerts.splice(index.value, 1))}>
+            onClick={() => (local.alerts.splice(index.value, 1))}>
               ×
           </span>
           <span class="alert-text">{ text.value }</span>
