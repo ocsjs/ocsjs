@@ -15,7 +15,7 @@ export const SearchResults = defineComponent({
     const currentSearchResults = computed(() => currentResult.value?.ctx?.searchResults);
     // 简短标题
     const currentTitle = computed(() =>
-      StringUtils.of(currentResult.value?.ctx?.elements.title?.[0].innerText || '')
+      StringUtils.of(currentResult.value?.ctx?.elements.title?.[0].textContent || '')
         .nowrap()
         .toString()
     );
@@ -133,7 +133,7 @@ export const SearchResults = defineComponent({
                       class="search-results-title"
                       onMouseenter={() => (currentResult.value = res)}
                       style={{ color: res.result?.finish ? '' : 'red' }}
-                      title={res.ctx?.elements.title?.[0].innerText}
+                      title={res.ctx?.elements.title?.[0].textContent || ''}
                       onClick={(e) => {
                         e.stopPropagation();
                       }}
@@ -150,7 +150,7 @@ export const SearchResults = defineComponent({
                         onClick={() => {
                           if (isCopy.value === false) {
                             isCopy.value = true;
-                            navigator.clipboard.writeText(title?.innerText.trim() || '');
+                            navigator.clipboard.writeText(title?.textContent?.trim() || '');
                             setTimeout(() => {
                               isCopy.value = false;
                             }, 500);
@@ -173,7 +173,7 @@ export const SearchResults = defineComponent({
                         {i + 1}
                       </span>
                       <span >
-                        {StringUtils.of(title?.innerText || '')
+                        {StringUtils.of(title?.textContent || '')
                           .nowrap()
                           .max(40)
                           .toString()}

@@ -241,7 +241,10 @@ export const CXScript = defineScript({
       ],
       onload() {
         document.body.querySelectorAll('img').forEach((img) => {
-          img.after(document.createTextNode(img.src));
+          const div = document.createElement('div');
+          div.style.display = 'none';
+          div.textContent = img.src;
+          img.after(div);
         });
       }
     },

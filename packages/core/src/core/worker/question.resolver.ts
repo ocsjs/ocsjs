@@ -19,7 +19,7 @@ export function defaultQuestionResolve<E>(
           const ans = StringUtils.nowrap(answer.answer).trim();
           if (ans.length === 1 && isPlainAnswer(ans)) {
             const index = ans.charCodeAt(0) - 65;
-            handler('single', options[index].innerText, options[index], ctx);
+            handler('single', options[index].textContent || options[index].innerText, options[index], ctx);
             return { finish: true, option: options[index] };
           }
         }
@@ -28,7 +28,7 @@ export function defaultQuestionResolve<E>(
       /** 配对选项的相似度 */
       const ratings = answerSimilar(
         results.map((res) => res.answers.map((ans) => ans.answer)).flat(),
-        options.map((el) => el.innerText)
+        options.map((el) => el.textContent || el.innerText)
       );
       /**  找出最相似的选项 */
       let index = -1;
@@ -42,7 +42,7 @@ export function defaultQuestionResolve<E>(
       // 存在选项，并且相似度超过 60 %
       if (index !== -1 && max > 0.6) {
         /** 经自定义的处理器进行处理 */
-        handler('single', options[index].innerText, options[index], ctx);
+        handler('single', options[index].textContent || options[index].innerText, options[index], ctx);
         return {
           finish: true,
           ratings: ratings.map((r) => r.rating)
@@ -69,8 +69,8 @@ export function defaultQuestionResolve<E>(
 
         // 判断选项是否完全存在于答案里面
         options.forEach((el, i) => {
-          if (answers.some((answer) => answer.includes(removeRedundant(el.innerText)))) {
-            targetAnswers[count][i] = el.innerText;
+          if (answers.some((answer) => answer.includes(removeRedundant(el.textContent || el.innerText)))) {
+            targetAnswers[count][i] = el.textContent || el.innerText;
             targetOptions[count][i] = el;
           }
         });
@@ -81,7 +81,7 @@ export function defaultQuestionResolve<E>(
           if (isPlainAnswer(ans)) {
             for (let i = 0; i < ans.length; i++) {
               const index = ans.charCodeAt(i) - 65;
-              targetAnswers[count][i] = options[index].innerText;
+              targetAnswers[count][i] = options[index].textContent || options[index].innerText;
               targetOptions[count][i] = options[index];
             }
           }
@@ -90,14 +90,14 @@ export function defaultQuestionResolve<E>(
         if (targetAnswers[count].length === 0) {
           const ratings = answerSimilar(
             answers,
-            options.map((el) => el.innerText)
+            options.map((el) => el.textContent || el.innerText)
           ).sort((a, b) => b.rating - a.rating);
 
           // 匹配相似率
           if (ratings.some((rating) => rating.rating > 0.6)) {
             options.forEach((el, i) => {
               if (ratings[i].rating > 0.6) {
-                targetAnswers[count][i] = el.innerText;
+                targetAnswers[count][i] = el.textContent || el.innerText;
                 targetOptions[count][i] = el;
               }
             });
@@ -166,9 +166,9 @@ export function defaultQuestionResolve<E>(
           let option: HTMLElement | undefined;
           for (const el of options) {
             /** 选项显示正确 */
-            const textShowCorrect = matches(el.innerText, correctWords);
+            const textShowCorrect = matches(el.textContent || el.innerText, correctWords);
             /** 选项显示错误 */
-            const textShowIncorrect = matches(el.innerText, incorrectWords);
+            const textShowIncorrect = matches(el.textContent || el.innerText, incorrectWords);
             if (answerShowCorrect && textShowCorrect) {
               option = el;
               handler('judgement', answerShowCorrect, el, ctx);

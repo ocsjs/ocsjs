@@ -298,7 +298,7 @@ async function chapterTestTask(frame: HTMLIFrameElement) {
       },
       /** 默认搜题方法构造器 */
       answerer: (elements, type, ctx) => {
-        const title = StringUtils.nowrap(elements.title[0].innerText)
+        const title = StringUtils.nowrap(elements.title[0].textContent || elements.title[0].innerText)
           .trim()
           .replace(/\(..题, .+?分\)/, '')
           .replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
