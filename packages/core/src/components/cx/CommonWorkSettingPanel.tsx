@@ -59,7 +59,7 @@ export const CommonWorkSettingPanel = defineComponent({
             <input
               type="number"
               value={settings.value.timeout}
-              min="0"
+              min="10"
               step="1"
               onChange={(e: any) => (settings.value.timeout = e.target.valueAsNumber)}
               onInput={(e: any) => (settings.value.timeout = e.target.valueAsNumber)}
