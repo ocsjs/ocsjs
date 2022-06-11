@@ -35,9 +35,22 @@ export function createReactive<T extends object>(
 
 /** 创建响应式监听器 */
 function createWatcher(key: string, target: any) {
-  return watch(() => cloneDeep(target), debounce((old, _new) => {
+  // 声明cache变量，便于匹配是否有循环引用的情况
+  const cache: any[] = [];
+
+  return watch(() => cloneDeep(target), debounce((_new) => {
     // eslint-disable-next-line no-undef
-    GM_setValue(key, JSON.parse(JSON.stringify(old)));
+    GM_setValue(key, JSON.parse(JSON.stringify(_new, function (key, value) {
+      if (typeof value === 'object' && value !== null) {
+        if (cache.indexOf(value) !== -1) {
+          // 移除
+          return;
+        }
+        // 收集所有的值
+        cache.push(value);
+      }
+      return value;
+    })));
   }, 100), { deep: true });
 }
 
