@@ -1,6 +1,6 @@
 import { defineComponent, nextTick, onMounted, watch } from 'vue';
-
 import { domSearch } from '../core/utils';
+import { panel } from '../start';
 import { useStore } from '../store';
 
 export const Terminal = defineComponent({
@@ -8,23 +8,22 @@ export const Terminal = defineComponent({
     const local = useStore('localStorage');
 
     onMounted(() => {
-      // 控制台元素
-      const { terminal } = domSearch({ terminal: '.terminal' });
       // 监听改变，并且滚动到最下方
-      watch(
-        () => local.logs,
+      watch(local.logs,
         // eslint-disable-next-line vue/valid-next-tick
         () => nextTick(() => scroll())
       );
-      // 滚动到最下方
-      nextTick(() => scroll());
 
       function scroll () {
-        if (terminal?.scrollHeight) {
-          terminal?.scrollTo({
-            behavior: 'auto',
-            top: terminal.scrollHeight
-          });
+        if (panel) {
+          // 控制台元素
+          const { terminal } = domSearch({ terminal: '.terminal' }, panel);
+          if (terminal?.scrollHeight) {
+            terminal?.scrollTo({
+              behavior: 'auto',
+              top: terminal.scrollHeight
+            });
+          }
         }
       }
     });
