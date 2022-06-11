@@ -1,4 +1,3 @@
-import get from 'lodash/get';
 import { request } from '../utils';
 
 /** 题目答案 */
@@ -192,9 +191,8 @@ export async function defaultAnswerWrapperHandler(
     if (typeof str === 'string') {
       const matches = str.match(/\${(.*?)}/g) || [];
       matches.forEach((placeHolder) => {
-        const value: any =
-          /** 获取元素属性 */
-          get(env, placeHolder.replace(/\${(.*)}/, '$1'));
+        /** 获取占位符的值 */
+        const value: any = env[placeHolder.replace(/\${(.*)}/, '$1')];
         str = str.replace(placeHolder, value);
       });
     }
