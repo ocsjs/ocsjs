@@ -98,6 +98,10 @@ type ICVECell = {
 }
 
 export interface ICVESetting {
+  common: {
+    // 网课类型
+    type?: 'MOOC' | 'ZJY'
+  },
   study: {
     /** 播放速度 */
     playbackRate: number
@@ -107,8 +111,8 @@ export interface ICVESetting {
     showProgress: boolean
     /** ppt翻阅速度 */
     pptRate: number
-    /** 是否正在学习中 */
-    isStarting: boolean
+    /** 是否正在阅读中 */
+    isReading: boolean
     /** 当前任务 */
     currentTask: ICVECell | undefined
     /** 任务章节 */
@@ -190,12 +194,15 @@ export const defaultOCSSetting: ScriptSettings = {
     exam: defaultWorkSetting
   },
   icve: {
+    common: {
+      type: undefined
+    },
     study: {
       playbackRate: 1,
       volume: 0,
       showProgress: true,
-      pptRate: 5,
-      isStarting: false,
+      pptRate: 1,
+      isReading: false,
       currentTask: undefined,
       cells: []
     }
