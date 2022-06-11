@@ -1,7 +1,6 @@
 import { defineComponent } from 'vue';
-import { createWorkerSetting } from '..';
 import { useSettings } from '../../store';
-
+import { WorkerSetting } from '../WorkerSetting';
 import { CommonWorkSettingPanel } from './CommonWorkSettingPanel';
 
 export const CreditWorkSettingPanel = defineComponent({
@@ -15,15 +14,12 @@ export const CreditWorkSettingPanel = defineComponent({
           <CommonWorkSettingPanel
             settings={settings}
             v-slots={{
-              upload: createWorkerSetting(
-                '自动答题',
-                {
-                  selected: settings.upload,
-                  options: [
-                    { value: 'nomove', label: '完成后请自行检查并提交' }
-                  ]
-                },
-                (e: any) => (settings.upload = e.target.value)
+              upload: (
+                <WorkerSetting
+                  label='自动答题'
+                  config={{ selected: settings.upload }}
+                  changeHandler={(e: any) => (settings.upload = e.target.value)}
+                />
               )
             }}>
           </CommonWorkSettingPanel>

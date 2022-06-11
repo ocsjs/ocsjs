@@ -1,12 +1,12 @@
 import { defineComponent } from 'vue';
-import { createWorkerSetting } from '..';
 import { useSettings } from '../../store';
+import { WorkerSetting } from '../WorkerSetting';
 
 import { CommonWorkSettingPanel } from './CommonWorkSettingPanel';
 
 export const WorkSettingPanel = defineComponent({
 
-  setup (props, { slots }) {
+  setup () {
     const settings = useSettings().zhs.work;
 
     return () => (
@@ -16,13 +16,13 @@ export const WorkSettingPanel = defineComponent({
           <CommonWorkSettingPanel
             settings={settings}
             v-slots={{
-              upload: createWorkerSetting(
-                '自动答题',
-                {
-                  selected: settings.upload
+              upload: (
+                <WorkerSetting
+                  label='自动答题'
+                  config={{ selected: settings.upload }}
+                  changeHandler={(e: any) => (settings.upload = e.target.value)}
+                />
 
-                },
-                (e: any) => (settings.upload = e.target.value)
               )
             }}>
           </CommonWorkSettingPanel>

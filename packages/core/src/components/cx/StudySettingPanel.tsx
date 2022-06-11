@@ -3,6 +3,7 @@ import { fixedVideoProgress } from '../../script/cx/study';
 import { useSettings } from '../../store';
 import { Tooltip } from '../Tooltip';
 import { CommonWorkSettingPanel } from './CommonWorkSettingPanel';
+import { WorkerSetting } from '../WorkerSetting';
 
 export const StudySettingPanel = defineComponent({
   setup () {
@@ -94,10 +95,12 @@ export const StudySettingPanel = defineComponent({
           <CommonWorkSettingPanel
             settings={workSettings}
             v-slots={{
-              upload: createWorkerSetting(
-                '自动答题',
-                { selected: settings.upload },
-                (e: any) => (settings.upload = e.target.value)
+              upload: (
+                <WorkerSetting
+                  label='自动答题'
+                  config={{ selected: settings.upload }}
+                  changeHandler={(e: any) => (settings.upload = e.target.value)}
+                />
               ),
               extra: (
                 <>
