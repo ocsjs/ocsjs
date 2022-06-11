@@ -193,7 +193,7 @@ export async function loadTasks() {
     for (const target of targets) {
       target.click();
       await waitForLoading();
-      await sleep(1000 * (fixTime) * 2);
+      await sleep(1000 * (fixTime + 1));
     }
   }
 
