@@ -7,16 +7,32 @@ import { useSettings, useContext } from '../../store';
  *
  * @param removeTask 是否标记为已完成
  */
-export function nextTask(removeTask: boolean = true) {
+export function nextTask() {
   const { icve } = useSettings();
-  const task = icve.study.cells.find(cell => cell.isTask);
-  if (task) {
-    if (removeTask) task.isTask = false;
-    icve.study.currentTask = task;
-    top?.location.replace(task.href);
+  if (icve.common.type === 'MOOC') {
+    // 找到下一个任务（除外链任务）
+    const { sections } = domSearchAll({ sections: '.cellClick .np-section-type:not(.np-section-type.active)' });
+    if (sections.length) {
+      const cell = sections[0].parentElement;
+      logger('info', '即将切换到下一个任务 ' + cell?.dataset.cellname?.trim() || '未知');
+      cell?.click();
+      study();
+    } else {
+      message('warn', '没有可学习的任务，学习结束。');
+    }
   } else {
-    icve.study.isStarting = false;
-    message('warn', '没有可学习的任务，学习结束。');
+    // 找到下一个任务，根据自定义任务获取
+    const task = icve.study.cells.find(cell => cell.isTask);
+    if (task) {
+      logger('info', '即将切换到下一个任务 ' + task.cellName);
+      task.isTask = false;
+      icve.study.currentTask = task;
+      setTimeout(() => {
+        window.location.href = task.href;
+      }, 1000);
+    } else {
+      message('warn', '没有可学习的任务，学习结束。');
+    }
   }
 }
 
@@ -25,22 +41,28 @@ export async function study() {
   const { icve: settings } = useSettings();
   const { common } = useContext();
   // @ts-ignore
-  const fixTime = useUnsafeWindow()._fixTime;
-  const { ppt, video, iframe, link } = domSearch({
+  const fixTime = useUnsafeWindow()?._fixTime || 10;
+  const { ppt, video, iframe, link, studyNow, nocaptcha } = domSearch({
     // ppt
-    ppt: '.MPreview-ppt',
+    ppt: '.page-bar',
     // ppt
     iframe: 'iframe',
     // 视频
     video: 'video',
     // 链接
-    link: '#externalLinkDiv'
+    link: '#externalLinkDiv',
+    // 学习提示弹窗
+    studyNow: '#studyNow',
+    // 验证码
+    nocaptcha: '#nocaptcha'
   });
 
-  console.log('tasks', { ppt, video, iframe });
+  console.log({ ppt, video, iframe, link, studyNow, nocaptcha });
 
-  // 如果 iframe 不存在则表示只有视频任务，否则表示PPT任务正在运行
-  if (video) {
+  if (nocaptcha) {
+    message('warn', '请手动滑动验证码。');
+  } else if (video) {
+    // 如果 iframe 不存在则表示只有视频任务，否则表示PPT任务正在运行
     logger('info', '开始播放视频');
     const v = video as HTMLMediaElement;
     common.currentMedia = v;
@@ -57,25 +79,13 @@ export async function study() {
     if (v.paused) {
       v.play();
     }
-  } else if (iframe) {
-    logger('info', '开始播放PPT');
-    // @ts-ignore
-    useUnsafeWindow().addEventListener('message', listenTaskFinish);
-
-    /** 等待阅读任务完成 */
-    function listenTaskFinish(e: MessageEvent) {
-      const { type } = JSON.parse(e.data);
-      console.log('type', type);
-
-      if (type === 'read-start') {
-        logger('info', '阅读脚本启动');
-      }
-      if (type === 'read-finish') {
-        logger('info', '阅读脚本完成');
+  } else if (iframe && (iframe as HTMLIFrameElement).src.startsWith('https://file.icve.com.cn')) {
+    const interval = setInterval(() => {
+      if (settings.study.isReading === false) {
+        clearInterval(interval);
         nextTask();
-        useUnsafeWindow()?.removeEventListener('message', listenTaskFinish);
       }
-    }
+    }, settings.study.pptRate * 1000);
   } else if (ppt) {
     logger('info', '开始播放PPT');
     const { pageCount, pageCurrentCount, pageNext } = domSearch({
@@ -94,14 +104,20 @@ export async function study() {
         await sleep(1000 * settings.study.pptRate);
         count++;
       }
+      logger('info', `PPT播放完成 ${fixTime * 2} 秒后将自动切换下一个任务。`);
+      await sleep(1000 * fixTime * 2);
       nextTask();
     } else {
       message('error', '未找到PPT进度，请刷新重试或者跳过此任务。');
     }
-  } else if (link) {
+  } else if (link && link.style.display !== 'none') {
     logger('info', `链接查看完成，${fixTime}秒后下一个任务`);
     await sleep(1000 * fixTime);
     nextTask();
+  } else if (studyNow && studyNow.style.display !== 'none') {
+    studyNow.click();
+  } else {
+    logger('error', '未知的课件类型，请反馈给作者。');
   }
 }
 
@@ -155,13 +171,10 @@ export async function loadTasks() {
 
   /** 加载列表 */
   const { moduleTriggers } = domSearchAll({ moduleTriggers: '.moduleList .openOrCloseModule' });
-  console.log('moduleTriggers', moduleTriggers);
-
-  await open(moduleTriggers.slice(1));
+  /** 删除已经展开的列表 */
+  await open(moduleTriggers.filter(trigger => trigger.parentElement?.querySelector('.topicList') === null));
   /** 加载章节 */
   const { topicsTriggers } = domSearchAll({ topicsTriggers: '.topicList .openOrCloseTopic' });
-  console.log('topicsTriggers', topicsTriggers);
-
   await open(topicsTriggers);
 
   // 获取链接
@@ -173,18 +186,23 @@ export async function loadTasks() {
 
   /** 加载元素并等待请求 */
   async function open(targets: HTMLElement[]) {
+    console.log('targets', targets);
+
     for (const target of targets) {
       target.click();
       await waitForLoading();
-      await sleep(1000 * fixTime);
+      await sleep(1000 * (fixTime) * 2);
     }
   }
 
   /** 等待请求完成 */
   function waitForLoading() {
     loading = true;
-    return new Promise<void>((resolve, reject) => {
-      setInterval(() => loading === false ? resolve() : undefined, 1000);
-    });
+    return Promise.race([
+      sleep(1000 * 60),
+      new Promise<void>((resolve, reject) => {
+        setInterval(() => loading === false ? resolve() : undefined, 1000);
+      })
+    ]);
   }
 }

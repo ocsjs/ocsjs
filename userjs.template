@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name					OCS 网课助手
-// @version					{{version}}
+// @version					{{VERSION}}
 // @description				OCS 网课助手，支持各平台网课学习，支持超星学习通，知道智慧树，智慧职教（职教云），等网课的学习，作业，考试功能。
 // @author					enncy
 // @license					MIT
