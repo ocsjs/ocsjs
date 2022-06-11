@@ -129,6 +129,8 @@ export function fixedVideoProgress(fixed: boolean) {
   const { bar } = domSearch({ bar: '.jw-controlbar' });
   if (common.currentMedia && bar) {
     bar.style.display = fixed ? 'block' : 'none';
+    bar.style.visibility = fixed ? 'visible' : 'hidden';
+    bar.style.opacity = fixed ? '1' : '0';
   }
 }
 
