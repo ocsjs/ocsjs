@@ -15,10 +15,19 @@ export const appStore = {
   alwaysOnTop: false,
   notify: [] as any[],
   /** 脚本启动设置 */
-  script: {} as any,
+  script: {
+    /** 是否使用 --user-data-dir (false 为无痕浏览) */
+    userDataDir: false,
+    launchOptions: {
+      /** 无头浏览 */
+      headless: false,
+      /** 浏览器路径 */
+      executablePath: ''
+    }
+  },
   /** 脚本默认设置 */
   setting: {
-    answererWrappers: []
+    answererWrappers: [] as any[]
   },
   /** 用户脚本列表 */
   userScripts: [] as UserScripts[],

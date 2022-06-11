@@ -58,7 +58,8 @@ export const store = reactive<AppStore & {
     /** 是否使用 --user-data-dir (false 为无痕浏览) */
     userDataDir: false,
     launchOptions: {
-      headless: false
+      headless: false,
+      executablePath: ''
     }
   },
   /** 浏览器脚本默认设置 */
