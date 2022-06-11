@@ -1,33 +1,34 @@
 // ==UserScript==
 // @name					OCS 网课助手
-// @version					{{VERSION}}
+// @version					{{VERSION_SLOT}}
 // @description				OCS 网课助手，支持各平台网课学习，支持超星学习通，知道智慧树，智慧职教（职教云），等网课的学习，作业，考试功能。
 // @author					enncy
 // @license					MIT
 // @namespace				https://enncy.cn
-// @homepage				https://enncy.github.io/online-course-script/
-// @source					https://github.com/enncy/online-course-script/
+// @homepage				https://docs.ocsjs.com
+// @source					https://github.com/ocsjs/ocsjs
 // @icon					https://cdn.ocsjs.com/logo.ico
 // @connect					enncy.cn
 // @connect					icodef.com
-// @connect                 ocsjs.com
-// @connect                 localhost
+// @connect					ocsjs.com
+// @connect					localhost
 // @match					*://*.chaoxing.com/*
 // @match					*://*.edu.cn/*
 // @match					*://*.org.cn/*
 // @match					*://*.zhihuishu.com/*
-// @match                   *://*.icve.com.cn/*
+// @match					*://*.icve.com.cn/*
 // @grant					unsafeWindow
 // @grant					GM_xmlhttpRequest
 // @grant					GM_setValue
 // @grant					GM_getValue
+// @grant					GM_addValueChangeListener
+// @grant					GM_removeValueChangeListener
 // @run-at					document-start
 // ==/UserScript==
 
+{{SCRIPT_SLOT}}
 
-{{script}}
-
-const OCS_STYLE = `{{style}}`;
+const OCS_STYLE = `{{STYLE_SLOT}}`;
 
 /* eslint no-undef: 0 */
 
