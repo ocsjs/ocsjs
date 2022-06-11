@@ -1,35 +1,43 @@
 import defaultsDeep from 'lodash/defaultsDeep';
-import { reactive, watch } from 'vue';
+import { reactive } from 'vue';
+import { createReactive } from './core/reactive';
 import { OCSLocalStorage, OCSStore } from './core/types';
-import { isInBrowser, onComplete, useUnsafeWindow } from './core/utils';
-import { logger } from './logger';
+import { isInBrowser } from './core/utils';
 import { defaultOCSSetting } from './scripts';
 
 /**
  * OCS 响应式存储对象, 在除油猴环境下的其他环境为 `{}`
  */
-let store: OCSStore = {} as OCSStore;
+let store: OCSStore;
 
 // 环境检测
 if (isInBrowser()) {
-  if (typeof useUnsafeWindow() !== 'undefined') {
-    setStore(createStore());
+  // 创建响应式存储对象
+  store = reactive(createStore());
+  // 初始化本地
+  if (top === self) {
+    // eslint-disable-next-line no-undef
+    GM_setValue('store', JSON.parse(JSON.stringify(store.localStorage)));
   }
+  // 创建跨域响应式存储功能
+  createReactive('store', store.localStorage, (oldValue, newValue) => {
+    // console.log('store changed', oldValue, newValue);
+  });
+} else {
+  store = {} as any;
 }
 
 export function getStore() {
   return store;
 }
 
-export function setStore(val: OCSStore) {
-  store = val;
-}
-
-export function createStore() {
+export function createStore(): OCSStore {
   /** 默认存储数据 */
   // eslint-disable-next-line no-undef
-  const defaultStore = defaultsDeep(isInBrowser() ? GM_getValue('store', {}) : {}, {
+  const localStore: OCSLocalStorage = defaultsDeep(isInBrowser() ? GM_getValue('store', {}) : {}, {
+    setting: defaultOCSSetting,
     logs: [],
+    alerts: [],
     workResults: [],
     /** 是否缩小隐藏面板 */
     hide: false,
@@ -40,24 +48,15 @@ export function createStore() {
     }
   } as Partial<OCSLocalStorage>);
 
-  /** 本地存储数据 */
-  const _localStorage: OCSLocalStorage = reactive<OCSLocalStorage>({
-    setting: defaultsDeep(defaultStore.setting, defaultOCSSetting),
-    ...defaultStore
-  });
-
-  // 响应式对象
-  const _store = reactive<OCSStore>({
-    localStorage: _localStorage,
+  return {
+    localStorage: localStore,
     // @ts-ignore
     VERSION: process.env._VERSION_,
-    setting: _localStorage.setting,
+    setting: localStore.setting,
     context: {
       common: {
         startOptions: {},
-        currentMedia: null,
-        workResults: [],
-        alerts: []
+        currentMedia: null
       },
       cx: {
         videojs: null,
@@ -68,32 +67,7 @@ export function createStore() {
         isRecognizing: false
       }
     }
-  });
-
-  /** 监听，并保存到本地 */
-  watch(_localStorage, () => {
-    // eslint-disable-next-line no-undef
-    GM_setValue('store', JSON.parse(JSON.stringify(_localStorage)));
-  });
-
-  return _store;
-}
-
-export function initStore(original: OCSStore) {
-  onComplete(() => {
-    if (typeof useUnsafeWindow() !== 'undefined') {
-      try {
-        // 统一转向顶层对象
-        // eslint-disable-next-line no-undef
-        setStore(original || store);
-      } catch (e) {
-        // @ts-ignore
-        console.log('store init error', e.message);
-      }
-    } else {
-      logger('warn', '为了确保功能正常使用, 请在油猴环境下运行 https://www.tampermonkey.net/');
-    }
-  });
+  };
 }
 
 export function useStore<T extends keyof OCSStore>(name: T): OCSStore[T] {
