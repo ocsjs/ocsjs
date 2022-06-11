@@ -2,6 +2,7 @@ import { domSearch, domSearchAll, sleep } from '../../core/utils';
 import { logger } from '../../logger';
 import { message } from '../../main';
 import { useContext, useSettings } from '../../store';
+import { waitForCaptcha } from './utils';
 
 let stop = false;
 
@@ -93,11 +94,13 @@ export async function watch() {
         // 设置播放速度
         await switchPlaybackRate(creditStudy ? 1 : playbackRate);
 
-        video.onpause = function () {
+        video.onpause = async function () {
           if (!video.ended) {
             if (stop) {
               resolve();
             } else {
+              await waitForCaptcha();
+              await sleep(1000);
               video.play();
             }
           }

@@ -167,8 +167,10 @@ export type WorkOptions<E extends RawElements> = {
   retry?: number
   /** 监听答题结果 */
   onResult?: (res: WorkResult<E>) => void
-  /** 当元素被搜索到的处理器 */
+  /** 当元素被搜索到的钩子 */
   onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>) => void
+  /** 拦截器，返回 true 代表通过，返回 false 代表此题被拦截 */
+  interceptor?: (ctx: WorkContext<E>) => Promise<boolean> | boolean
   /** 监听错误事件 */
   onError?: (e: Error, ctx?: WorkContext<E>) => void
 }

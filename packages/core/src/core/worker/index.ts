@@ -59,52 +59,54 @@ export class OCSWorker<E extends RawElements = RawElements> {
                 ? this.opts.work.type
                 : this.opts.work.type(this.currentContext);
         }
+        /** 调用拦截器 */
+        if (this.opts.interceptor === undefined || await this.opts.interceptor?.(this.currentContext)) {
+          /** 查找题目 */
+          const searchResults = await this.doAnswer(elements, type, this.currentContext);
 
-        /** 查找题目 */
-        const searchResults = await this.doAnswer(elements, type, this.currentContext);
+          if (!searchResults) {
+            throw new Error('答案获取失败, 请重新运行, 或者忽略此题。');
+          } else {
+            /** 筛选出有效的答案 */
+            const validResults = searchResults
+              .map((res) => res.answers.map((ans) => ans.answer))
+              .flat()
+              .filter((ans) => ans);
 
-        if (!searchResults) {
-          throw new Error('答案获取失败, 请重新运行, 或者忽略此题。');
-        } else {
-          /** 筛选出有效的答案 */
-          const validResults = searchResults
-            .map((res) => res.answers.map((ans) => ans.answer))
-            .flat()
-            .filter((ans) => ans);
-
-          // 答案为 undefined 的情况， 需要赋值给一个空字符串
-          searchResults.forEach((res) => {
-            res.answers = res.answers.map((ans) => {
-              ans.answer = ans.answer ? ans.answer : '';
-              return ans;
+            // 答案为 undefined 的情况， 需要赋值给一个空字符串
+            searchResults.forEach((res) => {
+              res.answers = res.answers.map((ans) => {
+                ans.answer = ans.answer ? ans.answer : '';
+                return ans;
+              });
             });
-          });
 
-          /** 改变上下文 */
-          this.currentContext = { searchResults, root: el, elements };
+            /** 改变上下文 */
+            this.currentContext = { searchResults, root: el, elements };
 
-          if (searchResults.length === 0 || validResults.length === 0) {
-            throw new Error('搜索不到答案, 请重新运行, 或者忽略此题。');
+            if (searchResults.length === 0 || validResults.length === 0) {
+              throw new Error('搜索不到答案, 请重新运行, 或者忽略此题。');
+            }
           }
-        }
 
-        /** 开始处理 */
-        if (typeof this.opts.work === 'object') {
-          if (elements.options) {
-            /** 使用默认处理器 */
+          /** 开始处理 */
+          if (typeof this.opts.work === 'object') {
+            if (elements.options) {
+              /** 使用默认处理器 */
 
-            if (type) {
-              const resolver = defaultQuestionResolve(this.currentContext)[type];
-              result = resolver(searchResults, elements.options, this.opts.work.handler);
+              if (type) {
+                const resolver = defaultQuestionResolve(this.currentContext)[type];
+                result = resolver(searchResults, elements.options, this.opts.work.handler);
+              } else {
+                throw new Error('题目类型解析失败, 请自行提供解析器, 或者忽略此题。');
+              }
             } else {
-              throw new Error('题目类型解析失败, 请自行提供解析器, 或者忽略此题。');
+              throw new Error('elements.options 为空 ! 使用默认处理器, 必须提供题目选项的选择器。');
             }
           } else {
-            throw new Error('elements.options 为空 ! 使用默认处理器, 必须提供题目选项的选择器。');
+            /** 使用自定义处理器 */
+            result = this.opts.work(this.currentContext);
           }
-        } else {
-          /** 使用自定义处理器 */
-          result = this.opts.work(this.currentContext);
         }
       } catch (e) {
         error = e as any;

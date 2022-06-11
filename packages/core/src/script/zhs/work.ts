@@ -5,6 +5,7 @@ import { logger } from '../../logger';
 import { message } from '../../components/utils';
 import { useSettings, useStore } from '../../store';
 import { StringUtils } from '@ocsjs/common/src/utils/string';
+import { waitForCaptcha } from './utils';
 
 export async function workOrExam(type: 'work' | 'exam' = 'work') {
   const { period, timeout, retry, upload } = useSettings().zhs.work;
@@ -52,6 +53,11 @@ export async function workOrExam(type: 'work' | 'exam' = 'work') {
             }
           }
         }
+      },
+      // 如果有验证码，则等待验证码
+      async interceptor() {
+        await waitForCaptcha();
+        return true;
       },
       onElementSearched(elements) {
         // 处理题目跨域丢失问题
