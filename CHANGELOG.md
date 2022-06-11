@@ -1,3 +1,29 @@
+# [3.17.0](https://github.com/enncy/online-course-script/compare/3.16.11...3.17.0) (2022-06-11)
+
+
+### Bug Fixes
+
+* **app:** 新增软件 zip 打包方式，修复工作区丢失的BUG ([8fe1357](https://github.com/enncy/online-course-script/commit/8fe13574285871f56234223264b1ae64a0c27a77))
+* **core:** 调整职教云任务读取速度 ([b2adafb](https://github.com/enncy/online-course-script/commit/b2adafbade5b894f7c723b3e197ea44a3919cdcd))
+* **core:** 将整个项目修改成跨域响应式模式 ([10aaf0a](https://github.com/enncy/online-course-script/commit/10aaf0ae4d415d68e3a22bba303962c17f43355f))
+* **core:** 限制请求超时时间最小为10 ([f3fc59e](https://github.com/enncy/online-course-script/commit/f3fc59e211b6f86c70c4a9a80a6c0bb3b4b82a0d))
+* **core:** 新增ICVE字段 ([abbcfec](https://github.com/enncy/online-course-script/commit/abbcfec64d25622415c863233029c68878d1d4a5))
+* **core:** 修复日志面板不会实时滚动的BUG ([a0b9fff](https://github.com/enncy/online-course-script/commit/a0b9fffb6967a34397eef6597483ccdff8772319))
+* **core:** 修复职教云进度不显示的BUG ([480cfa3](https://github.com/enncy/online-course-script/commit/480cfa3a71d91a2252e73f9ae09db6221a97c8a0))
+* **core:** 修改 userjs.templete 模板文件，兼容跨域响应式，并修改 homepage 等字段 ([f945a80](https://github.com/enncy/online-course-script/commit/f945a8043e5e62f4b92f8650fc332278cdfb974b))
+* **core:** 优化题库解析器 ([67b50a4](https://github.com/enncy/online-course-script/commit/67b50a47fdc9fb5730e83d295249e93e046c12f7))
+* **core:** 优化图片识别时图片链接显示的问题 ([d9778f6](https://github.com/enncy/online-course-script/commit/d9778f6268a4986a4ff3eed7542ee54f9e97242b))
+* **core:** 优化响应式存储 ([b307f74](https://github.com/enncy/online-course-script/commit/b307f74140d382243c46dc80dafa372cf1b3ca47))
+
+
+### Features
+
+* **core:** 新增 智慧职教mooc脚本 ， 优化职教云脚本 ([0e44978](https://github.com/enncy/online-course-script/commit/0e44978c57e81afcaf28b55c1adfdb4eac297db0))
+* **core:** 新增跨域响应式特性 ([d7f967e](https://github.com/enncy/online-course-script/commit/d7f967ec27fd3d67de9d8132dd60100765727384))
+* **core:** 新增智慧树验证码检测功能 ([dcf73b3](https://github.com/enncy/online-course-script/commit/dcf73b317cb7492a971a74c77af03e91a13eb1bb))
+
+
+
 ## [3.16.11](https://github.com/enncy/online-course-script/compare/3.16.7...3.16.11) (2022-06-05)
 
 
