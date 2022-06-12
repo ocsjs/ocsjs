@@ -39,7 +39,7 @@
         class="ocs-panel-header draggable"
       >
         <template
-          v-for="(item, index) in currentPanels.filter(p=>p.hide !== true)"
+          v-for="(item, index) in currentPanels.filter(p=>p.hide?.() !== true)"
           :key="index"
         >
           <div
@@ -59,7 +59,7 @@
         class="ocs-panel-container"
       >
         <template
-          v-for="(item, index) in currentPanels.filter(p=>p.hide !== true)"
+          v-for="(item, index) in currentPanels.filter(p=>p.hide?.() !== true)"
           :key="index"
         >
           <div

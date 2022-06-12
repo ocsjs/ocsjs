@@ -39,7 +39,7 @@ export interface ScriptPanel {
   /** 当页面没有任何面板时，显示的默认面板 */
   default?: boolean
   /** 是否隐藏 */
-  hide?: boolean
+  hide?: () => boolean
 }
 
 export type ScriptPanelChild = Omit<ScriptPanel, 'url' | 'children'>

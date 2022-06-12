@@ -107,7 +107,7 @@ export const ICVEScript = defineScript({
         },
         {
           name: '任务列表',
-          hide: useSettings().icve.common.type === 'MOOC',
+          hide: () => useSettings().icve.common.type === 'MOOC',
           el: () => <TaskList selectable={false} />
         },
         createTerminalPanel()
