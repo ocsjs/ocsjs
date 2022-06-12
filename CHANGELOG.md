@@ -1,3 +1,14 @@
+## [3.17.3](https://github.com/enncy/online-course-script/compare/3.17.0...3.17.3) (2022-06-12)
+
+
+### Bug Fixes
+
+* **core:** 修复 store 环境检测问题 ([cd14eb0](https://github.com/enncy/online-course-script/commit/cd14eb07e8b33746fc72b1d35e2aaba85a85b07f))
+* **core:** 修复职教云任务获取出现子节点BUG ([ba63921](https://github.com/enncy/online-course-script/commit/ba639211dedd4d50b56e7a8ea1e02d1c25c73346))
+* **core:** 修复职教云子节点读取的问题，优化任务列表，优化学习脚本 ([5a11f13](https://github.com/enncy/online-course-script/commit/5a11f138151bc0a8b0297b1f09ed17e8c2589488))
+
+
+
 # [3.17.0](https://github.com/enncy/online-course-script/compare/3.16.11...3.17.0) (2022-06-11)
 
 
