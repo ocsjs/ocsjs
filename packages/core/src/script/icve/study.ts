@@ -157,7 +157,8 @@ export async function loadTasks() {
     // 解除加载状态
     loading = false;
     if (type === 'cell_html' && data.code) {
-      icve.study.cells = icve.study.cells.concat(data.cellList);
+      // 获取章节列表并且检测子节点
+      icve.study.cells = icve.study.cells.concat(data.cellList.map((cl: any) => cl.childNodeList || cl));
       icve.study.cells = icve.study.cells.map(cell => {
         // 判断进度
         cell.isTask = cell.stuCellPercent !== 100;
