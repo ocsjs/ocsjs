@@ -95,6 +95,7 @@ type ICVECell = {
   categoryName: '视频' | 'ppt'
   cellName: string
   stuCellPercent: number
+  stuCellFourPercent: number
 }
 
 export interface ICVESetting {

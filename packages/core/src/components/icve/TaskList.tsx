@@ -29,6 +29,9 @@ export const TaskList = defineComponent({
               <th>
                 <span>名称</span>
               </th>
+              <th>
+                <span>操作</span>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -50,12 +53,16 @@ export const TaskList = defineComponent({
                     {item.categoryName.toLocaleUpperCase()}
                   </td>
                   <td>
-                    {item.stuCellPercent}%
+                    {item.stuCellPercent || item.stuCellFourPercent}%
                   </td>
                   <td title={item.href}>
                     <label for={'task_' + index.toString()} style={{ cursor: 'pointer' }}>
                       {item.cellName}
+                      <span style={{ fontWeight: 'bold' }}>{settings.cells.find(cell => cell.isTask)?.Id === item.Id ? ' (下个任务)' : ''}</span>
                     </label>
+                  </td>
+                  <td title={item.href}>
+                    <a href={item.href}>进入</a>
                   </td>
                 </tr>
               ))

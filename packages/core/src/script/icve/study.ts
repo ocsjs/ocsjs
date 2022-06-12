@@ -42,7 +42,7 @@ export async function study() {
   const { common } = useContext();
   // @ts-ignore
   const fixTime = useUnsafeWindow()?._fixTime || 10;
-  const { ppt, video, iframe, link, studyNow, nocaptcha } = domSearch({
+  const { ppt, video, iframe, link, nocaptcha } = domSearch({
     // ppt
     ppt: '.page-bar',
     // ppt
@@ -51,15 +51,13 @@ export async function study() {
     video: 'video',
     // 链接
     link: '#externalLinkDiv',
-    // 学习提示弹窗
-    studyNow: '#studyNow',
     // 验证码
-    nocaptcha: '#nocaptcha'
+    nocaptcha: '#waf_nc_block,#nocaptcha'
   });
 
-  console.log({ ppt, video, iframe, link, studyNow, nocaptcha });
+  console.log({ ppt, video, iframe, link, nocaptcha });
 
-  if (nocaptcha) {
+  if (nocaptcha && nocaptcha.style.display !== 'none') {
     message('warn', '请手动滑动验证码。');
   } else if (video) {
     // 如果 iframe 不存在则表示只有视频任务，否则表示PPT任务正在运行
@@ -114,8 +112,6 @@ export async function study() {
     logger('info', `链接查看完成，${fixTime}秒后下一个任务`);
     await sleep(1000 * fixTime);
     nextTask();
-  } else if (studyNow && studyNow.style.display !== 'none') {
-    studyNow.click();
   } else {
     logger('error', '未知的课件类型，请反馈给作者。');
   }
@@ -158,10 +154,11 @@ export async function loadTasks() {
     loading = false;
     if (type === 'cell_html' && data.code) {
       // 获取章节列表并且检测子节点
-      icve.study.cells = icve.study.cells.concat(data.cellList.map((cl: any) => cl.childNodeList || cl));
+      icve.study.cells = icve.study.cells.concat(data.cellList.map((cl: any) => (cl.childNodeList || cl)).flat());
       icve.study.cells = icve.study.cells.map(cell => {
+        const percent = cell.stuCellPercent || cell.stuCellFourPercent;
         // 判断进度
-        cell.isTask = cell.stuCellPercent !== 100;
+        cell.isTask = percent !== 100;
         return cell;
       });
     }

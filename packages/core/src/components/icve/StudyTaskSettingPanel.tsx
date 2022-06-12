@@ -39,7 +39,10 @@ export const StudyTaskSettingPanel = defineComponent({
             <button
               class="ocs-btn-primary"
               disabled={loading.value || hasTask.value === false || hasCell.value === false}
-              onClick={() => nextTask()}
+              onClick={() => {
+                message('info', '开始学习，如果页面不跳转请自行进入第一个任务。');
+                nextTask();
+              }}
             >
               开始学习
             </button>
