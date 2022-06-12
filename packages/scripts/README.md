@@ -9,4 +9,4 @@
 
 ## 使用方法
 
-https://github.com/enncy/online-course-script/#readme
+https://github.com/ocsjs/ocsjs/#readme

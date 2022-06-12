@@ -88,7 +88,7 @@
             />
             <TitleLink
               title="脚本更新日志"
-              url="https://github.com/enncy/online-course-script/blob/3.0/CHANGELOG.md"
+              url="https://github.com/ocsjs/ocsjs/blob/3.0/CHANGELOG.md"
             />
           </a-menu>
         </template>

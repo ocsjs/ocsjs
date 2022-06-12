@@ -64,7 +64,7 @@ export interface DefaultWork<E extends RawElements> {
   /** 工作器的题目类型 */
   type?: QuestionTypes | { (ctx: WorkContext<E>): QuestionTypes }
   /**
-     * 处理器， 每个题目的处理器， 实例可看默认的 zhs `作业脚本` 写法 : https://github.com/enncy/online-course-script/blob/3.0/packages/scripts/src/browser/zhs/work.ts
+     * 处理器， 每个题目的处理器， 实例可看默认的 zhs `作业脚本` 写法 : https://github.com/ocsjs/ocsjs/blob/3.0/packages/scripts/src/browser/zhs/work.ts
      *
      *
      * @param type 题目类型

@@ -34,7 +34,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/enncy/online-course-script.git"
+    "url": "git+https://github.com/ocsjs/ocsjs.git"
   },
   "keywords": [
     "ocs",
@@ -49,7 +49,7 @@
   "author": "enncy",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/enncy/online-course-script/issues"
+    "url": "https://github.com/ocsjs/ocsjs/issues"
   },
-  "homepage": "https://github.com/enncy/online-course-script#readme"
+  "homepage": "https://github.com/ocsjs/ocsjs#readme"
 }
