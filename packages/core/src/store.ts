@@ -2,7 +2,7 @@ import defaultsDeep from 'lodash/defaultsDeep';
 import { reactive } from 'vue';
 import { createReactive } from './core/reactive';
 import { OCSLocalStorage, OCSStore } from './core/types';
-import { isInBrowser } from './core/utils';
+import { isInBrowser, useUnsafeWindow } from './core/utils';
 import { defaultOCSSetting } from './scripts';
 
 /**
@@ -11,7 +11,7 @@ import { defaultOCSSetting } from './scripts';
 let store: OCSStore;
 
 // 环境检测
-if (isInBrowser()) {
+if (isInBrowser() && useUnsafeWindow()) {
   // 创建响应式存储对象
   store = reactive(createStore());
   // 初始化本地
@@ -34,7 +34,7 @@ export function getStore() {
 export function createStore(): OCSStore {
   /** 默认存储数据 */
   // eslint-disable-next-line no-undef
-  const localStore: OCSLocalStorage = defaultsDeep(isInBrowser() ? GM_getValue('store', {}) : {}, {
+  const localStore: OCSLocalStorage = defaultsDeep(GM_getValue('store', {}), {
     setting: defaultOCSSetting,
     logs: [],
     alerts: [],
