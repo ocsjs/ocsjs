@@ -1,3 +1,12 @@
+## [3.17.4](https://github.com/enncy/online-course-script/compare/3.17.3...3.17.4) (2022-06-12)
+
+
+### Bug Fixes
+
+* **core:** 优化OCS环境加载问题 ([2742ed4](https://github.com/enncy/online-course-script/commit/2742ed47892308879560742b1aa2bf2a08dbe6cf))
+
+
+
 ## [3.17.3](https://github.com/enncy/online-course-script/compare/3.17.0...3.17.3) (2022-06-12)
 
 
