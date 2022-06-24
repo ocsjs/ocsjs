@@ -1,30 +1,34 @@
 <template>
-  <IconFont
-    :type="type"
-    :title="title"
-    class="ocsicon"
-  />
+	<span class="ocs-icon">
+		<IconFont
+			:type="type"
+			:title="title"
+			:class="{ active }"
+		/>
+	</span>
 </template>
 
-<script setup lang="ts">
+<script
+	setup
+	lang="ts"
+>
 import { toRefs } from 'vue';
 interface IconProps {
-  type: string
-  title?: string
+	type: string;
+	title?: string;
+	active?: boolean;
 }
 const props = withDefaults(defineProps<IconProps>(), {
-  title: ''
+	title: ''
 });
 const { type } = toRefs(props);
 </script>
 
-<style scope lang="less">
-.ant-input-suffix{
-  .ocsicon {
-    transform: translate(0.5px, 0px);
-  }
-}
-.ocsicon {
-    transform: translate(0.5px, 5px);
+<style
+	scoped
+	lang="less"
+>
+.active {
+	color: #1890ff;
 }
 </style>

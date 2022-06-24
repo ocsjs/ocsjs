@@ -1,22 +1,21 @@
 <div align="center">
- 
+
+<img src="https://cdn.ocsjs.com/resources/img/logo.jpg" width=124 height=124 style="border-radius:50%" />
+
 # OCS 网课助手
- 
+
 > OCS (Online Course Script) 网课刷课脚本，帮助大学生解决网课难题
 
-![GitHub Repo stars](https://img.shields.io/github/stars/ocsjs/ocsjs?style=flat-square)
-![npm](https://img.shields.io/npm/v/ocsjs?color=red&style=flat-square)
-![jsDelivr hits (npm)](https://img.shields.io/jsdelivr/npm/hd/ocsjs?color=%23ff5627&label=jsDelivr&logoColor=%23555555&style=flat-square)
-![NPM](https://img.shields.io/npm/l/ocsjs?style=flat-square)
-![npm bundle size](https://img.shields.io/bundlephobia/min/ocsjs?style=flat-square)
+![GitHub Repo stars](https://img.shields.io/github/stars/ocsjs/ocsjs)
+![npm](https://img.shields.io/npm/v/ocsjs?color=red)
+![NPM](https://img.shields.io/npm/l/ocsjs)
+![今日安装](https://img.shields.io/badge/dynamic/json?color=orange&label=今日安装&query=$.data.today_install&url=https://scriptcat.org/api/v1/scripts/367)
+![总共安装](https://img.shields.io/badge/dynamic/json?color=red&label=总共安装&query=$.data.total_install&url=https://scriptcat.org/api/v1/scripts/367)
 
 </div>
-
-# 关于
-
--   [使用方法](https://docs.ocsjs.com)
--   [功能列表](https://docs.ocsjs.com/feat-list)
--   [项目开发](https://docs.ocsjs.com/docs/更多/api)
--   [疑难问答](https://docs.ocsjs.com/docs/更多/FQA)
--   [更新日志](CHANGELOG.md)
  
+<div align="center">
+
+## 官网及教程 [https://docs.ocsjs.com](https://docs.ocsjs.com)
+
+</div>

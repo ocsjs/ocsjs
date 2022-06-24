@@ -1,4 +1,3 @@
-
 import { message } from '../../main';
 
 /**
@@ -6,17 +5,17 @@ import { message } from '../../main';
  */
 
 export function waitForCaptcha(): void | Promise<void> {
-  const popup = document.querySelector('.yidun_popup');
-  if (popup) {
-    message('warn', '当前检测到验证码，请输入后方可继续运行。');
-    return new Promise<void>((resolve, reject) => {
-      const interval = setInterval(() => {
-        const popup = document.querySelector('.yidun_popup');
-        if (popup === null) {
-          clearInterval(interval);
-          resolve();
-        }
-      }, 1000);
-    });
-  }
+	const popup = document.querySelector('.yidun_popup');
+	if (popup) {
+		message('warn', '当前检测到验证码，请输入后方可继续运行。');
+		return new Promise<void>((resolve, reject) => {
+			const interval = setInterval(() => {
+				const popup = document.querySelector('.yidun_popup');
+				if (popup === null) {
+					clearInterval(interval);
+					resolve();
+				}
+			}, 1000);
+		});
+	}
 }

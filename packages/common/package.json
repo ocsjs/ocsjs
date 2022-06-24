@@ -1,31 +1,31 @@
 {
-  "name": "@ocsjs/common",
-  "version": "1.0.0",
-  "description": "common package of ocs",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "scripts": {},
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ocsjs/ocsjs.git"
-  },
-  "keywords": [
-    "ocs",
-    "script",
-    "playwright",
-    "puppeteer",
-    "electron",
-    "vue",
-    "ant-design-vue",
-    "typescript"
-  ],
-  "author": "enncy",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/ocsjs/ocsjs/issues"
-  },
-  "homepage": "https://github.com/ocsjs/ocsjs#readme",
-  "dependencies": {
-    "axios": "^0.25.0"
-  }
+	"name": "@ocsjs/common",
+	"version": "1.0.0",
+	"description": "common package of ocs",
+	"main": "./lib/index.js",
+	"types": "./lib/index.d.ts",
+	"scripts": {},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ocsjs/ocsjs.git"
+	},
+	"keywords": [
+		"ocs",
+		"script",
+		"playwright",
+		"puppeteer",
+		"electron",
+		"vue",
+		"ant-design-vue",
+		"typescript"
+	],
+	"author": "enncy",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/ocsjs/ocsjs/issues"
+	},
+	"homepage": "https://github.com/ocsjs/ocsjs#readme",
+	"dependencies": {
+		"axios": "^0.25.0"
+	}
 }

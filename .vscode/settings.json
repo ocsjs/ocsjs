@@ -1,5 +1,17 @@
 {
-  "cSpell.words": [
-    "xmlhttp"
-  ]
+	"cSpell.words": ["xmlhttp"],
+	"eslint.validate": ["javascript", "javascriptreact", "vue"],
+	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": true
+	},
+	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	"less.compile": {
+		"compress": false,
+		"sourceMap": false,
+		"out": "../css/",
+		"main": "common.less"
+	},
+	"editor.mouseWheelZoom": true,
+	"editor.mouseWheelScrollSensitivity": 2
 }

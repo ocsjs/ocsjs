@@ -6,10 +6,10 @@ import { findBestMatch, Rating } from 'string-similarity';
  * @returns
  */
 export function clearString(str: string, ...exclude: string[]) {
-  return str
-    .trim()
-    .toLocaleLowerCase()
-    .replace(RegExp(`[^\\u4e00-\\u9fa5A-Za-z0-9${exclude.join('')}]*`, 'g'), '');
+	return str
+		.trim()
+		.toLocaleLowerCase()
+		.replace(RegExp(`[^\\u4e00-\\u9fa5A-Za-z0-9${exclude.join('')}]*`, 'g'), '');
 }
 
 /**
@@ -33,20 +33,20 @@ export function clearString(str: string, ...exclude: string[]) {
  *
  */
 export function answerSimilar(answers: string[], options: string[]): Rating[] {
-  answers = answers.map(removeRedundant);
-  options = options.map(removeRedundant);
+	answers = answers.map(removeRedundant);
+	options = options.map(removeRedundant);
 
-  const similar =
-    answers.length !== 0
-      ? options.map((option) => findBestMatch(option, answers).bestMatch)
-      : options.map((opt) => ({ rating: 0, target: '' } as Rating));
+	const similar =
+		answers.length !== 0
+			? options.map((option) => findBestMatch(option, answers).bestMatch)
+			: options.map((opt) => ({ rating: 0, target: '' } as Rating));
 
-  return similar;
+	return similar;
 }
 
 /**
  * 删除题目选项中开头的冗余字符串
  */
 export function removeRedundant(str: string) {
-  return str?.trim().replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, '$1') || '';
+	return str?.trim().replace(/[A-Z]{1}[^A-Za-z0-9\u4e00-\u9fa5]+([A-Za-z0-9\u4e00-\u9fa5]+)/, '$1') || '';
 }

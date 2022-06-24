@@ -1,120 +1,153 @@
-
+import cloneDeep from 'lodash/cloneDeep';
 import { reactive, watch } from 'vue';
-import { fs, showFile } from '../components/file/File';
-import { Project } from '../components/project';
 import { remote } from '../utils/remote';
-import { FileNode } from './../components/file/File';
+
 import defaultsDeep from 'lodash/defaultsDeep';
 import { AppStore, UserScripts } from '@ocsjs/app';
 import { CommonUserScript } from '../types/user.script';
+import { NodeJS } from '../utils/export';
+import { showFile } from '../components/file/File';
+import { File } from '../core/File';
+import { config } from '../config';
 
 const Store = require('electron-store') as typeof import('electron-store');
-const { getValidBrowsers } = require('@ocsjs/common') as typeof import('@ocsjs/common');
+const localStore = new Store();
 
-const s = new Store();
+export type StoreUserScript = { info: CommonUserScript } & Omit<UserScripts, 'info'>;
 
-/** 工作区数据 */
-export const workspace = reactive<{
-  projects: Project[],
-  opened: FileNode[],
+export type WebStore = {
+	/** 当前文件 */
+	currentKey: string;
+	/** 打开的文件 */
+	openedKeys: string[];
+	/** 选中的文件 */
+	selectedKeys: string[];
+	/** 展开的文件 */
+	expandedKeys: string[];
+	// 类型增强
+	userScripts: StoreUserScript[];
+	/** 教程步骤 */
+	tutorialStep: number;
+	/** 当前的主题 */
+	theme: {
+		key: string;
+		name: string;
+	};
+};
 
-}>({
-  projects: [],
-  /** 打开的文件 */
-  opened: []
+/** 数据存储对象 */
+export const store = reactive<AppStore & WebStore>(
+	defaultsDeep(localStore.store, {
+		extensionPaths: [],
+		currentKey: '',
+		openedKeys: [],
+		selectedKeys: [],
+		expandedKeys: [],
+		userScripts: [],
+		tutorialStep: 0,
+		theme: config.themes[0]
+	} as WebStore)
+);
+
+/** 根目录 */
+export const files = reactive<File[]>([]);
+
+/** 打开的文件 */
+export const openedFiles = reactive(new Map<string, File>());
+
+/** 监听主题变化 */
+watch(
+	() => cloneDeep(store.theme),
+	(cur, prev) => {
+		document.body.classList.remove(prev.key);
+		document.body.classList.add(cur.key);
+	}
+);
+
+watch(openedFiles, () => {
+	store.openedKeys = Array.from(openedFiles.keys());
 });
 
-export type StoreUserScript = { info: CommonUserScript } & Omit<UserScripts, 'info'>
-
-export const store = reactive<AppStore & {
-  files: string[],
-  win: {
-    size: number
-  },
-  userScripts: StoreUserScript[],
-  expandedKeys: string[]
-}>(defaultsDeep(s.store, {
-  name: 'ocs',
-  version: '0.0.1',
-  // 工作路径
-  workspace: '',
-  'config-path': '',
-  'user-data-path': '',
-  'exe-path': '',
-  'logs-path': '',
-  path: '',
-  /** 开机自启 */
-  'auto-launch': false,
-  /** 文件编辑 */
-  files: [],
-  /** win setting */
-  win: {
-    size: 1
-  },
-  /** 用戶脚本 */
-  userScripts: [],
-  /** 启动浏览器脚本设置 */
-  script: {
-    /** 是否使用 --user-data-dir (false 为无痕浏览) */
-    userDataDir: false,
-    launchOptions: {
-      headless: false,
-      executablePath: ''
-    }
-  },
-  /** 浏览器脚本默认设置 */
-  setting: {
-    /** 题库配置 */
-    answererWrappers: []
-  },
-  alwaysOnTop: false,
-  /** 列表展开的 key */
-  expandedKeys: [],
-  notify: [],
-  validBrowsers: getValidBrowsers()
-} as AppStore));
-
 watch(store, (newStore) => {
-  s.store = JSON.parse(JSON.stringify(newStore));
+	localStore.store = JSON.parse(JSON.stringify(newStore));
 });
 
 watch(() => store['auto-launch'], setAutoLaunch);
 watch(() => store.win.size, setZoomFactor);
+watch(() => store.win.alwaysOnTop, setAlwaysOnTop);
 
-/** 监听打开的文件，保留工作区打开的文件 */
-watch(
-  () => workspace.opened.length,
-  () => {
-    store.files = workspace.opened.map((file) => file.path);
-  }
-);
+export function initTheme() {
+	document.body.classList.add(store.theme.key);
+}
+
+// 下一步教程
+export function nextTutorialStep() {
+	store.tutorialStep = store.tutorialStep + 1;
+	if (store.tutorialStep > 5) {
+		store.tutorialStep = 0;
+		store.state.tutorial = false;
+	}
+}
+
+/**
+ * 初始化数据
+ */
+export function initStoreData() {
+	files.push(
+		File.from(store.workspace, undefined, {
+			encoding: 'utf-8',
+			topDirectory: true,
+			merge(file) {
+				const isFile = file.stats.isFile();
+				file.isLeaf = isFile;
+				file.slots = {
+					icon: isFile ? 'file' : 'dir'
+				};
+				console.log('merge', file);
+
+				return file;
+			}
+		})
+	);
+
+	for (const key of store.openedKeys) {
+		const old = openedFiles.get(key);
+		if (old === undefined) {
+			const file = files.map((f) => f.find(key, true)).find(Boolean);
+			if (file && file.stats.isFile()) {
+				openedFiles.set(key, file);
+			}
+		}
+	}
+}
 
 export function setAutoLaunch() {
-  remote.methods.call('autoLaunch');
+	remote.methods.call('autoLaunch');
 }
 
 export function setZoomFactor() {
-  remote.webContents.call('setZoomFactor', store.win.size);
+	remote.webContents.call('setZoomFactor', store.win.size);
 }
 
-export function handleFile(file: string) {
-  if (fs.existsSync(String(file))) {
-    workspace.opened.push(Project.createFileNode(String(file)));
+export function setAlwaysOnTop() {
+	remote.win.call('setAlwaysOnTop', store.win.alwaysOnTop);
+}
 
-    // 显示文件
-    const len = workspace.opened.length;
-    if (len) {
-      showFile(workspace.opened[len - 1]);
-    }
-  }
+export function handleOpenedFile(path: string) {
+	const file = files.map((f) => f.find(path, true)).find(Boolean);
+
+	if (file) {
+		showFile(file);
+	}
 }
 
 /**
  * 处理打开的文件
  */
-export function initOpenFiles() {
-  store.files = Array.from(new Set(store.files));
-  for (const file of store.files) {
-    handleFile(String(file));
-  }
+export function initOpenedFiles() {
+	for (const path of store.openedKeys) {
+		if (NodeJS.fs.existsSync(String(path))) {
+			handleOpenedFile(path);
+		}
+	}
 }

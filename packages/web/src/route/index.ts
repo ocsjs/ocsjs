@@ -5,13 +5,27 @@ import { config } from '../config';
  * 根据配置生成路由
  */
 
-export const routes: RouteRecordRaw[] = Reflect.ownKeys(config.routes).map((key) => Reflect.get(config.routes, key));
+export const routes = config.routes as (RouteRecordRaw & {
+	name: string;
+	path: string;
+	component: any;
+	meta: {
+		icon: string;
+		filledIcon: string;
+		title: string;
+		tutorial: {
+			step: number;
+			placement: string;
+			tooltip: string;
+		};
+	};
+})[];
 
 export const router = createRouter({
-  history: createWebHashHistory(),
-  routes
+	history: createWebHashHistory(),
+	routes
 });
 
 router.beforeEach(() => {
-  return true;
+	return true;
 });

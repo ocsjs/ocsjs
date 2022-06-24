@@ -1,5 +1,5 @@
 import { LaunchOptions } from 'playwright';
 
 export const launchOptions = {
-  headless: false
+	headless: false
 } as LaunchOptions;

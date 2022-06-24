@@ -3,7 +3,7 @@ import { CXPhoneCodeLoginOptions } from './phone.code';
 import { CXSchoolLoginOptions } from './school';
 
 export interface CXLoginOptions {
-  phone: CXPhoneLoginOptions
-  school: CXSchoolLoginOptions
-  phoneCode: CXPhoneCodeLoginOptions
+	phone: CXPhoneLoginOptions;
+	school: CXSchoolLoginOptions;
+	phoneCode: CXPhoneCodeLoginOptions;
 }
