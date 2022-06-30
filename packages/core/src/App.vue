@@ -253,9 +253,6 @@ function listenHistoryChange() {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style lang="less">
 @import './assets/less/common.less';
 </style>

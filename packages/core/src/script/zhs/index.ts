@@ -7,7 +7,7 @@ import { WorkSettingPanel } from '../../components/zhs/WorkSettingPanel';
 import { defineScript } from '../../core/define.script';
 import { sleep } from '../../core/utils';
 import { logger } from '../../logger';
-import { useContext, useSettings } from '../../store';
+import { useSettings } from '../../store';
 import { creditStudy, study } from './study';
 import { creditWork, workOrExam } from './work';
 
@@ -91,96 +91,41 @@ export const ZHSScript = defineScript({
 			}
 		},
 		{
-			name: '文本识别脚本',
+			name: '文字识别脚本',
 			url: [
 				'**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
 				'**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*'
 			],
 			async onload() {
-				const { zhs } = useContext();
-				zhs.isRecognizing = true;
-
-				const interval = setInterval(() => {
-					const scripts = Array.from(document.querySelectorAll('script'));
-					for (const script of scripts) {
-						const params = new URLSearchParams(script.src.substring(script.src.indexOf('?') + 1));
-						const json = params.get('json');
-						if (json) {
-							let dtos = [];
-							try {
-								dtos = JSON.parse(JSON.parse(JSON.parse(json).data[0].data).data);
-							} catch {}
-							if (dtos.length === 0) {
-								try {
-									dtos = JSON.parse(JSON.parse(json).data[0].data).data;
-								} catch {}
-							}
-							try {
-								const questionDtos = dtos.rt.examBase.workExamParts.map((p: any) => p.questionDtos).flat();
-								questionDtos
-									.map((d: any) => {
-										d.eid = d.eid.replace(/\\|\/|\?|\*|"|'|<|>|\{|\}|\[|\]|:|\^|\$|!|~|`|=|\+|/g, '');
-										return d;
-									})
-									.forEach((d: any) => {
-										const desc = document
-											.querySelector('#anchor_' + d.eid)
-											?.parentNode?.parentNode?.querySelector('.subject_describe');
-										if (desc) desc.innerHTML = d.name;
-									});
-								zhs.isRecognizing = false;
-								clearInterval(interval);
-								break;
-							} catch {}
-						}
+				setTimeout(() => {
+					for (const div of Array.from(document.querySelectorAll('.subject_describe > div'))) {
+						// @ts-ignore
+						div.__vue__.$el.innerHTML = div.__vue__._data.shadowDom.textContent;
 					}
 				}, 3000);
 			}
 		},
 		{
-			name: '页面反反混淆功能',
-			url: '**zhihuishu.com/videoStudy.html**',
-			priority: 999,
-			onstart() {
+			name: '视频守护脚本',
+			url: ['**zhihuishu.com/videoStudy.html**'],
+			onload() {
 				// @ts-ignore
-				// eslint-disable-next-line no-extend-native
-				RegExp.prototype._test = RegExp.prototype.test;
+				const study = document.querySelector('.video-study').__vue__;
+				const empty = () => {};
 				// @ts-ignore
-				// eslint-disable-next-line no-extend-native
-				RegExp.prototype.test = function (s) {
-					if (this.source.includes('function') || this.source.includes('native code')) {
-						console.log(this.source);
-						return true;
-					}
+				study.checkout = empty;
+				// @ts-ignore
+				study.notTrustScript = empty;
+				// @ts-ignore
+				study.checkoutNotTrustScript = empty;
+				// @ts-ignore
+				const _videoClick = study.videoClick;
+				// @ts-ignore
+				study.videoClick = function (...args) {
+					args[args.length - 1] = { isTrusted: true };
 					// @ts-ignore
-					return this._test(s);
+					return _videoClick.apply(study, args);
 				};
-			}
-		},
-		{
-			name: '屏蔽视频检测脚本',
-			url: '**zhihuishu.com/videoStudy.html**',
-			onstart() {
-				function hookAddEventListener() {
-					const args = [...arguments];
-					const temp = args[1];
-					args[1] = function () {
-						const args2 = [...arguments];
-						args2[0] = new Proxy(args2[0], {
-							get(target: any, p: string | symbol) {
-								return p === 'isTrusted' ? true : target[p];
-							}
-						});
-						return temp(...args2);
-					};
-					// @ts-ignore
-					return this._addEventListener(...args);
-				}
-				if (Element.prototype.addEventListener !== hookAddEventListener) {
-					// @ts-ignore
-					Element.prototype._addEventListener = Element.prototype.addEventListener;
-					Element.prototype.addEventListener = hookAddEventListener;
-				}
 			}
 		}
 	],

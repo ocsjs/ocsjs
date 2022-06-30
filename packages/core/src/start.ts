@@ -29,6 +29,9 @@ export let loaded = false;
  * 显示面板，检测是否存在需要运行的脚本，并执行
  */
 export function start(options?: StartOptions) {
+	// 先创建面板元素，防止 shadow root 被自身混淆
+	const div = document.createElement('div');
+	const shadowRoot = div.attachShadow({ mode: 'closed' });
 	// 执行脚本
 	executeScripts(options?.scripts || definedScripts);
 
@@ -39,8 +42,7 @@ export function start(options?: StartOptions) {
 
 		/** 绑定元素 */
 		app = createApp(App);
-		const div = document.createElement('div');
-		const shadowRoot = div.attachShadow({ mode: 'closed' });
+
 		const style = document.createElement('style');
 		panel = document.createElement('div');
 		style.innerHTML = options?.style || '';
