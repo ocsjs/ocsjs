@@ -141,12 +141,13 @@ export async function switchPlaybackRate(playbackRate: number) {
 export async function closeTestDialog() {
 	const { items } = domSearchAll({ items: '.topic-item' });
 	if (items.length !== 0) {
-		const { item, btn } = domSearch({ item: '.topic-item', btn: '[aria-label="弹题测验"] .btn' });
+		const { item, study } = domSearch({ item: '.topic-item', study: '.video-study' });
 		// 选择A
 		item?.click();
 		await sleep(1000);
-		// 关闭
-		btn?.click();
+		// 关闭弹窗
+		// @ts-ignore
+		study.testDialog = false;
 		await sleep(1000);
 	}
 }
