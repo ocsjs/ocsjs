@@ -8,13 +8,12 @@ assignees: enncy
 ---
 
 **环境描述**
-浏览器：xxx
-网课类型：xxx
+系统:  win11/mac/linux/...
+浏览器：谷歌/edge/fire fox/...
 页面链接: https://example.com/xxxxxxxxxxxxxxx
 
 **BUG描述**
-
-xxx
+...
 
 **重现方法**
  
