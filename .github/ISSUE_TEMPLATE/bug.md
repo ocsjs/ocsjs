@@ -7,7 +7,14 @@ assignees: enncy
 
 ---
 
+**环境描述**
+浏览器：xxx
+网课类型：xxx
+页面链接: https://example.com/xxxxxxxxxxxxxxx
+
 **BUG描述**
+
+xxx
 
 **重现方法**
  
@@ -21,9 +28,6 @@ assignees: enncy
 
 **屏幕截图**
 如果可以请附带截图。
-
-**浏览器类型**
-谷歌/Edge/...
  
 **解决方案**
 如果可以，请提供您的解决思路
