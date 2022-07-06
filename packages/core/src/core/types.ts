@@ -61,7 +61,7 @@ export interface OCSStore {
     zhs: {
       /** 是否正在识别文字 */
       isRecognizing: boolean
-    }
-
+    },
+    zjooc: {}
   }
 }

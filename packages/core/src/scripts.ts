@@ -121,10 +121,24 @@ export interface ICVESetting {
   }
 }
 
+export interface ZJOOCSetting {
+  video: {
+    /** 播放速度 */
+    playbackRate: number
+    /** 音量 */
+    volume: number
+    /** 复习模式 */
+    restudy: boolean,
+  }
+  work: CommonWorkSetting
+  exam: CommonWorkSetting
+}
+
 export interface ScriptSettings {
   zhs: ZHSSetting
   cx: CXSetting
   icve: ICVESetting
+  zjooc: ZJOOCSetting
   common: {
     answererWrappers: AnswererWrapper[]
   }
@@ -207,6 +221,15 @@ export const defaultOCSSetting: ScriptSettings = {
       currentTask: undefined,
       cells: []
     }
+  },
+  zjooc: {
+    video: {
+      playbackRate: 1,
+      volume: 0,
+      restudy: false
+    },
+    work: defaultWorkSetting,
+    exam: defaultWorkSetting
   },
   common: {
     answererWrappers: [] as AnswererWrapper[]

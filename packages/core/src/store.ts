@@ -65,7 +65,8 @@ export function createStore(): OCSStore {
       },
       zhs: {
         isRecognizing: false
-      }
+      },
+      zjooc: {}
     }
   };
 }
