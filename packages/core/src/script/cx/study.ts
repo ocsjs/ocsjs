@@ -51,6 +51,9 @@ export async function study() {
 		logger('debug', '完成, 即将跳转, 如卡死请自行点击下一章。');
 		await sleep(3000);
 		next.click();
+		// 如果当然存在任务点未完成，则跳过，运行下一章
+		await sleep(3000);
+		domSearch({ confirm: '.jobFinishTip .nextChapter' }, top?.document).confirm?.click();
 	} else {
 		if (CXAnalyses.isInFinalChapter()) {
 			if (CXAnalyses.isFinishedAllChapters()) {
