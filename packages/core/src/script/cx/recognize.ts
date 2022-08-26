@@ -1,8 +1,7 @@
 import md5 from 'md5';
 import { request } from '../../core/utils';
-import { logger, OCR } from '../../main';
+import { logger } from '../../main';
 import CXAnalyses from './utils';
-// @ts-ignore
 import Typr from 'typr.js';
 import { useContext } from '../../store';
 
@@ -64,50 +63,6 @@ export async function mapRecognize() {
 				});
 			}
 		}
-	}
-}
-
-/** 繁体字识别-OCR文字识别 */
-export async function ocrRecognize() {
-	const ocr = new OCR({
-		langPath: 'https://cdn.ocsjs.com/resources/tessdata',
-		corePath: 'https://cdn.ocsjs.com/resources/tesseract/tesseract-core.wasm.js',
-		workerPath: 'https://cdn.ocsjs.com/resources/tesseract/worker.min.js'
-	});
-
-	const { cx } = useContext();
-
-	// 顶层初始化
-	if (window === top) {
-		cx.isRecognizing = false;
-		logger('debug', '加载文字识别功能, 如果是初始化请耐心等待..., 大约需要下载20mb的数据文件');
-		// 预加载
-		await ocr.load();
-		logger('info', '文字识别功能加载成功');
-	}
-
-	const fonts = CXAnalyses.getSecretFont();
-	if (fonts.length) {
-		logger('info', '文字识别功能启动');
-		cx.isRecognizing = true;
-		// 加载
-		await ocr.load();
-		for (let i = 0; i < fonts.length; i++) {
-			try {
-				// 识别
-				const text = await ocr.recognize(OCR.suit(fonts[i]));
-				// 改变文本
-				fonts[i].innerText = text;
-				// 复原样式
-				OCR.unsuit(fonts[i]);
-			} catch (e) {
-				logger('error', '文字识别功能出错,可能存在图片无法识别。', e);
-				console.log('文字识别错误', e);
-			}
-		}
-
-		cx.isRecognizing = false;
-		logger('info', '文字识别完成');
 	}
 }
 

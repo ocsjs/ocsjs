@@ -9,7 +9,7 @@ import { logger } from '../../logger';
 import { useContext, useSettings } from '../../store';
 import { LiveSettingPanel } from '../../components/cx/LiveSettingPanel';
 import { rateHack } from './rate.hack';
-import { mapRecognize, ocrRecognize } from './recognize';
+import { mapRecognize } from './recognize';
 import { study, switchPlayLine } from './study';
 import CXAnalyses from './utils';
 import { workOrExam } from './work';
@@ -28,6 +28,7 @@ const updateURLs = [
 
 export const CXScript = defineScript({
 	name: '超星学习通',
+	domain: ['chaoxing.com', 'edu.cn', 'org.cn'],
 	routes: [
 		{
 			name: '版本切换脚本',
@@ -228,8 +229,6 @@ export const CXScript = defineScript({
 				const { recognize } = useSettings().cx.common;
 				if (recognize === 'map') {
 					mapRecognize();
-				} else if (recognize === 'ocr') {
-					ocrRecognize();
 				} else {
 					logger('debug', '繁体字识别已被关闭，可能会导致繁体字出现。');
 				}

@@ -14,12 +14,10 @@
 		"@types/node-fetch": "^2.6.1",
 		"axios": "^0.25.0",
 		"chalk": "4.1.0",
-		"dom-to-image": "^2.6.0",
 		"lodash": "^4.17.21",
 		"md5": "^2.3.0",
 		"node-fetch": "^2.6.7",
 		"string-similarity": "^4.0.4",
-		"tesseract.js": "^2.1.5",
 		"typr.js": "^1.0.0",
 		"vue": "^3.2.31"
 	},

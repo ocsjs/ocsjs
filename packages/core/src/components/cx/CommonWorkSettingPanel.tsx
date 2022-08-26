@@ -27,7 +27,6 @@ export const CommonWorkSettingPanel = defineComponent({
 						<select onChange={(e: any) => (commonSettings.recognize = e.target.value)}>
 							{[
 								['map', '字典匹配识别-推荐'],
-								['ocr', 'OCR文字识别'],
 								['close', '关闭繁体字识别']
 							].map((item) => (
 								<option
