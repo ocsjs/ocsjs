@@ -1,54 +1,54 @@
 {
-  "name": "@ocsjs/scripts",
-  "version": "1.1.0",
-  "description": "scripts package of ocs",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "files": [
-    "lib"
-  ],
-  "publishConfig": {
-    "access": "public"
-  },
-  "bin": {
-    "ocs": "./lib/nodejs/cli.js"
-  },
-  "scripts": {
-    "test": "playwright test --config=playwright.config.ts"
-  },
-  "dependencies": {
-    "@ocsjs/common": "workspace:^1.0.0",
-    "axios": "^0.25.0",
-    "chalk": "4.1.0",
-    "commander": "^9.0.0",
-    "dotenv": "^16.0.0",
-    "lodash": "^4.17.21",
-    "playwright": "^1.18.1",
-    "string-similarity": "^4.0.4",
-    "vue": "^3.2.31"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/enncy/online-course-script.git"
-  },
-  "keywords": [
-    "ocs",
-    "script",
-    "playwright",
-    "puppeteer",
-    "electron",
-    "vue",
-    "ant-design-vue",
-    "typescript"
-  ],
-  "author": "enncy",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/enncy/online-course-script/issues"
-  },
-  "homepage": "https://github.com/enncy/online-course-script#readme",
-  "devDependencies": {
-    "@playwright/test": "^1.19.1",
-    "@types/string-similarity": "^4.0.0"
-  }
+	"name": "@ocsjs/scripts",
+	"version": "1.1.0",
+	"description": "scripts package of ocs",
+	"main": "./lib/index.js",
+	"types": "./lib/index.d.ts",
+	"files": [
+		"lib"
+	],
+	"publishConfig": {
+		"access": "public"
+	},
+	"bin": {
+		"ocs": "./lib/nodejs/cli.js"
+	},
+	"scripts": {
+		"test": "playwright test --config=playwright.config.ts"
+	},
+	"dependencies": {
+		"@ocsjs/common": "workspace:^1.0.0",
+		"axios": "^0.25.0",
+		"chalk": "4.1.0",
+		"commander": "^9.0.0",
+		"dotenv": "^16.0.0",
+		"lodash": "^4.17.21",
+		"playwright": "^1.18.1",
+		"string-similarity": "^4.0.4",
+		"vue": "^3.2.31"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ocsjs/ocsjs.git"
+	},
+	"keywords": [
+		"ocs",
+		"script",
+		"playwright",
+		"puppeteer",
+		"electron",
+		"vue",
+		"ant-design-vue",
+		"typescript"
+	],
+	"author": "enncy",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/ocsjs/ocsjs/issues"
+	},
+	"homepage": "https://github.com/ocsjs/ocsjs#readme",
+	"devDependencies": {
+		"@playwright/test": "^1.19.1",
+		"@types/string-similarity": "^4.0.0"
+	}
 }

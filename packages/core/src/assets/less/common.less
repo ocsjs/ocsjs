@@ -1,449 +1,433 @@
- /**
+/**
 panel style
 */
- #ocs-panel {
-     position: fixed;
-     top: 40%;
-     left: 50%;
-     min-width: 300px;
-     background: white;
-     z-index: 99999999;
-     text-align: left;
-     box-shadow: 0 0 24px -10px #000000;
-     border-radius: 6px;
-     border: 1px solid #a3a3a3;
-     font-family: Avenir, Helvetica, Arial, sans-serif;
-     -webkit-font-smoothing: antialiased;
-     -moz-osx-font-smoothing: grayscale;
-     color: #636363;
-
-     // 头部
-     .ocs-panel-header {
-         display: flex;
-         padding: 2px 12px;
-         background: #f7f7f7;
-         border-radius: 6px;
-         border-bottom-left-radius: unset;
-         border-bottom-right-radius: unset;
-         box-shadow: 0px 0px 4px #c7c7c7;
-
-         // 标题
-         .title {
-             cursor: pointer !important;
-             font-size: 14px;
-             padding: 2px 8px;
-             white-space: nowrap;
-             color: rgba(0, 0, 0, 0.509);
-
-             &.active {
-                 background: white;
-                 color: black;
-
-                 span::after {
-                     content: "";
-                     border-bottom: 2px solid #0099ff;
-                     display: block;
-                     width: 24px;
-                     justify-content: center;
-                     margin: 0 auto;
-                 }
-             }
-
-             &:hover {
-                 background: white;
-             }
-         }
-
-
-         &.hide {
-             display: none;
-         }
-     }
-
-     // 内容区域
-     .ocs-panel-container {
-         font-size: 12px;
-         padding: 4px;
-         overflow: auto;
-         max-height: 500px;
-         max-width: 800px;
-
-         ul li {
-             list-style: inside;
-         }
-
-         &.hide {
-             display: none;
-         }
-     }
-
-     .draggable {
-         cursor: move;
-     }
-
-     // 隐藏样式
-     &.hide {
-         width: 48px;
-         height: 48px;
-         background-color: rgba(0, 0, 0, 0);
-         box-shadow: 0px 0px 16px grey;
-         border-radius: 10px;
-         min-width: unset;
-         bottom: 10%;
-         left: 5%;
-         top: unset;
-     }
-
-     ul {
-         padding: 0;
-         margin: 0;
-     }
-
-     hr {
-         margin: 4px 0px;
-     }
-
-     // 底部区域
-     .ocs-panel-footer {
-         font-size: 12px;
-         color: #c5c5c5;
-         margin-top: 8px;
-         text-align: right;
-         padding: 0px 4px;
-         box-shadow: 0px 0px 4px #c7c7c7;
-         border-radius: 6px;
-         border-top-left-radius: unset;
-         border-top-right-radius: unset;
-
-         &.hide {
-             border-top: none;
-         }
-
-         .hide-btn {
-             float: left;
-             cursor: pointer;
-         }
-     }
-
-     // 设置
-     .ocs-setting-items {
-         display: grid;
-         grid-template-columns: min-content auto;
-         grid-row-gap: 8px;
-         white-space: nowrap;
-         font-size: 12px;
-
-         label {
-             padding-right: 4px;
-         }
-
-         label+div {
-             display: inline-flex;
-             align-items: center;
-             gap: 2px;
-         }
-
-         label::after {
-             content: ": ";
-         }
-
-         select {
-             font-size: 12px;
-             outline: none;
-             border: none;
-             border: 1px solid #e4e4e4;
-             border-radius: 4px;
-             width: 100%;
-         }
-
-         input {
-             outline: none;
-             border: none;
-             border-bottom: 1px solid #e4e4e4;
-             background: #fbfbfb;
-             padding-left: 2px;
-             text-align: center;
-             padding: 0px;
-             margin: 0px;
-         }
-
-         /** check box 的样式 */
-         .input-switch {
-             appearance: none;
-             width: fit-content;
-             min-width: 32px;
-             height: 16px;
-             background: #c5c5c5;
-             border-radius: 100px;
-             display: flex;
-             align-items: center;
-             padding: 2px 4PX;
-             transition: all .2s ease-in-out;
-
-             &:checked {
-                 background: #1890ff !important;
-             }
-
-             &:checked::before {
-                 transform: translate(100%, 0px);
-             }
-
-
-             &::before {
-                 background-color: #fff;
-                 border-radius: 9px;
-                 box-shadow: 0 2px 4px #00230b33;
-                 width: 12px;
-                 height: 12px;
-                 content: "";
-             }
-
-         }
-
-         input:not([type="checkbox"], [type="radio"]) {
-             width: 100%;
-         }
-
-         input[type='checkbox'],
-         input[type='radio'],
-         input[type='range'] {
-             accent-color: #0e8ee2;
-             ;
-         }
-     }
-
-     // 按钮
-     .ocs-btn-primary {
-         outline: none;
-         border: none;
-         cursor: pointer;
-
-         background: #1890ff;
-         color: white;
-         border: 1px solid #1890ff;
-         font-size: 12px;
-         border-radius: 4px;
-         margin: 2px;
-
-     }
-
-     // 普通按钮
-     .ocs-btn {
-         outline: none;
-         border: none;
-         cursor: pointer;
-
-         background: white;
-         border: 1px solid #e4e4e4;
-         border-radius: 4px;
-         font-size: 12px;
-         margin: 2px;
-     }
-
-     // 按钮禁用状态
-     button[disabled] {
-         background: #e4e4e4;
-         color: #a5a5a5;
-         border: 1px solid #e4e4e4;
-         cursor: not-allowed;
-     }
-
-     // 终端样式
-     .terminal {
-         width: 300px;
-         height: 300px;
-         max-width: 300px;
-         max-height: 300px;
-         overflow: auto;
-         background-color: black;
-         padding: 12px 6px;
-
-         color: white;
-
-         level {
-             padding: 0px 2px;
-             border-radius: 2px;
-         }
-
-         level.info {
-             background-color: #2196f3a3;
-         }
-
-         level.warn {
-             background-color: #ffc107db;
-         }
-
-         level.error {
-             background-color: #f36c71cc;
-         }
-
-         level.debug {
-             background-color: #9e9e9ec4;
-         }
-
-         // 文字选中样式
-         & *::selection {
-             background-color: #ffffff6b;
-         }
-     }
-
-     /** 搜索结果  */
-     #search-results {
-
-         a {
-             text-decoration: underline;
-         }
-
-
-         // 搜索结果悬浮窗
-         .search-result-modal {
-             max-height: 600px;
-             max-width: 800px;
-             overflow: auto;
-             background-color: white;
-             padding: 4px;
-             transform: translate(-105%, 0px);
-             position: absolute;
-             box-shadow: 0px 0px 8px rgb(199, 199, 199);
-         }
-
-         // 搜索结果标题
-         .search-results-title {
-             padding: 2px 0px;
-         }
-
-
-         .search-results-container {
-             padding-left: 12px;
-         }
-
-         .search-results-item {
-             margin-bottom: 8px;
-             background: #f6ffed;
-             border: 1px solid #b7eb8f;
-             padding: 0px 2px;
-         }
-     }
-
-
-
-     /** 文字提示 */
-     .tooltip {
-         position: absolute;
-         transform: translate(0%, -100%);
-         padding: 4px;
-         border-radius: 4px;
-         box-shadow: 0px 0px 4px black;
-         white-space: nowrap;
-         z-index: 9999999;
-
-         a {
-             color: #1890ff;
-         }
-
-         &.dark {
-             background: black;
-             color: white;
-             opacity: 0.8;
-         }
-
-         &.light {
-             background: white;
-             color: inherit;
-         }
-     }
-
-     // alert 提示父元素
-     .alert-container {
-         margin-bottom: 4px;
-         position: absolute;
-         z-index: 999999;
-         bottom: 100%;
-         left: 50%;
-         width: 100%;
-         transform: translate(-50%, 0px);
-
-         // 关闭按钮
-         .alert-closer {
-             float: right;
-             border-radius: 50%;
-             border: 1px solid;
-             text-align: center;
-             cursor: pointer;
-             font: icon;
-             line-height: 14px;
-             width: 14px;
-         }
-
-         // 隐藏模式下的提示样式
-         .hide .alert {
-             width: 200px;
-             transform: translate(-82px, 0px);
-         }
-
-         // 提示内容
-         .alert {
-             border-radius: 4px;
-             margin-bottom: 4px;
-             padding: 4px;
-             font-size: 12px;
-
-
-             .alert-text {
-                 letter-spacing: 1px;
-                 font-weight: bold;
-             }
-
-             &.error {
-                 background-color: #ff000699;
-                 color: #fff;
-                 border: 1px solid #f36c70;
-             }
-
-
-             &.info {
-                 background-color: #2196f3a3;
-                 color: white;
-                 border: 1px solid #1890ff;
-             }
-
-             &.success {
-                 background-color: #84d346d1;
-                 color: #fff;
-                 border: 1px solid #6fd91d;
-             }
-
-             &.warn {
-                 background-color: #fbbf30e6;
-                 color: #725206;
-                 border: 1px solid #ffc107;
-             }
-         }
-
-     }
-
-
-
-     .hide-tip {
-         position: fixed;
-         color: white;
-         white-space: nowrap;
-         transform: translate(-30%, 0px);
-         text-align: center;
-         text-shadow: 0px 0px 8px black;
-     }
-
- }
-
- // logo图标
- .ocs-icon {
-     width: 64px;
-     height: 64px;
-     position: relative;
-     top: -8px;
-     left: -8px;
- }
-
- .pointer {
-     cursor: pointer;
- }
+#ocs-panel {
+	position: fixed;
+	top: 40%;
+	left: 50%;
+	min-width: 300px;
+	background: white;
+	z-index: 99999999;
+	text-align: left;
+	box-shadow: 0 0 24px -10px #000000;
+	border-radius: 6px;
+	border: 1px solid #a3a3a3;
+	font-family: Avenir, Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: #636363;
+
+	// 头部
+	.ocs-panel-header {
+		display: flex;
+		padding: 2px 12px;
+		background: #f7f7f7;
+		border-radius: 6px;
+		border-bottom-left-radius: unset;
+		border-bottom-right-radius: unset;
+		box-shadow: 0px 0px 4px #c7c7c7;
+
+		// 标题
+		.title {
+			cursor: pointer !important;
+			font-size: 14px;
+			padding: 2px 8px;
+			white-space: nowrap;
+			color: rgba(0, 0, 0, 0.509);
+
+			&.active {
+				background: white;
+				color: black;
+
+				span::after {
+					content: '';
+					border-bottom: 2px solid #0099ff;
+					display: block;
+					width: 24px;
+					justify-content: center;
+					margin: 0 auto;
+				}
+			}
+
+			&:hover {
+				background: white;
+			}
+		}
+
+		&.hide {
+			display: none;
+		}
+	}
+
+	// 内容区域
+	.ocs-panel-container {
+		font-size: 12px;
+		padding: 4px;
+		overflow: auto;
+		max-height: 500px;
+		max-width: 800px;
+
+		ul li {
+			list-style: inside;
+		}
+
+		&.hide {
+			display: none;
+		}
+	}
+
+	.draggable {
+		cursor: move;
+	}
+
+	// 隐藏样式
+	&.hide {
+		width: 48px;
+		height: 48px;
+		background-color: rgba(0, 0, 0, 0);
+		box-shadow: 0px 0px 16px grey;
+		border-radius: 10px;
+		min-width: unset;
+		bottom: 10%;
+		left: 5%;
+		top: unset;
+	}
+
+	ul {
+		padding: 0;
+		margin: 0;
+	}
+
+	hr {
+		margin: 4px 0px;
+	}
+
+	// 底部区域
+	.ocs-panel-footer {
+		font-size: 12px;
+		color: #c5c5c5;
+		margin-top: 8px;
+		text-align: right;
+		padding: 0px 4px;
+		box-shadow: 0px 0px 4px #c7c7c7;
+		border-radius: 6px;
+		border-top-left-radius: unset;
+		border-top-right-radius: unset;
+
+		&.hide {
+			border-top: none;
+		}
+
+		.hide-btn {
+			float: left;
+			cursor: pointer;
+		}
+	}
+
+	// 设置
+	.ocs-setting-items {
+		display: grid;
+		grid-template-columns: min-content auto;
+		grid-row-gap: 8px;
+		white-space: nowrap;
+		font-size: 12px;
+
+		label {
+			padding-right: 4px;
+		}
+
+		label + div {
+			display: inline-flex;
+			align-items: center;
+			gap: 2px;
+		}
+
+		label::after {
+			content: ': ';
+		}
+
+		select {
+			font-size: 12px;
+			outline: none;
+			border: none;
+			border: 1px solid #e4e4e4;
+			border-radius: 4px;
+			width: 100%;
+		}
+
+		input {
+			outline: none;
+			border: none;
+			border-bottom: 1px solid #e4e4e4;
+			background: #fbfbfb;
+			padding-left: 2px;
+			text-align: center;
+			padding: 0px;
+			margin: 0px;
+		}
+
+		/** check box 的样式 */
+		.input-switch {
+			appearance: none;
+			width: fit-content;
+			min-width: 32px;
+			height: 16px;
+			background: #c5c5c5;
+			border-radius: 100px;
+			display: flex;
+			align-items: center;
+			padding: 2px 4px;
+			transition: all 0.2s ease-in-out;
+
+			&:checked {
+				background: #1890ff !important;
+			}
+
+			&:checked::before {
+				transform: translate(100%, 0px);
+			}
+
+			&::before {
+				background-color: #fff;
+				border-radius: 9px;
+				box-shadow: 0 2px 4px #00230b33;
+				width: 12px;
+				height: 12px;
+				content: '';
+			}
+		}
+
+		input:not([type='checkbox'], [type='radio']) {
+			width: 100%;
+		}
+
+		input[type='checkbox'],
+		input[type='radio'],
+		input[type='range'] {
+			accent-color: #0e8ee2;
+		}
+	}
+
+	// 按钮
+	.ocs-btn-primary {
+		outline: none;
+		border: none;
+		cursor: pointer;
+
+		background: #1890ff;
+		color: white;
+		border: 1px solid #1890ff;
+		font-size: 12px;
+		border-radius: 4px;
+		margin: 2px;
+	}
+
+	// 普通按钮
+	.ocs-btn {
+		outline: none;
+		border: none;
+		cursor: pointer;
+
+		background: white;
+		border: 1px solid #e4e4e4;
+		border-radius: 4px;
+		font-size: 12px;
+		margin: 2px;
+	}
+
+	// 按钮禁用状态
+	button[disabled] {
+		background: #e4e4e4;
+		color: #a5a5a5;
+		border: 1px solid #e4e4e4;
+		cursor: not-allowed;
+	}
+
+	// 终端样式
+	.terminal {
+		width: 300px;
+		height: 300px;
+		max-width: 300px;
+		max-height: 300px;
+		overflow: auto;
+		background-color: black;
+		padding: 12px 6px;
+
+		color: white;
+
+		level {
+			padding: 0px 2px;
+			border-radius: 2px;
+		}
+
+		level.info {
+			background-color: #2196f3a3;
+		}
+
+		level.warn {
+			background-color: #ffc107db;
+		}
+
+		level.error {
+			background-color: #f36c71cc;
+		}
+
+		level.debug {
+			background-color: #9e9e9ec4;
+		}
+
+		// 文字选中样式
+		& *::selection {
+			background-color: #ffffff6b;
+		}
+	}
+
+	/** 搜索结果  */
+	#search-results {
+		a {
+			text-decoration: underline;
+		}
+
+		// 搜索结果悬浮窗
+		.search-result-modal {
+			max-height: 600px;
+			max-width: 800px;
+			overflow: auto;
+			background-color: white;
+			padding: 4px;
+			transform: translate(-105%, 0px);
+			position: absolute;
+			box-shadow: 0px 0px 8px rgb(199, 199, 199);
+		}
+
+		// 搜索结果标题
+		.search-results-title {
+			padding: 2px 0px;
+		}
+
+		.search-results-container {
+			padding-left: 12px;
+		}
+
+		.search-results-item {
+			margin-bottom: 8px;
+			background: #f6ffed;
+			border: 1px solid #b7eb8f;
+			padding: 0px 2px;
+		}
+	}
+
+	/** 文字提示 */
+	.tooltip {
+		position: absolute;
+		transform: translate(0%, -100%);
+		padding: 4px;
+		border-radius: 4px;
+		box-shadow: 0px 0px 4px black;
+		white-space: nowrap;
+		z-index: 9999999;
+
+		a {
+			color: #1890ff;
+		}
+
+		&.dark {
+			background: black;
+			color: white;
+			opacity: 0.8;
+		}
+
+		&.light {
+			background: white;
+			color: inherit;
+		}
+	}
+
+	// alert 提示父元素
+	.alert-container {
+		margin-bottom: 4px;
+		position: absolute;
+		z-index: 999999;
+		bottom: 100%;
+		left: 50%;
+		width: 100%;
+		transform: translate(-50%, 0px);
+
+		// 关闭按钮
+		.alert-closer {
+			float: right;
+			border-radius: 50%;
+			border: 1px solid;
+			text-align: center;
+			cursor: pointer;
+			font: icon;
+			line-height: 14px;
+			width: 14px;
+		}
+
+		// 隐藏模式下的提示样式
+		.hide .alert {
+			width: 200px;
+			transform: translate(-82px, 0px);
+		}
+
+		// 提示内容
+		.alert {
+			border-radius: 4px;
+			margin-bottom: 4px;
+			padding: 4px;
+			font-size: 12px;
+
+			.alert-text {
+				letter-spacing: 1px;
+				font-weight: bold;
+			}
+
+			&.error {
+				background-color: #ff000699;
+				color: #fff;
+				border: 1px solid #f36c70;
+			}
+
+			&.info {
+				background-color: #2196f3a3;
+				color: white;
+				border: 1px solid #1890ff;
+			}
+
+			&.success {
+				background-color: #84d346d1;
+				color: #fff;
+				border: 1px solid #6fd91d;
+			}
+
+			&.warn {
+				background-color: #fbbf30e6;
+				color: #725206;
+				border: 1px solid #ffc107;
+			}
+		}
+	}
+
+	.hide-tip {
+		position: fixed;
+		color: white;
+		white-space: nowrap;
+		transform: translate(-30%, 0px);
+		text-align: center;
+		text-shadow: 0px 0px 8px black;
+	}
+}
+
+// logo图标
+.ocs-icon {
+	width: 64px;
+	height: 64px;
+	position: relative;
+	top: -8px;
+	left: -8px;
+}
+
+.pointer {
+	cursor: pointer;
+}

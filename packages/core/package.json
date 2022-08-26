@@ -1,59 +1,57 @@
 {
-  "name": "@ocsjs/core",
-  "version": "2.0.0",
-  "description": "core package of ocs",
-  "main": "./lib/index.js",
-  "types": "./lib/index.d.ts",
-  "files": [
-    "lib"
-  ],
-  "scripts": {},
-  "dependencies": {
-    "@ocsjs/common": "workspace:^1.0.0",
-    "@types/md5": "^2.3.2",
-    "@types/node-fetch": "^2.6.1",
-    "axios": "^0.25.0",
-    "chalk": "4.1.0",
-    "dom-to-image": "^2.6.0",
-    "lodash": "^4.17.21",
-    "md5": "^2.3.0",
-    "node-fetch": "^2.6.7",
-    "string-similarity": "^4.0.4",
-    "tesseract.js": "^2.1.5",
-    "typr.js": "^1.0.0",
-    "vue": "^3.2.31"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/enncy/online-course-script.git"
-  },
-  "keywords": [
-    "ocs",
-    "script",
-    "playwright",
-    "puppeteer",
-    "electron",
-    "vue",
-    "ant-design-vue",
-    "typescript"
-  ],
-  "author": "enncy",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/enncy/online-course-script/issues"
-  },
-  "homepage": "https://github.com/enncy/online-course-script#readme",
-  "devDependencies": {
-    "@types/dom-to-image": "^2.6.4",
-    "@types/string-similarity": "^4.0.0",
-    "@types/tampermonkey": "^4.0.5",
-    "@vitejs/plugin-vue": "^1.6.1",
-    "@vitejs/plugin-vue-jsx": "^1.3.9",
-    "@vue/compiler-sfc": "^3.2.31",
-    "less": "^4.1.2",
-    "less-loader": "^10.2.0",
-    "rollup-plugin-visualizer": "^5.6.0",
-    "vite": "^2.5.4",
-    "vite-plugin-banner": "^0.2.0"
-  }
+	"name": "@ocsjs/core",
+	"version": "2.0.0",
+	"description": "core package of ocs",
+	"main": "./lib/index.js",
+	"types": "./lib/index.d.ts",
+	"files": [
+		"lib"
+	],
+	"scripts": {},
+	"dependencies": {
+		"@ocsjs/common": "workspace:^1.0.0",
+		"@types/md5": "^2.3.2",
+		"@types/node-fetch": "^2.6.1",
+		"axios": "^0.25.0",
+		"chalk": "4.1.0",
+		"lodash": "^4.17.21",
+		"md5": "^2.3.0",
+		"node-fetch": "^2.6.7",
+		"string-similarity": "^4.0.4",
+		"typr.js": "^1.0.0",
+		"vue": "^3.2.31"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/ocsjs/ocsjs.git"
+	},
+	"keywords": [
+		"ocs",
+		"script",
+		"playwright",
+		"puppeteer",
+		"electron",
+		"vue",
+		"ant-design-vue",
+		"typescript"
+	],
+	"author": "enncy",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/ocsjs/ocsjs/issues"
+	},
+	"homepage": "https://github.com/ocsjs/ocsjs#readme",
+	"devDependencies": {
+		"@types/dom-to-image": "^2.6.4",
+		"@types/string-similarity": "^4.0.0",
+		"@types/tampermonkey": "^4.0.5",
+		"@vitejs/plugin-vue": "^1.6.1",
+		"@vitejs/plugin-vue-jsx": "^1.3.9",
+		"@vue/compiler-sfc": "^3.2.31",
+		"less": "^4.1.2",
+		"less-loader": "^10.2.0",
+		"rollup-plugin-visualizer": "^5.6.0",
+		"vite": "^2.5.4",
+		"vite-plugin-banner": "^0.2.0"
+	}
 }

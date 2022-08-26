@@ -1,4 +1,4 @@
 export interface ValidBrowser {
-  name: string;
-  path: string | undefined;
+	name: string;
+	path: string | undefined;
 }

@@ -1,84 +1,196 @@
 body,
 html,
 #app {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  max-width: 100%;
-  max-height: 100%;
-  min-width: 500px;
-  min-height: 300px;
-  box-shadow: 0px 0px 8px black;
+	margin: 0;
+	padding: 0;
+	width: 100%;
+	height: 100%;
+	max-width: 100%;
+	max-height: 100%;
+	min-width: 500px;
+	min-height: 300px;
+	box-shadow: 0px 0px 8px black;
 }
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  color: #504949;
-  /** 禁用动画 */
-}
-#app * {
-  animation-duration: 0s !important;
-  animation: none !important;
-  transition: none !important;
-}
-/** 禁用动画 */
-* {
-  animation-duration: 0s !important;
-  animation: none !important;
-  transition: none !important;
+	font-family: Avenir, Helvetica, Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
 }
 .pointer {
-  cursor: pointer;
+	cursor: pointer;
 }
 /* 设置滚动条的样式 */
 ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+	width: 10px;
+	height: 10px;
 }
 /* 滚动槽 */
 ::-webkit-scrollbar-track {
-  background: #ffffff00;
+	background: #ffffff00;
 }
 /* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
-  border-radius: 2px;
-  background: rgba(0, 0, 0, 0.1);
-  box-shadow: inset006pxrgba(0, 0, 0, 0.3);
-}
-/** message 消息样式 */
-.ant-message-notice .anticon {
-  transform: translate(-0.5px, -4px);
+	border-radius: 2px;
+	background: rgba(0, 0, 0, 0.1);
+	box-shadow: inset006pxrgba(0, 0, 0, 0.3);
 }
 /** 通知栏样式 */
 .ant-notification {
-  /** 主容器 */
-  /** 底部按钮 */
-}
-.ant-notification .anticon {
-  transform: translate(-0.5px, -6px);
+	/** 主容器 */
+	/** 底部按钮 */
 }
 .ant-notification .ant-notification-notice {
-  padding: 12px;
+	padding: 12px;
 }
 .ant-notification .ant-notification-notice-btn {
-  margin-top: 8px;
+	margin-top: 8px;
 }
 .ant-notification .ant-notification-notice-with-icon .ant-notification-notice-description {
-  margin-left: 0;
-  font-size: 12px;
+	margin-left: 0;
+	font-size: 12px;
 }
 .ant-notification .ant-notification-notice-with-icon .ant-notification-notice-message {
-  margin-left: 36px;
+	margin-left: 36px;
 }
 .ant-notification .ant-notification-notice-description {
-  overflow: auto;
+	overflow: auto;
 }
-code {
-  padding: 2px 4px !important;
-  font-size: 90% !important;
-  color: #323030;
-  background-color: #eaeaea;
-  border-radius: 4px;
+.anticon {
+	vertical-align: 0px !important;
+}
+.markdown code {
+	margin: 0px 2px !important;
+	padding: 2px 4px !important;
+	font-size: 90% !important;
+	color: #323030;
+	background-color: #eaeaea;
+	border-radius: 4px;
+}
+em {
+	background-color: yellow;
+	font-weight: bold;
+}
+body .ant-tree li span.ant-tree-iconEle {
+	vertical-align: unset;
+}
+body .ant-tree li .ant-tree-node-content-wrapper {
+	padding: 0;
+}
+body .ant-tree li {
+	padding: 0px 8px 0px 0px !important;
+	text-overflow: hidden;
+	overflow: hidden;
+	white-space: nowrap;
+}
+body .ant-tree-title {
+	padding: 4px 8px 4px 0px !important;
+}
+body .ant-tree * {
+	animation-duration: 0s !important;
+	animation: none !important;
+	transition: none !important;
+}
+body .ant-tree-iconEle.ant-tree-icon__customize {
+	width: 18px;
+}
+body .ant-tree li span.ant-tree-switcher {
+	width: 18px;
+}
+body.theme-light #title ul li {
+	color: #504949;
+}
+body.theme-night {
+	color: #bfbbb3;
+	background-color: #32302f;
+	/* 滚动槽 */
+	/* 滚动条滑块 */
+}
+body.theme-night #title ul li {
+	color: #bfbbb3;
+}
+body.theme-night ::-webkit-scrollbar-track {
+	background: #9693933a;
+}
+body.theme-night ::-webkit-scrollbar-thumb {
+	background: #c9bfbf98;
+}
+body.theme-night .ant-modal-confirm-content,
+body.theme-night .ant-modal-confirm-title,
+body.theme-night .ant-tree-title,
+body.theme-night .ant-dropdown-menu-item,
+body.theme-night .ant-tabs {
+	color: #bfbbb3 !important;
+}
+body.theme-night .anticon {
+	color: #bfbbb3 !important;
+}
+body.theme-night .anticon.active,
+body.theme-night .ant-tabs-nav .ant-tabs-tab-active,
+body.theme-night a.link {
+	color: #61a5e4 !important;
+}
+body.theme-night .ant-tag,
+body.theme-night .ant-input-number,
+body.theme-night .ant-input,
+body.theme-night .ant-input-affix-wrapper,
+body.theme-night .ant-select,
+body.theme-night .ant-select-item,
+body.theme-night .ant-modal-content,
+body.theme-night .ant-modal-header,
+body.theme-night .ant-modal-title,
+body.theme-night .ant-select-selector,
+body.theme-night .ant-table,
+body.theme-night .ant-table-thead > tr > th,
+body.theme-night .ant-table-cell-fix-right {
+	background: #32302f !important;
+	color: #bfbbb3 !important;
+}
+body.theme-night .ant-switch {
+	background: #bfbbb3 !important;
+}
+body.theme-night .ant-switch-checked,
+body.theme-night li.ant-tree-treenode-selected > span.ant-tree-node-content-wrapper::before {
+	background: #61a5e4 !important;
+}
+body.theme-night .border-end,
+body.theme-night .border-start,
+body.theme-night .border-bottom,
+body.theme-night .border-top,
+body.theme-night .ant-tabs-bar,
+body.theme-night .ant-modal-footer,
+body.theme-night .ant-modal-header,
+body.theme-night [class*='ant-input'],
+body.theme-night .ant-select-selector,
+body.theme-night .ant-table-tbody > tr > td,
+body.theme-night .ant-table-thead > tr > th,
+body.theme-night .ant-table-cell-fix-right {
+	border-color: #4b4848 !important;
+}
+body.theme-night * {
+	box-shadow: none !important;
+}
+body.theme-night .ant-select-dropdown,
+body.theme-night .ant-dropdown-menu {
+	border: 1px solid;
+	border-color: #4b4848 !important;
+	background: #32302f !important;
+}
+body.theme-night .ant-dropdown-menu-item-divider {
+	background: #4b4848;
+}
+body.theme-night .ant-table-row-hover td,
+body.theme-night .ant-dropdown-menu-item:hover,
+body.theme-night .ant-select-item:hover,
+body.theme-night li span.ant-tree-node-content-wrapper:hover::before {
+	background: #686868 !important;
+}
+body.theme-night .ant-select-item.ant-select-item-option-selected {
+	background: #61a5e4 !important;
+}
+body.theme-night .screenshot-item {
+	border: 1px solid;
+	border-color: #4b4848 !important;
+}
+body.theme-night .ant-divider-vertical {
+	border-color: #4b4848 !important;
 }

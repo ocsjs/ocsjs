@@ -6,17 +6,17 @@ import { URLSearchParams } from 'url';
  * @param page
  * @param url 课程首页
  */
-export async function gotoStudyPage (page: Page, url: string) {
-  const params = new URLSearchParams(url);
-  params.set('pageHeader', '1');
-  await page.goto(params.toString());
-  const frame = page.frame('frame_content-zj');
+export async function gotoStudyPage(page: Page, url: string) {
+	const params = new URLSearchParams(url);
+	params.set('pageHeader', '1');
+	await page.goto(params.toString());
+	const frame = page.frame('frame_content-zj');
 
-  if (frame) {
-    await Promise.all([page.waitForNavigation(), frame.click("[onclick*='toOld']")]);
-  }
+	if (frame) {
+		await Promise.all([page.waitForNavigation(), frame.click("[onclick*='toOld']")]);
+	}
 
-  return page;
+	return page;
 }
 
 /**
@@ -24,11 +24,11 @@ export async function gotoStudyPage (page: Page, url: string) {
  * @param page
  * @param url 课程首页
  */
-export async function gotoHomeworkPage (page: Page, url: string) {
-  const params = new URLSearchParams(url);
-  params.set('pageHeader', '8');
-  await page.goto(params.toString());
-  return page;
+export async function gotoHomeworkPage(page: Page, url: string) {
+	const params = new URLSearchParams(url);
+	params.set('pageHeader', '8');
+	await page.goto(params.toString());
+	return page;
 }
 
 /**
@@ -36,9 +36,9 @@ export async function gotoHomeworkPage (page: Page, url: string) {
  * @param page
  * @param url 课程首页
  */
-export async function gotoExamPage (page: Page, url: string) {
-  const params = new URLSearchParams(url);
-  params.set('pageHeader', '9');
-  await page.goto(params.toString());
-  return page;
+export async function gotoExamPage(page: Page, url: string) {
+	const params = new URLSearchParams(url);
+	params.set('pageHeader', '9');
+	await page.goto(params.toString());
+	return page;
 }

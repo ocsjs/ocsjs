@@ -1,44 +1,31 @@
 {
-  "env": {
-    "browser": true,
-    "es2021": true,
-    "node": true,
-    "vue/setup-compiler-macros": true
-  },
-  "extends": [
-    "plugin:vue/vue3-recommended",
-    "standard"
-  ],
-  "parserOptions": {
-    "ecmaVersion": "latest",
-    "parser": "@typescript-eslint/parser",
-    "sourceType": "module"
-  },
-  "plugins": [
-    "vue",
-    "@typescript-eslint"
-  ],
-  "rules": {
-    "semi": [
-      2,
-      "always"
-    ],
-    "max-len": [
-      2,
-      {
-        "code": 120,
-        "tabWidth": 2,
-        "ignoreComments": true,
-        "ignoreStrings": true
-      }
-    ],
-    "indent": [
-      "error",
-      2
-    ],
-    "camelcase": "off",
-    "vue/multi-word-component-names": "off",
-    "space-before-function-paren": "off",
-    "func-call-spacing": "off"
-  }
+	"env": {
+		"browser": true,
+		"es2021": true,
+		"node": true,
+		"vue/setup-compiler-macros": true
+	},
+	"extends": ["standard", "plugin:vue/vue3-recommended", "prettier"],
+	"parserOptions": {
+		"ecmaVersion": "latest",
+		"parser": "@typescript-eslint/parser",
+		"sourceType": "module"
+	},
+	"plugins": ["vue", "@typescript-eslint"],
+	"rules": {
+		"max-len": [
+			2,
+			{
+				"code": 120,
+				"tabWidth": 2,
+				"ignoreComments": true,
+				"ignoreStrings": true
+			}
+		],
+		"indent": "off",
+		"camelcase": "off",
+		"vue/multi-word-component-names": "off",
+		"space-before-function-paren": "off",
+		"func-call-spacing": "off"
+	}
 }
