@@ -75,6 +75,8 @@ export interface ZHSSetting {
 		playbackRate: number;
 		/** 显示视频进度 */
 		showProgress: boolean;
+		/** 视频画质 */
+		definition: string;
 		/** 音量 */
 		volume: number;
 		/** 复习模式 */
@@ -158,6 +160,7 @@ export const defaultOCSSetting: ScriptSettings = {
 			closeDate: new Date(0),
 			playbackRate: 1,
 			showProgress: true,
+			definition: 'line1bp',
 			restudy: false,
 			volume: 0,
 			creditStudy: false

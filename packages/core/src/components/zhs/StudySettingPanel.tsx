@@ -56,6 +56,31 @@ export const StudySettingPanel = defineComponent({
 						  ]
 						: []}
 
+					<label>视频画质</label>
+					<div>
+						<Tooltip title="默认画质为流畅">
+							<select
+								onChange={(e: any) => {
+									settings.definition = e.target.value;
+									(document.querySelector('.' + e.target.value) as any).click();
+								}}
+							>
+								<option
+									value="line1bq"
+									selected={settings.definition === 'line1bq'}
+								>
+									流畅
+								</option>
+								<option
+									value="line1gq"
+									selected={settings.definition === 'line1gq'}
+								>
+									高清
+								</option>
+							</select>
+						</Tooltip>
+					</div>
+
 					{settings.creditStudy === true ? (
 						<>
 							<label>视频倍速 </label>

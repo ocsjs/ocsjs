@@ -72,53 +72,44 @@ export async function study() {
  * @returns
  */
 export async function watch() {
-	const { volume, playbackRate, creditStudy } = useSettings().zhs.video;
+	const { volume, playbackRate, creditStudy, definition } = useSettings().zhs.video;
 
-	return new Promise<void>((resolve, reject) => {
-		try {
-			const video = document.querySelector('video') as HTMLVideoElement;
-			const { common } = useContext();
-			// 保存视频元素
-			common.currentMedia = video;
+	// 切换画质
+	const def: HTMLElement = document.querySelector('.' + definition) as any;
+	if (def.innerText !== definition) {
+		def.click();
+		await sleep(3000);
+	}
 
-			// 设置当前视频
-			common.currentMedia = video;
-			// 如果已经播放完了，则重置视频进度
-			video.currentTime = 0;
-			// 音量
-			video.volume = volume;
+	const video = document.querySelector('video') as HTMLVideoElement;
+	const { common } = useContext();
+	// 保存视频元素
+	common.currentMedia = video;
 
-			Promise.resolve(async () => {
-				await sleep(1000);
+	// 如果已经播放完了，则重置视频进度
+	video.currentTime = 0;
+	// 音量
+	video.volume = volume;
+	await sleep(1000);
 
-				video.play();
-				// 设置播放速度
-				await switchPlaybackRate(creditStudy ? 1 : playbackRate);
-
-				video.onpause = async function () {
-					if (!video.ended) {
-						if (stop) {
-							resolve();
-						} else {
-							await waitForCaptcha();
-							await sleep(1000);
-							video.play();
-						}
-					}
-				};
-				video.onended = function () {
+	video.play();
+	// 设置播放速度
+	await switchPlaybackRate(creditStudy ? 1 : playbackRate);
+	return new Promise<void>((resolve) => {
+		video.onpause = async function () {
+			if (!video.ended) {
+				if (stop) {
 					resolve();
-				};
-			})
-				.then((func) => {
-					func();
-				})
-				.catch((err) => {
-					logger('error', err);
-				});
-		} catch (e) {
-			reject(e);
-		}
+				} else {
+					await waitForCaptcha();
+					await sleep(1000);
+					video.play();
+				}
+			}
+		};
+		video.onended = function () {
+			resolve();
+		};
 	});
 }
 
@@ -147,7 +138,7 @@ export async function closeTestDialog() {
 		await sleep(1000);
 		// 关闭弹窗
 		// @ts-ignore
-		study.testDialog = false;
+		study.__vue__.testDialog = false;
 		await sleep(1000);
 	}
 }
