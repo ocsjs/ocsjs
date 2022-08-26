@@ -17,7 +17,7 @@ export const ZHSScript = defineScript({
 	routes: [
 		{
 			name: '共享课视频脚本',
-			url: '**zhihuishu.com/videoStudy.html**',
+			url: '**zhihuishu.com/stuStudy**',
 			async onload() {
 				const settings = useSettings().zhs.video;
 				await sleep(5000);
@@ -108,7 +108,7 @@ export const ZHSScript = defineScript({
 		},
 		{
 			name: '视频守护脚本',
-			url: ['**zhihuishu.com/videoStudy.html**'],
+			url: ['**zhihuishu.com/stuStudy**'],
 			onload() {
 				// @ts-ignore
 				const study = document.querySelector('.video-study').__vue__;
@@ -144,7 +144,7 @@ export const ZHSScript = defineScript({
 		{
 			name: '共享课视频助手',
 			/** 共享课 */
-			url: '**zhihuishu.com/videoStudy.html**',
+			url: '**zhihuishu.com/stuStudy**',
 			el: () =>
 				createNote(
 					'进入 视频设置面板 可以调整视频设置',

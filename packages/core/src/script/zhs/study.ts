@@ -145,9 +145,9 @@ export async function closeTestDialog() {
 		// 选择A
 		item?.click();
 		await sleep(1000);
-		// 关闭
+		// 关闭弹窗
 		// @ts-ignore
-		study.__vue__.testDialog = false;
+		study.testDialog = false;
 		await sleep(1000);
 	}
 }
