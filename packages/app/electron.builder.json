@@ -22,7 +22,7 @@
 		]
 	},
 	"mac": {
-		"icon": "public/favicon.ico",
+		"icon": "public/favicon.icns",
 		"artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
 		"target": "default"
 	},
