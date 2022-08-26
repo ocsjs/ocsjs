@@ -24,10 +24,7 @@
 	</template>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 interface HelperProps {
 	content: string;
@@ -45,7 +42,4 @@ const emits = defineEmits<{
 }>();
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

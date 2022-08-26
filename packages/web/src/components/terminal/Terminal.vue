@@ -5,10 +5,7 @@
 	/>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { onMounted, toRefs, ref } from 'vue';
 import 'xterm/css/xterm.css';
 import { ITerminal } from '.';
@@ -40,10 +37,7 @@ onMounted(async () => {
 });
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .xterm .xterm-viewport {
 	overflow-y: auto;
 }

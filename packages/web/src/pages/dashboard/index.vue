@@ -75,7 +75,7 @@
 			/>
 		</div>
 
-		<template v-if="currentGroup.data.length === 0">
+		<template v-if="currentGroup?.data.length === 0">
 			<a-empty
 				class="pt-5"
 				description="暂时没有编辑中/运行中的文件"
@@ -89,7 +89,7 @@
 				}"
 			>
 				<template
-					v-for="[key, data] of currentGroup.data.filter(
+					v-for="[key, data] of currentGroup?.data.filter(
 						([key, data]) => search === '' || data.file.name.includes(search)
 					)"
 					:key="key"
@@ -173,10 +173,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { message } from 'ant-design-vue';
 import { computed, ref } from 'vue';
 import { useRouter } from 'vue-router';
@@ -254,10 +251,7 @@ function launch(data: FileData) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .dashboard {
 	display: grid;
 	gap: 10px;

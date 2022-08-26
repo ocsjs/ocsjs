@@ -8,10 +8,7 @@
 	</span>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 interface IconProps {
 	type: string;
@@ -24,10 +21,7 @@ const props = withDefaults(defineProps<IconProps>(), {
 const { type } = toRefs(props);
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .active {
 	color: #1890ff;
 }

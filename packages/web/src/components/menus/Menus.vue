@@ -34,10 +34,7 @@
 	</a-menu>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 import { MenuItem } from '.';
 import SubMenus from './SubMenus.vue';
@@ -64,7 +61,4 @@ function click(item: MenuItem) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

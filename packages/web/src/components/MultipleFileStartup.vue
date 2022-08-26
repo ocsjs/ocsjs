@@ -36,10 +36,7 @@
 	</a-modal>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref, toRefs } from 'vue';
 import { File } from '../core/File';
 import { startup } from './file/File';
@@ -62,7 +59,4 @@ function handleOk() {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

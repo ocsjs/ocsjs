@@ -6,15 +6,9 @@
 	</router-view>
 </template>
 
-<script
-	setup
-	lang="ts"
-></script>
+<script setup lang="ts"></script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .home {
 	height: 100%;
 	width: 100%;

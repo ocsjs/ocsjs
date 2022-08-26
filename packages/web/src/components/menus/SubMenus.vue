@@ -32,10 +32,7 @@
 	</a-sub-menu>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 import { MenuItem } from '.';
 
@@ -47,7 +44,4 @@ const props = defineProps<MenusProps>();
 const { menu } = toRefs(props);
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

@@ -18,10 +18,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref, onMounted, Ref } from 'vue';
 
 const contextmenu: Ref<HTMLElement> = ref() as any;
@@ -54,10 +51,7 @@ onMounted(() => {
 });
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .contextmenu {
 	visibility: hidden;
 	position: fixed;

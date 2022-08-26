@@ -4,10 +4,7 @@
 	</a-menu-item>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 interface TitleLinkProps {
 	url: string;
 	title: string;
@@ -21,7 +18,4 @@ function open(url: string) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

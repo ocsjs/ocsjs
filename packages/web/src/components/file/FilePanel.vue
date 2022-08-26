@@ -194,10 +194,7 @@
 	</template>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, toRefs, watch } from 'vue';
 import { Form, scriptForms } from '.';
 import { NodeJS } from '../../utils/export';
@@ -317,10 +314,7 @@ onUnmounted(() => {
 });
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .error-page {
 	width: 100%;
 	padding-top: 50px;

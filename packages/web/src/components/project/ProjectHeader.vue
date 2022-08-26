@@ -50,10 +50,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 import { createFile, mkdir } from '../file/File';
 interface ProjectHeaderProps {
@@ -74,10 +71,7 @@ const emits = defineEmits<{
 }>();
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .header {
 	white-space: nowrap;
 

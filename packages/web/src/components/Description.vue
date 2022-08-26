@@ -16,10 +16,7 @@
 	</span>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 interface DescriptionProps {
 	label: string;
@@ -33,10 +30,7 @@ const props = withDefaults(defineProps<DescriptionProps>(), {
 const { label, desc, textClass } = toRefs(props);
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .desc {
 	word-wrap: break-word;
 	word-break: break-all;

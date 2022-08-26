@@ -112,10 +112,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref } from 'vue';
 
 import { config } from '../../config';
@@ -174,10 +171,7 @@ function onRemoveScript(script: StoreUserScript) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .actions {
 	div + div {
 		margin-left: 4px;

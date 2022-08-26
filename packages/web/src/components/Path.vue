@@ -16,10 +16,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref, toRefs } from 'vue';
 import Description from './Description.vue';
 import { remote } from '../utils/remote';
@@ -55,7 +52,4 @@ async function change(name: string) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

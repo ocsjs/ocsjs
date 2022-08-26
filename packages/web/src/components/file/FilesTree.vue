@@ -58,10 +58,7 @@
 	</a-directory-tree>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref, toRefs } from 'vue';
 import { config } from '../../config';
 import { MenuItem } from '../../components/menus';
@@ -207,10 +204,7 @@ function onDrop(info: any) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .rename-input {
 	width: min-content;
 	-webkit-user-select: none !important;

@@ -178,10 +178,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { LaunchOptions } from '@ocsjs/scripts';
 import { message } from 'ant-design-vue';
 import { computed, nextTick, onMounted, ref, watch } from 'vue';
@@ -275,10 +272,7 @@ function reset() {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .setting {
 	margin: 0 auto;
 	min-height: 500px;
