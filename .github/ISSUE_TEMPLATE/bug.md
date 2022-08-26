@@ -6,17 +6,13 @@ labels: ''
 assignees: enncy
 ---
 
-<<<<<<< HEAD
 **环境描述**
-系统:  win11/mac/linux/...
+系统: win11/mac/linux/...
 浏览器：谷歌/edge/fire fox/...
 页面链接: https://example.com/xxxxxxxxxxxxxxx
 
-**BUG描述**
-...
-=======
 **BUG 描述**
->>>>>>> dev-app
+...
 
 **重现方法**
 
@@ -30,13 +26,6 @@ assignees: enncy
 
 **屏幕截图**
 如果可以请附带截图。
-<<<<<<< HEAD
- 
-=======
 
-**浏览器类型**
-谷歌/Edge/...
-
->>>>>>> dev-app
 **解决方案**
 如果可以，请提供您的解决思路
