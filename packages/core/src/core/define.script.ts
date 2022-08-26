@@ -46,6 +46,10 @@ export type ScriptPanelChild = Omit<ScriptPanel, 'url' | 'children'>;
 
 export interface DefineScript {
 	name: string;
+	// 主域名
+	domain?: string | string[];
+	// 用于一些统计列表中的显示及隐藏，不影响任何使用
+	hide?: boolean;
 	routes?: ScriptRoute[];
 	panels?: ScriptPanel[];
 }

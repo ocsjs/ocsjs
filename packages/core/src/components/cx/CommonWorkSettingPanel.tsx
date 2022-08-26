@@ -23,7 +23,7 @@ export const CommonWorkSettingPanel = defineComponent({
 
 				<label>繁体字识别模式</label>
 				<div>
-					<Tooltip title="繁体/加密/乱码字识别功能，默认推荐-字典匹配识别\n如果字体匹配识别用不了，可以切换到OCR文字识别。">
+					<Tooltip title="繁体/加密/乱码字识别功能，默认推荐-字典匹配识别">
 						<select onChange={(e: any) => (commonSettings.recognize = e.target.value)}>
 							{[
 								['map', '字典匹配识别-推荐'],

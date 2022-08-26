@@ -13,6 +13,7 @@ import { creditWork, workOrExam } from './work';
 
 export const ZHSScript = defineScript({
 	name: '知道智慧树',
+	domain: 'zhihuishu.com',
 	routes: [
 		{
 			name: '共享课视频脚本',

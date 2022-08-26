@@ -10,6 +10,7 @@ import { TaskList } from '../../components/icve/TaskList';
 
 export const ICVEScript = defineScript({
 	name: '职教云',
+	domain: 'icve.com.cn',
 	routes: [
 		{
 			name: '分类脚本',
