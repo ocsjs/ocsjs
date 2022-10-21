@@ -218,12 +218,7 @@ export const CXScript = defineScript({
 		},
 		{
 			name: '繁体字识别脚本',
-			url: [
-				'**/mycourse/studentstudy**',
-				'**/work/doHomeWorkNew**',
-				'**/mooc2/exam/preview**',
-				'**/mooc2/work/dowork**'
-			],
+			url: ['**/work/doHomeWorkNew**', '**/mooc2/exam/preview**', '**/mooc2/work/dowork**'],
 			async onload() {
 				const { recognize } = useSettings().cx.common;
 				if (recognize === 'map') {
