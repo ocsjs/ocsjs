@@ -100,11 +100,19 @@ export const ZHSScript = defineScript({
 				setTimeout(() => {
 					for (const div of Array.from(document.querySelectorAll('.subject_describe > div'))) {
 						// @ts-ignore
-						div.__vue__.$el.innerHTML = div.__vue__._data.shadowDom.textContent;
+						div.__vue__.$el.innerHTML = div.__vue__._data.shadowDom.innerHTML;
 					}
+					// 识别图片
+					document.body.querySelectorAll('img').forEach((img) => {
+						const div = document.createElement('div');
+						div.style.display = 'none';
+						div.textContent = img.src || img.getAttribute('data-src');
+						img.after(div);
+					});
 				}, 3000);
 			}
 		},
+
 		{
 			name: '视频守护脚本',
 			url: ['**zhihuishu.com/stuStudy**'],

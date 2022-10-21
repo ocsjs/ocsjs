@@ -23,8 +23,6 @@ export async function study() {
 	if (list.length === 0) {
 		logger('warn', '视频任务数量为 0 !');
 	} else {
-		console.log(list);
-
 		logger('info', '视频任务数量', list.length);
 
 		/**
@@ -147,7 +145,7 @@ export async function closeTestDialog() {
 		await sleep(1000);
 		// 关闭弹窗
 		// @ts-ignore
-		study.testDialog = false;
+		study.__vue__.testDialog = false;
 		await sleep(1000);
 	}
 }

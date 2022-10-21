@@ -35,7 +35,7 @@ export async function workOrExam(type: 'work' | 'exam' = 'work') {
 			answerer: (elements, type, ctx) =>
 				defaultAnswerWrapperHandler(answererWrappers, {
 					type,
-					title: elements.title[0].innerText,
+					title: elements.title[0].textContent,
 					root: ctx.root
 				}),
 			work: {
@@ -69,6 +69,9 @@ export async function workOrExam(type: 'work' | 'exam' = 'work') {
 				}
 				console.log(res);
 				logger('info', '题目完成结果 : ', res.result?.finish ? '完成' : '未完成');
+				// 点击下一题
+				const { btn } = domSearch({ btn: 'div.examPaper_box > div.switch-btn-box > button:nth-child(2)' });
+				btn?.click();
 			},
 
 			/** 其余配置 */
@@ -146,7 +149,7 @@ export async function creditWork() {
 			},
 			/** 默认搜题方法构造器 */
 			answerer: (elements, type, ctx) => {
-				const title = StringUtils.nowrap(elements.title[0].innerText).trim();
+				const title = StringUtils.nowrap(elements.title[0].textContent || '').trim();
 				if (title) {
 					return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
 				} else {
