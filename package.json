@@ -1,10 +1,6 @@
 {
 	"name": "ocsjs",
-<<<<<<< HEAD
 	"version": "3.17.14",
-=======
-	"version": "3.17.10",
->>>>>>> 128b1ae515770284bbc4fa4cf8e4439f46a5625b
 	"description": "ocs - online course script 在线网络课程辅助工具",
 	"types": "./lib/src/core/index.d.ts",
 	"main": "./lib/src/core/index.js",
