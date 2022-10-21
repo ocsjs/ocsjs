@@ -5,4 +5,5 @@ package-lock.json
 pnpm-lock.yaml
 public
 stats.html
+tests/*
 .md

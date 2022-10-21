@@ -8,17 +8,11 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import Key from './Key.vue';
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .help-content {
 	width: fit-content;
 }

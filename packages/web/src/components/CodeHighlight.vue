@@ -12,10 +12,7 @@
 	</div></code></pre>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 
 import highlight from 'highlight.js/lib/core';
@@ -45,10 +42,7 @@ function render(content: string, language: string) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 pre,
 code {
 	padding: 0 !important;
@@ -62,6 +56,7 @@ code {
 	.error {
 		background-color: #ff000030;
 	}
+
 	.info {
 		background-color: #70b2df30;
 	}

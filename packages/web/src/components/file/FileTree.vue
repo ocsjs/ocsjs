@@ -77,10 +77,7 @@
 	</ATree>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { message } from 'ant-design-vue';
 import ATree from 'ant-design-vue/lib/tree';
 import { TreeDataItem } from 'ant-design-vue/lib/tree/Tree';
@@ -271,10 +268,7 @@ function renameDir(dir: string, dest: string) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 #app .file-tree {
 	.file-title {
 		font-size: 12px;

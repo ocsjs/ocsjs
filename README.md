@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src="https://cdn.ocsjs.com/resources/img/logo.jpg" width=124 height=124 style="border-radius:50%" />
+<div style="padding:8px;border-radius:100%;background:white;width:124px;height:124px">
+<img src="https://cdn.ocsjs.com/resources/img/logo.png" width=124 height=124  >
+</div>
 
 # OCS 网课助手
 

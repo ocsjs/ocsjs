@@ -51,10 +51,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { nextTick, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import Title from './components/Title.vue';

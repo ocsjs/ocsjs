@@ -90,10 +90,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { computed, Ref } from '@vue/reactivity';
 import debounce from 'lodash/debounce';
 import { nextTick, onMounted, ref, watch } from 'vue';

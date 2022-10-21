@@ -13,10 +13,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 interface CardProps {
 	title?: string;
@@ -29,10 +26,7 @@ const props = withDefaults(defineProps<CardProps>(), {
 const { title } = toRefs(props);
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 #app .ant-badge-status-dot {
 	height: 16px;
 	border-radius: 4px;

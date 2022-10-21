@@ -49,10 +49,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { toRefs } from 'vue';
 
 interface Screenshot {
@@ -79,10 +76,7 @@ const props = withDefaults(defineProps<ScreenShotProps>(), {
 const { screenshots } = toRefs(props);
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 :deep(.ant-empty-img-default) {
 	width: 100px;
 	height: 100px;

@@ -93,10 +93,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { Button, message } from 'ant-design-vue';
 import { h, onMounted, ref } from 'vue';
 import { config } from '../../config';
@@ -187,7 +184,4 @@ function installListener(name: string, channel: string, rate: number, chunkLengt
 }
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

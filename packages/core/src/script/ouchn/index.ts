@@ -3,6 +3,8 @@ import { defineScript } from '../../core/define.script';
 
 export const OUCHNScript = defineScript({
 	name: '国家开放大学',
+	domain: 'ouchn.cn',
+	hide: true,
 	routes: [],
 	panels: [
 		{

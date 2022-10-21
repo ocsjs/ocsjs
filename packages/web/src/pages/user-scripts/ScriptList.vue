@@ -87,10 +87,7 @@
 	</template>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref, toRefs } from 'vue';
 import Icon from '../../components/Icon.vue';
 import { store, StoreUserScript } from '../../store';
@@ -138,10 +135,7 @@ function getElapsedTime(t: number) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .user-script-list {
 	padding: 4px;
 	height: calc(100vh - 180px);

@@ -6,10 +6,7 @@
 	/>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref, Ref, toRefs } from 'vue';
 import { notify } from '../../utils/notify';
 import { remote } from '../../utils/remote';
@@ -47,7 +44,4 @@ function onError(e: Error) {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
-></style>
+<style scoped lang="less"></style>

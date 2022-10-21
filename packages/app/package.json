@@ -15,7 +15,7 @@
 		"@types/node-forge": "^1.0.0",
 		"@types/semver": "^7.3.9",
 		"electron": "17.0.0",
-		"electron-builder": "^22.14.13"
+		"electron-builder": "^23.1.0"
 	},
 	"dependencies": {
 		"@ocsjs/common": "workspace:^1.0.0",

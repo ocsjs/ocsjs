@@ -50,10 +50,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import interact from 'interactjs';
 import { nextTick, onMounted, ref, watch } from 'vue';
 import Help from '../../components/Help.vue';
@@ -116,10 +113,7 @@ onMounted(() => {
 });
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 #workspace {
 	padding: 0;
 

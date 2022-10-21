@@ -4,15 +4,9 @@
 	</span>
 </template>
 
-<script
-	setup
-	lang="ts"
-></script>
+<script setup lang="ts"></script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .key {
 	padding: 2px;
 	margin: 0px 4px 0px 4px;

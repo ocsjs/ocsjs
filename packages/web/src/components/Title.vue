@@ -99,10 +99,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { Modal } from 'ant-design-vue';
 import { h, nextTick, onMounted, ref, watch } from 'vue';
 import { nextTutorialStep, store, files } from '../store';
@@ -180,10 +177,7 @@ function multipleFileStartup() {
 }
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 .title {
 	width: 100%;
 	display: flex;

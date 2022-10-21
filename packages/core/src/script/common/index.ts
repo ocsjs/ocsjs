@@ -9,6 +9,7 @@ const supports = ['*'];
 
 export const CommonScript = defineScript({
 	name: '默认脚本',
+	hide: true,
 	routes: [
 		{
 			name: '禁止弹窗脚本',

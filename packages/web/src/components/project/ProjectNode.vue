@@ -71,10 +71,7 @@
 	</div>
 </template>
 
-<script
-	setup
-	lang="ts"
->
+<script setup lang="ts">
 import { ref, toRefs, watch } from 'vue';
 import { store } from '../../store';
 import { FileNode, flatFiles } from '../File/File';
@@ -205,10 +202,7 @@ watch(openSearch, () => {
 });
 </script>
 
-<style
-	scoped
-	lang="less"
->
+<style scoped lang="less">
 body .file-tree {
 	:deep(.ant-tree li) {
 		padding: 0;
