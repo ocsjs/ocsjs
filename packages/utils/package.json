@@ -24,5 +24,11 @@
 	"bugs": {
 		"url": "https://github.com/ocsjs/ocsjs/issues"
 	},
-	"homepage": "https://github.com/ocsjs/ocsjs#readme"
+	"homepage": "https://github.com/ocsjs/ocsjs#readme",
+	"devDependencies": {
+		"@types/node-fetch": "^2.6.2"
+	},
+	"dependencies": {
+		"node-fetch": "^2.6.7"
+	}
 }

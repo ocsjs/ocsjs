@@ -6,6 +6,7 @@ export interface IScriptContext<T> {
 
 export interface IScript<T> {
 	name: string;
+	namespace: string;
 	url: (string | RegExp)[];
 	notes?: string[];
 	configs?: T;
@@ -17,6 +18,7 @@ export interface IScript<T> {
 
 export class Script<T extends Record<string, Config> = Record<string, Config>> implements IScript<T> {
 	name: string;
+	namespace: string;
 	url: (string | RegExp)[];
 	start: (opts: IScriptContext<T>) => any;
 	stop: (opts: IScriptContext<T>) => any;
@@ -24,8 +26,9 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> i
 	configs?: T;
 	cfg: Record<keyof T, any> = {} as any;
 
-	constructor({ name, url, start, stop, notes, configs }: IScript<T>) {
+	constructor({ name, namespace, url, start, stop, notes, configs }: IScript<T>) {
 		this.name = name;
+		this.namespace = namespace;
 		this.url = url;
 		this.start = start;
 		this.stop = stop;

@@ -1,20 +1,20 @@
+import { getConfig, setConfig } from '../utils/common';
 import { el } from '../utils/dom';
+
 import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
 
 export class ConfigElement extends IElement {
-	label: HTMLElement;
-	type?: keyof ConfigTagMap;
-	provider: ConfigTagMap[keyof ConfigTagMap];
-	key?: string;
+	label: HTMLElement = el('div');
+	key: string = '';
+	tag?: keyof ConfigTagMap;
+	provider: ConfigTagMap[keyof ConfigTagMap] = el('input');
+	attrs?: Partial<ConfigTagMap[keyof ConfigTagMap]>;
 	/** 跨域设置 */
 	cors?: boolean;
-	constructor() {
-		super();
 
-		this.label = el('div');
-
-		switch (this.type) {
+	connectedCallback() {
+		switch (this.tag) {
 			case 'input': {
 				this.provider = el('input');
 				break;
@@ -32,21 +32,24 @@ export class ConfigElement extends IElement {
 				break;
 			}
 		}
-
 		this.append(this.label, this.provider);
-	}
 
-	connectedCallback() {
+		this.provider.value = getConfig(this.key, '');
+
+		for (const key in this.attrs) {
+			if (Object.prototype.hasOwnProperty.call(this.attrs, key)) {
+				Reflect.set(this.provider, key, Reflect.get(this.attrs, key));
+			}
+		}
+
 		// 储存值
 		this.provider.onchange = () => {
-			if (this.key) {
-				// eslint-disable-next-line no-undef
-				GM_setValue(this.key, this.provider.value);
-			}
+			// eslint-disable-next-line no-undef
+			setConfig(this.key, this.provider.value);
 		};
 
 		// 处理跨域
-		if (this.cors && this.key) {
+		if (this.cors) {
 			// eslint-disable-next-line no-undef
 			GM_addValueChangeListener(this.key, (key, pre, curr, remote) => {
 				if (remote) {

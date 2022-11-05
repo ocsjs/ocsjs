@@ -11,14 +11,17 @@ function cleanOutput() {
 }
 
 function buildUserJs() {
-	return execOut('vue-tsc --noEmit && vite build  --emptyOutDir -c ./vite.config.ts', { cwd: '../packages/core' });
+	return execOut('npm run build', { cwd: '../packages/core' });
 }
 
 async function createUserJs(cb) {
+	/** 模拟浏览器环境 */
+	require('browser-env')();
 	/** @type {import('../packages/core')} */
 	const ocs = require('../dist/index');
 
-	await createUserScript({
+	/** @type {import('../packages/utils').CreateOptions} */
+	const createOptions = {
 		parseRequire: true,
 		parseResource: true,
 		resourceBuilder: (key, value) => `const ${key} = \`${value}\`;`,
@@ -32,9 +35,9 @@ async function createUserJs(cb) {
 		metadata: {
 			name: 'OCS 网课助手',
 			version: version,
-			description: `OCS 网课助手，支持 ${ocs.definedScripts
-				.filter((s) => !s.hide)
-				.map((s) => s.name)}，等网课的视频学习，自动跳转，及部分的作业，考试功能。`,
+			description: `OCS 网课助手，支持 ${ocs.definedProjects.map(
+				(s) => s.name
+			)}，等网课的视频学习，自动跳转，及部分的作业，考试功能。`,
 			author: 'enncy',
 			license: 'MIT',
 			namespace: 'https://enncy.cn',
@@ -42,10 +45,7 @@ async function createUserJs(cb) {
 			source: 'https://github.com/ocsjs/ocsjs',
 			icon: 'https://cdn.ocsjs.com/logo.ico',
 			connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'localhost'],
-			match: ocs.definedScripts
-				.filter((s) => !s.hide && s.domain)
-				.map((s) => (Array.isArray(s.domain) ? s.domain : [s.domain]).map((d) => `*://*.${d}/*`))
-				.flat(),
+			match: ocs.definedProjects.map((p) => p.domains.map((d) => `*://*.${d}/*`)).flat(),
 			grant: [
 				'unsafeWindow',
 				'GM_xmlhttpRequest',
@@ -55,12 +55,20 @@ async function createUserJs(cb) {
 				'GM_removeValueChangeListener'
 			],
 			require: [path.join(__dirname, '../dist/index.js')],
-			resource: [`OCS_STYLE ${path.join(__dirname, '../dist/style.css')}`],
+			resource: [],
 			'run-at': 'document-start'
 		},
 		entry: path.join(__dirname, '../packages/core/entry.js'),
 		dist: path.join(__dirname, '../dist/ocs.user.js')
-	});
+	};
+
+	await createUserScript(createOptions);
+	/** 创建调试脚本 */
+	createOptions.parseRequire = false;
+	createOptions.metadata.name = createOptions.metadata.name + '(dev)';
+	createOptions.metadata.require = ['file://' + path.join(__dirname, '../dist/index.js')];
+	createOptions.dist = path.join(__dirname, '../dist/ocs.user.dev.js');
+	await createUserScript(createOptions);
 }
 
 exports.default = series(cleanOutput, buildUserJs, createUserJs);

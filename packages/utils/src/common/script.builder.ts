@@ -90,7 +90,7 @@ export function createUserScriptMetadata(formatter: MetaDataFormatter, metadata:
  * 解析脚本头部信息
  * @param require 外部依赖
  */
-export async function parseMetaDataRequires(require: Metadata['require']) {
+export async function parseMetaDataRequires(require: Metadata['require'] = []) {
 	const requires: string[] = [];
 	for (const value of Array.isArray(require) ? require : [require]) {
 		if (value) {
@@ -109,7 +109,7 @@ export async function parseMetaDataRequires(require: Metadata['require']) {
  * @param resourceBuilder 变量声明器
  */
 export async function parseMetaDataResources(
-	resource: Metadata['resource'],
+	resource: Metadata['resource'] = [],
 	resourceBuilder: (key: string, value: string) => string
 ) {
 	const resources: string[] = [];
@@ -127,9 +127,10 @@ export async function parseMetaDataResources(
 /**
  * 创建用户脚本
  */
-export async function createUserScript(opts: CreateOptions) {
+export async function createUserScript(options: CreateOptions) {
 	let requires = '';
 	let resources = '';
+	const opts = JSON.parse(JSON.stringify(options));
 	if (opts.parseRequire) {
 		// 解析外部依赖
 		requires = await parseMetaDataRequires(opts.metadata.require);

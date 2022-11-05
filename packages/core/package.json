@@ -7,7 +7,9 @@
 	"files": [
 		"lib"
 	],
-	"scripts": {},
+	"scripts": {
+		"build": "tsc && vite build"
+	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/ocsjs/ocsjs.git"
@@ -29,6 +31,10 @@
 	},
 	"homepage": "https://github.com/ocsjs/ocsjs#readme",
 	"devDependencies": {
-		"@types/tampermonkey": "^4.0.5"
+		"@types/tampermonkey": "^4.0.5",
+		"vite-plugin-banner": "^0.6.1"
+	},
+	"dependencies": {
+		"vite": "^2.5.4"
 	}
 }
