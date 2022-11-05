@@ -113,7 +113,24 @@ export const ZHSScript = defineScript({
 				}, 3000);
 			}
 		},
-
+		{
+			name: '考试守护脚本',
+			url: [
+				'**zhihuishu.com/stuExamWeb.html#/webExamList/dohomework**',
+				'**zhihuishu.com/stuExamWeb.html#/webExamList/doexamination*'
+			],
+			onload() {
+				// @ts-ignore
+				const study = document.querySelector('#app > div').__vue__;
+				const empty = () => {};
+				// @ts-ignore
+				study.checkout = empty;
+				// @ts-ignore
+				study.notTrustScript = empty;
+				// @ts-ignore
+				study.checkoutNotTrustScript = empty;
+			}
+		},
 		{
 			name: '视频守护脚本',
 			url: ['**zhihuishu.com/stuStudy**'],

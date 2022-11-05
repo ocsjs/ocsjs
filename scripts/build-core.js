@@ -15,6 +15,8 @@ function buildUserJs() {
 }
 
 async function createUserJs(cb) {
+	/** 模拟浏览器环境 */
+	require('browser-env')();
 	/** @type {import('../packages/core')} */
 	const ocs = require('../dist/index');
 
