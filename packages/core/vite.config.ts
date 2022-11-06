@@ -32,7 +32,7 @@ export default defineConfig({
 		}
 	},
 	define: {
-		'process.env._VERSION_': JSON.stringify(version)
+		'process.env.__VERSION__': JSON.stringify(version)
 	},
 
 	plugins: [visualizer(), banner(bannerContent)]

@@ -9,8 +9,7 @@
 	"less.compile": {
 		"compress": false,
 		"sourceMap": false,
-		"out": "../css/",
-		"main": "common.less"
+		"out": "../css/"
 	},
 	"editor.mouseWheelZoom": true,
 	"editor.mouseWheelScrollSensitivity": 2

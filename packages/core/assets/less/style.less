@@ -1,0 +1,339 @@
+container-element {
+	position: fixed;
+	top: 10%;
+	left: 10%;
+	z-index: 99999999;
+	text-align: left;
+	border-radius: 4px;
+	background-color: white;
+	box-shadow: 0 0 24px -12px #3f3f3f;
+	border: 1px solid #c8c8c8;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	color: #636363;
+	user-select: none;
+}
+
+.header {
+	@base-height: 32px;
+	@size: 18px;
+
+	cursor: move;
+	white-space: nowrap;
+	justify-content: end;
+	display: flex;
+	padding-right: 12px;
+	line-height: @base-height;
+	height: @base-height;
+	vertical-align: middle;
+	background: #ededed73;
+
+	& > * {
+		margin-left: 12px;
+	}
+	& > * {
+		text-align: center;
+		height: @size;
+		line-height: @size;
+		margin-top: calc((@base-height - @size) / 2);
+	}
+
+	.close {
+		color: black;
+		width: @size;
+		background: #ff00004f;
+		cursor: pointer;
+		border-radius: 100%;
+	}
+
+	.switch {
+		color: black;
+		width: @size;
+		background: #ffa6003e;
+		cursor: pointer;
+		border-radius: 100%;
+	}
+
+	.panel-switch {
+		color: black;
+		width: @size;
+		background: #14a00d50;
+		cursor: pointer;
+		border-radius: 100%;
+	}
+
+	.logo {
+		cursor: pointer;
+		border-radius: 100%;
+	}
+}
+
+.body {
+	background: white;
+	padding: 8px;
+	width: auto;
+}
+
+.script-panel + .script-panel {
+	margin-top: 12px;
+}
+
+.footer {
+	cursor: move;
+	border-top: 1px solid #d9d9d9;
+	color: grey;
+}
+
+.card + .card {
+	margin-top: 12px;
+}
+
+.card {
+	border-radius: 3px;
+	padding: 4px;
+
+	width: -webkit-fill-available;
+}
+
+.notes {
+	background: #0099ff0e;
+	border-left: 4px solid #0099ff65;
+}
+
+.tooltip {
+	margin: 12px 0px 0px 12px;
+	padding: 4px;
+	color: black;
+	background: #f0f0f0;
+	box-shadow: 0px 0px 4px #949494;
+	position: fixed;
+	white-space: normal;
+	max-width: 200px;
+	height: auto;
+	border-radius: 2px;
+}
+
+.configs {
+	display: table;
+
+	background: #e1e1e107;
+	border-left: 4px solid #cecece;
+
+	.configs-body {
+		display: table-row-group;
+
+		config-element + config-element {
+			label {
+				padding-top: 3px;
+			}
+			.config-wrapper {
+				padding-top: 3px;
+			}
+		}
+
+		config-element {
+			width: 100%;
+			display: table-row;
+
+			.config-wrapper {
+				display: table-cell;
+			}
+
+			.config-wrapper > *:not(.tooltip) {
+				background-color: #f5f7fa;
+				border-radius: 2px;
+				color: black;
+				width: -webkit-fill-available;
+			}
+			.config-wrapper > *:disabled {
+				cursor: not-allowed;
+			}
+
+			label {
+				font-size: 13px;
+				white-space: nowrap;
+				color: #4e5969;
+				display: table-cell;
+				padding-right: 12px;
+				text-align: left;
+				vertical-align: top;
+			}
+
+			select {
+				outline: none;
+				border: none;
+				border: 1px solid #e4e4e4;
+				border-radius: 4px;
+				height: 22px;
+			}
+
+			textarea {
+				padding: 4px;
+				outline: none;
+				border: none;
+			}
+
+			input {
+				outline: none;
+				border: none;
+				padding: 2px 0px;
+				margin: 0px;
+				text-align: center;
+			}
+
+			/** check box 的样式 */
+			.input-switch {
+				appearance: none;
+				width: fit-content;
+				min-width: 32px;
+				height: 16px;
+				background: #c5c5c5;
+				border-radius: 100px;
+				display: flex;
+				align-items: center;
+				padding: 2px 4px;
+				transition: all 0.2s ease-in-out;
+
+				&:checked {
+					background: #1890ff !important;
+				}
+
+				&:checked::before {
+					transform: translate(100%, 0px);
+				}
+
+				&::before {
+					background-color: #fff;
+					border-radius: 9px;
+					box-shadow: 0 2px 4px #00230b33;
+					width: 12px;
+					height: 12px;
+					content: '';
+				}
+			}
+
+			input:not([type='checkbox'], [type='radio']) {
+				width: 100%;
+			}
+
+			input[type='checkbox'],
+			input[type='radio'],
+			input[type='range'] {
+				accent-color: #0e8ee2;
+			}
+		}
+	}
+}
+
+// 提示内容
+// alert 提示父元素
+.alert-container {
+	margin-bottom: 4px;
+	position: absolute;
+	z-index: 999999;
+	bottom: 100%;
+	left: 50%;
+	width: 100%;
+	transform: translate(-50%, 0px);
+
+	// 关闭按钮
+	.alert-closer {
+		float: right;
+		border-radius: 50%;
+		border: 1px solid;
+		text-align: center;
+		cursor: pointer;
+		font: icon;
+		line-height: 14px;
+		width: 14px;
+	}
+
+	// 隐藏模式下的提示样式
+	.hide .alert {
+		width: 200px;
+		transform: translate(-82px, 0px);
+	}
+
+	// 提示内容
+	.alert {
+		border-radius: 4px;
+		margin-bottom: 4px;
+		padding: 4px;
+		font-size: 12px;
+
+		.alert-text {
+			letter-spacing: 1px;
+			font-weight: bold;
+		}
+
+		&.error {
+			background-color: #ff000699;
+			color: #fff;
+			border: 1px solid #f36c70;
+		}
+
+		&.info {
+			background-color: #2196f3a3;
+			color: white;
+			border: 1px solid #1890ff;
+		}
+
+		&.success {
+			background-color: #84d346d1;
+			color: #fff;
+			border: 1px solid #6fd91d;
+		}
+
+		&.warn {
+			background-color: #fbbf30e6;
+			color: #725206;
+			border: 1px solid #ffc107;
+		}
+	}
+}
+
+.pointer {
+	cursor: pointer;
+}
+
+.project-selector {
+	background: #ffffff00;
+	border: none;
+	font-size: inherit;
+	color: inherit;
+}
+
+.separator {
+	display: flex;
+	align-items: center;
+	text-align: center;
+	padding: 4px 0px;
+}
+
+.separator::before,
+.separator::after {
+	content: '';
+	flex: 1;
+	border-bottom: 1px solid #63636346;
+}
+
+.separator:not(:empty)::before {
+	margin-right: 0.25em;
+}
+
+.separator:not(:empty)::after {
+	margin-left: 0.25em;
+}
+
+container-element.close {
+	display: none;
+}
+
+.minimize {
+	.body,
+	.footer,
+	.project-selector,
+	.panel-switch {
+		display: none;
+	}
+}

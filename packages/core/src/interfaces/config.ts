@@ -1,10 +1,11 @@
 import { ConfigTagMap } from '../elements/configs/interface';
 
-export interface Config {
-	label: string;
-	tag?: keyof ConfigTagMap;
-	attrs?: Partial<ConfigTagMap[keyof ConfigTagMap]>;
+export interface Config<T extends keyof ConfigTagMap = keyof ConfigTagMap> {
+	label?: string;
+	tag?: T;
+	attrs?: Partial<ConfigTagMap[T]>;
 	defaultValue?: any;
-	/** 跨域设置 */
-	cors?: boolean;
+	/** 将本地修改后的值同步到元素中 */
+	sync?: boolean;
+	onload?: (this: ConfigTagMap[T]) => void;
 }

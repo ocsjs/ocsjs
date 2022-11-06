@@ -5,7 +5,7 @@
 
 	// 运行脚本
 	OCS.start({
-		style: STYLE,
+		style: GM_getResourceText('STYLE'),
 		projects: OCS.getDefinedProjects()
 	});
 })();

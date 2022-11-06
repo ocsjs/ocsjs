@@ -127,10 +127,10 @@ export async function parseMetaDataResources(
 /**
  * 创建用户脚本
  */
-export async function createUserScript(options: CreateOptions) {
+export async function createUserScript(opts: CreateOptions) {
 	let requires = '';
 	let resources = '';
-	const opts = JSON.parse(JSON.stringify(options));
+
 	if (opts.parseRequire) {
 		// 解析外部依赖
 		requires = await parseMetaDataRequires(opts.metadata.require);

@@ -1,3 +1,8 @@
+import { CommonProject } from './common';
 import { CXProject } from './cx';
+import { InitProject } from './init';
+import { ZHSProject } from './zhs';
 
-export const definedProjects = [CXProject];
+export function getDefinedProjects() {
+	return [InitProject, CommonProject, CXProject, ZHSProject];
+}

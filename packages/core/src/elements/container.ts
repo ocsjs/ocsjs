@@ -1,12 +1,11 @@
-import { el } from '../utils/dom';
+import { el, tooltip } from '../utils/dom';
 import { IElement } from './interface';
 
 export class ContainerElement extends IElement {
-	header: HTMLElement = el('div');
-	body: HTMLElement = el('div');
-	footer: HTMLElement = el('div');
+	header: HTMLElement = tooltip(el('div', { className: 'header', title: '菜单栏-可拖动区域' }));
+	body: HTMLElement = el('div', { className: 'body' });
 
 	connectedCallback() {
-		this.append(this.header, this.body, this.footer);
+		this.append(this.header, this.body);
 	}
 }
