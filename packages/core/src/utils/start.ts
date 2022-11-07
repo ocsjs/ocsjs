@@ -9,9 +9,7 @@ export interface StartConfig {
 export function start(startConfig: StartConfig) {
 	getMatchedScripts(startConfig.projects).forEach((script) => {
 		/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
-		if (!script.disableConfigProxy) {
-			script.cfg = createConfigProxy(script);
-		}
+		script.cfg = createConfigProxy(script);
 
 		/** 执行脚本 */
 		script.onstart?.(startConfig);

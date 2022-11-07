@@ -11,10 +11,16 @@ export const CommonProject: Project = {
 		new Script({
 			name: '开发者调试页面',
 			url: [/.*/],
-			namespace: 'common.developer',
-
 			configs: () => {
-				const configs = cloneDeep(getAllRawConfigs(getScriptsWithout('common.developer')));
+				const configs = cloneDeep(
+					getAllRawConfigs(
+						getDefinedProjects()
+							.map((p) => p.scripts)
+							.flat()
+							.filter((s) => s.name !== '开发者调试页面')
+					)
+				);
+
 				for (const key in configs) {
 					if (Object.prototype.hasOwnProperty.call(configs, key)) {
 						const element = configs[key];
@@ -37,10 +43,3 @@ export const CommonProject: Project = {
 		})
 	]
 };
-
-function getScriptsWithout(namespace: string) {
-	return getDefinedProjects()
-		.map((p) => p.scripts)
-		.flat()
-		.filter((s) => s.namespace !== namespace);
-}

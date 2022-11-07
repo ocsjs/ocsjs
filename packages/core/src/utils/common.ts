@@ -10,7 +10,8 @@ import { Script } from '../interfaces/script';
  */
 export function getConfig(key: string, defaultValue?: any) {
 	// eslint-disable-next-line no-undef
-	return GM_getValue(key, defaultValue);
+	const val = GM_getValue(key, defaultValue);
+	return typeof val === 'undefined' ? '' : val;
 }
 
 /**
@@ -42,7 +43,7 @@ export function getAllRawConfigs(scripts: Script[]): Record<string, Config> {
  */
 export function setConfig(key: string, value: any) {
 	// eslint-disable-next-line no-undef
-	GM_setValue(key, value);
+	GM_setValue(key, typeof value === 'undefined' ? '' : value);
 }
 
 export function onConfigChange(key: string, handler: (pre: any, curr: any, remote: boolean) => any) {

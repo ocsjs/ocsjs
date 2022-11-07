@@ -15,18 +15,31 @@ export interface ScriptOptions<T extends Record<string, Config>> {
 	hideInPanel?: boolean;
 }
 
+/**
+ * 脚本
+ */
 export class Script<T extends Record<string, Config> = Record<string, Config>> {
+	/** 名字 */
 	name: string;
+	/** 匹配路径 */
 	url: (string | RegExp)[];
+	/** 唯一命名空间，用于避免 config 重名 */
 	namespace?: string;
+	/** 脚本提示 */
 	notes?: string[];
-	disableConfigProxy?: boolean;
+	/** 后台脚本（不提供管理页面） */
 	hideInPanel?: boolean;
+	/** 通过 configs 映射并经过解析后的配置对象 */
 	cfg: Record<keyof T, any> = {} as any;
+	/** 未经处理的 configs 原对象 */
 	private _configs?: ScriptConfigsProvider<T>;
+	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
 	private _resolvedConfigs?: T;
+	/** 在脚本加载时立即运行的钩子 */
 	onstart?: (...args: any) => any;
+	/** 在页面初始化完成时（元素可被访问）时运行的钩子 */
 	onactive?: (...args: any) => any;
+	/** 在页面完全加载时运行的钩子 */
 	oncomplete?: (...args: any) => any;
 
 	get configs() {
@@ -57,7 +70,6 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> {
 		this.url = url;
 		this.notes = notes;
 		this._configs = configs;
-		this.disableConfigProxy = disableConfigProxy;
 		this.hideInPanel = hideInPanel;
 		this.onstart = onstart as any;
 		this.onactive = onactive as any;

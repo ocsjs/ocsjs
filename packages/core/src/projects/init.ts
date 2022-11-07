@@ -16,10 +16,10 @@ const InitPanelScript = new Script({
 	configs: {
 		x: { defaultValue: window.innerWidth * 0.1 },
 		y: { defaultValue: window.innerWidth * 0.1 },
-		visual: { defaultValue: '' },
+		visual: { defaultValue: 'normal' },
 		expandAll: { defaultValue: false },
 		alerts: { defaultValue: '' },
-		currentPanelNamespace: { defaultValue: 'init.panel' }
+		currentPanelName: { defaultValue: 'init.panel' }
 	},
 	onactive({ style, projects }: StartConfig) {
 		/** 注册自定义元素 */
@@ -61,7 +61,7 @@ const InitPanelScript = new Script({
 						className: 'project-selector',
 						title: '选择脚本管理页面，当全部展开时，显示全部管理页面。',
 						onchange: () => {
-							this.cfg.currentPanelNamespace = projectSelector.value;
+							this.cfg.currentPanelName = projectSelector.value;
 							// 替换元素
 							replaceBody();
 						}
@@ -72,9 +72,9 @@ const InitPanelScript = new Script({
 							for (const script of scripts) {
 								select.append(
 									el('option', {
-										value: script.namespace,
+										value: project.name + '-' + script.name,
 										innerText: project.name + '-' + script.name,
-										selected: script.namespace === this.cfg.currentPanelNamespace
+										selected: project.name + '-' + script.name === this.cfg.currentPanelName
 									})
 								);
 							}
@@ -134,7 +134,7 @@ const InitPanelScript = new Script({
 		const createBody = () => {
 			const scriptContainers = [];
 			for (const project of visibleProjects.sort((a, b) =>
-				a.scripts.some((s) => s.namespace === this.cfg.currentPanelNamespace) ? -1 : 1
+				a.scripts.some((s) => a.name + '-' + s.name === this.cfg.currentPanelName) ? -1 : 1
 			)) {
 				const scripts = getMatchedScripts([project]);
 
@@ -218,8 +218,8 @@ const InitPanelScript = new Script({
 		const replaceBody = () => {
 			container.body.replaceChildren(...createBody());
 		};
+		/** 创建设置区域 */
 
-		/** 创建内容板块 */
 		function createConfigs(namespace: string | undefined, configs: Record<string, Config<any>>) {
 			const elements = [];
 			for (const key in configs) {
@@ -241,7 +241,7 @@ const InitPanelScript = new Script({
 
 			return elements;
 		}
-		/** 创建设置区域 */
+		/** 创建内容板块 */
 		function createNotes(notes: string[]) {
 			const elements = [];
 			for (const note of notes) {
