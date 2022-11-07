@@ -1,12 +1,17 @@
 import { definedCustomElements } from '../elements';
+import { MessageElement } from '../elements/message';
+import { ModelElement } from '../elements/model';
 
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getConfig, getMatchedScripts, namespaceKey, setConfig } from '../utils/common';
+import { getMatchedScripts, namespaceKey } from '../utils/common';
 import { el, enableElementDraggable, tooltip } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
+
+const modelContainer = el('div', { className: 'model-container' });
+const messageContainer = el('div', { className: 'message-container' });
 
 const InitPanelScript = new Script({
 	name: '初始化页面',
@@ -18,7 +23,6 @@ const InitPanelScript = new Script({
 		y: { defaultValue: window.innerWidth * 0.1 },
 		visual: { defaultValue: 'normal' },
 		expandAll: { defaultValue: false },
-		alerts: { defaultValue: '' },
 		currentPanelName: { defaultValue: 'init.panel' }
 	},
 	onactive({ style, projects }: StartConfig) {
@@ -255,11 +259,12 @@ const InitPanelScript = new Script({
 			const { profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton } = createHeader();
 
 			// 创建样式元素
-			container.append(el('style', { textContent: style || '' }));
+			container.append(el('style', { textContent: style || '' }), messageContainer);
 			container.header.append(profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton);
+
 			replaceBody();
 			// 插入操作面板到页面
-			panel.attachShadow({ mode: 'closed' }).append(container);
+			panel.attachShadow({ mode: 'closed' }).append(modelContainer, container);
 			document.body.appendChild(panel);
 			handlePosition();
 		}
@@ -274,8 +279,45 @@ export const InitProject: Project = {
 	scripts: [InitPanelScript]
 };
 
-export function $alert(message: string) {
-	const key = namespaceKey(InitPanelScript.namespace, 'alerts');
-	const value = getConfig(key);
-	setConfig(key, value + message + '\n');
+/**
+ * 创建一个模态框代替原生的 alert, confirm, prompt
+ */
+export function $model(
+	attrs: Pick<ModelElement, 'type' | 'content' | 'onConfirm' | 'onCancel' | 'placeholder'> & {
+		disableWrapperCloseable?: boolean;
+		title?: string;
+	}
+) {
+	const { disableWrapperCloseable, onConfirm, onCancel, ..._attrs } = attrs;
+	modelContainer.append(
+		el('div', { className: 'model-wrapper' }, (wrapper) => {
+			const model = el('model-element', {
+				onConfirm(val) {
+					onConfirm?.apply(model, [val]);
+					wrapper.remove();
+				},
+				onCancel() {
+					onCancel?.apply(model);
+					wrapper.remove();
+				},
+				..._attrs
+			});
+			wrapper.append(model);
+
+			model.addEventListener('click', (e) => {
+				e.stopPropagation();
+			});
+			if (!disableWrapperCloseable) {
+				/** 点击遮罩层关闭模态框 */
+				wrapper.addEventListener('click', () => wrapper.remove());
+			}
+		})
+	);
+}
+
+/**
+ * 消息推送
+ */
+export function $message(attrs: Pick<MessageElement, 'type' | 'duration' | 'onClose' | 'content' | 'closeable'>) {
+	messageContainer.append(el('message-element', attrs));
 }

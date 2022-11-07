@@ -57,6 +57,14 @@ export const CXProject: Project = {
 					label: '测试3---输入框',
 					attrs: { title: '测试' },
 					tag: 'textarea'
+				},
+				switch: {
+					label: '测试4',
+					attrs: { type: 'checkbox', className: 'input-switch' }
+				},
+				radio: {
+					label: '测试5',
+					attrs: { type: 'radio' }
 				}
 			}
 		})

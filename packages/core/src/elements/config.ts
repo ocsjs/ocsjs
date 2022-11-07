@@ -5,7 +5,7 @@ import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
 
 export class ConfigElement<T extends keyof ConfigTagMap = keyof ConfigTagMap> extends IElement {
-	label: HTMLElement = el('label');
+	label: HTMLLabelElement = el('label');
 	key: string = '';
 	tag?: T;
 	provider!: ConfigTagMap[T];

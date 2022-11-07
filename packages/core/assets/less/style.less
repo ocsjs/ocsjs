@@ -1,17 +1,64 @@
+/** 默认字体 */
+@base-font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+/** 输入框默认边距 */
+@form-control-padding: 2px 8px;
+@form-control-bg: #eef2f7;
+
+.base-style-active-form-control {
+	border: 1px solid #ffffff00;
+	&:focus {
+		border: 1px solid #0e8de290;
+		box-shadow: 0px 0px 4px #0e8de252;
+	}
+
+	&:focus:not([type='checkbox'], [type='radio']) {
+		border: 1px solid #0e8de290;
+		box-shadow: 0px 0px 4px #0e8de252;
+		background-color: white !important;
+	}
+
+	&:hover {
+		background-color: #ebeef4;
+	}
+}
+
+.base-style-input {
+	outline: none;
+	border: 1px solid #ffffff00;
+	padding: @form-control-padding;
+	margin: 0px;
+	background-color: @form-control-bg;
+	border-radius: 2px;
+	color: black;
+
+	&::placeholder {
+		color: #bababa;
+	}
+}
+
+.base-style-button {
+	appearance: none;
+	border: 1px solid #ffffff00;
+	background-color: #94bfff;
+	color: white;
+	border-radius: 4px;
+	cursor: pointer;
+
+	&:active {
+		box-shadow: 0px 0px 8px #0e8de2a5;
+	}
+}
+
 container-element {
 	position: fixed;
 	top: 10%;
 	left: 10%;
-	z-index: 99999999;
+	z-index: 99;
 	text-align: left;
-	border-radius: 4px;
-	background-color: white;
-	box-shadow: 0 0 24px -12px #3f3f3f;
-	border: 1px solid #c8c8c8;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	color: #636363;
-	user-select: none;
+	font: 12px/1.5 @base-font-family;
 }
 
 .header {
@@ -26,7 +73,12 @@ container-element {
 	line-height: @base-height;
 	height: @base-height;
 	vertical-align: middle;
-	background: #ededed73;
+	background: #fbfbfbee;
+	border-radius: 4px;
+	border: 1px solid #e6e6e6;
+	box-shadow: 0 0 24px -12px #3f3f3f;
+	margin-bottom: 4px;
+	user-select: none;
 
 	& > * {
 		margin-left: 12px;
@@ -69,11 +121,14 @@ container-element {
 }
 
 .body {
-	background: white;
 	padding: 8px;
 	width: auto;
 	height: 100%;
 	overflow: auto;
+	background-color: white;
+	box-shadow: 0 0 24px -12px #3f3f3f;
+	border: 1px solid #e6e6e6;
+	border-radius: 4px;
 }
 
 .script-panel + .script-panel {
@@ -142,13 +197,13 @@ container-element {
 			}
 
 			.config-wrapper > *:not(.tooltip) {
-				background-color: #f5f7fa;
+				background-color: @form-control-bg;
 				border-radius: 2px;
 				color: black;
-				width: -webkit-fill-available;
 			}
 			.config-wrapper > *:disabled {
 				cursor: not-allowed;
+				background-color: #f7f7f78b;
 			}
 
 			label {
@@ -166,21 +221,22 @@ container-element {
 				border: none;
 				border: 1px solid #e4e4e4;
 				border-radius: 4px;
+				padding: @form-control-padding;
 				height: 22px;
+
+				.base-style-active-form-control();
 			}
 
 			textarea {
-				padding: 4px;
+				padding: @form-control-padding;
 				outline: none;
 				border: none;
+				.base-style-active-form-control();
 			}
 
 			input {
-				outline: none;
-				border: none;
-				padding: 2px 0px;
-				margin: 0px;
-				text-align: center;
+				.base-style-input();
+				.base-style-active-form-control();
 			}
 
 			/** check box 的样式 */
@@ -189,12 +245,12 @@ container-element {
 				width: fit-content;
 				min-width: 32px;
 				height: 16px;
-				background: #c5c5c5;
-				border-radius: 100px;
+				border-radius: 100px !important;
 				display: flex;
 				align-items: center;
 				padding: 2px 4px;
 				transition: all 0.2s ease-in-out;
+				width: auto;
 
 				&:checked {
 					background: #1890ff !important;
@@ -214,8 +270,10 @@ container-element {
 				}
 			}
 
-			input:not([type='checkbox'], [type='radio']) {
-				width: 100%;
+			input:not([type='checkbox'], [type='radio']),
+			textarea,
+			select {
+				width: -webkit-fill-available;
 			}
 
 			input[type='checkbox'],
@@ -227,45 +285,40 @@ container-element {
 	}
 }
 
-// 提示内容
-// alert 提示父元素
-.alert-container {
+// 消息推送
+
+.message-container {
 	margin-bottom: 4px;
 	position: absolute;
-	z-index: 999999;
 	bottom: 100%;
 	left: 50%;
 	width: 100%;
 	transform: translate(-50%, 0px);
 
-	// 关闭按钮
-	.alert-closer {
-		float: right;
-		border-radius: 50%;
-		border: 1px solid;
-		text-align: center;
-		cursor: pointer;
-		font: icon;
-		line-height: 14px;
-		width: 14px;
-	}
-
-	// 隐藏模式下的提示样式
-	.hide .alert {
-		width: 200px;
-		transform: translate(-82px, 0px);
-	}
-
 	// 提示内容
-	.alert {
+	message-element {
+		display: block;
 		border-radius: 4px;
 		margin-bottom: 4px;
-		padding: 4px;
+		padding: 4px 12px;
 		font-size: 12px;
 
-		.alert-text {
+		.message-text {
 			letter-spacing: 1px;
 			font-weight: bold;
+		}
+
+		// 关闭按钮
+		.message-closer {
+			width: 18px;
+			cursor: pointer;
+			background-color: white;
+			color: #a8a8a8;
+			border-radius: 100%;
+			float: right;
+			text-align: center;
+			height: 18px;
+			line-height: 18px;
 		}
 
 		&.error {
@@ -292,6 +345,107 @@ container-element {
 			border: 1px solid #ffc107;
 		}
 	}
+}
+
+model-element {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	background-color: white;
+	border-radius: 4px;
+	box-shadow: 0px 0px 24px -12px black;
+	border: 1px solid #929292;
+	min-width: 300px;
+	height: fit-content;
+	transform: translate(-50%, -50%);
+	padding: 12px 18px 18px 18px;
+	font-family: @base-font-family;
+	z-index: 99999;
+
+	.model-profile {
+		zoom: 0.8;
+		color: #969696;
+		user-select: none;
+		margin-bottom: 4px;
+	}
+
+	.model-title {
+		font-size: 18px;
+		font-weight: bold;
+		user-select: none;
+	}
+
+	.model-body {
+		margin: 12px 0px;
+	}
+
+	.model-footer {
+		display: flex;
+		white-space: nowrap;
+		justify-content: end;
+
+		* + * {
+			margin-left: 12px;
+		}
+	}
+
+	.model-input {
+		.base-style-input();
+		.base-style-active-form-control();
+		width: -webkit-fill-available;
+	}
+
+	.model-cancel-button {
+		.base-style-button();
+		min-width: 60px;
+		color: gray;
+		background-color: white;
+		border: 1px solid #dcdcdc;
+	}
+	.model-confirm-button {
+		.base-style-button();
+		min-width: 60px;
+	}
+}
+
+model-element.alert {
+	.model-input,
+	.model-cancel-button {
+		display: none;
+	}
+	.model-confirm-button {
+		margin: 0;
+	}
+}
+
+model-element.prompt {
+	.model-input,
+	.model-cancel-button,
+	.model-confirm-button {
+		display: block;
+	}
+}
+
+model-element.confirm {
+	.model-input {
+		display: none;
+	}
+}
+
+.model-container {
+	width: 100%;
+	height: 100%;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+
+.model-wrapper {
+	position: fixed;
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	background-color: rgba(0, 0, 0, 0.265);
 }
 
 .pointer {
