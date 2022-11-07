@@ -1,7 +1,7 @@
 import { getDefinedProjects } from '.';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getAllRawConfigs, onConfigChange } from '../utils/common';
+import { getAllRawConfigs, addConfigChangeListener } from '../utils/common';
 import cloneDeep from 'lodash/cloneDeep';
 
 export const CommonProject: Project = {
@@ -34,7 +34,7 @@ export const CommonProject: Project = {
 			onstart() {
 				for (const key in this.configs) {
 					if (Object.prototype.hasOwnProperty.call(this.configs, key)) {
-						onConfigChange(key, (pre, curr) => {
+						addConfigChangeListener(key, (pre, curr) => {
 							Reflect.set(this.cfg, key, curr);
 						});
 					}

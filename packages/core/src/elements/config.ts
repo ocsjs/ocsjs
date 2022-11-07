@@ -1,4 +1,4 @@
-import { getConfig, setConfig } from '../utils/common';
+import { getValue, setValue } from '../utils/common';
 import { el, tooltip } from '../utils/dom';
 
 import { ConfigTagMap } from './configs/interface';
@@ -15,7 +15,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = keyof ConfigTagMap> ex
 	_onload?: (this: ConfigTagMap[T]) => void;
 
 	get value() {
-		return getConfig(this.key);
+		return getValue(this.key);
 	}
 
 	connectedCallback() {
@@ -42,7 +42,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = keyof ConfigTagMap> ex
 		wrapper.append(this.provider);
 		this.append(this.label, wrapper);
 
-		this.provider.value = getConfig(this.key);
+		this.provider.value = getValue(this.key);
 
 		for (const key in this.attrs) {
 			if (Object.prototype.hasOwnProperty.call(this.attrs, key)) {
@@ -53,7 +53,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = keyof ConfigTagMap> ex
 		// 储存值
 		this.provider.onchange = () => {
 			// eslint-disable-next-line no-undef
-			setConfig(this.key, this.provider.value);
+			setValue(this.key, this.provider.value);
 		};
 
 		// 处理跨域

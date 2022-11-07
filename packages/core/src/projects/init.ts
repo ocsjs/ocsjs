@@ -5,10 +5,27 @@ import { ModelElement } from '../elements/model';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getMatchedScripts, namespaceKey } from '../utils/common';
+import {
+	addConfigChangeListener,
+	getValue,
+	getMatchedScripts,
+	namespaceKey,
+	removeConfigChangeListener,
+	setValue,
+	deleteValue,
+	listValues
+} from '../utils/common';
 import { el, enableElementDraggable, tooltip } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
+
+export type ModelAttrs = Pick<
+	ModelElement,
+	'content' | 'onConfirm' | 'onCancel' | 'cancelButtonText' | 'confirmButtonText' | 'placeholder'
+> & {
+	disableWrapperCloseable?: boolean;
+	title?: string;
+};
 
 const modelContainer = el('div', { className: 'model-container' });
 const messageContainer = el('div', { className: 'message-container' });
@@ -23,9 +40,13 @@ const InitPanelScript = new Script({
 		y: { defaultValue: window.innerWidth * 0.1 },
 		visual: { defaultValue: 'normal' },
 		expandAll: { defaultValue: false },
-		currentPanelName: { defaultValue: 'init.panel' }
+		currentPanelName: { defaultValue: 'init.panel' },
+		models: { defaultValue: '' }
 	},
 	onactive({ style, projects }: StartConfig) {
+		history.pushState = addFunctionEventListener(history, 'pushState');
+		history.replaceState = addFunctionEventListener(history, 'replaceState');
+
 		/** 注册自定义元素 */
 		for (const element of definedCustomElements) {
 			const name = humpToTarget(element.name, '-');
@@ -34,7 +55,7 @@ const InitPanelScript = new Script({
 		const visibleProjects = projects.filter((p) => p.scripts.find((s) => !s.hideInPanel));
 		/** 当前匹配到的脚本，并且面板不隐藏 */
 		const matchedScripts = getMatchedScripts(projects).filter((s) => !s.hideInPanel);
-		const panel = el('div');
+
 		const container = el('container-element');
 
 		/** 创建头部元素 */
@@ -150,7 +171,7 @@ const InitPanelScript = new Script({
 					const configsContainer = el('div', { className: 'configs card', title: '脚本设置' });
 					const configsBody = el('div', { className: 'configs-body' });
 
-					notesContainer.append(...createNotes(script.notes || []));
+					notesContainer.append(...createNotes(script));
 					configsBody.append(...createConfigs(script.namespace, script.configs || {}));
 					configsContainer.append(configsBody);
 
@@ -218,13 +239,19 @@ const InitPanelScript = new Script({
 			visual(this.cfg.visual);
 		};
 
+		/** 监听页面状态改变 */
+		const handleHistoryChange = () => {
+			window.addEventListener('pushState', render);
+			window.addEventListener('replaceState', render);
+		};
+
 		/** 替换 body 中的内容 */
 		const replaceBody = () => {
 			container.body.replaceChildren(...createBody());
 		};
 		/** 创建设置区域 */
 
-		function createConfigs(namespace: string | undefined, configs: Record<string, Config<any>>) {
+		const createConfigs = (namespace: string | undefined, configs: Record<string, Config<any>>) => {
 			const elements = [];
 			for (const key in configs) {
 				if (Object.prototype.hasOwnProperty.call(configs, key)) {
@@ -244,28 +271,80 @@ const InitPanelScript = new Script({
 			}
 
 			return elements;
-		}
+		};
 		/** 创建内容板块 */
-		function createNotes(notes: string[]) {
-			const elements = [];
-			for (const note of notes) {
-				elements.push(el('div', { textContent: note }));
+		const createNotes = (script: Script) => {
+			const notes: HTMLDivElement[] = [];
+			script.notes = script.notes || [];
+
+			/** 创建响应式对象，当 notes 改变时，页面元素内容同样改变 */
+			script.notes = new Proxy(script.notes, {
+				set(target, key, value) {
+					const note: HTMLDivElement = Reflect.get(notes, key);
+					note.innerText = value;
+					return Reflect.set(target, key, value);
+				}
+			});
+
+			for (const note of script.notes || []) {
+				notes.push(el('div', { textContent: note }));
 			}
-			return elements;
-		}
+			return notes;
+		};
+
+		/** 初始化模态框系统 */
+		const initModelSystem = () => {
+			// 删除全部未处理的模态框临时变量
+			listValues().forEach((key) => {
+				if (/model-[0-9a-z]{32}-(state|arguments)/.test(key)) {
+					deleteValue(key);
+				}
+			});
+			// 添加 models 监听队列
+			addConfigChangeListener('init.panel.models', (pre, curr, remote) => {
+				if (remote) {
+					const list = String(curr).split(',');
+					// 处理队列
+					const id = list.pop();
+
+					if (id) {
+						const { type, ...attrs }: ModelAttrs & { type: ModelElement['type'] } = getValue(id + '-arguments');
+						attrs.onConfirm = (val) => {
+							setValue(id + '-state', '1-' + val);
+						};
+						attrs.onCancel = () => {
+							setValue(id + '-state', '2-');
+						};
+						// 弹出模态框
+						$model(type, attrs);
+						// 更新队列
+						setTimeout(() => {
+							setValue('init.panel.models', list.join(','));
+						}, 1000);
+					}
+				}
+			});
+		};
+
+		const render = () => {
+			// 创建样式元素
+			container.append(el('style', { textContent: style || '' }), messageContainer);
+			const { profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton } = createHeader();
+			container.header.replaceChildren(profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton);
+			replaceBody();
+		};
 
 		/** 在顶级页面显示操作面板 */
 		if (matchedScripts.length !== 0 && self === top) {
-			const { profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton } = createHeader();
-
-			// 创建样式元素
-			container.append(el('style', { textContent: style || '' }), messageContainer);
-			container.header.append(profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton);
-
-			replaceBody();
-			// 插入操作面板到页面
+			// 随机位置插入操作面板到页面
+			const panel = el('span');
 			panel.attachShadow({ mode: 'closed' }).append(modelContainer, container);
-			document.body.appendChild(panel);
+			const children = allVisibleChildren(document.body);
+			children[random(0, children.length - 1)].after(panel);
+
+			render();
+			initModelSystem();
+			handleHistoryChange();
 			handlePosition();
 		}
 
@@ -282,42 +361,113 @@ export const InitProject: Project = {
 /**
  * 创建一个模态框代替原生的 alert, confirm, prompt
  */
-export function $model(
-	attrs: Pick<ModelElement, 'type' | 'content' | 'onConfirm' | 'onCancel' | 'placeholder'> & {
-		disableWrapperCloseable?: boolean;
-		title?: string;
-	}
-) {
+export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 	const { disableWrapperCloseable, onConfirm, onCancel, ..._attrs } = attrs;
-	modelContainer.append(
-		el('div', { className: 'model-wrapper' }, (wrapper) => {
-			const model = el('model-element', {
-				onConfirm(val) {
-					onConfirm?.apply(model, [val]);
-					wrapper.remove();
-				},
-				onCancel() {
-					onCancel?.apply(model);
-					wrapper.remove();
-				},
-				..._attrs
-			});
-			wrapper.append(model);
 
-			model.addEventListener('click', (e) => {
-				e.stopPropagation();
-			});
-			if (!disableWrapperCloseable) {
-				/** 点击遮罩层关闭模态框 */
-				wrapper.addEventListener('click', () => wrapper.remove());
+	if (self === top) {
+		modelContainer.append(
+			el('div', { className: 'model-wrapper' }, (wrapper) => {
+				const model = el('model-element', {
+					onConfirm(val) {
+						onConfirm?.apply(model, [val]);
+						wrapper.remove();
+					},
+					onCancel() {
+						onCancel?.apply(model);
+						wrapper.remove();
+					},
+					type,
+					..._attrs
+				});
+				wrapper.append(model);
+
+				model.addEventListener('click', (e) => {
+					e.stopPropagation();
+				});
+				if (!disableWrapperCloseable) {
+					/** 点击遮罩层关闭模态框 */
+					wrapper.addEventListener('click', () => wrapper.remove());
+				}
+			})
+		);
+	} else {
+		const id = 'model-' + uuid().replace(/-/g, '');
+
+		/** 状态, 0 等待交互 ， 1 确定 , 2 取消 ， 后面紧跟着模态框中获取到的值，如果模态框类型是 prompt 则有值，否则为空字符串 */
+		setValue(id + '-state', ['0', ''].join('-'));
+		/** 模态框所需参数 */
+		setValue(id + '-arguments', { type, ...attrs });
+
+		const listenerId = addConfigChangeListener(id + '-state', (pre, curr) => {
+			const args = String(curr).split('-');
+
+			if (args[0] === '1') {
+				onConfirm?.(args[1]);
+			} else {
+				onCancel?.();
 			}
-		})
-	);
+
+			// 移除冗余的本地临时存储变量
+			deleteValue(id + '-state');
+			deleteValue(id + '-arguments');
+
+			// 移除此监听器
+			removeConfigChangeListener(listenerId);
+		});
+
+		/** 添加 id 到监听队列 */
+		setValue(
+			'init.panel.models',
+			(getValue('init.panel.models') ? String(getValue('init.panel.models')).split(',') : []).concat(id).join(',')
+		);
+	}
 }
 
 /**
  * 消息推送
  */
-export function $message(attrs: Pick<MessageElement, 'type' | 'duration' | 'onClose' | 'content' | 'closeable'>) {
-	messageContainer.append(el('message-element', attrs));
+export function $message(
+	type: MessageElement['type'],
+	attrs: Pick<MessageElement, 'duration' | 'onClose' | 'content' | 'closeable'>
+) {
+	messageContainer.append(el('message-element', { type, ...attrs }));
+}
+
+/**
+ * 添加事件调用监听器
+ */
+function addFunctionEventListener(obj: any, type: string) {
+	const origin = obj[type];
+	return function (...args: any[]) {
+		// @ts-ignore
+		const res = origin.apply(this, args);
+		const e = new Event(type.toString());
+		// @ts-ignore
+		e.arguments = args;
+		window.dispatchEvent(e);
+		return res;
+	};
+}
+
+function uuid() {
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+		const r = (Math.random() * 16) | 0;
+		const v = c === 'x' ? r : (r & 0x3) | 0x8;
+		return v.toString(16);
+	});
+}
+
+function random(min: number, max: number) {
+	return Math.round(Math.random() * (max - min)) + min;
+}
+
+function allVisibleChildren(element: HTMLElement) {
+	const list: HTMLElement[] = [];
+	for (const child of Array.from(element.children) as HTMLElement[]) {
+		list.push(child, ...allVisibleChildren(child));
+		if (child.style.display !== 'none' && child.hidden !== false && child.style.visibility !== 'hidden') {
+			list.push(...allVisibleChildren(child));
+		}
+	}
+	return list;
 }

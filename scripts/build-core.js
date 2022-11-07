@@ -49,9 +49,11 @@ async function createUserJs(cb) {
 				match: ocs.definedProjects.map((p) => p.domains.map((d) => `*://*.${d}/*`)).flat(),
 				grant: [
 					'unsafeWindow',
-					'GM_xmlhttpRequest',
 					'GM_setValue',
 					'GM_getValue',
+					'GM_listValues',
+					'GM_deleteValue',
+					'GM_xmlhttpRequest',
 					'GM_getResourceText',
 					'GM_addValueChangeListener',
 					'GM_removeValueChangeListener'

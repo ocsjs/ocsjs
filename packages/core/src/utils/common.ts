@@ -8,10 +8,20 @@ import { Script } from '../interfaces/script';
  * @param defaultValue 默认值
  * @returns
  */
-export function getConfig(key: string, defaultValue?: any) {
+export function getValue(key: string, defaultValue?: any) {
 	// eslint-disable-next-line no-undef
 	const val = GM_getValue(key, defaultValue);
 	return typeof val === 'undefined' ? '' : val;
+}
+
+export function deleteValue(key: string) {
+	// eslint-disable-next-line no-undef
+	GM_deleteValue(key);
+}
+
+export function listValues() {
+	// eslint-disable-next-line no-undef
+	return GM_listValues();
 }
 
 /**
@@ -41,16 +51,21 @@ export function getAllRawConfigs(scripts: Script[]): Record<string, Config> {
  * @param value 值
  * @returns
  */
-export function setConfig(key: string, value: any) {
+export function setValue(key: string, value: any) {
 	// eslint-disable-next-line no-undef
 	GM_setValue(key, typeof value === 'undefined' ? '' : value);
 }
 
-export function onConfigChange(key: string, handler: (pre: any, curr: any, remote: boolean) => any) {
+export function addConfigChangeListener(key: string, handler: (pre: any, curr: any, remote: boolean) => any) {
 	// eslint-disable-next-line no-undef
-	GM_addValueChangeListener(key, (_, pre, curr, remote) => {
+	return GM_addValueChangeListener(key, (_, pre, curr, remote) => {
 		handler(pre, curr, remote);
 	});
+}
+
+export function removeConfigChangeListener(listenerId: number) {
+	// eslint-disable-next-line no-undef
+	GM_removeValueChangeListener(listenerId);
 }
 
 /**
@@ -89,11 +104,11 @@ export function createConfigProxy<T extends Record<string, Config> = Record<stri
 	const proxy = new Proxy(script.cfg, {
 		set(target, propertyKey, value) {
 			const key = namespaceKey(script.namespace, propertyKey);
-			setConfig(key, value);
+			setValue(key, value);
 			return Reflect.set(target, propertyKey, value);
 		},
 		get(target, propertyKey) {
-			const value = getConfig(namespaceKey(script.namespace, propertyKey));
+			const value = getValue(namespaceKey(script.namespace, propertyKey));
 			Reflect.set(target, propertyKey, value);
 			return value;
 		}
@@ -103,7 +118,7 @@ export function createConfigProxy<T extends Record<string, Config> = Record<stri
 	for (const key in script.configs) {
 		if (Object.prototype.hasOwnProperty.call(script.configs, key)) {
 			const element = Reflect.get(script.configs, key);
-			Reflect.set(proxy, key, getConfig(namespaceKey(script.namespace, key), element.defaultValue));
+			Reflect.set(proxy, key, getValue(namespaceKey(script.namespace, key), element.defaultValue));
 		}
 	}
 

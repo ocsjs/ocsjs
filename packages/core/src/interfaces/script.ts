@@ -9,8 +9,6 @@ export interface ScriptOptions<T extends Record<string, Config>> {
 	namespace?: string;
 	notes?: string[];
 	configs?: ScriptConfigsProvider<T>;
-	/** 关闭响应式配置 */
-	disableConfigProxy?: boolean;
 	/** 不显示脚本页 */
 	hideInPanel?: boolean;
 }
@@ -26,7 +24,7 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> {
 	/** 唯一命名空间，用于避免 config 重名 */
 	namespace?: string;
 	/** 脚本提示 */
-	notes?: string[];
+	notes: string[];
 	/** 后台脚本（不提供管理页面） */
 	hideInPanel?: boolean;
 	/** 通过 configs 映射并经过解析后的配置对象 */
@@ -49,13 +47,16 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> {
 		return this._resolvedConfigs;
 	}
 
+	set configs(c) {
+		this._configs = c;
+	}
+
 	constructor({
 		name,
 		namespace,
 		url,
 		notes,
 		configs,
-		disableConfigProxy,
 		hideInPanel,
 		onstart,
 		onactive,
@@ -68,7 +69,7 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> {
 		this.name = name;
 		this.namespace = namespace;
 		this.url = url;
-		this.notes = notes;
+		this.notes = notes || [];
 		this._configs = configs;
 		this.hideInPanel = hideInPanel;
 		this.onstart = onstart as any;

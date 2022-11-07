@@ -1,6 +1,7 @@
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
 import { $$el } from '../utils/dom';
+import { $model } from './init';
 
 export const CXProject: Project = {
 	name: '超星学习通',
@@ -9,14 +10,21 @@ export const CXProject: Project = {
 		new Script({
 			name: '章节提示',
 			namespace: 'cx.chapter',
-			url: [/\/mycourse\/stu\?.*&pageHeader=1/],
+			url: [/\/mooc2-ans\/mycourse\/studentcourse/],
 			notes: ['请点击任意一个章节进入课程，5秒后自动进入。'],
 			oncomplete() {
 				const list = $$el('.catalog_task .catalog_jindu');
+
 				if (list.length) {
 					list[0].click();
 				} else {
-					//
+					this.notes[0] = '全部任务已完成！';
+					$model('prompt', {
+						content: '全部任务已完成！',
+						onConfirm(val) {
+							alert(val);
+						}
+					});
 				}
 			}
 		}),

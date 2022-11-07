@@ -17,8 +17,8 @@ export class ModelElement extends IElement {
 	type: 'prompt' | 'alert' | 'confirm' = 'alert';
 	content: string = '';
 	placeholder?: string = '';
-	cancelButtonText: string = '取消';
-	confirmButtonText: string = '确定';
+	cancelButtonText?: string;
+	confirmButtonText?: string;
 	onConfirm?: (value?: string) => void;
 	onCancel?: () => void;
 
@@ -26,8 +26,8 @@ export class ModelElement extends IElement {
 		this.classList.add(this.type);
 		this.modalTitle.innerText = this.title;
 		this.modalBody.innerText = this.content;
-		this.cancelButton.innerText = this.cancelButtonText;
-		this.confirmButton.innerText = this.confirmButtonText;
+		this.cancelButton.innerText = this.cancelButtonText = '取消';
+		this.confirmButton.innerText = this.confirmButtonText = '确定';
 		this.modalInput.placeholder = this.placeholder || '';
 		this.modalFooter.append(this.modalInput, this.cancelButton, this.confirmButton);
 		this.append(this.modelProfile, this.modalTitle, this.modalBody, this.modalFooter);
