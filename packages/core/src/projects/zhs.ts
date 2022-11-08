@@ -8,8 +8,13 @@ export const ZHSProject: Project = {
 		new Script({
 			name: '课程学习',
 			url: [/.*/],
-			notes: ['111'],
-			namespace: 'zhs.study'
+
+			namespace: 'zhs.study',
+			configs: {
+				notes: {
+					defaultValue: `智慧树111`
+				}
+			}
 		})
 	]
 };

@@ -11,13 +11,16 @@ export const CXProject: Project = {
 			name: '章节提示',
 			namespace: 'cx.chapter',
 			url: [/\/mooc2-ans\/mycourse\/studentcourse/],
-			notes: ['请点击任意一个章节进入课程，5秒后自动进入。'],
+			configs: {
+				notes: { defaultValue: `请点击任意一个章节进入课程\n5秒后将自动进入。` }
+			},
 			oncomplete() {
 				const list = $$el('.catalog_task .catalog_jindu');
 
 				if (list.length) {
 					list[0].click();
 				} else {
+					this.cfg.notes = '全部任务已完成！';
 					$model('prompt', {
 						content: '全部任务已完成！',
 						onConfirm(val) {
@@ -31,8 +34,9 @@ export const CXProject: Project = {
 			name: '课程学习',
 			namespace: 'cx.study',
 			url: [/\/mycourse\/studentstudy/],
-			notes: ['测试', '111'],
+
 			configs: {
+				notes: { defaultValue: `测试aaaa` },
 				test: {
 					defaultValue: 1,
 					attrs: { type: 'number', title: '测试选项' },

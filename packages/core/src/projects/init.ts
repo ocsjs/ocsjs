@@ -6,7 +6,7 @@ import { Config } from '../interfaces/config';
 import { cors } from '../interfaces/cors';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getMatchedScripts, namespaceKey } from '../utils/common';
+import { getMatchedScripts, getValue, namespaceKey } from '../utils/common';
 import { el, enableElementDraggable, tooltip } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
@@ -19,7 +19,8 @@ export type ModelAttrs = Pick<
 	title?: string;
 };
 
-const modelContainer = el('div', { className: 'model-container' });
+const panel = el('div');
+const root = panel.attachShadow({ mode: 'closed' });
 const messageContainer = el('div', { className: 'message-container' });
 
 const InitPanelScript = new Script({
@@ -46,7 +47,7 @@ const InitPanelScript = new Script({
 		}
 		const visibleProjects = projects.filter((p) => p.scripts.find((s) => !s.hideInPanel));
 		/** 当前匹配到的脚本，并且面板不隐藏 */
-		const matchedScripts = getMatchedScripts(projects).filter((s) => !s.hideInPanel);
+		const matchedScripts = getMatchedScripts(projects, [location.href]).filter((s) => !s.hideInPanel);
 
 		const container = el('container-element');
 
@@ -85,7 +86,7 @@ const InitPanelScript = new Script({
 					},
 					(select) => {
 						for (const project of visibleProjects) {
-							const scripts = getMatchedScripts([project]).filter((s) => !s.hideInPanel);
+							const scripts = getMatchedScripts([project], getValue('_urls_') || []).filter((s) => !s.hideInPanel);
 							for (const script of scripts) {
 								select.append(
 									el('option', {
@@ -153,7 +154,7 @@ const InitPanelScript = new Script({
 			for (const project of visibleProjects.sort((a, b) =>
 				a.scripts.some((s) => a.name + '-' + s.name === this.cfg.currentPanelName) ? -1 : 1
 			)) {
-				const scripts = getMatchedScripts([project]);
+				const scripts = getMatchedScripts([project], getValue('_urls_') || [location.href]);
 
 				for (const script of scripts) {
 					const scriptContainer = el('div', { className: 'script-panel' });
@@ -163,7 +164,13 @@ const InitPanelScript = new Script({
 					const configsContainer = el('div', { className: 'configs card', title: '脚本设置' });
 					const configsBody = el('div', { className: 'configs-body' });
 
-					notesContainer.append(...createNotes(script));
+					script.onConfigChange('notes', (pre, curr) => {
+						console.log('change', curr);
+
+						notesContainer.replaceChildren(...createNotes(script));
+					});
+
+					notesContainer.replaceChildren(...createNotes(script));
 					configsBody.append(...createConfigs(script.namespace, script.configs || {}));
 					configsContainer.append(configsBody);
 
@@ -267,18 +274,8 @@ const InitPanelScript = new Script({
 		/** 创建内容板块 */
 		const createNotes = (script: Script) => {
 			const notes: HTMLDivElement[] = [];
-			script.notes = script.notes || [];
 
-			/** 创建响应式对象，当 notes 改变时，页面元素内容同样改变 */
-			script.notes = new Proxy(script.notes, {
-				set(target, key, value) {
-					const note: HTMLDivElement = Reflect.get(notes, key);
-					note.innerText = value;
-					return Reflect.set(target, key, value);
-				}
-			});
-
-			for (const note of script.notes || []) {
+			for (const note of script.cfg.notes?.split('\n') || []) {
 				notes.push(el('div', { textContent: note }));
 			}
 			return notes;
@@ -308,8 +305,7 @@ const InitPanelScript = new Script({
 		/** 在顶级页面显示操作面板 */
 		if (matchedScripts.length !== 0 && self === top) {
 			// 随机位置插入操作面板到页面
-			const panel = el('div');
-			panel.attachShadow({ mode: 'closed' }).append(modelContainer, container);
+			root.append(container);
 			document.body.children[random(0, document.body.children.length - 1)].after(panel);
 
 			render();
@@ -335,7 +331,7 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 	if (self === top) {
 		const { disableWrapperCloseable, onConfirm, onCancel, ..._attrs } = attrs;
 
-		modelContainer.append(
+		root.append(
 			el('div', { className: 'model-wrapper' }, (wrapper) => {
 				const model = el('model-element', {
 					onConfirm(val) {

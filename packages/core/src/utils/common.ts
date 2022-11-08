@@ -10,8 +10,7 @@ import { Script } from '../interfaces/script';
  */
 export function getValue(key: string, defaultValue?: any) {
 	// eslint-disable-next-line no-undef
-	const val = GM_getValue(key, defaultValue);
-	return typeof val === 'undefined' ? '' : val;
+	return GM_getValue(key, defaultValue);
 }
 
 export function deleteValue(key: string) {
@@ -73,11 +72,11 @@ export function removeConfigChangeListener(listenerId: number) {
  * @param projects 程序列表
  * @returns
  */
-export function getMatchedScripts(projects: Project[]) {
+export function getMatchedScripts(projects: Project[], urls: string[]) {
 	const scripts = [];
 	for (const project of projects) {
 		for (const script of project.scripts) {
-			if (script.url.some((u) => RegExp(u).test(document.location.href))) {
+			if (script.url.some((u) => urls.some((url) => RegExp(u).test(url)))) {
 				scripts.push(script);
 			}
 		}
@@ -100,7 +99,7 @@ export function namespaceKey(namespace: string | undefined, key: any) {
  * @param script
  * @returns
  */
-export function createConfigProxy<T extends Record<string, Config> = Record<string, Config>>(script: Script<T>) {
+export function createConfigProxy(script: Script) {
 	const proxy = new Proxy(script.cfg, {
 		set(target, propertyKey, value) {
 			const key = namespaceKey(script.namespace, propertyKey);
@@ -118,8 +117,13 @@ export function createConfigProxy<T extends Record<string, Config> = Record<stri
 	for (const key in script.configs) {
 		if (Object.prototype.hasOwnProperty.call(script.configs, key)) {
 			const element = Reflect.get(script.configs, key);
-			Reflect.set(proxy, key, getValue(namespaceKey(script.namespace, key), element.defaultValue));
+			Reflect.set(proxy, key, getValue(namespaceKey(script.namespace, key)) || element.defaultValue);
 		}
+	}
+
+	if (script.namespace) {
+		// 重置特殊的 notes 对象
+		proxy.notes = script.configs?.notes?.defaultValue;
 	}
 
 	return proxy;

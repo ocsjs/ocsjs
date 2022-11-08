@@ -1,4 +1,4 @@
-import { namespaceKey } from '../utils/common';
+import { getValue, namespaceKey, setValue } from '../utils/common';
 import { Config } from './config';
 
 export type ScriptConfigsProvider<T extends Record<string, Config>> = T | { (): T };
@@ -24,26 +24,27 @@ export class BaseScript {
 	onbeforeunload?: (...args: any) => any;
 }
 
-export interface ScriptEvent {
-	[name: string]: any;
-}
+export type ScriptConfigs = {
+	/** 脚本提示 */
+	readonly notes?: {
+		defaultValue: string;
+	};
+} & Record<string, Config>;
 
 /**
  * 脚本
  */
-export class Script<T extends Record<string, Config> = Record<string, Config>> extends BaseScript {
+export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript {
 	/** 名字 */
 	name: string;
 	/** 匹配路径 */
 	url: (string | RegExp)[];
 	/** 唯一命名空间，用于避免 config 重名 */
 	namespace?: string;
-	/** 脚本提示 */
-	notes: string[];
 	/** 后台脚本（不提供管理页面） */
 	hideInPanel?: boolean;
 	/** 通过 configs 映射并经过解析后的配置对象 */
-	cfg: Record<keyof T, any> = {} as any;
+	cfg: Record<keyof T, any> & { notes?: string } = {} as any;
 	/** 未经处理的 configs 原对象 */
 	private _configs?: ScriptConfigsProvider<T>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
@@ -69,22 +70,44 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> e
 		hideInPanel,
 		onstart,
 		onactive,
-		oncomplete
+		oncomplete,
+		onbeforeunload
 	}: ScriptOptions<T> & {
 		onstart?: (this: Script<T>, ...args: any) => any;
 		onactive?: (this: Script<T>, ...args: any) => any;
 		oncomplete?: (this: Script<T>, ...args: any) => any;
+		onbeforeunload?: (this: Script<T>, ...args: any) => any;
 	}) {
 		super();
 		this.name = name;
 		this.namespace = namespace;
 		this.url = url;
-		this.notes = notes || [];
 		this._configs = configs;
 		this.hideInPanel = hideInPanel;
 		this.onstart = onstart as any;
 		this.onactive = onactive as any;
 		this.oncomplete = oncomplete as any;
+		this.onbeforeunload = onbeforeunload as any;
+
+		const _onstart = this.onstart;
+		this.onstart = (...args: any) => {
+			_onstart?.call(this, ...args);
+			const urls: string[] = Array.from(getValue('_urls_'));
+			const urlHasInRecord = urls.find((u) => u === location.href);
+			if (!urlHasInRecord) {
+				setValue('_urls_', urls.concat(location.href));
+			}
+		};
+
+		const _onbeforeunload = this.onbeforeunload;
+		this.onbeforeunload = (...args: any) => {
+			_onbeforeunload?.call(this, ...args);
+			const urls: string[] = Array.from(getValue('_urls_'));
+			const urlIndex = urls.findIndex((u) => u === location.href);
+			if (urlIndex !== -1) {
+				setValue('_urls_', urls.splice(urlIndex, 1));
+			}
+		};
 	}
 
 	onConfigChange(key: keyof T, handler: (pre: any, curr: any, remote: boolean) => any) {

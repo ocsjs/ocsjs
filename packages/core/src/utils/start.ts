@@ -16,11 +16,18 @@ export interface StartConfig {
  * @param cfg 启动配置
  */
 export function start(cfg: StartConfig) {
-	const scripts = getMatchedScripts(cfg.projects);
-	scripts.forEach((script) => {
-		/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
-		script.cfg = createConfigProxy(script);
+	/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
+	cfg.projects = cfg.projects.map((p) => {
+		p.scripts = p.scripts.map((s) => {
+			s.cfg = createConfigProxy(s);
+			return s;
+		});
+		return p;
+	});
 
+	const scripts = getMatchedScripts(cfg.projects, [location.href]);
+
+	scripts.forEach((script) => {
 		/** 执行脚本 */
 		script.onstart?.(cfg);
 
