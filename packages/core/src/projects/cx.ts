@@ -18,7 +18,6 @@ export const CXProject: Project = {
 				if (list.length) {
 					list[0].click();
 				} else {
-					this.notes[0] = '全部任务已完成！';
 					$model('prompt', {
 						content: '全部任务已完成！',
 						onConfirm(val) {

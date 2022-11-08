@@ -440,6 +440,7 @@ model-element.confirm .model-input {
   position: fixed;
   top: 0px;
   left: 0px;
+  z-index: 9999999;
 }
 .model-wrapper {
   position: fixed;

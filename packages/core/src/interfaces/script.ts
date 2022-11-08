@@ -13,10 +13,25 @@ export interface ScriptOptions<T extends Record<string, Config>> {
 	hideInPanel?: boolean;
 }
 
+export class BaseScript {
+	/** 在脚本加载时立即运行的钩子 */
+	onstart?: (...args: any) => any;
+	/** 在页面初始化完成时（元素可被访问）时运行的钩子 */
+	onactive?: (...args: any) => any;
+	/** 在页面完全加载时运行的钩子 */
+	oncomplete?: (...args: any) => any;
+	/** 在页面离开时执行的钩子 */
+	onbeforeunload?: (...args: any) => any;
+}
+
+export interface ScriptEvent {
+	[name: string]: any;
+}
+
 /**
  * 脚本
  */
-export class Script<T extends Record<string, Config> = Record<string, Config>> {
+export class Script<T extends Record<string, Config> = Record<string, Config>> extends BaseScript {
 	/** 名字 */
 	name: string;
 	/** 匹配路径 */
@@ -33,12 +48,6 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> {
 	private _configs?: ScriptConfigsProvider<T>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
 	private _resolvedConfigs?: T;
-	/** 在脚本加载时立即运行的钩子 */
-	onstart?: (...args: any) => any;
-	/** 在页面初始化完成时（元素可被访问）时运行的钩子 */
-	onactive?: (...args: any) => any;
-	/** 在页面完全加载时运行的钩子 */
-	oncomplete?: (...args: any) => any;
 
 	get configs() {
 		if (!this._resolvedConfigs) {
@@ -66,6 +75,7 @@ export class Script<T extends Record<string, Config> = Record<string, Config>> {
 		onactive?: (this: Script<T>, ...args: any) => any;
 		oncomplete?: (this: Script<T>, ...args: any) => any;
 	}) {
+		super();
 		this.name = name;
 		this.namespace = namespace;
 		this.url = url;

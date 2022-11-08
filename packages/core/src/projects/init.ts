@@ -3,18 +3,10 @@ import { MessageElement } from '../elements/message';
 import { ModelElement } from '../elements/model';
 
 import { Config } from '../interfaces/config';
+import { cors } from '../interfaces/cors';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import {
-	addConfigChangeListener,
-	getValue,
-	getMatchedScripts,
-	namespaceKey,
-	removeConfigChangeListener,
-	setValue,
-	deleteValue,
-	listValues
-} from '../utils/common';
+import { getMatchedScripts, namespaceKey } from '../utils/common';
 import { el, enableElementDraggable, tooltip } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
@@ -294,35 +286,14 @@ const InitPanelScript = new Script({
 
 		/** 初始化模态框系统 */
 		const initModelSystem = () => {
-			// 删除全部未处理的模态框临时变量
-			listValues().forEach((key) => {
-				if (/model-[0-9a-z]{32}-(state|arguments)/.test(key)) {
-					deleteValue(key);
-				}
-			});
 			// 添加 models 监听队列
-			addConfigChangeListener('init.panel.models', (pre, curr, remote) => {
-				if (remote) {
-					const list = String(curr).split(',');
-					// 处理队列
-					const id = list.pop();
-
-					if (id) {
-						const { type, ...attrs }: ModelAttrs & { type: ModelElement['type'] } = getValue(id + '-arguments');
-						attrs.onConfirm = (val) => {
-							setValue(id + '-state', '1-' + val);
-						};
-						attrs.onCancel = () => {
-							setValue(id + '-state', '2-');
-						};
-						// 弹出模态框
-						$model(type, attrs);
-						// 更新队列
-						setTimeout(() => {
-							setValue('init.panel.models', list.join(','));
-						}, 1000);
-					}
-				}
+			cors.on('model', async ([type, _attrs]) => {
+				return new Promise((resolve, reject) => {
+					const attrs = _attrs as ModelAttrs;
+					attrs.onCancel = () => resolve('');
+					attrs.onConfirm = resolve;
+					$model(type, attrs);
+				});
 			});
 		};
 
@@ -337,10 +308,9 @@ const InitPanelScript = new Script({
 		/** 在顶级页面显示操作面板 */
 		if (matchedScripts.length !== 0 && self === top) {
 			// 随机位置插入操作面板到页面
-			const panel = el('span');
+			const panel = el('div');
 			panel.attachShadow({ mode: 'closed' }).append(modelContainer, container);
-			const children = allVisibleChildren(document.body);
-			children[random(0, children.length - 1)].after(panel);
+			document.body.children[random(0, document.body.children.length - 1)].after(panel);
 
 			render();
 			initModelSystem();
@@ -362,9 +332,9 @@ export const InitProject: Project = {
  * 创建一个模态框代替原生的 alert, confirm, prompt
  */
 export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
-	const { disableWrapperCloseable, onConfirm, onCancel, ..._attrs } = attrs;
-
 	if (self === top) {
+		const { disableWrapperCloseable, onConfirm, onCancel, ..._attrs } = attrs;
+
 		modelContainer.append(
 			el('div', { className: 'model-wrapper' }, (wrapper) => {
 				const model = el('model-element', {
@@ -391,35 +361,13 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 			})
 		);
 	} else {
-		const id = 'model-' + uuid().replace(/-/g, '');
-
-		/** 状态, 0 等待交互 ， 1 确定 , 2 取消 ， 后面紧跟着模态框中获取到的值，如果模态框类型是 prompt 则有值，否则为空字符串 */
-		setValue(id + '-state', ['0', ''].join('-'));
-		/** 模态框所需参数 */
-		setValue(id + '-arguments', { type, ...attrs });
-
-		const listenerId = addConfigChangeListener(id + '-state', (pre, curr) => {
-			const args = String(curr).split('-');
-
-			if (args[0] === '1') {
-				onConfirm?.(args[1]);
+		cors.emit('model', [type, attrs], (args, remote) => {
+			if (args) {
+				attrs.onConfirm?.(args);
 			} else {
-				onCancel?.();
+				attrs.onCancel?.();
 			}
-
-			// 移除冗余的本地临时存储变量
-			deleteValue(id + '-state');
-			deleteValue(id + '-arguments');
-
-			// 移除此监听器
-			removeConfigChangeListener(listenerId);
 		});
-
-		/** 添加 id 到监听队列 */
-		setValue(
-			'init.panel.models',
-			(getValue('init.panel.models') ? String(getValue('init.panel.models')).split(',') : []).concat(id).join(',')
-		);
 	}
 }
 
@@ -449,25 +397,6 @@ function addFunctionEventListener(obj: any, type: string) {
 	};
 }
 
-function uuid() {
-	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-		const r = (Math.random() * 16) | 0;
-		const v = c === 'x' ? r : (r & 0x3) | 0x8;
-		return v.toString(16);
-	});
-}
-
 function random(min: number, max: number) {
 	return Math.round(Math.random() * (max - min)) + min;
-}
-
-function allVisibleChildren(element: HTMLElement) {
-	const list: HTMLElement[] = [];
-	for (const child of Array.from(element.children) as HTMLElement[]) {
-		list.push(child, ...allVisibleChildren(child));
-		if (child.style.display !== 'none' && child.hidden !== false && child.style.visibility !== 'hidden') {
-			list.push(...allVisibleChildren(child));
-		}
-	}
-	return list;
 }

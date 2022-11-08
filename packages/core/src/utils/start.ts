@@ -1,26 +1,44 @@
+import { cors } from '../interfaces/cors';
 import { Project } from '../interfaces/project';
+
 import { getMatchedScripts, createConfigProxy } from './common';
 
+/**
+ * 启动配置
+ */
 export interface StartConfig {
 	style: string;
 	projects: Project[];
 }
 
-export function start(startConfig: StartConfig) {
-	getMatchedScripts(startConfig.projects).forEach((script) => {
+/**
+ * 启动项目
+ * @param cfg 启动配置
+ */
+export function start(cfg: StartConfig) {
+	const scripts = getMatchedScripts(cfg.projects);
+	scripts.forEach((script) => {
 		/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
 		script.cfg = createConfigProxy(script);
 
 		/** 执行脚本 */
-		script.onstart?.(startConfig);
+		script.onstart?.(cfg);
 
 		document.addEventListener('readystatechange', () => {
 			if (document.readyState === 'interactive') {
-				script.onactive?.(startConfig);
+				script.onactive?.(cfg);
 			}
 			if (document.readyState === 'complete') {
-				script.oncomplete?.(startConfig);
+				script.oncomplete?.(cfg);
 			}
 		});
 	});
+
+	window.onbeforeunload = () => {
+		scripts.forEach((script) => {
+			script.onbeforeunload?.(cfg);
+		});
+	};
+
+	cors.init();
 }
