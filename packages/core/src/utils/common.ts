@@ -117,7 +117,8 @@ export function createConfigProxy(script: Script) {
 	for (const key in script.configs) {
 		if (Object.prototype.hasOwnProperty.call(script.configs, key)) {
 			const element = Reflect.get(script.configs, key);
-			Reflect.set(proxy, key, getValue(namespaceKey(script.namespace, key)) || element.defaultValue);
+			const value = getValue(namespaceKey(script.namespace, key));
+			Reflect.set(proxy, key, value === '' ? element.defaultValue : value);
 		}
 	}
 

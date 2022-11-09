@@ -49,12 +49,21 @@
 	}
 }
 
+container-element.close {
+	display: none;
+}
+
+container-element.minimize {
+	min-width: unset;
+}
+
 container-element {
 	position: fixed;
 	top: 10%;
 	left: 10%;
 	z-index: 99;
 	text-align: left;
+	min-width: 300px;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	color: #636363;
@@ -129,16 +138,15 @@ container-element {
 	box-shadow: 0 0 24px -12px #3f3f3f;
 	border: 1px solid #e6e6e6;
 	border-radius: 4px;
+	resize: both;
+	overflow: auto;
 }
 
-.script-panel + .script-panel {
+scrip-panel-element + scrip-panel-element {
 	margin-top: 12px;
 }
 
 .footer {
-	cursor: move;
-	border-top: 1px solid #d9d9d9;
-	color: grey;
 }
 
 .card + .card {
@@ -194,6 +202,86 @@ container-element {
 
 			.config-wrapper {
 				display: table-cell;
+
+				label {
+					font-size: 13px;
+					white-space: nowrap;
+					color: #4e5969;
+					display: table-cell;
+					padding-right: 12px;
+					text-align: left;
+					vertical-align: top;
+				}
+
+				select {
+					outline: none;
+					border: none;
+					border: 1px solid #e4e4e4;
+					border-radius: 4px;
+					padding: @form-control-padding;
+					height: 22px;
+
+					.base-style-active-form-control();
+				}
+
+				textarea {
+					padding: @form-control-padding;
+					outline: none;
+					border: none;
+					.base-style-active-form-control();
+				}
+
+				input:not([type='button']) {
+					.base-style-input();
+					.base-style-active-form-control();
+				}
+
+				input[type='button'] {
+					.base-style-button();
+				}
+
+				/** check box 的样式 */
+				input[type='checkbox'] {
+					appearance: none;
+					width: fit-content;
+					min-width: 32px;
+					height: 16px;
+					border-radius: 100px !important;
+					display: flex;
+					align-items: center;
+					padding: 2px 4px;
+					transition: all 0.2s ease-in-out;
+					width: auto;
+
+					&:checked {
+						background: #1890ff !important;
+					}
+
+					&:checked::before {
+						transform: translate(100%, 0px);
+					}
+
+					&::before {
+						background-color: #fff;
+						border-radius: 9px;
+						box-shadow: 0 2px 4px #00230b33;
+						width: 12px;
+						height: 12px;
+						content: '';
+					}
+				}
+
+				input:not([type='checkbox'], [type='radio']),
+				textarea,
+				select {
+					width: -webkit-fill-available;
+				}
+
+				input[type='checkbox'],
+				input[type='radio'],
+				input[type='range'] {
+					accent-color: #0e8ee2;
+				}
 			}
 
 			.config-wrapper > *:not(.tooltip) {
@@ -204,82 +292,6 @@ container-element {
 			.config-wrapper > *:disabled {
 				cursor: not-allowed;
 				background-color: #f7f7f78b;
-			}
-
-			label {
-				font-size: 13px;
-				white-space: nowrap;
-				color: #4e5969;
-				display: table-cell;
-				padding-right: 12px;
-				text-align: left;
-				vertical-align: top;
-			}
-
-			select {
-				outline: none;
-				border: none;
-				border: 1px solid #e4e4e4;
-				border-radius: 4px;
-				padding: @form-control-padding;
-				height: 22px;
-
-				.base-style-active-form-control();
-			}
-
-			textarea {
-				padding: @form-control-padding;
-				outline: none;
-				border: none;
-				.base-style-active-form-control();
-			}
-
-			input {
-				.base-style-input();
-				.base-style-active-form-control();
-			}
-
-			/** check box 的样式 */
-			.input-switch {
-				appearance: none;
-				width: fit-content;
-				min-width: 32px;
-				height: 16px;
-				border-radius: 100px !important;
-				display: flex;
-				align-items: center;
-				padding: 2px 4px;
-				transition: all 0.2s ease-in-out;
-				width: auto;
-
-				&:checked {
-					background: #1890ff !important;
-				}
-
-				&:checked::before {
-					transform: translate(100%, 0px);
-				}
-
-				&::before {
-					background-color: #fff;
-					border-radius: 9px;
-					box-shadow: 0 2px 4px #00230b33;
-					width: 12px;
-					height: 12px;
-					content: '';
-				}
-			}
-
-			input:not([type='checkbox'], [type='radio']),
-			textarea,
-			select {
-				width: -webkit-fill-available;
-			}
-
-			input[type='checkbox'],
-			input[type='radio'],
-			input[type='range'] {
-				accent-color: #0e8ee2;
 			}
 		}
 	}
@@ -355,7 +367,6 @@ model-element {
 	border-radius: 4px;
 	box-shadow: 0px 0px 24px -12px black;
 	border: 1px solid #929292;
-	min-width: 300px;
 	height: fit-content;
 	transform: translate(-50%, -50%);
 	padding: 12px 18px 18px 18px;
@@ -432,20 +443,14 @@ model-element.confirm {
 	}
 }
 
-.model-container {
+.model-wrapper {
 	width: 100%;
 	height: 100%;
+	z-index: 9999;
 	position: fixed;
 	top: 0px;
 	left: 0px;
 	z-index: 9999999;
-}
-
-.model-wrapper {
-	position: fixed;
-	width: 100%;
-	height: 100%;
-	z-index: 9999;
 	background-color: rgba(0, 0, 0, 0.265);
 }
 
@@ -458,6 +463,9 @@ model-element.confirm {
 	border: none;
 	font-size: inherit;
 	color: inherit;
+}
+.project-selector.expand-all {
+	display: none;
 }
 
 .separator {
@@ -480,10 +488,6 @@ model-element.confirm {
 
 .separator:not(:empty)::after {
 	margin-left: 0.25em;
-}
-
-container-element.close {
-	display: none;
 }
 
 .minimize {

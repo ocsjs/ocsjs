@@ -15,8 +15,9 @@ export class ModelElement extends IElement {
 	modalInput: HTMLInputElement = el('input', { className: 'model-input' });
 
 	type: 'prompt' | 'alert' | 'confirm' = 'alert';
-	content: string = '';
+	content: string | HTMLElement = '';
 	placeholder?: string = '';
+	width?: number;
 	cancelButtonText?: string;
 	confirmButtonText?: string;
 	onConfirm?: (value?: string) => void;
@@ -25,12 +26,13 @@ export class ModelElement extends IElement {
 	connectedCallback() {
 		this.classList.add(this.type);
 		this.modalTitle.innerText = this.title;
-		this.modalBody.innerText = this.content;
-		this.cancelButton.innerText = this.cancelButtonText = '取消';
-		this.confirmButton.innerText = this.confirmButtonText = '确定';
+		this.modalBody.append(this.content);
+		this.cancelButton.innerText = this.cancelButtonText || '取消';
+		this.confirmButton.innerText = this.confirmButtonText || '确定';
 		this.modalInput.placeholder = this.placeholder || '';
 		this.modalFooter.append(this.modalInput, this.cancelButton, this.confirmButton);
 		this.append(this.modelProfile, this.modalTitle, this.modalBody, this.modalFooter);
+		this.style.width = (this.width || 400) + 'px';
 
 		this.confirmButton.addEventListener('click', () => {
 			this.onConfirm?.(this.modalInput.value);

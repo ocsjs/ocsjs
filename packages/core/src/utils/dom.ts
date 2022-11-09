@@ -7,13 +7,29 @@ export type AllElementTagMaps = HTMLElementTagNameMap & CustomElementTagMap;
  * 创建元素，效果等同于 document.createElement(tagName, options)
  * @param tagName 标签名
  * @param attrs 元素属性
+ * @param arg 可以是一个子元素列表，或者一个创建元素成功后的回调函数
  */
 export function el<K extends keyof AllElementTagMaps>(
 	tagName: K,
+	attrs?: Partial<AllElementTagMaps[K]>
+): AllElementTagMaps[K];
+
+export function el<K extends keyof AllElementTagMaps>(
+	tagName: K,
 	attrs?: Partial<AllElementTagMaps[K]>,
-	handler?: (el: AllElementTagMaps[K]) => void
+	children?: (string | HTMLElement)[] | string
+): AllElementTagMaps[K];
+export function el<K extends keyof AllElementTagMaps>(
+	tagName: K,
+	attrs?: Partial<AllElementTagMaps[K]>,
+	handler?: { (el: AllElementTagMaps[K]): void }
+): AllElementTagMaps[K];
+export function el<K extends keyof AllElementTagMaps>(
+	tagName: K,
+	attrs?: Partial<AllElementTagMaps[K]>,
+	arg?: { (el: AllElementTagMaps[K]): void } | (string | HTMLElement)[] | string
 ): AllElementTagMaps[K] {
-	const element = document.createElement(tagName) as any;
+	const element: AllElementTagMaps[K] = document.createElement(tagName) as any;
 	/** 设置属性 */
 	for (const key in attrs) {
 		if (Object.prototype.hasOwnProperty.call(attrs, key)) {
@@ -21,8 +37,12 @@ export function el<K extends keyof AllElementTagMaps>(
 			Reflect.set(element, key, value);
 		}
 	}
-	if (handler) {
-		handler(element);
+	if (typeof arg === 'function') {
+		arg?.(element);
+	} else if (typeof arg === 'object') {
+		element.append(...arg);
+	} else if (typeof arg === 'string') {
+		element.append(arg);
 	}
 	return element;
 }

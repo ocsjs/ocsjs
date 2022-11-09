@@ -38,12 +38,19 @@
 .base-style-button:active {
   box-shadow: 0px 0px 8px #0e8de2a5;
 }
+container-element.close {
+  display: none;
+}
+container-element.minimize {
+  min-width: unset;
+}
 container-element {
   position: fixed;
   top: 10%;
   left: 10%;
   z-index: 99;
   text-align: left;
+  min-width: 300px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #636363;
@@ -103,19 +110,15 @@ container-element {
   padding: 8px;
   width: auto;
   height: 100%;
-  overflow: auto;
   background-color: white;
   box-shadow: 0 0 24px -12px #3f3f3f;
   border: 1px solid #e6e6e6;
   border-radius: 4px;
+  resize: both;
+  overflow: auto;
 }
-.script-panel + .script-panel {
+scrip-panel-element + scrip-panel-element {
   margin-top: 12px;
-}
-.footer {
-  cursor: move;
-  border-top: 1px solid #d9d9d9;
-  color: grey;
 }
 .card + .card {
   margin-top: 12px;
@@ -158,21 +161,12 @@ container-element {
 .configs .configs-body config-element {
   width: 100%;
   display: table-row;
-  /** check box 的样式 */
 }
 .configs .configs-body config-element .config-wrapper {
   display: table-cell;
+  /** check box 的样式 */
 }
-.configs .configs-body config-element .config-wrapper > *:not(.tooltip) {
-  background-color: #eef2f7;
-  border-radius: 2px;
-  color: black;
-}
-.configs .configs-body config-element .config-wrapper > *:disabled {
-  cursor: not-allowed;
-  background-color: #f7f7f78b;
-}
-.configs .configs-body config-element label {
+.configs .configs-body config-element .config-wrapper label {
   font-size: 13px;
   white-space: nowrap;
   color: #4e5969;
@@ -181,7 +175,7 @@ container-element {
   text-align: left;
   vertical-align: top;
 }
-.configs .configs-body config-element select {
+.configs .configs-body config-element .config-wrapper select {
   outline: none;
   border: none;
   border: 1px solid #e4e4e4;
@@ -190,37 +184,37 @@ container-element {
   height: 22px;
   border: 1px solid #ffffff00;
 }
-.configs .configs-body config-element select:focus {
+.configs .configs-body config-element .config-wrapper select:focus {
   border: 1px solid #0e8de290;
   box-shadow: 0px 0px 4px #0e8de252;
 }
-.configs .configs-body config-element select:focus:not([type='checkbox'], [type='radio']) {
+.configs .configs-body config-element .config-wrapper select:focus:not([type='checkbox'], [type='radio']) {
   border: 1px solid #0e8de290;
   box-shadow: 0px 0px 4px #0e8de252;
   background-color: white !important;
 }
-.configs .configs-body config-element select:hover {
+.configs .configs-body config-element .config-wrapper select:hover {
   background-color: #ebeef4;
 }
-.configs .configs-body config-element textarea {
+.configs .configs-body config-element .config-wrapper textarea {
   padding: 2px 8px;
   outline: none;
   border: none;
   border: 1px solid #ffffff00;
 }
-.configs .configs-body config-element textarea:focus {
+.configs .configs-body config-element .config-wrapper textarea:focus {
   border: 1px solid #0e8de290;
   box-shadow: 0px 0px 4px #0e8de252;
 }
-.configs .configs-body config-element textarea:focus:not([type='checkbox'], [type='radio']) {
+.configs .configs-body config-element .config-wrapper textarea:focus:not([type='checkbox'], [type='radio']) {
   border: 1px solid #0e8de290;
   box-shadow: 0px 0px 4px #0e8de252;
   background-color: white !important;
 }
-.configs .configs-body config-element textarea:hover {
+.configs .configs-body config-element .config-wrapper textarea:hover {
   background-color: #ebeef4;
 }
-.configs .configs-body config-element input {
+.configs .configs-body config-element .config-wrapper input:not([type='button']) {
   outline: none;
   padding: 2px 8px;
   margin: 0px;
@@ -229,22 +223,33 @@ container-element {
   color: black;
   border: 1px solid #ffffff00;
 }
-.configs .configs-body config-element input::placeholder {
+.configs .configs-body config-element .config-wrapper input:not([type='button'])::placeholder {
   color: #bababa;
 }
-.configs .configs-body config-element input:focus {
+.configs .configs-body config-element .config-wrapper input:not([type='button']):focus {
   border: 1px solid #0e8de290;
   box-shadow: 0px 0px 4px #0e8de252;
 }
-.configs .configs-body config-element input:focus:not([type='checkbox'], [type='radio']) {
+.configs .configs-body config-element .config-wrapper input:not([type='button']):focus:not([type='checkbox'], [type='radio']) {
   border: 1px solid #0e8de290;
   box-shadow: 0px 0px 4px #0e8de252;
   background-color: white !important;
 }
-.configs .configs-body config-element input:hover {
+.configs .configs-body config-element .config-wrapper input:not([type='button']):hover {
   background-color: #ebeef4;
 }
-.configs .configs-body config-element .input-switch {
+.configs .configs-body config-element .config-wrapper input[type='button'] {
+  appearance: none;
+  border: 1px solid #ffffff00;
+  background-color: #94bfff;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:active {
+  box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox'] {
   appearance: none;
   width: fit-content;
   min-width: 32px;
@@ -256,13 +261,13 @@ container-element {
   transition: all 0.2s ease-in-out;
   width: auto;
 }
-.configs .configs-body config-element .input-switch:checked {
+.configs .configs-body config-element .config-wrapper input[type='checkbox']:checked {
   background: #1890ff !important;
 }
-.configs .configs-body config-element .input-switch:checked::before {
+.configs .configs-body config-element .config-wrapper input[type='checkbox']:checked::before {
   transform: translate(100%, 0px);
 }
-.configs .configs-body config-element .input-switch::before {
+.configs .configs-body config-element .config-wrapper input[type='checkbox']::before {
   background-color: #fff;
   border-radius: 9px;
   box-shadow: 0 2px 4px #00230b33;
@@ -270,15 +275,24 @@ container-element {
   height: 12px;
   content: '';
 }
-.configs .configs-body config-element input:not([type='checkbox'], [type='radio']),
-.configs .configs-body config-element textarea,
-.configs .configs-body config-element select {
+.configs .configs-body config-element .config-wrapper input:not([type='checkbox'], [type='radio']),
+.configs .configs-body config-element .config-wrapper textarea,
+.configs .configs-body config-element .config-wrapper select {
   width: -webkit-fill-available;
 }
-.configs .configs-body config-element input[type='checkbox'],
-.configs .configs-body config-element input[type='radio'],
-.configs .configs-body config-element input[type='range'] {
+.configs .configs-body config-element .config-wrapper input[type='checkbox'],
+.configs .configs-body config-element .config-wrapper input[type='radio'],
+.configs .configs-body config-element .config-wrapper input[type='range'] {
   accent-color: #0e8ee2;
+}
+.configs .configs-body config-element .config-wrapper > *:not(.tooltip) {
+  background-color: #eef2f7;
+  border-radius: 2px;
+  color: black;
+}
+.configs .configs-body config-element .config-wrapper > *:disabled {
+  cursor: not-allowed;
+  background-color: #f7f7f78b;
 }
 .message-container {
   margin-bottom: 4px;
@@ -338,7 +352,6 @@ model-element {
   border-radius: 4px;
   box-shadow: 0px 0px 24px -12px black;
   border: 1px solid #929292;
-  min-width: 300px;
   height: fit-content;
   transform: translate(-50%, -50%);
   padding: 12px 18px 18px 18px;
@@ -434,19 +447,14 @@ model-element.prompt .model-confirm-button {
 model-element.confirm .model-input {
   display: none;
 }
-.model-container {
+.model-wrapper {
   width: 100%;
   height: 100%;
+  z-index: 9999;
   position: fixed;
   top: 0px;
   left: 0px;
   z-index: 9999999;
-}
-.model-wrapper {
-  position: fixed;
-  width: 100%;
-  height: 100%;
-  z-index: 9999;
   background-color: rgba(0, 0, 0, 0.265);
 }
 .pointer {
@@ -457,6 +465,9 @@ model-element.confirm .model-input {
   border: none;
   font-size: inherit;
   color: inherit;
+}
+.project-selector.expand-all {
+  display: none;
 }
 .separator {
   display: flex;
@@ -475,9 +486,6 @@ model-element.confirm .model-input {
 }
 .separator:not(:empty)::after {
   margin-left: 0.25em;
-}
-container-element.close {
-  display: none;
 }
 .minimize .body,
 .minimize .footer,

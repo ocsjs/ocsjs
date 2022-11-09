@@ -13,10 +13,10 @@ import { humpToTarget } from '../utils/string';
 
 export type ModelAttrs = Pick<
 	ModelElement,
-	'content' | 'onConfirm' | 'onCancel' | 'cancelButtonText' | 'confirmButtonText' | 'placeholder'
+	'content' | 'onConfirm' | 'onCancel' | 'cancelButtonText' | 'confirmButtonText' | 'placeholder' | 'width'
 > & {
 	disableWrapperCloseable?: boolean;
-	title?: string;
+	title?: ModelElement['title'];
 };
 
 const panel = el('div');
@@ -37,24 +37,21 @@ const InitPanelScript = new Script({
 		models: { defaultValue: '' }
 	},
 	onactive({ style, projects }: StartConfig) {
-		history.pushState = addFunctionEventListener(history, 'pushState');
-		history.replaceState = addFunctionEventListener(history, 'replaceState');
-
 		/** 注册自定义元素 */
 		for (const element of definedCustomElements) {
 			const name = humpToTarget(element.name, '-');
 			customElements.define(name, element);
 		}
-		const visibleProjects = projects.filter((p) => p.scripts.find((s) => !s.hideInPanel));
+
 		/** 当前匹配到的脚本，并且面板不隐藏 */
 		const matchedScripts = getMatchedScripts(projects, [location.href]).filter((s) => !s.hideInPanel);
 
 		const container = el('container-element');
 
 		/** 创建头部元素 */
-		const createHeader = () => {
+		const initHeader = () => {
 			/** 图标 */
-			const logo = tooltip(
+			container.header.logo = tooltip(
 				el('img', {
 					src: 'https://cdn.ocsjs.com/logo.png',
 					width: 18,
@@ -66,17 +63,14 @@ const InitPanelScript = new Script({
 				})
 			);
 			/** 版本简介 */
-			const profile = el('div', {
-				className: 'profile',
-				innerText: 'OCS-' + (process.env.__VERSION__ || '0')
-			});
+			container.header.profile = el('div', { className: 'profile' }, 'OCS-' + (process.env.__VERSION__ || '0'));
 
 			/** 面板切换器 */
 			const projectSelector = tooltip(
 				el(
 					'select',
 					{
-						className: 'project-selector',
+						className: ['project-selector', this.cfg.expandAll ? 'expand-all' : ''].join(' '),
 						title: '选择脚本管理页面，当全部展开时，显示全部管理页面。',
 						onchange: () => {
 							this.cfg.currentPanelName = projectSelector.value;
@@ -85,7 +79,7 @@ const InitPanelScript = new Script({
 						}
 					},
 					(select) => {
-						for (const project of visibleProjects) {
+						for (const project of projects) {
 							const scripts = getMatchedScripts([project], getValue('_urls_') || []).filter((s) => !s.hideInPanel);
 							for (const script of scripts) {
 								select.append(
@@ -100,6 +94,27 @@ const InitPanelScript = new Script({
 					}
 				)
 			);
+			container.header.projectSelector = projectSelector;
+
+			/** 是否展开所有脚本 */
+			const isExpandAll = () => this.cfg.expandAll === true;
+			/** 脚本切换按钮 */
+			const expandSwitcher = tooltip(
+				el('div', {
+					className: 'panel-switch',
+					title: isExpandAll() ? '收缩脚本' : '展开脚本',
+					innerText: isExpandAll() ? '-' : '≡',
+					onclick: () => {
+						this.cfg.expandAll = !isExpandAll();
+						expandSwitcher.title = this.cfg.expandAll ? '收缩脚本' : '展开脚本';
+						expandSwitcher.innerText = this.cfg.expandAll ? '-' : '≡';
+						projectSelector.classList.toggle('expand-all');
+						// 替换元素
+						replaceBody();
+					}
+				})
+			);
+			container.header.expandSwitcher = expandSwitcher;
 
 			/** 窗口是否最小化 */
 			const isMinimize = () => this.cfg.visual === 'minimize';
@@ -116,27 +131,10 @@ const InitPanelScript = new Script({
 					}
 				})
 			);
-
-			/** 是否展开所有脚本 */
-			const isExpandAll = () => this.cfg.expandAll === true;
-			/** 脚本切换按钮 */
-			const expandSwitcher = tooltip(
-				el('div', {
-					className: 'panel-switch',
-					title: isExpandAll() ? '收缩脚本' : '展开脚本',
-					innerText: isExpandAll() ? '-' : '≡',
-					onclick: () => {
-						this.cfg.expandAll = !isExpandAll();
-						expandSwitcher.title = isExpandAll() ? '收缩脚本' : '展开脚本';
-						expandSwitcher.innerText = isExpandAll() ? '-' : '≡';
-						// 替换元素
-						replaceBody();
-					}
-				})
-			);
+			container.header.visualSwitcher = visualSwitcher;
 
 			/** 窗口关闭按钮 */
-			const closeButton = tooltip(
+			container.header.closeButton = tooltip(
 				el('div', {
 					className: 'close  ',
 					innerText: 'x',
@@ -144,48 +142,52 @@ const InitPanelScript = new Script({
 					onclick: () => (this.cfg.visual = 'close')
 				})
 			);
+		};
 
-			return { profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton };
+		const createScriptPanel = (projectName: string, script: Script) => {
+			// 创建脚本面板
+			const scriptPanel = el('script-panel-element', {
+				name: this.cfg.expandAll ? projectName + '-' + script.name : script.name
+			});
+
+			// 监听提示内容改变
+			script.onConfigChange('notes', (pre, curr) => {
+				scriptPanel.notesContainer.replaceChildren(...createNotes(script));
+			});
+			// 注入 panel 对象 ， 脚本可修改 panel 对象进行面板的内容自定义
+			script.panel = scriptPanel;
+			scriptPanel.notesContainer.replaceChildren(...createNotes(script));
+			scriptPanel.configsBody.append(...createConfigs(script.namespace, script.configs || {}));
+			scriptPanel.configsContainer.append(scriptPanel.configsBody);
+
+			return scriptPanel;
 		};
 
 		/** 创建内容 */
 		const createBody = () => {
 			const scriptContainers = [];
-			for (const project of visibleProjects.sort((a, b) =>
-				a.scripts.some((s) => a.name + '-' + s.name === this.cfg.currentPanelName) ? -1 : 1
-			)) {
-				const scripts = getMatchedScripts([project], getValue('_urls_') || [location.href]);
 
-				for (const script of scripts) {
-					const scriptContainer = el('div', { className: 'script-panel' });
-					// 创建提示板块
-					const notesContainer = el('div', { className: 'notes card', title: '使用提示' });
-					// 创建设置板块
-					const configsContainer = el('div', { className: 'configs card', title: '脚本设置' });
-					const configsBody = el('div', { className: 'configs-body' });
+			for (const project of projects) {
+				const scripts = getMatchedScripts([project], getValue('_urls_') || [location.href]).filter(
+					(s) => !s.hideInPanel
+				);
 
-					script.onConfigChange('notes', (pre, curr) => {
-						console.log('change', curr);
+				const initPanelAndScript = (script: Script) => {
+					const panel = createScriptPanel(project.name, script);
+					script.panel = panel;
+					script.header = container.header;
+					return panel;
+				};
 
-						notesContainer.replaceChildren(...createNotes(script));
-					});
-
-					notesContainer.replaceChildren(...createNotes(script));
-					configsBody.append(...createConfigs(script.namespace, script.configs || {}));
-					configsContainer.append(configsBody);
-
-					scriptContainer.append(
-						el('div', {
-							className: 'separator',
-							textContent: this.cfg.expandAll ? project.name + '-' + script.name : script.name
-						})
-					);
-
-					notesContainer.childElementCount && scriptContainer.append(notesContainer);
-					configsBody.childElementCount && scriptContainer.append(configsContainer);
-					scriptContainers.push(scriptContainer);
-					if (!this.cfg.expandAll) {
-						return scriptContainers;
+				// 如果全部展开
+				if (this.cfg.expandAll) {
+					for (const script of scripts) {
+						scriptContainers.push(initPanelAndScript(script));
+					}
+				} else {
+					const script = scripts.find((s) => project.name + '-' + s.name === this.cfg.currentPanelName);
+					if (script) {
+						return [initPanelAndScript(script)];
 					}
 				}
 			}
@@ -240,6 +242,8 @@ const InitPanelScript = new Script({
 
 		/** 监听页面状态改变 */
 		const handleHistoryChange = () => {
+			history.pushState = addFunctionEventListener(history, 'pushState');
+			history.replaceState = addFunctionEventListener(history, 'replaceState');
 			window.addEventListener('pushState', render);
 			window.addEventListener('replaceState', render);
 		};
@@ -255,7 +259,7 @@ const InitPanelScript = new Script({
 			for (const key in configs) {
 				if (Object.prototype.hasOwnProperty.call(configs, key)) {
 					const cfg = configs[key];
-					if (cfg.label) {
+					if (cfg.label !== undefined) {
 						const element = el('config-element', {
 							key: namespaceKey(namespace, key),
 							tag: cfg.tag,
@@ -276,7 +280,7 @@ const InitPanelScript = new Script({
 			const notes: HTMLDivElement[] = [];
 
 			for (const note of script.cfg.notes?.split('\n') || []) {
-				notes.push(el('div', { textContent: note }));
+				notes.push(el('div', {}, note));
 			}
 			return notes;
 		};
@@ -295,20 +299,18 @@ const InitPanelScript = new Script({
 		};
 
 		const render = () => {
-			// 创建样式元素
-			container.append(el('style', { textContent: style || '' }), messageContainer);
-			const { profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton } = createHeader();
-			container.header.replaceChildren(profile, projectSelector, logo, expandSwitcher, visualSwitcher, closeButton);
+			initHeader();
 			replaceBody();
 		};
 
 		/** 在顶级页面显示操作面板 */
 		if (matchedScripts.length !== 0 && self === top) {
+			// 创建样式元素
+			container.append(el('style', {}, style || ''), messageContainer);
+			render();
 			// 随机位置插入操作面板到页面
 			root.append(container);
 			document.body.children[random(0, document.body.children.length - 1)].after(panel);
-
-			render();
 			initModelSystem();
 			handleHistoryChange();
 			handlePosition();

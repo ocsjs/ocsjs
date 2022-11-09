@@ -12,22 +12,30 @@ export const CXProject: Project = {
 			namespace: 'cx.chapter',
 			url: [/\/mooc2-ans\/mycourse\/studentcourse/],
 			configs: {
-				notes: { defaultValue: `请点击任意一个章节进入课程\n5秒后将自动进入。` }
+				notes: { defaultValue: '' }
 			},
 			oncomplete() {
 				const list = $$el('.catalog_task .catalog_jindu');
-
-				if (list.length) {
-					list[0].click();
-				} else {
-					this.cfg.notes = '全部任务已完成！';
-					$model('prompt', {
-						content: '全部任务已完成！',
-						onConfirm(val) {
-							alert(val);
+				let count = 5;
+				this.cfg.notes = `请点击任意一个章节进入课程\n ${count--} 秒后将自动进入。`;
+				const id = setInterval(() => {
+					if (count <= 0) {
+						if (list.length) {
+							list[0].click();
+						} else {
+							this.cfg.notes = '全部任务已完成！';
+							$model('prompt', {
+								content: '全部任务已完成！',
+								onConfirm(val) {
+									alert(val);
+								}
+							});
 						}
-					});
-				}
+						clearInterval(id);
+					} else {
+						this.cfg.notes = `请点击任意一个章节进入课程\n ${count--} 秒后将自动进入。`;
+					}
+				}, 1000);
 			}
 		}),
 		new Script({

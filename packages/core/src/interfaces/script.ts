@@ -1,3 +1,5 @@
+import { HeaderElement } from '../elements/header';
+import { ScriptPanelElement } from '../elements/script.panel';
 import { getValue, namespaceKey, setValue } from '../utils/common';
 import { Config } from './config';
 
@@ -45,6 +47,9 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 	hideInPanel?: boolean;
 	/** 通过 configs 映射并经过解析后的配置对象 */
 	cfg: Record<keyof T, any> & { notes?: string } = {} as any;
+	/** 经过初始化页面脚本注入的页面元素，如果初始化脚本未运行，则此元素为空 */
+	panel?: ScriptPanelElement;
+	header?: HeaderElement;
 	/** 未经处理的 configs 原对象 */
 	private _configs?: ScriptConfigsProvider<T>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */

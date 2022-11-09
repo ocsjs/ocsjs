@@ -4,11 +4,12 @@ import { el, tooltip } from '../utils/dom';
 import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
 
-export class ConfigElement<T extends keyof ConfigTagMap = keyof ConfigTagMap> extends IElement {
+export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElement {
 	label: HTMLLabelElement = el('label');
+	wrapper: HTMLDivElement = el('div', { className: 'config-wrapper' });
 	key: string = '';
 	tag?: T;
-	provider!: ConfigTagMap[T];
+	provider!: ConfigTagMap[keyof ConfigTagMap];
 	/** 将本地修改后的值同步到元素中 */
 	sync?: boolean;
 	attrs?: Partial<ConfigTagMap[T]>;
@@ -19,30 +20,37 @@ export class ConfigElement<T extends keyof ConfigTagMap = keyof ConfigTagMap> ex
 	}
 
 	connectedCallback() {
+		const createInput = () => {
+			this.provider = el('input');
+			if (['checkbox', 'radio'].some((t) => t === this.attrs?.type)) {
+				this.provider.checked = getValue(this.key);
+			} else {
+				this.provider.value = getValue(this.key);
+			}
+		};
 		switch (this.tag) {
 			case 'input': {
-				this.provider = el('input') as any;
+				createInput();
 				break;
 			}
 			case 'select': {
-				this.provider = el('select') as any;
+				this.provider = el('select');
+				this.provider.value = getValue(this.key);
 				break;
 			}
 			case 'textarea': {
-				this.provider = el('textarea') as any;
+				this.provider = el('textarea');
+				this.provider.value = getValue(this.key);
 				break;
 			}
 			default: {
-				this.provider = el('input') as any;
+				createInput();
 				break;
 			}
 		}
 
-		const wrapper = el('div', { className: 'config-wrapper' });
-		wrapper.append(this.provider);
-		this.append(this.label, wrapper);
-
-		this.provider.value = getValue(this.key);
+		this.wrapper.replaceChildren(this.provider);
+		this.append(this.label, this.wrapper);
 
 		for (const key in this.attrs) {
 			if (Object.prototype.hasOwnProperty.call(this.attrs, key)) {
@@ -71,6 +79,6 @@ export class ConfigElement<T extends keyof ConfigTagMap = keyof ConfigTagMap> ex
 		 * 触发输入组件的加载回调
 		 * 可用于高度定制化组件
 		 */
-		this._onload?.apply(this.provider);
+		this._onload?.apply(this.provider as any);
 	}
 }
