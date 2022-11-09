@@ -70,10 +70,10 @@ container-element {
 	font: 12px/1.5 @base-font-family;
 }
 
-.header {
-	@base-height: 32px;
-	@size: 18px;
+@base-height: 32px;
+@size: 18px;
 
+.header {
 	cursor: move;
 	white-space: nowrap;
 	justify-content: end;
@@ -93,40 +93,34 @@ container-element {
 		margin-left: 12px;
 	}
 	& > * {
-		text-align: center;
 		height: @size;
 		line-height: @size;
 		margin-top: calc((@base-height - @size) / 2);
 	}
+}
 
-	.close {
-		color: black;
-		width: @size;
-		background: #ff00004f;
-		cursor: pointer;
-		border-radius: 100%;
-	}
+.close,
+.switch,
+.panel-switch,
+.logo {
+	color: black;
+	width: @size;
+	cursor: pointer;
+	border-radius: 100%;
+	display: inline-block;
+	text-align: center;
+}
 
-	.switch {
-		color: black;
-		width: @size;
-		background: #ffa6003e;
-		cursor: pointer;
-		border-radius: 100%;
-	}
+.close {
+	background: #ff00004f;
+}
 
-	.panel-switch {
-		color: black;
-		width: @size;
-		background: #14a00d50;
-		cursor: pointer;
-		border-radius: 100%;
-	}
+.switch {
+	background: #ffa6003e;
+}
 
-	.logo {
-		cursor: pointer;
-		border-radius: 100%;
-	}
+.panel-switch {
+	background: #14a00d50;
 }
 
 .body {
@@ -146,17 +140,13 @@ scrip-panel-element + scrip-panel-element {
 	margin-top: 12px;
 }
 
-.footer {
-}
-
 .card + .card {
 	margin-top: 12px;
 }
 
 .card {
-	border-radius: 3px;
-	padding: 4px;
-
+	border-radius: 2px;
+	padding: 0px 4px;
 	width: -webkit-fill-available;
 }
 
@@ -180,9 +170,7 @@ scrip-panel-element + scrip-panel-element {
 
 .configs {
 	display: table;
-
 	background: #e1e1e107;
-	border-left: 4px solid #cecece;
 
 	.configs-body {
 		display: table-row-group;
@@ -200,18 +188,20 @@ scrip-panel-element + scrip-panel-element {
 			width: 100%;
 			display: table-row;
 
+			label {
+				font-size: 13px;
+				white-space: nowrap;
+				color: #4e5969;
+				display: table-cell;
+				padding-right: 12px;
+				text-align: left;
+				vertical-align: top;
+				margin-right: 12px;
+			}
+
 			.config-wrapper {
 				display: table-cell;
-
-				label {
-					font-size: 13px;
-					white-space: nowrap;
-					color: #4e5969;
-					display: table-cell;
-					padding-right: 12px;
-					text-align: left;
-					vertical-align: top;
-				}
+				vertical-align: middle;
 
 				select {
 					outline: none;
@@ -246,7 +236,7 @@ scrip-panel-element + scrip-panel-element {
 					width: fit-content;
 					min-width: 32px;
 					height: 16px;
-					border-radius: 100px !important;
+					border-radius: 100px;
 					display: flex;
 					align-items: center;
 					padding: 2px 4px;
@@ -254,7 +244,10 @@ scrip-panel-element + scrip-panel-element {
 					width: auto;
 
 					&:checked {
-						background: #1890ff !important;
+						background: #1890ff;
+					}
+					&:disabled {
+						background-color: #f7f7f78b;
 					}
 
 					&:checked::before {
@@ -288,6 +281,7 @@ scrip-panel-element + scrip-panel-element {
 				background-color: @form-control-bg;
 				border-radius: 2px;
 				color: black;
+				float: right;
 			}
 			.config-wrapper > *:disabled {
 				cursor: not-allowed;
@@ -452,6 +446,8 @@ model-element.confirm {
 	left: 0px;
 	z-index: 9999999;
 	background-color: rgba(0, 0, 0, 0.265);
+	color: #636363;
+	font: 12px/1.5 @base-font-family;
 }
 
 .pointer {
@@ -496,5 +492,14 @@ model-element.confirm {
 	.project-selector,
 	.panel-switch {
 		display: none;
+	}
+}
+
+.user-guide {
+	max-width: 400px;
+	padding-left: 16px;
+
+	& > li {
+		padding: 4px 0px;
 	}
 }

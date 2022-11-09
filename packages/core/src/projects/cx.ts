@@ -5,6 +5,7 @@ import { $model } from './init';
 
 export const CXProject: Project = {
 	name: '超星学习通',
+	level: 99,
 	domains: ['chaoxing.com'],
 	scripts: [
 		new Script({
@@ -41,6 +42,7 @@ export const CXProject: Project = {
 		new Script({
 			name: '课程学习',
 			namespace: 'cx.study',
+			level: 99,
 			url: [/\/mycourse\/studentstudy/],
 
 			configs: {

@@ -1,5 +1,5 @@
-import { getValue, setValue } from '../utils/common';
 import { el, tooltip } from '../utils/dom';
+import { getValue, setValue } from '../utils/tampermonkey';
 
 import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
@@ -24,8 +24,15 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 			this.provider = el('input');
 			if (['checkbox', 'radio'].some((t) => t === this.attrs?.type)) {
 				this.provider.checked = getValue(this.key);
+				const provider = this.provider;
+				provider.onchange = () => {
+					setValue(this.key, provider.checked);
+				};
 			} else {
 				this.provider.value = getValue(this.key);
+				this.provider.onchange = () => {
+					setValue(this.key, this.provider.value);
+				};
 			}
 		};
 		switch (this.tag) {
@@ -57,12 +64,6 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 				Reflect.set(this.provider, key, Reflect.get(this.attrs, key));
 			}
 		}
-
-		// 储存值
-		this.provider.onchange = () => {
-			// eslint-disable-next-line no-undef
-			setValue(this.key, this.provider.value);
-		};
 
 		// 处理跨域
 		if (this.sync) {

@@ -1,9 +1,10 @@
 import { el } from '../utils/dom';
+import { getInfos } from '../utils/tampermonkey';
 import { IElement } from './interface';
 
 export class ModelElement extends IElement {
 	modelProfile: HTMLDivElement = el('div', {
-		innerText: '弹窗来自: OCS-' + process.env.__VERSION__,
+		innerText: '弹窗来自: OCS-' + getInfos().script.version,
 		className: 'model-profile'
 	});
 
@@ -26,7 +27,7 @@ export class ModelElement extends IElement {
 	connectedCallback() {
 		this.classList.add(this.type);
 		this.modalTitle.innerText = this.title;
-		this.modalBody.append(this.content);
+		this.modalBody.append(typeof this.content === 'string' ? el('div', { innerHTML: this.content }) : this.content);
 		this.cancelButton.innerText = this.cancelButtonText || '取消';
 		this.confirmButton.innerText = this.confirmButtonText || '确定';
 		this.modalInput.placeholder = this.placeholder || '';

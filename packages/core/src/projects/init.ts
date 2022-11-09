@@ -6,10 +6,11 @@ import { Config } from '../interfaces/config';
 import { cors } from '../interfaces/cors';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getMatchedScripts, getValue, namespaceKey } from '../utils/common';
+import { getMatchedScripts, namespaceKey } from '../utils/common';
 import { el, enableElementDraggable, tooltip } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
+import { getInfos, getValue } from '../utils/tampermonkey';
 
 export type ModelAttrs = Pick<
 	ModelElement,
@@ -53,17 +54,17 @@ const InitPanelScript = new Script({
 			/** 图标 */
 			container.header.logo = tooltip(
 				el('img', {
-					src: 'https://cdn.ocsjs.com/logo.png',
+					src: getInfos().script.icon || '',
 					width: 18,
 					className: 'logo',
 					title: '官方教程',
 					onclick: () => {
-						window.open('https://docs.ocsjs.com', '_blank');
+						window.open(getInfos().script.homepage || '', '_blank');
 					}
 				})
 			);
 			/** 版本简介 */
-			container.header.profile = el('div', { className: 'profile' }, 'OCS-' + (process.env.__VERSION__ || '0'));
+			container.header.profile = el('div', { className: 'profile' }, 'OCS-' + (getInfos().script.version || '0'));
 
 			/** 面板切换器 */
 			const projectSelector = tooltip(
@@ -71,7 +72,7 @@ const InitPanelScript = new Script({
 					'select',
 					{
 						className: ['project-selector', this.cfg.expandAll ? 'expand-all' : ''].join(' '),
-						title: '选择脚本管理页面，当全部展开时，显示全部管理页面。',
+						title: '点击选择脚本操作页面，部分脚本会提供操作页面（包含脚本设置和脚本提示）。',
 						onchange: () => {
 							this.cfg.currentPanelName = projectSelector.value;
 							// 替换元素
@@ -79,8 +80,10 @@ const InitPanelScript = new Script({
 						}
 					},
 					(select) => {
-						for (const project of projects) {
-							const scripts = getMatchedScripts([project], getValue('_urls_') || []).filter((s) => !s.hideInPanel);
+						for (const project of projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a)) {
+							const scripts = getMatchedScripts([project], getValue('_urls_') || [])
+								.filter((s) => !s.hideInPanel)
+								.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
 							for (const script of scripts) {
 								select.append(
 									el('option', {
@@ -122,11 +125,11 @@ const InitPanelScript = new Script({
 			const visualSwitcher = tooltip(
 				el('div', {
 					className: 'switch ',
-					title: isMinimize() ? '展开窗口' : '最小化窗口',
+					title: isMinimize() ? '点击展开窗口' : '点击最小化窗口',
 					innerText: isMinimize() ? '□' : '-',
 					onclick: () => {
 						this.cfg.visual = isMinimize() ? 'normal' : 'minimize';
-						visualSwitcher.title = isMinimize() ? '展开窗口' : '最小化窗口';
+						visualSwitcher.title = isMinimize() ? '点击展开窗口' : '点击最小化窗口';
 						visualSwitcher.innerText = isMinimize() ? '□' : '-';
 					}
 				})
@@ -138,7 +141,7 @@ const InitPanelScript = new Script({
 				el('div', {
 					className: 'close  ',
 					innerText: 'x',
-					title: '关闭窗口（不会影响脚本运行，连续点击三次页面可以重新唤出）',
+					title: '点击关闭窗口（不会影响脚本运行，连续点击三次页面任意位置可以重新唤出窗口）',
 					onclick: () => (this.cfg.visual = 'close')
 				})
 			);
@@ -152,11 +155,12 @@ const InitPanelScript = new Script({
 
 			// 监听提示内容改变
 			script.onConfigChange('notes', (pre, curr) => {
-				scriptPanel.notesContainer.replaceChildren(...createNotes(script));
+				scriptPanel.notesContainer.innerHTML = script.cfg.notes || '';
 			});
 			// 注入 panel 对象 ， 脚本可修改 panel 对象进行面板的内容自定义
 			script.panel = scriptPanel;
-			scriptPanel.notesContainer.replaceChildren(...createNotes(script));
+
+			scriptPanel.notesContainer.innerHTML = script.cfg.notes || '';
 			scriptPanel.configsBody.append(...createConfigs(script.namespace, script.configs || {}));
 			scriptPanel.configsContainer.append(scriptPanel.configsBody);
 
@@ -166,32 +170,33 @@ const InitPanelScript = new Script({
 		/** 创建内容 */
 		const createBody = () => {
 			const scriptContainers = [];
+			const allScript = [];
 
 			for (const project of projects) {
 				const scripts = getMatchedScripts([project], getValue('_urls_') || [location.href]).filter(
 					(s) => !s.hideInPanel
 				);
+				allScript.push(...scripts);
 
 				const initPanelAndScript = (script: Script) => {
 					const panel = createScriptPanel(project.name, script);
+					script.projectName = project.name;
 					script.panel = panel;
 					script.header = container.header;
 					return panel;
 				};
-
-				// 如果全部展开
-				if (this.cfg.expandAll) {
-					for (const script of scripts) {
-						scriptContainers.push(initPanelAndScript(script));
-					}
-				} else {
-					const script = scripts.find((s) => project.name + '-' + s.name === this.cfg.currentPanelName);
-					if (script) {
-						return [initPanelAndScript(script)];
-					}
+				for (const script of scripts) {
+					scriptContainers.push(initPanelAndScript(script));
 				}
 			}
 
+			if (!this.cfg.expandAll) {
+				const index = allScript.findIndex((s) => s.projectName + '-' + s.name === this.cfg.currentPanelName);
+				if (index !== -1) {
+					return [scriptContainers[index]];
+				}
+			}
+			// 如果全部展开
 			return scriptContainers;
 		};
 
@@ -275,15 +280,6 @@ const InitPanelScript = new Script({
 
 			return elements;
 		};
-		/** 创建内容板块 */
-		const createNotes = (script: Script) => {
-			const notes: HTMLDivElement[] = [];
-
-			for (const note of script.cfg.notes?.split('\n') || []) {
-				notes.push(el('div', {}, note));
-			}
-			return notes;
-		};
 
 		/** 初始化模态框系统 */
 		const initModelSystem = () => {
@@ -293,6 +289,7 @@ const InitPanelScript = new Script({
 					const attrs = _attrs as ModelAttrs;
 					attrs.onCancel = () => resolve('');
 					attrs.onConfirm = resolve;
+
 					$model(type, attrs);
 				});
 			});

@@ -1,6 +1,7 @@
 import { HeaderElement } from '../elements/header';
 import { ScriptPanelElement } from '../elements/script.panel';
-import { getValue, namespaceKey, setValue } from '../utils/common';
+import { namespaceKey } from '../utils/common';
+import { getValue, setValue } from '../utils/tampermonkey';
 import { Config } from './config';
 
 export type ScriptConfigsProvider<T extends Record<string, Config>> = T | { (): T };
@@ -8,6 +9,7 @@ export type ScriptConfigsProvider<T extends Record<string, Config>> = T | { (): 
 export interface ScriptOptions<T extends Record<string, Config>> {
 	name: string;
 	url: (string | RegExp)[];
+	level?: number;
 	namespace?: string;
 	notes?: string[];
 	configs?: ScriptConfigsProvider<T>;
@@ -39,17 +41,21 @@ export type ScriptConfigs = {
 export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript {
 	/** 名字 */
 	name: string;
+	projectName?: string;
 	/** 匹配路径 */
 	url: (string | RegExp)[];
 	/** 唯一命名空间，用于避免 config 重名 */
 	namespace?: string;
 	/** 后台脚本（不提供管理页面） */
 	hideInPanel?: boolean;
+	level?: number;
 	/** 通过 configs 映射并经过解析后的配置对象 */
 	cfg: Record<keyof T, any> & { notes?: string } = {} as any;
 	/** 经过初始化页面脚本注入的页面元素，如果初始化脚本未运行，则此元素为空 */
 	panel?: ScriptPanelElement;
+	/** 操作面板头部元素 */
 	header?: HeaderElement;
+	listenerId?: number;
 	/** 未经处理的 configs 原对象 */
 	private _configs?: ScriptConfigsProvider<T>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
@@ -116,9 +122,17 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 	}
 
 	onConfigChange(key: keyof T, handler: (pre: any, curr: any, remote: boolean) => any) {
+		if (this.listenerId) {
+			// eslint-disable-next-line no-undef
+			GM_removeValueChangeListener(this.listenerId);
+		}
+
 		// eslint-disable-next-line no-undef
-		GM_addValueChangeListener(namespaceKey(this.namespace, key.toString()), (_, pre, curr, remote) => {
-			handler(pre, curr, remote);
-		});
+		this.listenerId = GM_addValueChangeListener(
+			namespaceKey(this.namespace, key.toString()),
+			(_, pre, curr, remote) => {
+				handler(pre, curr, remote);
+			}
+		);
 	}
 }

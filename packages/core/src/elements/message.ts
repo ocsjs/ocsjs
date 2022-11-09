@@ -14,7 +14,9 @@ export class MessageElement extends IElement {
 
 	connectedCallback() {
 		this.classList.add(this.type);
-		this.contentContainer.append(this.content);
+		this.contentContainer.append(
+			typeof this.content === 'string' ? el('div', { innerHTML: this.content }) : this.content
+		);
 		this.duration = Math.max(this.duration, 0);
 		this.append(this.contentContainer);
 

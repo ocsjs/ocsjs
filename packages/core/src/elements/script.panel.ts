@@ -16,8 +16,8 @@ export class ScriptPanelElement extends IElement {
 		this.replaceChildren();
 		this.separator.innerText = this.name || '';
 		this.append(this.separator);
-		this.notesContainer.childElementCount && this.append(this.notesContainer);
-		this.configsBody.childElementCount && this.append(this.configsContainer);
+		this.append(this.notesContainer);
+		this.append(this.configsContainer);
 		this.append(this.body);
 	}
 }

@@ -1,7 +1,7 @@
-import { cors } from '../interfaces/cors';
 import { Project } from '../interfaces/project';
 
-import { getMatchedScripts, createConfigProxy } from './common';
+import { createConfigProxy, getMatchedScripts, uuid } from './common';
+import { setTab } from './tampermonkey';
 
 /**
  * 启动配置
@@ -16,6 +16,9 @@ export interface StartConfig {
  * @param cfg 启动配置
  */
 export function start(cfg: StartConfig) {
+	// 添加当前标签 id
+	setTab({ tabId: uuid() });
+
 	/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
 	cfg.projects = cfg.projects.map((p) => {
 		p.scripts = p.scripts.map((s) => {
@@ -46,6 +49,4 @@ export function start(cfg: StartConfig) {
 			script.onbeforeunload?.(cfg);
 		});
 	};
-
-	cors.init();
 }

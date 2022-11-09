@@ -101,7 +101,11 @@ onMounted(() => {
 					'OCS更新程序',
 					`更新中: ${(chunkLength / 1024 / 1024).toFixed(2)}MB/${(totalLength / 1024 / 1024).toFixed(2)}MB`,
 					'updater',
-					{ type: 'info', duration: 5, close: false }
+					{
+						type: 'info',
+						duration: 5,
+						close: false
+					}
 				);
 			}
 		});

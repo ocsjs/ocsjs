@@ -1,7 +1,7 @@
 import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import banner from 'vite-plugin-banner';
-import { author, description, homepage, license, name, version } from '../../package.json';
+import { author, description, homepage, license, name } from '../../package.json';
 
 const bannerContent = `
 /*!
@@ -30,9 +30,6 @@ export default defineConfig({
 			fileName: () => 'index.js',
 			formats: ['umd']
 		}
-	},
-	define: {
-		'process.env.__VERSION__': JSON.stringify(version)
 	},
 
 	plugins: [visualizer(), banner(bannerContent)]

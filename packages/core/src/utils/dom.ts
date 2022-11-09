@@ -2,48 +2,79 @@
 import { CustomElementTagMap } from '../elements/interface';
 
 export type AllElementTagMaps = HTMLElementTagNameMap & CustomElementTagMap;
+export type AllElementTagKeys = keyof AllElementTagMaps;
+/** 子元素 */
+export type ElementChildren = (string | Node)[] | string;
+/** 元素数学 */
+export type ElementAttrs<K extends AllElementTagKeys> = Partial<AllElementTagMaps[K]>;
+/** 元素处理回调 */
+export type ElementHandler<K extends AllElementTagKeys> = (
+	this: AllElementTagMaps[K],
+	el: AllElementTagMaps[K]
+) => void;
 
 /**
  * 创建元素，效果等同于 document.createElement(tagName, options)
  * @param tagName 标签名
- * @param attrs 元素属性
- * @param arg 可以是一个子元素列表，或者一个创建元素成功后的回调函数
+ * @param attrsOrChildren 元素属性，或者子元素列表，或者字符串
+ * @param childrenOrHandler 子元素列表，或者元素生成的回调函数
  */
-export function el<K extends keyof AllElementTagMaps>(
+export function el<K extends AllElementTagKeys>(tagName: K, children?: ElementChildren): AllElementTagMaps[K];
+export function el<K extends AllElementTagKeys>(
 	tagName: K,
 	attrs?: Partial<AllElementTagMaps[K]>
 ): AllElementTagMaps[K];
-
-export function el<K extends keyof AllElementTagMaps>(
+export function el<K extends AllElementTagKeys>(
+	tagName: K,
+	attrsOrChildren?: ElementAttrs<K> | ElementChildren
+): AllElementTagMaps[K];
+export function el<K extends AllElementTagKeys>(
 	tagName: K,
 	attrs?: Partial<AllElementTagMaps[K]>,
 	children?: (string | HTMLElement)[] | string
 ): AllElementTagMaps[K];
-export function el<K extends keyof AllElementTagMaps>(
+export function el<K extends AllElementTagKeys>(
 	tagName: K,
 	attrs?: Partial<AllElementTagMaps[K]>,
-	handler?: { (el: AllElementTagMaps[K]): void }
+	handler?: ElementHandler<K>
 ): AllElementTagMaps[K];
-export function el<K extends keyof AllElementTagMaps>(
+export function el<K extends AllElementTagKeys>(
 	tagName: K,
 	attrs?: Partial<AllElementTagMaps[K]>,
-	arg?: { (el: AllElementTagMaps[K]): void } | (string | HTMLElement)[] | string
+	childrenOrHandler?: ElementChildren | ElementHandler<K>
+): AllElementTagMaps[K];
+export function el<K extends AllElementTagKeys>(
+	tagName: K,
+	attrsOrChildren?: ElementAttrs<K> | ElementChildren,
+	childrenOrHandler?: ElementChildren | ElementHandler<K>
 ): AllElementTagMaps[K] {
 	const element: AllElementTagMaps[K] = document.createElement(tagName) as any;
-	/** 设置属性 */
-	for (const key in attrs) {
-		if (Object.prototype.hasOwnProperty.call(attrs, key)) {
-			const value = attrs[key];
-			Reflect.set(element, key, value);
+	if (attrsOrChildren) {
+		if (Array.isArray(attrsOrChildren)) {
+			element.append(...attrsOrChildren);
+		} else if (typeof attrsOrChildren === 'string') {
+			element.append(attrsOrChildren);
+		} else {
+			const attrs = attrsOrChildren;
+			/** 设置属性 */
+			for (const key in attrs) {
+				if (Object.prototype.hasOwnProperty.call(attrs, key)) {
+					const value = attrs[key];
+					Reflect.set(element, key, value);
+				}
+			}
 		}
 	}
-	if (typeof arg === 'function') {
-		arg?.(element);
-	} else if (typeof arg === 'object') {
-		element.append(...arg);
-	} else if (typeof arg === 'string') {
-		element.append(arg);
+	if (childrenOrHandler) {
+		if (typeof childrenOrHandler === 'function') {
+			childrenOrHandler.call(element, element);
+		} else if (Array.isArray(childrenOrHandler)) {
+			element.append(...childrenOrHandler);
+		} else if (typeof childrenOrHandler === 'string') {
+			element.append(childrenOrHandler);
+		}
 	}
+
 	return element;
 }
 

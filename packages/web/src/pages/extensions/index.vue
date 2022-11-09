@@ -177,7 +177,11 @@ function installListener(name: string, channel: string, rate: number, chunkLengt
 				'拓展下载',
 				`${name} 下载中: ${(chunkLength / 1024 / 1024).toFixed(2)}MB/${(totalLength / 1024 / 1024).toFixed(2)}MB`,
 				'download-extensions-' + name,
-				{ type: 'info', duration: 5, close: false }
+				{
+					type: 'info',
+					duration: 5,
+					close: false
+				}
 			);
 		}
 	}
