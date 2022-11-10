@@ -26,8 +26,7 @@ export function createConfigProxy(script: Script) {
 	for (const key in script.configs) {
 		if (Object.prototype.hasOwnProperty.call(script.configs, key)) {
 			const element = Reflect.get(script.configs, key);
-			const value = getValue(namespaceKey(script.namespace, key));
-			Reflect.set(proxy, key, value === '' ? element.defaultValue : value);
+			Reflect.set(proxy, key, getValue(namespaceKey(script.namespace, key), element.defaultValue));
 		}
 	}
 
@@ -93,4 +92,17 @@ export function uuid() {
 		const v = c === 'x' ? r : (r & 0x3) | 0x8;
 		return v.toString(16);
 	});
+}
+
+export async function sleep(period: number): Promise<void> {
+	return new Promise((resolve) => {
+		setTimeout(resolve, period);
+	});
+}
+
+/**
+ * 当前是否处于浏览器环境
+ */
+export function isInBrowser(): boolean {
+	return typeof window !== 'undefined' && typeof window.document !== 'undefined';
 }

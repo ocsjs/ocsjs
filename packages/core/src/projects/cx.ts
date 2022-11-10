@@ -75,15 +75,18 @@ export const CXProject: Project = {
 					}
 				},
 				test3: {
+					defaultValue: '',
 					label: '测试3---输入框',
 					attrs: { title: '测试' },
 					tag: 'textarea'
 				},
 				switch: {
+					defaultValue: true,
 					label: '测试4',
 					attrs: { type: 'checkbox', className: 'input-switch' }
 				},
 				radio: {
+					defaultValue: true,
 					label: '测试5',
 					attrs: { type: 'radio' }
 				}

@@ -40,6 +40,11 @@ export function el<K extends AllElementTagKeys>(
 ): AllElementTagMaps[K];
 export function el<K extends AllElementTagKeys>(
 	tagName: K,
+	children?: ElementChildren,
+	handler?: ElementHandler<K>
+): AllElementTagMaps[K];
+export function el<K extends AllElementTagKeys>(
+	tagName: K,
 	attrs?: Partial<AllElementTagMaps[K]>,
 	childrenOrHandler?: ElementChildren | ElementHandler<K>
 ): AllElementTagMaps[K];
@@ -81,15 +86,15 @@ export function el<K extends AllElementTagKeys>(
 /**
  * 选择元素，效果等同于 document.querySelector(selector)
  */
-export function $el(selector: string) {
-	return document.querySelector(selector);
+export function $el<T extends HTMLElement>(selector: string, root: HTMLElement | Document = window.document) {
+	return root.querySelector(selector) as T & { [x: string]: any };
 }
 
 /**
  * 选择元素列表，效果等同于 document.querySelectorAll(selector)
  */
-export function $$el(selector: string) {
-	return Array.from(document.querySelectorAll(selector) as unknown as HTMLElement[]);
+export function $$el<T extends HTMLElement>(selector: string, root: HTMLElement | Document = window.document) {
+	return Array.from(root.querySelectorAll(selector) as unknown as (T & { [x: string]: any })[]);
 }
 
 /**
@@ -143,15 +148,19 @@ export function enableElementDraggable(header: HTMLElement, target: HTMLElement,
  */
 export function tooltip<T extends HTMLElement>(target: T) {
 	const title = el('div', { className: 'tooltip' });
+	target.setAttribute('data-title', target.title);
+	// 取消默认title，避免系统默认事件重复显示
+	target.removeAttribute('title');
 
 	const onMouseMove = (e: MouseEvent) => {
 		title.style.top = e.y + 'px';
 		title.style.left = e.x + 'px';
 	};
 	const showTitle = (e: MouseEvent) => {
-		if (target.title) {
+		const dataTitle = target.getAttribute('data-title');
+		if (dataTitle) {
 			title.style.display = 'block';
-			title.textContent = target.title;
+			title.innerHTML = dataTitle.split('\n').join('<br>') || '';
 			title.style.top = e.y + 'px';
 			title.style.left = e.x + 'px';
 			target.after(title);

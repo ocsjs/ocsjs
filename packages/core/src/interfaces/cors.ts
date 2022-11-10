@@ -84,6 +84,7 @@ export class CorsEventEmitter {
 				} else {
 					// 清空未处理的事件
 					setValue(key, '');
+
 					// 添加 models 监听队列
 					const id = addConfigChangeListener(key, async (pre, curr, remote) => {
 						if (remote) {

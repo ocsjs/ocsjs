@@ -1,7 +1,7 @@
 import { Project } from '../interfaces/project';
 
 import { createConfigProxy, getMatchedScripts, uuid } from './common';
-import { setTab } from './tampermonkey';
+import { getTab, setTab } from './tampermonkey';
 
 /**
  * 启动配置
@@ -16,8 +16,12 @@ export interface StartConfig {
  * @param cfg 启动配置
  */
 export function start(cfg: StartConfig) {
-	// 添加当前标签 id
-	setTab({ tabId: uuid() });
+	// 添加当前标签唯一id
+	getTab(({ tabId }) => {
+		if (tabId === undefined) {
+			setTab({ tabId: uuid() });
+		}
+	});
 
 	/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
 	cfg.projects = cfg.projects.map((p) => {

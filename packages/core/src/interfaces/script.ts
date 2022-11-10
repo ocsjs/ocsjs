@@ -1,7 +1,7 @@
 import { HeaderElement } from '../elements/header';
 import { ScriptPanelElement } from '../elements/script.panel';
 import { namespaceKey } from '../utils/common';
-import { getValue, setValue } from '../utils/tampermonkey';
+import { addConfigChangeListener, getValue, removeConfigChangeListener, setValue } from '../utils/tampermonkey';
 import { Config } from './config';
 
 export type ScriptConfigsProvider<T extends Record<string, Config>> = T | { (): T };
@@ -39,8 +39,14 @@ export type ScriptConfigs = {
  * 脚本
  */
 export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript {
+	/** 未经处理的 configs 原对象 */
+	private _configs?: ScriptConfigsProvider<T>;
+	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
+	private _resolvedConfigs?: T;
+
 	/** 名字 */
 	name: string;
+	/** 工程名，如果是独立脚本则为空 */
 	projectName?: string;
 	/** 匹配路径 */
 	url: (string | RegExp)[];
@@ -55,11 +61,8 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 	panel?: ScriptPanelElement;
 	/** 操作面板头部元素 */
 	header?: HeaderElement;
-	listenerId?: number;
-	/** 未经处理的 configs 原对象 */
-	private _configs?: ScriptConfigsProvider<T>;
-	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
-	private _resolvedConfigs?: T;
+	/** 监听器，存储每个 key 的监听器，number 是监听器的 id */
+	listeners: Map<string, number> = new Map();
 
 	get configs() {
 		if (!this._resolvedConfigs) {
@@ -100,10 +103,15 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		this.oncomplete = oncomplete as any;
 		this.onbeforeunload = onbeforeunload as any;
 
+		/**
+		 * 以下是在每个脚本加载之后，统计每个脚本当前所运行的页面链接，链接不会重复
+		 * 初始化页面的脚本可以根据此链接列表，进行脚本页面的生成
+		 */
+
 		const _onstart = this.onstart;
 		this.onstart = (...args: any) => {
 			_onstart?.call(this, ...args);
-			const urls: string[] = Array.from(getValue('_urls_'));
+			const urls: string[] = Array.from(getValue('_urls_', []));
 			const urlHasInRecord = urls.find((u) => u === location.href);
 			if (!urlHasInRecord) {
 				setValue('_urls_', urls.concat(location.href));
@@ -113,7 +121,7 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		const _onbeforeunload = this.onbeforeunload;
 		this.onbeforeunload = (...args: any) => {
 			_onbeforeunload?.call(this, ...args);
-			const urls: string[] = Array.from(getValue('_urls_'));
+			const urls: string[] = Array.from(getValue('_urls_', []));
 			const urlIndex = urls.findIndex((u) => u === location.href);
 			if (urlIndex !== -1) {
 				setValue('_urls_', urls.splice(urlIndex, 1));
@@ -122,17 +130,26 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 	}
 
 	onConfigChange(key: keyof T, handler: (pre: any, curr: any, remote: boolean) => any) {
-		if (this.listenerId) {
-			// eslint-disable-next-line no-undef
-			GM_removeValueChangeListener(this.listenerId);
+		const _key = namespaceKey(this.namespace, key.toString());
+		const id = this.listeners.get(_key);
+		if (id) {
+			removeConfigChangeListener(id);
 		}
 
-		// eslint-disable-next-line no-undef
-		this.listenerId = GM_addValueChangeListener(
-			namespaceKey(this.namespace, key.toString()),
-			(_, pre, curr, remote) => {
+		this.listeners.set(
+			_key,
+			addConfigChangeListener(_key, (pre, curr, remote) => {
 				handler(pre, curr, remote);
-			}
+			})
 		);
+	}
+
+	offConfigChange(key: keyof T) {
+		const _key = namespaceKey(this.namespace, key.toString());
+		const id = this.listeners.get(_key);
+		if (id) {
+			removeConfigChangeListener(id);
+		}
+		this.listeners.delete(_key);
 	}
 }

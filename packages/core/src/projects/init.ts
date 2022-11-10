@@ -10,14 +10,28 @@ import { getMatchedScripts, namespaceKey } from '../utils/common';
 import { el, enableElementDraggable, tooltip } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
-import { getInfos, getValue } from '../utils/tampermonkey';
+import { getInfos, getValue, notification } from '../utils/tampermonkey';
 
 export type ModelAttrs = Pick<
 	ModelElement,
-	'content' | 'onConfirm' | 'onCancel' | 'cancelButtonText' | 'confirmButtonText' | 'placeholder' | 'width'
+	| 'content'
+	| 'onConfirm'
+	| 'onCancel'
+	| 'cancelButtonText'
+	| 'confirmButtonText'
+	| 'placeholder'
+	| 'width'
+	| 'cancelButton'
+	| 'confirmButton'
 > & {
 	disableWrapperCloseable?: boolean;
 	title?: ModelElement['title'];
+	/** 伴随系统通知一起弹出 */
+	notification?: boolean;
+	notificationOptions?: {
+		important?: boolean;
+		duration?: number;
+	};
 };
 
 const panel = el('div');
@@ -34,8 +48,7 @@ const InitPanelScript = new Script({
 		y: { defaultValue: window.innerWidth * 0.1 },
 		visual: { defaultValue: 'normal' },
 		expandAll: { defaultValue: false },
-		currentPanelName: { defaultValue: 'init.panel' },
-		models: { defaultValue: '' }
+		currentPanelName: { defaultValue: 'init.panel' }
 	},
 	onactive({ style, projects }: StartConfig) {
 		/** 注册自定义元素 */
@@ -81,7 +94,7 @@ const InitPanelScript = new Script({
 					},
 					(select) => {
 						for (const project of projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a)) {
-							const scripts = getMatchedScripts([project], getValue('_urls_') || [])
+							const scripts = getMatchedScripts([project], getValue('_urls_', []))
 								.filter((s) => !s.hideInPanel)
 								.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
 							for (const script of scripts) {
@@ -173,9 +186,7 @@ const InitPanelScript = new Script({
 			const allScript = [];
 
 			for (const project of projects) {
-				const scripts = getMatchedScripts([project], getValue('_urls_') || [location.href]).filter(
-					(s) => !s.hideInPanel
-				);
+				const scripts = getMatchedScripts([project], getValue('_urls_', [location.href])).filter((s) => !s.hideInPanel);
 				allScript.push(...scripts);
 
 				const initPanelAndScript = (script: Script) => {
@@ -194,6 +205,8 @@ const InitPanelScript = new Script({
 				const index = allScript.findIndex((s) => s.projectName + '-' + s.name === this.cfg.currentPanelName);
 				if (index !== -1) {
 					return [scriptContainers[index]];
+				} else {
+					return [scriptContainers[0]];
 				}
 			}
 			// 如果全部展开
@@ -307,6 +320,7 @@ const InitPanelScript = new Script({
 			render();
 			// 随机位置插入操作面板到页面
 			root.append(container);
+
 			document.body.children[random(0, document.body.children.length - 1)].after(panel);
 			initModelSystem();
 			handleHistoryChange();
@@ -328,33 +342,46 @@ export const InitProject: Project = {
  */
 export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 	if (self === top) {
-		const { disableWrapperCloseable, onConfirm, onCancel, ..._attrs } = attrs;
+		const {
+			disableWrapperCloseable,
+			onConfirm,
+			onCancel,
+			notification: notify,
+			notificationOptions,
+			..._attrs
+		} = attrs;
 
-		root.append(
-			el('div', { className: 'model-wrapper' }, (wrapper) => {
-				const model = el('model-element', {
-					onConfirm(val) {
-						onConfirm?.apply(model, [val]);
-						wrapper.remove();
-					},
-					onCancel() {
-						onCancel?.apply(model);
-						wrapper.remove();
-					},
-					type,
-					..._attrs
-				});
-				wrapper.append(model);
+		if (notify) {
+			notification(typeof _attrs.content === 'string' ? _attrs.content : _attrs.content.innerText, notificationOptions);
+		}
 
-				model.addEventListener('click', (e) => {
-					e.stopPropagation();
-				});
-				if (!disableWrapperCloseable) {
-					/** 点击遮罩层关闭模态框 */
-					wrapper.addEventListener('click', () => wrapper.remove());
-				}
-			})
-		);
+		const wrapper = el('div', { className: 'model-wrapper' }, (wrapper) => {
+			const model = el('model-element', {
+				onConfirm(val) {
+					onConfirm?.apply(model, [val]);
+					wrapper.remove();
+				},
+				onCancel() {
+					onCancel?.apply(model);
+					wrapper.remove();
+				},
+				type,
+				..._attrs
+			});
+			wrapper.append(model);
+
+			model.addEventListener('click', (e) => {
+				e.stopPropagation();
+			});
+			if (!disableWrapperCloseable) {
+				/** 点击遮罩层关闭模态框 */
+				wrapper.addEventListener('click', () => wrapper.remove());
+			}
+		});
+
+		root.append(wrapper);
+
+		return wrapper;
 	} else {
 		cors.emit('model', [type, attrs], (args, remote) => {
 			if (args) {
@@ -373,7 +400,9 @@ export function $message(
 	type: MessageElement['type'],
 	attrs: Pick<MessageElement, 'duration' | 'onClose' | 'content' | 'closeable'>
 ) {
-	messageContainer.append(el('message-element', { type, ...attrs }));
+	const message = el('message-element', { type, ...attrs });
+	messageContainer.append(message);
+	return message;
 }
 
 /**

@@ -4,9 +4,9 @@ import { IElement } from './interface';
 export class ScriptPanelElement extends IElement {
 	separator: HTMLDivElement = el('div', { className: 'separator' });
 	// 创建提示板块
-	notesContainer: HTMLDivElement = el('div', { className: 'notes card', title: '使用提示' });
+	notesContainer: HTMLDivElement = el('div', { className: 'notes card' });
 	// 创建设置板块
-	configsContainer: HTMLDivElement = el('div', { className: 'configs card', title: '脚本设置' });
+	configsContainer: HTMLDivElement = el('div', { className: 'configs card' });
 	configsBody: HTMLDivElement = el('div', { className: 'configs-body' });
 	body: HTMLDivElement = el('div', { className: 'script-panel-body' });
 

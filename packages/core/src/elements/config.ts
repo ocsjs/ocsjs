@@ -1,5 +1,5 @@
 import { el, tooltip } from '../utils/dom';
-import { getValue, setValue } from '../utils/tampermonkey';
+import { addConfigChangeListener, getValue, setValue } from '../utils/tampermonkey';
 
 import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
@@ -13,7 +13,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 	/** 将本地修改后的值同步到元素中 */
 	sync?: boolean;
 	attrs?: Partial<ConfigTagMap[T]>;
-	_onload?: (this: ConfigTagMap[T]) => void;
+	_onload?: (this: ConfigTagMap[T], el: this) => void;
 
 	get value() {
 		return getValue(this.key);
@@ -23,13 +23,13 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 		const createInput = () => {
 			this.provider = el('input');
 			if (['checkbox', 'radio'].some((t) => t === this.attrs?.type)) {
-				this.provider.checked = getValue(this.key);
+				this.provider.checked = getValue(this.key, false);
 				const provider = this.provider;
 				provider.onchange = () => {
 					setValue(this.key, provider.checked);
 				};
 			} else {
-				this.provider.value = getValue(this.key);
+				this.provider.value = getValue(this.key, '');
 				this.provider.onchange = () => {
 					setValue(this.key, this.provider.value);
 				};
@@ -42,12 +42,19 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 			}
 			case 'select': {
 				this.provider = el('select');
-				this.provider.value = getValue(this.key);
+				// select 表情不能直接设置 value ，需要根据子元素 selected
+				this.provider.setAttribute('value', getValue(this.key));
+				this.provider.onchange = () => {
+					setValue(this.key, this.provider.value);
+				};
 				break;
 			}
 			case 'textarea': {
 				this.provider = el('textarea');
-				this.provider.value = getValue(this.key);
+				this.provider.value = getValue(this.key, '');
+				this.provider.onchange = () => {
+					setValue(this.key, this.provider.value);
+				};
 				break;
 			}
 			default: {
@@ -67,8 +74,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 
 		// 处理跨域
 		if (this.sync) {
-			// eslint-disable-next-line no-undef
-			GM_addValueChangeListener(this.key, (key, pre, curr, remote) => {
+			addConfigChangeListener(this.key, (pre, curr, remote) => {
 				this.provider.value = curr;
 			});
 		}
@@ -80,6 +86,6 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 		 * 触发输入组件的加载回调
 		 * 可用于高度定制化组件
 		 */
-		this._onload?.apply(this.provider as any);
+		this._onload?.call(this.provider as any, this);
 	}
 }

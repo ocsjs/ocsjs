@@ -37,7 +37,7 @@ export function listValues() {
  */
 export function setValue(key: string, value: any) {
 	// eslint-disable-next-line no-undef
-	GM_setValue(key, typeof value === 'undefined' ? '' : value);
+	GM_setValue(key, value);
 }
 
 export function addConfigChangeListener(key: string, handler: (pre: any, curr: any, remote: boolean) => any) {
@@ -81,21 +81,24 @@ export function notification(
 		ondone?: () => void;
 		/** 通知是否重要 */
 		important?: boolean;
-		/** 显示时间，默认为0 */
-		timeout?: number;
+		/** 显示时间，单位为秒，默认为0 */
+		duration?: number;
 	}
 ) {
-	const { onclick, ondone, important, timeout } = options || {};
-	const { icon, name } = getInfos().script;
-	// eslint-disable-next-line no-undef
-	GM_notification({
-		title: name,
-		text: content,
-		image: icon || '',
-		highlight: important,
-		onclick,
-		ondone,
-		silent: true,
-		timeout
-	});
+	const notification = getValue('common.settings.notification', true);
+	if (notification) {
+		const { onclick, ondone, important, duration = 0 } = options || {};
+		const { icon, name } = getInfos().script;
+		// eslint-disable-next-line no-undef
+		GM_notification({
+			title: name,
+			text: content,
+			image: icon || '',
+			highlight: important,
+			onclick,
+			ondone,
+			silent: getValue('common.settings.notificationSilent', true),
+			timeout: duration * 1000
+		});
+	}
 }

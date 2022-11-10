@@ -10,7 +10,11 @@ export class ContainerElement extends IElement {
 	connectedCallback() {
 		this.append(this.header, this.body, this.footer);
 
-		this.body.style.maxHeight = window.innerHeight - 200 + 'px';
-		this.body.style.maxWidth = window.innerWidth - 200 + 'px';
+		const resize = () => {
+			this.body.style.maxHeight = window.innerHeight - this.header.clientHeight - 100 + 'px';
+			this.body.style.maxWidth = window.innerWidth - 50 + 'px';
+		};
+		resize();
+		window.addEventListener('resize', resize);
 	}
 }
