@@ -17,6 +17,7 @@ export type ModelAttrs = Pick<
 	| 'content'
 	| 'onConfirm'
 	| 'onCancel'
+	| 'onClose'
 	| 'cancelButtonText'
 	| 'confirmButtonText'
 	| 'placeholder'
@@ -305,7 +306,7 @@ const InitPanelScript = new Script({
 					const attrs = _attrs as ModelAttrs;
 					attrs.onCancel = () => resolve('');
 					attrs.onConfirm = resolve;
-
+					attrs.onClose = resolve;
 					$model(type, attrs);
 				});
 			});
@@ -352,6 +353,7 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 			disableWrapperCloseable,
 			onConfirm,
 			onCancel,
+			onClose,
 			notification: notify,
 			notificationOptions,
 			..._attrs
@@ -371,6 +373,10 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 					onCancel?.apply(model);
 					wrapper.remove();
 				},
+				onClose(val) {
+					onClose?.apply(model, [val]);
+					wrapper.remove();
+				},
 				type,
 				..._attrs
 			});
@@ -381,7 +387,10 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 			});
 			if (!disableWrapperCloseable) {
 				/** 点击遮罩层关闭模态框 */
-				wrapper.addEventListener('click', () => wrapper.remove());
+				wrapper.addEventListener('click', () => {
+					onClose?.apply(model);
+					wrapper.remove();
+				});
 			}
 		});
 

@@ -23,6 +23,7 @@ export class ModelElement extends IElement {
 	confirmButtonText?: string;
 	onConfirm?: (value?: string) => void;
 	onCancel?: () => void;
+	onClose?: (value?: string) => void;
 
 	connectedCallback() {
 		this.classList.add(this.type);
@@ -38,6 +39,7 @@ export class ModelElement extends IElement {
 			this.cancelButton.innerText = this.cancelButtonText || '取消';
 			this.cancelButton.addEventListener('click', () => {
 				this.onCancel?.();
+				this.onClose?.();
 				this.remove();
 			});
 		}
@@ -46,6 +48,7 @@ export class ModelElement extends IElement {
 			this.confirmButton.innerText = this.confirmButtonText || '确定';
 			this.confirmButton.addEventListener('click', () => {
 				this.onConfirm?.(this.modalInput.value);
+				this.onClose?.(this.modalInput.value);
 				this.remove();
 			});
 		}
