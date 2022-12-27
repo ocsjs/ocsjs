@@ -1,8 +1,8 @@
 import { message, Modal } from 'ant-design-vue';
 import { h } from 'vue';
 import { store } from '../store';
-const { OCSApi } = require('@ocsjs/common') as typeof import('@ocsjs/common');
 import dayjs from 'dayjs';
+const { OCSApi } = require('@ocsjs/common') as typeof import('@ocsjs/common');
 
 export function sleep(timeout: number) {
 	return new Promise((resolve) => setTimeout(resolve, timeout));

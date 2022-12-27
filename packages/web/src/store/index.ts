@@ -6,7 +6,7 @@ import defaultsDeep from 'lodash/defaultsDeep';
 import { AppStore, UserScripts } from '@ocsjs/app';
 import { CommonUserScript } from '../types/user.script';
 import { config } from '../config';
-import { Browser, BrowserFolder, Tag } from '../types/browser';
+import { Browser, BrowserFolder } from '../types/browser';
 
 const Store = require('electron-store') as typeof import('electron-store');
 const localStore = new Store();

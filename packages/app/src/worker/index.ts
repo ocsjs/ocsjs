@@ -22,6 +22,7 @@ export class ScriptWorker extends EventEmitter {
 			this.emit('page-image', base64);
 		}
 	);
+
 	pageId: string = '';
 	pages: Record<string, Page> = {};
 
@@ -212,44 +213,50 @@ export async function launchScripts({
 	scripts: string[];
 	onLaunch?: (browser: BrowserContext) => void;
 }) {
-	return new Promise<void>(async (resolve) => {
-		const browser = await chromium.launchPersistentContext(userDataDir, {
-			viewport: null,
-			executablePath,
-			args: [
-				'--no-sandbox',
-				'--disable-setuid-sandbox',
-				'--disable-dev-shm-usage',
-				'--disable-accelerated-2d-canvas',
-				'--no-first-run',
-				'--disable-gpu',
-				...args
-			],
-			headless
-		});
-		onLaunch?.(browser);
+	return new Promise<void>((resolve, reject) => {
+		chromium
+			.launchPersistentContext(userDataDir, {
+				viewport: null,
+				executablePath,
+				args: [
+					'--no-sandbox',
+					'--disable-setuid-sandbox',
+					'--disable-dev-shm-usage',
+					'--disable-accelerated-2d-canvas',
+					'--no-first-run',
+					'--disable-gpu',
+					...args
+				],
+				headless
+			})
+			.then((browser) => {
+				onLaunch?.(browser);
 
-		const [blankPage] = browser.pages();
+				const [blankPage] = browser.pages();
 
-		blankPage.setContent('正在等待浏览器插件加载。。。');
+				blankPage.setContent('正在等待浏览器插件加载。。。');
 
-		// 等待插件加载完成
-		browser.once('page', async (extensionPage) => {
-			await blankPage.setContent('正在安装脚本。。。');
-			await extensionPage.close();
-			const [page] = browser.pages();
-			// 载入本地脚本
-			for (const url of scripts) {
-				try {
-					await initScript(url, page);
-				} catch (e) {
-					// @ts-ignore
-					await blankPage.setContent('脚本载入失败，请手动更新，或者忽略。' + e.message);
-				}
-			}
-			await blankPage.setContent('初始化进程完毕。');
-			resolve();
-		});
+				// 等待插件加载完成
+				browser.once('page', async (extensionPage) => {
+					await blankPage.setContent('正在安装脚本。。。');
+					await extensionPage.close();
+					const [page] = browser.pages();
+					// 载入本地脚本
+					for (const url of scripts) {
+						try {
+							await initScript(url, page);
+						} catch (e) {
+							// @ts-ignore
+							await blankPage.setContent('脚本载入失败，请手动更新，或者忽略。' + e.message);
+						}
+					}
+					await blankPage.setContent('初始化进程完毕。');
+					resolve();
+				});
+			})
+			.catch((err) => {
+				reject(err);
+			});
 	});
 }
 
@@ -260,25 +267,28 @@ export async function launchScripts({
 function initScript(url: string, page: Page) {
 	console.log('install ', url);
 
-	return new Promise<void>(async (resolve) => {
+	return new Promise<void>((resolve, reject) => {
 		/** 获取最新资源信息 */
-		const [installPage] = await Promise.all([
-			page.context().waitForEvent('page'),
-			page.evaluate((url) => (window.location.href = url), url)
-		]);
-		// 检测脚本是否安装/更新完毕
-		const interval = setInterval(async () => {
-			if (installPage.isClosed()) {
-				clearInterval(interval);
-				setTimeout(resolve, 1000);
-			} else {
-				// 置顶页面，防止点击安装失败
-				await installPage.bringToFront();
-				await installPage.evaluate(() => {
-					const input = (document.querySelector('button.primary') || document.querySelector('input')) as HTMLElement;
-					input?.click();
-				});
-			}
-		}, 3000);
+		Promise.all([page.context().waitForEvent('page'), page.evaluate((url) => (window.location.href = url), url)])
+			.then(([installPage]) => {
+				// 检测脚本是否安装/更新完毕
+				const interval = setInterval(async () => {
+					if (installPage.isClosed()) {
+						clearInterval(interval);
+						setTimeout(resolve, 1000);
+					} else {
+						// 置顶页面，防止点击安装失败
+						await installPage.bringToFront();
+						await installPage.evaluate(() => {
+							const input = (document.querySelector('button.primary') ||
+								document.querySelector('input')) as HTMLElement;
+							input?.click();
+						});
+					}
+				}, 3000);
+			})
+			.catch((err) => {
+				reject(err);
+			});
 	});
 }

@@ -21,8 +21,8 @@
 							<span style="color: #1890ff; cursor: pointer"> + 添加本地脚本</span>
 						</label>
 						<input
-							style="display: none"
 							id="local-file"
+							style="display: none"
 							name="local-file"
 							type="file"
 							accept=".js"

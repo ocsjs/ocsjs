@@ -30,17 +30,15 @@ process.on('message', async (message) => {
 		// 初始化脚本工作器
 		worker = new ScriptWorker({
 			// 拓展路径
-			extensionPaths: fs.readdirSync(extensionsFolder).map((file) => path.join(extensionsFolder, file)),
+			extensionPaths: fs.readdirSync(extensionsFolder).map((file) => path.join(extensionsFolder, file))
 		});
 
 		['launched', 'page-image', 'page-load', 'page-close', 'page-switch'].forEach((action) => {
 			// 事件转移
 			worker.on(action, (data) => {
-
 				process.send?.({ action, data });
 			});
-		})
-
+		});
 
 		// 初始化日志
 		worker.logger = new LoggerCore(store['logs-path'], false, 'script', path.basename(cachePath));

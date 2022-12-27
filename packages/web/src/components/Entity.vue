@@ -9,10 +9,10 @@
 				</Icon>
 			</div>
 			<a-input
-				ref="input"
-				size="small"
 				v-if="rename"
+				ref="input"
 				v-model:value="renameValue"
+				size="small"
 				@blur="(rename = false), onRename?.(uid, renameValue)"
 			></a-input>
 			<span v-else>{{ name }} </span>

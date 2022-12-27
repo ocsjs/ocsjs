@@ -1,4 +1,4 @@
-import { CDPSession, chromium, Page } from 'playwright-core';
+import { CDPSession, Page } from 'playwright-core';
 import { Protocol } from 'playwright-core/types/protocol';
 
 export class PageScreencaster {

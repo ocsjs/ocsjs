@@ -10,8 +10,8 @@
 			@mouseover="selectedScript = script.id"
 		>
 			<div
-				class="col-12"
 				v-if="script.info"
+				class="col-12"
 			>
 				<div class="user-script-name">
 					<a
@@ -80,8 +80,8 @@
 			</div>
 
 			<div
-				class="col-12"
 				v-else
+				class="col-12"
 			>
 				<div class="user-script-name">
 					<a

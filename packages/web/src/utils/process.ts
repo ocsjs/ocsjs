@@ -4,10 +4,9 @@ import { remote } from './remote';
 import { store } from '../store';
 import { NodeJS } from './/export';
 import { LaunchOptions } from 'playwright-core';
-import { reactive, Ref, ref } from 'vue';
+import { reactive } from 'vue';
 
 const childProcess = require('child_process') as typeof import('child_process');
-export const processes: Record<string, Process> = reactive({});
 
 /**
  * 运行进程
@@ -27,6 +26,7 @@ export class Process {
 			title: string;
 		}
 	> = {};
+
 	onImage?: (pageId: string, base64: string) => void;
 	pageId: string = '';
 	base64 = '';
@@ -142,3 +142,5 @@ export class Process {
 		return '[Process]';
 	}
 }
+
+export const processes: Record<string, Process> = reactive({});

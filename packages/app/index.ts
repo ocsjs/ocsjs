@@ -1,6 +1,6 @@
 // @ts-check
 
-import { app, ipcMain, Menu } from 'electron';
+import { app } from 'electron';
 import { handleOpenFile } from './src/tasks/handle.open';
 import { remoteRegister } from './src/tasks/remote.register';
 import { initStore } from './src/tasks/init.store';

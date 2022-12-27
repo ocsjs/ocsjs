@@ -53,13 +53,16 @@
 
 			<a-divider type="vertical" />
 			<a-select
-				size="small"
 				v-model:value="state.search.tags"
+				size="small"
 				mode="multiple"
 				placeholder="使用标签过滤浏览器"
 				style="min-width: 200px"
 			>
-				<template v-for="key in object.keys(store.browser.tags)">
+				<template
+					v-for="key in object.keys(store.browser.tags)"
+					:key="key"
+				>
 					<a-select-option
 						:value="key"
 						:label="key"
@@ -70,8 +73,8 @@
 				</template>
 			</a-select>
 			<a-input-search
-				size="small"
 				v-model:value="state.search.name"
+				size="small"
 				placeholder="输入名字搜索浏览器"
 				style="min-width: 200px; border-radius: 12px"
 				@search="onSearch"
@@ -98,13 +101,13 @@
 		>
 			<!-- 显示当前浏览器的信息 -->
 			<a-drawer
+				v-if="currentBrowser"
 				placement="right"
 				:closable="false"
 				:visible="!!currentBrowser"
 				width="600"
 				:get-container="false"
 				:style="{ position: 'absolute' }"
-				v-if="currentBrowser"
 				@close="store.browser.currentBrowserUid = ''"
 			>
 				<a-space class="mb-3 d-flex justify-content-end">
@@ -228,7 +231,10 @@
 						:span="3"
 					>
 						<a-timeline class="histories">
-							<template v-for="history of currentBrowser.histories">
+							<template
+								v-for="(history, index) of currentBrowser.histories"
+								:key="index"
+							>
 								<a-timeline-item>
 									<p>{{ datetime(history.time) }}</p>
 									<p>
@@ -297,11 +303,11 @@ import Icon from '../../components/Icon.vue';
 import { store } from '../../store';
 import { NodeJS } from '../../utils/export';
 import { Browser, BrowserFolder, Tag } from '../../types/browser';
-import { computed, reactive, ref } from '@vue/reactivity';
+import { computed, reactive, nextTick, watch } from 'vue';
 import Entity from '../../components/Entity.vue';
 import { date, datetime } from '../../utils';
 import Tags from '../../components/Tags.vue';
-import { nextTick, watch } from 'vue';
+
 import { Process, processes } from '../../utils/process';
 const object = Object;
 
@@ -311,13 +317,13 @@ const currentFolder = computed(() => store.browser.folders.find((f) => f.uid ===
 const currentBrowser = computed(() => store.browser.list.find((f) => f.uid === store.browser.currentBrowserUid));
 /** 当前的文件夹列表 */
 const currentFolders = computed(() =>
-	currentFolder
+	currentFolder.value
 		? store.browser.folders.filter((f) => f.parent === currentFolder.value?.uid)
 		: store.browser.folders.filter((f) => f.parent === undefined)
 );
 /** 当前的浏览器列表 */
 const currentBrowsers = computed(() =>
-	currentFolder
+	currentFolder.value
 		? store.browser.list.filter((b) => b.parent === currentFolder.value?.uid)
 		: store.browser.list.filter((b) => b.parent === undefined)
 );
@@ -356,7 +362,7 @@ watch(
 const uid = () => NodeJS.crypto.randomUUID().replace(/-/g, '');
 
 /** 当前浏览器图像 */
-const base64 = ref('');
+// const base64 = ref('');
 
 function flatFolder(folder: BrowserFolder) {
 	const folders: BrowserFolder[] = [folder];
@@ -429,7 +435,7 @@ function newBrowser() {
 		parent: currentFolder.value?.uid,
 		renaming: true,
 		histories: [{ action: '创建', time: Date.now() }],
-		cachePath: NodeJS.path.join(store['userDataDirsFolder'], id),
+		cachePath: NodeJS.path.join(store.userDataDirsFolder, id),
 		running: false
 	});
 }

@@ -1,6 +1,6 @@
 <template>
 	<template
-		v-for="(tag, index) in tags"
+		v-for="tag in tags"
 		:key="tag"
 	>
 		<a-tooltip
@@ -43,9 +43,9 @@
 		<div class="d-flex mb-3">
 			<span class="col-2">标签名: </span>
 			<a-auto-complete
+				ref="inputRef"
 				v-model:value="state.inputValue"
 				placeholder="输入标签名"
-				ref="inputRef"
 				size="small"
 				style="width: 100%"
 				:options="options"
@@ -61,11 +61,11 @@
 			<span class="col-2">标签颜色: </span>
 			<template v-if="store.browser.tags[state.inputValue]">
 				<div
-					@click.prevent
 					style="cursor: not-allowed; width: 50px"
 					:style="{
 						backgroundColor: store.browser.tags[state.inputValue].color
 					}"
+					@click.prevent
 				></div>
 			</template>
 			<template v-else>
@@ -75,8 +75,8 @@
 	</a-modal>
 </template>
 <script setup lang="ts">
-import { ref, reactive, nextTick, watch } from 'vue';
-import { PlusOutlined } from '@ant-design/icons-vue';
+import { ref, reactive, nextTick } from 'vue';
+
 import { Tag } from '../types/browser';
 import { store } from '../store';
 const object = Object;

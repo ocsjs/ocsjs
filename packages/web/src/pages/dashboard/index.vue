@@ -71,7 +71,7 @@
 		>
 			<a-tabs
 				v-if="!!currentProcess"
-				:activeKey="currentProcess.pageId"
+				:active-key="currentProcess.pageId"
 				type="editable-card"
 				@edit="onEdit"
 				@change="(key:string) => currentProcess!.pageSwitch(key)"
@@ -97,8 +97,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { Process, processes } from '../../utils/process';
+import { computed, ref } from 'vue';
+import { processes } from '../../utils/process';
 const object = Object;
 /** 列数控制 */
 const num = ref(4);
