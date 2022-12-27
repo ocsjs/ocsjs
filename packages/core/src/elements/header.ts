@@ -4,7 +4,7 @@ export class HeaderElement extends IElement {
 	closeButton?: HTMLDivElement;
 	visualSwitcher?: HTMLDivElement;
 	expandSwitcher?: HTMLDivElement;
-	projectSelector?: HTMLSelectElement;
+	projectSelector?: HTMLDivElement;
 	logo?: HTMLDivElement;
 	profile?: HTMLDivElement;
 
