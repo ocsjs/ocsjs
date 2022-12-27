@@ -2,7 +2,7 @@
 	<div class="col-12 ps-1 pe-1 m-auto">
 		<p class="text-secondary text-small markdown">
 			<code>浏览器拓展</code> 会在浏览器启动时自动加载（你也可以手动下载并解压到 <code>存储路径</code> 中）。<br />
-			<code>当前存储路径</code> {{ store.extensionsRoot }} <br />
+			<code>当前存储路径</code> {{ store.extensionsPath }} <br />
 			<code>用户脚本管理器</code> 只能存在一个，否则可能造成脚本之间的冲突
 		</p>
 		<div v-if="loading">
@@ -94,7 +94,7 @@
 </template>
 
 <script setup lang="ts">
-import { Button, message } from 'ant-design-vue';
+import { Button, message, Modal } from 'ant-design-vue';
 import { h, onMounted, ref } from 'vue';
 import { config } from '../../config';
 import { store } from '../../store';
@@ -120,7 +120,7 @@ onMounted(async () => {
 		extensions.value = extensions.value.concat(exts);
 	}
 	for (const extension of extensions.value) {
-		extension.installed = NodeJS.fs.existsSync(`${store.extensionsRoot}/${extension.name}`);
+		extension.installed = NodeJS.fs.existsSync(`${store.extensionsPath}/${extension.name}`);
 	}
 
 	loading.value = false;
@@ -132,9 +132,9 @@ async function installExtension(extension: Extension) {
 		message.warn('脚本管理器已经存在，请卸载另外一个再尝试安装。');
 	} else {
 		// 压缩包下载位置
-		const zipPath = NodeJS.path.join(store.extensionsRoot, `${extension.name}.zip`);
+		const zipPath = NodeJS.path.join(store.extensionsPath, `${extension.name}.zip`);
 		// 拓展位置
-		const extensionPath = NodeJS.path.join(store.extensionsRoot, extension.name);
+		const extensionPath = NodeJS.path.join(store.extensionsPath, extension.name);
 
 		const listener = (e: any, channel: string, rate: number, chunkLength: number, totalLength: number) => {
 			installListener(extension.name, channel, rate, chunkLength, totalLength);
@@ -159,7 +159,7 @@ async function installExtension(extension: Extension) {
 
 // 卸载拓展
 function uninstallExtension(extension: Extension) {
-	NodeJS.fs.rmdirSync(NodeJS.path.join(store.extensionsRoot, extension.name), { recursive: true });
+	NodeJS.fs.rmdirSync(NodeJS.path.join(store.extensionsPath, extension.name), { recursive: true });
 	extension.installed = false;
 }
 
@@ -172,6 +172,17 @@ function installListener(name: string, channel: string, rate: number, chunkLengt
 				'download-extensions-' + name,
 				{ type: 'success', duration: 3 }
 			);
+
+			Modal.confirm({
+				title: '提示',
+				content: '安装脚本管理器后需要重启才能生效。',
+				okText: '立刻重启',
+				cancelText: '下次一定',
+				onOk: () => {
+					remote.app.call('relaunch');
+					remote.app.call('exit', 0);
+				}
+			});
 		} else {
 			notify(
 				'拓展下载',

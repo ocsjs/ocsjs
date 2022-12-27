@@ -1,19 +1,14 @@
 import { reactive, shallowRef } from 'vue';
 import { RouteRecordRaw } from 'vue-router';
 import setting from '@/pages/setting/index.vue';
-import files from '@/pages/files/index.vue';
+import browsers from '@/pages/browsers/index.vue';
 import dashboard from '@/pages/dashboard/index.vue';
 import userScripts from '@/pages/user-scripts/index.vue';
 import extensions from '@/pages/extensions/index.vue';
-import { LaunchScriptsOptions } from '@ocsjs/scripts';
-import { store } from '../store';
 import { GreasyForkUserScript, ScriptCatUserScript, CommonUserScript } from '../types/user.script';
 import { remote } from '../utils/remote';
 import { ExtensionSearchEngine, ScriptSearchEngine } from '../types/search';
 import { getRemoteInfos } from '../utils';
-import { NodeJS } from '../utils/export';
-
-const { randomUUID } = require('crypto') as typeof import('crypto');
 
 export const config = reactive({
 	/**
@@ -26,20 +21,13 @@ export const config = reactive({
 	 */
 	routes: [
 		{
-			name: 'files',
+			name: 'browsers',
 			path: '/',
-			component: shallowRef(files),
+			component: shallowRef(browsers),
 			meta: {
-				icon: 'icon-file-text',
-				filledIcon: 'icon-file-text-fill',
-				title: '文件',
-
-				tutorial: {
-					step: 0,
-					placement: 'rightTop',
-					tooltip:
-						'1. 文件页可以对文件进行创建,管理,运行,关闭等操作, 其中一个文件代表一个独立的浏览器，每个文件之间互不影响，可以用鼠标右键创建文件，左键拖拽文件。'
-				}
+				icon: 'icon-chrome',
+				filledIcon: 'icon-chrome-fill',
+				title: '浏览器列表'
 			}
 		},
 		{
@@ -47,14 +35,9 @@ export const config = reactive({
 			path: '/dashboard',
 			component: shallowRef(dashboard),
 			meta: {
-				icon: 'icon-dashboard',
-				filledIcon: 'icon-dashboard-fill',
-				title: '仪表盘',
-				tutorial: {
-					step: 1,
-					placement: 'rightTop',
-					tooltip: '2. 仪表盘是进行数据分析以及文件运行时监控图像的页面'
-				}
+				icon: 'icon-image',
+				filledIcon: 'icon-image-fill',
+				title: '仪表盘'
 			}
 		},
 		{
@@ -64,12 +47,7 @@ export const config = reactive({
 			meta: {
 				icon: 'icon-bug',
 				filledIcon: 'icon-bug-fill',
-				title: '用户脚本',
-				tutorial: {
-					step: 2,
-					placement: 'rightTop',
-					tooltip: '3. 用户脚本可以搜索，添加网络脚本到本地，在浏览器运行后，会加载本地的用户脚本，配合浏览器拓展使用。'
-				}
+				title: '用户脚本'
 			}
 		},
 		{
@@ -77,8 +55,8 @@ export const config = reactive({
 			path: '/extensions',
 			component: shallowRef(extensions),
 			meta: {
-				icon: 'icon-chrome',
-				filledIcon: 'icon-chrome-fill',
+				icon: 'icon-pintu',
+				filledIcon: 'icon-pintu1',
 				title: '浏览器拓展',
 				tutorial: {
 					step: 3,
@@ -94,13 +72,7 @@ export const config = reactive({
 			meta: {
 				icon: 'icon-setting',
 				filledIcon: 'icon-setting-fill',
-				title: '设置',
-				tutorial: {
-					step: 4,
-					placement: 'rightTop',
-					tooltip:
-						'5. 必须设置浏览器路径，不然就无法启动浏览器。（如果你的电脑上已经安装支持的浏览器，那么程序会自动选择）'
-				}
+				title: '设置'
 			}
 		}
 	] as RouteRecordRaw[],
@@ -116,35 +88,6 @@ export const config = reactive({
 		}
 	],
 
-	/**
-	 * 初始文件模板
-	 */
-	ocsFileTemplate: (uid?: string) => {
-		uid = uid || randomUUID().replace(/-/g, '');
-
-		return JSON.stringify(
-			{
-				uid,
-				launchOptions: {
-					headless: false,
-					executablePath: 'default'
-				},
-
-				scripts: [
-					{
-						name: 'cx-login-phone',
-						options: {} as any
-					}
-				],
-				userDataDir: NodeJS.path.join(store['user-data-path'], 'scriptUserData', uid),
-				init: true,
-				localStorage: 'default',
-				userScripts: []
-			} as LaunchScriptsOptions,
-			null,
-			4
-		);
-	},
 	/** 浏览器拓展搜索引擎 */
 	extensionSearchEngines: [
 		{

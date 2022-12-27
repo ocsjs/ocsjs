@@ -23,11 +23,6 @@ export const CommonProject: Project = {
 					defaultValue: true,
 					attrs: { title: '允许脚本发送系统通知（在电脑屏幕右侧显示通知弹窗）。', type: 'checkbox' }
 				},
-				notificationSilent: {
-					label: '开启通知声音',
-					defaultValue: false,
-					attrs: { title: '发送”叮“的声音提示', type: 'checkbox' }
-				},
 				answererWrappers: {
 					defaultValue: []
 				},

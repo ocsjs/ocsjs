@@ -7,12 +7,12 @@
 	"jsxSingleQuote": false,
 	"printWidth": 120,
 	"tabWidth": 2,
-	"singleAttributePerLine": true,
 	"useTabs": true,
 	"vueIndentScriptAndStyle": false,
 	"arrowParens": "always",
 	"proseWrap": "preserve",
 	"htmlWhitespaceSensitivity": "css",
 	"endOfLine": "auto",
-	"trailingComma": "none"
+	"trailingComma": "none",
+	"singleAttributePerLine": true
 }

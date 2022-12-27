@@ -11,7 +11,7 @@
 
 				<Description label="窗口置顶">
 					<a-switch
-						v-model:checked="store.win.alwaysOnTop"
+						v-model:checked="store.setting.window.alwaysOnTop"
 						size="small"
 					/>
 				</Description>
@@ -32,7 +32,7 @@
 
 				<Description label="窗口大小">
 					<a-input-number
-						v-model:value="store.win.size"
+						v-model:value="store.setting.window.zoom"
 						size="small"
 						:step="0.1"
 						:min="0"
@@ -98,41 +98,12 @@
 						</template>
 					</a-input>
 				</Description>
-
-				<Description label="默认题库设置">
-					<a-input
-						size="small"
-						class="w-100"
-						type="text"
-						placeholder="请直接ctrl+cv快捷键复制粘贴, 不要一个个字输入。 教程请看右侧问号"
-						:value="answererWrappers"
-						@paste="onAWChange($event)"
-					>
-						<template #suffix>
-							<a-popover>
-								<template #content>
-									<div><b>请直接ctrl+cv快捷键复制粘贴, 不要一个个字输入。</b></div>
-									<div>
-										<b>题库配置教程</b> :
-										<a
-											href="#"
-											@click="link('https://docs.ocsjs.com/docs/work')"
-											>https://docs.ocsjs.com/docs/work</a
-										>
-									</div>
-								</template>
-
-								<Icon type="icon-question-circle" />
-							</a-popover>
-						</template>
-					</a-input>
-				</Description>
 			</Card>
 
 			<Card title="路径设置">
 				<Path
-					label="workspace"
-					name="workspace"
+					label="浏览器缓存"
+					name="userDataDirsFolder"
 					:setting="true"
 				/>
 				<Path
@@ -143,18 +114,6 @@
 				<Path
 					label="配置文件"
 					name="config-path"
-				/>
-				<Path
-					label="数据文件"
-					name="user-data-path"
-				/>
-				<Path
-					label="日志文件"
-					name="logs-path"
-				/>
-				<Path
-					label="可执行文件"
-					name="exe-path"
 				/>
 			</Card>
 
@@ -179,9 +138,8 @@
 </template>
 
 <script setup lang="ts">
-import { LaunchOptions } from '@ocsjs/scripts';
 import { message } from 'ant-design-vue';
-import { computed, nextTick, onMounted, ref, watch } from 'vue';
+import { nextTick, onMounted, ref, watch } from 'vue';
 import Card from '../../components/Card.vue';
 import Description from '../../components/Description.vue';
 import Path from '../../components/Path.vue';
@@ -189,25 +147,20 @@ import { store } from '../../store';
 import { remote } from '../../utils/remote';
 import { NodeJS } from '../../utils/export';
 import { config } from '../../config';
-const { shell } = require('electron');
 
 /** 主题名字 */
-const themeName = ref(store.theme.name);
+const themeName = ref(store.setting.theme.name);
 /** 更新主题 */
 watch(themeName, () => {
-	store.theme = config.themes.find((t) => t.name === themeName.value);
+	const theme = config.themes.find((t) => t.name === themeName.value);
+	if (theme) {
+		store.setting.theme = theme;
+	}
 });
 
-const launchOptions = store.script.launchOptions as LaunchOptions;
-
-// 题库配置
-const answererWrappers = computed(() =>
-	store.setting.answererWrappers && store.setting.answererWrappers.length
-		? JSON.stringify(store.setting.answererWrappers)
-		: ''
-);
 /** 选择的浏览器路径 */
 const selectedPath = ref('diy');
+const launchOptions = store.setting.launchOptions;
 
 /**
  * 监听浏览器类型变化
@@ -225,34 +178,15 @@ function onDiy() {
 	}
 }
 
-/**
- * 监听题库配置的变化
- */
-async function onAWChange(e: ClipboardEvent) {
-	// @ts-ignore
-	const val = e.clipboardData.getData('text') || (await navigator.clipboard.readText());
-	try {
-		const aw = JSON.parse(val);
-		if (typeof aw === 'object' || Array.isArray(aw)) {
-			store.setting.answererWrappers = aw;
-			message.success('题库配置保存成功');
-		} else {
-			message.error('题库配置格式错误');
-			store.setting.answererWrappers = [];
-		}
-	} catch {
-		message.error('题库配置格式错误');
-		store.setting.answererWrappers = [];
-	}
-}
-
 /** 如果尚未选择，并且没有自定义路径的话，自动选择第一个 */
 onMounted(() => {
 	nextTick(() => {
 		console.log('可用浏览器', store.validBrowsers);
 
 		if (store.validBrowsers.length !== 0 && launchOptions.executablePath === '') {
-			launchOptions.executablePath = store.validBrowsers[0].path;
+			if (store.validBrowsers[0].path) {
+				launchOptions.executablePath = store.validBrowsers[0].path;
+			}
 		}
 
 		selectedPath.value =
@@ -260,12 +194,9 @@ onMounted(() => {
 	});
 });
 
-function link(url: string) {
-	shell.openExternal(url);
-}
-
 /** 重置设置 */
 function reset() {
+	// @ts-ignore
 	store.version = undefined;
 	remote.app.call('relaunch');
 	remote.app.call('exit', 0);

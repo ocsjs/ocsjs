@@ -1,10 +1,10 @@
-import { BrowserContext, Page } from 'playwright';
-import { launchScripts, LaunchScriptsOptions } from '@ocsjs/scripts';
 import EventEmitter from 'events';
 import { Instance as Chalk } from 'chalk';
 import { LoggerCore } from '../logger.core';
 import { ScriptWorkerAction, ScriptWorkerActions } from './types';
 import { basename } from 'path';
+import { chromium, BrowserContext, Page, LaunchOptions } from 'playwright-core';
+import { PageScreencaster } from '../screencast.browser';
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
 /** 动作集合 */
@@ -13,17 +13,21 @@ const actions: Map<keyof ScriptWorkerActions, ScriptWorkerAction> = new Map();
 /** 脚本工作线程 */
 export class ScriptWorker extends EventEmitter {
 	browser?: BrowserContext;
-	page?: Page;
 	logger?: LoggerCore;
 	/** 拓展路径 */
 	extensionPaths: string[] = [];
-	/** 截图间隔 */
-	screenshotPeriod: number = 1000 * 60;
+	screencaster = new PageScreencaster(
+		{ everyNthFrame: 5, quality: 100, format: 'png', maxHeight: 920, maxWidth: 1080 },
+		async ({ base64 }) => {
+			this.emit('page-image', base64);
+		}
+	);
+	pageId: string = '';
+	pages: Record<string, Page> = {};
 
-	constructor({ extensionPaths, screenshotPeriod }: { extensionPaths: string[]; screenshotPeriod: number }) {
+	constructor({ extensionPaths }: { extensionPaths: string[] }) {
 		super();
 		this.extensionPaths = extensionPaths;
-		this.screenshotPeriod = screenshotPeriod;
 		process.on('unhandledRejection', (e) => this.error('未处理的错误!', e));
 		process.on('uncaughtException', (e) => this.error('未处理的错误!', e));
 	}
@@ -38,75 +42,100 @@ export class ScriptWorker extends EventEmitter {
 		destroyWhenError: true,
 		enableLogger: true
 	})
-	async launch(options: LaunchScriptsOptions) {
+	async launch(
+		options: Required<Pick<LaunchOptions, 'executablePath' | 'headless' | 'args'>> & {
+			userDataDir: string;
+			scripts: string[];
+		}
+	) {
 		if (this.extensionPaths.length) {
 			this.debug(
 				'加载拓展：',
 				this.extensionPaths.map((p) => basename(p))
 			);
 		} else {
-			this.warn('浏览器拓展为空，请确保拓展已安装，并尝试重启软件。');
+			this.debug('浏览器拓展为空');
 		}
 
 		/** 添加拓展启动参数 */
-		options.launchOptions.args = formatExtensionArguments(this.extensionPaths);
+		options.args = formatExtensionArguments(this.extensionPaths);
+
 		/** 启动脚本 */
 		await launchScripts({
-			onLaunch: (...args) => {
-				// 初始化浏览器变量
-				[this.browser, this.page] = args;
-				// 开始记录图像
-				const interval = setInterval(async () => {
-					if (this.browser) this.screenshot(this.browser);
-				}, this.screenshotPeriod);
-				this.browser.once('close', () => clearInterval(interval));
+			onLaunch: (browser) => {
+				this.browser = browser;
+				// 浏览器启动完成
+				this.emit('launched');
 			},
-			onError: this.error,
 			...options
 		});
 
-		if (this.browser === undefined || this.page === undefined || this.page?.isClosed()) {
-			throw new Error('启动失败，请重试。');
-		} else {
-			// 置顶页面
-			await this.page.bringToFront();
-			// 截图
-			if (this.browser) this.screenshot(this.browser);
+		// 开始传递图像
+
+		const listenPage = async (page: Page) => {
+			if (this.browser) {
+				const id = Date.now().toString();
+				this.pages[id] = page;
+				await this.pageSwitch(id);
+				page.on('load', async () => {
+					this.emit('page-load', { id, url: page.url(), title: await page.title() });
+				});
+				// 当页面关闭时
+				page.once('close', async () => {
+					this.pageClose(id);
+				});
+			}
+		};
+
+		if (this.browser) {
+			listenPage(this.browser.pages()[0]);
+			this.browser.on('page', listenPage);
 		}
 	}
 
-	@Action('close', {
-		name: '关闭'
-	})
-	close() {
+	@Action('page-close', { name: '关闭标签页' })
+	async pageClose(pageId: string) {
+		const page = this.pages[pageId];
+		if (this.browser && page) {
+			// 如果关闭的是当前页，则切换，并重新传递影像
+			if (this.pageId === pageId) {
+				const newId = Object.keys(this.pages).at(-1);
+				if (newId) {
+					// 改变当前 id
+					this.pageId = newId;
+					// 删除浏览器记录
+					Reflect.deleteProperty(this.pages, pageId);
+					// 传递事件
+					this.emit('page-switch', newId);
+					await this.pageSwitch(newId);
+				}
+			}
+			// 关闭浏览器
+			if (!page.isClosed()) {
+				await page.close();
+			}
+			this.emit('page-close', { id: pageId });
+		}
+	}
+
+	@Action('browser-close', { name: '关闭浏览器' })
+	browserClose() {
 		this.destroy();
 	}
 
-	/**
-	 * 定时截图
-	 */
-	async screenshot(browser: BrowserContext) {
-		const screenshots = await Promise.all(
-			browser.pages().map(async (page) => {
-				try {
-					const buffer = await page.screenshot();
-					return { title: await page.title(), url: page.url(), base64: buffer.toString('base64') };
-				} catch {
-					return undefined;
-				}
-			})
-		);
-
-		this.emit(
-			'screenshot',
-			screenshots.filter((s) => s)
-		);
+	@Action('page-switch', { name: '页面切换' })
+	async pageSwitch(pageId: string) {
+		const page = this.pages[pageId];
+		if (page) {
+			await this.screencaster.stop();
+			await this.screencaster.start(page);
+			this.pageId = pageId;
+		}
 	}
 
 	destroy() {
 		this.browser?.close();
 		this.browser = undefined;
-		this.page = undefined;
 	}
 
 	debug(...msg: any[]) {
@@ -160,14 +189,96 @@ function Action(actionName: keyof ScriptWorkerActions, options: Omit<ScriptWorke
 
 /** 格式化浏览器拓展启动参数 */
 function formatExtensionArguments(extensionPaths: string[]) {
-	if (extensionPaths.length) {
-		const paths = extensionPaths.map((p) => p.replace(/\\/g, '/')).join(',');
-		return [`--disable-extensions-except=${paths}`, `--load-extension=${paths}`];
-	} else {
-		return [];
-	}
+	const paths = extensionPaths.map((p) => p.replace(/\\/g, '/')).join(',');
+	return [`--disable-extensions-except=${paths}`, `--load-extension=${paths}`];
 }
 
 function loggerPrefix() {
 	return `[OCS] ${new Date().toLocaleTimeString()}`;
+}
+
+/**
+ * 运行脚本
+ */
+export async function launchScripts({
+	executablePath,
+	headless,
+	args,
+	userDataDir,
+	scripts,
+	onLaunch
+}: Required<Pick<LaunchOptions, 'executablePath' | 'headless' | 'args'>> & {
+	userDataDir: string;
+	scripts: string[];
+	onLaunch?: (browser: BrowserContext) => void;
+}) {
+	return new Promise<void>(async (resolve) => {
+		const browser = await chromium.launchPersistentContext(userDataDir, {
+			viewport: null,
+			executablePath,
+			args: [
+				'--no-sandbox',
+				'--disable-setuid-sandbox',
+				'--disable-dev-shm-usage',
+				'--disable-accelerated-2d-canvas',
+				'--no-first-run',
+				'--disable-gpu',
+				...args
+			],
+			headless
+		});
+		onLaunch?.(browser);
+
+		const [blankPage] = browser.pages();
+
+		blankPage.setContent('正在等待浏览器插件加载。。。');
+
+		// 等待插件加载完成
+		browser.once('page', async (extensionPage) => {
+			await blankPage.setContent('正在安装脚本。。。');
+			await extensionPage.close();
+			const [page] = browser.pages();
+			// 载入本地脚本
+			for (const url of scripts) {
+				try {
+					await initScript(url, page);
+				} catch (e) {
+					// @ts-ignore
+					await blankPage.setContent('脚本载入失败，请手动更新，或者忽略。' + e.message);
+				}
+			}
+			await blankPage.setContent('初始化进程完毕。');
+			resolve();
+		});
+	});
+}
+
+/**
+ * 安装/更新脚本
+ *
+ */
+function initScript(url: string, page: Page) {
+	console.log('install ', url);
+
+	return new Promise<void>(async (resolve) => {
+		/** 获取最新资源信息 */
+		const [installPage] = await Promise.all([
+			page.context().waitForEvent('page'),
+			page.evaluate((url) => (window.location.href = url), url)
+		]);
+		// 检测脚本是否安装/更新完毕
+		const interval = setInterval(async () => {
+			if (installPage.isClosed()) {
+				clearInterval(interval);
+				setTimeout(resolve, 1000);
+			} else {
+				// 置顶页面，防止点击安装失败
+				await installPage.bringToFront();
+				await installPage.evaluate(() => {
+					const input = (document.querySelector('button.primary') || document.querySelector('input')) as HTMLElement;
+					input?.click();
+				});
+			}
+		}, 3000);
+	});
 }

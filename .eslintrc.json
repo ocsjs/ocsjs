@@ -6,13 +6,13 @@
 		"es6": true,
 		"vue/setup-compiler-macros": true
 	},
-	"extends": ["standard", "plugin:vue/vue3-recommended", "prettier"],
+	"extends": ["standard", "plugin:vue/vue3-recommended", "prettier", "plugin:@html-eslint/recommended"],
 	"parserOptions": {
 		"ecmaVersion": "latest",
 		"parser": "@typescript-eslint/parser",
 		"sourceType": "module"
 	},
-	"plugins": ["vue", "@typescript-eslint"],
+	"plugins": ["vue", "@typescript-eslint", "eslint-plugin-vue"],
 	"rules": {
 		"max-len": [
 			2,

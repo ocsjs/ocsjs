@@ -11,17 +11,15 @@
 		"@ant-design/icons-vue": "6.0.1",
 		"@ocsjs/app": "workspace:^1.3.5",
 		"@ocsjs/common": "workspace:^1.0.0",
-		"@ocsjs/scripts": "workspace:^1.0.0",
-		"ant-design-vue": "2.2.8",
+		"ant-design-vue": "3.2.9",
 		"axios": "^0.25.0",
 		"chalk": "4.1.0",
-		"highlight.js": "^11.4.0",
-		"interactjs": "^1.10.11",
+		"dayjs": "^1.10.7",
+		"playwright-core": "^1.28.0",
 		"vue": "^3.2.6",
 		"vue-router": "^4.0.12",
-		"xlsx": "^0.18.5",
-		"xterm": "^4.18.0",
-		"xterm-addon-fit": "^0.5.0"
+		"vue3-colorpicker": "^2.0.11",
+		"xlsx": "^0.18.5"
 	},
 	"devDependencies": {
 		"@vitejs/plugin-vue": "^1.6.1",

@@ -1,3 +1,4 @@
+import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
 import { sleep } from '../utils/common';
@@ -5,6 +6,23 @@ import { $$el, $el, el } from '../utils/dom';
 import { $createSelectOptions } from '../utils/script';
 import { addConfigChangeListener, getValue } from '../utils/tampermonkey';
 import { $message, $model } from './init';
+
+const volume: Config = {
+	label: '音量调节',
+	attrs: { type: 'range', step: '0.05', min: '0', max: '1' },
+	defaultValue: 0,
+	onload() {
+		this.addEventListener('change', () => {
+			this.setAttribute('data-title', (parseFloat(this.value) * 100).toFixed() + '%');
+		});
+		this.setAttribute('data-title', (parseFloat(this.value) * 100).toFixed() + '%');
+	}
+};
+const restudy: Config = {
+	label: '复习模式',
+	attrs: { title: '已经完成的视频继续学习', type: 'checkbox' },
+	defaultValue: false
+};
 
 export const ZHSProject: Project = {
 	name: '知道智慧树',
@@ -32,22 +50,8 @@ export const ZHSProject: Project = {
 					attrs: { title: '到时间后自动暂停脚本', type: 'time' },
 					defaultValue: '00:00'
 				},
-				restudy: {
-					label: '复习模式',
-					attrs: { title: '重复观看视频', type: 'checkbox' },
-					defaultValue: false
-				},
-				volume: {
-					label: '音量调节',
-					attrs: { type: 'range', step: 0.05, min: 0, max: 1 },
-					defaultValue: 0,
-					onload() {
-						this.addEventListener('change', () => {
-							this.setAttribute('data-title', (parseFloat(this.value) * 100).toFixed() + '%');
-						});
-						this.setAttribute('data-title', (parseFloat(this.value) * 100).toFixed() + '%');
-					}
-				},
+				restudy: restudy,
+				volume: volume,
 				playbackRate: {
 					label: '视频倍速',
 					tag: 'select',
@@ -108,7 +112,7 @@ export const ZHSProject: Project = {
 							$$el('.v-modal,.mask').forEach((modal) => {
 								modal.remove();
 							});
-						}, 1000);
+						}, 3000);
 
 						// 查找任务
 						let list = $$el('li.clearfix.video');
@@ -124,6 +128,7 @@ export const ZHSProject: Project = {
 							const study = async () => {
 								const item = list.shift();
 								if (item) {
+									await sleep(5000);
 									item.click();
 									await sleep(5000);
 									watch({ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate }, study);
@@ -135,6 +140,41 @@ export const ZHSProject: Project = {
 						}
 					}
 				}, 1000);
+			}
+		}),
+		new Script({
+			name: '学分共享课（翻转课）学习脚本',
+			/** 学分共享课（翻转课） */
+			url: [/zhihuishu.com\/aidedteaching\/sourceLearning/],
+			namespace: 'zhs.source',
+			configs: {
+				notes: {
+					defaultValue: el('ul', [el('li', '章节测试请大家观看完视频后手动打开。'), el('li', '此课程不能使用倍速。')])
+						.outerHTML
+				},
+				restudy: restudy,
+				volume: volume
+			},
+			oncomplete() {
+				/** 查找任务 */
+				let list = $$el('.file-item');
+
+				/** 如果不是复习模式，则排除掉已经完成的任务 */
+				if (!this.cfg.restudy) {
+					list = list.filter((el) => el.querySelector('.icon-finish') === null);
+				}
+
+				const item = list[0];
+				if (item) {
+					if (item.classList.contains('active')) {
+						watch({ volume: this.cfg.volume, playbackRate: 1 }, () => {
+							/** 下一章 */
+							if (list[1]) list[1].click();
+						});
+					} else {
+						item.click();
+					}
+				}
 			}
 		}),
 		new Script({
@@ -218,6 +258,7 @@ export const ZHSProject: Project = {
 							search.onfocus?.(new FocusEvent('focus'));
 							search.value = this.cfg.school;
 							search.onclick?.(new MouseEvent('click'));
+
 							setTimeout(() => {
 								$el('#schoolListCode > li').click();
 								$el('#clCode').value = this.cfg.id;
@@ -237,13 +278,25 @@ export const ZHSProject: Project = {
 			}
 		}),
 		new Script({
+			name: '作业考试提示',
+			url: [/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/],
+			namespace: 'zhs.work.guide',
+			level: 1,
+			configs: {
+				notes: {
+					defaultValue:
+						'考试功能因为zhs频繁更新所以不稳定，大家预留好其他搜题方式。<br>在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置，否则将无法正常答题。'
+				}
+			}
+		}),
+		new Script({
 			name: '使用提示',
-			url: [/.*/],
+			url: [/zhihuishu.com/],
 			level: 1,
 			namespace: 'zhs.guide',
 			configs: {
 				notes: {
-					defaultValue: `请登录智慧树后打开视频或者作业进行使用`
+					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
 				}
 			}
 		})

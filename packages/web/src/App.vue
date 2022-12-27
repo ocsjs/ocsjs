@@ -1,54 +1,41 @@
 <template>
-	<div class="row h-100 w-100 p-0 m-0">
-		<div class="col-auto border-end sider h-100">
-			<div class="sider-items">
-				<template
-					v-for="(item, index) in routes"
-					:key="index"
-				>
-					<div
-						class="sider-item"
-						@click="router.push(item.path)"
+	<a-config-provider :locale="zhCN">
+		<div class="row h-100 w-100 p-0 m-0">
+			<div class="col-auto border-end sider h-100">
+				<div class="sider-items">
+					<template
+						v-for="(item, index) in routes"
+						:key="index"
 					>
-						<Tutorial
-							:show-help="store.state.tutorial && store.tutorialStep === item.meta.tutorial.step"
-							:content="(item.meta.tutorial.tooltip as string)"
-							:placement="item.meta.tutorial.placement"
-							@click="nextTutorialStep"
+						<div
+							class="sider-item"
+							@click="router.push(item.path)"
 						>
-							<a-tooltip
-								:title="item.meta.title"
-								placement="right"
-							>
-								<Icon
-									class="icon"
-									:type="(((item.path === currentRoute.path && item.meta.filledIcon) 
+							<Icon
+								class="icon"
+								:type="(((item.path === currentRoute.path && item.meta.filledIcon) 
 							? item.meta.filledIcon : item.meta.icon) as string)"
-								/>
-							</a-tooltip>
-						</Tutorial>
-					</div>
-				</template>
-			</div>
+							/>
+						</div>
+					</template>
+				</div>
 
-			<div class="text-secondary version">
-				{{ store.version }}
+				<div class="text-secondary version">
+					{{ store.version }}
+				</div>
 			</div>
-		</div>
-		<div class="col p-0 m-0">
-			<div class="row main h-100 w-100 p-0 m-0">
-				<div class="col-12 p-0 m-0"><Title id="title" /></div>
-				<div class="col-12 p-0 m-0 overflow-auto">
-					<Index />
+			<div class="col p-0 m-0">
+				<div class="row main h-100 w-100 p-0 m-0">
+					<div class="col-12 p-0 m-0"><Title id="title" /></div>
+					<div class="col-12 p-0 m-0 overflow-auto">
+						<CommonContextMenu>
+							<Index />
+						</CommonContextMenu>
+					</div>
 				</div>
 			</div>
 		</div>
-
-		<div
-			v-if="store.state.tutorial"
-			class="tutorial"
-		></div>
-	</div>
+	</a-config-provider>
 </template>
 
 <script setup lang="ts">
@@ -57,37 +44,58 @@ import { useRouter } from 'vue-router';
 import Title from './components/Title.vue';
 import Index from './pages/index.vue';
 import { router, routes } from './route';
-import {
-	initTheme,
-	initOpenedFiles,
-	handleOpenedFile,
-	initStoreData,
-	setAlwaysOnTop,
-	setAutoLaunch,
-	setZoomFactor,
-	store,
-	nextTutorialStep
-} from './store';
+import { initTheme, setAlwaysOnTop, setAutoLaunch, setZoomFactor, store } from './store';
 import { fetchRemoteNotify } from './utils';
 import { notify } from './utils/notify';
 import { remote } from './utils/remote';
 import Icon from './components/Icon.vue';
-import Tutorial from './components/Tutorial.vue';
-import { NodeJS } from './utils/export';
+import zhCN from 'ant-design-vue/es/locale/zh_CN';
+import { processes } from './utils/process';
+import { Modal } from 'ant-design-vue';
+import CommonContextMenu from './components/CommonContextMenu.vue';
 
 const { ipcRenderer } = require('electron');
 
 // 当前路由
 const currentRoute = useRouter().currentRoute;
 
-// @ts-ignore
-window.electron = require('electron');
-// @ts-ignore
-window.store = store;
-// @ts-ignore
-window.remote = remote;
-// @ts-ignore
-window.NodeJS = NodeJS;
+onUnmounted(() => closeAllBrowser(false));
+ipcRenderer.on('close', () => closeAllBrowser(true));
+
+function closeAllBrowser(quit: boolean) {
+	if (processes.size) {
+		remote.win.call('moveTop');
+		const modal = Modal.confirm({
+			content: '还有浏览器正在运行，您确定关闭软件吗？',
+			title: '警告',
+			maskClosable: true,
+			closable: true,
+			onOk: () => {
+				return new Promise<void>((resolve) => {
+					modal.update({ visible: true, content: '正在关闭所有浏览器...' });
+					for (const key in processes) {
+						processes[key].close();
+					}
+					for (const browser of store.browser.list) {
+						browser.running = false;
+					}
+
+					if (quit) {
+						setTimeout(() => {
+							remote.app.call('exit');
+						}, 3000);
+					} else {
+						resolve();
+					}
+				});
+			}
+		});
+	} else {
+		if (quit) {
+			remote.app.call('exit');
+		}
+	}
+}
 
 onMounted(() => {
 	nextTick(() => {
@@ -116,13 +124,7 @@ onMounted(() => {
 		setZoomFactor();
 		setAutoLaunch();
 		setAlwaysOnTop();
-		initOpenedFiles();
-		initStoreData();
 		initTheme();
-
-		ipcRenderer.on('open-file', (e, file) => {
-			handleOpenedFile(file);
-		});
 	});
 });
 
@@ -149,6 +151,9 @@ onUnmounted(() => {
 	width: 48px;
 	padding: 4px;
 	text-align: center;
+	display: flex;
+	justify-content: center;
+
 	.sider-items {
 		.sider-item {
 			margin-top: 8px;

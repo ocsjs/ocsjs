@@ -60,3 +60,9 @@ export interface ScriptCatUserScript {
 	createtime: number;
 	updatetime: number;
 }
+
+export interface LocalUserScript {
+	path: string;
+	filename: string;
+	createtime: number;
+}

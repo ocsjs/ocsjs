@@ -1,16 +1,15 @@
 <template>
 	<span class="row flex-nowrap mb-1">
-		<span class="me-1 col-3 desc-label"> {{ label }} : </span>
+		<span class="col-3 desc-label"> {{ label }} : </span>
 
-		<span class="ms-1 col-9 d-inline-flex align-items-center">
+		<span class="col-9 d-inline-flex align-items-center">
 			<span
 				v-if="desc"
 				class="desc"
 				:class="textClass"
 			>
-				{{ String(desc) }}</span
-			>
-
+				{{ String(desc) }}
+			</span>
 			<slot />
 		</span>
 	</span>

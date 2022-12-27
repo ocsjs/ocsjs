@@ -9,7 +9,10 @@
 			@mouseleave="selectedScript = 0"
 			@mouseover="selectedScript = script.id"
 		>
-			<div class="col-12">
+			<div
+				class="col-12"
+				v-if="script.info"
+			>
 				<div class="user-script-name">
 					<a
 						target="_blank"
@@ -76,11 +79,25 @@
 				</div>
 			</div>
 
+			<div
+				class="col-12"
+				v-else
+			>
+				<div class="user-script-name">
+					<a
+						target="_blank"
+						:href="`file://${script.url}`"
+					>
+						<span>{{ script.url }}</span>
+					</a>
+				</div>
+			</div>
+
 			<div class="user-script-actions">
 				<slot
 					name="actions"
 					:script="script"
-					:already-installed="store.userScripts.find((s) => s.id === script.id) !== undefined"
+					:already-installed="store.scripts.find((s) => s.id === script.id) !== undefined"
 				/>
 			</div>
 		</div>

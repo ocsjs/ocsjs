@@ -30,12 +30,11 @@ export function initStore() {
 		store.store = appStore;
 	}
 
-	// 初始化可能不存在的目录
-	if (!existsSync(store.store.workspace)) {
-		mkdirSync(store.store.workspace, { recursive: true });
+	if (!existsSync(store.store.userDataDirsFolder)) {
+		mkdirSync(store.store.userDataDirsFolder, { recursive: true });
 	}
-	if (!existsSync(store.store.extensionsRoot)) {
-		mkdirSync(store.store.extensionsRoot, { recursive: true });
+	if (!existsSync(store.store.extensionsPath)) {
+		mkdirSync(store.store.extensionsPath, { recursive: true });
 	}
 }
 

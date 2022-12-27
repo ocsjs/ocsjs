@@ -7,6 +7,8 @@ import { router } from './route';
 import { createFromIconfontCN } from '@ant-design/icons-vue';
 import Icon from './components/Icon.vue';
 import { notify } from './utils/notify';
+import Vue3ColorPicker from 'vue3-colorpicker';
+import 'vue3-colorpicker/style.css';
 
 console.log(Date.now());
 
@@ -31,7 +33,7 @@ const IconFont = createFromIconfontCN({
 
 const app = createApp(App);
 
-app.use(router).use(Antd).component('IconFont', IconFont).component('Icon', Icon).mount('#app');
+app.use(router).use(Antd).use(Vue3ColorPicker).component('IconFont', IconFont).component('Icon', Icon).mount('#app');
 
 app.directive('focus', {
 	mounted(el) {

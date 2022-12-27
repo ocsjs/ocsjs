@@ -1,6 +1,5 @@
 import { ipcMain, app, dialog, BrowserWindow } from 'electron';
 import { Logger } from '../logger';
-import trash from 'trash';
 import { autoLaunch } from './auto.launch';
 import axios from 'axios';
 import { downloadFile, unzip, zip } from '../utils';
@@ -49,7 +48,6 @@ let win: BrowserWindow | undefined;
 /** 需远程共享的方法 */
 const methods = {
 	autoLaunch,
-	trash,
 	get: (url: string, opts: any) => axios.get(url, opts).then((res) => res.data),
 	post: (url: string, opts: any) => axios.post(url, opts).then((res) => res.data),
 	download: (channel: string, url: string, dest: string) => {

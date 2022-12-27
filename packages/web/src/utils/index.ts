@@ -2,6 +2,7 @@ import { message, Modal } from 'ant-design-vue';
 import { h } from 'vue';
 import { store } from '../store';
 const { OCSApi } = require('@ocsjs/common') as typeof import('@ocsjs/common');
+import dayjs from 'dayjs';
 
 export function sleep(timeout: number) {
 	return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -50,13 +51,12 @@ export function jsonLint(jsonString: string) {
 	}
 }
 
-export function formatDate() {
-	const date = new Date();
-	return [
-		date.getFullYear(),
-		String(date.getMonth() + 1).padStart(2, '0'),
-		date.getDate().toString().padStart(2, '0')
-	].join('-');
+export function date(time: number) {
+	return dayjs(time).format('YYYY-MM-DD');
+}
+
+export function datetime(time: number) {
+	return dayjs(time).format('YYYY-MM-DD hh:mm');
 }
 
 /**
@@ -68,7 +68,7 @@ export async function fetchRemoteNotify(readAll: boolean) {
 		const infos = await OCSApi.getInfos();
 
 		let remoteNotify = infos.notify;
-		const storeNotify: typeof infos.notify = store.notify;
+		const storeNotify: typeof infos.notify = store.notifies;
 		/** 寻找未阅读的通知 */
 		if (!readAll) {
 			remoteNotify = remoteNotify.filter(
@@ -114,7 +114,7 @@ export async function fetchRemoteNotify(readAll: boolean) {
 					),
 				onOk() {
 					if (!readAll) {
-						store.notify = [...store.notify].concat(remoteNotify);
+						store.notifies = [...store.notifies].concat(remoteNotify);
 					}
 				},
 				onCancel() {}

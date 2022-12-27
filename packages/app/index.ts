@@ -1,6 +1,6 @@
 // @ts-check
 
-import { app } from 'electron';
+import { app, ipcMain, Menu } from 'electron';
 import { handleOpenFile } from './src/tasks/handle.open';
 import { remoteRegister } from './src/tasks/remote.register';
 import { initStore } from './src/tasks/init.store';
@@ -33,6 +33,17 @@ function bootstrap() {
 			task('启动渲染进程', async () => {
 				await app.whenReady();
 				const window = createWindow();
+
+				app.on('quit', (e) => {
+					e.preventDefault();
+					// 交给渲染层去关闭浏览器
+					window.webContents.send('close');
+				});
+
+				window.on('close', (e) => {
+					e.preventDefault();
+					window.webContents.send('close');
+				});
 
 				task('初始化远程通信模块', () => remoteRegister(window));
 				task('注册app事件监听器', () => globalListenerRegister(window));

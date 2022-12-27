@@ -1,84 +1,27 @@
 <template>
 	<div class="col-12 p-2 m-auto">
-		<div>
-			<a-tag
-				v-for="(group, index) of fileGroups"
-				:key="index"
-				:color="group.color"
-			>
-				{{ group.name }}: {{ group.data.length }}
-			</a-tag>
-		</div>
-
-		<div class="d-flex mb-1 align-items-center border-bottom">
-			<span>列数:</span>
-			<a-slider
-				v-model:value="num"
-				style="width: 100px; margin: 10px 6px 10px"
-				type="number"
-				:min="1"
-				:max="12"
-			/>
-
-			<a-divider type="vertical" />
-
-			<span> 显示:</span>
+		<div class="d-flex mb-1 align-items-center">
 			<a-select
-				v-model:value="currentGroupName"
+				v-model:value="num"
 				size="small"
 				style="width: 100px"
+				:options="[2, 4, 6, 8].map((i) => ({ value: i, label: `显示${i}列` }))"
 			>
-				<a-select-option
-					key="1"
-					value="全部"
-				>
-					全部
-				</a-select-option>
-				<a-select-option
-					key="1"
-					value="编辑中"
-				>
-					编辑中
-				</a-select-option>
-				<a-select-option
-					key="2"
-					value="运行中"
-				>
-					运行中
-				</a-select-option>
 			</a-select>
-
-			<a-divider type="vertical" />
-
-			<span> 页面序号:</span>
-			<a-input
-				v-model:value="customIndex"
-				size="small"
-				type="number"
-				style="width: 100px"
-				:min="1"
-			>
-				<template #suffix>
-					<a-tooltip title="显示浏览器每个页面图像的序号，默认为1，表示显示第一个页面">
-						<Icon type="icon-info-circle" />
-					</a-tooltip>
-				</template>
-			</a-input>
-
 			<a-divider type="vertical" />
 
 			<a-input-search
 				v-model:value="search"
-				placeholder="输入文件名搜索"
+				placeholder="输入浏览器名字进行搜索"
 				size="small"
-				style="width: 150px"
+				style="width: 200px"
 			/>
 		</div>
 
-		<template v-if="currentGroup?.data.length === 0">
+		<template v-if="object.keys(processes).length === 0">
 			<a-empty
 				class="pt-5"
-				description="暂时没有编辑中/运行中的文件"
+				description="没有运行中的浏览器"
 			></a-empty>
 		</template>
 		<template v-else>
@@ -89,84 +32,64 @@
 				}"
 			>
 				<template
-					v-for="[key, data] of currentGroup?.data.filter(
-						([key, data]) => search === '' || data.file.name.includes(search)
-					)"
+					v-for="key of object.keys(processes)"
 					:key="key"
 				>
-					<div
-						class="screenshot-item"
-						:class="{
-							active: active === key
-						}"
-						@mouseover="active = key"
-						@mouseleave="active = ''"
-					>
+					<a-tooltip title="点击操控浏览器">
 						<div
-							v-if="data.process.screenshots.length === 0"
-							class="screenshot-item-title w-100 border-bottom"
+							class="browser"
+							@click="openBrowser(key)"
 						>
-							{{ data.file.name }}
-						</div>
-
-						<ScreenShot
-							class="h-100"
-							:show-all="false"
-							:custom-index="customIndex - 1"
-							:screenshots="data.process.screenshots"
-							@preview="onPreview"
-						>
-							<template #title="{ title, screenshot }">
-								<div
-									class="screenshot-item-title border-bottom"
-									:title="screenshot?.url + '\n' + title"
-									:class="{
-										running: data.stat.running
-									}"
-								>
-									<span>
-										{{ data.file.name }}
-									</span>
-									<span>
-										<span> | </span>
-										<span v-if="active === key">
-											<a-space>
-												<Icon
-													type="icon-file"
-													title="编辑"
-													@click="edit(data)"
-												/>
-												<Icon
-													:type="data.stat.running ? 'icon-timeout' : 'icon-play-circle'"
-													:style="{
-														color: data.stat.running ? 'red' : ''
-													}"
-													:title="data.stat.running ? '停止' : '运行'"
-													@click="data.stat.running ? close(data) : launch(data)"
-												/>
-											</a-space>
-										</span>
-										<span v-else> {{ title }} </span>
-									</span>
+							<template v-if="processes[key].pageId">
+								<div class="browser-title">
+									{{ processes[key].pages[processes[key].pageId].title || 'about:blank' }}
 								</div>
+								<img
+									class="browser-img"
+									style="width: 100%"
+									:src="`data:image/png;base64, ${processes[key].base64}`"
+								/>
 							</template>
-						</ScreenShot>
-					</div>
+
+							<a-empty
+								v-else
+								description="请等待浏览器初始化完毕"
+							>
+							</a-empty>
+						</div>
+					</a-tooltip>
 				</template>
 			</div>
 		</template>
 
 		<a-modal
 			v-model:visible="visible"
-			width="90%"
-			style="top: 10px"
+			width="1080px"
+			style="top: 10px; text-align: center"
 			:title="modelTitle"
 			:footer="null"
 		>
-			<div>
+			<a-tabs
+				v-if="!!currentProcess"
+				:activeKey="currentProcess.pageId"
+				type="editable-card"
+				@edit="onEdit"
+				@change="(key:string) => currentProcess!.pageSwitch(key)"
+			>
+				<a-tab-pane
+					v-for="key in object.keys(currentProcess.pages)"
+					:key="key"
+					:tab="currentProcess.pages[key].title || 'about:blank'"
+					:closable="true"
+				>
+				</a-tab-pane>
+			</a-tabs>
+			<div style="overflow: auto; height: calc(100vh - 140px)">
 				<img
+					v-if="currentProcess"
 					style="width: 100%"
-					:src="image"
+					class="browser-img"
+					:src="`data:image/png;base64, ${currentProcess.base64}`"
 				/>
 			</div>
 		</a-modal>
@@ -174,80 +97,59 @@
 </template>
 
 <script setup lang="ts">
-import { message } from 'ant-design-vue';
-import { computed, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { FileData, fileData } from '../../components/file/data';
-import ScreenShot from '../../components/file/ScreenShot.vue';
-import { store } from '../../store';
-
-const router = useRouter();
-
-/** 文件组 */
-const fileGroups = computed(() => [
-	{
-		name: '全部',
-		data: Array.from(fileData)
-	},
-	{
-		name: '编辑中',
-		data: Array.from(fileData).filter(([key, data]) => !data.stat.running),
-		color: 'orange'
-	},
-	{
-		name: '运行中',
-		data: Array.from(fileData).filter(([key, data]) => data.stat.running),
-		color: 'processing'
-	}
-]);
-
-/** 文件选定组名字 */
-const currentGroupName = ref(fileGroups.value[0].name);
-
-/** 选定组 */
-const currentGroup = computed(() => fileGroups.value.find((g) => g.name === currentGroupName.value));
-
+import { computed, ref, watch } from 'vue';
+import { Process, processes } from '../../utils/process';
+const object = Object;
 /** 列数控制 */
 const num = ref(4);
-/** 图像位置 */
-const customIndex = ref(1);
+
 /** 搜索 */
 const search = ref('');
 /** 当前的文件 */
-const active = ref('');
-
+const activeKey = ref('');
 /** 预览图像弹窗 */
 const visible = ref(false);
 /** 弹窗标题 */
 const modelTitle = ref('');
-/** img 的 src 属性 */
-const image = ref<string>('');
 
-/** 预览 */
-function onPreview(source: string, screenshot) {
-	visible.value = true;
-	image.value = source;
-	modelTitle.value = screenshot.title;
-}
+const currentProcessUid = ref<string>('');
+const currentProcess = computed(() => processes[currentProcessUid.value]);
+const panes = ref<{ title: string; key: string }[]>([]);
 
-function edit(data: FileData) {
-	store.currentKey = data.file.path;
-	store.selectedKeys = [data.file.path];
-	router.push('/');
-}
+const add = () => {
+	activeKey.value = Date.now().toString();
+	panes.value.push({ title: 'New Tab', key: activeKey.value });
+};
 
-function close(data: FileData) {
-	data.stat.running = false;
-	data.process.close();
-}
-
-function launch(data: FileData) {
-	data.stat.running = true;
-	if (data.options) {
-		data.process.launch(data.options);
-	} else {
-		message.error('参数错误, 可能是文件格式错误, 请到编辑页修正。');
+const remove = (targetKey: string) => {
+	let lastIndex = 0;
+	panes.value.forEach((pane, i) => {
+		if (pane.key === targetKey) {
+			lastIndex = i - 1;
+		}
+	});
+	panes.value = panes.value.filter((pane) => pane.key !== targetKey);
+	if (panes.value.length && activeKey.value === targetKey) {
+		if (lastIndex >= 0) {
+			activeKey.value = panes.value[lastIndex].key;
+		} else {
+			activeKey.value = panes.value[0].key;
+		}
 	}
+};
+
+const onEdit = (targetKey: string, action: string) => {
+	if (action === 'add') {
+		add();
+	} else {
+		remove(targetKey);
+		currentProcess.value?.closePage(targetKey);
+	}
+};
+
+function openBrowser(uid: string) {
+	currentProcessUid.value = uid;
+	visible.value = true;
 }
 </script>
 
@@ -263,13 +165,14 @@ function launch(data: FileData) {
 	white-space: nowrap;
 }
 
-.screenshot-item {
+.browser {
 	overflow: hidden;
+	cursor: pointer;
 	border-radius: 4px;
 	box-shadow: 0px 2px 8px -2px #b7b7b7;
+}
 
-	&.active {
-		box-shadow: 0px 2px 4px -2px #1890ff;
-	}
+.browser:hover {
+	box-shadow: 0px 2px 4px -2px #1890ff;
 }
 </style>

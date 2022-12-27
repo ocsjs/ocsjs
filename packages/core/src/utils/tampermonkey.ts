@@ -97,7 +97,7 @@ export function notification(
 			highlight: important,
 			onclick,
 			ondone,
-			silent: getValue('common.settings.notificationSilent', true),
+			silent: true,
 			timeout: duration * 1000
 		});
 	}

@@ -2,25 +2,6 @@
 	<div class="title border-bottom">
 		<ul class="w-100 title-items">
 			<a-dropdown>
-				<li>
-					<Tutorial
-						:show-help="store.state.tutorial && store.tutorialStep === 5"
-						placement="bottomRight"
-						content="工具栏有很多功能，例如批量运行以及批量导入。"
-						@click="nextTutorialStep"
-					>
-						工具
-					</Tutorial>
-				</li>
-
-				<template #overlay>
-					<a-menu class="title-menu">
-						<a-menu-item @click="multipleFileStartup"> 批量运行文件 </a-menu-item>
-					</a-menu>
-				</template>
-			</a-dropdown>
-
-			<a-dropdown>
 				<li>窗口</li>
 
 				<template #overlay>
@@ -48,8 +29,7 @@
 
 				<template #overlay>
 					<a-menu>
-						<a-menu-item @click="about"> 关于 </a-menu-item>
-						<a-menu-item @click="store.state.tutorial = true"> 新手教程 </a-menu-item>
+						<a-menu-item @click="about"> 关于软件 </a-menu-item>
 						<TitleLink
 							title="官网教程"
 							url="https://docs.ocsjs.com/"
@@ -57,18 +37,15 @@
 						<a-menu-item @click="allNotify"> 全部通知 </a-menu-item>
 
 						<TitleLink
-							title="版本更新"
+							title="软件更新"
 							url="https://docs.ocsjs.com/docs/资源下载/app-downloads"
-						/>
-						<TitleLink
-							title="脚本更新日志"
-							url="https://github.com/ocsjs/ocsjs/blob/3.0/CHANGELOG.md"
 						/>
 					</a-menu>
 				</template>
 			</a-dropdown>
 		</ul>
 		<ul
+			v-if="NodeJS.os.platform() !== 'darwin'"
 			class="traffic-light"
 			@mouseenter="initMaximize()"
 		>
@@ -91,29 +68,18 @@
 				<Icon type="icon-close" />
 			</li>
 		</ul>
-
-		<MultipleFileStartup
-			v-model:visible="multipleFileStartupVisible"
-			:files="files"
-		/>
 	</div>
 </template>
 
 <script setup lang="ts">
 import { Modal } from 'ant-design-vue';
 import { h, nextTick, onMounted, ref, watch } from 'vue';
-import { nextTutorialStep, store, files } from '../store';
-import { fetchRemoteNotify, formatDate } from '../utils';
+import { fetchRemoteNotify, date } from '../utils';
 import { NodeJS } from '../utils/export';
 import { remote } from '../utils/remote';
-import Tutorial from './Tutorial.vue';
-import MultipleFileStartup from './MultipleFileStartup.vue';
 import TitleLink from './TitleLink.vue';
 
 const { shell } = require('electron');
-
-// 批量运行弹窗
-const multipleFileStartupVisible = ref(false);
 
 const max = ref<boolean>(false);
 
@@ -137,7 +103,7 @@ function relaunch() {
 
 // 打开日志目录
 async function openLog() {
-	shell.openPath(NodeJS.path.join(await remote.app.call('getPath', 'logs'), formatDate()));
+	shell.openPath(NodeJS.path.join(await remote.app.call('getPath', 'logs'), date(Date.now())));
 }
 
 // 显示全部通知
@@ -171,9 +137,6 @@ async function about() {
 // 初始化状态
 async function initMaximize() {
 	max.value = await remote.win.call('isMaximized');
-}
-function multipleFileStartup() {
-	multipleFileStartupVisible.value = true;
 }
 </script>
 

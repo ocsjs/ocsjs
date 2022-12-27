@@ -5,8 +5,7 @@
 	"asar": false,
 	"copyright": "Copyright © 2021 ${author}",
 	"nsis": {
-		"oneClick": true,
-		"uninstallDisplayName": "${productName} ${version} 卸载程序"
+		"oneClick": true
 	},
 	"win": {
 		"icon": "public/favicon.ico",
@@ -22,13 +21,8 @@
 		]
 	},
 	"mac": {
-		"icon": "public/favicon.icns",
+		"icon": "public/favicon.ico",
 		"artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
 		"target": "default"
-	},
-	"fileAssociations": {
-		"ext": "ocs",
-		"icon": "public/favicon.ico",
-		"name": "ocs 脚本"
 	}
 }

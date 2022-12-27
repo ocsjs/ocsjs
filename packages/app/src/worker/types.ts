@@ -8,7 +8,8 @@ export interface ScriptWorkerAction {
 
 export interface ScriptWorkerActions {
 	launch: ScriptWorkerAction;
-	close: ScriptWorkerAction;
+	'page-close': ScriptWorkerAction;
+	'browser-close': ScriptWorkerAction;
 	call: ScriptWorkerAction;
-	screenshot: ScriptWorkerAction;
+	'page-switch': ScriptWorkerAction;
 }

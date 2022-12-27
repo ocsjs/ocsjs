@@ -10,7 +10,7 @@ import { getMatchedScripts, namespaceKey } from '../utils/common';
 import { el, enableElementDraggable, tooltip } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
-import { getInfos, getValue, notification } from '../utils/tampermonkey';
+import { addConfigChangeListener, getInfos, getValue, notification } from '../utils/tampermonkey';
 
 export type ModelAttrs = Pick<
 	ModelElement,
@@ -63,7 +63,8 @@ const InitPanelScript = new Script({
 		const container = el('container-element');
 
 		/** 创建头部元素 */
-		const initHeader = () => {
+		const initHeader = (urls: string[] = getValue('_urls_', [location.href])) => {
+			container.header.replaceChildren();
 			/** 图标 */
 			container.header.logo = tooltip(
 				el('img', {
@@ -76,6 +77,7 @@ const InitPanelScript = new Script({
 					}
 				})
 			);
+
 			/** 版本简介 */
 			container.header.profile = el('div', { className: 'profile' }, 'OCS-' + (getInfos().script.version || '0'));
 
@@ -94,7 +96,7 @@ const InitPanelScript = new Script({
 					},
 					(select) => {
 						for (const project of projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a)) {
-							const scripts = getMatchedScripts([project], getValue('_urls_', []))
+							const scripts = getMatchedScripts([project], urls)
 								.filter((s) => !s.hideInPanel)
 								.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
 							for (const script of scripts) {
@@ -158,6 +160,15 @@ const InitPanelScript = new Script({
 					onclick: () => (this.cfg.visual = 'close')
 				})
 			);
+
+			container.header.append(
+				container.header.profile || '',
+				container.header.projectSelector || '',
+				container.header.logo || '',
+				container.header.expandSwitcher || '',
+				container.header.visualSwitcher || '',
+				container.header.closeButton || ''
+			);
 		};
 
 		const createScriptPanel = (projectName: string, script: Script) => {
@@ -181,12 +192,12 @@ const InitPanelScript = new Script({
 		};
 
 		/** 创建内容 */
-		const createBody = () => {
+		const createBody = (urls: string[]) => {
 			const scriptContainers = [];
 			const allScript = [];
 
 			for (const project of projects) {
-				const scripts = getMatchedScripts([project], getValue('_urls_', [location.href])).filter((s) => !s.hideInPanel);
+				const scripts = getMatchedScripts([project], urls).filter((s) => !s.hideInPanel);
 				allScript.push(...scripts);
 
 				const initPanelAndScript = (script: Script) => {
@@ -258,17 +269,9 @@ const InitPanelScript = new Script({
 			visual(this.cfg.visual);
 		};
 
-		/** 监听页面状态改变 */
-		const handleHistoryChange = () => {
-			history.pushState = addFunctionEventListener(history, 'pushState');
-			history.replaceState = addFunctionEventListener(history, 'replaceState');
-			window.addEventListener('pushState', render);
-			window.addEventListener('replaceState', render);
-		};
-
 		/** 替换 body 中的内容 */
-		const replaceBody = () => {
-			container.body.replaceChildren(...createBody());
+		const replaceBody = (urls: string[] = getValue('_urls_', [location.href])) => {
+			container.body.replaceChildren(...createBody(urls));
 		};
 		/** 创建设置区域 */
 
@@ -311,6 +314,11 @@ const InitPanelScript = new Script({
 		const render = () => {
 			initHeader();
 			replaceBody();
+
+			addConfigChangeListener('_urls_', (pre, curr) => {
+				initHeader(curr);
+				replaceBody(curr);
+			});
 		};
 
 		/** 在顶级页面显示操作面板 */
@@ -320,10 +328,8 @@ const InitPanelScript = new Script({
 			render();
 			// 随机位置插入操作面板到页面
 			root.append(container);
-
 			document.body.children[random(0, document.body.children.length - 1)].after(panel);
 			initModelSystem();
-			handleHistoryChange();
 			handlePosition();
 		}
 
@@ -403,22 +409,6 @@ export function $message(
 	const message = el('message-element', { type, ...attrs });
 	messageContainer.append(message);
 	return message;
-}
-
-/**
- * 添加事件调用监听器
- */
-function addFunctionEventListener(obj: any, type: string) {
-	const origin = obj[type];
-	return function (...args: any[]) {
-		// @ts-ignore
-		const res = origin.apply(this, args);
-		const e = new Event(type.toString());
-		// @ts-ignore
-		e.arguments = args;
-		window.dispatchEvent(e);
-		return res;
-	};
 }
 
 function random(min: number, max: number) {

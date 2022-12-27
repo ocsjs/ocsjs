@@ -20,6 +20,7 @@ export function notify(title: string, msg: any, key: string, options?: NotifyOpt
 		message: title,
 		description: h('span', { title: String(msg) }, StringUtils.max(String(msg), 100)),
 		duration: options?.duration || (options?.type === 'error' ? 60 : 10),
+		// @ts-ignore
 		btn:
 			options?.btn ||
 			h('div', [

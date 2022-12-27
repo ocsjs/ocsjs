@@ -34,7 +34,6 @@
 		"eslint-plugin-node": "^11.1.0",
 		"eslint-plugin-prettier": "^4.0.0",
 		"eslint-plugin-promise": "^4.2.1",
-		"eslint-plugin-vue": "^8.6.0",
 		"gulp": "^4.0.2",
 		"gulp-cli": "^2.3.0",
 		"gulp-zip": "^5.1.0",

@@ -1,23 +1,34 @@
 import { existsSync } from 'fs';
 import { join } from 'path';
 import { ValidBrowser } from '../interface';
+import os from 'os';
 
 // 获取可用浏览器路径
 export function getValidBrowsers(): ValidBrowser[] {
-	return [
-		{
-			name: '微软浏览器(Microsoft Edge)',
-			path: resolveBrowserPath('Microsoft\\Edge\\Application\\msedge.exe')
-		},
-		{
-			name: '谷歌浏览器(chrome)',
-			path: resolveBrowserPath('Google\\Chrome\\Application\\chrome.exe')
-		},
-		{
-			name: '火狐浏览器(Firefox)',
-			path: resolveBrowserPath('Mozilla Firefox\\firefox.exe')
+	switch (os.platform()) {
+		case 'darwin': {
+			return [];
 		}
-	].filter((b) => b.path);
+		case 'win32': {
+			return [
+				{
+					name: '微软浏览器(Microsoft Edge)',
+					path: resolveBrowserPath('Microsoft\\Edge\\Application\\msedge.exe')
+				},
+				{
+					name: '谷歌浏览器(chrome)',
+					path: resolveBrowserPath('Google\\Chrome\\Application\\chrome.exe')
+				},
+				{
+					name: '火狐浏览器(Firefox)',
+					path: resolveBrowserPath('Mozilla Firefox\\firefox.exe')
+				}
+			].filter((b) => b.path);
+		}
+		default: {
+			return [];
+		}
+	}
 }
 
 function resolveBrowserPath(commonPath: string) {
