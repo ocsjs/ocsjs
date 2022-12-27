@@ -83,37 +83,56 @@ const InitPanelScript = new Script({
 			container.header.profile = el('div', { className: 'profile' }, 'OCS-' + (getInfos().script.version || '0'));
 
 			/** 面板切换器 */
-			const projectSelector = tooltip(
-				el(
-					'select',
-					{
-						className: ['project-selector', this.cfg.expandAll ? 'expand-all' : ''].join(' '),
-						title: '点击选择脚本操作页面，部分脚本会提供操作页面（包含脚本设置和脚本提示）。',
-						onchange: () => {
-							this.cfg.currentPanelName = projectSelector.value;
-							// 替换元素
-							replaceBody();
-						}
-					},
-					(select) => {
-						for (const project of projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a)) {
-							const scripts = getMatchedScripts([project], urls)
-								.filter((s) => !s.hideInPanel)
-								.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
+			const projectSelector = el(
+				'select',
+				{
+					onchange: () => {
+						this.cfg.currentPanelName = projectSelector.value;
+						// 替换元素
+						replaceBody();
+					}
+				},
+				(select) => {
+					for (const project of projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a)) {
+						const scripts = getMatchedScripts([project], urls)
+							.filter((s) => !s.hideInPanel)
+							.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
+						if (scripts.length) {
+							const group = el('optgroup', { label: project.name });
 							for (const script of scripts) {
-								select.append(
+								group.append(
 									el('option', {
 										value: project.name + '-' + script.name,
-										innerText: project.name + '-' + script.name,
+										innerText: script.name,
 										selected: project.name + '-' + script.name === this.cfg.currentPanelName
 									})
 								);
 							}
+							select.append(group);
 						}
 					}
+				}
+			);
+			const panelName = el('span', {}, (name) => {
+				projectSelector.addEventListener('change', () => {
+					updatePanelProjectName(name);
+				});
+			});
+			const projectSelectorDiv = tooltip(
+				el(
+					'div',
+					{
+						className: ['project-selector', this.cfg.expandAll ? 'expand-all' : ''].join(' '),
+						title: '点击选择脚本操作页面，部分脚本会提供操作页面（包含脚本设置和脚本提示）。'
+					},
+					[panelName, projectSelector]
 				)
 			);
-			container.header.projectSelector = projectSelector;
+			const updatePanelProjectName = (name: HTMLSpanElement) => {
+				name.innerText = projectSelector.value.split('-')[0] + ' -';
+			};
+			updatePanelProjectName(panelName);
+			container.header.projectSelector = projectSelectorDiv;
 
 			/** 是否展开所有脚本 */
 			const isExpandAll = () => this.cfg.expandAll === true;
@@ -127,7 +146,7 @@ const InitPanelScript = new Script({
 						this.cfg.expandAll = !isExpandAll();
 						expandSwitcher.title = this.cfg.expandAll ? '收缩脚本' : '展开脚本';
 						expandSwitcher.innerText = this.cfg.expandAll ? '-' : '≡';
-						projectSelector.classList.toggle('expand-all');
+						projectSelectorDiv.classList.toggle('expand-all');
 						// 替换元素
 						replaceBody();
 					}
@@ -329,7 +348,8 @@ const InitPanelScript = new Script({
 			render();
 			// 随机位置插入操作面板到页面
 			root.append(container);
-			document.body.children[random(0, document.body.children.length - 1)].after(panel);
+			const target = document.body.children[random(0, document.body.children.length - 1)];
+			target.after(panel);
 			initModelSystem();
 			handlePosition();
 		}
