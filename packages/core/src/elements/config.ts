@@ -30,6 +30,8 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 				};
 			} else {
 				this.provider.value = getValue(this.key, '');
+				this.provider.setAttribute('value', this.provider.value);
+
 				this.provider.onchange = () => {
 					setValue(this.key, this.provider.value);
 				};
