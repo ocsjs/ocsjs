@@ -2,7 +2,7 @@
 	"name": "@ocsjs/app",
 	"version": "1.6.0",
 	"description": "app package of ocs",
-	"main": "./lib/index.js",
+	"main": "./lib/types.js",
 	"types": "./lib/types.d.ts",
 	"scripts": {
 		"dev": "tsc && chcp 65001 && electron .",

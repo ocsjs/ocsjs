@@ -6,7 +6,7 @@
 		"es6": true,
 		"vue/setup-compiler-macros": true
 	},
-	"extends": ["standard", "plugin:vue/vue3-recommended", "prettier", "plugin:@html-eslint/recommended"],
+	"extends": ["standard", "plugin:vue/vue3-recommended", "prettier"],
 	"parserOptions": {
 		"ecmaVersion": "latest",
 		"parser": "@typescript-eslint/parser",
@@ -26,6 +26,7 @@
 		"indent": "off",
 		"camelcase": "off",
 		"vue/multi-word-component-names": "off",
+		"vue/valid-attribute-name": "off",
 		"space-before-function-paren": "off",
 		"func-call-spacing": "off",
 		"no-redeclare": "off"
