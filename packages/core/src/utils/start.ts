@@ -34,18 +34,23 @@ export function start(cfg: StartConfig) {
 
 	const scripts = getMatchedScripts(cfg.projects, [location.href]);
 
-	scripts.forEach((script) => {
-		/** 执行脚本 */
-		script.onstart?.(cfg);
+	/** 执行脚本 */
 
-		document.addEventListener('readystatechange', () => {
-			if (document.readyState === 'interactive') {
+	scripts.forEach((script) => {
+		script.onstart?.(cfg);
+	});
+
+	document.addEventListener('readystatechange', () => {
+		if (document.readyState === 'interactive') {
+			scripts.forEach((script) => {
 				script.onactive?.(cfg);
-			}
-			if (document.readyState === 'complete') {
+			});
+		}
+		if (document.readyState === 'complete') {
+			scripts.forEach((script) => {
 				script.oncomplete?.(cfg);
-			}
-		});
+			});
+		}
 	});
 
 	window.onbeforeunload = () => {
