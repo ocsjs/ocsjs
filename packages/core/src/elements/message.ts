@@ -20,7 +20,7 @@ export class MessageElement extends IElement {
 			this.contentContainer.append(this.content);
 		}
 
-		this.duration = Math.max(this.duration || 5, 0);
+		this.duration = Math.max(this.duration === 0 ? 0 : this.duration || 5, 0);
 		this.append(this.contentContainer);
 
 		if (this.closeable) {
