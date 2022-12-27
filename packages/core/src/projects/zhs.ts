@@ -1,3 +1,4 @@
+import { MessageElement } from '../elements/message';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
@@ -13,9 +14,9 @@ const volume: Config = {
 	defaultValue: 0,
 	onload() {
 		this.addEventListener('change', () => {
-			this.setAttribute('data-title', (parseFloat(this.value) * 100).toFixed() + '%');
+			this.setAttribute('data-title', (parseFloat(this.getAttribute('value') || '0') * 100).toFixed() + '%');
 		});
-		this.setAttribute('data-title', (parseFloat(this.value) * 100).toFixed() + '%');
+		this.setAttribute('data-title', (parseFloat(this.getAttribute('value') || '0') * 100).toFixed() + '%');
 	}
 };
 const restudy: Config = {
@@ -23,6 +24,25 @@ const restudy: Config = {
 	attrs: { title: '已经完成的视频继续学习', type: 'checkbox' },
 	defaultValue: false
 };
+
+const definition: Config = {
+	label: '清晰度',
+	tag: 'select',
+	defaultValue: 'line1bq',
+	onload() {
+		this.append(
+			...$createSelectOptions(this.getAttribute('value'), [
+				['line1bq', '流畅'],
+				['line1gq', '高清']
+			])
+		);
+	}
+};
+
+// 是否暂停
+let stop = false;
+// 是否存在验证码
+let hasCapture = false;
 
 export const ZHSProject: Project = {
 	name: '知道智慧树',
@@ -47,28 +67,91 @@ export const ZHSProject: Project = {
 				},
 				stopTime: {
 					label: '定时停止',
-					attrs: { title: '到时间后自动暂停脚本', type: 'time' },
-					defaultValue: '00:00'
+					tag: 'select',
+					attrs: { title: '到时间后自动暂停脚本' },
+					defaultValue: 0,
+					onload() {
+						this.append(
+							...$createSelectOptions(this.getAttribute('value'), [
+								[0, '关闭'],
+								[0.5, '半小时后'],
+								[1, '一小时后'],
+								[2, '两小时后']
+							])
+						);
+					}
 				},
 				restudy: restudy,
 				volume: volume,
+				definition: definition,
 				playbackRate: {
 					label: '视频倍速',
 					tag: 'select',
 					defaultValue: 1,
 					onload() {
 						this.append(
-							...[1, 1.25, 1.5].map((rate) => el('option', { value: rate.toString(), innerText: rate + 'x' }))
+							...$createSelectOptions(
+								this.getAttribute('value'),
+								[1, 1.25, 1.5].map((rate) => [rate, rate + 'x'])
+							)
 						);
 					}
 				}
 			},
 			onactive() {
 				// 重置时间
-				this.cfg.stopTime = '00:00';
+				this.cfg.stopTime = '0';
 			},
 			oncomplete() {
 				const vue = $el('.video-study')?.__vue__;
+				let stopInterval: any = 0;
+				let stopMessage: MessageElement;
+				// 监听定时停止
+				this.onConfigChange('stopTime', () => {
+					clearInterval(stopInterval);
+					stopMessage?.remove();
+					if (this.cfg.stopTime === '0') {
+						$message('info', { content: '定时停止已关闭' });
+					} else {
+						let stopCount = parseFloat(this.cfg.stopTime) * 60 * 60;
+						stopInterval = setInterval(() => {
+							if (stopCount > 0 && hasCapture === false) {
+								stopCount--;
+							} else {
+								clearInterval(stopInterval);
+								stop = true;
+								$el<HTMLVideoElement>('video').pause();
+								$model('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
+							}
+						}, 1000);
+						const val = [
+							[0.5, '半小时后'],
+							[1, '一小时后'],
+							[2, '两小时后']
+						].find((t) => t[0].toString() === this.cfg.stopTime)?.[0] as number;
+						const date = new Date();
+						date.setMinutes(date.getMinutes() + val * 60);
+						stopMessage = $message('info', {
+							duration: 0,
+							content: `在 ${date.toLocaleTimeString()} 脚本将自动暂停`
+						});
+					}
+				});
+
+				// 监听音量
+				this.onConfigChange('volume', (pre: any, curr: any) => {
+					$el<HTMLVideoElement>('video').volume = curr;
+				});
+
+				// 监听速度
+				this.onConfigChange('playbackRate', (pre: any, curr: any) => {
+					switchPlaybackRate(parseFloat(curr));
+				});
+
+				// 监听清晰度
+				this.onConfigChange('definition', (pre: any, curr: any) => {
+					switchLine(curr);
+				});
 
 				const hideDialog = () => {
 					/** 隐藏通知弹窗 */
@@ -99,6 +182,29 @@ export const ZHSProject: Project = {
 					bar.style.display = 'block';
 				};
 
+				let timeMessage: MessageElement;
+				const calculateTime = () => {
+					// 计算视频完成所需时间
+					try {
+						const vue = $el('.video-study')?.__vue__;
+						const videos = (vue.videoList as any[])
+							.map((v: any) => v.videoLessons)
+							.flat()
+							.map((l: any) => /** 章节或者章节中的小节 */ l?.videoSmallLessons || l)
+							.flat()
+							/** 排除已经学习过的 */
+							.filter((v) => v.isStudiedLesson === 0);
+						const allTime: number = videos.map((l) => l.videoSec || 0).reduce((pre, curr) => pre + curr, 0);
+						if (timeMessage) {
+							timeMessage.remove();
+						}
+						timeMessage = $message('info', {
+							duration: 0,
+							content: `当前还剩${videos.length - 1}个视频，观看需耗时：${(allTime / (60 * 60)).toFixed(2)}小时`
+						});
+					} catch {}
+				};
+
 				const interval = setInterval(async () => {
 					// 等待视频加载完成
 					if (vue.videoList.length) {
@@ -124,16 +230,26 @@ export const ZHSProject: Project = {
 						if (list.length === 0) {
 							finish();
 						} else {
-							$message('info', { content: '5秒后开始学习', duration: 5 });
+							$message('info', { content: '3秒后开始学习', duration: 3 });
 							const study = async () => {
-								const item = list.shift();
-								if (item) {
-									await sleep(5000);
-									item.click();
-									await sleep(5000);
-									watch({ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate }, study);
+								if (stop === false) {
+									const item = list.shift();
+									if (item) {
+										await sleep(3000);
+										item.click();
+										await sleep(5000);
+										watch(
+											{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
+											study
+										);
+										calculateTime();
+									} else {
+										finish();
+									}
 								} else {
-									finish();
+									$message('warn', {
+										content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
+									});
 								}
 							};
 							study();
@@ -153,7 +269,8 @@ export const ZHSProject: Project = {
 						.outerHTML
 				},
 				restudy: restudy,
-				volume: volume
+				volume: volume,
+				definition: definition
 			},
 			oncomplete() {
 				/** 查找任务 */
@@ -167,7 +284,7 @@ export const ZHSProject: Project = {
 				const item = list[0];
 				if (item) {
 					if (item.classList.contains('active')) {
-						watch({ volume: this.cfg.volume, playbackRate: 1 }, () => {
+						watch({ volume: this.cfg.volume, playbackRate: 1, definition: this.cfg.definition }, () => {
 							/** 下一章 */
 							if (list[1]) list[1].click();
 						});
@@ -201,8 +318,8 @@ export const ZHSProject: Project = {
 					onload() {
 						this.append(
 							...$createSelectOptions(this.getAttribute('value') || '', [
-								{ value: 'phone', text: '手机号登录' },
-								{ value: 'id', text: '学号登录' }
+								['phone', '手机号登录'],
+								['id', '学号登录']
 							])
 						);
 					}
@@ -245,13 +362,15 @@ export const ZHSProject: Project = {
 			},
 			oncomplete() {
 				if (!this.cfg.disable) {
-					const id = setTimeout(() => {
+					const id = setTimeout(async () => {
 						const phoneLogin = $el('#qSignin');
 						const idLogin = $el('#qStudentID');
 						if (this.cfg.type === 'phone') {
 							phoneLogin.click();
 							$el('#lUsername').value = this.cfg.phone;
 							$el('#lPassword').value = this.cfg.password;
+
+							await sleep(2000);
 						} else {
 							idLogin.click();
 							const search = $el('#quickSearch');
@@ -259,13 +378,16 @@ export const ZHSProject: Project = {
 							search.value = this.cfg.school;
 							search.onclick?.(new MouseEvent('click'));
 
-							setTimeout(() => {
-								$el('#schoolListCode > li').click();
-								$el('#clCode').value = this.cfg.id;
-								$el('#clPassword').value = this.cfg.password;
-								$el('#f_sign_up .wall-sub-btn').click();
-							}, 2000);
+							await sleep(2000);
+
+							$el('#schoolListCode > li').click();
+							$el('#clCode').value = this.cfg.id;
+							$el('#clPassword').value = this.cfg.password;
 						}
+
+						// 点击登录
+						await sleep(1000);
+						$el('#f_sign_up .wall-sub-btn').click();
 					}, 3000);
 					const close = el('a', '取消');
 					const msg = $message('info', { content: el('span', ['3秒后自动登录。', close]) });
@@ -308,39 +430,68 @@ export const ZHSProject: Project = {
  * @param setting
  * @returns
  */
-async function watch(options: { volume: number; playbackRate: number }, onended: () => void) {
-	const vue = $el('.video-study')?.__vue__;
-	console.log(vue);
+async function watch(
+	options: { volume: number; playbackRate: number; definition: 'line1bq' | 'line1gq' },
+	onended: () => void
+) {
+	let video = $el<HTMLVideoElement>('video');
 
-	const video = $el('video');
-	// 如果已经播放完了，则重置视频进度
-	video.currentTime = 0;
-	// 音量
-	video.volume = options.volume;
-	await sleep(1000);
-	video.play();
-	// 设置播放速度
-	await switchPlaybackRate(options.playbackRate);
+	const set = async () => {
+		// 设置清晰度
+		switchLine(options.definition);
+		await sleep(1000);
 
-	video.onpause = async function () {
-		if (!video.ended) {
+		// 设置播放速度
+		switchPlaybackRate(options.playbackRate);
+		await sleep(500);
+
+		// 上面操作会导致元素刷新，这里重新获取视频
+		video = $el<HTMLVideoElement>('video');
+		// 如果已经播放完了，则重置视频进度
+		video.currentTime = 1;
+		await sleep(500);
+
+		// 音量
+		video.volume = options.volume;
+		await sleep(500);
+	};
+
+	await set();
+
+	video.play().catch(() => {
+		$model('alert', {
+			content: '由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放。',
+			onClose: async () => {
+				video.play();
+			}
+		});
+	});
+
+	video.onpause = async () => {
+		if (!video.ended && stop === false) {
 			await waitForCaptcha();
 			await sleep(1000);
 			video.play();
 		}
 	};
+
 	video.onended = onended;
 }
 
 /**
- * 切换播放速度
+ * 切换视频清晰度
+ * @param definition 清晰度的类名
+ */
+function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
+	$el(`.definiLines .${definition}`)?.click();
+}
+
+/**
+ * 切换视频清晰度
  * @param playbackRate 播放速度
  */
-async function switchPlaybackRate(playbackRate: number) {
-	await sleep(1000);
-	$el('.speedBox')?.click();
-	await sleep(1000);
-	$el(`[rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`)?.click();
+function switchPlaybackRate(playbackRate: number) {
+	$el(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`)?.click();
 }
 
 /**
@@ -355,8 +506,11 @@ function waitForCaptcha(): void | Promise<void> {
 			const interval = setInterval(() => {
 				const popup = $el('.yidun_popup');
 				if (popup === null) {
+					hasCapture = false;
 					clearInterval(interval);
 					resolve();
+				} else {
+					hasCapture = true;
 				}
 			}, 1000);
 		});
