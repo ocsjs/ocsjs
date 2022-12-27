@@ -2,6 +2,8 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import banner from 'vite-plugin-banner';
 import { author, description, homepage, license, name } from '../../package.json';
+import { readFileSync, writeFileSync } from 'fs';
+import path from 'path';
 
 const bannerContent = `
 /*!
@@ -32,5 +34,23 @@ export default defineConfig({
 		}
 	},
 
-	plugins: [visualizer(), banner(bannerContent)]
+	plugins: [
+		visualizer(),
+		banner(bannerContent),
+		{
+			// 将打包后的 unicode 中文全部转换成正常中文
+			name: 'escape-code',
+			closeBundle() {
+				const content = readFileSync(path.resolve(__dirname, '../../dist/index.js')).toString();
+				writeFileSync(
+					path.resolve(__dirname, '../../dist/index.js'),
+					unescape(
+						content.replace(/\\u([\d\w]{4})/gi, function (match, grp) {
+							return String.fromCharCode(parseInt(grp, 16));
+						})
+					)
+				);
+			}
+		}
+	]
 });
