@@ -10,6 +10,7 @@ export interface StartConfig {
 	style: string;
 	projects: Project[];
 }
+console.log(document.readyState);
 
 /**
  * 启动项目
@@ -39,6 +40,12 @@ export function start(cfg: StartConfig) {
 	scripts.forEach((script) => {
 		script.onstart?.(cfg);
 	});
+
+	if (document.readyState === 'interactive') {
+		scripts.forEach((script) => {
+			script.onactive?.(cfg);
+		});
+	}
 
 	document.addEventListener('readystatechange', () => {
 		if (document.readyState === 'interactive') {
