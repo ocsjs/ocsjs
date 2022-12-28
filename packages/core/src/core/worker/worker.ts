@@ -96,7 +96,7 @@ export class OCSWorker<E extends RawElements = RawElements> {
 
 							if (type) {
 								const resolver = defaultQuestionResolve(this.currentContext)[type];
-								result = resolver(searchResults, elements.options, this.opts.work.handler);
+								result = await resolver(searchResults, elements.options, this.opts.work.handler);
 							} else {
 								throw new Error('题目类型解析失败, 请自行提供解析器, 或者忽略此题。');
 							}
@@ -127,7 +127,7 @@ export class OCSWorker<E extends RawElements = RawElements> {
 			};
 
 			/** 监听答题结果 */
-			this.opts.onResult?.(res);
+			await this.opts.onResult?.(res);
 			// 保存结果
 			results.push(res);
 

@@ -2,6 +2,8 @@ import { QuestionResolver, WorkContext } from './interface';
 import { isPlainAnswer, splitAnswer } from './utils';
 import { StringUtils } from '@ocsjs/common/src/utils/string';
 import { answerSimilar, removeRedundant, clearString } from '../utils/string';
+import { sleep } from '../../utils/common';
+
 /** 默认答案题目处理器 */
 export function defaultQuestionResolve<E>(
 	ctx: WorkContext<E>
@@ -55,7 +57,7 @@ export function defaultQuestionResolve<E>(
 		 *
 		 * 匹配每个题库的答案，找出匹配数量最多的题库，并且选择
 		 */
-		multiple(results, options, handler) {
+		async multiple(results, options, handler) {
 			/** 最终的回答列表 */
 			const targetAnswers: string[][] = [];
 			/** 最终的选项 */
@@ -125,12 +127,11 @@ export function defaultQuestionResolve<E>(
 				targetAnswers[index] = targetAnswers[index].filter((ans) => ans !== undefined);
 				targetOptions[index] = targetOptions[index].filter((ans) => ans !== undefined);
 
-				targetOptions[index].forEach((_, i) => {
-					/** 延长点击时间，避免一次点击全部 */
-					setTimeout(() => {
-						handler('multiple', targetAnswers[index][i], targetOptions[index][i], ctx);
-					}, 500 * i);
-				});
+				for (let i = 0; i < targetOptions[index].length; i++) {
+					await handler('multiple', targetAnswers[index][i], targetOptions[index][i], ctx);
+					// 暂停一会防止点击过快
+					await sleep(500);
+				}
 
 				return { finish: true, targetOptions, targetAnswers };
 			}

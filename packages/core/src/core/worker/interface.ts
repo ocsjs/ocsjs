@@ -51,8 +51,8 @@ export type QuestionResolver<E> = (
 		answer: string,
 		option: HTMLElement,
 		ctx: WorkContext<SearchedElements<E, HTMLElement[]>>
-	) => void
-) => ResolverResult;
+	) => void | Promise<void>
+) => ResolverResult | Promise<ResolverResult>;
 
 /**
  * 使用默认工作器
@@ -165,7 +165,7 @@ export type WorkOptions<E extends RawElements> = {
 	/** 回答器请求重试次数 */
 	retry?: number;
 	/** 监听答题结果 */
-	onResult?: (res: WorkResult<E>) => void;
+	onResult?: (res: WorkResult<E>) => void | Promise<void>;
 	/** 当元素被搜索到的钩子 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>) => void;
 	/** 拦截器，返回 true 代表通过，返回 false 代表此题被拦截 */
