@@ -24,6 +24,7 @@ export type ModelAttrs = Pick<
 	| 'width'
 	| 'cancelButton'
 	| 'confirmButton'
+	| 'inputDefaultValue'
 > & {
 	disableWrapperCloseable?: boolean;
 	title?: ModelElement['title'];
@@ -225,6 +226,7 @@ const InitPanelScript = new Script({
 					script.projectName = project.name;
 					script.panel = panel;
 					script.header = container.header;
+					script.onrender?.({ panel, header: container.header });
 					return panel;
 				};
 				for (const script of scripts) {
@@ -285,7 +287,7 @@ const InitPanelScript = new Script({
 				}
 			});
 			// 跨域监听状态切换
-			this.onConfigChange('visual', (pre, curr) => visual(curr));
+			this.onConfigChange('visual', (curr) => visual(curr));
 			visual(this.cfg.visual);
 		};
 
@@ -385,9 +387,13 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 
 		const wrapper = el('div', { className: 'model-wrapper' }, (wrapper) => {
 			const model = el('model-element', {
-				onConfirm(val) {
-					onConfirm?.apply(model, [val]);
-					wrapper.remove();
+				async onConfirm(val) {
+					const isClose: any = await onConfirm?.apply(model, [val]);
+					if (isClose !== false) {
+						wrapper.remove();
+					}
+
+					return isClose;
 				},
 				onCancel() {
 					onCancel?.apply(model);
