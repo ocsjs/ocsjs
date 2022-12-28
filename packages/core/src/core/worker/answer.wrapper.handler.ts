@@ -107,84 +107,87 @@ export async function defaultAnswerWrapperHandler(
 ): Promise<SearchResult[]> {
 	const searchResults: SearchResult[] = [];
 	const temp: AnswererWrapper[] = JSON.parse(JSON.stringify(answererWrappers));
-	for (const wrapper of temp) {
-		// 解构数据，并赋初始值
-		const {
-			name = '未知题库',
-			homepage = '#',
-			method = 'get',
-			type = 'fetch',
-			contentType = 'json',
-			headers = {},
-			data: wrapperData = {},
-			handler = 'return (res)=> [JSON.stringify(res), undefined]'
-		} = wrapper;
-		try {
-			// 答案列表
-			let answers: Answer[] = [];
-			// 构造请求数据
-			const data: Record<string, string> = Object.create({});
-			/** 构造一个请求数据 */
-			Reflect.ownKeys(wrapperData).forEach((key) => {
-				// 解析data数据
-				Reflect.set(data, key, resolvePlaceHolder(wrapperData[key.toString()]));
-			});
-			/** 解析 url 数据 */
-			let url = resolvePlaceHolder(wrapper.url);
+	// 多线程请求
+	await Promise.all(
+		temp.map(async (wrapper) => {
+			// 解构数据，并赋初始值
+			const {
+				name = '未知题库',
+				homepage = '#',
+				method = 'get',
+				type = 'fetch',
+				contentType = 'json',
+				headers = {},
+				data: wrapperData = {},
+				handler = 'return (res)=> [JSON.stringify(res), undefined]'
+			} = wrapper;
+			try {
+				// 答案列表
+				let answers: Answer[] = [];
+				// 构造请求数据
+				const data: Record<string, string> = Object.create({});
+				/** 构造一个请求数据 */
+				Reflect.ownKeys(wrapperData).forEach((key) => {
+					// 解析data数据
+					Reflect.set(data, key, resolvePlaceHolder(wrapperData[key.toString()]));
+				});
+				/** 解析 url 数据 */
+				let url = resolvePlaceHolder(wrapper.url);
 
-			/** 请求參數 */
-			url = method === 'post' ? url : url + '?' + new URLSearchParams(data).toString();
-			const requestData = {
-				method,
-				contentType,
-				data,
-				type,
-				headers: JSON.parse(JSON.stringify(headers || {}))
-			};
-			// 发送请求
-			const responseData = await request(url, requestData);
-			/** 从 handler 获取搜索到的题目和回答 */
+				/** 请求參數 */
+				url = method === 'post' ? url : url + '?' + new URLSearchParams(data).toString();
+				const requestData = {
+					method,
+					contentType,
+					data,
+					type,
+					headers: JSON.parse(JSON.stringify(headers || {}))
+				};
+				// 发送请求
+				const responseData = await request(url, requestData);
+				/** 从 handler 获取搜索到的题目和回答 */
 
-			// eslint-disable-next-line no-new-func
-			const info = Function(handler)()(responseData);
-			if (info && Array.isArray(info)) {
-				/** 如果返回一个二维数组 */
-				if (info.every((item: any) => Array.isArray(item))) {
-					answers = answers.concat(
-						info.map((item: any) => ({
-							question: item[0],
-							answer: item[1]
-						}))
-					);
-				} else {
-					answers.push({
-						question: info[0],
-						answer: info[1]
-					});
+				// eslint-disable-next-line no-new-func
+				const info = Function(handler)()(responseData);
+				if (info && Array.isArray(info)) {
+					/** 如果返回一个二维数组 */
+					if (info.every((item: any) => Array.isArray(item))) {
+						answers = answers.concat(
+							info.map((item: any) => ({
+								question: item[0],
+								answer: item[1]
+							}))
+						);
+					} else {
+						answers.push({
+							question: info[0],
+							answer: info[1]
+						});
+					}
 				}
-			}
 
-			searchResults.push({
-				url: wrapper.url,
-				name,
-				homepage,
-				answers,
-				response: responseData,
-				data: requestData
-			});
-		} catch (error) {
-			console.error('请求失败: ', { error });
-			searchResults.push({
-				url: wrapper.url,
-				name,
-				homepage,
-				answers: [],
-				response: undefined,
-				data: undefined,
-				error: error as any
-			});
-		}
-	}
+				searchResults.push({
+					url: wrapper.url,
+					name,
+					homepage,
+					answers,
+					response: responseData,
+					data: requestData
+				});
+			} catch (error) {
+				console.error('请求失败: ', { error });
+				searchResults.push({
+					url: wrapper.url,
+					name,
+					homepage,
+					answers: [],
+					response: undefined,
+					data: undefined,
+					error: error as any
+				});
+			}
+		})
+	);
 
 	// 替换占位符
 	function resolvePlaceHolder(str: string) {
