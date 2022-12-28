@@ -26,6 +26,8 @@ export class BaseScript {
 	oncomplete?: (...args: any) => any;
 	/** 在页面离开时执行的钩子 */
 	onbeforeunload?: (...args: any) => any;
+	/** 在渲染的时候执行的钩子，（面板之间切换时会重复渲染） */
+	onrender?: (elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
 }
 
 export type ScriptConfigs = {
@@ -85,12 +87,14 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		onstart,
 		onactive,
 		oncomplete,
-		onbeforeunload
+		onbeforeunload,
+		onrender
 	}: ScriptOptions<T> & {
 		onstart?: (this: Script<T>, ...args: any) => any;
 		onactive?: (this: Script<T>, ...args: any) => any;
 		oncomplete?: (this: Script<T>, ...args: any) => any;
 		onbeforeunload?: (this: Script<T>, ...args: any) => any;
+		onrender?: (this: Script<T>, elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
 	}) {
 		super();
 		this.name = name;
@@ -98,10 +102,11 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		this.url = url;
 		this._configs = configs;
 		this.hideInPanel = hideInPanel;
-		this.onstart = onstart as any;
-		this.onactive = onactive as any;
-		this.oncomplete = oncomplete as any;
-		this.onbeforeunload = onbeforeunload as any;
+		this.onstart = onstart;
+		this.onactive = onactive;
+		this.oncomplete = oncomplete;
+		this.onbeforeunload = onbeforeunload;
+		this.onrender = onrender;
 
 		/**
 		 * 以下是在每个脚本加载之后，统计每个脚本当前所运行的页面链接，链接不会重复
@@ -129,7 +134,7 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		};
 	}
 
-	onConfigChange(key: keyof T, handler: (pre: any, curr: any, remote: boolean) => any) {
+	onConfigChange(key: keyof T, handler: (curr: any, pre: any, remote: boolean) => any) {
 		const _key = namespaceKey(this.namespace, key.toString());
 		const id = this.listeners.get(_key);
 		if (id) {
@@ -139,7 +144,7 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		this.listeners.set(
 			_key,
 			addConfigChangeListener(_key, (pre, curr, remote) => {
-				handler(pre, curr, remote);
+				handler(curr, pre, remote);
 			})
 		);
 	}
