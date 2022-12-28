@@ -11,30 +11,38 @@ export class ModelElement extends IElement {
 	modalTitle: HTMLDivElement = el('div', { className: 'model-title' });
 	modalBody: HTMLDivElement = el('div', { className: 'model-body' });
 	modalFooter: HTMLDivElement = el('div', { className: 'model-footer' });
-	confirmButton?: HTMLButtonElement;
-	cancelButton?: HTMLButtonElement;
+	confirmButton?: HTMLButtonElement | null;
+	cancelButton?: HTMLButtonElement | null;
 	modalInput: HTMLInputElement = el('input', { className: 'model-input' });
 
 	type: 'prompt' | 'alert' | 'confirm' = 'alert';
 	content: string | HTMLElement = '';
+	inputDefaultValue?: string = '';
 	placeholder?: string = '';
 	width?: number;
 	cancelButtonText?: string;
 	confirmButtonText?: string;
-	onConfirm?: (value?: string) => void;
+	/** 返回 false 则不会关闭模态框 */
+	onConfirm?: (value?: string) => boolean | void | Promise<boolean | void>;
 	onCancel?: () => void;
 	onClose?: (value?: string) => void;
 
 	connectedCallback() {
 		this.classList.add(this.type);
+		// 标题
 		this.modalTitle.innerText = this.title;
+		// 模态框内容
 		this.modalBody.append(typeof this.content === 'string' ? el('div', { innerHTML: this.content }) : this.content);
 
+		// 输入框
 		this.modalInput.placeholder = this.placeholder || '';
+		this.modalInput.value = this.inputDefaultValue || '';
+
+		// 底部
 		this.modalFooter.append(this.modalInput);
 		this.append(this.modelProfile, this.modalTitle, this.modalBody, this.modalFooter);
 		this.style.width = (this.width || 400) + 'px';
-		if (!this.cancelButton) {
+		if (this.cancelButton === undefined) {
 			this.cancelButton = el('button', { className: 'model-cancel-button' });
 			this.cancelButton.innerText = this.cancelButtonText || '取消';
 			this.cancelButton.addEventListener('click', () => {
@@ -43,16 +51,18 @@ export class ModelElement extends IElement {
 				this.remove();
 			});
 		}
-		if (!this.confirmButton) {
+		if (this.confirmButton === undefined) {
 			this.confirmButton = el('button', { className: 'model-confirm-button' });
 			this.confirmButton.innerText = this.confirmButtonText || '确定';
-			this.confirmButton.addEventListener('click', () => {
-				this.onConfirm?.(this.modalInput.value);
-				this.onClose?.(this.modalInput.value);
-				this.remove();
+			this.confirmButton.addEventListener('click', async () => {
+				if ((await this.onConfirm?.(this.modalInput.value)) !== false) {
+					this.remove();
+					this.onClose?.(this.modalInput.value);
+				}
 			});
 		}
-		this.modalFooter.append(this.cancelButton);
-		this.modalFooter.append(this.confirmButton);
+
+		this.cancelButton !== null && this.modalFooter.append(this.cancelButton);
+		this.confirmButton !== null && this.modalFooter.append(this.confirmButton);
 	}
 }
