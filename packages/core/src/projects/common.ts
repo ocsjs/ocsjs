@@ -315,11 +315,45 @@ export const CommonProject: Project = {
 					}
 				}
 				return configs;
+			}
+		}),
+		new Script({
+			name: '页面复制粘贴限制解除脚本',
+			url: [/.*/],
+			hideInPanel: true,
+			onactive() {
+				enableCopy();
 			},
-			onstart() {}
+			oncomplete() {
+				enableCopy();
+				setTimeout(() => enableCopy(), 3000);
+			}
 		})
 	]
 };
+
+function enableCopy() {
+	try {
+		const d = document;
+		const b = document.body;
+		d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
+		b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
+	} catch (err) {
+		console.error('页面复制粘贴功能开启失败', err);
+	}
+
+	const style = document.createElement('style');
+	style.innerHTML = `
+		html * {
+		  -webkit-user-select: text !important;
+		  -khtml-user-select: text !important;
+		  -moz-user-select: text !important;
+		  -ms-user-select: text !important;
+		  user-select: text !important;
+		}`;
+
+	document.body.appendChild(style);
+}
 
 function createAnswererWrapperList(aw: AnswererWrapper[]) {
 	return aw.map((item) =>
@@ -329,7 +363,7 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 				el('summary', [item.name]),
 				el('ul', [
 					el('li', ['名字\t', item.name]),
-					el('li', ['官网\t', item.homepage || '无']),
+					el('li', { innerHTML: `官网\t<a target="_blank" href=${item.homepage}>${item.homepage || '无'}</a>` }),
 					el('li', ['接口\t', item.url]),
 					el('li', ['请求方法\t', item.method]),
 					el('li', ['请求类型\t', item.type]),
