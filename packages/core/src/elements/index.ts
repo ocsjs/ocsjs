@@ -4,6 +4,7 @@ import { HeaderElement } from './header';
 import { MessageElement } from './message';
 import { ModelElement } from './model';
 import { ScriptPanelElement } from './script.panel';
+import { SearchResultsElement } from './search.results';
 
 export const definedCustomElements = [
 	ConfigElement,
@@ -11,5 +12,6 @@ export const definedCustomElements = [
 	HeaderElement,
 	ModelElement,
 	MessageElement,
-	ScriptPanelElement
+	ScriptPanelElement,
+	SearchResultsElement
 ];
