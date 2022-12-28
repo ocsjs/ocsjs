@@ -258,7 +258,6 @@ export const CommonProject: Project = {
 
 						el('li', '以下是窗口顶部菜单栏的按钮说明:', [
 							el('ul', { className: 'user-guide' }, [
-									el('li', '以下是窗口顶部菜单栏的解析:'),
 								el('li', [
 									projectSelector || '',
 									' ',
@@ -285,9 +284,6 @@ export const CommonProject: Project = {
 							this.cfg.showGuide = false;
 						}
 					});
-				}
-			}
-					}, 100);
 				}
 			}
 		}),
