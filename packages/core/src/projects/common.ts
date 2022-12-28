@@ -3,16 +3,106 @@ import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
 import { getAllRawConfigs } from '../utils/common';
 import cloneDeep from 'lodash/cloneDeep';
-import { $model } from './init';
+import { $message, $model } from './init';
 import { el } from '../utils/dom';
 import { getValue, notification, setValue } from '../utils/tampermonkey';
 import { parseAnswererWrappers } from '../core/utils/common';
-import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
+import { AnswererWrapper, defaultAnswerWrapperHandler } from '../core/worker/answer.wrapper.handler';
+import debounce from 'lodash/debounce';
 
 export const CommonProject: Project = {
 	name: '通用',
 	domains: [],
 	scripts: [
+		new Script({
+			name: '在线搜题',
+			url: [/.*/],
+			namespace: 'common.online-search',
+			configs: {
+				notes: {
+					defaultValue: '查题前请在 “通用-全局设置” 中设置题库配置，才能进行在线搜题。'
+				},
+				selectSearch: {
+					label: '划词搜索',
+					defaultValue: true,
+					attrs: { type: 'checkbox', title: '使用鼠标滑动选择页面中的题目进行搜索。' }
+				},
+				selection: {
+					defaultValue: ''
+				}
+			},
+			oncomplete() {
+				if (this.cfg.selectSearch) {
+					document.addEventListener(
+						'selectionchange',
+						debounce(function () {
+							setValue('common.online-search.selection', document.getSelection()?.toString() || '');
+						}, 500)
+					);
+				}
+			},
+			onrender({ panel }) {
+				const content = el('div', '请输入题目进行搜索：', (content) => {
+					content.style.marginBottom = '12px';
+				});
+				const input = el('input', { placeholder: '请尽量保证题目完整，不要漏字哦。' }, (input) => {
+					input.className = 'base-style-input';
+					input.style.flex = '1';
+				});
+
+				const search = async (value: string) => {
+					content.replaceChildren(el('span', '搜索中...'));
+
+					if (value) {
+						const t = Date.now();
+						const results = await defaultAnswerWrapperHandler(getValue('common.settings.answererWrappers'), {
+							title: value
+						});
+						// 耗时计算
+						const resume = ((Date.now() - t) / 1000).toFixed(2);
+
+						content.replaceChildren(
+							el(
+								'div',
+								[
+									el('div', `搜索到 ${results.map((r) => r.answers).flat().length} 个结果，共耗时 ${resume} 秒`),
+									el('search-results-element', { results: results, question: value })
+								],
+								(div) => {
+									div.style.width = '400px';
+								}
+							)
+						);
+					} else {
+						content.replaceChildren(el('span', '题目不能为空！'));
+					}
+				};
+
+				const button = el('button', '搜索', (button) => {
+					button.className = 'base-style-button';
+					button.onclick = () => {
+						search(input.value);
+					};
+				});
+				const searchContainer = el('div', [input, button], (div) => {
+					div.style.display = 'flex';
+				});
+
+				// 监听划词变化
+				this.onConfigChange('selection', (curr) => {
+					// 判断是否处于搜索页面，搜索框可见
+					if (input.isConnected) {
+						input.value = curr;
+					}
+				});
+
+				panel.body.append(
+					el('div', [el('hr'), content, searchContainer], (div) => {
+						div.className = 'card';
+					})
+				);
+			}
+		}),
 		new Script({
 			name: '全局设置',
 			url: [/.*/],
@@ -21,7 +111,11 @@ export const CommonProject: Project = {
 				notification: {
 					label: '开启系统通知',
 					defaultValue: true,
-					attrs: { title: '允许脚本发送系统通知（在电脑屏幕右侧显示通知弹窗）。', type: 'checkbox' }
+					attrs: {
+						title:
+							'允许脚本发送系统通知，只有重要事情发生时会发送系统通知，尽量避免用户受到骚扰（在电脑屏幕右侧显示通知弹窗，例如脚本执行完毕，版本更新等通知）。',
+						type: 'checkbox'
+					}
 				},
 				answererWrappers: {
 					defaultValue: []
@@ -34,20 +128,29 @@ export const CommonProject: Project = {
 						type: 'button'
 					},
 					onload() {
+						const aws: any[] = getValue('common.settings.answererWrappers');
+						this.value = `点击重新配置${aws.length ? '，当前有' + aws.length + '个可用题库' : ''}`;
+
 						this.onclick = () => {
 							const aw: any[] = getValue('common.settings.answererWrappers');
 							const list = el('div', [
 								el('div', aw.length ? '以下是已经解析过的题库配置:' : ''),
 								...createAnswererWrapperList(aw)
 							]);
-							$model('prompt', {
-								content: el('div', ['具体的题库配置，请点击上方菜单栏的官网按钮查看 "自动答题教程"。', list]),
+
+							const model = $model('prompt', {
+								content: el('div', {
+									innerHTML:
+										'具体配置教程，请查看官网的 <a href="https://docs.ocsjs.com/docs/work" target="_blank">"自动答题教程"</a>' +
+										list.innerHTML
+								}).innerHTML,
 								placeholder: aw.length ? '重新输入' : '输入题库配置',
 								cancelButton: el('button', {
 									className: 'model-cancel-button',
 									innerText: '清空题库配置',
 									onclick() {
-										list.remove();
+										$message('success', { content: '已清空，在答题前请记得重新配置。' });
+										model?.remove();
 										setValue('common.settings.answererWrappers', []);
 									}
 								}),
@@ -76,10 +179,25 @@ export const CommonProject: Project = {
 							});
 						};
 					}
+				},
+				period: {
+					label: '答题间隔（秒）',
+					attrs: { min: '3', step: '1', max: '60', title: '每道题的间隔时间，不建议太低，避免增加服务器压力。' },
+					defaultValue: 3
+				},
+				timeout: {
+					label: '处理超时时间（秒）',
+					attrs: { min: '10', step: '1', max: '60', title: '每道题最多做n秒, 超过则跳过此题。' },
+					defaultValue: 30
+				},
+				retry: {
+					label: '超时重试次数',
+					attrs: { min: '0', step: '1', max: '3' },
+					defaultValue: 1
 				}
 			},
 			onactive() {
-				this.onConfigChange('notification', (pre, curr) => {
+				this.onConfigChange('notification', (curr) => {
 					if (curr) {
 						notification('您已开启系统通知，如果脚本有重要情况需要处理，则会发起通知提示您。', {
 							duration: 5
