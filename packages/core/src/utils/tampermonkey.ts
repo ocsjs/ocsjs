@@ -102,3 +102,5 @@ export function notification(
 		});
 	}
 }
+
+export const unsafeWindow = globalThis.unsafeWindow;
