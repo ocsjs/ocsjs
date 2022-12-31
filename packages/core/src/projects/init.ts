@@ -2,12 +2,12 @@ import { definedCustomElements } from '../elements';
 import { MessageElement } from '../elements/message';
 import { ModelElement } from '../elements/model';
 
-import { Config } from '../interfaces/config';
 import { cors } from '../interfaces/cors';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getMatchedScripts, namespaceKey } from '../utils/common';
-import { el, enableElementDraggable, tooltip } from '../utils/dom';
+import { getMatchedScripts } from '../utils/common';
+import { $creator } from '../utils/creator';
+import { el, enableElementDraggable } from '../utils/dom';
 import { StartConfig } from '../utils/start';
 import { humpToTarget } from '../utils/string';
 import { addConfigChangeListener, getInfos, getValue, notification } from '../utils/tampermonkey';
@@ -68,7 +68,7 @@ const InitPanelScript = new Script({
 		const initHeader = (urls: string[] = getValue('_urls_', [location.href])) => {
 			container.header.replaceChildren();
 			/** 图标 */
-			container.header.logo = tooltip(
+			container.header.logo = $creator.tooltip(
 				el('img', {
 					src: getInfos().script.icon || '',
 					width: 18,
@@ -119,7 +119,7 @@ const InitPanelScript = new Script({
 					updatePanelProjectName(name);
 				});
 			});
-			const projectSelectorDiv = tooltip(
+			const projectSelectorDiv = $creator.tooltip(
 				el(
 					'div',
 					{
@@ -138,7 +138,7 @@ const InitPanelScript = new Script({
 			/** 是否展开所有脚本 */
 			const isExpandAll = () => this.cfg.expandAll === true;
 			/** 脚本切换按钮 */
-			const expandSwitcher = tooltip(
+			const expandSwitcher = $creator.tooltip(
 				el('div', {
 					className: 'panel-switch',
 					title: isExpandAll() ? '收缩脚本' : '展开脚本',
@@ -158,7 +158,7 @@ const InitPanelScript = new Script({
 			/** 窗口是否最小化 */
 			const isMinimize = () => this.cfg.visual === 'minimize';
 			/** 窗口状态切换按钮 */
-			const visualSwitcher = tooltip(
+			const visualSwitcher = $creator.tooltip(
 				el('div', {
 					className: 'switch ',
 					title: isMinimize() ? '点击展开窗口' : '点击最小化窗口',
@@ -173,7 +173,7 @@ const InitPanelScript = new Script({
 			container.header.visualSwitcher = visualSwitcher;
 
 			/** 窗口关闭按钮 */
-			container.header.closeButton = tooltip(
+			container.header.closeButton = $creator.tooltip(
 				el('div', {
 					className: 'close  ',
 					innerText: 'x',
@@ -206,7 +206,15 @@ const InitPanelScript = new Script({
 			script.panel = scriptPanel;
 
 			scriptPanel.notesContainer.innerHTML = script.cfg.notes || '';
-			scriptPanel.configsBody.append(...createConfigs(script.namespace, script.configs || {}));
+			const els = $creator.configs(script.namespace, script.configs || {});
+			const elList = [];
+			for (const key in els) {
+				if (Object.prototype.hasOwnProperty.call(els, key)) {
+					elList.push(els[key]);
+				}
+			}
+
+			scriptPanel.configsBody.append(...elList);
 			scriptPanel.configsContainer.append(scriptPanel.configsBody);
 
 			return scriptPanel;
@@ -296,28 +304,6 @@ const InitPanelScript = new Script({
 			container.body.replaceChildren(...createBody(urls));
 		};
 		/** 创建设置区域 */
-
-		const createConfigs = (namespace: string | undefined, configs: Record<string, Config<any>>) => {
-			const elements = [];
-			for (const key in configs) {
-				if (Object.prototype.hasOwnProperty.call(configs, key)) {
-					const cfg = configs[key];
-					if (cfg.label !== undefined) {
-						const element = el('config-element', {
-							key: namespaceKey(namespace, key),
-							tag: cfg.tag,
-							sync: cfg.sync,
-							attrs: cfg.attrs,
-							_onload: cfg.onload
-						});
-						element.label.textContent = cfg.label;
-						elements.push(element);
-					}
-				}
-			}
-
-			return elements;
-		};
 
 		/** 初始化模态框系统 */
 		const initModelSystem = () => {

@@ -1,9 +1,10 @@
-import { el, tooltip } from '../utils/dom';
+import { $creator } from '../utils/creator';
+import { el } from '../utils/dom';
 import { HeaderElement } from './header';
 import { IElement } from './interface';
 
 export class ContainerElement extends IElement {
-	header: HeaderElement = tooltip(el('header-element', { className: 'header', title: '菜单栏-可拖动区域' }));
+	header: HeaderElement = $creator.tooltip(el('header-element', { className: 'header', title: '菜单栏-可拖动区域' }));
 	body: HTMLDivElement = el('div', { className: 'body', clientHeight: window.innerHeight / 2 });
 	footer: HTMLDivElement = el('div', { className: 'footer' });
 

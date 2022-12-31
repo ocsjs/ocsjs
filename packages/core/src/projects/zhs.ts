@@ -1,14 +1,15 @@
 import { AnswererWrapper, defaultAnswerWrapperHandler } from '../core/worker/answer.wrapper.handler';
 import { OCSWorker } from '../core/worker/worker';
+import { ConfigElement } from '../elements/config';
 import { MessageElement } from '../elements/message';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
 import { sleep } from '../utils/common';
+import { $creator } from '../utils/creator';
 import { $$el, $el, el } from '../utils/dom';
-import { $createSelectOptions } from '../utils/script';
 import { StringUtils } from '../utils/string';
-import { addConfigChangeListener, getValue } from '../utils/tampermonkey';
+import { getValue } from '../utils/tampermonkey';
 import { $message, $model } from './init';
 
 const volume: Config = {
@@ -34,7 +35,7 @@ const definition: Config = {
 	defaultValue: 'line1bq',
 	onload() {
 		this.append(
-			...$createSelectOptions(this.getAttribute('value'), [
+			...$creator.selectOptions(this.getAttribute('value'), [
 				['line1bq', '流畅'],
 				['line1gq', '高清']
 			])
@@ -54,7 +55,7 @@ const workConfigs: Record<'upload' | 'notes', Config> = {
 		attrs: { title: '答题设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。' },
 		onload() {
 			this.append(
-				...$createSelectOptions(this.getAttribute('value'), [
+				...$creator.selectOptions(this.getAttribute('value'), [
 					['close', '关闭自动答题', '关闭自动答题后, 脚本将忽略答题, 自动进入下一节。'],
 					['save', '完成后自动保存', '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'],
 					[
@@ -105,10 +106,10 @@ export const ZHSProject: Project = {
 					label: '定时停止',
 					tag: 'select',
 					attrs: { title: '到时间后自动暂停脚本' },
-					defaultValue: 0,
+					defaultValue: '0',
 					onload() {
 						this.append(
-							...$createSelectOptions(this.getAttribute('value'), [
+							...$creator.selectOptions(this.getAttribute('value'), [
 								[0, '关闭'],
 								[0.5, '半小时后'],
 								[1, '一小时后'],
@@ -126,7 +127,7 @@ export const ZHSProject: Project = {
 					defaultValue: 1,
 					onload() {
 						this.append(
-							...$createSelectOptions(
+							...$creator.selectOptions(
 								this.getAttribute('value'),
 								[1, 1.25, 1.5].map((rate) => [rate, rate + 'x'])
 							)
@@ -181,7 +182,7 @@ export const ZHSProject: Project = {
 
 				// 监听速度
 				this.onConfigChange('playbackRate', (curr) => {
-					switchPlaybackRate(parseFloat(curr));
+					switchPlaybackRate(parseFloat(curr.toString()));
 				});
 
 				// 监听清晰度
@@ -393,7 +394,7 @@ export const ZHSProject: Project = {
 					attrs: { title: '答题设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。' },
 					onload() {
 						this.append(
-							...$createSelectOptions(this.getAttribute('value'), [
+							...$creator.selectOptions(this.getAttribute('value'), [
 								['close', '关闭自动答题', '关闭自动答题后, 脚本将忽略答题, 自动进入下一节。'],
 								['nomove', '开启自动答题']
 							])
@@ -496,51 +497,54 @@ export const ZHSProject: Project = {
 				type: {
 					label: '登录类型',
 					tag: 'select',
-					defaultValue: 'phone',
+					defaultValue: 'phone' as 'phone' | 'id',
 					onload() {
 						this.append(
-							...$createSelectOptions(this.getAttribute('value') || '', [
+							...$creator.selectOptions(this.getAttribute('value') || '', [
 								['phone', '手机号登录'],
 								['id', '学号登录']
 							])
 						);
 					}
-				},
-				phone: {
-					label: '手机',
-					defaultValue: '',
-					onload() {
-						const style = (type: string) =>
-							(this.parentElement!.parentElement!.style.display = type === 'id' ? 'none' : 'table-row');
-						style(getValue('zhs.login.type'));
-						addConfigChangeListener('zhs.login.type', (pre, curr) => style(curr));
-					}
-				},
-				school: {
-					label: '学校',
-					defaultValue: '',
-					onload() {
-						const style = (type: string) =>
-							(this.parentElement!.parentElement!.style.display = type === 'id' ? 'table-row' : 'none');
-						style(getValue('zhs.login.type'));
-						addConfigChangeListener('zhs.login.type', (pre, curr) => style(curr));
-					}
-				},
-				id: {
-					label: '学号',
-					defaultValue: '',
-					onload() {
-						const style = (type: string) =>
-							(this.parentElement!.parentElement!.style.display = type === 'id' ? 'table-row' : 'none');
-						style(getValue('zhs.login.type'));
-						addConfigChangeListener('zhs.login.type', (pre, curr) => style(curr));
-					}
-				},
-				password: {
-					label: '密码',
-					defaultValue: '',
-					attrs: { type: 'password' }
 				}
+			},
+			onrender({ panel }) {
+				let els: Record<string, ConfigElement<any>>;
+				/** 监听更改 */
+				this.onConfigChange('type', () => {
+					for (const key in els) {
+						if (Object.prototype.hasOwnProperty.call(els, key)) {
+							els[key].remove();
+						}
+					}
+					// 删除后重新渲染
+					render();
+				});
+
+				const render = () => {
+					/** 动态创建设置 */
+					const passwordConfig: Config = { label: '密码', defaultValue: '', attrs: { type: 'password' } };
+					if (this.cfg.type === 'phone') {
+						els = $creator.configs('zhs.login', {
+							phone: { label: '手机', defaultValue: '' },
+							password: passwordConfig
+						});
+					} else {
+						els = $creator.configs('zhs.login', {
+							school: { label: '学校', defaultValue: '' },
+							id: { label: '学号', defaultValue: '' },
+							password: passwordConfig
+						});
+					}
+
+					for (const key in els) {
+						if (Object.prototype.hasOwnProperty.call(els, key)) {
+							panel.configsBody.append(els[key]);
+						}
+					}
+				};
+
+				render();
 			},
 			oncomplete() {
 				if (!this.cfg.disable) {
@@ -549,22 +553,20 @@ export const ZHSProject: Project = {
 						const idLogin = $el('#qStudentID');
 						if (this.cfg.type === 'phone') {
 							phoneLogin.click();
-							$el('#lUsername').value = this.cfg.phone;
-							$el('#lPassword').value = this.cfg.password;
-
-							await sleep(2000);
+							$el('#lUsername').value = getValue('zhs.login.phone');
+							$el('#lPassword').value = getValue('zhs.login.password');
 						} else {
 							idLogin.click();
 							const search = $el('#quickSearch');
 							search.onfocus?.(new FocusEvent('focus'));
-							search.value = this.cfg.school;
+							search.value = getValue('zhs.login.school');
 							search.onclick?.(new MouseEvent('click'));
-
+							// 等待搜索
 							await sleep(2000);
 
 							$el('#schoolListCode > li').click();
-							$el('#clCode').value = this.cfg.id;
-							$el('#clPassword').value = this.cfg.password;
+							$el('#clCode').value = getValue('zhs.login.id');
+							$el('#clPassword').value = getValue('zhs.login.password');
 						}
 
 						// 点击登录
