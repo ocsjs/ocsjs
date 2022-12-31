@@ -1,4 +1,5 @@
-import { el, tooltip } from '../utils/dom';
+import { $creator } from '../utils/creator';
+import { el } from '../utils/dom';
 import { addConfigChangeListener, getValue, setValue } from '../utils/tampermonkey';
 
 import { ConfigTagMap } from './configs/interface';
@@ -82,7 +83,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 		}
 
 		// 处理提示
-		tooltip(this.provider);
+		$creator.tooltip(this.provider);
 
 		/**
 		 * 触发输入组件的加载回调
