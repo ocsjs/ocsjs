@@ -44,8 +44,10 @@ export default defineConfig({
 				const content = readFileSync(path.resolve(__dirname, '../../dist/index.js')).toString();
 				writeFileSync(
 					path.resolve(__dirname, '../../dist/index.js'),
-					unescape(
-						content.replace(/\\u([\d\w]{4})/gi, function (match, grp) {
+
+					// eslint-disable-next-line no-eval
+					JSON.parse(
+						JSON.stringify(`${content}`).replace(/\\\\u([\d\w]{4})/gi, function (match, grp) {
 							return String.fromCharCode(parseInt(grp, 16));
 						})
 					)
