@@ -10,7 +10,6 @@ export interface StartConfig {
 	style: string;
 	projects: Project[];
 }
-console.log(document.readyState);
 
 /**
  * 启动项目
