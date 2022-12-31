@@ -82,9 +82,6 @@ export class CorsEventEmitter {
 				if (originId) {
 					resolve(originId);
 				} else {
-					// 清空未处理的事件
-					setValue(key, '');
-
 					// 添加 models 监听队列
 					const id = addConfigChangeListener(key, async (pre, curr, remote) => {
 						if (remote) {
@@ -125,7 +122,7 @@ export class CorsEventEmitter {
 }
 
 if (typeof GM_listValues !== 'undefined') {
-	// 离开页面后
+	// 加载页面后
 	window.onload = () => {
 		// 删除全部未处理的模态框临时变量，以及监听队列
 		listValues().forEach((key) => {
