@@ -58,7 +58,7 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 	hideInPanel?: boolean;
 	level?: number;
 	/** 通过 configs 映射并经过解析后的配置对象 */
-	cfg: Record<keyof T, any> & { notes?: string } = {} as any;
+	cfg: { [K in keyof T]: T[K]['defaultValue'] } & { notes?: string } = {} as any;
 	/** 经过初始化页面脚本注入的页面元素，如果初始化脚本未运行，则此元素为空 */
 	panel?: ScriptPanelElement;
 	/** 操作面板头部元素 */
@@ -134,7 +134,10 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		};
 	}
 
-	onConfigChange(key: keyof T, handler: (curr: any, pre: any, remote: boolean) => any) {
+	onConfigChange<K extends keyof T>(
+		key: K,
+		handler: (curr: T[K]['defaultValue'], pre: T[K]['defaultValue'], remote: boolean) => any
+	) {
 		const _key = namespaceKey(this.namespace, key.toString());
 		const id = this.listeners.get(_key);
 		if (id) {
