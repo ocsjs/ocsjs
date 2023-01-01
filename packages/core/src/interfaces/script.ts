@@ -81,7 +81,6 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		name,
 		namespace,
 		url,
-		notes,
 		configs,
 		hideInPanel,
 		onstart,
@@ -159,5 +158,14 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 			removeConfigChangeListener(id);
 		}
 		this.listeners.delete(_key);
+	}
+
+	/**
+	 * 在面板中置顶
+	 *
+	 * 原理：设置本地当前面板名为：工程名-脚本名
+	 */
+	static pin(script: Script) {
+		setValue('render.panel.currentPanelName', `${script.projectName}-${script.name}`);
 	}
 }
