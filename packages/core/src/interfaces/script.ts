@@ -25,7 +25,7 @@ export class BaseScript {
 	/** 在页面完全加载时运行的钩子 */
 	oncomplete?: (...args: any) => any;
 	/** 在页面离开时执行的钩子 */
-	onbeforeunload?: (...args: any) => any;
+	onbeforeunload?: (...args: any) => undefined | boolean;
 	/** 在渲染的时候执行的钩子，（面板之间切换时会重复渲染） */
 	onrender?: (elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
 }
@@ -124,12 +124,13 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 
 		const _onbeforeunload = this.onbeforeunload;
 		this.onbeforeunload = (...args: any) => {
-			_onbeforeunload?.call(this, ...args);
+			const prevent = _onbeforeunload?.call(this, ...args);
 			const urls: string[] = Array.from(getValue('_urls_', []));
 			const urlIndex = urls.findIndex((u) => u === location.href);
 			if (urlIndex !== -1) {
 				setValue('_urls_', urls.splice(urlIndex, 1));
 			}
+			return prevent;
 		};
 	}
 
