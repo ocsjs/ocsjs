@@ -1,5 +1,15 @@
 {
-	"cSpell.words": ["onrender", "Tesseract", "traineddata", "xmlhttp", "zhihuishu"],
+	"cSpell.words": [
+		"nomove",
+		"ondefault",
+		"onprevent",
+		"onrender",
+		"onrun",
+		"Tesseract",
+		"traineddata",
+		"xmlhttp",
+		"zhihuishu"
+	],
 	"eslint.validate": ["javascript", "javascriptreact", "vue"],
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {

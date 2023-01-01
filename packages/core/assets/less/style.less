@@ -4,6 +4,25 @@
 @form-control-padding: 2px 8px;
 @form-control-bg: #eef2f7;
 
+ul,
+ol {
+	padding-left: 16px;
+	margin: 0px;
+}
+
+a {
+	color: #1890ff;
+}
+
+hr {
+	border-style: solid;
+	border-color: #63636346;
+	border-width: 0px;
+	border-bottom: 1px solid #63636346;
+	margin-block-start: 1em;
+	margin-block-end: 1em;
+}
+
 .base-style-active-form-control {
 	border: 1px solid #ffffff00;
 	&:focus {
@@ -67,7 +86,6 @@ container-element {
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	color: #636363;
-	font: 12px/1.5 @base-font-family;
 }
 
 @base-height: 32px;
@@ -89,6 +107,10 @@ container-element {
 	margin-bottom: 4px;
 	user-select: none;
 
+	.profile {
+		flex: 1;
+	}
+
 	& > * {
 		margin-left: 12px;
 	}
@@ -109,6 +131,7 @@ container-element {
 	border-radius: 100%;
 	display: inline-block;
 	text-align: center;
+	font-size: 12px;
 }
 
 .close {
@@ -121,6 +144,44 @@ container-element {
 
 .panel-switch {
 	background: #14a00d50;
+}
+
+.project-selector {
+	display: flex;
+	align-items: center;
+
+	select:first-child {
+		border-top-left-radius: 4px;
+		border-bottom-left-radius: 4px;
+		border: 1px solid #63636346;
+		background-color: inherit;
+		border-right: none;
+		color: inherit;
+		font: inherit;
+		appearance: none;
+		padding: 4px 0px 4px 4px;
+	}
+	select:last-child {
+		border-top-right-radius: 4px;
+		border-bottom-right-radius: 4px;
+		background: #ffffff00;
+		border: 1px solid #63636346;
+		border-left: none;
+		color: inherit;
+		font: inherit;
+
+		/** 自定义箭头 */
+		background: url("data:image/svg+xml,<svg height='10px' width='10px' viewBox='0 0 16 16' fill='%23000000' xmlns='http://www.w3.org/2000/svg'><path d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/></svg>")
+			no-repeat;
+		background-position: calc(100% - 0.75rem) center;
+		-moz-appearance: none;
+		-webkit-appearance: none;
+		appearance: none;
+		padding: 4px 0px;
+	}
+}
+.project-selector.expand-all {
+	display: none;
 }
 
 .body {
@@ -190,7 +251,6 @@ scrip-panel-element + scrip-panel-element {
 			display: table-row;
 
 			label {
-				font-size: 13px;
 				white-space: nowrap;
 				color: #4e5969;
 				display: table-cell;
@@ -210,7 +270,6 @@ scrip-panel-element + scrip-panel-element {
 					border: 1px solid #e4e4e4;
 					border-radius: 4px;
 					padding: @form-control-padding;
-					height: 22px;
 
 					.base-style-active-form-control();
 				}
@@ -239,8 +298,8 @@ scrip-panel-element + scrip-panel-element {
 				input[type='checkbox'] {
 					appearance: none;
 					width: fit-content;
-					min-width: 32px;
-					height: 16px;
+					min-width: 36px;
+					height: 20px;
 					border-radius: 100px;
 					display: flex;
 					align-items: center;
@@ -263,8 +322,8 @@ scrip-panel-element + scrip-panel-element {
 						background-color: #fff;
 						border-radius: 9px;
 						box-shadow: 0 2px 4px #00230b33;
-						width: 12px;
-						height: 12px;
+						width: 14px;
+						height: 14px;
 						content: '';
 					}
 				}
@@ -273,6 +332,7 @@ scrip-panel-element + scrip-panel-element {
 				textarea,
 				select {
 					width: -webkit-fill-available;
+					font-size: inherit;
 				}
 
 				input[type='checkbox'],
@@ -305,14 +365,19 @@ scrip-panel-element + scrip-panel-element {
 	left: 50%;
 	width: 100%;
 	transform: translate(-50%, 0px);
+	min-width: 300px;
 
 	// 提示内容
 	message-element {
-		display: block;
+		display: flex;
 		border-radius: 4px;
 		margin-bottom: 4px;
 		padding: 4px 12px;
-		font-size: 12px;
+
+		.message-content-container {
+			margin-right: 8px;
+			flex: auto;
+		}
 
 		.message-text {
 			letter-spacing: 1px;
@@ -322,41 +387,38 @@ scrip-panel-element + scrip-panel-element {
 		// 关闭按钮
 		.message-closer {
 			width: 18px;
+			min-width: 18px;
 			cursor: pointer;
-			background-color: white;
-			color: #a8a8a8;
+			background-color: #ffffffb3;
+			color: #a1a1a1;
 			border-radius: 100%;
-			float: right;
 			text-align: center;
 			height: 18px;
-			line-height: 18px;
+			vertical-align: middle;
+			font-size: 12px;
 		}
 
 		&.error {
-			background-color: #ff6b6ded;
-			color: #fff;
-			font-weight: bold;
-			border: 1px solid #f36c70;
+			background-color: #ffe6e6;
+			color: #c70208;
+			border: 1px solid #ff6b6ded;
 		}
 
 		&.info {
-			background-color: #2195f3ef;
-			color: white;
-			font-weight: bold;
-			border: 1px solid #1890ff;
+			background-color: #c9e7ff;
+			color: #004d95;
+			border: 1px solid #1890ff69;
 		}
 
 		&.success {
-			background-color: #95eb77cf;
-			color: #3f5432;
-			font-weight: bold;
+			background-color: #e8ffe0;
+			color: #3e8d0d;
 			border: 1px solid #6fd91d;
 		}
 
 		&.warn {
-			background-color: #fbbf30e6;
-			color: #725206;
-			font-weight: bold;
+			background-color: #ffefc8;
+			color: #9b7400;
 			border: 1px solid #ffc107;
 		}
 	}
@@ -463,37 +525,6 @@ model-element.confirm {
 	cursor: pointer;
 }
 
-.project-selector {
-	display: flex;
-	align-items: center;
-
-	span {
-		border-top-left-radius: 4px;
-		border-bottom-left-radius: 4px;
-		border: 1px solid gray;
-		border-right: none;
-		font: inherit;
-		display: inline-block;
-		padding-left: 12px;
-	}
-	select {
-		border-top-right-radius: 4px;
-		border-bottom-right-radius: 4px;
-		background: #ffffff00;
-		border: 1px solid gray;
-		border-left: none;
-		font-size: inherit;
-		color: inherit;
-		height: 20px;
-		font: inherit;
-		line-height: 14px;
-		padding: 0px 6px;
-	}
-}
-.project-selector.expand-all {
-	display: none;
-}
-
 .separator {
 	display: flex;
 	align-items: center;
@@ -525,17 +556,51 @@ model-element.confirm {
 	}
 }
 
-ul,
-ol {
-	padding-left: 16px;
-	margin: 0px;
-}
-
 .user-guide {
 	max-width: 400px;
-
 	& > li {
 		padding: 4px 0px;
+	}
+}
+
+.search-results-question {
+	white-space: nowrap;
+	cursor: pointer;
+	padding: 4px 0px;
+	display: block;
+	overflow: hidden;
+	text-overflow: ellipsis;
+
+	&.hover {
+		color: #00488d;
+	}
+
+	&.active {
+		color: #1890ff;
+	}
+
+	&.error {
+		color: #ff6b6ded;
+	}
+}
+
+.search-results-num {
+	width: 22px;
+	margin: 2px;
+	height: 20px;
+	border-radius: 4px;
+	display: inline-block;
+	background-color: #1890ff80;
+	color: white;
+	text-align: center;
+	cursor: pointer;
+
+	&.active {
+		background-color: #1890ff;
+	}
+
+	&.error {
+		background-color: #ff6b6ded;
 	}
 }
 
@@ -549,7 +614,6 @@ search-results-element {
 
 		.question {
 			font-weight: bold;
-			font-size: 14px;
 		}
 		.answer {
 			color: #7c7c7c;
@@ -565,10 +629,6 @@ search-results-element {
 
 		.copy {
 			display: none;
-			margin-left: 4px;
-			color: #1890ff;
-			text-decoration: underline;
-			cursor: pointer;
 		}
 	}
 
@@ -577,4 +637,12 @@ search-results-element {
 			display: inline;
 		}
 	}
+}
+
+.copy {
+	margin-left: 4px;
+	padding: 2px 4px;
+	border-radius: 2px;
+	box-shadow: 0 0 4px #b1b1b1;
+	cursor: pointer;
 }
