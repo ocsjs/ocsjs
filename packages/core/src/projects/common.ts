@@ -91,7 +91,7 @@ export const CommonProject: Project = {
 				// 监听划词变化
 				this.onConfigChange('selection', (curr) => {
 					// 判断是否处于搜索页面，搜索框可见
-					if (input.isConnected) {
+					if (input.parentElement) {
 						input.value = curr;
 					}
 				});
