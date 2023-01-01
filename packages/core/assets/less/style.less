@@ -96,7 +96,6 @@ container-element {
 	white-space: nowrap;
 	justify-content: end;
 	display: flex;
-	padding-right: 12px;
 	line-height: @base-height;
 	height: @base-height;
 	vertical-align: middle;
@@ -104,8 +103,10 @@ container-element {
 	border-radius: 4px;
 	border: 1px solid #e6e6e6;
 	box-shadow: 0 0 24px -12px #3f3f3f;
-	margin-bottom: 4px;
 	user-select: none;
+	padding-right: 12px;
+	margin: 0px 24px 10px 24px;
+	margin-bottom: 4px;
 
 	.profile {
 		flex: 1;
@@ -185,19 +186,27 @@ container-element {
 }
 
 .body {
-	padding: 8px;
+	padding: 0px 24px 24px 24px;
 	width: auto;
 	height: 100%;
-	overflow: auto;
+}
+
+script-panel-element {
+	display: block;
 	background-color: white;
 	box-shadow: 0 0 24px -12px #3f3f3f;
 	border: 1px solid #e6e6e6;
 	border-radius: 4px;
+	padding: 8px 8px 12px 8px;
 	resize: both;
 	overflow: auto;
+
+	.script-panel-body {
+		padding: 0px 8px;
+	}
 }
 
-scrip-panel-element + scrip-panel-element {
+script-panel-element + script-panel-element {
 	margin-top: 12px;
 }
 
@@ -207,13 +216,14 @@ scrip-panel-element + scrip-panel-element {
 
 .card {
 	border-radius: 2px;
-	padding: 0px 4px;
+	padding: 0px 8px;
 }
 
 .notes {
 	background: #0099ff0e;
 	border-left: 4px solid #0099ff65;
 	width: -webkit-fill-available;
+	margin: 0px 12px;
 }
 
 .tooltip {
@@ -371,8 +381,8 @@ scrip-panel-element + scrip-panel-element {
 	message-element {
 		display: flex;
 		border-radius: 4px;
-		margin-bottom: 4px;
 		padding: 4px 12px;
+		margin: 0px 24px 4px 24px;
 
 		.message-content-container {
 			margin-right: 8px;
@@ -439,7 +449,7 @@ model-element {
 	z-index: 99999999999;
 
 	.model-profile {
-		zoom: 0.8;
+		zoom: 0.9;
 		color: #969696;
 		user-select: none;
 		margin-bottom: 4px;
@@ -518,7 +528,7 @@ model-element.confirm {
 	z-index: 9999999;
 	background-color: rgba(0, 0, 0, 0.265);
 	color: #636363;
-	font: 12px/1.5 @base-font-family;
+	font: 14px @base-font-family;
 }
 
 .pointer {

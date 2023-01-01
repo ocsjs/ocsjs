@@ -3,7 +3,7 @@ import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
 import { getAllRawConfigs } from '../utils/common';
 import cloneDeep from 'lodash/cloneDeep';
-import { $message, $model } from './init';
+import { $message, $model } from './render';
 import { el } from '../utils/dom';
 import { notification } from '../utils/tampermonkey';
 import { parseAnswererWrappers } from '../core/utils/common';
@@ -98,11 +98,7 @@ export const CommonProject = Project.create({
 					}
 				});
 
-				panel.body.append(
-					el('div', [el('hr'), content, searchContainer], (div) => {
-						div.className = 'card';
-					})
-				);
+				panel.body.append(el('div', [el('hr'), content, searchContainer]));
 			}
 		}),
 		workResults: new Script({
@@ -402,15 +398,16 @@ export const CommonProject = Project.create({
 					defaultValue: 1
 				}
 			},
-			onactive() {
-				this.onConfigChange('notification', (curr) => {
-					if (curr) {
+			oncomplete() {
+				this.onConfigChange('notification', (open) => {
+					if (open) {
 						notification('您已开启系统通知，如果脚本有重要情况需要处理，则会发起通知提示您。', {
 							duration: 5
 						});
 					}
 				});
-			}
+			},
+			onbeforeunload() {}
 		}),
 		guide: new Script({
 			name: '使用教程',
