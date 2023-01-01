@@ -1,8 +1,19 @@
+import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
+import { WorkUploadType } from '../core/worker/interface';
 import { ConfigElement } from '../elements/config';
 import { Config } from '../interfaces/config';
+import { $message, $model } from '../projects/init';
 
 import { namespaceKey } from './common';
 import { ElementChildren, ElementHandler, el } from './dom';
+
+export interface CommonWorkOptions {
+	period: number;
+	timeout: number;
+	retry: number;
+	upload: WorkUploadType;
+	answererWrappers: AnswererWrapper[];
+}
 
 export const $creator = {
 	/**
@@ -103,5 +114,87 @@ export const $creator = {
 		}
 
 		return elements;
+	},
+	/**
+	 * 生成一个复制按钮
+	 * @param name 按钮名
+	 * @param value 复制内容
+	 */
+	copy(name: string, value: string) {
+		return el('span', '📄' + name, (btn) => {
+			btn.className = 'copy';
+
+			btn.addEventListener('click', () => {
+				btn.innerText = '已复制√';
+				navigator.clipboard.writeText(value);
+				setTimeout(() => {
+					btn.innerText = '📄' + name;
+				}, 500);
+			});
+		});
+	},
+	/** 创建一个取消默认事件的文字按钮，如果不点击，则执行默认事件 */
+	preventText({
+		name,
+		delay = 3,
+		autoRemove = true,
+		ondefault,
+		onprevent
+	}: {
+		name: string;
+		delay?: number;
+
+		autoRemove?: boolean;
+		ondefault: (span: HTMLSpanElement) => void;
+		onprevent?: (span: HTMLSpanElement) => void;
+	}) {
+		const span = el('span', name);
+
+		span.style.textDecoration = 'underline';
+		span.style.cursor = 'pointer';
+		span.onclick = () => {
+			clearTimeout(id);
+			if (autoRemove) {
+				span.remove();
+			}
+			onprevent?.(span);
+		};
+		const id = setTimeout(() => {
+			if (autoRemove) {
+				span.remove();
+			}
+			ondefault(span);
+		}, delay * 1000);
+
+		return span;
+	},
+	/** 创建答题预处理信息 */
+	workPreCheckMessage(
+		options: CommonWorkOptions & {
+			onrun: (opts: CommonWorkOptions) => void;
+		}
+	) {
+		const { onrun, ...opts } = options;
+
+		if (opts.answererWrappers.length === 0) {
+			$model('alert', { content: '题库配置为空，请设置。' });
+		} else {
+			$message('info', {
+				duration: 5,
+				content: el('span', [
+					'5秒后自动答题。并切换到“通用-搜索结果”。',
+					$creator.preventText({
+						name: '点击取消此次答题',
+						delay: 5,
+						ondefault: (span) => {
+							onrun(opts);
+						},
+						onprevent(span) {
+							$message('warn', { content: '已经关闭此次的自动答题，刷新页面后可重新开始答题。' });
+						}
+					})
+				])
+			});
+		}
 	}
 };
