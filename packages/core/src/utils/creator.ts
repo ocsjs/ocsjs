@@ -2,7 +2,7 @@ import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
 import { WorkUploadType } from '../core/worker/interface';
 import { ConfigElement } from '../elements/config';
 import { Config } from '../interfaces/config';
-import { $message, $model } from '../projects/init';
+import { $message, $model } from '../projects/render';
 
 import { namespaceKey } from './common';
 import { ElementChildren, ElementHandler, el } from './dom';

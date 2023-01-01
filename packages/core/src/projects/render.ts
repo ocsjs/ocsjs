@@ -51,9 +51,20 @@ const RenderScript = new Script({
 		expandAll: { defaultValue: false },
 		currentPanelName: { defaultValue: 'render.panel' },
 		fontsize: {
-			label: '字体大小',
+			label: '字体大小（像素）',
 			attrs: { type: 'number', min: 10, max: 36, step: 1 },
 			defaultValue: 14
+		},
+		switchPoint: {
+			label: '窗口连续点击切换点（次数）',
+			attrs: {
+				type: 'number',
+				min: 3,
+				max: 10,
+				step: 1,
+				title: '设置当连续点击屏幕 N 次时，可以进行面板的 隐藏/显示 切换，默认连续点击屏幕三下'
+			},
+			defaultValue: 3
 		}
 	},
 	onactive({ style, projects }: StartConfig) {
@@ -292,8 +303,8 @@ const RenderScript = new Script({
 				}
 			};
 			window.addEventListener('click', (e) => {
-				// 三击重置位置
-				if (e.detail === 3) {
+				// 三击以上重置位置
+				if (e.detail === Math.max(this.cfg.switchPoint, 3)) {
 					container.style.top = e.y + 'px';
 					container.style.left = e.x + 'px';
 					this.cfg.x = e.x;
