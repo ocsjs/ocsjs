@@ -22,7 +22,7 @@ export function createConfigProxy(script: Script) {
 		}
 	});
 
-	// 设置默认值
+	// 为 proxy 创建属性，并设置默认值
 	for (const key in script.configs) {
 		if (Object.prototype.hasOwnProperty.call(script.configs, key)) {
 			const element = Reflect.get(script.configs, key);
@@ -108,4 +108,15 @@ export async function sleep(period: number): Promise<void> {
  */
 export function isInBrowser(): boolean {
 	return typeof window !== 'undefined' && typeof window.document !== 'undefined';
+}
+
+/**
+ * 使元素变成纯文本对象，（跨域时对象上下文会被销毁）
+ */
+export function elementToRawObject(el: HTMLElement) {
+	return {
+		innerText: el.innerText,
+		innerHTML: el.innerHTML,
+		textContent: el.textContent
+	} as any;
 }

@@ -1,16 +1,22 @@
-import { AnswererWrapper, defaultAnswerWrapperHandler } from '../core/worker/answer.wrapper.handler';
+import { defaultAnswerWrapperHandler } from '../core/worker/answer.wrapper.handler';
 import { OCSWorker } from '../core/worker/worker';
 import { ConfigElement } from '../elements/config';
 import { MessageElement } from '../elements/message';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { sleep } from '../utils/common';
-import { $creator } from '../utils/creator';
+import { elementToRawObject, sleep } from '../utils/common';
+import { $creator, CommonWorkOptions } from '../utils/creator';
 import { $$el, $el, el } from '../utils/dom';
 import { StringUtils } from '../utils/string';
 import { getValue } from '../utils/tampermonkey';
 import { $message, $model } from './init';
+import { CommonProject } from './common';
+import { WorkResult, WorkUploadType } from '../core/worker/interface';
+
+/**
+ * 全局变量
+ */
 
 const volume: Config = {
 	label: '音量调节',
@@ -43,37 +49,37 @@ const definition: Config = {
 	}
 };
 
-const workConfigs: Record<'upload' | 'notes', Config> = {
+const workConfigs = {
 	notes: {
 		defaultValue:
 			'- 答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。<br>- 可以搭配 “通用-在线搜题” 一起使用。'
-	},
+	} as Config<any, string>,
+	enable: {
+		label: '开启自动答题',
+		attrs: { type: 'checkbox' },
+		defaultValue: false
+	} as Config<any, boolean>,
 	upload: {
-		label: '自动答题',
+		label: '答题完成后',
 		tag: 'select',
-		defaultValue: 'close',
-		attrs: { title: '答题设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。' },
+		defaultValue: 'save' as WorkUploadType,
+		attrs: { title: '答题完成后的设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。' },
 		onload() {
 			this.append(
 				...$creator.selectOptions(this.getAttribute('value'), [
-					['close', '关闭自动答题', '关闭自动答题后, 脚本将忽略答题, 自动进入下一节。'],
-					['save', '完成后自动保存', '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'],
-					[
-						'nomove',
-						'完成后不做任何动作',
-						'完成后既不保存也不提交, 等待时间过后将会自动下一节, 适合在测试脚本时使用。'
-					],
-					['force', '强制自动提交', '不管答案是否正确直接强制自动提交，如需开启，请配合随机作答谨慎使用。'],
+					['save', '自动保存', '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'],
+					['nomove', '不保存也不提交', '等待时间过后将会自动下一节, 适合在测试脚本时使用。'],
 					...([10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => [
 						rate.toString(),
-						`查到大于${rate}%的题目则自动提交`,
-						`例如: 100题, 搜索到大于 ${rate} 的题, 则会自动提交答案。`
+						`搜到${rate}%的题目则自动提交`,
+						`例如: 100题中查询到 ${rate} 题的答案,（答案不一定正确）, 则会自动提交。`
 					]) as [any, string, string][]),
-					['100', '每个题目都查到答案才自动提交']
+					['100', '每个题目都查到答案才自动提交', '答案不一定正确'],
+					['force', '强制自动提交', '不管答案是否正确直接强制自动提交，如需开启，请配合随机作答谨慎使用。']
 				])
 			);
 		}
-	}
+	} as Config<any, WorkUploadType>
 };
 
 // 是否暂停
@@ -81,16 +87,17 @@ let stop = false;
 // 是否存在验证码
 let hasCapture = false;
 
-export const ZHSProject: Project = {
-	name: '知道智慧树',
+/** 工程导出 */
+export const ZHSProject = Project.create({
+	name: '智慧树',
 	level: 99,
 	domains: ['zhihuishu.com'],
-	scripts: [
-		new Script({
-			name: '课程学习脚本',
+	scripts: {
+		'gxk-study': new Script({
+			name: '共享课学习脚本',
 			url: [/studyvideoh5.zhihuishu.com/],
 			level: 999,
-			namespace: 'zhs.study',
+			namespace: 'zhs.gxk.study',
 			configs: {
 				notes: {
 					defaultValue: el('ul', [
@@ -295,11 +302,10 @@ export const ZHSProject: Project = {
 				}, 1000);
 			}
 		}),
-		new Script({
-			name: '学分共享课（翻转课）学习脚本',
-			/** 学分共享课（翻转课） */
+		'xnk-study': new Script({
+			name: '校内课学习脚本',
 			url: [/zhihuishu.com\/aidedteaching\/sourceLearning/],
-			namespace: 'zhs.source',
+			namespace: 'zhs.xnk.study',
 			configs: {
 				notes: {
 					defaultValue: el('ul', [el('li', '章节测试请大家观看完视频后手动打开。'), el('li', '此课程不能使用倍速。')])
@@ -332,7 +338,7 @@ export const ZHSProject: Project = {
 			}
 		}),
 
-		new Script({
+		'gxk-work': new Script({
 			name: '共享课作业脚本',
 			url: [
 				/zhihuishu.com\/stuExamWeb.html#\/webExamList\/dohomework/,
@@ -340,17 +346,22 @@ export const ZHSProject: Project = {
 				/** 在列表中也提供设置页面 */
 				/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/
 			],
-			namespace: 'zhs.work.gxk',
+			namespace: 'zhs.gxk.work',
 			level: 99,
 			configs: workConfigs,
 			oncomplete() {
-				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/dohomework/.test(location.href)) {
-					this.onConfigChange('upload', () => {
-						$message('info', {
-							content: el('span', ['检测到设置更改，请刷新页面重新答题。'])
-						});
+				const changeMsg = () =>
+					$message('info', { content: el('span', ['检测到设置更改，请重新进入，或者刷新作业页面进行答题。']) });
+				this.onConfigChange('upload', changeMsg);
+				this.onConfigChange('enable', changeMsg);
+				if (this.cfg.enable === false) {
+					return $message('warn', {
+						duration: 0,
+						content: '自动答题已被关闭！请在设置开启自动答题，并刷新页面！或者忽略此警告'
 					});
+				}
 
+				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/dohomework/.test(location.href)) {
 					const interval = setInterval(() => {
 						const vue = $el('#app > div')?.__vue__;
 						if (vue?.alllQuestionTest) {
@@ -358,105 +369,98 @@ export const ZHSProject: Project = {
 							// 识别文字
 							recognize();
 							// 开始作业
-							workOrExam('work', {
-								answererWrappers: getValue('common.settings.answererWrappers'),
-								period: getValue('common.settings.period'),
-								retry: getValue('common.settings.retry'),
-								timeout: getValue('common.settings.timeout'),
-								upload: this.cfg.upload
+							$creator.workPreCheckMessage({
+								onrun: (opts) => gxkWorkOrExam('work', opts),
+								upload: this.cfg.upload,
+								...CommonProject.scripts.settings.cfg
 							});
 						}
 					}, 1000);
 					//
-				} else {
-					//
 				}
 			}
 		}),
-		new Script({
+		'gxk.exam': new Script({
 			name: '共享课考试脚本',
 			url: [
 				/zhihuishu.com\/stuExamWeb.html#\/webExamList\/doexamination/,
 				/** 在列表中也提供设置页面 */
 				/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/
 			],
-			namespace: 'zhs.work.gxk',
+			namespace: 'zhs.gxk.exam',
 			level: 99,
 			configs: {
 				notes: {
 					defaultValue:
-						'- 答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。<br>- 可以搭配 “通用-在线搜题” 一起使用。<br>- 考试请在脚本自动答题完成后自行检查，自己点击提交，脚本不会自动提交。'
+						'- 答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。<br>- 可以搭配 “通用-在线搜题” 一起使用。<br>- 考试请在脚本自动答题完成后自行检查，自己点击提交，脚本不会自动提交。<br>-如果开启后脚本仍然没有反应，请刷新页面重试。'
 				},
-				upload: {
-					label: '自动答题',
-					tag: 'select',
-					defaultValue: 'close',
-					attrs: { title: '答题设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。' },
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value'), [
-								['close', '关闭自动答题', '关闭自动答题后, 脚本将忽略答题, 自动进入下一节。'],
-								['nomove', '开启自动答题']
-							])
-						);
-					}
+				enable: {
+					label: '开启自动答题',
+					attrs: { type: 'checkbox' },
+					defaultValue: false
 				}
 			},
 			oncomplete() {
-				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/doexamination/.test(location.href)) {
-					this.onConfigChange('upload', () => {
-						$message('info', {
-							content: el('span', ['检测到设置更改，请刷新页面重新答题。'])
-						});
-					});
+				const changeMsg = () =>
+					$message('info', { content: el('span', ['检测到设置更改，请重新进入，或者刷新考试页面进行答题。']) });
+				this.onConfigChange('enable', changeMsg);
 
+				if (this.cfg.enable === false) {
+					return $message('warn', {
+						duration: 0,
+						content: '自动答题已被关闭！请在设置开启自动答题，并刷新页面！或者忽略此警告'
+					});
+				}
+
+				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/doexamination/.test(location.href)) {
 					const interval = setInterval(() => {
 						const vue = $el('#app > div')?.__vue__;
+						// 等待题目加载
 						if (vue?.alllQuestionTest) {
 							clearInterval(interval);
 							// 识别文字
 							recognize();
 							// 开始考试
-							workOrExam('exam', {
-								answererWrappers: getValue('common.settings.answererWrappers'),
-								period: getValue('common.settings.period'),
-								retry: getValue('common.settings.retry'),
-								timeout: getValue('common.settings.timeout'),
-								upload: this.cfg.upload
+							$creator.workPreCheckMessage({
+								onrun: (opts) => gxkWorkOrExam('exam', opts),
+								upload: 'nomove',
+								...CommonProject.scripts.settings.cfg
 							});
 						}
 					}, 1000);
 					//
-				} else {
-					//
 				}
 			}
 		}),
-		new Script({
-			name: '学分课作业考试脚本',
+		'xnk.work': new Script({
+			name: '校内课作业考试脚本',
 			url: [/zhihuishu.com\/atHomeworkExam\/stu\/homeworkQ\/exerciseList/],
-			namespace: 'zhs.work.xfk',
+			namespace: 'zhs.xnk.work',
 			level: 99,
 			configs: workConfigs,
 			oncomplete() {
-				this.onConfigChange('upload', () => {
-					$message('info', { content: el('span', ['检测到设置更改，请刷新页面重新答题。']) });
-				});
-				// 开始作业
-				creditWork({
-					answererWrappers: getValue('common.settings.answererWrappers'),
-					period: getValue('common.settings.period'),
-					retry: getValue('common.settings.retry'),
-					timeout: getValue('common.settings.timeout'),
-					upload: this.cfg.upload
+				const changeMsg = () => $message('info', { content: el('span', ['检测到设置更改，请刷新页面重新答题。']) });
+				this.onConfigChange('upload', changeMsg);
+				this.onConfigChange('enable', changeMsg);
+				if (this.cfg.enable === false) {
+					return $message('warn', {
+						duration: 0,
+						content: '自动答题已被关闭！请在设置开启自动答题，并刷新页面！或者忽略此警告'
+					});
+				}
+
+				$creator.workPreCheckMessage({
+					onrun: xnkWork,
+					upload: this.cfg.upload,
+					...CommonProject.scripts.settings.cfg
 				});
 			}
 		}),
 
-		new Script({
+		'work-gxk-guide': new Script({
 			name: '共享课作业考试提示',
 			url: [/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/],
-			namespace: 'zhs.work.guide',
+			namespace: 'zhs.work.gxk-guide',
 			level: 999,
 			configs: {
 				notes: {
@@ -466,7 +470,7 @@ export const ZHSProject: Project = {
 			}
 		}),
 
-		new Script({
+		guide: new Script({
 			name: '使用提示',
 			url: [/onlineweb.zhihuishu.com\/onlinestuh5/, /www.zhihuishu.com/],
 			level: 1,
@@ -477,7 +481,7 @@ export const ZHSProject: Project = {
 				}
 			}
 		}),
-		new Script({
+		login: new Script({
 			name: '登录脚本',
 			url: [/passport.zhihuishu.com\/login/],
 			level: 9,
@@ -551,8 +555,12 @@ export const ZHSProject: Project = {
 					const id = setTimeout(async () => {
 						const phoneLogin = $el('#qSignin');
 						const idLogin = $el('#qStudentID');
+
+						console.log({ p: getValue('zhs.login.phone') });
+
 						if (this.cfg.type === 'phone') {
 							phoneLogin.click();
+							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
 							$el('#lUsername').value = getValue('zhs.login.phone');
 							$el('#lPassword').value = getValue('zhs.login.password');
 						} else {
@@ -583,8 +591,8 @@ export const ZHSProject: Project = {
 				}
 			}
 		})
-	]
-};
+	}
+});
 
 /**
  * 观看视频
@@ -702,198 +710,177 @@ function recognize() {
 	}
 }
 
-async function workOrExam(
+async function gxkWorkOrExam(
 	type: 'work' | 'exam' = 'work',
-	options: { period: number; timeout: number; retry: number; upload: string; answererWrappers: AnswererWrapper[] }
+	{ answererWrappers, period, timeout, retry, upload }: CommonWorkOptions
 ) {
-	const { period, timeout, retry, upload, answererWrappers } = options;
+	const workResults: WorkResult<any>[] = [];
+	// 清空搜索结果
+	CommonProject.scripts.workResults.cfg.results = [];
+	// 置顶搜索结果面板
+	Script.pin(CommonProject.scripts.workResults);
 
-	if (upload === 'close') {
-		$message('warn', { content: '自动答题已被关闭！请在设置开启自动答题，并刷新页面！或者忽略此警告' });
-	} else if (answererWrappers.length === 0) {
-		$model('alert', { content: '题库配置为空，请设置。' });
+	/** 新建答题器 */
+	const worker = new OCSWorker({
+		root: '.examPaper_subject',
+		elements: {
+			title: '.subject_describe,.smallStem_describe',
+			options: '.subject_node .nodeLab'
+		},
+		/** 默认搜题方法构造器 */
+		answerer: (elements, type, ctx) =>
+			defaultAnswerWrapperHandler(answererWrappers, {
+				type,
+				title: elements.title[0].innerText,
+				root: ctx.root
+			}),
+		work: {
+			/** 自定义处理器 */
+			handler(type, answer, option) {
+				if (type === 'judgement' || type === 'single' || type === 'multiple') {
+					if (!option.querySelector('input')?.checked) {
+						option.click();
+					}
+				} else if (type === 'completion' && answer.trim()) {
+					const text = option.querySelector('textarea');
+					if (text) {
+						text.value = answer;
+					}
+				}
+			}
+		},
+		// 如果有验证码，则等待验证码
+		async interceptor() {
+			await waitForCaptcha();
+			return true;
+		},
+
+		/** 完成答题后 */
+		onResult: async (res) => {
+			// 处理题目跨域丢失问题
+			if (res.ctx) {
+				res.ctx.root = elementToRawObject(res.ctx.root);
+				res.ctx.elements.title = res.ctx.elements.title.map(elementToRawObject);
+			}
+
+			workResults.push(res);
+			CommonProject.scripts.workResults.cfg.results = workResults;
+
+			console.log(CommonProject.scripts.workResults.cfg);
+			await sleep(500);
+			// 下一页
+			$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
+		},
+
+		/** 其余配置 */
+
+		period: (period === 0 ? 0 : period || 3) * 1000,
+		timeout: (timeout || 30) * 1000,
+		retry,
+		stopWhenError: false
+	});
+
+	const results = await worker.doWork();
+
+	if (type === 'exam') {
+		$message('info', { content: '为了安全考虑，请自行检查后自行点击提交！' });
 	} else {
-		$message('info', { content: '即将开始自动答题。' });
-		const workResults = [];
+		// 处理提交
+		await worker.uploadHandler({
+			type: upload,
+			results,
+			async callback(finishedRate, uploadable) {
+				$message('info', {
+					content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
+				});
 
-		/** 新建答题器 */
-		const worker = new OCSWorker({
-			root: '.examPaper_subject',
-			elements: {
-				title: '.subject_describe,.smallStem_describe',
-				options: '.subject_node .nodeLab'
-			},
-			/** 默认搜题方法构造器 */
-			answerer: (elements, type, ctx) =>
-				defaultAnswerWrapperHandler(answererWrappers, {
-					type,
-					title: elements.title[0].innerText,
-					root: ctx.root
-				}),
-			work: {
-				/** 自定义处理器 */
-				handler(type, answer, option) {
-					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						if (!option.querySelector('input')?.checked) {
-							option.click();
-						}
-					} else if (type === 'completion' && answer.trim()) {
-						const text = option.querySelector('textarea');
-						if (text) {
-							text.value = answer;
-						}
-					}
+				await sleep(5000);
+
+				// 保存按钮， 提交按钮
+				const saveBtn = $el('.btnStyleX:not(.btnStyleXSumit)');
+				const uploadBtn = $el('.btnStyleXSumit');
+
+				if (uploadable) {
+					uploadBtn?.click();
+				} else {
+					saveBtn?.click();
 				}
-			},
-			// 如果有验证码，则等待验证码
-			async interceptor() {
-				await waitForCaptcha();
-				return true;
-			},
-			onElementSearched(elements) {
-				// 处理题目跨域丢失问题
-				// elements.title = elements.title.map(elementToRawObject);
-			},
-			/** 完成答题后 */
-			onResult: async (res) => {
-				if (res.ctx) {
-					workResults.push(res);
-				}
-				console.log(res);
-				await sleep(500);
-				// 下一页
-				$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
-			},
 
-			/** 其余配置 */
+				await sleep(2000);
+				/** 确定按钮 */
+				const { confirmBtn } = $el("[role='dialog'] .el-button--primary");
 
-			period: (period === 0 ? 0 : period || 3) * 1000,
-			timeout: (timeout || 30) * 1000,
-			retry,
-			stopWhenError: false
+				confirmBtn?.click();
+			}
 		});
-
-		const results = await worker.doWork();
-
-		if (type === 'exam') {
-			$message('info', { content: '为了安全考虑，请自行检查后自行点击提交！' });
-		} else {
-			// 处理提交
-			await worker.uploadHandler({
-				uploadRate: upload,
-				results,
-				async callback(finishedRate, uploadable) {
-					$message('info', {
-						content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
-					});
-
-					await sleep(5000);
-
-					// 保存按钮， 提交按钮
-					const saveBtn = $el('.btnStyleX:not(.btnStyleXSumit)');
-					const uploadBtn = $el('.btnStyleXSumit');
-
-					if (uploadable) {
-						uploadBtn?.click();
-					} else {
-						saveBtn?.click();
-					}
-
-					await sleep(2000);
-					/** 确定按钮 */
-					const { confirmBtn } = $el("[role='dialog'] .el-button--primary");
-
-					confirmBtn?.click();
-				}
-			});
-		}
 	}
 }
 
 /**
- * 学分课的作业
+ * 校内学分课的作业
  */
-async function creditWork(options: {
-	period: number;
-	timeout: number;
-	retry: number;
-	upload: string;
-	answererWrappers: AnswererWrapper[];
-}) {
-	const { period, timeout, retry, upload, answererWrappers } = options;
+async function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions) {
+	const workResults: WorkResult<any>[] = [];
+	// 清空搜索结果
+	CommonProject.scripts.workResults.cfg.results = [];
+	// 置顶搜索结果面板
+	Script.pin(CommonProject.scripts.workResults);
 
-	if (upload === 'close') {
-		$message('warn', { content: '自动答题已被关闭！请在设置开启自动答题！或者忽略此警告' });
-	} else if (answererWrappers.length === 0) {
-		$model('alert', { content: '题库配置为空，请设置。' });
-	} else {
-		const workResults = [];
-
-		const worker = new OCSWorker({
-			root: '.questionBox',
-			elements: {
-				title: '.questionContent',
-				options: '.optionUl label',
-				questionTit: '.questionTit'
-			},
-			/** 默认搜题方法构造器 */
-			answerer: (elements, type, ctx) => {
-				const title = StringUtils.nowrap(elements.title[0].innerText).trim();
-				if (title) {
-					return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
-				} else {
-					throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-				}
-			},
-			work: {
-				/** 自定义处理器 */
-				handler(type, answer, option, ctx) {
-					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						if (option.querySelector('input')?.checked === false) {
-							option.click();
-						}
-					} else if (type === 'completion' && answer.trim()) {
-						const text = option.querySelector('textarea');
-						if (text) {
-							text.value = answer;
-						}
+	const worker = new OCSWorker({
+		root: '.questionBox',
+		elements: {
+			title: '.questionContent',
+			options: '.optionUl label',
+			questionTit: '.questionTit'
+		},
+		/** 默认搜题方法构造器 */
+		answerer: (elements, type, ctx) => {
+			const title = StringUtils.nowrap(elements.title[0].innerText).trim();
+			if (title) {
+				return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
+			} else {
+				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+			}
+		},
+		work: {
+			/** 自定义处理器 */
+			handler(type, answer, option, ctx) {
+				if (type === 'judgement' || type === 'single' || type === 'multiple') {
+					if (option.querySelector('input')?.checked === false) {
+						option.click();
+					}
+				} else if (type === 'completion' && answer.trim()) {
+					const text = option.querySelector('textarea');
+					if (text) {
+						text.value = answer;
 					}
 				}
-			},
-			onElementSearched(elements) {
-				// 处理题目跨域丢失问题
-				// elements.title = elements.title.map(elementToRawObject);
-			},
-			onResult: (res) => {
-				if (res.ctx) {
-					// 浅拷贝并且只保留 innerText ， 防止元素对象变化导致显示的题目全部是一个同样的值。
+			}
+		},
 
-					if (res.ctx.elements.title[0]) {
-						// @ts-ignore
-						res.ctx.elements.title[0] = {
-							innerText: res.ctx.elements.questionTit[0]?.innerText + res.ctx.elements.title[0]?.innerText
-						};
-					}
+		onResult: (res) => {
+			// 处理题目跨域丢失问题
+			if (res.ctx) {
+				res.ctx.root = elementToRawObject(res.ctx.root);
+				res.ctx.elements.title = res.ctx.elements.title.map(elementToRawObject);
+			}
+			workResults.push(res);
+			CommonProject.scripts.workResults.cfg.results = workResults;
+		},
+		period: (period || 3) * 1000,
+		timeout: (timeout || 30) * 1000,
+		retry,
+		stopWhenError: false
+	});
 
-					workResults.push(res);
-				}
-				console.log(res);
-			},
-			period: (period || 3) * 1000,
-			timeout: (timeout || 30) * 1000,
-			retry,
-			stopWhenError: false
-		});
+	const getBtn = () => document.querySelector('span.Topicswitchingbtn:nth-child(2)') as HTMLElement;
+	let next = getBtn();
 
-		const getBtn = () => document.querySelector('span.Topicswitchingbtn:nth-child(2)') as HTMLElement;
-		let next = getBtn();
-
-		while (next) {
-			await worker.doWork();
-			await sleep((period || 3) * 1000);
-			next = getBtn();
-			next?.click();
-			await sleep((period || 3) * 1000);
-		}
+	while (next) {
+		await worker.doWork();
+		await sleep((period || 3) * 1000);
+		next = getBtn();
+		next?.click();
+		await sleep((period || 3) * 1000);
 	}
 }
