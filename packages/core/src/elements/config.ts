@@ -34,7 +34,18 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 				this.provider.setAttribute('value', this.provider.value);
 
 				this.provider.onchange = () => {
-					setValue(this.key, this.provider.value);
+					const { min, max, type } = this.attrs as Partial<ConfigTagMap['input']>;
+					if (type === 'number') {
+						if (min && this.provider.value < min) {
+							this.provider.value = min;
+						} else if (max && this.provider.value > max) {
+							this.provider.value = max;
+						} else {
+							setValue(this.key, this.provider.value);
+						}
+					} else {
+						setValue(this.key, this.provider.value);
+					}
 				};
 			}
 		};
