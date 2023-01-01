@@ -10,7 +10,7 @@ import { $creator, CommonWorkOptions } from '../utils/creator';
 import { $$el, $el, el } from '../utils/dom';
 import { StringUtils } from '../utils/string';
 import { getValue } from '../utils/tampermonkey';
-import { $message, $model } from './init';
+import { $message, $model } from './render';
 import { CommonProject } from './common';
 import { WorkResult, WorkUploadType } from '../core/worker/interface';
 
@@ -93,6 +93,127 @@ export const ZHSProject = Project.create({
 	level: 99,
 	domains: ['zhihuishu.com'],
 	scripts: {
+		guide: new Script({
+			name: '使用提示',
+			url: [/onlineweb.zhihuishu.com\/onlinestuh5/, /www.zhihuishu.com/],
+			level: 1,
+			namespace: 'zhs.guide',
+			configs: {
+				notes: {
+					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
+				}
+			}
+		}),
+		login: new Script({
+			name: '登录脚本',
+			url: [/passport.zhihuishu.com\/login/],
+			level: 9,
+			namespace: 'zhs.login',
+			configs: {
+				notes: {
+					defaultValue: el('ul', [
+						el('li', '脚本会自动输入账号密码，但是需要手动填写验证码。'),
+						el('li', '脚本用于辅助软件登录，如不想使用可直接关闭。')
+					]).outerHTML
+				},
+				disable: {
+					label: '关闭此脚本',
+					defaultValue: false,
+					attrs: { type: 'checkbox' }
+				},
+				type: {
+					label: '登录类型',
+					tag: 'select',
+					defaultValue: 'phone' as 'phone' | 'id',
+					onload() {
+						this.append(
+							...$creator.selectOptions(this.getAttribute('value') || '', [
+								['phone', '手机号登录'],
+								['id', '学号登录']
+							])
+						);
+					}
+				}
+			},
+			onrender({ panel }) {
+				let els: Record<string, ConfigElement<any>>;
+				/** 监听更改 */
+				this.onConfigChange('type', () => {
+					for (const key in els) {
+						if (Object.prototype.hasOwnProperty.call(els, key)) {
+							els[key].remove();
+						}
+					}
+					// 删除后重新渲染
+					render();
+				});
+
+				const render = () => {
+					/** 动态创建设置 */
+					const passwordConfig: Config = { label: '密码', defaultValue: '', attrs: { type: 'password' } };
+					if (this.cfg.type === 'phone') {
+						els = $creator.configs('zhs.login', {
+							phone: { label: '手机', defaultValue: '' },
+							password: passwordConfig
+						});
+					} else {
+						els = $creator.configs('zhs.login', {
+							school: { label: '学校', defaultValue: '' },
+							id: { label: '学号', defaultValue: '' },
+							password: passwordConfig
+						});
+					}
+
+					for (const key in els) {
+						if (Object.prototype.hasOwnProperty.call(els, key)) {
+							panel.configsBody.append(els[key]);
+						}
+					}
+				};
+
+				render();
+			},
+			oncomplete() {
+				if (!this.cfg.disable) {
+					const id = setTimeout(async () => {
+						const phoneLogin = $el('#qSignin');
+						const idLogin = $el('#qStudentID');
+
+						console.log({ p: getValue('zhs.login.phone') });
+
+						if (this.cfg.type === 'phone') {
+							phoneLogin.click();
+							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
+							$el('#lUsername').value = getValue('zhs.login.phone');
+							$el('#lPassword').value = getValue('zhs.login.password');
+						} else {
+							idLogin.click();
+							const search = $el('#quickSearch');
+							search.onfocus?.(new FocusEvent('focus'));
+							search.value = getValue('zhs.login.school');
+							search.onclick?.(new MouseEvent('click'));
+							// 等待搜索
+							await sleep(2000);
+
+							$el('#schoolListCode > li').click();
+							$el('#clCode').value = getValue('zhs.login.id');
+							$el('#clPassword').value = getValue('zhs.login.password');
+						}
+
+						// 点击登录
+						await sleep(1000);
+						$el('#f_sign_up .wall-sub-btn').click();
+					}, 3000);
+					const close = el('a', '取消');
+					const msg = $message('info', { content: el('span', ['3秒后自动登录。', close]) });
+					close.href = '#';
+					close.onclick = () => {
+						clearTimeout(id);
+						msg.remove();
+					};
+				}
+			}
+		}),
 		'gxk-study': new Script({
 			name: '共享课学习脚本',
 			url: [/studyvideoh5.zhihuishu.com/],
@@ -337,7 +458,18 @@ export const ZHSProject = Project.create({
 				}
 			}
 		}),
-
+		'gxk-work-and-exam-guide': new Script({
+			name: '共享课作业考试提示',
+			url: [/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/],
+			namespace: 'zhs.work.gxk-guide',
+			level: 999,
+			configs: {
+				notes: {
+					defaultValue:
+						'作业点击进入即可使用<br>考试功能因为zhs频繁更新所以不稳定，大家预留好其他搜题方式。<br>在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置，否则将无法正常答题。'
+				}
+			}
+		}),
 		'gxk-work': new Script({
 			name: '共享课作业脚本',
 			url: [
@@ -380,7 +512,8 @@ export const ZHSProject = Project.create({
 				}
 			}
 		}),
-		'gxk.exam': new Script({
+
+		'gxk-exam': new Script({
 			name: '共享课考试脚本',
 			url: [
 				/zhihuishu.com\/stuExamWeb.html#\/webExamList\/doexamination/,
@@ -432,7 +565,7 @@ export const ZHSProject = Project.create({
 				}
 			}
 		}),
-		'xnk.work': new Script({
+		'xnk-work': new Script({
 			name: '校内课作业考试脚本',
 			url: [/zhihuishu.com\/atHomeworkExam\/stu\/homeworkQ\/exerciseList/],
 			namespace: 'zhs.xnk.work',
@@ -454,141 +587,6 @@ export const ZHSProject = Project.create({
 					upload: this.cfg.upload,
 					...CommonProject.scripts.settings.cfg
 				});
-			}
-		}),
-
-		'work-gxk-guide': new Script({
-			name: '共享课作业考试提示',
-			url: [/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/],
-			namespace: 'zhs.work.gxk-guide',
-			level: 999,
-			configs: {
-				notes: {
-					defaultValue:
-						'作业点击进入即可使用<br>考试功能因为zhs频繁更新所以不稳定，大家预留好其他搜题方式。<br>在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置，否则将无法正常答题。'
-				}
-			}
-		}),
-
-		guide: new Script({
-			name: '使用提示',
-			url: [/onlineweb.zhihuishu.com\/onlinestuh5/, /www.zhihuishu.com/],
-			level: 1,
-			namespace: 'zhs.guide',
-			configs: {
-				notes: {
-					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
-				}
-			}
-		}),
-		login: new Script({
-			name: '登录脚本',
-			url: [/passport.zhihuishu.com\/login/],
-			level: 9,
-			namespace: 'zhs.login',
-			configs: {
-				notes: {
-					defaultValue: el('ul', [
-						el('li', '脚本会自动输入账号密码，但是需要手动填写验证码。'),
-						el('li', '脚本用于辅助软件登录，如不想使用可直接关闭。')
-					]).outerHTML
-				},
-				disable: {
-					label: '关闭此脚本',
-					defaultValue: false,
-					attrs: { type: 'checkbox' }
-				},
-				type: {
-					label: '登录类型',
-					tag: 'select',
-					defaultValue: 'phone' as 'phone' | 'id',
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value') || '', [
-								['phone', '手机号登录'],
-								['id', '学号登录']
-							])
-						);
-					}
-				}
-			},
-			onrender({ panel }) {
-				let els: Record<string, ConfigElement<any>>;
-				/** 监听更改 */
-				this.onConfigChange('type', () => {
-					for (const key in els) {
-						if (Object.prototype.hasOwnProperty.call(els, key)) {
-							els[key].remove();
-						}
-					}
-					// 删除后重新渲染
-					render();
-				});
-
-				const render = () => {
-					/** 动态创建设置 */
-					const passwordConfig: Config = { label: '密码', defaultValue: '', attrs: { type: 'password' } };
-					if (this.cfg.type === 'phone') {
-						els = $creator.configs('zhs.login', {
-							phone: { label: '手机', defaultValue: '' },
-							password: passwordConfig
-						});
-					} else {
-						els = $creator.configs('zhs.login', {
-							school: { label: '学校', defaultValue: '' },
-							id: { label: '学号', defaultValue: '' },
-							password: passwordConfig
-						});
-					}
-
-					for (const key in els) {
-						if (Object.prototype.hasOwnProperty.call(els, key)) {
-							panel.configsBody.append(els[key]);
-						}
-					}
-				};
-
-				render();
-			},
-			oncomplete() {
-				if (!this.cfg.disable) {
-					const id = setTimeout(async () => {
-						const phoneLogin = $el('#qSignin');
-						const idLogin = $el('#qStudentID');
-
-						console.log({ p: getValue('zhs.login.phone') });
-
-						if (this.cfg.type === 'phone') {
-							phoneLogin.click();
-							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
-							$el('#lUsername').value = getValue('zhs.login.phone');
-							$el('#lPassword').value = getValue('zhs.login.password');
-						} else {
-							idLogin.click();
-							const search = $el('#quickSearch');
-							search.onfocus?.(new FocusEvent('focus'));
-							search.value = getValue('zhs.login.school');
-							search.onclick?.(new MouseEvent('click'));
-							// 等待搜索
-							await sleep(2000);
-
-							$el('#schoolListCode > li').click();
-							$el('#clCode').value = getValue('zhs.login.id');
-							$el('#clPassword').value = getValue('zhs.login.password');
-						}
-
-						// 点击登录
-						await sleep(1000);
-						$el('#f_sign_up .wall-sub-btn').click();
-					}, 3000);
-					const close = el('a', '取消');
-					const msg = $message('info', { content: el('span', ['3秒后自动登录。', close]) });
-					close.href = '#';
-					close.onclick = () => {
-						clearTimeout(id);
-						msg.remove();
-					};
-				}
 			}
 		})
 	}

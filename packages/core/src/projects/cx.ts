@@ -7,7 +7,7 @@ import { $creator } from '../utils/creator';
 import { $$el, $el, el } from '../utils/dom';
 
 import { getValue, unsafeWindow } from '../utils/tampermonkey';
-import { $message, $model } from './init';
+import { $message, $model } from './render';
 
 export const CXProject = Project.create({
 	name: '学习通',

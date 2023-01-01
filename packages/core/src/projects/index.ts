@@ -1,7 +1,7 @@
 import { Project } from '../interfaces/project';
 import { CommonProject } from './common';
 import { CXProject } from './cx';
-import { RenderProject } from './init';
+import { RenderProject } from './render';
 import { ZHSProject } from './zhs';
 
 export function getDefinedProjects(): Project[] {
