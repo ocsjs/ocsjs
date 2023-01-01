@@ -9,19 +9,19 @@ import { $$el, $el, el } from '../utils/dom';
 import { getValue, unsafeWindow } from '../utils/tampermonkey';
 import { $message, $model } from './init';
 
-export const CXProject: Project = {
-	name: '超星学习通',
+export const CXProject = Project.create({
+	name: '学习通',
 	level: 99,
 	domains: ['chaoxing.com'],
-	scripts: [
-		new Script({
+	scripts: {
+		study: new Script({
 			name: '课程学习',
 			namespace: 'cx.study',
 			url: []
 		}),
-		new Script({
+		'chapter-guide': new Script({
 			name: '章节提示',
-			namespace: 'cx.chapter',
+			namespace: 'cx.chapter.guide',
 			url: [/\/mooc2-ans\/mycourse\/studentcourse/],
 			level: 9,
 			configs: {
@@ -55,7 +55,7 @@ export const CXProject: Project = {
 				this.onConfigChange('autoStudy', run);
 			}
 		}),
-		new Script({
+		login: new Script({
 			name: '登录脚本',
 			url: [/passport2.chaoxing.com\/login/],
 			level: 9,
@@ -132,7 +132,7 @@ export const CXProject: Project = {
 						if (this.cfg.type === 'phone') {
 							phoneLogin?.click();
 							await sleep(1000);
-
+							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
 							$el('#phone').value = getValue('cx.login.phone');
 							$el('#pwd').value = getValue('cx.login.password');
 
@@ -168,7 +168,7 @@ export const CXProject: Project = {
 				}
 			}
 		}),
-		new Script({
+		guide: new Script({
 			name: '使用提示',
 			url: [/chaoxing.com/],
 			level: 1,
@@ -179,5 +179,5 @@ export const CXProject: Project = {
 				}
 			}
 		})
-	]
-};
+	}
+});
