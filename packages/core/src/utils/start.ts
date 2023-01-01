@@ -41,14 +41,23 @@ export function start(cfg: StartConfig) {
 		script.onstart?.(cfg);
 	});
 
+	/** 防止 onactive 执行两次 */
+	let active = false;
+
+	/** 存在一开始就是 active 的情况 */
 	if (document.readyState === 'interactive') {
+		active = true;
 		scripts.forEach((script) => {
 			script.onactive?.(cfg);
 		});
 	}
 
 	document.addEventListener('readystatechange', () => {
-		if (document.readyState === 'interactive') {
+		if (
+			document.readyState === 'interactive' &&
+			/** 防止执行两次 */
+			active === false
+		) {
 			scripts.forEach((script) => {
 				script.onactive?.(cfg);
 			});
@@ -60,9 +69,18 @@ export function start(cfg: StartConfig) {
 		}
 	});
 
-	window.onbeforeunload = () => {
-		scripts.forEach((script) => {
-			script.onbeforeunload?.(cfg);
-		});
+	window.onbeforeunload = (e) => {
+		let prevent;
+		for (const script of scripts) {
+			if (script.onbeforeunload?.(cfg)) {
+				prevent = true;
+			}
+		}
+
+		if (prevent) {
+			e.preventDefault();
+			e.returnValue = true;
+			return true;
+		}
 	};
 }
