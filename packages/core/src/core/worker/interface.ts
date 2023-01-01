@@ -173,3 +173,5 @@ export type WorkOptions<E extends RawElements> = {
 	/** 监听错误事件 */
 	onError?: (e: Error, ctx?: WorkContext<E>) => void;
 };
+
+export type WorkUploadType = 'save' | 'nomove' | 'force' | number;

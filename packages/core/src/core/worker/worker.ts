@@ -1,6 +1,6 @@
 import { sleep } from '../../utils/common';
 import { domSearchAll } from '../utils/dom';
-import { RawElements, ResolverResult, WorkContext, WorkOptions, WorkResult } from './interface';
+import { RawElements, ResolverResult, WorkContext, WorkOptions, WorkResult, WorkUploadType } from './interface';
 import { defaultQuestionResolve } from './question.resolver';
 import { defaultWorkTypeResolver } from './utils';
 
@@ -168,8 +168,8 @@ export class OCSWorker<E extends RawElements = RawElements> {
 	async uploadHandler(options: {
 		// doWork 的返回值结果
 		results: WorkResult<E>[];
-		// 上传百分比
-		uploadRate: string;
+		// 提交类型
+		type: WorkUploadType;
 		/**
 		 * 是否上传处理器
 		 *
@@ -178,7 +178,7 @@ export class OCSWorker<E extends RawElements = RawElements> {
 		 */
 		callback: (finishedRate: number, uploadable: boolean) => void | Promise<void>;
 	}) {
-		const { results, uploadRate, callback } = options;
+		const { results, type, callback } = options;
 		let finished = 0;
 		for (const result of results) {
 			if (result.result?.finish) {
@@ -186,11 +186,11 @@ export class OCSWorker<E extends RawElements = RawElements> {
 			}
 		}
 		const rate = results.length === 0 ? 0 : (finished / results.length) * 100;
-		if (uploadRate !== 'nomove') {
-			if (uploadRate === 'force') {
+		if (type !== 'nomove') {
+			if (type === 'force') {
 				await callback(rate, true);
 			} else {
-				await callback(rate, uploadRate === 'save' ? false : rate >= parseFloat(uploadRate));
+				await callback(rate, type === 'save' ? false : rate >= parseFloat(type.toString()));
 			}
 		}
 	}
