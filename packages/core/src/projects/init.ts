@@ -40,17 +40,21 @@ const panel = el('div');
 const root = panel.attachShadow({ mode: 'closed' });
 const messageContainer = el('div', { className: 'message-container' });
 
-const InitPanelScript = new Script({
-	name: '初始化页面',
+const RenderScript = new Script({
+	name: '悬浮窗',
 	url: [/.*/],
-	namespace: 'init.panel',
-	hideInPanel: true,
+	namespace: 'render.panel',
 	configs: {
 		x: { defaultValue: window.innerWidth * 0.1 },
 		y: { defaultValue: window.innerWidth * 0.1 },
 		visual: { defaultValue: 'normal' },
 		expandAll: { defaultValue: false },
-		currentPanelName: { defaultValue: 'init.panel' }
+		currentPanelName: { defaultValue: 'render.panel' },
+		fontsize: {
+			label: '字体大小',
+			attrs: { type: 'number', min: 10, max: 36, step: 1 },
+			defaultValue: 14
+		}
 	},
 	onactive({ style, projects }: StartConfig) {
 		/** 注册自定义元素 */
@@ -62,6 +66,7 @@ const InitPanelScript = new Script({
 		/** 当前匹配到的脚本，并且面板不隐藏 */
 		const matchedScripts = getMatchedScripts(projects, [location.href]).filter((s) => !s.hideInPanel);
 
+		/** 根元素 */
 		const container = el('container-element');
 
 		/** 创建头部元素 */
@@ -89,8 +94,6 @@ const InitPanelScript = new Script({
 				{
 					onchange: () => {
 						this.cfg.currentPanelName = projectSelector.value;
-						// 替换元素
-						replaceBody();
 					}
 				},
 				(select) => {
@@ -114,11 +117,14 @@ const InitPanelScript = new Script({
 					}
 				}
 			);
-			const panelName = el('span', {}, (name) => {
-				projectSelector.addEventListener('change', () => {
-					updatePanelProjectName(name);
-				});
+			const opt = el('option');
+			const updatePanelProjectName = () => (opt.innerText = projectSelector.value.split('-')[0] + '-');
+			/** 仅展示名字，不具备选择功能 */
+			const projectNameEl = el('select', [opt], (sel) => {
+				sel.disabled = true;
 			});
+			projectSelector.addEventListener('change', updatePanelProjectName);
+			updatePanelProjectName();
 			const projectSelectorDiv = $creator.tooltip(
 				el(
 					'div',
@@ -126,13 +132,10 @@ const InitPanelScript = new Script({
 						className: ['project-selector', this.cfg.expandAll ? 'expand-all' : ''].join(' '),
 						title: '点击选择脚本操作页面，部分脚本会提供操作页面（包含脚本设置和脚本提示）。'
 					},
-					[panelName, projectSelector]
+					[projectNameEl, projectSelector]
 				)
 			);
-			const updatePanelProjectName = (name: HTMLSpanElement) => {
-				name.innerText = projectSelector.value.split('-')[0] + ' -';
-			};
-			updatePanelProjectName(panelName);
+
 			container.header.projectSelector = projectSelectorDiv;
 
 			/** 是否展开所有脚本 */
@@ -223,7 +226,7 @@ const InitPanelScript = new Script({
 		/** 创建内容 */
 		const createBody = (urls: string[]) => {
 			const scriptContainers = [];
-			const allScript = [];
+			const allScript: Script[] = [];
 
 			for (const project of projects) {
 				const scripts = getMatchedScripts([project], urls).filter((s) => !s.hideInPanel);
@@ -234,7 +237,6 @@ const InitPanelScript = new Script({
 					script.projectName = project.name;
 					script.panel = panel;
 					script.header = container.header;
-					script.onrender?.({ panel, header: container.header });
 					return panel;
 				};
 				for (const script of scripts) {
@@ -244,13 +246,18 @@ const InitPanelScript = new Script({
 
 			if (!this.cfg.expandAll) {
 				const index = allScript.findIndex((s) => s.projectName + '-' + s.name === this.cfg.currentPanelName);
-				if (index !== -1) {
-					return [scriptContainers[index]];
-				} else {
-					return [scriptContainers[0]];
-				}
+				const targetIndex = index === -1 ? 0 : index;
+				// 执行重新渲染钩子
+				allScript[targetIndex].onrender?.({ panel: scriptContainers[targetIndex], header: container.header });
+				return [scriptContainers[targetIndex]];
 			}
 			// 如果全部展开
+			for (const script of allScript) {
+				if (script.panel) {
+					script.onrender?.({ panel: script.panel, header: container.header });
+				}
+			}
+
 			return scriptContainers;
 		};
 
@@ -327,6 +334,13 @@ const InitPanelScript = new Script({
 				initHeader(curr);
 				replaceBody(curr);
 			});
+
+			// 监听变化，重新渲染
+			this.onConfigChange('currentPanelName', render);
+		};
+
+		const onFontsizeChange = () => {
+			container.style.font = `${this.cfg.fontsize}px  Menlo, Monaco, Consolas, 'Courier New', monospace`;
 		};
 
 		/** 在顶级页面显示操作面板 */
@@ -340,17 +354,22 @@ const InitPanelScript = new Script({
 			target.after(panel);
 			initModelSystem();
 			handlePosition();
+
+			onFontsizeChange();
+			this.onConfigChange('fontsize', onFontsizeChange);
 		}
 
 		handleVisible();
 	}
 });
 
-export const InitProject: Project = {
-	name: '初始化程序',
+export const RenderProject = Project.create({
+	name: '渲染',
 	domains: [],
-	scripts: [InitPanelScript]
-};
+	scripts: {
+		render: RenderScript
+	}
+});
 
 /**
  * 创建一个模态框代替原生的 alert, confirm, prompt
