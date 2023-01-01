@@ -25,10 +25,11 @@ export function start(cfg: StartConfig) {
 
 	/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
 	cfg.projects = cfg.projects.map((p) => {
-		p.scripts = p.scripts.map((s) => {
-			s.cfg = createConfigProxy(s);
-			return s;
-		});
+		for (const key in p.scripts) {
+			if (Object.prototype.hasOwnProperty.call(p.scripts, key)) {
+				p.scripts[key].cfg = createConfigProxy(p.scripts[key]);
+			}
+		}
 		return p;
 	});
 

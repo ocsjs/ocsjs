@@ -67,9 +67,12 @@ export function getAllRawConfigs(scripts: Script[]): Record<string, Config> {
 export function getMatchedScripts(projects: Project[], urls: string[]) {
 	const scripts = [];
 	for (const project of projects) {
-		for (const script of project.scripts) {
-			if (script.url.some((u) => urls.some((url) => RegExp(u).test(url)))) {
-				scripts.push(script);
+		for (const key in project.scripts) {
+			if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
+				const script = project.scripts[key];
+				if (script.url.some((u) => urls.some((url) => RegExp(u).test(url)))) {
+					scripts.push(script);
+				}
 			}
 		}
 	}
