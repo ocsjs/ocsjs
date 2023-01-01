@@ -8,6 +8,8 @@
  * 而对于消息推送，弹窗通知等临时，但是需要跨域的变量，可以使用标签页去存储临时信息
  */
 
+import { CommonProject } from '../projects/common';
+
 /**
  * 通过key获取存储的值
  * @param key 键
@@ -85,7 +87,7 @@ export function notification(
 		duration?: number;
 	}
 ) {
-	const notification = getValue('common.settings.notification', true);
+	const notification = CommonProject.scripts.settings.cfg.notification;
 	if (notification) {
 		const { onclick, ondone, important, duration = 0 } = options || {};
 		const { icon, name } = getInfos().script;
