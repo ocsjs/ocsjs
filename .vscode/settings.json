@@ -1,7 +1,10 @@
 {
 	"cSpell.words": [
+		"isclose",
+		"isstop",
 		"nomove",
 		"ondefault",
+		"ondone",
 		"onprevent",
 		"onrender",
 		"onrun",

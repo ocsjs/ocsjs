@@ -31,12 +31,14 @@
 	},
 	"homepage": "https://github.com/ocsjs/ocsjs#readme",
 	"devDependencies": {
+		"@types/event-emitter": "^0.3.3",
 		"@types/string-similarity": "^4.0.0",
 		"@types/tampermonkey": "^4.0.5",
 		"vite": "^2.9.15",
 		"vite-plugin-banner": "^0.6.1"
 	},
 	"dependencies": {
+		"events": "^3.3.0",
 		"lodash": "^4.17.21",
 		"string-similarity": "^4.0.4"
 	}

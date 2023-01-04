@@ -1,7 +1,7 @@
 import { Project } from '../interfaces/project';
 
-import { createConfigProxy, getMatchedScripts, uuid } from './common';
-import { getTab, setTab } from './tampermonkey';
+import { $ } from './common';
+import { $gm } from './tampermonkey';
 
 /**
  * 启动配置
@@ -17,9 +17,9 @@ export interface StartConfig {
  */
 export function start(cfg: StartConfig) {
 	// 添加当前标签唯一id
-	getTab(({ tabId }) => {
+	$gm.getTab(({ tabId }) => {
 		if (tabId === undefined) {
-			setTab({ tabId: uuid() });
+			$gm.setTab({ tabId: $.uuid() });
 		}
 	});
 
@@ -27,13 +27,13 @@ export function start(cfg: StartConfig) {
 	cfg.projects = cfg.projects.map((p) => {
 		for (const key in p.scripts) {
 			if (Object.prototype.hasOwnProperty.call(p.scripts, key)) {
-				p.scripts[key].cfg = createConfigProxy(p.scripts[key]);
+				p.scripts[key].cfg = $.createConfigProxy(p.scripts[key]);
 			}
 		}
 		return p;
 	});
 
-	const scripts = getMatchedScripts(cfg.projects, [location.href]);
+	const scripts = $.getMatchedScripts(cfg.projects, [location.href]);
 
 	/** 执行脚本 */
 

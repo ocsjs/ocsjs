@@ -45,14 +45,30 @@ hr {
 }
 .base-style-button {
   appearance: none;
-  border: 1px solid #ffffff00;
-  background-color: #94bfff;
-  color: white;
   border-radius: 4px;
+  background-color: white;
+  border: 1px solid #2c92ff;
+  color: #409eff;
   cursor: pointer;
+  margin-bottom: 4px;
 }
 .base-style-button:active {
   box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.base-style-button + .base-style-button {
+  margin-left: 12px;
+}
+.base-style-button:hover {
+  background-color: #7abbff24;
+}
+.base-style-button:disabled {
+  background-color: white;
+  border: 1px solid #c0c0c0;
+  color: #aeaeae;
+  cursor: not-allowed;
+}
+.base-style-button:disabled:active {
+  box-shadow: none;
 }
 container-element.close {
   display: none;
@@ -105,11 +121,13 @@ container-element {
 .logo {
   color: black;
   width: 18px;
+  height: 18px;
   cursor: pointer;
   border-radius: 100%;
-  display: inline-block;
-  text-align: center;
   font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 .close {
   background: #ff00004f;
@@ -186,9 +204,11 @@ script-panel-element + script-panel-element {
   background: #0099ff0e;
   border-left: 4px solid #0099ff65;
   width: -webkit-fill-available;
-  margin: 0px 12px;
+  margin: 0px 8px;
+  line-height: 22px;
 }
 .tooltip {
+  z-index: 99999999999999;
   margin: 12px 0px 0px 12px;
   padding: 4px;
   color: black;
@@ -299,14 +319,30 @@ script-panel-element + script-panel-element {
 }
 .configs .configs-body config-element .config-wrapper input[type='button'] {
   appearance: none;
-  border: 1px solid #ffffff00;
-  background-color: #94bfff;
-  color: white;
   border-radius: 4px;
+  background-color: white;
+  border: 1px solid #2c92ff;
+  color: #409eff;
   cursor: pointer;
+  margin-bottom: 4px;
 }
 .configs .configs-body config-element .config-wrapper input[type='button']:active {
   box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.configs .configs-body config-element .config-wrapper input[type='button'] + .configs .configs-body config-element .config-wrapper input[type='button'] {
+  margin-left: 12px;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:hover {
+  background-color: #7abbff24;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:disabled {
+  background-color: white;
+  border: 1px solid #c0c0c0;
+  color: #aeaeae;
+  cursor: not-allowed;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:disabled:active {
+  box-shadow: none;
 }
 .configs .configs-body config-element .config-wrapper input[type='checkbox'] {
   appearance: none;
@@ -477,11 +513,11 @@ model-element .model-input:hover {
 }
 model-element .model-cancel-button {
   appearance: none;
-  border: 1px solid #ffffff00;
-  background-color: #94bfff;
-  color: white;
   border-radius: 4px;
+  border: 1px solid #2c92ff;
+  color: #409eff;
   cursor: pointer;
+  margin-bottom: 4px;
   color: gray;
   background-color: white;
   border: 1px solid #dcdcdc;
@@ -489,16 +525,47 @@ model-element .model-cancel-button {
 model-element .model-cancel-button:active {
   box-shadow: 0px 0px 8px #0e8de2a5;
 }
+model-element .model-cancel-button + model-element .model-cancel-button {
+  margin-left: 12px;
+}
+model-element .model-cancel-button:hover {
+  background-color: #7abbff24;
+}
+model-element .model-cancel-button:disabled {
+  background-color: white;
+  border: 1px solid #c0c0c0;
+  color: #aeaeae;
+  cursor: not-allowed;
+}
+model-element .model-cancel-button:disabled:active {
+  box-shadow: none;
+}
 model-element .model-confirm-button {
   appearance: none;
-  border: 1px solid #ffffff00;
-  background-color: #94bfff;
-  color: white;
   border-radius: 4px;
+  background-color: white;
+  border: 1px solid #2c92ff;
+  color: #409eff;
   cursor: pointer;
+  margin-bottom: 4px;
 }
 model-element .model-confirm-button:active {
   box-shadow: 0px 0px 8px #0e8de2a5;
+}
+model-element .model-confirm-button + model-element .model-confirm-button {
+  margin-left: 12px;
+}
+model-element .model-confirm-button:hover {
+  background-color: #7abbff24;
+}
+model-element .model-confirm-button:disabled {
+  background-color: white;
+  border: 1px solid #c0c0c0;
+  color: #aeaeae;
+  cursor: not-allowed;
+}
+model-element .model-confirm-button:disabled:active {
+  box-shadow: none;
 }
 model-element.alert .model-input,
 model-element.alert .model-cancel-button {

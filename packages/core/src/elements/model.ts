@@ -64,5 +64,12 @@ export class ModelElement extends IElement {
 
 		this.cancelButton !== null && this.modalFooter.append(this.cancelButton);
 		this.confirmButton !== null && this.modalFooter.append(this.confirmButton);
+
+		const resize = () => {
+			this.style.maxHeight = window.innerHeight - 100 + 'px';
+			this.style.maxWidth = window.innerWidth - 50 + 'px';
+		};
+		resize();
+		window.addEventListener('resize', resize);
 	}
 }
