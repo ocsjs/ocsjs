@@ -2,7 +2,7 @@ import { QuestionResolver, WorkContext } from './interface';
 import { isPlainAnswer, splitAnswer } from './utils';
 import { StringUtils } from '@ocsjs/common/src/utils/string';
 import { answerSimilar, removeRedundant, clearString } from '../utils/string';
-import { sleep } from '../../utils/common';
+import { $ } from '../../utils/common';
 
 /** 默认答案题目处理器 */
 export function defaultQuestionResolve<E>(
@@ -130,7 +130,7 @@ export function defaultQuestionResolve<E>(
 				for (let i = 0; i < targetOptions[index].length; i++) {
 					await handler('multiple', targetAnswers[index][i], targetOptions[index][i], ctx);
 					// 暂停一会防止点击过快
-					await sleep(500);
+					await $.sleep(500);
 				}
 
 				return { finish: true, targetOptions, targetAnswers };

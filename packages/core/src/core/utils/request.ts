@@ -1,4 +1,4 @@
-import { isInBrowser } from '../../utils/common';
+import { $ } from '../../utils/common';
 
 /**
  * 发起请求
@@ -20,7 +20,7 @@ export function request<T extends 'json' | 'text'>(
 			/** 默认参数 */
 			const { contentType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
 			/** 环境变量 */
-			const env = isInBrowser() ? 'browser' : 'node';
+			const env = $.isInBrowser() ? 'browser' : 'node';
 
 			/** 如果是跨域模式并且是浏览器环境 */
 			if (type === 'GM_xmlhttpRequest' && env === 'browser') {

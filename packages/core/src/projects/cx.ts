@@ -2,11 +2,11 @@ import { ConfigElement } from '../elements/config';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { sleep } from '../utils/common';
+import { $ } from '../utils/common';
 import { $creator } from '../utils/creator';
 import { $$el, $el, el } from '../utils/dom';
 
-import { getValue, unsafeWindow } from '../utils/tampermonkey';
+import { $gm } from '../utils/tampermonkey';
 import { $message, $model } from './render';
 
 export const CXProject = Project.create({
@@ -131,29 +131,29 @@ export const CXProject = Project.create({
 						const idLogin = $el('#otherlogin');
 						if (this.cfg.type === 'phone') {
 							phoneLogin?.click();
-							await sleep(1000);
+							await $.sleep(1000);
 							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
-							$el('#phone').value = getValue('cx.login.phone');
-							$el('#pwd').value = getValue('cx.login.password');
+							$el('#phone').value = $gm.getValue('cx.login.phone');
+							$el('#pwd').value = $gm.getValue('cx.login.password');
 
 							// 点击登录
-							await sleep(1000);
+							await $.sleep(1000);
 							$el('#loginBtn').click();
 						} else {
 							idLogin?.click();
-							await sleep(1000);
+							await $.sleep(1000);
 							const search = $el('#inputunitname');
 							search.focus();
-							search.value = getValue('cx.login.school');
+							search.value = $gm.getValue('cx.login.school');
 							// @ts-ignore
-							unsafeWindow.search(search);
+							$.unsafeWindow.search(search);
 
 							// 等待搜索
-							await sleep(2000);
+							await $.sleep(2000);
 
 							$el('#r1b > li').click();
-							$el('#uname').value = getValue('cx.login.id');
-							$el('#password').value = getValue('cx.login.password');
+							$el('#uname').value = $gm.getValue('cx.login.id');
+							$el('#password').value = $gm.getValue('cx.login.password');
 
 							$message('info', { content: '请输入验证码后点击登录。' });
 						}

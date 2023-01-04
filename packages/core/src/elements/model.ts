@@ -1,10 +1,10 @@
 import { el } from '../utils/dom';
-import { getInfos } from '../utils/tampermonkey';
+import { $gm } from '../utils/tampermonkey';
 import { IElement } from './interface';
 
 export class ModelElement extends IElement {
 	modelProfile: HTMLDivElement = el('div', {
-		innerText: '弹窗来自: OCS-' + getInfos().script.version,
+		innerText: '弹窗来自: OCS-' + $gm.getInfos().script.version,
 		className: 'model-profile'
 	});
 
