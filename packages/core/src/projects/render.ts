@@ -5,12 +5,13 @@ import { ModelElement } from '../elements/model';
 import { cors } from '../interfaces/cors';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getMatchedScripts } from '../utils/common';
+import { $ } from '../utils/common';
 import { $creator } from '../utils/creator';
 import { el, enableElementDraggable } from '../utils/dom';
+import { $elements } from '../utils/elements';
 import { StartConfig } from '../utils/start';
-import { humpToTarget } from '../utils/string';
-import { addConfigChangeListener, getInfos, getValue, notification } from '../utils/tampermonkey';
+import { $string } from '../utils/string';
+import { $gm } from '../utils/tampermonkey';
 
 export type ModelAttrs = Pick<
 	ModelElement,
@@ -35,10 +36,6 @@ export type ModelAttrs = Pick<
 		duration?: number;
 	};
 };
-
-const panel = el('div');
-const root = panel.attachShadow({ mode: 'closed' });
-const messageContainer = el('div', { className: 'message-container' });
 
 const RenderScript = new Script({
 	name: '悬浮窗',
@@ -70,34 +67,40 @@ const RenderScript = new Script({
 	onactive({ style, projects }: StartConfig) {
 		/** 注册自定义元素 */
 		for (const element of definedCustomElements) {
-			const name = humpToTarget(element.name, '-');
+			const name = $string.humpToTarget(element.name, '-');
 			customElements.define(name, element);
 		}
 
 		/** 当前匹配到的脚本，并且面板不隐藏 */
-		const matchedScripts = getMatchedScripts(projects, [location.href]).filter((s) => !s.hideInPanel);
+		const matchedScripts = $.getMatchedScripts(projects, [location.href]).filter((s) => !s.hideInPanel);
 
 		/** 根元素 */
 		const container = el('container-element');
 
 		/** 创建头部元素 */
-		const initHeader = (urls: string[] = getValue('_urls_', [location.href])) => {
+		const initHeader = (urls: string[] = $gm.getValue('_urls_', [location.href])) => {
 			container.header.replaceChildren();
 			/** 图标 */
 			container.header.logo = $creator.tooltip(
 				el('img', {
-					src: getInfos().script.icon || '',
+					src: $gm.getInfos().script.icon || '',
 					width: 18,
 					className: 'logo',
 					title: '官方教程',
 					onclick: () => {
-						window.open(getInfos().script.homepage || '', '_blank');
+						window.open($gm.getInfos().script.homepage || '', '_blank');
 					}
 				})
 			);
 
 			/** 版本简介 */
-			container.header.profile = el('div', { className: 'profile' }, 'OCS-' + (getInfos().script.version || '0'));
+			container.header.profile = $creator.tooltip(
+				el(
+					'div',
+					{ className: 'profile', title: '菜单栏（可拖动区域）' },
+					'OCS-' + ($gm.getInfos().script.version || '0')
+				)
+			);
 
 			/** 面板切换器 */
 			const projectSelector = el(
@@ -109,7 +112,7 @@ const RenderScript = new Script({
 				},
 				(select) => {
 					for (const project of projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a)) {
-						const scripts = getMatchedScripts([project], urls)
+						const scripts = $.getMatchedScripts([project], urls)
 							.filter((s) => !s.hideInPanel)
 							.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
 						if (scripts.length) {
@@ -240,7 +243,7 @@ const RenderScript = new Script({
 			const allScript: Script[] = [];
 
 			for (const project of projects) {
-				const scripts = getMatchedScripts([project], urls).filter((s) => !s.hideInPanel);
+				const scripts = $.getMatchedScripts([project], urls).filter((s) => !s.hideInPanel);
 				allScript.push(...scripts);
 
 				const initPanelAndScript = (script: Script) => {
@@ -260,6 +263,7 @@ const RenderScript = new Script({
 				const targetIndex = index === -1 ? 0 : index;
 				// 执行重新渲染钩子
 				allScript[targetIndex].onrender?.({ panel: scriptContainers[targetIndex], header: container.header });
+				allScript[targetIndex].emit('render', { panel: scriptContainers[targetIndex], header: container.header });
 				return [scriptContainers[targetIndex]];
 			}
 			// 如果全部展开
@@ -318,7 +322,7 @@ const RenderScript = new Script({
 		};
 
 		/** 替换 body 中的内容 */
-		const replaceBody = (urls: string[] = getValue('_urls_', [location.href])) => {
+		const replaceBody = (urls: string[] = $gm.getValue('_urls_', [location.href])) => {
 			container.body.replaceChildren(...createBody(urls));
 		};
 		/** 创建设置区域 */
@@ -341,7 +345,7 @@ const RenderScript = new Script({
 			initHeader();
 			replaceBody();
 
-			addConfigChangeListener('_urls_', (pre, curr) => {
+			$gm.addConfigChangeListener('_urls_', (pre, curr) => {
 				initHeader(curr);
 				replaceBody(curr);
 			});
@@ -357,12 +361,12 @@ const RenderScript = new Script({
 		/** 在顶级页面显示操作面板 */
 		if (matchedScripts.length !== 0 && self === top) {
 			// 创建样式元素
-			container.append(el('style', {}, style || ''), messageContainer);
+			container.append(el('style', {}, style || ''), $elements.messageContainer);
 			render();
 			// 随机位置插入操作面板到页面
-			root.append(container);
+			$elements.root.append(container);
 			const target = document.body.children[random(0, document.body.children.length - 1)];
-			target.after(panel);
+			target.after($elements.panel);
 			initModelSystem();
 			handlePosition();
 
@@ -398,7 +402,10 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 		} = attrs;
 
 		if (notify) {
-			notification(typeof _attrs.content === 'string' ? _attrs.content : _attrs.content.innerText, notificationOptions);
+			$gm.notification(
+				typeof _attrs.content === 'string' ? _attrs.content : _attrs.content.innerText,
+				notificationOptions
+			);
 		}
 
 		const wrapper = el('div', { className: 'model-wrapper' }, (wrapper) => {
@@ -436,7 +443,7 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 			}
 		});
 
-		root.append(wrapper);
+		$elements.root.append(wrapper);
 
 		return wrapper;
 	} else {
@@ -458,7 +465,7 @@ export function $message(
 	attrs: Pick<MessageElement, 'duration' | 'onClose' | 'content' | 'closeable'>
 ) {
 	const message = el('message-element', { type, ...attrs });
-	messageContainer.append(message);
+	$elements.messageContainer.append(message);
 	return message;
 }
 

@@ -1,16 +1,18 @@
 import { getDefinedProjects } from '.';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { getAllRawConfigs } from '../utils/common';
+import { $ } from '../utils/common';
 import cloneDeep from 'lodash/cloneDeep';
 import { $message, $model } from './render';
 import { el } from '../utils/dom';
-import { notification } from '../utils/tampermonkey';
 import { parseAnswererWrappers } from '../core/utils/common';
 import { AnswererWrapper, defaultAnswerWrapperHandler } from '../core/worker/answer.wrapper.handler';
 import debounce from 'lodash/debounce';
 import { WorkResult } from '../core/worker/interface';
 import { $creator } from '../utils/creator';
+import { ScriptPanelElement } from '../elements/script.panel';
+import { HeaderElement } from '../elements/header';
+import { $gm } from '../utils/tampermonkey';
 
 export const CommonProject = Project.create({
 	name: '通用',
@@ -401,7 +403,7 @@ export const CommonProject = Project.create({
 			oncomplete() {
 				this.onConfigChange('notification', (open) => {
 					if (open) {
-						notification('您已开启系统通知，如果脚本有重要情况需要处理，则会发起通知提示您。', {
+						$gm.notification('您已开启系统通知，如果脚本有重要情况需要处理，则会发起通知提示您。', {
 							duration: 5
 						});
 					}
@@ -414,74 +416,83 @@ export const CommonProject = Project.create({
 			url: [/.*/],
 			namespace: 'common.guide',
 			configs: {
-				notes: {
-					defaultValue: ''
-				},
 				showGuide: { defaultValue: true, label: '显示使用教程', attrs: { type: 'checkbox' } }
 			},
 
-			onrender({ panel, header }) {
-				const projectSelector = header.projectSelector?.cloneNode(true) as HTMLSelectElement;
-				const logo = header.logo?.cloneNode(true) as HTMLDivElement;
-				const expandSwitcher = header.expandSwitcher?.cloneNode(true) as HTMLDivElement;
-				const visualSwitcher = header.visualSwitcher?.cloneNode(true) as HTMLDivElement;
-				const closeButton = header.closeButton?.cloneNode(true) as HTMLDivElement;
+			oncomplete() {
+				const createGuide = ({ panel, header }: { panel: ScriptPanelElement; header: HeaderElement }) => {
+					const projectSelector = header.projectSelector?.cloneNode(true) as HTMLSelectElement;
+					const logo = header.logo?.cloneNode(true) as HTMLDivElement;
+					const expandSwitcher = header.expandSwitcher?.cloneNode(true) as HTMLDivElement;
+					const visualSwitcher = header.visualSwitcher?.cloneNode(true) as HTMLDivElement;
+					const closeButton = header.closeButton?.cloneNode(true) as HTMLDivElement;
+					projectSelector.style.display = 'inline-block';
+					projectSelector.querySelectorAll('select').forEach((el) => (el.disabled = true));
+					logo.style.cursor = 'default';
+					expandSwitcher.style.cursor = 'default';
+					visualSwitcher.style.cursor = 'default';
+					closeButton.style.cursor = 'default';
 
-				const guide = el('div', [
-					el('ol', { className: 'user-guide' }, [
-						el('li', [
-							'OCS会根据当前的页面自动选择脚本进行运行，如果没有达到您预期的效果，则代表当前页面并没有脚本运行。',
-							'以下是全部支持的网课以及包含的脚本（点击下列详情展开查看）:'
-						]),
-						...getDefinedProjects().map((project) => {
-							return el('details', [
-								el('summary', project.name),
-								el(
-									'ul',
-									Object.keys(project.scripts).map((key) =>
-										el('li', [
+					return el('div', { className: 'user-guide' }, [
+						$creator.notes(
+							[
+								[
+									'OCS会根据当前的页面自动选择脚本进行运行，如果没有达到您预期的效果，则代表当前页面并没有脚本运行。',
+									'以下是全部支持的网课以及包含的脚本（点击下列详情展开查看）:',
+									...getDefinedProjects().map((project) => {
+										return el('details', [
+											el('summary', project.name),
 											el(
-												'span',
-												{
-													title: [
-														'隐藏操作页面:\t' + (project.scripts[key].hideInPanel ? '是' : '否'),
-														'在以下页面中运行:\t' + project.scripts[key].url.join(',')
-													].join('\n')
-												},
-												project.scripts[key].name
+												'ul',
+												Object.keys(project.scripts).map((key) =>
+													el('li', [
+														el(
+															'span',
+															{
+																title: [
+																	'隐藏操作页面:\t' + (project.scripts[key].hideInPanel ? '是' : '否'),
+																	'在以下页面中运行:\t' + project.scripts[key].url.join(',')
+																].join('\n')
+															},
+															project.scripts[key].name
+														)
+													])
+												),
+												(ul) => {
+													ul.style.paddingLeft = '42px';
+												}
 											)
-										])
-									),
-									(ul) => {
-										ul.style.paddingLeft = '42px';
-									}
-								)
-							]);
-						}),
+										]);
+									})
+								],
+								[
+									'以下是窗口顶部菜单栏的按钮说明:',
+									$creator.notes([
+										el('span', [
+											projectSelector,
+											' 部分脚本会提供操作页面（包含脚本设置和脚本提示）。此按钮可以选择指定的脚本页面进行显示。'
+										]),
+										el('span', [logo, ' 点击查看官网教程']),
+										el('span', [expandSwitcher, ' 可以 展开/收缩 脚本操作页面。']),
+										el('span', [visualSwitcher, ' 可以 展开/收缩 窗口。']),
+										el('span', [closeButton, ' ', closeButton.getAttribute('data-title') || ''])
+									])
+								],
 
-						el('li', '以下是窗口顶部菜单栏的按钮说明:', [
-							el('ul', { className: 'user-guide' }, [
-								el('li', [
-									projectSelector || '',
-									' ',
-									'菜单栏的选择框，可选择脚本操作页面，部分脚本会提供操作页面（包含脚本设置和脚本提示）。'
-								]),
-								el('li', [logo || '', ' ', '点击查看官网教程']),
-								el('li', [expandSwitcher || '', ' ', '可以 展开/收缩 脚本操作页面。']),
-								el('li', [visualSwitcher || '', ' ', '可以 最小化/展开 窗口。']),
-								el('li', [closeButton || '', ' ', closeButton?.title || closeButton.getAttribute('data-title') || ''])
-							])
-						]),
+								'最后温馨提示：请将浏览器页面保持最大化，或者缩小窗口，不能最小化，可能导致脚本卡死！'
+							],
+							'ol'
+						)
+					]);
+				};
+				this.on('render', ({ panel, header }) => {
+					panel.body.replaceChildren(el('hr'), createGuide({ panel, header }));
+				});
 
-						el('li', '最后温馨提示：请将浏览器页面保持最大化，或者缩小窗口，不能最小化，可能导致脚本卡死！')
-					])
-				]);
-				this.cfg.notes = guide.outerHTML;
-
-				if (this.cfg.showGuide) {
+				if (this.cfg.showGuide && this.panel && this.header) {
 					$model('confirm', {
 						title: '使用教程',
-						content: panel.notesContainer.outerHTML || '',
+						content: createGuide({ panel: this.panel, header: this.header }),
 						confirmButtonText: '我已阅读，不再提示',
 						onConfirm: () => {
 							this.cfg.showGuide = false;
@@ -497,7 +508,7 @@ export const CommonProject = Project.create({
 			url: [/.*/],
 			configs: () => {
 				const configs = cloneDeep(
-					getAllRawConfigs(
+					$.getAllRawConfigs(
 						getDefinedProjects()
 							.map((p) => Object.keys(p.scripts).map((key) => p.scripts[key]))
 							.flat()

@@ -1,16 +1,21 @@
 /**
- * 驼峰转目标字符串
- * @param value
- * @returns
+ * 字符串工具库
  */
-export function humpToTarget(value: string, target: string) {
-	return value
-		.replace(/([A-Z])/g, target + '$1')
-		.toLowerCase()
-		.split(target)
-		.slice(1)
-		.join(target);
-}
+export const $string = {
+	/**
+	 * 驼峰转目标字符串
+	 * @param value
+	 * @returns
+	 */
+	humpToTarget(value: string, target: string) {
+		return value
+			.replace(/([A-Z])/g, target + '$1')
+			.toLowerCase()
+			.split(target)
+			.slice(1)
+			.join(target);
+	}
+};
 
 export class StringUtils {
 	_text: string;

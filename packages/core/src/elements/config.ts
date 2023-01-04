@@ -1,6 +1,6 @@
 import { $creator } from '../utils/creator';
 import { el } from '../utils/dom';
-import { addConfigChangeListener, getValue, setValue } from '../utils/tampermonkey';
+import { $gm } from '../utils/tampermonkey';
 
 import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
@@ -17,24 +17,35 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 	_onload?: (this: ConfigTagMap[T], el: this) => void;
 
 	get value() {
-		return getValue(this.key);
+		return $gm.getValue(this.key);
 	}
 
 	connectedCallback() {
 		const createInput = () => {
 			this.provider = el('input');
 			if (['checkbox', 'radio'].some((t) => t === this.attrs?.type)) {
-				this.provider.checked = getValue(this.key, false);
+				this.provider.checked = $gm.getValue(this.key, false);
 				const provider = this.provider;
 				provider.onchange = () => {
-					setValue(this.key, provider.checked);
+					$gm.setValue(this.key, provider.checked);
 				};
 			} else {
-				this.provider.value = getValue(this.key, '');
+				this.provider.value = $gm.getValue(this.key, '');
 				this.provider.setAttribute('value', this.provider.value);
 
 				this.provider.onchange = () => {
-					setValue(this.key, this.provider.value);
+					const { min, max, type } = (this.attrs || {}) as Partial<ConfigTagMap['input']>;
+					if (type === 'number') {
+						if (min && this.provider.value < min) {
+							this.provider.value = min;
+						} else if (max && this.provider.value > max) {
+							this.provider.value = max;
+						} else {
+							$gm.setValue(this.key, this.provider.value);
+						}
+					} else {
+						$gm.setValue(this.key, this.provider.value);
+					}
 				};
 			}
 		};
@@ -46,17 +57,17 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 			case 'select': {
 				this.provider = el('select');
 				// select 表情不能直接设置 value ，需要根据子元素 selected
-				this.provider.setAttribute('value', getValue(this.key));
+				this.provider.setAttribute('value', $gm.getValue(this.key));
 				this.provider.onchange = () => {
-					setValue(this.key, this.provider.value);
+					$gm.setValue(this.key, this.provider.value);
 				};
 				break;
 			}
 			case 'textarea': {
 				this.provider = el('textarea');
-				this.provider.value = getValue(this.key, '');
+				this.provider.value = $gm.getValue(this.key, '');
 				this.provider.onchange = () => {
-					setValue(this.key, this.provider.value);
+					$gm.setValue(this.key, this.provider.value);
 				};
 				break;
 			}
@@ -77,7 +88,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 
 		// 处理跨域
 		if (this.sync) {
-			addConfigChangeListener(this.key, (pre, curr, remote) => {
+			$gm.addConfigChangeListener(this.key, (pre, curr, remote) => {
 				this.provider.value = curr;
 			});
 		}

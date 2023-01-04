@@ -1,8 +1,9 @@
 import { HeaderElement } from '../elements/header';
 import { ScriptPanelElement } from '../elements/script.panel';
-import { namespaceKey } from '../utils/common';
-import { addConfigChangeListener, getValue, removeConfigChangeListener, setValue } from '../utils/tampermonkey';
+import { $ } from '../utils/common';
+import { $gm } from '../utils/tampermonkey';
 import { Config } from './config';
+import EventEmitter from 'events';
 
 export type ScriptConfigsProvider<T extends Record<string, Config>> = T | { (): T };
 
@@ -17,7 +18,7 @@ export interface ScriptOptions<T extends Record<string, Config>> {
 	hideInPanel?: boolean;
 }
 
-export class BaseScript {
+export class BaseScript extends EventEmitter {
 	/** 在脚本加载时立即运行的钩子 */
 	onstart?: (...args: any) => any;
 	/** 在页面初始化完成时（元素可被访问）时运行的钩子 */
@@ -63,8 +64,8 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 	panel?: ScriptPanelElement;
 	/** 操作面板头部元素 */
 	header?: HeaderElement;
-	/** 监听器，存储每个 key 的监听器，number 是监听器的 id */
-	listeners: Map<string, number> = new Map();
+	/** 本地变量改变监听器，存储每个 key 的监听器，number 是监听器的 id */
+	configListeners: Map<string, number> = new Map();
 
 	get configs() {
 		if (!this._resolvedConfigs) {
@@ -115,20 +116,20 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		const _onstart = this.onstart;
 		this.onstart = (...args: any) => {
 			_onstart?.call(this, ...args);
-			const urls: string[] = Array.from(getValue('_urls_', []));
+			const urls: string[] = Array.from($gm.getValue('_urls_', []));
 			const urlHasInRecord = urls.find((u) => u === location.href);
 			if (!urlHasInRecord) {
-				setValue('_urls_', urls.concat(location.href));
+				$gm.setValue('_urls_', urls.concat(location.href));
 			}
 		};
 
 		const _onbeforeunload = this.onbeforeunload;
 		this.onbeforeunload = (...args: any) => {
 			const prevent = _onbeforeunload?.call(this, ...args);
-			const urls: string[] = Array.from(getValue('_urls_', []));
+			const urls: string[] = Array.from($gm.getValue('_urls_', []));
 			const urlIndex = urls.findIndex((u) => u === location.href);
 			if (urlIndex !== -1) {
-				setValue('_urls_', urls.splice(urlIndex, 1));
+				$gm.setValue('_urls_', urls.splice(urlIndex, 1));
 			}
 			return prevent;
 		};
@@ -138,35 +139,22 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 		key: K,
 		handler: (curr: T[K]['defaultValue'], pre: T[K]['defaultValue'], remote: boolean) => any
 	) {
-		const _key = namespaceKey(this.namespace, key.toString());
-		const id = this.listeners.get(_key);
-		if (id) {
-			removeConfigChangeListener(id);
-		}
+		const _key = $.namespaceKey(this.namespace, key.toString());
 
-		this.listeners.set(
+		this.configListeners.set(
 			_key,
-			addConfigChangeListener(_key, (pre, curr, remote) => {
+			$gm.addConfigChangeListener(_key, (pre, curr, remote) => {
 				handler(curr, pre, remote);
 			})
 		);
 	}
 
 	offConfigChange(key: keyof T) {
-		const _key = namespaceKey(this.namespace, key.toString());
-		const id = this.listeners.get(_key);
+		const _key = $.namespaceKey(this.namespace, key.toString());
+		const id = this.configListeners.get(_key);
 		if (id) {
-			removeConfigChangeListener(id);
+			$gm.removeConfigChangeListener(id);
 		}
-		this.listeners.delete(_key);
-	}
-
-	/**
-	 * 在面板中置顶
-	 *
-	 * 原理：设置本地当前面板名为：工程名-脚本名
-	 */
-	static pin(script: Script) {
-		setValue('render.panel.currentPanelName', `${script.projectName}-${script.name}`);
+		this.configListeners.delete(_key);
 	}
 }
