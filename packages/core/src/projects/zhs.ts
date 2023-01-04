@@ -187,23 +187,36 @@ export const ZHSProject = Project.create({
 						const phoneLogin = $el('#qSignin');
 						const idLogin = $el('#qStudentID');
 
-						if (this.cfg.type === 'phone') {
-							phoneLogin.click();
-							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 $gm.getValue 进行获取
-							$el('#lUsername').value = $gm.getValue('zhs.login.phone');
-							$el('#lPassword').value = $gm.getValue('zhs.login.password');
-						} else {
-							idLogin.click();
-							const search = $el('#quickSearch');
-							search.onfocus?.(new FocusEvent('focus'));
-							search.value = $gm.getValue('zhs.login.school');
-							search.onclick?.(new MouseEvent('click'));
-							// 等待搜索
-							await $.sleep(2000);
+						const phone = $gm.getValue('zhs.login.phone');
+						const password = $gm.getValue('zhs.login.password');
+						const school = $gm.getValue('zhs.login.school');
+						const id = $gm.getValue('zhs.login.id');
 
-							$el('#schoolListCode > li').click();
-							$el('#clCode').value = $gm.getValue('zhs.login.id');
-							$el('#clPassword').value = $gm.getValue('zhs.login.password');
+						if (this.cfg.type === 'phone') {
+							if (phone && password) {
+								phoneLogin.click();
+								// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 $gm.getValue 进行获取
+								$el('#lUsername').value = $gm.getValue('zhs.login.phone');
+								$el('#lPassword').value = $gm.getValue('zhs.login.password');
+							} else {
+								$message('warn', { content: '信息未填写完整，登录停止。' });
+							}
+						} else {
+							if (school && id && password) {
+								idLogin.click();
+								const search = $el('#quickSearch');
+								search.onfocus?.(new FocusEvent('focus'));
+								search.value = $gm.getValue('zhs.login.school');
+								search.onclick?.(new MouseEvent('click'));
+								// 等待搜索
+								await $.sleep(2000);
+
+								$el('#schoolListCode > li').click();
+								$el('#clCode').value = $gm.getValue('zhs.login.id');
+								$el('#clPassword').value = $gm.getValue('zhs.login.password');
+							} else {
+								$message('warn', { content: '信息未填写完整，登录停止。' });
+							}
 						}
 
 						// 点击登录

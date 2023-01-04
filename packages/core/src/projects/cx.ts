@@ -129,33 +129,47 @@ export const CXProject = Project.create({
 					const id = setTimeout(async () => {
 						const phoneLogin = $el('#back');
 						const idLogin = $el('#otherlogin');
+
+						const phone = $gm.getValue('cx.login.phone');
+						const password = $gm.getValue('cx.login.password');
+						const school = $gm.getValue('cx.login.school');
+						const id = $gm.getValue('cx.login.id');
+
 						if (this.cfg.type === 'phone') {
-							phoneLogin?.click();
-							await $.sleep(1000);
-							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
-							$el('#phone').value = $gm.getValue('cx.login.phone');
-							$el('#pwd').value = $gm.getValue('cx.login.password');
+							if (phone && password) {
+								phoneLogin?.click();
+								await $.sleep(1000);
+								// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
+								$el('#phone').value = $gm.getValue('cx.login.phone');
+								$el('#pwd').value = $gm.getValue('cx.login.password');
 
-							// 点击登录
-							await $.sleep(1000);
-							$el('#loginBtn').click();
+								// 点击登录
+								await $.sleep(1000);
+								$el('#loginBtn').click();
+							} else {
+								$message('warn', { content: '信息未填写完整，登录停止。' });
+							}
 						} else {
-							idLogin?.click();
-							await $.sleep(1000);
-							const search = $el('#inputunitname');
-							search.focus();
-							search.value = $gm.getValue('cx.login.school');
-							// @ts-ignore
-							$.unsafeWindow.search(search);
+							if (school && id && password) {
+								idLogin?.click();
+								await $.sleep(1000);
+								const search = $el('#inputunitname');
+								search.focus();
+								search.value = $gm.getValue('cx.login.school');
+								// @ts-ignore
+								$.unsafeWindow.search(search);
 
-							// 等待搜索
-							await $.sleep(2000);
+								// 等待搜索
+								await $.sleep(2000);
 
-							$el('#r1b > li').click();
-							$el('#uname').value = $gm.getValue('cx.login.id');
-							$el('#password').value = $gm.getValue('cx.login.password');
+								$el('#r1b > li').click();
+								$el('#uname').value = $gm.getValue('cx.login.id');
+								$el('#password').value = $gm.getValue('cx.login.password');
 
-							$message('info', { content: '请输入验证码后点击登录。' });
+								$message('info', { content: '请输入验证码后点击登录。' });
+							} else {
+								$message('warn', { content: '信息未填写完整，登录停止。' });
+							}
 						}
 					}, 3000);
 					const close = el('a', '取消');
