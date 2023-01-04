@@ -4,8 +4,9 @@ import { ConfigElement } from '../elements/config';
 import { Config } from '../interfaces/config';
 import { $message, $model } from '../projects/render';
 
-import { namespaceKey } from './common';
+import { $ } from './common';
 import { ElementChildren, ElementHandler, el } from './dom';
+import { $elements } from './elements';
 
 export interface CommonWorkOptions {
 	period: number;
@@ -15,35 +16,42 @@ export interface CommonWorkOptions {
 	answererWrappers: AnswererWrapper[];
 }
 
+/**
+ * 元素创建器
+ */
 export const $creator = {
+	notes(lines: (string | HTMLElement | (string | HTMLElement)[])[], tag: 'ul' | 'ol' = 'ul') {
+		return el(
+			tag,
+			lines.map((line) => el('li', Array.isArray(line) ? line.map((str) => el('div', [str])) : [line]))
+		);
+	},
 	/**
 	 * 启动元素提示气泡，根据元素 title 即时显示，（兼容手机端的提示）
 	 * @param target
 	 */
 	tooltip<T extends HTMLElement>(target: T) {
-		const title = el('div', { className: 'tooltip' });
 		target.setAttribute('data-title', target.title);
 		// 取消默认title，避免系统默认事件重复显示
 		target.removeAttribute('title');
 
 		const onMouseMove = (e: MouseEvent) => {
-			title.style.top = e.y + 'px';
-			title.style.left = e.x + 'px';
+			$elements.tooltip.style.top = e.y + 'px';
+			$elements.tooltip.style.left = e.x + 'px';
 		};
 		const showTitle = (e: MouseEvent) => {
 			const dataTitle = target.getAttribute('data-title');
 			if (dataTitle) {
-				title.style.display = 'block';
-				title.innerHTML = dataTitle.split('\n').join('<br>') || '';
-				title.style.top = e.y + 'px';
-				title.style.left = e.x + 'px';
-				target.after(title);
+				$elements.tooltip.style.display = 'block';
+				$elements.tooltip.innerHTML = dataTitle.split('\n').join('<br>') || '';
+				$elements.tooltip.style.top = e.y + 'px';
+				$elements.tooltip.style.left = e.x + 'px';
 			}
-
+			$elements.tooltip.style.display = 'block';
 			window.addEventListener('mousemove', onMouseMove);
 		};
 		const hideTitle = () => {
-			title.style.display = 'none';
+			$elements.tooltip.style.display = 'none';
 			window.removeEventListener('mousemove', onMouseMove);
 		};
 		hideTitle();
@@ -82,12 +90,12 @@ export const $creator = {
 		});
 	},
 	button(
+		text?: string,
 		attrs?: Omit<Partial<HTMLInputElement>, 'type'> | undefined,
-		children?: ElementChildren,
 		handler?: ElementHandler<'input'> | undefined
 	) {
 		return el('input', { type: 'button', ...attrs }, function (btn) {
-			btn.append(...(children || []));
+			btn.value = text || '';
 			btn.classList.add('base-style-button');
 			handler?.apply(this, [btn]);
 		});
@@ -101,7 +109,7 @@ export const $creator = {
 				const cfg = configs[key];
 				if (cfg.label !== undefined) {
 					const element = el('config-element', {
-						key: namespaceKey(namespace, key),
+						key: $.namespaceKey(namespace, key),
 						tag: cfg.tag,
 						sync: cfg.sync,
 						attrs: cfg.attrs,
@@ -172,12 +180,14 @@ export const $creator = {
 	workPreCheckMessage(
 		options: CommonWorkOptions & {
 			onrun: (opts: CommonWorkOptions) => void;
+			ondone?: (opts: CommonWorkOptions) => void;
 		}
 	) {
-		const { onrun, ...opts } = options;
+		const { onrun, ondone, ...opts } = options;
 
 		if (opts.answererWrappers.length === 0) {
 			$model('alert', { content: '题库配置为空，请设置。' });
+			ondone?.(opts);
 		} else {
 			$message('info', {
 				duration: 5,
@@ -190,7 +200,8 @@ export const $creator = {
 							onrun(opts);
 						},
 						onprevent(span) {
-							$message('warn', { content: '已经关闭此次的自动答题，刷新页面后可重新开始答题。' });
+							$message('warn', { content: '已关闭此次的自动答题。' });
+							ondone?.(opts);
 						}
 					})
 				])
