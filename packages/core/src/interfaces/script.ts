@@ -2,6 +2,7 @@ import { HeaderElement } from '../elements/header';
 import { ScriptPanelElement } from '../elements/script.panel';
 import { $ } from '../utils/common';
 import { $gm } from '../utils/tampermonkey';
+import { CommonEventEmitter } from './common';
 import { Config } from './config';
 import EventEmitter from 'events';
 
@@ -18,19 +19,41 @@ export interface ScriptOptions<T extends Record<string, Config>> {
 	hideInPanel?: boolean;
 }
 
-export class BaseScript extends EventEmitter {
+export type ScriptConfigs = {
+	/** 脚本提示 */
+	readonly notes?: {
+		defaultValue: string;
+	};
+} & Record<string, Config>;
+
+type ScriptEvent = {
+	/** 在脚本加载时立即运行的事件 */
+	start: (...args: any[]) => any;
+	/** 在页面初始化完成时（元素可被访问）时运行的事件 */
+	active: (...args: any[]) => any;
+	/** 在页面完全加载时运行的事件 */
+	complete: (...args: any[]) => any;
+	/** 当 history 被 push 或者 replace 修改时运行的事件 */
+	historychange: (type: 'push' | 'replace', ...args: any[]) => any;
+	/** 在渲染的时候执行的事件，（面板之间切换时会重复渲染） */
+	render: (elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
+	/** 在页面离开时执行的事件 */
+	beforeunload: (...args: any[]) => undefined | boolean;
+};
+
+export class BaseScript<E extends Record<string | symbol, (...args: any[]) => any>> extends CommonEventEmitter<E> {
 	/** 在脚本加载时立即运行的钩子 */
-	onstart?: (...args: any) => any;
+	onstart?: (...args: any[]) => any;
 	/** 在页面初始化完成时（元素可被访问）时运行的钩子 */
-	onactive?: (...args: any) => any;
+	onactive?: (...args: any[]) => any;
 	/** 在页面完全加载时运行的钩子 */
-	oncomplete?: (...args: any) => any;
+	oncomplete?: (...args: any[]) => any;
 	/** 当 history 被 push 或者 replace 修改时运行的钩子 */
-	onhistorychange?: (type: 'push' | 'replace', ...args: any) => any;
+	onhistorychange?: (type: 'push' | 'replace', ...args: any[]) => any;
 	/** 在渲染的时候执行的钩子，（面板之间切换时会重复渲染） */
 	onrender?: (elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
 	/** 在页面离开时执行的钩子 */
-	onbeforeunload?: (...args: any) => undefined | boolean;
+	onbeforeunload?: (...args: any[]) => undefined | boolean;
 }
 
 export type ScriptConfigs = {
@@ -43,7 +66,10 @@ export type ScriptConfigs = {
 /**
  * 脚本
  */
-export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript {
+export class Script<
+	T extends ScriptConfigs = ScriptConfigs,
+	Events extends ScriptEvent = ScriptEvent
+> extends BaseScript<Events> {
 	/** 未经处理的 configs 原对象 */
 	private _configs?: ScriptConfigsProvider<T>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
@@ -68,6 +94,9 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript 
 	header?: HeaderElement;
 	/** 本地变量改变监听器，存储每个 key 的监听器，number 是监听器的 id */
 	configListeners: Map<string, number> = new Map();
+
+	/** 自定义事件触发器，避免使用 script.emit , script.on 导致与原有的事件冲突，使用 script.event.emit 和 script.event.on */
+	event: EventEmitter = new EventEmitter();
 
 	get configs() {
 		if (!this._resolvedConfigs) {

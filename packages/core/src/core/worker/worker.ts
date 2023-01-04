@@ -1,3 +1,4 @@
+import { CommonEventEmitter } from '../../interfaces/common';
 import { $message } from '../../projects/render';
 import { $ } from '../../utils/common';
 import { domSearchAll } from '../utils/dom';
@@ -12,7 +13,6 @@ import {
 } from './interface';
 import { defaultQuestionResolve } from './question.resolver';
 import { defaultWorkTypeResolver } from './utils';
-import EventEmitter from 'events';
 
 type WorkerEvent<E extends RawElements = RawElements> = {
 	/** 答题开始 */
@@ -39,7 +39,7 @@ type WorkerEvent<E extends RawElements = RawElements> = {
  * @param answerer  查题器, : 默认是 {@link defaultAnswerWrapperHandler}
  *
  */
-export class OCSWorker<E extends RawElements = RawElements> extends EventEmitter {
+export class OCSWorker<E extends RawElements = RawElements> extends CommonEventEmitter<WorkerEvent> {
 	opts: WorkOptions<E>;
 	isRunning = false;
 	isClose = false;
@@ -48,22 +48,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends EventEmitter
 	constructor(opts: WorkOptions<E>) {
 		super();
 		this.opts = opts;
-	}
-
-	override on<K extends keyof WorkerEvent<E>>(eventName: K, listener: WorkerEvent<E>[K]): this {
-		return super.on(eventName.toString(), listener);
-	}
-
-	override once<K extends keyof WorkerEvent<E>>(eventName: K, listener: WorkerEvent<E>[K]): this {
-		return super.once(eventName.toString(), listener);
-	}
-
-	override emit<K extends keyof WorkerEvent<E>>(eventName: K, ...args: Parameters<WorkerEvent<E>[K]>): boolean {
-		return super.emit(eventName.toString(), ...args);
-	}
-
-	override off<K extends keyof WorkerEvent<E>>(eventName: K, listener: WorkerEvent<E>[K]): this {
-		return super.off(eventName.toString(), listener);
 	}
 
 	currentContext?: WorkContext<E>;

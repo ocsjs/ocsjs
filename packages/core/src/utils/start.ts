@@ -15,7 +15,7 @@ export interface StartConfig {
  * 启动项目
  * @param cfg 启动配置
  */
-export function start(cfg: StartConfig) {
+export function start(startConfig: StartConfig) {
 	// 添加当前标签唯一id
 	$gm.getTab(({ tabId }) => {
 		if (tabId === undefined) {
@@ -24,7 +24,7 @@ export function start(cfg: StartConfig) {
 	});
 
 	/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
-	cfg.projects = cfg.projects.map((p) => {
+	startConfig.projects = startConfig.projects.map((p) => {
 		for (const key in p.scripts) {
 			if (Object.prototype.hasOwnProperty.call(p.scripts, key)) {
 				p.scripts[key].cfg = $.createConfigProxy(p.scripts[key]);
@@ -33,12 +33,13 @@ export function start(cfg: StartConfig) {
 		return p;
 	});
 
-	const scripts = $.getMatchedScripts(cfg.projects, [location.href]);
+	const scripts = $.getMatchedScripts(startConfig.projects, [location.href]);
 
 	/** 执行脚本 */
 
 	scripts.forEach((script) => {
-		script.onstart?.(cfg);
+		script.emit('start', startConfig);
+		script.onstart?.(startConfig);
 	});
 
 	/** 防止 onactive 执行两次 */
@@ -47,7 +48,7 @@ export function start(cfg: StartConfig) {
 	/** 存在一开始就是 active 的情况 */
 	if (document.readyState === 'interactive') {
 		active = true;
-		scripts.forEach((script) => script.onactive?.(cfg));
+		scripts.forEach((script) => script.onactive?.(startConfig));
 	}
 
 	document.addEventListener('readystatechange', () => {
@@ -56,26 +57,39 @@ export function start(cfg: StartConfig) {
 			/** 防止执行两次 */
 			active === false
 		) {
-			scripts.forEach((script) => script.onactive?.(cfg));
+			scripts.forEach((script) => {
+				script.emit('active', startConfig);
+				script.onactive?.(startConfig);
+			});
 		}
 		if (document.readyState === 'complete') {
-			scripts.forEach((script) => script.oncomplete?.(cfg));
+			scripts.forEach((script) => {
+				script.emit('complete');
+				script.oncomplete?.(startConfig);
+			});
 		}
 	});
 
 	history.pushState = addFunctionEventListener(history, 'pushState');
 	history.replaceState = addFunctionEventListener(history, 'replaceState');
 	window.addEventListener('pushState', () => {
-		scripts.forEach((script) => script.onhistorychange?.('push', cfg));
+		scripts.forEach((script) => {
+			script.emit('historychange', 'push', startConfig);
+			script.onhistorychange?.('push', startConfig);
+		});
 	});
 	window.addEventListener('replaceState', () => {
-		scripts.forEach((script) => script.onhistorychange?.('replace', cfg));
+		scripts.forEach((script) => {
+			script.emit('historychange', 'replace', startConfig);
+			script.onhistorychange?.('replace', startConfig);
+		});
 	});
 
 	window.onbeforeunload = (e) => {
 		let prevent;
 		for (const script of scripts) {
-			if (script.onbeforeunload?.(cfg)) {
+			script.emit('beforeunload');
+			if (script.onbeforeunload?.(startConfig)) {
 				prevent = true;
 			}
 		}
