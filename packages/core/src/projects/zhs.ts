@@ -5,14 +5,15 @@ import { MessageElement } from '../elements/message';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { elementToRawObject, sleep } from '../utils/common';
+import { $ } from '../utils/common';
 import { $creator, CommonWorkOptions } from '../utils/creator';
 import { $$el, $el, el } from '../utils/dom';
 import { StringUtils } from '../utils/string';
-import { getValue } from '../utils/tampermonkey';
+import { $gm } from '../utils/tampermonkey';
 import { $message, $model } from './render';
 import { CommonProject } from './common';
 import { WorkResult, WorkUploadType } from '../core/worker/interface';
+import { $script } from '../utils/script';
 
 /**
  * 全局变量
@@ -51,14 +52,17 @@ const definition: Config = {
 
 const workConfigs = {
 	notes: {
-		defaultValue:
-			'- 答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。<br>- 可以搭配 “通用-在线搜题” 一起使用。'
+		defaultValue: $creator.notes([
+			'答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。',
+			'可以搭配 “通用-在线搜题” 一起使用。'
+		]).outerHTML
 	} as Config<any, string>,
-	enable: {
+	auto: {
 		label: '开启自动答题',
 		attrs: { type: 'checkbox' },
 		defaultValue: false
 	} as Config<any, boolean>,
+
 	upload: {
 		label: '答题完成后',
 		tag: 'select',
@@ -85,7 +89,7 @@ const workConfigs = {
 // 是否暂停
 let stop = false;
 // 是否存在验证码
-let hasCapture = false;
+const hasCapture = false;
 
 /** 工程导出 */
 export const ZHSProject = Project.create({
@@ -100,7 +104,11 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.guide',
 			configs: {
 				notes: {
-					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
+					defaultValue: $creator.notes([
+						'请手动进入视频、作业、考试页面，脚本会自动运行。',
+						'兴趣课会自动下一个，所以不提供脚本。',
+						'校内学分课的考试脚本还未提供，请手动(划词)搜题。'
+					]).outerHTML
 				}
 			}
 		}),
@@ -111,9 +119,9 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.login',
 			configs: {
 				notes: {
-					defaultValue: el('ul', [
-						el('li', '脚本会自动输入账号密码，但是需要手动填写验证码。'),
-						el('li', '脚本用于辅助软件登录，如不想使用可直接关闭。')
+					defaultValue: $creator.notes([
+						'脚本会自动输入账号密码，但是需要手动填写验证码。',
+						'脚本用于辅助软件登录，如不想使用可直接关闭。'
 					]).outerHTML
 				},
 				disable: {
@@ -179,29 +187,27 @@ export const ZHSProject = Project.create({
 						const phoneLogin = $el('#qSignin');
 						const idLogin = $el('#qStudentID');
 
-						console.log({ p: getValue('zhs.login.phone') });
-
 						if (this.cfg.type === 'phone') {
 							phoneLogin.click();
-							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
-							$el('#lUsername').value = getValue('zhs.login.phone');
-							$el('#lPassword').value = getValue('zhs.login.password');
+							// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 $gm.getValue 进行获取
+							$el('#lUsername').value = $gm.getValue('zhs.login.phone');
+							$el('#lPassword').value = $gm.getValue('zhs.login.password');
 						} else {
 							idLogin.click();
 							const search = $el('#quickSearch');
 							search.onfocus?.(new FocusEvent('focus'));
-							search.value = getValue('zhs.login.school');
+							search.value = $gm.getValue('zhs.login.school');
 							search.onclick?.(new MouseEvent('click'));
 							// 等待搜索
-							await sleep(2000);
+							await $.sleep(2000);
 
 							$el('#schoolListCode > li').click();
-							$el('#clCode').value = getValue('zhs.login.id');
-							$el('#clPassword').value = getValue('zhs.login.password');
+							$el('#clCode').value = $gm.getValue('zhs.login.id');
+							$el('#clPassword').value = $gm.getValue('zhs.login.password');
 						}
 
 						// 点击登录
-						await sleep(1000);
+						await $.sleep(1000);
 						$el('#f_sign_up .wall-sub-btn').click();
 					}, 3000);
 					const close = el('a', '取消');
@@ -221,14 +227,28 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.gxk.study',
 			configs: {
 				notes: {
-					defaultValue: el('ul', [
-						el('li', '章节测试请大家观看完视频后手动打开。'),
-						el('li', [
-							el('div', '请大家仔细打开视频上方的”学前必读“，查看成绩分布，'),
-							el('div', '如果平时分占比多的话，请在下方的定时停止中选择时间，'),
-							el('div', '最好每天看半小时才能获得平时分。')
-						])
+					defaultValue: $creator.notes([
+						'章节测试请大家观看完视频后手动打开。',
+						[
+							'请大家仔细打开视频上方的”学前必读“，查看成绩分布。',
+							'如果 “平时成绩-学习习惯成绩” 占比多的话，就需要规律学习。',
+							'每天定时半小时可获得一分习惯分。',
+							'如果不想要习惯分可忽略。'
+						]
 					]).outerHTML
+				},
+				/** 学习记录 []  */
+				studyRecord: {
+					defaultValue: [] as {
+						/** 学习日期 */
+						date: number;
+						courses: {
+							/** 课程名 */
+							name: string;
+							/** 学习时间 */
+							time: number;
+						}[];
+					}[]
 				},
 				stopTime: {
 					label: '定时停止',
@@ -263,9 +283,63 @@ export const ZHSProject = Project.create({
 					}
 				}
 			},
+			onrender({ panel }) {
+				panel.body.append(
+					el('hr'),
+					$creator.button('⏰检测是否需要规律学习', {}, (btn) => {
+						btn.style.marginRight = '12px';
+						btn.onclick = () => {
+							$el('.iconbaizhoumoshi-xueqianbidu').click();
+							console.log($el('.preschool-Mustread-div'), $el('.preschool-Mustread-div').innerText);
+
+							setTimeout(() => {
+								const num = parseInt(
+									$el('.preschool-Mustread-div').innerText.match(/学习习惯成绩（(\d+)分）/)?.[1] || '0'
+								);
+								$model('alert', {
+									content:
+										`当前课程习惯分占比为${num}分，` +
+										(num
+											? `需要规律学习${num}天, 每天定时观看半小时即可。（如果不想拿习惯分可以忽略）`
+											: '可一直观看学习，无需定时停止。')
+								});
+							}, 100);
+						};
+					}),
+					$creator.button('📘查看学习记录', {}, (btn) => {
+						btn.onclick = () => {
+							$model('alert', {
+								title: '学习记录',
+								content: $creator.notes(
+									this.cfg.studyRecord.map((r) => {
+										const date = new Date(r.date);
+										return [
+											`${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date
+												.getDate()
+												.toString()
+												.padStart(2, '0')}`,
+											$creator.notes(r.courses.map((course) => `${course.name} - ${optimizeSecond(course.time)}`))
+										];
+									})
+								)
+							});
+						};
+					})
+				);
+			},
 			onactive() {
 				// 重置时间
 				this.cfg.stopTime = '0';
+				const records = this.cfg.studyRecord;
+				// 查找是否存在学习记录，不存在则新建
+				const record = records.find(
+					(record) => new Date(record.date).toLocaleDateString() === new Date().toLocaleDateString()
+				);
+				/** 初始化今日学习记录 */
+				if (!record) {
+					records.push({ date: Date.now(), courses: [] });
+					this.cfg.studyRecord = records;
+				}
 			},
 			oncomplete() {
 				const vue = $el('.video-study')?.__vue__;
@@ -330,7 +404,7 @@ export const ZHSProject = Project.create({
 					if (items.length !== 0) {
 						// 选择A
 						items[0].click();
-						await sleep(1000);
+						await $.sleep(1000);
 						// 关闭弹窗
 						vue.testDialog = false;
 					}
@@ -363,9 +437,17 @@ export const ZHSProject = Project.create({
 						if (timeMessage) {
 							timeMessage.remove();
 						}
+
+						const record = this.cfg.studyRecord.find(
+							(r) => new Date(r.date).toLocaleDateString() === new Date().toLocaleDateString()
+						);
 						timeMessage = $message('info', {
 							duration: 0,
-							content: `当前还剩${videos.length - 1}个视频，观看需耗时：${(allTime / (60 * 60)).toFixed(2)}小时`
+							content: `还剩${videos.length - 1}个视频，总时长${(allTime / (60 * 60)).toFixed(
+								2
+							)}小时，今日已学习${optimizeSecond(
+								record?.courses.find((c) => c.name === vue.data.courseInfo.name)?.time || 0
+							)}`
 						});
 					} catch {}
 				};
@@ -383,6 +465,24 @@ export const ZHSProject = Project.create({
 							$$el('.v-modal,.mask').forEach((modal) => {
 								modal.remove();
 							});
+
+							// 记录学习时间
+							if (!stop) {
+								const records = this.cfg.studyRecord;
+								const record = records.find(
+									(r) => new Date(r.date).toLocaleDateString() === new Date().toLocaleDateString()
+								);
+								if (record) {
+									record.courses = record?.courses || [];
+									const course = record?.courses.find((c) => c.name === vue.data.courseInfo.name);
+									if (course) {
+										course.time = course.time + 3;
+									} else {
+										record.courses.push({ name: vue.data.courseInfo.name, time: 0 });
+									}
+									this.cfg.studyRecord = records;
+								}
+							}
 						}, 3000);
 
 						// 查找任务
@@ -400,9 +500,9 @@ export const ZHSProject = Project.create({
 								if (stop === false) {
 									const item = list.shift();
 									if (item) {
-										await sleep(3000);
+										await $.sleep(3000);
 										item.click();
-										await sleep(5000);
+										await $.sleep(5000);
 										watch(
 											{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
 											study
@@ -429,8 +529,7 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.xnk.study',
 			configs: {
 				notes: {
-					defaultValue: el('ul', [el('li', '章节测试请大家观看完视频后手动打开。'), el('li', '此课程不能使用倍速。')])
-						.outerHTML
+					defaultValue: $creator.notes(['章节测试请大家观看完视频后手动打开。', '此课程不能使用倍速。']).outerHTML
 				},
 				restudy: restudy,
 				volume: volume,
@@ -465,8 +564,18 @@ export const ZHSProject = Project.create({
 			level: 999,
 			configs: {
 				notes: {
-					defaultValue:
-						'作业点击进入即可使用<br>考试功能因为zhs频繁更新所以不稳定，大家预留好其他搜题方式。<br>在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置，否则将无法正常答题。'
+					defaultValue: $creator.notes(
+						[
+							[
+								el('b', '在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置'),
+								el('b', '并在作业和考试脚本中开启自动答题选项，否则将无法正常答题。')
+							],
+							'考试自动答题在设置中开启，并点击进入即可使用',
+							'进入考试页面后需要刷新一下。',
+							'考试功能因为被频繁针对所以不稳定, 大家预留好其他搜题方式。'
+						],
+						'ol'
+					).outerHTML
 				}
 			}
 		}),
@@ -481,34 +590,58 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.gxk.work',
 			level: 99,
 			configs: workConfigs,
+
 			oncomplete() {
-				const changeMsg = () =>
-					$message('info', { content: el('span', ['检测到设置更改，请重新进入，或者刷新作业页面进行答题。']) });
+				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('upload', changeMsg);
-				this.onConfigChange('enable', changeMsg);
-				if (this.cfg.enable === false) {
-					return $message('warn', {
-						duration: 0,
-						content: '自动答题已被关闭！请在设置开启自动答题，并刷新页面！或者忽略此警告'
+				this.onConfigChange('auto', changeMsg);
+
+				let worker: OCSWorker<any> | undefined;
+				let warn: MessageElement | undefined;
+
+				this.on('start', () => start());
+				this.on('render', () => createWorkerControl(this, () => worker));
+				this.on('restart', () => {
+					worker?.emit('close');
+					$message('info', { content: '3秒后重新答题。' });
+					setTimeout(start, 3000);
+				});
+
+				/** 开始作业 */
+				const start = () => {
+					warn?.remove();
+					// 识别文字
+					recognize();
+					$creator.workPreCheckMessage({
+						onrun: (opts) => {
+							worker = gxkWorkOrExam('work', opts);
+						},
+						ondone: () => this.emit('done'),
+						upload: this.cfg.upload,
+						...CommonProject.scripts.settings.cfg
 					});
-				}
+				};
 
 				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/dohomework/.test(location.href)) {
-					const interval = setInterval(() => {
-						const vue = $el('#app > div')?.__vue__;
-						if (vue?.alllQuestionTest) {
-							clearInterval(interval);
-							// 识别文字
-							recognize();
-							// 开始作业
-							$creator.workPreCheckMessage({
-								onrun: (opts) => gxkWorkOrExam('work', opts),
-								upload: this.cfg.upload,
-								...CommonProject.scripts.settings.cfg
-							});
-						}
-					}, 1000);
-					//
+					/** 显示答题控制按钮 */
+					createWorkerControl(this, () => worker);
+
+					if (this.cfg.auto === false) {
+						this.emit('done');
+						warn = $message('warn', {
+							duration: 0,
+							content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
+						});
+					} else {
+						const interval = setInterval(() => {
+							const vue = $el('#app > div')?.__vue__;
+							if (vue?.alllQuestionTest) {
+								clearInterval(interval);
+
+								start();
+							}
+						}, 1000);
+					}
 				}
 			}
 		}),
@@ -524,44 +657,67 @@ export const ZHSProject = Project.create({
 			level: 99,
 			configs: {
 				notes: {
-					defaultValue:
-						'- 答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。<br>- 可以搭配 “通用-在线搜题” 一起使用。<br>- 考试请在脚本自动答题完成后自行检查，自己点击提交，脚本不会自动提交。<br>-如果开启后脚本仍然没有反应，请刷新页面重试。'
+					defaultValue: $creator.notes([
+						'答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。',
+						'可以搭配 “通用-在线搜题” 一起使用。',
+						'考试请在脚本自动答题完成后自行检查，自己点击提交，脚本不会自动提交。',
+						'如果开启后脚本仍然没有反应，请刷新页面重试。'
+					]).outerHTML
 				},
-				enable: {
+				auto: {
 					label: '开启自动答题',
 					attrs: { type: 'checkbox' },
 					defaultValue: false
 				}
 			},
-			oncomplete() {
-				const changeMsg = () =>
-					$message('info', { content: el('span', ['检测到设置更改，请重新进入，或者刷新考试页面进行答题。']) });
-				this.onConfigChange('enable', changeMsg);
 
-				if (this.cfg.enable === false) {
-					return $message('warn', {
-						duration: 0,
-						content: '自动答题已被关闭！请在设置开启自动答题，并刷新页面！或者忽略此警告'
+			async oncomplete() {
+				// 重置
+
+				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
+
+				this.onConfigChange('auto', changeMsg);
+
+				let worker: OCSWorker<any> | undefined;
+
+				this.on('start', () => start());
+				this.on('render', () => createWorkerControl(this, () => worker));
+				this.on('restart', () => {
+					worker?.emit('close');
+					$message('info', { content: '3秒后重新答题。' });
+					setTimeout(start, 3000);
+				});
+
+				/** 开始考试 */
+				const start = () => {
+					$creator.workPreCheckMessage({
+						onrun: (opts) => {
+							worker = gxkWorkOrExam('exam', opts);
+						},
+						ondone: () => {
+							this.emit('done');
+						},
+						upload: 'nomove',
+						...CommonProject.scripts.settings.cfg
 					});
-				}
+				};
 
 				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/doexamination/.test(location.href)) {
-					const interval = setInterval(() => {
-						const vue = $el('#app > div')?.__vue__;
-						// 等待题目加载
-						if (vue?.alllQuestionTest) {
-							clearInterval(interval);
-							// 识别文字
-							recognize();
-							// 开始考试
-							$creator.workPreCheckMessage({
-								onrun: (opts) => gxkWorkOrExam('exam', opts),
-								upload: 'nomove',
-								...CommonProject.scripts.settings.cfg
-							});
-						}
-					}, 1000);
-					//
+					/** 显示答题控制按钮 */
+					createWorkerControl(this, () => worker);
+
+					if (this.cfg.auto === false) {
+						this.emit('done');
+						$message('warn', {
+							duration: 0,
+							content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
+						});
+					} else {
+						await waitForQuestionsLoad();
+						// 识别文字
+						recognize();
+						start();
+					}
 				}
 			}
 		}),
@@ -571,22 +727,43 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.xnk.work',
 			level: 99,
 			configs: workConfigs,
+
 			oncomplete() {
-				const changeMsg = () => $message('info', { content: el('span', ['检测到设置更改，请刷新页面重新答题。']) });
+				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('upload', changeMsg);
-				this.onConfigChange('enable', changeMsg);
-				if (this.cfg.enable === false) {
+				this.onConfigChange('auto', changeMsg);
+
+				let worker: OCSWorker<any> | undefined;
+
+				/** 显示答题控制按钮 */
+				createWorkerControl(this, () => worker);
+
+				this.on('start', () => start());
+				this.on('restart', () => {
+					worker?.emit('close');
+					$message('info', { content: '3秒后重新答题。' });
+					setTimeout(start, 3000);
+				});
+
+				if (this.cfg.auto === false) {
 					return $message('warn', {
 						duration: 0,
-						content: '自动答题已被关闭！请在设置开启自动答题，并刷新页面！或者忽略此警告'
+						content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
 					});
 				}
 
-				$creator.workPreCheckMessage({
-					onrun: xnkWork,
-					upload: this.cfg.upload,
-					...CommonProject.scripts.settings.cfg
-				});
+				const start = () => {
+					$creator.workPreCheckMessage({
+						onrun: (opts) => {
+							worker = xnkWork(opts);
+						},
+						ondone: () => {
+							this.emit('done');
+						},
+						upload: this.cfg.upload,
+						...CommonProject.scripts.settings.cfg
+					});
+				};
 			}
 		})
 	}
@@ -606,21 +783,21 @@ async function watch(
 	const set = async () => {
 		// 设置清晰度
 		switchLine(options.definition);
-		await sleep(1000);
+		await $.sleep(1000);
 
 		// 设置播放速度
 		switchPlaybackRate(options.playbackRate);
-		await sleep(500);
+		await $.sleep(500);
 
 		// 上面操作会导致元素刷新，这里重新获取视频
 		video = $el<HTMLVideoElement>('video');
 		// 如果已经播放完了，则重置视频进度
 		video.currentTime = 1;
-		await sleep(500);
+		await $.sleep(500);
 
 		// 音量
 		video.volume = options.volume;
-		await sleep(500);
+		await $.sleep(500);
 	};
 
 	await set();
@@ -637,7 +814,7 @@ async function watch(
 	video.onpause = async () => {
 		if (!video.ended && stop === false) {
 			await waitForCaptcha();
-			await sleep(1000);
+			await $.sleep(1000);
 			video.play();
 		}
 	};
@@ -665,23 +842,56 @@ function switchPlaybackRate(playbackRate: number) {
  * 检测是否有验证码，并等待验证
  */
 
-function waitForCaptcha(): void | Promise<void> {
-	const popup = $el('.yidun_popup');
+function checkForCaptcha(update: (hasCaptcha: boolean) => void) {
+	let modal: HTMLDivElement | undefined;
+	return setInterval(() => {
+		if ($el('.yidun_popup')) {
+			update(true);
+			// 如果弹窗不存在，则显示
+			if (modal === undefined) {
+				modal = $model('alert', { content: '当前检测到验证码，请输入后方可继续运行。' });
+			}
+		} else {
+			if (modal) {
+				update(false);
+				// 关闭弹窗
+				modal.remove();
+				modal = undefined;
+			}
+		}
+	}, 1000);
+}
+
+export function waitForCaptcha(): void | Promise<void> {
+	const popup = document.querySelector('.yidun_popup');
 	if (popup) {
-		$model('alert', { content: '当前检测到验证码，请输入后方可继续运行。' });
+		$message('warn', { content: '当前检测到验证码，请输入后方可继续运行。' });
 		return new Promise<void>((resolve, reject) => {
 			const interval = setInterval(() => {
-				const popup = $el('.yidun_popup');
+				const popup = document.querySelector('.yidun_popup');
 				if (popup === null) {
-					hasCapture = false;
 					clearInterval(interval);
 					resolve();
-				} else {
-					hasCapture = true;
 				}
 			}, 1000);
 		});
 	}
+}
+
+/**
+ * 等待题目加载完毕
+ */
+function waitForQuestionsLoad() {
+	return new Promise<void>((resolve) => {
+		const interval = setInterval(() => {
+			const vue = $el('#app > div')?.__vue__;
+			// 等待题目加载
+			if (vue?.alllQuestionTest) {
+				clearInterval(interval);
+				resolve();
+			}
+		}, 1000);
+	});
 }
 
 /**
@@ -694,6 +904,13 @@ function hack() {
 	vue.notTrustScript = empty;
 	vue.checkoutNotTrustScript = empty;
 	const _videoClick = vue.videoClick;
+	vue.videoClick = function (...args: any[]) {
+		const e = new PointerEvent('click');
+		const event = Object.create({ isTrusted: true });
+		Object.setPrototypeOf(event, e);
+		args[args.length - 1] = event;
+		return _videoClick.apply(vue, args);
+	};
 	vue.videoClick = function (...args: any[]) {
 		args[args.length - 1] = { isTrusted: true };
 		return _videoClick.apply(vue, args);
@@ -708,15 +925,20 @@ function recognize() {
 	}
 }
 
-async function gxkWorkOrExam(
+/**
+ * 共享课的作业和考试
+ */
+function gxkWorkOrExam(
 	type: 'work' | 'exam' = 'work',
 	{ answererWrappers, period, timeout, retry, upload }: CommonWorkOptions
 ) {
+	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
+
 	const workResults: WorkResult<any>[] = [];
 	// 清空搜索结果
 	CommonProject.scripts.workResults.cfg.results = [];
 	// 置顶搜索结果面板
-	Script.pin(CommonProject.scripts.workResults);
+	$script.pin(CommonProject.scripts.workResults);
 
 	/** 新建答题器 */
 	const worker = new OCSWorker({
@@ -747,25 +969,20 @@ async function gxkWorkOrExam(
 				}
 			}
 		},
-		// 如果有验证码，则等待验证码
-		async interceptor() {
-			await waitForCaptcha();
-			return true;
-		},
 
 		/** 完成答题后 */
 		onResult: async (res) => {
 			// 处理题目跨域丢失问题
 			if (res.ctx) {
-				res.ctx.root = elementToRawObject(res.ctx.root);
-				res.ctx.elements.title = res.ctx.elements.title.map(elementToRawObject);
+				res.ctx.root = $.elementToRawObject(res.ctx.root);
+				res.ctx.elements.title = res.ctx.elements.title.map($.elementToRawObject);
 			}
 
 			workResults.push(res);
 			CommonProject.scripts.workResults.cfg.results = workResults;
 
 			console.log(CommonProject.scripts.workResults.cfg);
-			await sleep(500);
+			await $.sleep(500);
 			// 下一页
 			$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
 		},
@@ -778,51 +995,64 @@ async function gxkWorkOrExam(
 		stopWhenError: false
 	});
 
-	const results = await worker.doWork();
+	checkForCaptcha((hasCaptcha) => {
+		if (hasCaptcha) {
+			worker.emit('stop');
+		} else {
+			worker.emit('continuate');
+		}
+	});
 
-	if (type === 'exam') {
-		$message('info', { content: '为了安全考虑，请自行检查后自行点击提交！' });
-	} else {
-		// 处理提交
-		await worker.uploadHandler({
-			type: upload,
-			results,
-			async callback(finishedRate, uploadable) {
-				$message('info', {
-					content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
+	worker
+		.doWork()
+		.then(async (results) => {
+			if (type === 'exam') {
+				$message('info', { content: '为了安全考虑，请自行检查后自行点击提交！' });
+			} else {
+				// 处理提交
+				await worker.uploadHandler({
+					type: upload,
+					results,
+					async callback(finishedRate, uploadable) {
+						$message('info', {
+							content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
+						});
+
+						await $.sleep(5000);
+
+						// 保存按钮， 提交按钮
+						const saveBtn = $el('.btnStyleX:not(.btnStyleXSumit)');
+						const uploadBtn = $el('.btnStyleXSumit');
+
+						if (uploadable) {
+							uploadBtn?.click();
+						} else {
+							saveBtn?.click();
+						}
+
+						await $.sleep(2000);
+						/** 确定按钮 */
+						$el("[role='dialog'] .el-button--primary")?.click();
+					}
 				});
-
-				await sleep(5000);
-
-				// 保存按钮， 提交按钮
-				const saveBtn = $el('.btnStyleX:not(.btnStyleXSumit)');
-				const uploadBtn = $el('.btnStyleXSumit');
-
-				if (uploadable) {
-					uploadBtn?.click();
-				} else {
-					saveBtn?.click();
-				}
-
-				await sleep(2000);
-				/** 确定按钮 */
-				const { confirmBtn } = $el("[role='dialog'] .el-button--primary");
-
-				confirmBtn?.click();
 			}
+		})
+		.catch((err) => {
+			$message('error', { content: '提交程序发生错误 : ' + err.message });
 		});
-	}
+
+	return worker;
 }
 
 /**
  * 校内学分课的作业
  */
-async function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions) {
+function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions) {
 	const workResults: WorkResult<any>[] = [];
 	// 清空搜索结果
 	CommonProject.scripts.workResults.cfg.results = [];
 	// 置顶搜索结果面板
-	Script.pin(CommonProject.scripts.workResults);
+	$script.pin(CommonProject.scripts.workResults);
 
 	const worker = new OCSWorker({
 		root: '.questionBox',
@@ -859,8 +1089,8 @@ async function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkO
 		onResult: (res) => {
 			// 处理题目跨域丢失问题
 			if (res.ctx) {
-				res.ctx.root = elementToRawObject(res.ctx.root);
-				res.ctx.elements.title = res.ctx.elements.title.map(elementToRawObject);
+				res.ctx.root = $.elementToRawObject(res.ctx.root);
+				res.ctx.elements.title = res.ctx.elements.title.map($.elementToRawObject);
 			}
 			workResults.push(res);
 			CommonProject.scripts.workResults.cfg.results = workResults;
@@ -874,11 +1104,54 @@ async function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkO
 	const getBtn = () => document.querySelector('span.Topicswitchingbtn:nth-child(2)') as HTMLElement;
 	let next = getBtn();
 
-	while (next) {
-		await worker.doWork();
-		await sleep((period || 3) * 1000);
-		next = getBtn();
-		next?.click();
-		await sleep((period || 3) * 1000);
+	(async () => {
+		while (next && worker.isClose === false) {
+			await worker.doWork();
+			await $.sleep((period || 3) * 1000);
+			next = getBtn();
+			next?.click();
+			await $.sleep((period || 3) * 1000);
+		}
+	})();
+
+	return worker;
+}
+
+function optimizeSecond(second: number) {
+	return second / 3600 < 1 ? `${(second / 60).toFixed(2)}分钟` : `${(second / 3600).toFixed(2)}小时`;
+}
+
+/**
+ * 答题控制
+ */
+function createWorkerControl(
+	script: Script<Omit<typeof workConfigs, 'upload'>>,
+	getWorker: () => OCSWorker<any> | undefined
+) {
+	const worker = getWorker();
+	let stop = true;
+	const startBtn = $creator.button('▶️开始答题');
+	const restartBtn = $creator.button('↩️重新答题');
+	const controlBtn = $creator.button('⏸️暂停答题');
+
+	startBtn.onclick = () => {
+		startBtn.remove();
+		script.panel?.body.replaceChildren(el('hr'), restartBtn, controlBtn);
+		script.emit('start');
+	};
+	restartBtn.onclick = () => script.emit('restart');
+	controlBtn.onclick = () => {
+		stop = !stop;
+		const worker = getWorker();
+		worker?.emit?.(stop ? 'continuate' : 'stop');
+		controlBtn.value = stop ? '⏸️暂停答题' : '▶️继续答题';
+	};
+
+	script.on('done', () => (controlBtn.disabled = true));
+
+	if (script.panel) {
+		script.panel.body.style.textAlign = 'right';
 	}
+
+	script.panel?.body.replaceChildren(el('hr'), ...(worker?.isRunning ? [restartBtn, controlBtn] : [startBtn]));
 }
