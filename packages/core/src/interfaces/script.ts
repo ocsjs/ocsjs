@@ -25,10 +25,12 @@ export class BaseScript extends EventEmitter {
 	onactive?: (...args: any) => any;
 	/** 在页面完全加载时运行的钩子 */
 	oncomplete?: (...args: any) => any;
-	/** 在页面离开时执行的钩子 */
-	onbeforeunload?: (...args: any) => undefined | boolean;
+	/** 当 history 被 push 或者 replace 修改时运行的钩子 */
+	onhistorychange?: (type: 'push' | 'replace', ...args: any) => any;
 	/** 在渲染的时候执行的钩子，（面板之间切换时会重复渲染） */
 	onrender?: (elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
+	/** 在页面离开时执行的钩子 */
+	onbeforeunload?: (...args: any) => undefined | boolean;
 }
 
 export type ScriptConfigs = {

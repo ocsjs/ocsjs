@@ -47,9 +47,7 @@ export function start(cfg: StartConfig) {
 	/** 存在一开始就是 active 的情况 */
 	if (document.readyState === 'interactive') {
 		active = true;
-		scripts.forEach((script) => {
-			script.onactive?.(cfg);
-		});
+		scripts.forEach((script) => script.onactive?.(cfg));
 	}
 
 	document.addEventListener('readystatechange', () => {
@@ -58,15 +56,20 @@ export function start(cfg: StartConfig) {
 			/** 防止执行两次 */
 			active === false
 		) {
-			scripts.forEach((script) => {
-				script.onactive?.(cfg);
-			});
+			scripts.forEach((script) => script.onactive?.(cfg));
 		}
 		if (document.readyState === 'complete') {
-			scripts.forEach((script) => {
-				script.oncomplete?.(cfg);
-			});
+			scripts.forEach((script) => script.oncomplete?.(cfg));
 		}
+	});
+
+	history.pushState = addFunctionEventListener(history, 'pushState');
+	history.replaceState = addFunctionEventListener(history, 'replaceState');
+	window.addEventListener('pushState', () => {
+		scripts.forEach((script) => script.onhistorychange?.('push', cfg));
+	});
+	window.addEventListener('replaceState', () => {
+		scripts.forEach((script) => script.onhistorychange?.('replace', cfg));
 	});
 
 	window.onbeforeunload = (e) => {
@@ -82,5 +85,21 @@ export function start(cfg: StartConfig) {
 			e.returnValue = true;
 			return true;
 		}
+	};
+}
+
+/**
+ * 添加事件调用监听器
+ */
+export function addFunctionEventListener(obj: any, type: string) {
+	const origin = obj[type];
+	return function (...args: any[]) {
+		// @ts-ignore
+		const res = origin.apply(this, args);
+		const e = new Event(type.toString());
+		// @ts-ignore
+		e.arguments = args;
+		window.dispatchEvent(e);
+		return res;
 	};
 }
