@@ -1,17 +1,21 @@
 import { SearchResult } from './answer.wrapper.handler';
 
-export type RawElements = Record<string | symbol, string> & {
+export type ElementResolver<R> = (root: HTMLElement | Document) => R;
+export type RawElements = Record<
+	string | symbol,
+	string | ElementResolver<HTMLElement[]> | ElementResolver<HTMLElement>[]
+> & {
 	/** 题目元素选择器 */
-	title?: string;
+	title?: string | ElementResolver<HTMLElement[]> | ElementResolver<HTMLElement>[];
 	/** 题目选项的元素选择器 */
-	options?: string;
+	options?: string | ElementResolver<HTMLElement[]> | ElementResolver<HTMLElement>[];
 };
 
 export type SearchedElements<E, T> = Record<keyof E, T> & {
 	/** 题目元素选择器 */
-	title?: T;
+	title?: T extends Array<infer ArrayType> ? (undefined | ArrayType)[] : T;
 	/** 题目选项的元素选择器 */
-	options?: T;
+	options?: T extends Array<infer ArrayType> ? (undefined | ArrayType)[] : T;
 };
 
 /** 答题器上下文 */
@@ -32,12 +36,43 @@ export interface ResolverResult {
 
 /** 答题结果 */
 export interface WorkResult<E extends RawElements> {
-	time: number;
-	consume: number;
+	/** 正在等待 查题 线程处理 */
+	requesting: boolean;
+	/** 正在等待 答题 线程处理 */
+	resolving: boolean;
 	result?: ResolverResult;
-	error?: Error;
+	error?: string;
 	ctx?: WorkContext<E>;
 	type: 'single' | 'multiple' | 'completion' | 'judgement' | undefined;
+}
+
+/**
+ * 简化的答题结果 一般用于存储到本地
+ *
+ * 为什么不直接用 {@link WorkResult} ，因为对象里太多嵌套对象，一旦结果超过10个以上，可能导致 I/O 变慢，并且页面卡顿。
+ */
+export interface SimplifyWorkResult {
+	/** 题目 */
+	question: string;
+	/** 答题错误信息 */
+	error?: string;
+	/** 是否完成 */
+	finish?: boolean;
+	/** 正在等待 查题 线程处理 */
+	requesting: boolean;
+	/** 正在等待 答题 线程处理 */
+	resolving: boolean;
+	/** 搜索结果 */
+	searchResults: {
+		/** 题目名 */
+		name: SearchResult['name'];
+		/** 题库链接 */
+		homepage?: SearchResult['homepage'];
+		/** 题库搜索错误信息 */
+		error?: string;
+		/** 搜索结果 [题目，答案] */
+		results: [string, string][];
+	}[];
 }
 
 /** 答案题目处理器 */
@@ -52,7 +87,7 @@ export type QuestionResolver<E> = (
 		option: HTMLElement,
 		ctx: WorkContext<SearchedElements<E, HTMLElement[]>>
 	) => void | Promise<void>
-) => ResolverResult | Promise<ResolverResult>;
+) => Promise<ResolverResult>;
 
 /**
  * 使用默认工作器
@@ -134,7 +169,7 @@ export interface DefaultWork<E extends RawElements> {
  * ```
  *
  */
-export type CustomWork<E extends RawElements> = (ctx: WorkContext<E>) => ResolverResult;
+export type CustomWork<E extends RawElements> = (ctx: WorkContext<E>) => Promise<ResolverResult>;
 
 /**  查题器的类型  */
 
@@ -156,16 +191,22 @@ export type WorkOptions<E extends RawElements> = {
 	answerer: AnswererType<E>;
 	/** 工作器 */
 	work: DefaultWork<E> | CustomWork<E>;
-	/** 答题间隔 */
-	period?: number;
-	/** 出错时暂停答题 */
-	stopWhenError?: boolean;
-	/** 回答器请求超时时间(毫秒) */
+	/** 查题间隔（秒） */
+	requestPeriod?: number;
+	/** 答题间隔（秒）, 如果过快可能导致保存答案失败啊，或者被检测到 */
+	resolvePeriod?: number;
+	/** 回答器请求超时时间（秒） */
 	timeout?: number;
 	/** 回答器请求重试次数 */
 	retry?: number;
+	/** 多线程数量（个） */
+	thread?: number;
+	/** 当元素被搜索到 */
+	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>) => void | Promise<void>;
+	/** 监听搜题结果 */
+	onResultsUpdate?: (res: WorkResult<E>[]) => void | Promise<void>;
 	/** 监听答题结果 */
-	onResult?: (res: WorkResult<E>) => void | Promise<void>;
+	onResolveUpdate?: (res: WorkResult<E>) => void | Promise<void>;
 };
 
 export type WorkUploadType = 'save' | 'nomove' | 'force' | number;

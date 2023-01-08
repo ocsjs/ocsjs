@@ -30,5 +30,10 @@
 		"space-before-function-paren": "off",
 		"func-call-spacing": "off",
 		"no-redeclare": "off"
+	},
+
+	"globals": {
+		"core": "readonly",
+		"scripts": "readonly"
 	}
 }

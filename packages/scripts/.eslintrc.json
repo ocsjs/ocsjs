@@ -1,0 +1,7 @@
+{
+	"extends": ["../../.eslintrc.json"],
+	"globals": {
+		"core": "readonly",
+		"scripts": "readonly"
+	}
+}

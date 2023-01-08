@@ -1,3 +1,5 @@
+// @ts-check
+
 const { series } = require('gulp');
 const del = require('del');
 const util = require('util');
@@ -10,15 +12,23 @@ function cleanOutput() {
 	return del(['../dist', '../lib'], { force: true });
 }
 
-function buildUserJs() {
-	return execOut('npm run build', { cwd: '../packages/core' });
+async function buildPackages() {
+	// @ts-ignore
+	await execOut('npm run build', { cwd: '../packages/core' });
+	// @ts-ignore
+	await execOut('npm run build', { cwd: '../packages/scripts' });
 }
 
 async function createUserJs(cb) {
 	/** 模拟浏览器环境 */
 	require('browser-env')();
-	/** @type {import('../packages/core')} */
-	const ocs = require('../dist/index');
+
+	// @ts-ignore
+	globalThis.unsafeWindow = {};
+
+	/** @type {import('../packages/scripts/src/index')} */
+	// @ts-ignore
+	const ocs = require('../dist/index.js');
 
 	const createOptions = () =>
 		/** @type {import('../packages/utils').CreateOptions} */
@@ -37,7 +47,7 @@ async function createUserJs(cb) {
 				name: 'OCS 网课助手',
 				version: version,
 				description: `OCS(online-course-script) 网课助手，专注于帮助大学生从网课中释放出来。让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 ${ocs
-					.getDefinedProjects()
+					.definedProjects()
 					.map((s) => s.name)}，等网课的学习，作业。具体的功能请查看官网的功能列表 https://docs.ocsjs.com 。`,
 				author: 'enncy',
 				license: 'MIT',
@@ -47,7 +57,7 @@ async function createUserJs(cb) {
 				icon: 'https://cdn.ocsjs.com/logo.png',
 				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'localhost'],
 				match: ocs
-					.getDefinedProjects()
+					.definedProjects()
 					.map((p) => p.domains.map((d) => `*://*.${d}/*`))
 					.flat(),
 				grant: [
@@ -66,10 +76,10 @@ async function createUserJs(cb) {
 					'GM_removeValueChangeListener'
 				],
 				require: [path.join(__dirname, '../dist/index.js')],
-				resource: [`STYLE ${path.join(__dirname, '../packages/core/assets/css/style.css')}`],
+				resource: [`STYLE ${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`],
 				'run-at': 'document-start'
 			},
-			entry: path.join(__dirname, '../packages/core/entry.js'),
+			entry: path.join(__dirname, '../packages/scripts/entry.js'),
 			dist: path.join(__dirname, '../dist/ocs.user.js')
 		});
 
@@ -80,10 +90,10 @@ async function createUserJs(cb) {
 	opts.parseResource = false;
 	opts.metadata.name = opts.metadata.name + '(dev)';
 	opts.metadata.require = ['file://' + path.join(__dirname, '../dist/index.js')];
-	opts.metadata.resource = [`STYLE file://${path.join(__dirname, '../packages/core/assets/css/style.css')}`];
-	opts.entry = path.join(__dirname, '../packages/core/entry.dev.js');
+	opts.metadata.resource = [`STYLE file://${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`];
+	opts.entry = path.join(__dirname, '../packages/scripts/entry.dev.js');
 	opts.dist = path.join(__dirname, '../dist/ocs.user.dev.js');
 	await createUserScript(opts);
 }
 
-exports.default = series(cleanOutput, buildUserJs, createUserJs);
+exports.default = series(cleanOutput, buildPackages, createUserJs);

@@ -1,0 +1,11 @@
+# customize
+
+test/
+stats.html
+
+assets/
+src/
+  
+# Dependency directories
+node_modules/
+ 

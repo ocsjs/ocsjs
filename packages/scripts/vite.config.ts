@@ -16,11 +16,17 @@ const bannerContent = `
 
 // https://vitejs.dev/config/
 export default defineConfig({
+	resolve: {
+		alias: {
+			'@ocsjs/core': '../core/src/index.ts'
+		}
+	},
+
 	build: {
 		/** 取消css代码分离 */
 		cssCodeSplit: false,
 		/** 输出路径 */
-		outDir: './dist',
+		outDir: '../../dist',
 		/** 清空输出路径 */
 		emptyOutDir: true,
 		/** 是否压缩代码 */
@@ -35,15 +41,16 @@ export default defineConfig({
 	},
 
 	plugins: [
+		// commonjs(),
 		visualizer(),
 		banner(bannerContent),
 		{
 			// 将打包后的 unicode 中文全部转换成正常中文
 			name: 'escape-code',
 			closeBundle() {
-				const content = readFileSync(path.resolve(__dirname, './dist/index.js')).toString();
+				const content = readFileSync(path.resolve(__dirname, '../../dist/index.js')).toString();
 				writeFileSync(
-					path.resolve(__dirname, './dist/index.js'),
+					path.resolve(__dirname, '../../dist/index.js'),
 
 					// eslint-disable-next-line no-eval
 					JSON.parse(

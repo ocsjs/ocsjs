@@ -39,7 +39,7 @@ export type ModelAttrs = Pick<
 
 const RenderScript = new Script({
 	name: '悬浮窗',
-	url: [/.*/],
+	url: [['所有', /.*/]],
 	namespace: 'render.panel',
 	configs: {
 		x: { defaultValue: window.innerWidth * 0.1 },
@@ -341,6 +341,7 @@ const RenderScript = new Script({
 			});
 		};
 
+		let listenId = 0;
 		const render = () => {
 			initHeader();
 			replaceBody();
@@ -350,8 +351,10 @@ const RenderScript = new Script({
 				replaceBody(curr);
 			});
 
+			// 删除监听器
+			this.offConfigChange(listenId);
 			// 监听变化，重新渲染
-			this.onConfigChange('currentPanelName', render);
+			listenId = this.onConfigChange('currentPanelName', render);
 		};
 
 		const onFontsizeChange = () => {

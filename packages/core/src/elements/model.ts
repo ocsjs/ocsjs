@@ -1,3 +1,4 @@
+import { $ } from '../utils/common';
 import { el } from '../utils/dom';
 import { $gm } from '../utils/tampermonkey';
 import { IElement } from './interface';
@@ -65,11 +66,9 @@ export class ModelElement extends IElement {
 		this.cancelButton !== null && this.modalFooter.append(this.cancelButton);
 		this.confirmButton !== null && this.modalFooter.append(this.confirmButton);
 
-		const resize = () => {
-			this.style.maxHeight = window.innerHeight - 100 + 'px';
-			this.style.maxWidth = window.innerWidth - 50 + 'px';
-		};
-		resize();
-		window.addEventListener('resize', resize);
+		$.onresize(this, (modal) => {
+			modal.style.maxHeight = window.innerHeight - 100 + 'px';
+			modal.style.maxWidth = window.innerWidth - 50 + 'px';
+		});
 	}
 }

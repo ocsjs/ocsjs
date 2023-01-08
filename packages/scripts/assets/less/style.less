@@ -591,7 +591,6 @@ model-element.confirm {
 }
 
 .user-guide {
-	max-width: 400px;
 	& > li {
 		padding: 4px 0px;
 	}
@@ -624,17 +623,33 @@ model-element.confirm {
 	height: 20px;
 	border-radius: 4px;
 	display: inline-block;
-	background-color: #1890ff80;
 	color: white;
+	background-color: #63b4ff;
 	text-align: center;
 	cursor: pointer;
+	border: 1px solid #63b4ff;
+
+	&.requesting {
+		border: 1px solid #b6b6b6;
+		background-color: white;
+		color: inherit;
+	}
+
+	&.resolving {
+		border: 1px solid #1890ff;
+		background-color: white;
+		color: #1890ff;
+	}
 
 	&.active {
 		background-color: #1890ff;
+		color: white;
 	}
 
 	&.error {
+		border: 1px solid #ff8789ed;
 		background-color: #ff6b6ded;
+		color: white;
 	}
 }
 
@@ -679,4 +694,15 @@ search-results-element {
 	border-radius: 2px;
 	box-shadow: 0 0 4px #b1b1b1;
 	cursor: pointer;
+}
+
+.work-result-question-container {
+	position: absolute;
+	width: 400px;
+	margin-left: 40px;
+	background: white;
+	border: 1px solid #cbcbcb;
+	border-radius: 4px;
+	box-shadow: 0px 0px 12px #d1cfcf;
+	padding: 12px;
 }

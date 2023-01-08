@@ -8,13 +8,11 @@
  * 而对于消息推送，弹窗通知等临时，但是需要跨域的变量，可以使用标签页去存储临时信息
  */
 
-import { CommonProject } from '../projects/common';
-
 /**
  * 油猴工具库
  */
 export const $gm = {
-	unsafeWindow: globalThis.unsafeWindow,
+	unsafeWindow: globalThis.unsafeWindow as Window & { [x: string]: any },
 
 	/**
 	 * 通过key获取存储的值
@@ -93,21 +91,18 @@ export const $gm = {
 			duration?: number;
 		}
 	) {
-		const notification = CommonProject.scripts.settings.cfg.notification;
-		if (notification) {
-			const { onclick, ondone, important, duration = 0 } = options || {};
-			const { icon, name } = $gm.getInfos().script;
-			// eslint-disable-next-line no-undef
-			GM_notification({
-				title: name,
-				text: content,
-				image: icon || '',
-				highlight: important,
-				onclick,
-				ondone,
-				silent: true,
-				timeout: duration * 1000
-			});
-		}
+		const { onclick, ondone, important, duration = 0 } = options || {};
+		const { icon, name } = $gm.getInfos().script;
+		// eslint-disable-next-line no-undef
+		GM_notification({
+			title: name,
+			text: content,
+			image: icon || '',
+			highlight: important,
+			onclick,
+			ondone,
+			silent: true,
+			timeout: duration * 1000
+		});
 	}
 };

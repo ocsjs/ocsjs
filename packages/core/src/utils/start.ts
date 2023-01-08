@@ -35,8 +35,35 @@ export function start(startConfig: StartConfig) {
 
 	const scripts = $.getMatchedScripts(startConfig.projects, [location.href]);
 
-	/** 执行脚本 */
+	for (const script of scripts) {
+		/**
+		 * 以下是在每个脚本加载之后，统计每个脚本当前所运行的页面链接，链接不会重复
+		 * 初始化页面的脚本可以根据此链接列表，进行脚本页面的生成
+		 */
 
+		const _onstart = script.onstart;
+		script.onstart = (...args: any) => {
+			_onstart?.call(script, ...args);
+			const urls: string[] = Array.from($gm.getValue('_urls_', []));
+			const urlHasInRecord = urls.find((u) => u === location.href);
+			if (!urlHasInRecord) {
+				$gm.setValue('_urls_', urls.concat(location.href));
+			}
+		};
+
+		const _onbeforeunload = script.onbeforeunload;
+		script.onbeforeunload = (...args: any) => {
+			const prevent = _onbeforeunload?.call(script, ...args);
+			const urls: string[] = Array.from($gm.getValue('_urls_', []));
+			const urlIndex = urls.findIndex((u) => u === location.href);
+			if (urlIndex !== -1) {
+				$gm.setValue('_urls_', urls.splice(urlIndex, 1));
+			}
+			return prevent;
+		};
+	}
+
+	/** 执行脚本 */
 	scripts.forEach((script) => {
 		script.emit('start', startConfig);
 		script.onstart?.(startConfig);
@@ -51,6 +78,9 @@ export function start(startConfig: StartConfig) {
 		scripts.forEach((script) => script.onactive?.(startConfig));
 	}
 
+	/**
+	 * 监听 readystatechange
+	 */
 	document.addEventListener('readystatechange', () => {
 		if (
 			document.readyState === 'interactive' &&
@@ -70,6 +100,9 @@ export function start(startConfig: StartConfig) {
 		}
 	});
 
+	/**
+	 * 监听 history 更改
+	 */
 	history.pushState = addFunctionEventListener(history, 'pushState');
 	history.replaceState = addFunctionEventListener(history, 'replaceState');
 	window.addEventListener('pushState', () => {
@@ -85,6 +118,9 @@ export function start(startConfig: StartConfig) {
 		});
 	});
 
+	/**
+	 * 监听页面离开
+	 */
 	window.onbeforeunload = (e) => {
 		let prevent;
 		for (const script of scripts) {

@@ -175,7 +175,6 @@ export async function defaultAnswerWrapperHandler(
 					data: requestData
 				});
 			} catch (error) {
-				console.error('请求失败: ', { error });
 				searchResults.push({
 					url: wrapper.url,
 					name,

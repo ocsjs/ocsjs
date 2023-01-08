@@ -67,5 +67,8 @@
 		"commitizen": {
 			"path": "./node_modules/cz-conventional-changelog"
 		}
+	},
+	"dependencies": {
+		"@microsoft/tsdoc": "^0.14.2"
 	}
 }

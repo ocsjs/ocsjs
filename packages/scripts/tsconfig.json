@@ -1,0 +1,17 @@
+{
+	"compilerOptions": {
+		"target": "es6",
+		"module": "commonjs",
+		"outDir": "./lib",
+		"declaration": true,
+		"strict": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true,
+		"lib": ["DOM"],
+		"jsx": "preserve",
+		"resolveJsonModule": true
+	},
+	"include": ["./src/**/*.ts"],
+	"files": ["./global.d.ts"]
+}

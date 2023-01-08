@@ -1,0 +1,8 @@
+{
+	// Comments are supported, like tsconfig.json
+	"$schema": "https://typedoc.org/schema.json",
+	"entryPoints": ["src/index.ts"],
+	"out": "docs",
+	"theme": "github-wiki",
+	"cleanOutputDir": true
+}

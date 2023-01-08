@@ -1,10 +1,12 @@
 {
 	"cSpell.words": [
+		"historychange",
 		"isclose",
 		"isstop",
 		"nomove",
 		"ondefault",
 		"ondone",
+		"onhistorychange",
 		"onprevent",
 		"onrender",
 		"onrun",
@@ -19,11 +21,16 @@
 		"source.fixAll.eslint": true
 	},
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
+	/** 样式自动生成 */
 	"less.compile": {
 		"compress": false,
 		"sourceMap": false,
 		"out": "../css/"
 	},
+	/** 鼠标中键代码缩进 */
 	"editor.mouseWheelZoom": true,
-	"editor.mouseWheelScrollSensitivity": 2
+	/** 鼠标滚动速度 */
+	"editor.mouseWheelScrollSensitivity": 2,
+	/** 不生成 @return 的 jsdoc */
+	"typescript.suggest.jsdoc.generateReturns": false
 }

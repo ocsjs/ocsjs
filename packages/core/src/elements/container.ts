@@ -1,3 +1,4 @@
+import { $ } from '../utils/common';
 import { $creator } from '../utils/creator';
 import { el } from '../utils/dom';
 import { HeaderElement } from './header';
@@ -11,11 +12,9 @@ export class ContainerElement extends IElement {
 	connectedCallback() {
 		this.append(this.header, this.body, this.footer);
 
-		const resize = () => {
-			this.body.style.maxHeight = window.innerHeight - this.header.clientHeight - 100 + 'px';
-			this.body.style.maxWidth = window.innerWidth - 50 + 'px';
-		};
-		resize();
-		window.addEventListener('resize', resize);
+		$.onresize(this, (cont) => {
+			cont.body.style.maxHeight = window.innerHeight - this.header.clientHeight - 100 + 'px';
+			cont.body.style.maxWidth = window.innerWidth - 50 + 'px';
+		});
 	}
 }

@@ -33,6 +33,16 @@ export class StringUtils {
 		return this;
 	}
 
+	/** 删除空格，多个空格只留一个 */
+	static nospace(str?: string) {
+		return str?.replace(/ +/g, ' ') || '';
+	}
+
+	nospace() {
+		this._text = StringUtils.nospace(this._text);
+		return this;
+	}
+
 	/** 删除特殊字符 */
 	static noSpecialChar(str?: string) {
 		return str?.replace(/[^\w\s]/gi, '') || '';

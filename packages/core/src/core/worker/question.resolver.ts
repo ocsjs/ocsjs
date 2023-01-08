@@ -1,8 +1,8 @@
 import { QuestionResolver, WorkContext } from './interface';
 import { isPlainAnswer, splitAnswer } from './utils';
-import { StringUtils } from '@ocsjs/common/src/utils/string';
 import { answerSimilar, removeRedundant, clearString } from '../utils/string';
 import { $ } from '../../utils/common';
+import { StringUtils } from '../../utils/string';
 
 /** 默认答案题目处理器 */
 export function defaultQuestionResolve<E>(
@@ -14,14 +14,15 @@ export function defaultQuestionResolve<E>(
 		 *
 		 * 在多个题库给出的答案中，找出最相似的答案
 		 */
-		single(results, options, handler) {
+		async single(results, options, handler) {
 			// 是否为纯ABCD答案
 			for (const result of results) {
 				for (const answer of result.answers) {
 					const ans = StringUtils.nowrap(answer.answer).trim();
 					if (ans.length === 1 && isPlainAnswer(ans)) {
 						const index = ans.charCodeAt(0) - 65;
-						handler('single', options[index].textContent || options[index].innerText, options[index], ctx);
+						await handler('single', options[index].innerText, options[index], ctx);
+						await $.sleep(500);
 						return { finish: true, option: options[index] };
 					}
 				}
@@ -30,7 +31,7 @@ export function defaultQuestionResolve<E>(
 			/** 配对选项的相似度 */
 			const ratings = answerSimilar(
 				results.map((res) => res.answers.map((ans) => ans.answer)).flat(),
-				options.map((el) => el.textContent || el.innerText)
+				options.map((el) => el.innerText)
 			);
 			/**  找出最相似的选项 */
 			let index = -1;
@@ -44,7 +45,8 @@ export function defaultQuestionResolve<E>(
 			// 存在选项，并且相似度超过 60 %
 			if (index !== -1 && max > 0.6) {
 				/** 经自定义的处理器进行处理 */
-				handler('single', options[index].textContent || options[index].innerText, options[index], ctx);
+				await handler('single', options[index].innerText, options[index], ctx);
+				await $.sleep(500);
 				return {
 					finish: true,
 					ratings: ratings.map((r) => r.rating)
@@ -71,8 +73,8 @@ export function defaultQuestionResolve<E>(
 
 				// 判断选项是否完全存在于答案里面
 				options.forEach((el, i) => {
-					if (answers.some((answer) => answer.includes(removeRedundant(el.textContent || el.innerText)))) {
-						targetAnswers[count][i] = el.textContent || el.innerText;
+					if (answers.some((answer) => answer.includes(removeRedundant(el.innerText)))) {
+						targetAnswers[count][i] = el.innerText;
 						targetOptions[count][i] = el;
 					}
 				});
@@ -83,7 +85,7 @@ export function defaultQuestionResolve<E>(
 					if (isPlainAnswer(ans)) {
 						for (let i = 0; i < ans.length; i++) {
 							const index = ans.charCodeAt(i) - 65;
-							targetAnswers[count][i] = options[index].textContent || options[index].innerText;
+							targetAnswers[count][i] = options[index].innerText;
 							targetOptions[count][i] = options[index];
 						}
 					}
@@ -92,14 +94,14 @@ export function defaultQuestionResolve<E>(
 				if (targetAnswers[count].length === 0) {
 					const ratings = answerSimilar(
 						answers,
-						options.map((el) => el.textContent || el.innerText)
+						options.map((el) => el.innerText)
 					).sort((a, b) => b.rating - a.rating);
 
 					// 匹配相似率
 					if (ratings.some((rating) => rating.rating > 0.6)) {
 						options.forEach((el, i) => {
 							if (ratings[i].rating > 0.6) {
-								targetAnswers[count][i] = el.textContent || el.innerText;
+								targetAnswers[count][i] = el.innerText;
 								targetOptions[count][i] = el;
 							}
 						});
@@ -137,7 +139,7 @@ export function defaultQuestionResolve<E>(
 			}
 		},
 		/** 判断题处理器 */
-		judgement(results, options, handler) {
+		async judgement(results, options, handler) {
 			for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
 				const correctWords = ['是', '对', '正确', '√', '对的', '是的', '正确的', 'true', 'yes', '1'];
 				const incorrectWords = [
@@ -167,17 +169,19 @@ export function defaultQuestionResolve<E>(
 					let option: HTMLElement | undefined;
 					for (const el of options) {
 						/** 选项显示正确 */
-						const textShowCorrect = matches(el.textContent || el.innerText, correctWords);
+						const textShowCorrect = matches(el.innerText, correctWords);
 						/** 选项显示错误 */
-						const textShowIncorrect = matches(el.textContent || el.innerText, incorrectWords);
+						const textShowIncorrect = matches(el.innerText, incorrectWords);
 						if (answerShowCorrect && textShowCorrect) {
 							option = el;
-							handler('judgement', answerShowCorrect, el, ctx);
+							await handler('judgement', answerShowCorrect, el, ctx);
+							await $.sleep(500);
 							break;
 						}
 						if (answerShowIncorrect && textShowIncorrect) {
 							option = el;
-							handler('judgement', answerShowIncorrect, el, ctx);
+							await handler('judgement', answerShowIncorrect, el, ctx);
+							await $.sleep(500);
 							break;
 						}
 					}
@@ -193,21 +197,33 @@ export function defaultQuestionResolve<E>(
 			return { finish: false };
 		},
 		/** 填空题处理器 */
-		completion: function (results, options, handler) {
+		async completion(results, options, handler) {
 			for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
-				let ans = answers;
+				// 排除空答案
+				let ans = answers.filter((ans) => ans);
 				if (ans.length === 1) {
 					ans = splitAnswer(ans[0]);
 				}
 
-				if (ans.length !== 0 && ans.length === options.length) {
-					options.forEach((el, i) => {
-						/** 延长填写时间，避免一次全部填写 */
-						setTimeout(() => {
-							handler('completion', ans[i], el, ctx);
-						}, 500 * i);
-					});
-					return { finish: true };
+				if (
+					ans.length !== 0 &&
+					/** 答案数量要和文本框数量一致，或者文本框只有一个 */
+					(ans.length === options.length || options.length === 1)
+				) {
+					if (ans.length === options.length) {
+						for (let index = 0; index < options.length; index++) {
+							const element = options[index];
+							await handler('completion', ans[index], element, ctx);
+							await $.sleep(500);
+						}
+						return { finish: true };
+					} else if (options.length === 1) {
+						await handler('completion', ans.join(' '), options[0], ctx);
+						await $.sleep(500);
+						return { finish: true };
+					}
+
+					return { finish: false };
 				}
 			}
 

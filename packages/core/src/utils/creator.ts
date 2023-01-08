@@ -12,8 +12,30 @@ export interface CommonWorkOptions {
 	period: number;
 	timeout: number;
 	retry: number;
+	thread: number;
 	upload: WorkUploadType;
+	skipAnswered: boolean;
+	uncheckAllChoice: boolean;
 	answererWrappers: AnswererWrapper[];
+}
+
+export interface PreventTextOptions {
+	/** 按钮文字 */
+	name: string;
+	/**
+	 * 执行的延时
+	 * @default 5
+	 */
+	delay?: number;
+	/**
+	 * 时间到后是否自动删除该文本按钮元素
+	 * @default true
+	 */
+	autoRemove?: boolean;
+	/** 执行的回调 */
+	ondefault: (span: HTMLSpanElement) => void;
+	/** 不执行的回调 */
+	onprevent?: (span: HTMLSpanElement) => void;
 }
 
 /**
@@ -23,7 +45,7 @@ export const $creator = {
 	notes(lines: (string | HTMLElement | (string | HTMLElement)[])[], tag: 'ul' | 'ol' = 'ul') {
 		return el(
 			tag,
-			lines.map((line) => el('li', Array.isArray(line) ? line.map((str) => el('div', [str])) : [line]))
+			lines.map((line) => el('li', Array.isArray(line) ? line.map((node) => el('div', [node])) : [line]))
 		);
 	},
 	/**
@@ -141,21 +163,12 @@ export const $creator = {
 			});
 		});
 	},
-	/** 创建一个取消默认事件的文字按钮，如果不点击，则执行默认事件 */
-	preventText({
-		name,
-		delay = 3,
-		autoRemove = true,
-		ondefault,
-		onprevent
-	}: {
-		name: string;
-		delay?: number;
-
-		autoRemove?: boolean;
-		ondefault: (span: HTMLSpanElement) => void;
-		onprevent?: (span: HTMLSpanElement) => void;
-	}) {
+	/**
+	 * 创建一个取消默认事件的文字按钮，如果不点击，则执行默认事件
+	 * @param  opts 参数
+	 */
+	preventText(opts: PreventTextOptions) {
+		const { name, delay = 3, autoRemove = true, ondefault, onprevent } = opts;
 		const span = el('span', name);
 
 		span.style.textDecoration = 'underline';

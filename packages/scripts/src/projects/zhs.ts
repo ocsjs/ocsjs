@@ -1,92 +1,25 @@
-import { defaultAnswerWrapperHandler } from '../core/worker/answer.wrapper.handler';
-import { OCSWorker } from '../core/worker/worker';
-import { ConfigElement } from '../elements/config';
-import { MessageElement } from '../elements/message';
-import { Config } from '../interfaces/config';
-import { Project } from '../interfaces/project';
-import { Script } from '../interfaces/script';
-import { $ } from '../utils/common';
-import { $creator, CommonWorkOptions } from '../utils/creator';
-import { $$el, $el, el } from '../utils/dom';
-import { StringUtils } from '../utils/string';
-import { $gm } from '../utils/tampermonkey';
-import { $message, $model } from './render';
+import {
+	$creator,
+	Project,
+	Script,
+	$script,
+	$el,
+	$gm,
+	el,
+	$$el,
+	OCSWorker,
+	defaultAnswerWrapperHandler,
+	StringUtils,
+	$message,
+	$,
+	$model
+} from '@ocsjs/core';
+import type { Config, ConfigElement, MessageElement, CommonWorkOptions } from '@ocsjs/core';
 import { CommonProject } from './common';
-import { WorkResult, WorkUploadType } from '../core/worker/interface';
-import { $script } from '../utils/script';
+import { workConfigs, definition, volume, restudy } from '../utils/configs';
+import { createWorkerControl, optimizationTextWithImage } from '../utils/work';
 
-/**
- * 全局变量
- */
-
-const volume: Config = {
-	label: '音量调节',
-	attrs: { type: 'range', step: '0.05', min: '0', max: '1' },
-	defaultValue: 0,
-	onload() {
-		this.addEventListener('change', () => {
-			this.setAttribute('data-title', (parseFloat(this.getAttribute('value') || '0') * 100).toFixed() + '%');
-		});
-		this.setAttribute('data-title', (parseFloat(this.getAttribute('value') || '0') * 100).toFixed() + '%');
-	}
-};
-const restudy: Config = {
-	label: '复习模式',
-	attrs: { title: '已经完成的视频继续学习', type: 'checkbox' },
-	defaultValue: false
-};
-
-const definition: Config = {
-	label: '清晰度',
-	tag: 'select',
-	defaultValue: 'line1bq',
-	onload() {
-		this.append(
-			...$creator.selectOptions(this.getAttribute('value'), [
-				['line1bq', '流畅'],
-				['line1gq', '高清']
-			])
-		);
-	}
-};
-
-const workConfigs = {
-	notes: {
-		defaultValue: $creator.notes([
-			'答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。',
-			'可以搭配 “通用-在线搜题” 一起使用。'
-		]).outerHTML
-	} as Config<any, string>,
-	auto: {
-		label: '开启自动答题',
-		attrs: { type: 'checkbox' },
-		defaultValue: false
-	} as Config<any, boolean>,
-
-	upload: {
-		label: '答题完成后',
-		tag: 'select',
-		defaultValue: 'save' as WorkUploadType,
-		attrs: { title: '答题完成后的设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。' },
-		onload() {
-			this.append(
-				...$creator.selectOptions(this.getAttribute('value'), [
-					['save', '自动保存', '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'],
-					['nomove', '不保存也不提交', '等待时间过后将会自动下一节, 适合在测试脚本时使用。'],
-					...([10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => [
-						rate.toString(),
-						`搜到${rate}%的题目则自动提交`,
-						`例如: 100题中查询到 ${rate} 题的答案,（答案不一定正确）, 则会自动提交。`
-					]) as [any, string, string][]),
-					['100', '每个题目都查到答案才自动提交', '答案不一定正确'],
-					['force', '强制自动提交', '不管答案是否正确直接强制自动提交，如需开启，请配合随机作答谨慎使用。']
-				])
-			);
-		}
-	} as Config<any, WorkUploadType>
-};
-
-// 是否暂停
+// 学习是否暂停
 let stop = false;
 // 是否存在验证码
 const hasCapture = false;
@@ -99,7 +32,10 @@ export const ZHSProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '使用提示',
-			url: [/onlineweb.zhihuishu.com\/onlinestuh5/, /www.zhihuishu.com/],
+			url: [
+				['学习首页', 'https://onlineweb.zhihuishu.com/onlinestuh5'],
+				['首页', 'https://www.zhihuishu.com/']
+			],
 			level: 1,
 			namespace: 'zhs.guide',
 			configs: {
@@ -110,11 +46,15 @@ export const ZHSProject = Project.create({
 						'校内学分课的考试脚本还未提供，请手动(划词)搜题。'
 					]).outerHTML
 				}
+			},
+			oncomplete() {
+				// 置顶
+				$script.pin(this);
 			}
 		}),
 		login: new Script({
 			name: '登录脚本',
-			url: [/passport.zhihuishu.com\/login/],
+			url: [['登录页面', 'https://passport.zhihuishu.com/login']],
 			level: 9,
 			namespace: 'zhs.login',
 			configs: {
@@ -235,7 +175,7 @@ export const ZHSProject = Project.create({
 		}),
 		'gxk-study': new Script({
 			name: '共享课学习脚本',
-			url: [/studyvideoh5.zhihuishu.com/],
+			url: [['共享课学习页面', 'studyvideoh5.zhihuishu.com']],
 			level: 999,
 			namespace: 'zhs.gxk.study',
 			configs: {
@@ -303,7 +243,6 @@ export const ZHSProject = Project.create({
 						btn.style.marginRight = '12px';
 						btn.onclick = () => {
 							$el('.iconbaizhoumoshi-xueqianbidu').click();
-							console.log($el('.preschool-Mustread-div'), $el('.preschool-Mustread-div').innerText);
 
 							setTimeout(() => {
 								const num = parseInt(
@@ -538,7 +477,7 @@ export const ZHSProject = Project.create({
 		}),
 		'xnk-study': new Script({
 			name: '校内课学习脚本',
-			url: [/zhihuishu.com\/aidedteaching\/sourceLearning/],
+			url: [['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']],
 			namespace: 'zhs.xnk.study',
 			configs: {
 				notes: {
@@ -572,7 +511,7 @@ export const ZHSProject = Project.create({
 		}),
 		'gxk-work-and-exam-guide': new Script({
 			name: '共享课作业考试提示',
-			url: [/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/],
+			url: [['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']],
 			namespace: 'zhs.work.gxk-guide',
 			level: 999,
 			configs: {
@@ -590,15 +529,18 @@ export const ZHSProject = Project.create({
 						'ol'
 					).outerHTML
 				}
+			},
+			oncomplete() {
+				// 置顶
+				$script.pin(this);
 			}
 		}),
 		'gxk-work': new Script({
 			name: '共享课作业脚本',
 			url: [
-				/zhihuishu.com\/stuExamWeb.html#\/webExamList\/dohomework/,
-
+				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
 				/** 在列表中也提供设置页面 */
-				/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/
+				['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
 			],
 			namespace: 'zhs.gxk.work',
 			level: 99,
@@ -612,9 +554,9 @@ export const ZHSProject = Project.create({
 				let worker: OCSWorker<any> | undefined;
 				let warn: MessageElement | undefined;
 
-				this.on('start', () => start());
 				this.on('render', () => createWorkerControl(this, () => worker));
-				this.on('restart', () => {
+				this.event.on('start', () => start());
+				this.event.on('restart', () => {
 					worker?.emit('close');
 					$message('info', { content: '3秒后重新答题。' });
 					setTimeout(start, 3000);
@@ -629,7 +571,7 @@ export const ZHSProject = Project.create({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('work', opts);
 						},
-						ondone: () => this.emit('done'),
+						ondone: () => this.event.emit('done'),
 						upload: this.cfg.upload,
 						...CommonProject.scripts.settings.cfg
 					});
@@ -640,7 +582,7 @@ export const ZHSProject = Project.create({
 					createWorkerControl(this, () => worker);
 
 					if (this.cfg.auto === false) {
-						this.emit('done');
+						this.event.emit('done');
 						warn = $message('warn', {
 							duration: 0,
 							content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
@@ -662,9 +604,9 @@ export const ZHSProject = Project.create({
 		'gxk-exam': new Script({
 			name: '共享课考试脚本',
 			url: [
-				/zhihuishu.com\/stuExamWeb.html#\/webExamList\/doexamination/,
+				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
 				/** 在列表中也提供设置页面 */
-				/zhihuishu.com\/stuExamWeb.html#\/webExamList\?/
+				['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
 			],
 			namespace: 'zhs.gxk.exam',
 			level: 99,
@@ -685,17 +627,15 @@ export const ZHSProject = Project.create({
 			},
 
 			async oncomplete() {
-				// 重置
-
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 
 				this.onConfigChange('auto', changeMsg);
 
 				let worker: OCSWorker<any> | undefined;
 
-				this.on('start', () => start());
 				this.on('render', () => createWorkerControl(this, () => worker));
-				this.on('restart', () => {
+				this.event.on('start', () => start());
+				this.event.on('restart', () => {
 					worker?.emit('close');
 					$message('info', { content: '3秒后重新答题。' });
 					setTimeout(start, 3000);
@@ -708,7 +648,7 @@ export const ZHSProject = Project.create({
 							worker = gxkWorkOrExam('exam', opts);
 						},
 						ondone: () => {
-							this.emit('done');
+							this.event.emit('done');
 						},
 						upload: 'nomove',
 						...CommonProject.scripts.settings.cfg
@@ -720,7 +660,7 @@ export const ZHSProject = Project.create({
 					createWorkerControl(this, () => worker);
 
 					if (this.cfg.auto === false) {
-						this.emit('done');
+						this.event.emit('done');
 						$message('warn', {
 							duration: 0,
 							content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
@@ -736,7 +676,7 @@ export const ZHSProject = Project.create({
 		}),
 		'xnk-work': new Script({
 			name: '校内课作业考试脚本',
-			url: [/zhihuishu.com\/atHomeworkExam\/stu\/homeworkQ\/exerciseList/],
+			url: [['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList']],
 			namespace: 'zhs.xnk.work',
 			level: 99,
 			configs: workConfigs,
@@ -751,8 +691,10 @@ export const ZHSProject = Project.create({
 				/** 显示答题控制按钮 */
 				createWorkerControl(this, () => worker);
 
+				this.on('render', () => createWorkerControl(this, () => worker));
+
 				this.on('start', () => start());
-				this.on('restart', () => {
+				this.event.on('restart', () => {
 					worker?.emit('close');
 					$message('info', { content: '3秒后重新答题。' });
 					setTimeout(start, 3000);
@@ -771,7 +713,7 @@ export const ZHSProject = Project.create({
 							worker = xnkWork(opts);
 						},
 						ondone: () => {
-							this.emit('done');
+							this.event.emit('done');
 						},
 						upload: this.cfg.upload,
 						...CommonProject.scripts.settings.cfg
@@ -943,11 +885,10 @@ function recognize() {
  */
 function gxkWorkOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, timeout, retry, upload }: CommonWorkOptions
+	{ answererWrappers, period, timeout, retry, upload, thread }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
-	const workResults: WorkResult<any>[] = [];
 	// 清空搜索结果
 	CommonProject.scripts.workResults.cfg.results = [];
 	// 置顶搜索结果面板
@@ -960,11 +901,20 @@ function gxkWorkOrExam(
 			title: '.subject_describe,.smallStem_describe',
 			options: '.subject_node .nodeLab'
 		},
+		/** 其余配置 */
+		requestPeriod: period ?? 3,
+		resolvePeriod: 1,
+		timeout: timeout ?? 30,
+		retry: retry ?? 2,
+		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) =>
 			defaultAnswerWrapperHandler(answererWrappers, {
 				type,
-				title: elements.title[0].innerText,
+				title: elements.title
+					.filter((t) => t.innerText)
+					.map((t) => optimizationTextWithImage(t))
+					.join(','),
 				root: ctx.root
 			}),
 		work: {
@@ -982,30 +932,15 @@ function gxkWorkOrExam(
 				}
 			}
 		},
-
 		/** 完成答题后 */
-		onResult: async (res) => {
-			// 处理题目跨域丢失问题
-			if (res.ctx) {
-				res.ctx.root = $.elementToRawObject(res.ctx.root);
-				res.ctx.elements.title = res.ctx.elements.title.map($.elementToRawObject);
-			}
-
-			workResults.push(res);
-			CommonProject.scripts.workResults.cfg.results = workResults;
-
-			console.log(CommonProject.scripts.workResults.cfg);
-			await $.sleep(500);
-			// 下一页
-			$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
+		onResultsUpdate(res) {
+			CommonProject.scripts.workResults.cfg.results = $.simplifyWorkResult(res);
 		},
-
-		/** 其余配置 */
-
-		period: (period === 0 ? 0 : period || 3) * 1000,
-		timeout: (timeout || 30) * 1000,
-		retry,
-		stopWhenError: false
+		onResolveUpdate(res) {
+			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
+			CommonProject.scripts.workResults.cfg.requestIndex = worker.requestIndex;
+			CommonProject.scripts.workResults.cfg.resolverIndex = worker.resolverIndex;
+		}
 	});
 
 	checkForCaptcha((hasCaptcha) => {
@@ -1020,7 +955,7 @@ function gxkWorkOrExam(
 		.doWork()
 		.then(async (results) => {
 			if (type === 'exam') {
-				$message('info', { content: '为了安全考虑，请自行检查后自行点击提交！' });
+				$message('info', { content: '考试完成，为了安全考虑，请自行检查后自行点击提交！' });
 			} else {
 				// 处理提交
 				await worker.uploadHandler({
@@ -1049,9 +984,24 @@ function gxkWorkOrExam(
 					}
 				});
 			}
+
+			// 保存题目
+
+			const text = el('span', '正在保存题目中，请勿操作...');
+			const modal = $model('alert', { content: text });
+
+			for (let index = 0; index < worker.totalQuestionCount; index++) {
+				// 下一页
+				$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
+				await $.sleep(1000);
+			}
+			text.innerText = '所有题目保存成功。';
+			setTimeout(() => modal?.remove(), 3000);
+
+			$message('success', { duration: 0, content: '作业已完成。' });
 		})
 		.catch((err) => {
-			$message('error', { content: '提交程序发生错误 : ' + err.message });
+			$message('error', { content: '答题程序发生错误 : ' + err.message });
 		});
 
 	return worker;
@@ -1060,8 +1010,9 @@ function gxkWorkOrExam(
 /**
  * 校内学分课的作业
  */
-function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions) {
-	const workResults: WorkResult<any>[] = [];
+function xnkWork({ answererWrappers, period, timeout, retry, thread }: CommonWorkOptions) {
+	$message('info', { content: '开始作业' });
+
 	// 清空搜索结果
 	CommonProject.scripts.workResults.cfg.results = [];
 	// 置顶搜索结果面板
@@ -1074,6 +1025,12 @@ function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions
 			options: '.optionUl label',
 			questionTit: '.questionTit'
 		},
+		/** 其余配置 */
+		requestPeriod: period ?? 3,
+		resolvePeriod: 1,
+		timeout: timeout ?? 30,
+		retry: retry ?? 2,
+		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
 			const title = StringUtils.nowrap(elements.title[0].innerText).trim();
@@ -1099,19 +1056,14 @@ function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions
 			}
 		},
 
-		onResult: (res) => {
-			// 处理题目跨域丢失问题
-			if (res.ctx) {
-				res.ctx.root = $.elementToRawObject(res.ctx.root);
-				res.ctx.elements.title = res.ctx.elements.title.map($.elementToRawObject);
-			}
-			workResults.push(res);
-			CommonProject.scripts.workResults.cfg.results = workResults;
+		onResultsUpdate(res) {
+			CommonProject.scripts.workResults.cfg.results = $.simplifyWorkResult(res);
 		},
-		period: (period || 3) * 1000,
-		timeout: (timeout || 30) * 1000,
-		retry,
-		stopWhenError: false
+		onResolveUpdate(res) {
+			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
+			CommonProject.scripts.workResults.cfg.requestIndex = worker.requestIndex;
+			CommonProject.scripts.workResults.cfg.resolverIndex = worker.resolverIndex;
+		}
 	});
 
 	const getBtn = () => document.querySelector('span.Topicswitchingbtn:nth-child(2)') as HTMLElement;
@@ -1120,10 +1072,10 @@ function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions
 	(async () => {
 		while (next && worker.isClose === false) {
 			await worker.doWork();
-			await $.sleep((period || 3) * 1000);
+			await $.sleep((period ?? 3) * 1000);
 			next = getBtn();
 			next?.click();
-			await $.sleep((period || 3) * 1000);
+			await $.sleep((period ?? 3) * 1000);
 		}
 	})();
 
@@ -1132,39 +1084,4 @@ function xnkWork({ answererWrappers, period, timeout, retry }: CommonWorkOptions
 
 function optimizeSecond(second: number) {
 	return second / 3600 < 1 ? `${(second / 60).toFixed(2)}分钟` : `${(second / 3600).toFixed(2)}小时`;
-}
-
-/**
- * 答题控制
- */
-function createWorkerControl(
-	script: Script<Omit<typeof workConfigs, 'upload'>>,
-	getWorker: () => OCSWorker<any> | undefined
-) {
-	const worker = getWorker();
-	let stop = true;
-	const startBtn = $creator.button('▶️开始答题');
-	const restartBtn = $creator.button('↩️重新答题');
-	const controlBtn = $creator.button('⏸️暂停答题');
-
-	startBtn.onclick = () => {
-		startBtn.remove();
-		script.panel?.body.replaceChildren(el('hr'), restartBtn, controlBtn);
-		script.emit('start');
-	};
-	restartBtn.onclick = () => script.emit('restart');
-	controlBtn.onclick = () => {
-		stop = !stop;
-		const worker = getWorker();
-		worker?.emit?.(stop ? 'continuate' : 'stop');
-		controlBtn.value = stop ? '⏸️暂停答题' : '▶️继续答题';
-	};
-
-	script.on('done', () => (controlBtn.disabled = true));
-
-	if (script.panel) {
-		script.panel.body.style.textAlign = 'right';
-	}
-
-	script.panel?.body.replaceChildren(el('hr'), ...(worker?.isRunning ? [restartBtn, controlBtn] : [startBtn]));
 }

@@ -1,7 +1,9 @@
+import debounce from 'lodash/debounce';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
 import { $gm } from './tampermonkey';
+import { SimplifyWorkResult, WorkResult } from '../core/worker/interface';
 
 /**
  * 公共的工具库
@@ -9,8 +11,7 @@ import { $gm } from './tampermonkey';
 export const $ = {
 	/**
 	 * 构造 config 配置对象， 可进行响应式存储
-	 * @param script
-	 * @returns
+	 * @param script 脚本
 	 */
 	createConfigProxy(script: Script) {
 		const proxy = new Proxy(script.cfg, {
@@ -43,9 +44,8 @@ export const $ = {
 	},
 
 	/**
-	 * 获取所有未经处理过的脚本配置
-	 * @param scripts
-	 * @returns
+	 * 获取所有原生（未处理的）脚本配置
+	 * @param scripts 脚本列表
 	 */
 	getAllRawConfigs(scripts: Script[]): Record<string, Config> {
 		const object = {};
@@ -64,17 +64,22 @@ export const $ = {
 	},
 
 	/**
-	 * 获取匹配到的程序
+	 * 获取匹配到的脚本
 	 * @param projects 程序列表
-	 * @returns
 	 */
 	getMatchedScripts(projects: Project[], urls: string[]) {
 		const scripts = [];
+
 		for (const project of projects) {
 			for (const key in project.scripts) {
 				if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
 					const script = project.scripts[key];
-					if (script.url.some((u) => urls.some((url) => RegExp(u).test(url)))) {
+					// 被排除的网页
+					if (script.excludes?.some((u) => urls.some((url) => RegExp(u[1]).test(url)))) {
+						continue;
+					}
+
+					if (script.url.some((u) => urls.some((url) => RegExp(u[1]).test(url)))) {
 						scripts.push(script);
 					}
 				}
@@ -85,9 +90,8 @@ export const $ = {
 
 	/**
 	 * 获取具名键
-	 * @param namespace
-	 * @param key
-	 * @returns
+	 * @param namespace 命名空间
+	 * @param key 键
 	 */
 	namespaceKey(namespace: string | undefined, key: any) {
 		return namespace ? namespace + '.' + key.toString() : key.toString();
@@ -101,6 +105,10 @@ export const $ = {
 		});
 	},
 
+	/**
+	 * 暂停
+	 * @param period 毫秒
+	 */
 	async sleep(period: number): Promise<void> {
 		return new Promise((resolve) => {
 			setTimeout(resolve, period);
@@ -116,12 +124,59 @@ export const $ = {
 
 	/**
 	 * 使元素变成纯文本对象，（跨域时对象上下文会被销毁）
+	 * @param el 元素
 	 */
-	elementToRawObject(el: HTMLElement) {
+	elementToRawObject(el: HTMLElement | undefined | null) {
 		return {
-			innerText: el.innerText,
-			innerHTML: el.innerHTML,
-			textContent: el.textContent
+			innerText: el?.innerText,
+			innerHTML: el?.innerHTML,
+			textContent: el?.textContent
 		} as any;
+	},
+	/**
+	 * 监听页面宽度变化
+	 */
+	onresize<E extends HTMLElement>(el: E, handler: (el: E) => void) {
+		const resize = debounce(() => {
+			if (el.parentElement === null) {
+				window.removeEventListener('reset', resize);
+			} else {
+				handler(el);
+			}
+		}, 200);
+		resize();
+		window.addEventListener('resize', resize);
+	},
+	/** 将 {@link WorkResult} 转换成 {@link SimplifyWorkResult} */
+	simplifyWorkResult(results: WorkResult<any>[]): SimplifyWorkResult[] {
+		const res: SimplifyWorkResult[] = [];
+
+		for (const wr of results) {
+			res.push({
+				requesting: wr.requesting,
+				resolving: wr.resolving,
+				error: wr.error,
+				question: (
+					wr.ctx?.elements.title
+						?.map((t) => t?.innerText || '')
+						.filter(Boolean)
+						.join(',') || '无'
+				)
+					/** cx新版题目冗余 */
+					.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
+					/** cx旧版题目冗余 */
+					.replace(/[[|(|【|（]..题[\]|)|】|）]/, ''),
+				finish: wr.result?.finish,
+				searchResults:
+					wr.ctx?.searchResults.map((sr) => ({
+						error: sr.error?.message,
+						name: sr.name,
+						homepage: sr.homepage,
+						results: sr.answers.map((ans) => [ans.question, ans.answer])
+					})) || []
+			});
+		}
+
+		return res;
 	}
 };

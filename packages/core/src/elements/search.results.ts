@@ -1,5 +1,6 @@
-import { SearchResult } from '../core/worker/answer.wrapper.handler';
+import { SimplifyWorkResult } from '../core/worker';
 import { splitAnswer } from '../core/worker/utils';
+import { $ } from '../utils/common';
 import { $creator } from '../utils/creator';
 import { el } from '../utils/dom';
 import { IElement } from './interface';
@@ -9,7 +10,8 @@ const transformImgLink = (str: string) =>
 	str.replace(/https?:\/\/.*?\.(png|jpg|jpeg|gif)/g, (match) => `<img src="${match}" />`);
 
 export class SearchResultsElement extends IElement {
-	results: SearchResult[] = [];
+	/** 搜索结果 [题目，答案] */
+	results: SimplifyWorkResult['searchResults'] = [];
 	question: string = '';
 
 	connectedCallback() {
@@ -19,27 +21,25 @@ export class SearchResultsElement extends IElement {
 			el('div', [question, $creator.copy('复制', question)], (div) => {
 				div.style.padding = '4px';
 			}),
-			el('hr'),
+			el('hr')
+		);
+
+		this.append(
 			...this.results.map((res) => {
 				return el('details', { open: true }, [
 					el('summary', [el('a', { href: res.homepage, innerText: res.name })]),
 					...(res.error
 						? /** 显示错误信息 */
-						  [
-								el('span', { className: 'error' }, [
-									'此题库搜题时发生错误：',
-									res.error.message || '网络错误或者未知错误'
-								])
-						  ]
+						  [el('span', { className: 'error' }, ['此题库搜题时发生错误：', res.error || '网络错误或者未知错误'])]
 						: /** 显示结果列表 */
 						  [
-								...res.answers.map((ans) => {
-									const title = transformImgLink(ans.question || this.question || '无');
-									const answer = transformImgLink(ans.answer || '无');
+								...res.results.map((ans) => {
+									const title = transformImgLink(ans[0] || this.question || '无');
+									const answer = transformImgLink(ans[1] || '无');
 
 									return el('div', { className: 'search-result' }, [
 										/** 题目 */
-										el('div', { className: 'question' }, [title, $creator.copy('复制', title)]),
+										el('div', { className: 'question' }, [el('span', title), $creator.copy('复制', title)]),
 										/** 答案 */
 										el('div', { className: 'answer' }, [
 											el('span', '答案：'),
@@ -53,10 +53,8 @@ export class SearchResultsElement extends IElement {
 			})
 		);
 
-		const resize = () => {
-			this.style.maxHeight = window.innerHeight / 2 + 'px';
-		};
-		resize();
-		window.addEventListener('resize', resize);
+		$.onresize(this, (sr) => {
+			sr.style.maxHeight = window.innerHeight / 2 + 'px';
+		});
 	}
 }

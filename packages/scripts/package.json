@@ -1,12 +1,11 @@
 {
-	"name": "@ocsjs/core",
-	"version": "4.0.0-beta.0",
+	"name": "@ocsjs/scripts",
+	"version": "4.0.0",
 	"description": "core package of ocs",
 	"main": "./lib/index.js",
 	"types": "./lib/index.d.ts",
 	"files": [
-		"lib",
-		"dist"
+		"lib"
 	],
 	"scripts": {
 		"build": "tsc && vite build"
@@ -32,16 +31,17 @@
 	},
 	"homepage": "https://github.com/ocsjs/ocsjs#readme",
 	"devDependencies": {
-		"@types/event-emitter": "^0.3.3",
-		"@types/string-similarity": "^4.0.0",
+		"@types/md5": "^2.3.2",
 		"@types/tampermonkey": "^4.0.5",
-		"typedoc": "^0.23.23",
 		"vite": "^2.9.15",
 		"vite-plugin-banner": "^0.6.1"
 	},
 	"dependencies": {
-		"events": "^3.3.0",
+		"@ocsjs/core": "workspace:4.0.0-beta.0",
+		"@rollup/plugin-commonjs": "^24.0.0",
+		"browser-env": "^3.3.0",
 		"lodash": "^4.17.21",
-		"string-similarity": "^4.0.4"
+		"md5": "^2.3.0",
+		"typr.js": "^1.0.0"
 	}
 }

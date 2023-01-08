@@ -13,7 +13,16 @@ export function domSearch<E extends RawElements>(
 ): SearchedElements<E, HTMLElement | null> {
 	const obj = Object.create({});
 	Reflect.ownKeys(wrapper).forEach((key) => {
-		Reflect.set(obj, key, root.querySelector(wrapper[key.toString()]));
+		const item = wrapper[key.toString()];
+		Reflect.set(
+			obj,
+			key,
+			typeof item === 'string'
+				? root.querySelector(item)
+				: typeof item === 'function'
+				? item(root)
+				: item.map((fun) => fun(root))
+		);
 	});
 	return obj;
 }
@@ -39,7 +48,17 @@ export function domSearchAll<E extends RawElements>(
 ): SearchedElements<E, HTMLElement[]> {
 	const obj = Object.create({});
 	Reflect.ownKeys(wrapper).forEach((key) => {
-		Reflect.set(obj, key, Array.from(root.querySelectorAll(wrapper[key.toString()])));
+		const item = wrapper[key.toString()];
+
+		Reflect.set(
+			obj,
+			key,
+			typeof item === 'string'
+				? Array.from(root.querySelectorAll(item))
+				: typeof item === 'function'
+				? item(root)
+				: item.map((fun) => fun(root))
+		);
 	});
 	return obj;
 }

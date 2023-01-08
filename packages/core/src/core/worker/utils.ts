@@ -5,7 +5,7 @@ export function defaultWorkTypeResolver(ctx: WorkContext<any>): QuestionTypes | 
 	function count(selector: string) {
 		let c = 0;
 		for (const option of ctx.elements.options || []) {
-			if (option.querySelector(selector) !== null) {
+			if (option?.querySelector(selector) !== null) {
 				c++;
 			}
 		}

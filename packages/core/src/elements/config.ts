@@ -35,13 +35,17 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 
 				this.provider.onchange = () => {
 					const { min, max, type } = (this.attrs || {}) as Partial<ConfigTagMap['input']>;
+					/** 计算属性，不能超过 min 和 max */
 					if (type === 'number') {
-						if (min && this.provider.value < min) {
-							this.provider.value = min;
-						} else if (max && this.provider.value > max) {
-							this.provider.value = max;
+						const val = parseFloat(this.provider.value);
+						const _min = min ? parseFloat(min) : undefined;
+						const _max = max ? parseFloat(max) : undefined;
+						if (_min && val < _min) {
+							this.provider.value = _min.toString();
+						} else if (_max && val > _max) {
+							this.provider.value = _max.toString();
 						} else {
-							$gm.setValue(this.key, this.provider.value);
+							$gm.setValue(this.key, val);
 						}
 					} else {
 						$gm.setValue(this.key, this.provider.value);
