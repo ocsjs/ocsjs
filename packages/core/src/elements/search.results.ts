@@ -9,9 +9,13 @@ import { IElement } from './interface';
 const transformImgLink = (str: string) =>
 	str.replace(/https?:\/\/.*?\.(png|jpg|jpeg|gif)/g, (match) => `<img src="${match}" />`);
 
+/**
+ * 搜索结果元素
+ */
 export class SearchResultsElement extends IElement {
 	/** 搜索结果 [题目，答案] */
 	results: SimplifyWorkResult['searchResults'] = [];
+	/** 当前的题目 */
 	question: string = '';
 
 	connectedCallback() {

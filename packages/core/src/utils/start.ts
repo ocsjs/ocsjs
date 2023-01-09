@@ -7,13 +7,15 @@ import { $gm } from './tampermonkey';
  * 启动配置
  */
 export interface StartConfig {
+	/** 样式 */
 	style: string;
+	/** 项目列表 */
 	projects: Project[];
 }
 
 /**
  * 启动项目
- * @param cfg 启动配置
+ * @param startConfig 启动配置
  */
 export function start(startConfig: StartConfig) {
 	// 添加当前标签唯一id

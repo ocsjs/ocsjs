@@ -9,7 +9,8 @@
 		"dist"
 	],
 	"scripts": {
-		"build": "tsc && vite build"
+		"build": "tsc && vite build",
+		"doc": "typedoc  --options ./typedoc.json"
 	},
 	"repository": {
 		"type": "git",

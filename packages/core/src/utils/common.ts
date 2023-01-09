@@ -97,12 +97,22 @@ export const $ = {
 		return namespace ? namespace + '.' + key.toString() : key.toString();
 	},
 
+	/** 创建唯一id ， 不带横杠 */
 	uuid() {
 		return 'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
 			const r = (Math.random() * 16) | 0;
 			const v = c === 'x' ? r : (r & 0x3) | 0x8;
 			return v.toString(16);
 		});
+	},
+
+	/**
+	 * 生成随机数， 使用 Math.round 取整
+	 * @param min 最小值
+	 * @param max 最大值
+	 */
+	random(min: number, max: number) {
+		return Math.round(Math.random() * (max - min)) + min;
 	},
 
 	/**

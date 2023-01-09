@@ -5,6 +5,12 @@ import { $gm } from '../utils/tampermonkey';
 import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
 
+/**
+ * 配置表单元素
+ *
+ * 可以根据 {@link Script.configs} 在面板中生成设置表单，并对数据进行双向绑定。
+ *
+ */
 export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElement {
 	label: HTMLLabelElement = el('label');
 	wrapper: HTMLDivElement = el('div', { className: 'config-wrapper' });

@@ -27,16 +27,25 @@ export type ModelAttrs = Pick<
 	| 'confirmButton'
 	| 'inputDefaultValue'
 > & {
+	/** 取消生成窗口的关闭按钮 */
 	disableWrapperCloseable?: boolean;
+	/** 弹窗标题 */
 	title?: ModelElement['title'];
 	/** 伴随系统通知一起弹出 */
 	notification?: boolean;
 	notificationOptions?: {
+		/** 是否为重要通知 */
 		important?: boolean;
+		/** 消息显示时间（秒） */
 		duration?: number;
 	};
 };
 
+/**
+ * 内置的渲染脚本，包含在内置的 RenderProject 类中。搭配 start 函数进行整个脚本的悬浮窗构成创建
+ *
+ * 可以不用悬浮窗也能执行脚本的生命周期，但是不会执行 render 这个生命周期
+ */
 const RenderScript = new Script({
 	name: '悬浮窗',
 	url: [['所有', /.*/]],
@@ -368,7 +377,7 @@ const RenderScript = new Script({
 			render();
 			// 随机位置插入操作面板到页面
 			$elements.root.append(container);
-			const target = document.body.children[random(0, document.body.children.length - 1)];
+			const target = document.body.children[$.random(0, document.body.children.length - 1)];
 			target.after($elements.panel);
 			initModelSystem();
 			handlePosition();
@@ -381,6 +390,21 @@ const RenderScript = new Script({
 	}
 });
 
+/**
+ * 内置渲染工程，包含主要悬浮窗构建脚本 RenderScript
+ *
+ * 使用 start 函数进行调用
+ *
+ * 可以帮助其他工程进行页面构建，如果不引用，则不会出现悬浮窗已经设置表单区域。
+ *
+ * @example
+ *
+ * OCS.start({
+ * 		style: 'xxx',
+ * 		projects: [OCS.RenderProject, ...其他工程]
+ * })
+ *
+ */
 export const RenderProject = Project.create({
 	name: '渲染',
 	domains: [],
@@ -470,8 +494,4 @@ export function $message(
 	const message = el('message-element', { type, ...attrs });
 	$elements.messageContainer.append(message);
 	return message;
-}
-
-function random(min: number, max: number) {
-	return Math.round(Math.random() * (max - min)) + min;
 }

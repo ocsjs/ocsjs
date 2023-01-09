@@ -1,8 +1,13 @@
 {
 	// Comments are supported, like tsconfig.json
 	"$schema": "https://typedoc.org/schema.json",
-	"entryPoints": ["src/index.ts"],
+	"entryPoints": ["./src/elements/index.ts", "./src/utils/index.ts"],
 	"out": "docs",
-	"theme": "github-wiki",
-	"cleanOutputDir": true
+	"cleanOutputDir": true,
+	"darkHighlightTheme": "github-dark",
+	"lightHighlightTheme": "github-light",
+	"name": "OCS - API",
+	"readme": "../../README.md",
+	"customCss": "./assets/docs.css",
+	"kindSortOrder": ["Variable", "Property", "Method", "Function"]
 }

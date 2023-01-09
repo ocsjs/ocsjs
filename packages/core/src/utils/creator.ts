@@ -42,6 +42,7 @@ export interface PreventTextOptions {
  * 元素创建器
  */
 export const $creator = {
+	/** 创建多行的文本，支持 字符串，元素，以及包含字符串元素的列表，最多二维数组 */
 	notes(lines: (string | HTMLElement | (string | HTMLElement)[])[], tag: 'ul' | 'ol' = 'ul') {
 		return el(
 			tag,

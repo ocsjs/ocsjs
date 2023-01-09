@@ -5,7 +5,6 @@ export const $string = {
 	/**
 	 * 驼峰转目标字符串
 	 * @param value
-	 * @returns
 	 */
 	humpToTarget(value: string, target: string) {
 		return value
@@ -28,6 +27,7 @@ export class StringUtils {
 		return str?.replace(/\n/g, '') || '';
 	}
 
+	/** 删除换行符 */
 	nowrap() {
 		this._text = StringUtils.nowrap(this._text);
 		return this;
@@ -38,6 +38,7 @@ export class StringUtils {
 		return str?.replace(/ +/g, ' ') || '';
 	}
 
+	/** 删除空格，多个空格只留一个 */
 	nospace() {
 		this._text = StringUtils.nospace(this._text);
 		return this;
@@ -48,6 +49,7 @@ export class StringUtils {
 		return str?.replace(/[^\w\s]/gi, '') || '';
 	}
 
+	/** 删除特殊字符 */
 	noSpecialChar() {
 		this._text = StringUtils.noSpecialChar(this._text);
 		return this;
@@ -58,6 +60,7 @@ export class StringUtils {
 		return str.length > len ? str.substring(0, len) + '...' : str;
 	}
 
+	/** 最大长度，剩余显示省略号 */
 	max(len: number) {
 		this._text = StringUtils.max(this._text, len);
 		return this;
@@ -69,11 +72,16 @@ export class StringUtils {
 		return str.substring(0, start) + str.substring(start, end).replace(/./g, replacer) + str.substring(end);
 	}
 
+	/** 隐藏字符串 */
 	hide(start: number, end: number, replacer: string = '*') {
 		this._text = StringUtils.hide(this._text, start, end, replacer);
 		return this;
 	}
 
+	/**
+	 * 根据字符串创建 StringUtils 对象
+	 * @param text  字符串
+	 */
 	static of(text: string) {
 		return new StringUtils(text);
 	}

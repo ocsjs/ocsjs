@@ -7,11 +7,8 @@
  * 例如设置信息则使用本地持久化存储
  * 而对于消息推送，弹窗通知等临时，但是需要跨域的变量，可以使用标签页去存储临时信息
  */
-
-/**
- * 油猴工具库
- */
 export const $gm = {
+	/** 全局 unsafeWindow 对象 */
 	unsafeWindow: globalThis.unsafeWindow as Window & { [x: string]: any },
 
 	/**
@@ -25,18 +22,20 @@ export const $gm = {
 		return GM_getValue(key, defaultValue);
 	},
 
+	/** GM_deleteValue */
 	deleteValue(key: string) {
 		// eslint-disable-next-line no-undef
 		GM_deleteValue(key);
 	},
 
+	/** GM_listValues */
 	listValues() {
 		// eslint-disable-next-line no-undef
 		return GM_listValues();
 	},
 
 	/**
-	 * 存储值
+	 * GM_setValue 存储值
 	 * @param key 键
 	 * @param value 值
 	 * @returns
@@ -46,6 +45,7 @@ export const $gm = {
 		GM_setValue(key, value);
 	},
 
+	/** GM_addValueChangeListener */
 	addConfigChangeListener(key: string, handler: (pre: any, curr: any, remote: boolean) => any) {
 		// eslint-disable-next-line no-undef
 		return GM_addValueChangeListener(key, (_, pre, curr, remote) => {
@@ -53,21 +53,25 @@ export const $gm = {
 		});
 	},
 
+	/** GM_removeValueChangeListener */
 	removeConfigChangeListener(listenerId: number) {
 		// eslint-disable-next-line no-undef
 		GM_removeValueChangeListener(listenerId);
 	},
 
+	/** GM_getTab */
 	getTab(callback: (obj: any) => void) {
 		// eslint-disable-next-line no-undef
 		GM_getTab(callback);
 	},
 
+	/** GM_saveTab */
 	setTab(value: object) {
 		// eslint-disable-next-line no-undef
 		GM_saveTab(value);
 	},
 
+	/** 获取 GM_info */
 	getInfos() {
 		// eslint-disable-next-line no-undef
 		return GM_info;
