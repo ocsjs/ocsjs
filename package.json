@@ -10,8 +10,8 @@
 	],
 	"scripts": {
 		"dev:core": "gulp -f ./scripts/dev-core.js",
-		"build:core": "pnpm build && gulp -f ./scripts/build-core.js",
-		"build:app": "pnpm build && gulp -f ./scripts/build-app.js",
+		"build:core": "gulp -f ./scripts/build-core.js",
+		"build:app": "gulp -f ./scripts/build-app.js",
 		"build": "pnpm lint && gulp -f ./scripts/tsc.js",
 		"lint": "pnpm format && eslint  ./packages --ext .ts,.tsx,.js,.jsx,.vue --fix",
 		"format": "prettier .  --write",

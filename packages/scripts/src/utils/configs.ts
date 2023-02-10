@@ -11,9 +11,15 @@ export const volume: Config = {
 	defaultValue: 0,
 	onload() {
 		this.addEventListener('change', () => {
-			this.setAttribute('data-title', (parseFloat(this.getAttribute('value') || '0') * 100).toFixed() + '%');
+			this.setAttribute(
+				'data-title',
+				(parseFloat(this.value || this.getAttribute('value') || '0') * 100).toFixed() + '%'
+			);
 		});
-		this.setAttribute('data-title', (parseFloat(this.getAttribute('value') || '0') * 100).toFixed() + '%');
+		this.setAttribute(
+			'data-title',
+			(parseFloat(this.value || this.getAttribute('value') || '0') * 100).toFixed() + '%'
+		);
 	}
 };
 

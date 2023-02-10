@@ -5,12 +5,15 @@ import { handleOpenFile } from './src/tasks/handle.open';
 import { remoteRegister } from './src/tasks/remote.register';
 import { initStore } from './src/tasks/init.store';
 import { autoLaunch } from './src/tasks/auto.launch';
-import { createWindow } from './src/main';
+import { createWindow } from './src/window';
 import { globalListenerRegister } from './src/tasks/global.listener';
 import { task } from './src/utils';
 import { handleError } from './src/tasks/error.handler';
 import { updater } from './src/tasks/updater';
 import { startupServer } from './src/tasks/startup.server';
+
+// 设置 webrtc 的影像帧率比例，最高100，太高会造成卡顿，默认50
+app.commandLine.appendSwitch('webrtc-max-cpu-consumption-percentage', '1');
 
 /** 获取单进程锁 */
 const gotTheLock = app.requestSingleInstanceLock();
@@ -25,10 +28,12 @@ function bootstrap() {
 	task('OCS启动程序', () =>
 		Promise.all([
 			task('初始化错误处理', () => handleError()),
-			task('初始化本地设置', () => initStore()),
+			task('初始化本地设置', () => {
+				initStore();
+				task('启动接口服务', () => startupServer());
+			}),
 			task('初始化自动启动', () => autoLaunch()),
 			task('处理打开文件', () => handleOpenFile(process.argv)),
-			task('启动接口服务', () => startupServer()),
 
 			task('启动渲染进程', async () => {
 				await app.whenReady();
@@ -44,7 +49,6 @@ function bootstrap() {
 					e.preventDefault();
 					window.webContents.send('close');
 				});
-
 				task('初始化远程通信模块', () => remoteRegister(window));
 				task('注册app事件监听器', () => globalListenerRegister(window));
 
@@ -55,6 +59,7 @@ function bootstrap() {
 					window.webContents.openDevTools();
 				}
 
+				window.webContents.setZoomFactor(1);
 				window.show();
 
 				if (app.isPackaged) {

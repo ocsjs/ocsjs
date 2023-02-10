@@ -1,99 +1,166 @@
 <template>
-	<div class="title border-bottom">
-		<ul class="w-100 title-items">
-			<a-dropdown>
-				<li>窗口</li>
-
-				<template #overlay>
-					<a-menu class="title-menu">
-						<a-menu-item @click="remote.webContents.call('openDevTools')"> 开发者工具 </a-menu-item>
-						<a-menu-item @click="openLog"> 打开日志目录 </a-menu-item>
-
-						<a-menu-divider />
-
-						<a-menu-item @click="remote.webContents.call('reload')"> 重新加载 </a-menu-item>
-						<a-menu-item @click="relaunch"> 重新启动 </a-menu-item>
-
-						<a-menu-divider />
-
-						<a-menu-item @click="remote.win.call('maximize')"> 最大化 </a-menu-item>
-						<a-menu-item @click="remote.win.call('minimize')"> 最小化 </a-menu-item>
-						<a-menu-item @click="remote.win.call('restore')"> 还原 </a-menu-item>
-						<a-menu-item @click="remote.win.call('close')"> 关闭 </a-menu-item>
-					</a-menu>
-				</template>
-			</a-dropdown>
-
-			<a-dropdown>
-				<li>帮助</li>
-
-				<template #overlay>
-					<a-menu>
-						<a-menu-item @click="about"> 关于软件 </a-menu-item>
-						<TitleLink
-							title="官网教程"
-							url="https://docs.ocsjs.com/"
-						/>
-						<a-menu-item @click="allNotify"> 全部通知 </a-menu-item>
-
-						<TitleLink
-							title="软件更新"
-							url="https://docs.ocsjs.com/docs/资源下载/app-downloads"
-						/>
-					</a-menu>
-				</template>
-			</a-dropdown>
-		</ul>
-		<ul
-			v-if="NodeJS.os.platform() !== 'darwin'"
-			class="traffic-light"
-			@mouseenter="initMaximize()"
+	<div class="title border-bottom ps-2">
+		<a-dropdown
+			class="tittle-dropdown"
+			position="bl"
+			trigger="hover"
+			:popup-max-height="false"
 		>
-			<li
-				title="最小化"
-				@click="remote.win.call('minimize')"
+			<span class="title-item"> 工具 </span>
+			<template #content>
+				<a-doption style="width: 200px"> </a-doption>
+
+				<a-doption @click="exportData"> 导出数据 </a-doption>
+				<a-doption
+					class="border-bottom"
+					@click="importData"
+				>
+					导入数据
+				</a-doption>
+
+				<a-doption @click="store.render.state.setup = true"> 初始化设置 </a-doption>
+				<a-doption @click="relaunch"> 重启软件 </a-doption>
+				<a-doption @click="openLog"> 日志目录 </a-doption>
+				<a-doption @click="openDevTools"> 开发者工具 </a-doption>
+			</template>
+		</a-dropdown>
+		<a-dropdown
+			class="tittle-dropdown"
+			position="bl"
+			trigger="hover"
+			:popup-max-height="false"
+		>
+			<span
+				class="title-item"
+				@mousedown="mousedown"
 			>
-				<Icon type="icon-minus" />
-			</li>
-			<li
-				:title="max ? '还原' : '最大化'"
-				@click="max = !max"
-			>
-				<Icon :type="max ? 'icon-Batchfolding' : 'icon-border'" />
-			</li>
-			<li
-				title="关闭"
-				@click="remote.win.call('close')"
-			>
-				<Icon type="icon-close" />
-			</li>
-		</ul>
+				编辑
+			</span>
+			<template #content>
+				<a-doption style="width: 200px"> </a-doption>
+
+				<a-doption
+					class="w-100"
+					@mousedown="mousedown"
+					@click="exec('copy')"
+				>
+					<a-row>
+						<a-col flex="20px"> 复制 </a-col>
+						<a-col
+							flex="auto"
+							class="text-end"
+						>
+							Ctrl + C
+						</a-col>
+					</a-row>
+				</a-doption>
+				<a-doption
+					@mousedown="mousedown"
+					@click="exec('cut')"
+				>
+					<a-row>
+						<a-col flex="20px"> 剪切 </a-col>
+						<a-col
+							flex="auto"
+							class="text-end"
+						>
+							Ctrl + X
+						</a-col>
+					</a-row>
+				</a-doption>
+				<a-doption
+					@mousedown="mousedown"
+					@click="exec('paste')"
+				>
+					<a-row>
+						<a-col flex="20px"> 粘贴 </a-col>
+						<a-col
+							flex="auto"
+							class="text-end"
+						>
+							Ctrl + V
+						</a-col>
+					</a-row>
+				</a-doption>
+				<a-doption
+					@mousedown="mousedown"
+					@click="exec('undo')"
+				>
+					<a-row>
+						<a-col flex="20px"> 上一步 </a-col>
+						<a-col
+							flex="auto"
+							class="text-end"
+						>
+							Ctrl + Z
+						</a-col>
+					</a-row>
+				</a-doption>
+				<a-doption
+					@mousedown="mousedown"
+					@click="exec('redo')"
+				>
+					<a-row>
+						<a-col flex="20px"> 下一步 </a-col>
+						<a-col
+							flex="auto"
+							class="text-end"
+						>
+							Ctrl + Y
+						</a-col>
+					</a-row>
+				</a-doption>
+			</template>
+		</a-dropdown>
+
+		<a-dropdown
+			class="tittle-dropdown"
+			position="bl"
+			trigger="hover"
+			:popup-max-height="false"
+		>
+			<span class="title-item"> 帮助 </span>
+			<template #content>
+				<a-doption
+					style="width: 200px"
+					@click="about"
+				>
+					关于软件
+				</a-doption>
+				<a-doption @click="allNotify"> 全部通知 </a-doption>
+
+				<TitleLink
+					title="官网教程"
+					url="https://docs.ocsjs.com/"
+				/>
+				<TitleLink
+					title="软件更新"
+					url="https://docs.ocsjs.com/docs/资源下载/app-downloads"
+				/>
+			</template>
+		</a-dropdown>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { Modal } from 'ant-design-vue';
-import { h, nextTick, onMounted, ref, watch } from 'vue';
-import { fetchRemoteNotify, date } from '../utils';
-import { NodeJS } from '../utils/export';
+import { fetchRemoteNotify, date, about } from '../utils';
 import { remote } from '../utils/remote';
 import TitleLink from './TitleLink.vue';
+import { Message } from '@arco-design/web-vue';
+import { store } from '../store/index';
+import { electron } from '../utils/node';
+import { currentBrowser, currentFolder, currentEntities, currentSearchedEntities } from '../fs/index';
+import { root } from '../fs/folder';
 
-const { shell } = require('electron');
+const { shell } = electron;
 
-const max = ref<boolean>(false);
-
-onMounted(() => {
-	nextTick(() => initMaximize());
-});
-
-watch(max, () => {
-	if (max.value) {
-		remote.win.call('maximize');
+function exec(id: string) {
+	if (typeof window === 'undefined') {
+		return remote.webContents.call(id as any);
 	} else {
-		remote.win.call('restore');
+		return document.execCommand(id);
 	}
-});
+}
 
 // 重启
 function relaunch() {
@@ -103,7 +170,8 @@ function relaunch() {
 
 // 打开日志目录
 async function openLog() {
-	shell.openPath(NodeJS.path.join(await remote.app.call('getPath', 'logs'), date(Date.now())));
+	const path = await remote.path.call('join', await remote.app.call('getPath', 'logs'), date(Date.now()));
+	shell.openPath(path);
 }
 
 // 显示全部通知
@@ -111,32 +179,58 @@ function allNotify() {
 	fetchRemoteNotify(true);
 }
 
-// 显示关于面板
-async function about() {
-	Modal.info({
-		title: '关于',
-		closable: true,
-		maskClosable: true,
-		content: h('ul', [
-			h('li', '软件版本 : ' + (await remote.app.call('getVersion'))),
-			h('li', [
-				h('span', '版本详情 : '),
-				h(
-					'a',
-					{
-						href: '#',
-						onClick: () => shell.openExternal('https://docs.ocsjs.com/docs/资源下载/app-downloads')
-					},
-					'https://docs.ocsjs.com/docs/资源下载/app-downloads'
-				)
-			])
-		])
-	});
+function importData() {
+	remote.dialog
+		.call('showOpenDialog', {
+			title: '选择数据文件',
+			buttonLabel: '导出',
+			filters: [{ extensions: ['ocsdata'], name: 'ocsdata' }]
+		})
+		.then(async ({ canceled, filePaths }) => {
+			if (canceled === false && filePaths) {
+				try {
+					const text = await remote.fs.call('readFileSync', filePaths[0], { encoding: 'utf8' });
+					JSON.parse(text.toString());
+					await remote.fs.call('copyFileSync', filePaths[0], store['config-path']);
+					Message.success('导入成功！数据重启后生效。');
+				} catch (err) {
+					Message.error('数据有误! : ' + err);
+				}
+				// NodeJS.fs.copyFileSync(store['config-path'], filePath);
+			}
+		});
+}
+function exportData() {
+	remote.dialog
+		.call('showSaveDialog', {
+			title: '选择导出位置',
+			buttonLabel: '导出',
+			defaultPath: `config-${date(Date.now())}`
+		})
+		.then(async ({ canceled, filePath }) => {
+			if (canceled === false && filePath) {
+				await remote.fs.call('copyFileSync', store['config-path'], filePath + '.ocsdata');
+				Message.success('导出成功！');
+			}
+		});
 }
 
-// 初始化状态
-async function initMaximize() {
-	max.value = await remote.win.call('isMaximized');
+function mousedown(e: MouseEvent) {
+	e.preventDefault();
+}
+
+function openDevTools() {
+	// @ts-ignore
+	window.ocs = {
+		currentBrowser,
+		currentEntities,
+		currentFolder,
+		currentSearchedEntities,
+		root,
+		store
+	};
+
+	remote.webContents.call('openDevTools');
 }
 </script>
 
@@ -145,49 +239,25 @@ async function initMaximize() {
 	width: 100%;
 	display: flex;
 	align-items: center;
+	cursor: default;
 
-	.traffic-light {
-		display: flex;
-		justify-content: end;
-		-webkit-app-region: drag;
+	.title-item {
+		padding: 0px 8px;
+		font-size: 14px;
 
-		.ocsicon {
-			font-size: 14px;
-			padding: 0px 4px 0px 4px;
-		}
-	}
-
-	.title-items {
-		display: flex;
-		-webkit-app-region: drag;
-	}
-
-	ul {
-		white-space: nowrap;
-		list-style-type: none;
-		padding: 0;
-		margin: 0;
-		height: 100%;
-
-		li {
-			display: inline-flex;
-			align-items: center;
-			font-size: 14px;
-			padding: 0px 8px;
-			color: gray;
-			cursor: pointer;
-			border-radius: 2px;
-			-webkit-app-region: no-drag;
-		}
-
-		li.active {
-			font-weight: bold;
+		&:hover {
+			background-color: #f0f0f0;
 		}
 	}
 }
 :deep(.ant-dropdown-menu-item) {
 	font-size: 12px;
 	padding: 2px 24px 2px 12px;
+}
+
+:deep(.arco-dropdown-option-content) {
+	width: 100%;
+	display: block;
 }
 
 .tutorial-tooltip {

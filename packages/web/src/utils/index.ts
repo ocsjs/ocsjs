@@ -1,8 +1,13 @@
-import { message, Modal } from 'ant-design-vue';
 import { h } from 'vue';
 import { store } from '../store';
 import dayjs from 'dayjs';
-const { OCSApi } = require('@ocsjs/common') as typeof import('@ocsjs/common');
+import { Message, Modal } from '@arco-design/web-vue';
+import { remote } from './remote';
+import { notify } from './notify';
+import { electron } from './node';
+import { OCSApi } from '@ocsjs/common/src/api';
+
+const { ipcRenderer } = electron;
 
 export function sleep(timeout: number) {
 	return new Promise((resolve) => setTimeout(resolve, timeout));
@@ -65,10 +70,10 @@ export function datetime(time: number) {
  */
 export async function fetchRemoteNotify(readAll: boolean) {
 	try {
-		const infos = await OCSApi.getInfos();
+		const infos = await getRemoteInfos();
 
 		let remoteNotify = infos.notify;
-		const storeNotify: typeof infos.notify = store.notifies;
+		const storeNotify: typeof infos.notify = store.render.notifies;
 		/** 寻找未阅读的通知 */
 		if (!readAll) {
 			remoteNotify = remoteNotify.filter(
@@ -76,14 +81,14 @@ export async function fetchRemoteNotify(readAll: boolean) {
 			);
 		}
 
-		console.log('notify', { infos, exits: storeNotify, remoteNotify });
 		if (remoteNotify.length) {
-			Modal.info({
+			Modal.confirm({
 				title: () => '🎉最新公告🎉',
 				okText: readAll ? '确定' : '朕已阅读',
 				cancelText: readAll ? '取消' : '下次一定',
-				okCancel: true,
-				style: { top: '20px' },
+				hideCancel: false,
+				simple: true,
+				width: 600,
 				content: () =>
 					h(
 						'div',
@@ -114,14 +119,14 @@ export async function fetchRemoteNotify(readAll: boolean) {
 					),
 				onOk() {
 					if (!readAll) {
-						store.notifies = [...store.notifies].concat(remoteNotify);
+						store.render.notifies = [...store.render.notifies].concat(remoteNotify);
 					}
 				},
 				onCancel() {}
 			});
 		}
 	} catch (e) {
-		message.error('最新通知获取失败：' + e);
+		Message.error('最新通知获取失败：' + e);
 	}
 }
 
@@ -131,4 +136,152 @@ export async function fetchRemoteNotify(readAll: boolean) {
 
 export async function getRemoteInfos() {
 	return await OCSApi.getInfos();
+}
+
+/** 下载文件到指定路径 */
+export async function download({
+	name,
+	dest,
+	url
+}: {
+	/** 显示文件名 */
+	name: string;
+	/** 下载路径 */
+	dest: string;
+	/** url */
+	url: string;
+}) {
+	const listener = (e: any, channel: string, rate: number, chunkLength: number, totalLength: number) => {
+		installListener(name, channel, rate, chunkLength, totalLength);
+	};
+
+	// 监听下载进度
+	ipcRenderer.on('download', listener);
+	try {
+		// 下载
+		await remote.methods.call('download', 'download-file-' + name, url, dest);
+	} catch (err) {
+		// @ts-ignore
+		Message.error('下载错误 ' + err.message);
+	}
+	ipcRenderer.removeListener('download', listener);
+
+	return dest;
+}
+
+/**
+ * 下载压缩包文件，并返回解压过后的文件夹绝对路径
+ */
+export async function downloadZip({
+	name,
+	filename,
+	folder,
+	url
+}: {
+	/** 显示文件名 */
+	name: string;
+	/** 真实文件名，不要带后缀 */
+	filename: string;
+	/** 父文件夹路径 */
+	folder: string;
+	url: string;
+}) {
+	Message.info('正在下载 ' + name);
+
+	const zip = await remote.path.call('join', folder, `${filename}.zip`);
+	const unzip = await remote.path.call('join', folder, filename);
+	//  下载
+	await download({ name: name, dest: zip, url });
+
+	notify('文件解压', `${name} 解压中...`, 'download-file-' + name, {
+		type: 'info',
+		duration: 0
+	});
+
+	// 解压拓展
+	await remote.methods.call('unzip', zip, unzip);
+	// 删除压缩包
+	await remote.fs.call('unlinkSync', zip);
+
+	notify('文件下载', `${name} 下载完成！`, 'download-file-' + name, {
+		type: 'success',
+		duration: 3000
+	});
+
+	return unzip;
+}
+
+function installListener(name: string, channel: string, rate: number, chunkLength: number, totalLength: number) {
+	if (channel === 'download-file-' + name) {
+		if (rate === 100) {
+			return notify(
+				'文件下载',
+				`${name} 下载完成: ${(totalLength / 1024 / 1024).toFixed(2)}MB`,
+				'download-file-' + name,
+				{
+					type: 'success',
+					duration: 0
+				}
+			);
+		} else {
+			return notify(
+				'文件下载',
+				`${name} 下载中: ${(chunkLength / 1024 / 1024).toFixed(2)}MB/${(totalLength / 1024 / 1024).toFixed(2)}MB`,
+				'download-file-' + name,
+				{
+					type: 'info',
+					duration: 0
+				}
+			);
+		}
+	}
+}
+
+/** 显示关于软件说明 */
+export async function about() {
+	store.render.state.first = false;
+	const version = await remote.app.call('getVersion');
+	Modal.info({
+		title: '关于软件',
+		closable: true,
+		simple: false,
+		maskClosable: true,
+		content: () =>
+			h('div', [
+				h('p', {
+					innerHTML:
+						'&nbsp;&nbsp;OCS桌面版软件通过操控浏览器可以进行浏览器多开（每个浏览器数据不共享，可以实现每个网站登录不同的账号），并且有强大的浏览器管理功能以及浏览器屏幕监控功能。'
+				}),
+				h('p', {
+					innerHTML:
+						'&nbsp;&nbsp;通过安装用户脚本管理器（例如脚本猫，油猴），并安装拥有各种功能的用户脚本，可以拓展更多浏览器功能。'
+				}),
+
+				h('ul', { style: { paddingLeft: '12px' } }, [
+					h('li', '软件版本 : ' + version),
+					h('li', [
+						h('span', '软件官网 : '),
+						h(
+							'a',
+							{
+								href: '#',
+								onClick: () => electron.shell.openExternal('https://docs.ocsjs.com/')
+							},
+							'https://docs.ocsjs.com'
+						)
+					]),
+					h('li', [
+						h('span', '软件下载 : '),
+						h(
+							'a',
+							{
+								href: '#',
+								onClick: () => electron.shell.openExternal('https://docs.ocsjs.com/docs/资源下载/app-downloads')
+							},
+							'https://docs.ocsjs.com/docs/资源下载/app-downloads'
+						)
+					])
+				])
+			])
+	});
 }

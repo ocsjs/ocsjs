@@ -1,7 +1,7 @@
 import { Project } from '../interfaces/project';
 
 import { $ } from './common';
-import { $gm } from './tampermonkey';
+import { $store } from './store';
 
 /**
  * 启动配置
@@ -17,13 +17,12 @@ export interface StartConfig {
  * 启动项目
  * @param startConfig 启动配置
  */
-export function start(startConfig: StartConfig) {
+export async function start(startConfig: StartConfig) {
 	// 添加当前标签唯一id
-	$gm.getTab(({ tabId }) => {
-		if (tabId === undefined) {
-			$gm.setTab({ tabId: $.uuid() });
-		}
-	});
+	const uid = await $store.getTab('uid');
+	if (uid === undefined) {
+		await $store.setTab('uid', $.uuid());
+	}
 
 	/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
 	startConfig.projects = startConfig.projects.map((p) => {
@@ -46,20 +45,20 @@ export function start(startConfig: StartConfig) {
 		const _onstart = script.onstart;
 		script.onstart = (...args: any) => {
 			_onstart?.call(script, ...args);
-			const urls: string[] = Array.from($gm.getValue('_urls_', []));
+			const urls: string[] = Array.from($store.get('_urls_', []));
 			const urlHasInRecord = urls.find((u) => u === location.href);
 			if (!urlHasInRecord) {
-				$gm.setValue('_urls_', urls.concat(location.href));
+				$store.set('_urls_', urls.concat(location.href));
 			}
 		};
 
 		const _onbeforeunload = script.onbeforeunload;
 		script.onbeforeunload = (...args: any) => {
 			const prevent = _onbeforeunload?.call(script, ...args);
-			const urls: string[] = Array.from($gm.getValue('_urls_', []));
+			const urls: string[] = Array.from($store.get('_urls_', []));
 			const urlIndex = urls.findIndex((u) => u === location.href);
 			if (urlIndex !== -1) {
-				$gm.setValue('_urls_', urls.splice(urlIndex, 1));
+				$store.set('_urls_', urls.splice(urlIndex, 1));
 			}
 			return prevent;
 		};

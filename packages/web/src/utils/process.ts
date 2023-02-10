@@ -1,140 +1,136 @@
 import { ChildProcess } from 'child_process';
-import { message } from 'ant-design-vue';
 import { remote } from './remote';
 import { store } from '../store';
-import { NodeJS } from './/export';
 import { LaunchOptions } from 'playwright-core';
 import { reactive } from 'vue';
+import { ScriptWorker } from '@ocsjs/app';
+import { Browser } from '../fs/browser';
+import { Message } from '@arco-design/web-vue';
+import EventEmitter from 'events';
+import { child_process } from './node';
 
-const childProcess = require('child_process') as typeof import('child_process');
+export type RemoteScriptWorker = <W extends keyof ScriptWorker = keyof ScriptWorker>(
+	event: W,
+	...args: ScriptWorker[W] extends { (...args: any[]): any } ? Parameters<ScriptWorker[W]> : any[]
+) => void;
 
 /**
  * 运行进程
  */
-export class Process {
-	private shell: ChildProcess | undefined;
-	launched: boolean = false;
+export class Process extends EventEmitter {
+	uid: string;
+	shell?: ChildProcess;
+	worker?: RemoteScriptWorker;
+	/** 状态 */
+	status: 'closed' | 'launching' | 'launched' = 'closed';
+	/** 浏览器实体信息 */
+	browser: Browser;
 	/** 浏览器启动参数 */
-	options?: LaunchOptions;
-	/** 浏览器用户数据缓存文件夹路径 */
-	cachePath: string;
-	/** 浏览器信息 */
-	pages: Record<
-		string,
-		{
-			url: string;
-			title: string;
-		}
-	> = {};
+	launchOptions: Required<LaunchOptions>;
 
-	onImage?: (pageId: string, base64: string) => void;
-	pageId: string = '';
-	base64 = '';
+	video: HTMLVideoElement | undefined = undefined;
+	stream: MediaStream | undefined = undefined;
 
-	constructor(cachePath: string, options: LaunchOptions, onImage?: (pageId: string, base64: string) => void) {
-		this.cachePath = cachePath;
-		this.options = options;
-		this.onImage = onImage;
+	static from(uid: string) {
+		return processes.find((p) => p.uid === uid);
 	}
 
-	pageSwitch(pageId: string) {
-		this.pageId = pageId;
-		this.send('page-switch', pageId);
+	constructor(browser: Browser, launchOptions: LaunchOptions) {
+		super();
+		this.browser = browser;
+		this.uid = browser.uid;
+		this.launchOptions = launchOptions as any;
 	}
 
 	/**
 	 * 使用 child_process 运行 ocs 命令
 	 */
 	async init(onConsole?: (data: any) => void) {
-		const target = NodeJS.path.join(await remote.app.call('getAppPath'), './script.js');
-		process.env.store = JSON.stringify(store);
-		const shell = childProcess.fork(target, {
-			stdio: ['ipc'],
-			env: process.env
-		});
-		shell.stdout?.on('data', (data: any) => onConsole?.(data.toString()));
-		shell.stderr?.on('data', (data: any) => onConsole?.(data.toString()));
-		shell.stderr?.on('data', (data: any) => remote.logger.call('error', String(data)));
-		shell.on('message', (message: { action: string; data: any }) => {
-			// 浏览器启动
-			if (message.action === 'launched') {
-				this.launched = true;
+		this.shell = child_process.fork(
+			await remote.path.call('join', await remote.app.call('getAppPath'), './script.js'),
+			{
+				stdio: ['ipc'],
+				env: process.env
 			}
-			// 页面被切换（新建页面，页面跳转等）
-			else if (message.action === 'page-switch') {
-				this.pageId = message.data;
-			}
-			// 页面创建
-			else if (message.action === 'page-load') {
-				this.pages[message.data.id] = message.data;
-			}
-			// 页面关闭
-			else if (message.action === 'page-close') {
-				Reflect.deleteProperty(this.pages, message.data.id);
-			}
-			// 页面图像
-			else if (message.action === 'page-image') {
-				console.log('image');
+		);
+		this.worker = createRemoteScriptWorker(this.shell);
 
-				this.base64 = message.data;
-			} else {
-				console.error('unknown action: ' + message.action);
+		this.shell.stdout?.on('data', (data: any) => onConsole?.(data.toString()));
+		this.shell.stderr?.on('data', (data: any) => onConsole?.(data.toString()));
+		this.shell.stderr?.on('data', (data: any) => remote.logger.call('error', String(data)));
+
+		/** 监听器 */
+		const listeners: Record<string, (...args: any[]) => void> = {
+			/** 浏览器启动 */
+			launched: async () => {
+				this.status = 'launched';
+			},
+			'browser-closed': () => {
+				this.status = 'closed';
+			}
+		};
+		this.shell.on('close', () => {
+			this.status = 'closed';
+		});
+		this.shell.on('message', ({ event, args }: { event: string; args: any[] }) => {
+			// 将 shell 的事件共享到当前的对象
+			this.emit(event, ...args);
+			if (listeners[event]) {
+				listeners[event](...args);
 			}
 		});
-		this.shell = shell;
 
 		// 初始化进程数据
-		this.shell?.send(
-			JSON.stringify({
-				init: true,
-				data: store,
-				cachePath: this.cachePath
-			})
-		);
-	}
-
-	/**
-	 * 给子进程发送信息
-	 * @param action 事件名
-	 * @param data 数据
-	 */
-	send(action: string, data: any) {
-		console.log('process send :', { action, data });
-		this.shell?.send(
-			JSON.stringify({
-				action,
-				data: data,
-				cachePath: this.cachePath
-			})
-		);
+		this.worker('init', { store, cachePath: this.browser.cachePath, uid: this.uid });
 	}
 
 	/** 启动文件 */
 	launch() {
-		this.send('launch', {
-			userDataDir: this.cachePath,
-			scripts: store.scripts.filter((s) => s.enable).map((s) => s.url),
-			...this.options
+		return new Promise<void>((resolve, reject) => {
+			// 检查
+			if (this.launchOptions.executablePath) {
+				remote.fs
+					.call('existsSync', this.launchOptions.executablePath)
+					.then((result) => {
+						if (result) {
+							this.status = 'launching';
+
+							this.once('launched', resolve);
+							this.worker?.('launch', {
+								userDataDir: this.browser.cachePath,
+								scripts: store.render.scripts.filter((s) => s.enable).map((s) => s.url),
+								...this.launchOptions
+							});
+						} else {
+							Message.error('浏览器路径不存在，请修改。');
+						}
+					})
+					.catch((err) => {
+						Message.error('浏览器路径读取错误 : ', err);
+					});
+			} else {
+				Message.error('浏览器路径不存在，请修改。');
+			}
 		});
 	}
 
 	/** 关闭进程 */
-	close() {
-		this.send('browser-close', undefined);
-		this.launched = false;
-	}
-
-	closePage(pageId: string) {
-		this.send('page-close', pageId);
-		Reflect.deleteProperty(this.pages, pageId);
+	async close() {
+		return new Promise<void>((resolve, reject) => {
+			this.once('browser-closed', resolve);
+			this.worker?.('close');
+		});
 	}
 
 	/** 显示当前的浏览器  */
 	bringToFront() {
-		if (this.launched && this.options) {
-			childProcess.exec(`"${this.options.executablePath}" --user-data-dir="${this.cachePath}" "about:blank"`);
+		if (this.status === 'launched' && this.launchOptions) {
+			const action = `http://localhost:${store.server.port}/ocs-action_bring-to-top`;
+			child_process.exec(
+				`"${this.launchOptions.executablePath}" --user-data-dir="${this.browser.cachePath}" "${action}"`
+			);
 		} else {
-			message.warn('必须先启动文件');
+			Message.warning('必须先启动文件');
 		}
 	}
 
@@ -143,4 +139,19 @@ export class Process {
 	}
 }
 
-export const processes: Record<string, Process> = reactive({});
+export const processes: Process[] = reactive([]);
+
+/**
+ * 创建  ScriptWorker Shell 调用 APi
+ * @param shell
+ */
+function createRemoteScriptWorker(shell: ChildProcess) {
+	return <W extends keyof ScriptWorker, F extends ScriptWorker[W]>(
+		event: W,
+		...args: F extends { (...args: any[]): any } ? Parameters<F> : any[]
+	) => {
+		if (shell.connected) {
+			shell.send({ event, args });
+		}
+	};
+}

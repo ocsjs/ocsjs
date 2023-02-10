@@ -5,3 +5,4 @@ export * from './elements';
 export * from './script';
 export * from './string';
 export * from './tampermonkey';
+export * from './store';

@@ -1,6 +1,7 @@
 import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
 import { WorkUploadType } from '../core/worker/interface';
 import { ConfigElement } from '../elements/config';
+import { Script } from '../interfaces';
 import { Config } from '../interfaces/config';
 import { $message, $model } from '../projects/render';
 
@@ -123,22 +124,54 @@ export const $creator = {
 			handler?.apply(this, [btn]);
 		});
 	},
-	/** 创建设置区域 */
+	// 创建脚本面板
+	scriptPanel(script: Script, opts: { projectName: string; expandAll: boolean; onload?: (el: ConfigElement) => void }) {
+		const scriptPanel = el('script-panel-element', {
+			name: opts.expandAll ? opts.projectName + '-' + script.name : script.name
+		});
 
-	configs<T extends Record<string, Config<any>>>(namespace: string | undefined, configs: T) {
+		// 监听提示内容改变
+		script.onConfigChange('notes', (pre, curr) => {
+			scriptPanel.notesContainer.innerHTML = script.cfg.notes || '';
+		});
+		// 注入 panel 对象 ， 脚本可修改 panel 对象进行面板的内容自定义
+		script.panel = scriptPanel;
+
+		scriptPanel.notesContainer.innerHTML = script.configs?.notes?.defaultValue || '';
+		const els = $creator.configs(script.namespace, script.configs || {}, opts.onload);
+		const elList = [];
+		for (const key in els) {
+			if (Object.prototype.hasOwnProperty.call(els, key)) {
+				elList.push(els[key]);
+			}
+		}
+
+		scriptPanel.configsBody.append(...elList);
+		scriptPanel.configsContainer.append(scriptPanel.configsBody);
+
+		return scriptPanel;
+	},
+	/** 创建设置区域 */
+	configs<T extends Record<string, Config<any>>>(
+		namespace: string | undefined,
+		configs: T,
+		onload?: (el: ConfigElement) => void
+	) {
 		const elements: { [K in keyof T]: ConfigElement<T[K]['tag']> } = Object.create({});
 		for (const key in configs) {
 			if (Object.prototype.hasOwnProperty.call(configs, key)) {
-				const cfg = configs[key];
-				if (cfg.label !== undefined) {
+				const config = configs[key];
+				if (config.label !== undefined) {
 					const element = el('config-element', {
 						key: $.namespaceKey(namespace, key),
-						tag: cfg.tag,
-						sync: cfg.sync,
-						attrs: cfg.attrs,
-						_onload: cfg.onload
+						tag: config.tag,
+						sync: config.sync,
+						attrs: config.attrs,
+						_onload: config.onload,
+						defaultValue: config.defaultValue
 					});
-					element.label.textContent = cfg.label;
+					onload?.(element);
+					element.label.textContent = config.label;
 					elements[key] = element;
 				}
 			}

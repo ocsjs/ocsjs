@@ -1,17 +1,19 @@
 <template>
-	<a-menu-item @click="open(url)">
+	<a-doption @click="open(url)">
 		{{ title }}
-	</a-menu-item>
+	</a-doption>
 </template>
 
 <script setup lang="ts">
+import { electron } from '../utils/node';
+
 interface TitleLinkProps {
 	url: string;
 	title: string;
 }
 defineProps<TitleLinkProps>();
 
-const { shell } = require('electron');
+const { shell } = electron;
 
 function open(url: string) {
 	shell.openExternal(url);

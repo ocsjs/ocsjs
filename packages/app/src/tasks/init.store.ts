@@ -26,15 +26,19 @@ export function initStore() {
 			store.store = defaultsDeep(store.store, appStore);
 		}
 	} else {
+		const browser = store.store.render?.browser || {};
 		// 初始化设置
-		store.store = appStore;
+		store.store = Object.assign(appStore, { browser });
 	}
 
-	if (!existsSync(store.store.userDataDirsFolder)) {
-		mkdirSync(store.store.userDataDirsFolder, { recursive: true });
+	if (!existsSync(store.store.paths.userDataDirsFolder)) {
+		mkdirSync(store.store.paths.userDataDirsFolder, { recursive: true });
 	}
-	if (!existsSync(store.store.extensionsPath)) {
-		mkdirSync(store.store.extensionsPath, { recursive: true });
+	if (!existsSync(store.store.paths.extensionsFolder)) {
+		mkdirSync(store.store.paths.extensionsFolder, { recursive: true });
+	}
+	if (!existsSync(store.store.paths.downloadFolder)) {
+		mkdirSync(store.store.paths.downloadFolder, { recursive: true });
 	}
 }
 

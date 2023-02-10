@@ -5,16 +5,20 @@
 	"scripts": {
 		"dev": "vite",
 		"build": "vue-tsc --noEmit && vite build --emptyOutDir",
+		"build:watch": "vite build --watch",
 		"serve": "vite preview"
 	},
 	"dependencies": {
 		"@ant-design/icons-vue": "6.0.1",
-		"@ocsjs/app": "workspace:^1.3.5",
+		"@ocsjs/app": "workspace:^2.0.0",
 		"@ocsjs/common": "workspace:^1.0.0",
+		"@ocsjs/scripts": "workspace:^4.0.0",
 		"ant-design-vue": "3.2.9",
 		"axios": "^0.25.0",
 		"chalk": "4.1.0",
 		"dayjs": "^1.10.7",
+		"events": "^3.3.0",
+		"material-icons": "^1.13.1",
 		"playwright-core": "^1.28.0",
 		"vue": "^3.2.6",
 		"vue-router": "^4.0.12",
@@ -22,6 +26,7 @@
 		"xlsx": "^0.18.5"
 	},
 	"devDependencies": {
+		"@arco-design/web-vue": "^2.42.0",
 		"@vitejs/plugin-vue": "^1.6.1",
 		"@vue/compiler-sfc": "^3.2.6",
 		"less": "^4.1.2",
@@ -29,7 +34,7 @@
 		"rollup-plugin-visualizer": "^5.6.0",
 		"typescript": "^4.3.2",
 		"vite": "^2.5.4",
-		"vue-tsc": "^0.2.2"
+		"vue-tsc": "^1.0.24"
 	},
 	"repository": {
 		"type": "git",

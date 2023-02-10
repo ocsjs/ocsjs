@@ -1,27 +1,25 @@
-import { Button, notification } from 'ant-design-vue';
-import { h, VNodeTypes } from 'vue';
-const { StringUtils } = require('@ocsjs/common');
-const { clipboard } = require('electron');
+import { Button, Notification } from '@arco-design/web-vue';
+import { h, VNodeChild } from 'vue';
+import { electron } from './node';
+import { StringUtils } from '@ocsjs/common/src/utils/string';
+const { clipboard } = electron;
 
 interface NotifyOptions {
-	type?: 'error' | 'success' | 'info' | 'warn';
+	type?: 'error' | 'success' | 'info' | 'warning';
 	duration?: number;
-	btn?: VNodeTypes | undefined;
+	btn?: VNodeChild | undefined;
 	copy?: boolean;
 	close?: boolean;
 }
 
 export function notify(title: string, msg: any, key: string, options?: NotifyOptions) {
-	if (options?.type === 'error') {
-		console.error(title, msg);
-	}
-	notification[options?.type || 'info']({
-		key,
-		message: title,
-		description: h('span', { title: String(msg) }, StringUtils.max(String(msg), 100)),
-		duration: options?.duration || (options?.type === 'error' ? 60 : 10),
-		// @ts-ignore
-		btn:
+	return Notification[options?.type || 'info']({
+		id: key,
+		title,
+		closable: true,
+		content: () => h('span', { title: String(msg) }, StringUtils.max(String(msg), 100)),
+		duration: options?.duration ?? (options?.type === 'error' ? 6000 : 3000),
+		footer: () =>
 			options?.btn ||
 			h('div', [
 				options?.copy ? cerateCopyButton(title, msg, key, options) : '',
@@ -40,7 +38,7 @@ function createCloseButton(key: string) {
 			type: 'primary',
 			size: 'small',
 			onClick: () => {
-				notification.close(key);
+				Notification.remove(key);
 			}
 		},
 		'关闭'

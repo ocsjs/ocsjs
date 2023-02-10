@@ -1,5 +1,5 @@
 import { $ } from '../utils/common';
-import { $gm } from '../utils/tampermonkey';
+import { $store } from '../utils/store';
 
 /**
  * 跨域脚本事件通讯
@@ -34,29 +34,33 @@ export class CorsEventEmitter {
 	 * @param callback 事件回调，可以接收返回值
 	 */
 	emit(name: string, args: any[], callback: (returnValue: any, remote: boolean) => void): void {
-		$gm.getTab(({ tabId }) => {
-			const id = $.uuid().replace(/-/g, '');
-			const key = tabId + '.' + this.eventKey(name);
+		$store
+			.getTab('uid')
+			.then((uid: string) => {
+				const id = $.uuid().replace(/-/g, '');
+				const key = uid + '.' + this.eventKey(name);
 
-			/** 状态, 0 等待交互 ， 1 确定 , 2 取消 ， 后面紧跟着模态框中获取到的值，如果模态框类型是 prompt 则有值，否则为空字符串 */
-			$gm.setValue(this.keyOfState(id), 0);
-			/** 模态框所需参数 */
-			$gm.setValue(this.keyOfArguments(id), args);
+				/** 状态, 0 等待交互 ， 1 确定 , 2 取消 ， 后面紧跟着模态框中获取到的值，如果模态框类型是 prompt 则有值，否则为空字符串 */
+				$store.set(this.keyOfState(id), 0);
+				/** 模态框所需参数 */
+				$store.set(this.keyOfArguments(id), args);
 
-			const listenerId = $gm.addConfigChangeListener(this.keyOfState(id), (pre, curr, remote) => {
-				// 移除此监听器
-				$gm.removeConfigChangeListener(listenerId);
-				// 执行回调
-				callback($gm.getValue(this.keyOfReturn(id)), remote);
-				// 移除冗余的本地临时存储变量
-				$gm.deleteValue(this.keyOfState(id));
-				$gm.deleteValue(this.keyOfReturn(id));
-				$gm.deleteValue(this.keyOfArguments(id));
-			});
+				const listenerId =
+					$store.addChangeListener(this.keyOfState(id), (pre, curr, remote) => {
+						// 移除此监听器
+						$store.removeChangeListener(listenerId);
+						// 执行回调
+						callback($store.get(this.keyOfReturn(id)), !!remote);
+						// 移除冗余的本地临时存储变量
+						$store.delete(this.keyOfState(id));
+						$store.delete(this.keyOfReturn(id));
+						$store.delete(this.keyOfArguments(id));
+					}) || 0;
 
-			/** 添加 id 到监听队列 */
-			$gm.setValue(key, ($gm.getValue(key) ? String($gm.getValue(key)).split(',') : []).concat(id).join(','));
-		});
+				/** 添加 id 到监听队列 */
+				$store.set(key, ($store.get(key) ? String($store.get(key)).split(',') : []).concat(id).join(','));
+			})
+			.catch(console.error);
 	}
 
 	/**
@@ -67,39 +71,43 @@ export class CorsEventEmitter {
 	 */
 	on(name: string, handler: (args: any[]) => any) {
 		return new Promise<number>((resolve) => {
-			$gm.getTab(({ tabId }) => {
-				const key = tabId + '.' + this.eventKey(name);
-				const originId = this.eventMap.get(key);
+			$store
+				.getTab('uid')
+				.then((uid: string) => {
+					const key = uid + '.' + this.eventKey(name);
+					const originId = this.eventMap.get(key);
 
-				if (originId) {
-					resolve(originId);
-				} else {
-					// 添加 models 监听队列
-					const id = $gm.addConfigChangeListener(key, async (pre, curr, remote) => {
-						if (remote) {
-							const list = String(curr).split(',');
-							// 处理队列
-							const id = list.pop();
+					if (originId) {
+						resolve(originId);
+					} else {
+						// 添加 models 监听队列
+						const id =
+							$store.addChangeListener(key, async (pre, curr, remote) => {
+								if (remote) {
+									const list = String(curr).split(',');
+									// 处理队列
+									const id = list.pop();
 
-							if (id) {
-								// 设置返回参数
-								$gm.setValue(this.keyOfReturn(id), await handler($gm.getValue(this.keyOfArguments(id))));
+									if (id) {
+										// 设置返回参数
+										$store.set(this.keyOfReturn(id), await handler($store.get(this.keyOfArguments(id))));
 
-								// 更新队列
-								setTimeout(() => {
-									// 这里改变参数，可以触发另一端的监听
-									$gm.setValue(this.keyOfState(id), 1);
-									// 完成监听，删除id
-									$gm.setValue(key, list.join(','));
-								}, 100);
-							}
-						}
-					});
-					this.eventMap.set(key, id);
+										// 更新队列
+										setTimeout(() => {
+											// 这里改变参数，可以触发另一端的监听
+											$store.set(this.keyOfState(id), 1);
+											// 完成监听，删除id
+											$store.set(key, list.join(','));
+										}, 100);
+									}
+								}
+							}) || 0;
+						this.eventMap.set(key, id);
 
-					resolve(id);
-				}
-			});
+						resolve(id);
+					}
+				})
+				.catch(console.error);
 		});
 	}
 
@@ -108,7 +116,7 @@ export class CorsEventEmitter {
 		const originId = this.eventMap.get(key);
 		if (originId) {
 			this.eventMap.delete(key);
-			$gm.removeConfigChangeListener(originId);
+			$store.removeChangeListener(originId);
 		}
 	}
 }
@@ -117,13 +125,13 @@ if (typeof GM_listValues !== 'undefined') {
 	// 加载页面后
 	window.onload = () => {
 		// 删除全部未处理的模态框临时变量，以及监听队列
-		$gm.listValues().forEach((key) => {
+		$store.list().forEach((key) => {
 			if (/_temp_.event.[0-9a-z]{32}.(state|return|arguments)/.test(key)) {
-				$gm.deleteValue(key);
+				$store.delete(key);
 			}
 
 			if (/[0-9a-z]{32}.cors.events.model/.test(key)) {
-				$gm.deleteValue(key);
+				$store.delete(key);
 			}
 		});
 	};

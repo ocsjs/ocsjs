@@ -1,4 +1,4 @@
-import { BrowserExtension } from './extensions';
+import { ExtensionResource } from '@ocsjs/common';
 import { CommonUserScript } from './user.script';
 
 export interface ScriptSearchEngine {
@@ -10,5 +10,5 @@ export interface ScriptSearchEngine {
 export interface ExtensionSearchEngine {
 	name: string;
 	homepage: string;
-	search: () => Promise<BrowserExtension[]>;
+	search: () => Promise<ExtensionResource[]>;
 }

@@ -39,7 +39,7 @@
 						/>
 						<Icon
 							v-else
-							type="icon-user"
+							type="account_circle"
 							style="margin-top: 4px"
 							class="user-script-icon"
 						/>
@@ -50,32 +50,45 @@
 				</div>
 
 				<div class="user-script-infos">
-					<a-tag
-						color="blue"
-						title="今日安装"
-					>
-						⬇️<b>{{ script.info.daily_installs }}</b>
-					</a-tag>
-					<a-tag
-						color="green"
-						title="总安装"
-					>
-						📦<b>{{ script.info.total_installs }}</b>
-					</a-tag>
-					<a-tag
-						color="red"
-						title="版本"
-					>
-						v<b>{{ script.info.version }}</b>
-					</a-tag>
-					<a-tag
-						color="orange"
-						title="评分"
-					>
-						⭐<b>{{ script.info.ratings ? script.info.ratings.toFixed(1) : '无' }}</b>
-					</a-tag>
-					<a-tag title="创建时间"> {{ new Date(script.info.createTime).toLocaleDateString() }} 创建 </a-tag>
-					<a-tag title="更新时间"> {{ getElapsedTime(script.info.updateTime) }} 前更新 </a-tag>
+					<a-space size="mini">
+						<slot
+							:script="script"
+							name="infos"
+						></slot>
+						<a-tooltip
+							v-if="script.isLocalScript"
+							content="当前脚本处于您计算机本地，因此不能实时获取网络数据进行更新，但软件依然会尝试重复加载以保证您的文件修改后的代码仍能同步到浏览器中。"
+						>
+							<a-tag> 本地脚本 </a-tag>
+						</a-tooltip>
+
+						<a-tooltip content="今日安装">
+							<a-tag color="blue">
+								⬇️<b>{{ script.info.daily_installs }}</b>
+							</a-tag>
+						</a-tooltip>
+
+						<a-tooltip content="总安装">
+							<a-tag color="green">
+								📦<b>{{ script.info.total_installs }}</b>
+							</a-tag>
+						</a-tooltip>
+
+						<a-tooltip content="版本">
+							<a-tag color="red">
+								v<b>{{ script.info.version }}</b>
+							</a-tag>
+						</a-tooltip>
+
+						<a-tooltip content="评分">
+							<a-tag color="orange">
+								⭐<b>{{ script.info.ratings ? script.info.ratings.toFixed(1) : '无' }}</b>
+							</a-tag>
+						</a-tooltip>
+
+						<a-tag title="创建时间"> {{ new Date(script.info.createTime).toLocaleDateString() }} 创建 </a-tag>
+						<a-tag title="更新时间"> {{ getElapsedTime(script.info.updateTime) }} 前更新 </a-tag>
+					</a-space>
 				</div>
 			</div>
 
@@ -97,7 +110,7 @@
 				<slot
 					name="actions"
 					:script="script"
-					:already-installed="store.scripts.find((s) => s.id === script.id) !== undefined"
+					:already-installed="store.render.scripts.find((s) => s.id === script.id) !== undefined"
 				/>
 			</div>
 		</div>
@@ -171,6 +184,8 @@ function getElapsedTime(t: number) {
 
 .user-script-author {
 	color: inherit;
+	display: inline-flex;
+	align-items: center;
 }
 
 .user-script-name:hover {
@@ -183,15 +198,14 @@ function getElapsedTime(t: number) {
 	width: 24px;
 	height: 24px;
 	font-size: 20px;
-	border: 1px solid gray;
 	border-radius: 50%;
 	border-radius: 50%;
 }
 
 .user-script-descriptions {
 	font-size: 12px;
-
-	display: inline-block;
+	display: inline-flex;
+	align-items: center;
 	white-space: nowrap;
 	overflow: hidden;
 	width: 100%;

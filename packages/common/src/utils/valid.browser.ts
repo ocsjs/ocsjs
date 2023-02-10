@@ -18,12 +18,8 @@ export function getValidBrowsers(): ValidBrowser[] {
 				{
 					name: '谷歌浏览器(chrome)',
 					path: resolveBrowserPath('Google\\Chrome\\Application\\chrome.exe')
-				},
-				{
-					name: '火狐浏览器(Firefox)',
-					path: resolveBrowserPath('Mozilla Firefox\\firefox.exe')
 				}
-			].filter((b) => b.path);
+			].filter((b) => b.path) as ValidBrowser[];
 		}
 		default: {
 			return [];

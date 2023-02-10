@@ -1,155 +1,358 @@
 <template>
 	<div class="col-12 p-2 m-auto">
-		<div class="d-flex mb-1 align-items-center">
-			<a-select
-				v-model:value="num"
-				size="small"
-				style="width: 100px"
-				:options="[2, 4, 6, 8].map((i) => ({ value: i, label: `显示${i}列` }))"
-			>
-			</a-select>
-			<a-divider type="vertical" />
-
-			<a-input-search
-				v-model:value="search"
-				placeholder="输入浏览器名字进行搜索"
-				size="small"
-				style="width: 200px"
-			/>
+		<div class="text-secondary markdown mb-2">
+			<div>浏览器多开的数量取决于电脑的配置，自行根据实际情况尝试。</div>
+			<div>
+				当全部浏览器加载完成后（导航页加载完成）才能开启监控，如果浏览器过多请勿开启，否则容易造成卡顿，CPU过载。
+			</div>
 		</div>
 
-		<template v-if="object.keys(processes).length === 0">
+		<div class="d-flex mb-1 align-items-center">
+			<a-space :size="0">
+				<template #split>
+					<a-divider direction="vertical" />
+				</template>
+
+				<a-switch v-model="store.render.dashboard.details.tags">
+					<template #checked> 显示标签 </template>
+					<template #unchecked> 显示标签 </template>
+				</a-switch>
+
+				<a-switch v-model="store.render.dashboard.details.notes">
+					<template #checked> 显示备注 </template>
+					<template #unchecked> 显示备注 </template>
+				</a-switch>
+
+				<a-select
+					v-model="store.render.dashboard.num"
+					size="small"
+					style="width: 100px"
+					:options="[1, 2, 4, 6, 8].map((i) => ({ value: i, label: `显示${i}列` }))"
+				>
+				</a-select>
+
+				<a-select
+					v-model="store.render.dashboard.video.aspectRatio"
+					size="small"
+					style="width: 140px"
+					:options="[[0,'默认'], [4/3,'4:3'], [16/9,'16:9'], ]
+				.map((i) => 
+				({ selected: i[0] ===store.render.dashboard.video.aspectRatio, 
+				 value: i[0]!, label: i[1]! } as SelectOptionData))"
+				>
+					<template #prefix> 横纵比 </template>
+				</a-select>
+
+				<a-tooltip content="显示每个浏览器的图像，如果太多浏览器可能会造成电脑卡顿">
+					<a-button
+						size="small"
+						type="outline"
+						:disabled="processes.length === 0"
+						@click="state.show = !state.show"
+					>
+						{{ state.show ? '暂停' : '开始' }}监控
+					</a-button>
+				</a-tooltip>
+			</a-space>
+		</div>
+
+		<template v-if="processes.length === 0">
 			<a-empty
 				class="pt-5"
 				description="没有运行中的浏览器"
 			></a-empty>
 		</template>
+		<template v-else-if="state.show === false">
+			<a-empty
+				class="pt-5"
+				description="当前监控已暂停，请点击监控按钮重新监控"
+			></a-empty>
+		</template>
 		<template v-else>
+			<a-empty
+				v-show="state.loading === true"
+				class="pt-5"
+				description="加载中..."
+			></a-empty>
 			<div
-				class="dashboard pt-1"
+				v-show="state.loading === false"
+				class="dashboard mt-2"
 				:style="{
-					'grid-template-columns': `repeat(${num}, 1fr)`
+					'grid-template-columns': `repeat(${store.render.dashboard.num}, 1fr)`
 				}"
 			>
 				<template
-					v-for="key of object.keys(processes)"
-					:key="key"
+					v-for="pro of processes"
+					:key="pro.uid"
 				>
-					<a-tooltip title="点击操控浏览器">
-						<div
-							class="browser"
-							@click="openBrowser(key)"
-						>
-							<template v-if="processes[key].pageId">
-								<div class="browser-title">
-									{{ processes[key].pages[processes[key].pageId].title || 'about:blank' }}
-								</div>
-								<img
-									class="browser-img"
-									style="width: 100%"
-									:src="`data:image/png;base64, ${processes[key].base64}`"
-								/>
-							</template>
+					<div class="browser">
+						<!-- 头部操作按钮 -->
+						<div class="browser-title">
+							<a-row>
+								<a-col flex="100px">
+									<span
+										class="text-secondary"
+										style="font-size: 12px"
+									>
+										{{ pro.browser.name }}
+									</span>
+								</a-col>
+								<a-col
+									flex="auto"
+									class="d-flex align-content-center justify-content-end text-end"
+								>
+									<a-space
+										:size="0"
+										class="justify-content-end"
+									>
+										<template #split>
+											<a-divider
+												direction="vertical"
+												class="ms-1 me-1"
+											/>
+										</template>
 
-							<a-empty
-								v-else
-								description="请等待浏览器初始化完毕"
-							>
-							</a-empty>
+										<BrowserOperators
+											:space="false"
+											:browser="pro.browser"
+										>
+											<template #split>
+												<a-divider
+													direction="vertical"
+													class="ms-1 me-1"
+												/>
+											</template>
+										</BrowserOperators>
+
+										<EntityOperator
+											type="browser"
+											:entity="pro.browser"
+											:permissions="['location', 'edit']"
+										></EntityOperator>
+									</a-space>
+								</a-col>
+							</a-row>
 						</div>
-					</a-tooltip>
+
+						<!-- 影像区域 -->
+						<div
+							class="browser-video"
+							@click="openBrowser(pro.uid)"
+						>
+							<a-tooltip content="点击操控浏览器">
+								<!-- 浏览器影像投屏占位符 -->
+								<div :id="'video-' + pro.uid"></div>
+							</a-tooltip>
+
+							<span v-if="pro.video === undefined">
+								<a-empty
+									v-if="pro.status === 'launching'"
+									description="等待浏览器启动..."
+								>
+								</a-empty>
+								<a-empty
+									v-else-if="pro.status === 'launched'"
+									description="等待图像初始化..."
+								>
+								</a-empty>
+							</span>
+						</div>
+
+						<!-- 显示浏览器信息 -->
+
+						<a-row
+							v-if="store.render.dashboard.details.notes || store.render.dashboard.details.tags"
+							class="align-items-center"
+						>
+							<!-- 标签 -->
+							<a-col
+								v-if="store.render.dashboard.details.tags"
+								style="width: 100px"
+								flex="100px"
+							>
+								<Tags
+									:tags="pro.browser.tags"
+									:read-only="true"
+									size="small"
+								></Tags>
+							</a-col>
+							<!-- 备注 -->
+							<a-col
+								v-if="store.render.dashboard.details.notes"
+								style="width: 100px"
+								flex="100px"
+								class="text-secondary notes"
+							>
+								<a-tooltip
+									content="备注描述"
+									position="tl"
+								>
+									<template #content>
+										<div>备注描述</div>
+										<a-divider class="mt-1 mb-1" />
+										<div>
+											{{ pro.browser.notes }}
+										</div>
+									</template>
+									<span> {{ pro.browser.notes }} </span>
+								</a-tooltip>
+							</a-col>
+						</a-row>
+					</div>
 				</template>
 			</div>
 		</template>
-
-		<a-modal
-			v-model:visible="visible"
-			width="1080px"
-			style="top: 10px; text-align: center"
-			:title="modelTitle"
-			:footer="null"
-		>
-			<a-tabs
-				v-if="!!currentProcess"
-				:active-key="currentProcess.pageId"
-				type="editable-card"
-				@edit="onEdit"
-				@change="(key:string) => currentProcess!.pageSwitch(key)"
-			>
-				<a-tab-pane
-					v-for="key in object.keys(currentProcess.pages)"
-					:key="key"
-					:tab="currentProcess.pages[key].title || 'about:blank'"
-					:closable="true"
-				>
-				</a-tab-pane>
-			</a-tabs>
-			<div style="overflow: auto; height: calc(100vh - 140px)">
-				<img
-					v-if="currentProcess"
-					style="width: 100%"
-					class="browser-img"
-					:src="`data:image/png;base64, ${currentProcess.base64}`"
-				/>
-			</div>
-		</a-modal>
 	</div>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { processes } from '../../utils/process';
-const object = Object;
-/** 列数控制 */
-const num = ref(4);
+import { onDeactivated, watch, reactive } from 'vue';
+import { Process, processes } from '../../utils/process';
+import BrowserOperators from '../../components/browsers/BrowserOperators.vue';
+import { store } from '../../store';
 
-/** 搜索 */
-const search = ref('');
-/** 当前的文件 */
-const activeKey = ref('');
-/** 预览图像弹窗 */
-const visible = ref(false);
-/** 弹窗标题 */
-const modelTitle = ref('');
+import Tags from '../../components/Tags.vue';
+import { DesktopCapturerSource } from 'electron';
+import { remote } from '../../utils/remote';
+import { SelectOptionData } from '@arco-design/web-vue';
+import debounce from 'lodash/debounce';
+import EntityOperator from '../../components/EntityOperator.vue';
 
-const currentProcessUid = ref<string>('');
-const currentProcess = computed(() => processes[currentProcessUid.value]);
-const panes = ref<{ title: string; key: string }[]>([]);
+const state = reactive({
+	show: false,
+	loading: false
+});
 
-const add = () => {
-	activeKey.value = Date.now().toString();
-	panes.value.push({ title: 'New Tab', key: activeKey.value });
-};
+const debounceRefreshVideo = debounce(refreshVideo, 1000);
 
-const remove = (targetKey: string) => {
-	let lastIndex = 0;
-	panes.value.forEach((pane, i) => {
-		if (pane.key === targetKey) {
-			lastIndex = i - 1;
-		}
+// 当帧率和横纵比改变时，延迟更新视频
+watch(() => [store.render.dashboard.video.aspectRatio], debounceRefreshVideo);
+// 当show改变时，即时更新
+watch(
+	() => state.show,
+	() => {
+		state.show ? refreshVideo() : closeVideo();
+	}
+);
+
+onDeactivated(() => {
+	state.show = false;
+	closeVideo();
+});
+
+/** 如果其中有一个重启了，全部重新刷新 */
+for (const process of processes) {
+	process.on('relaunching', () => {
+		process.video = undefined;
+		// 删除视频
+		document.querySelector(`#video-${process.uid}`)?.replaceChildren();
 	});
-	panes.value = panes.value.filter((pane) => pane.key !== targetKey);
-	if (panes.value.length && activeKey.value === targetKey) {
-		if (lastIndex >= 0) {
-			activeKey.value = panes.value[lastIndex].key;
-		} else {
-			activeKey.value = panes.value[0].key;
+	process.on('relaunched', () => {
+		debounceRefreshVideo();
+	});
+}
+
+/**
+ * 关闭视频显示
+ */
+async function closeVideo() {
+	for (const process of processes) {
+		process.stream?.getTracks().forEach((track) => {
+			track.stop();
+		});
+	}
+}
+
+/**
+ * 刷新视频显示
+ */
+async function refreshVideo() {
+	state.loading = true;
+
+	// 将所有浏览器跳转至 webrtc 对接页面
+
+	await Promise.all(
+		processes.map(
+			(process) =>
+				new Promise<void>((resolve) => {
+					process.once('webrtc-page-loaded', resolve);
+					process.worker?.('gotoWebRTCPage');
+				})
+		)
+	);
+
+	// 抓取屏幕
+	const sources: DesktopCapturerSource[] = await remote.desktopCapturer.call('getSources', { types: ['window'] });
+
+	for (const process of processes) {
+		const res = await getBrowserVideo(process.uid, sources);
+		if (res) {
+			process.stream = res.stream;
+
+			process.stream?.getTracks().forEach((track) => {
+				track.applyConstraints({
+					/** 尽量减低帧率不占用高内存 */
+					frameRate: 1,
+					/** 横纵比 */
+					aspectRatio:
+						store.render.dashboard.video.aspectRatio === 0 ? undefined : store.render.dashboard.video.aspectRatio
+				});
+			});
+			process.video = res.video;
+		}
+		// 挂载视频
+		const slot = document.querySelector(`#video-${process.uid}`);
+		if (slot && process.video) {
+			slot.replaceChildren(process.video);
 		}
 	}
-};
 
-const onEdit = (targetKey: string, action: string) => {
-	if (action === 'add') {
-		add();
-	} else {
-		remove(targetKey);
-		currentProcess.value?.closePage(targetKey);
+	await Promise.all(
+		processes.map(
+			(process) =>
+				new Promise<void>((resolve) => {
+					process.once('webrtc-page-closed', resolve);
+					process.worker?.('closeWebRTCPage');
+				})
+		)
+	);
+
+	state.loading = false;
+}
+
+async function getBrowserVideo(uid: string, sources: DesktopCapturerSource[]) {
+	for (const source of sources) {
+		if (RegExp(uid).test(source.name)) {
+			try {
+				const stream = await navigator.mediaDevices.getUserMedia({
+					audio: false,
+					video: {
+						// @ts-ignore
+						mandatory: {
+							chromeMediaSource: 'desktop',
+							chromeMediaSourceId: source.id
+						}
+					}
+				});
+
+				const video = document.createElement('video');
+				video.srcObject = stream;
+				video.style.display = 'block';
+				video.style.width = '100%';
+				video.poster = source.thumbnail.toDataURL();
+
+				video.onloadedmetadata = (e) => video.play();
+
+				return { video, stream };
+			} catch (e) {
+				console.log(e);
+			}
+		}
 	}
-};
+}
 
 function openBrowser(uid: string) {
-	currentProcessUid.value = uid;
-	visible.value = true;
+	Process.from(uid)?.bringToFront();
 }
 </script>
 
@@ -166,13 +369,33 @@ function openBrowser(uid: string) {
 }
 
 .browser {
+	background-color: #f2f5f8;
+	padding: 4px;
+	border-radius: 4px;
+
+	&:hover {
+		box-shadow: 0px 0px 4px -1px #2e98fc;
+	}
+}
+
+.browser-video {
 	overflow: hidden;
 	cursor: pointer;
 	border-radius: 4px;
-	box-shadow: 0px 2px 8px -2px #b7b7b7;
 }
 
-.browser:hover {
-	box-shadow: 0px 2px 4px -2px #1890ff;
+.browser-title {
+	height: 26px;
+}
+
+.browser-entity {
+	padding: 4px;
+}
+
+.notes {
+	font-size: 12px;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	overflow: hidden;
 }
 </style>

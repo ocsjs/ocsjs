@@ -1,7 +1,10 @@
 import { appStore } from './src/store';
+import { ScriptWorker } from './src/worker';
 
 export { RemoteMethods } from './src/tasks/remote.register';
 export type AppStore = typeof appStore;
+
+export { ScriptWorker };
 
 export interface UserScripts {
 	id: number;
@@ -13,4 +16,6 @@ export interface UserScripts {
 	 * 脚本信息
 	 */
 	info: any;
+	/** 是否为本地脚本 */
+	isLocalScript: boolean;
 }

@@ -10,7 +10,7 @@ import { $creator } from '../utils/creator';
 import { el, enableElementDraggable } from '../utils/dom';
 import { $elements } from '../utils/elements';
 import { StartConfig } from '../utils/start';
-import { $string } from '../utils/string';
+import { $store } from '../utils/store';
 import { $gm } from '../utils/tampermonkey';
 
 export type ModelAttrs = Pick<
@@ -74,11 +74,8 @@ const RenderScript = new Script({
 		}
 	},
 	onactive({ style, projects }: StartConfig) {
-		/** 注册自定义元素 */
-		for (const element of definedCustomElements) {
-			const name = $string.humpToTarget(element.name, '-');
-			customElements.define(name, element);
-		}
+		/** 加载自定义元素 */
+		$.loadCustomElements(definedCustomElements);
 
 		/** 当前匹配到的脚本，并且面板不隐藏 */
 		const matchedScripts = $.getMatchedScripts(projects, [location.href]).filter((s) => !s.hideInPanel);
@@ -87,17 +84,18 @@ const RenderScript = new Script({
 		const container = el('container-element');
 
 		/** 创建头部元素 */
-		const initHeader = (urls: string[] = $gm.getValue('_urls_', [location.href])) => {
+		const initHeader = (urls: string[] = $store.get('_urls_', [location.href])) => {
 			container.header.replaceChildren();
+			const infos = $gm.getInfos();
 			/** 图标 */
 			container.header.logo = $creator.tooltip(
 				el('img', {
-					src: $gm.getInfos().script.icon || '',
+					src: infos?.script.icon || 'https://cdn.ocsjs.com/logo.png',
 					width: 18,
 					className: 'logo',
 					title: '官方教程',
 					onclick: () => {
-						window.open($gm.getInfos().script.homepage || '', '_blank');
+						window.open(infos?.script.homepage || 'https://docs.ocsjs.com', '_blank');
 					}
 				})
 			);
@@ -107,7 +105,7 @@ const RenderScript = new Script({
 				el(
 					'div',
 					{ className: 'profile', title: '菜单栏（可拖动区域）' },
-					'OCS-' + ($gm.getInfos().script.version || '0')
+					`OCS ${infos ? '-' : ''}${infos?.script.version || '0'}`
 				)
 			);
 
@@ -218,34 +216,6 @@ const RenderScript = new Script({
 			);
 		};
 
-		const createScriptPanel = (projectName: string, script: Script) => {
-			// 创建脚本面板
-			const scriptPanel = el('script-panel-element', {
-				name: this.cfg.expandAll ? projectName + '-' + script.name : script.name
-			});
-
-			// 监听提示内容改变
-			script.onConfigChange('notes', (pre, curr) => {
-				scriptPanel.notesContainer.innerHTML = script.cfg.notes || '';
-			});
-			// 注入 panel 对象 ， 脚本可修改 panel 对象进行面板的内容自定义
-			script.panel = scriptPanel;
-
-			scriptPanel.notesContainer.innerHTML = script.cfg.notes || '';
-			const els = $creator.configs(script.namespace, script.configs || {});
-			const elList = [];
-			for (const key in els) {
-				if (Object.prototype.hasOwnProperty.call(els, key)) {
-					elList.push(els[key]);
-				}
-			}
-
-			scriptPanel.configsBody.append(...elList);
-			scriptPanel.configsContainer.append(scriptPanel.configsBody);
-
-			return scriptPanel;
-		};
-
 		/** 创建内容 */
 		const createBody = (urls: string[]) => {
 			const scriptContainers = [];
@@ -256,7 +226,7 @@ const RenderScript = new Script({
 				allScript.push(...scripts);
 
 				const initPanelAndScript = (script: Script) => {
-					const panel = createScriptPanel(project.name, script);
+					const panel = $creator.scriptPanel(script, { expandAll: this.cfg.expandAll, projectName: project.name });
 					script.projectName = project.name;
 					script.panel = panel;
 					script.header = container.header;
@@ -331,7 +301,7 @@ const RenderScript = new Script({
 		};
 
 		/** 替换 body 中的内容 */
-		const replaceBody = (urls: string[] = $gm.getValue('_urls_', [location.href])) => {
+		const replaceBody = (urls: string[] = $store.get('_urls_', [location.href])) => {
 			container.body.replaceChildren(...createBody(urls));
 		};
 		/** 创建设置区域 */
@@ -355,7 +325,7 @@ const RenderScript = new Script({
 			initHeader();
 			replaceBody();
 
-			$gm.addConfigChangeListener('_urls_', (pre, curr) => {
+			$store.addChangeListener('_urls_', (pre, curr) => {
 				initHeader(curr);
 				replaceBody(curr);
 			});
@@ -363,7 +333,7 @@ const RenderScript = new Script({
 			// 删除监听器
 			this.offConfigChange(listenId);
 			// 监听变化，重新渲染
-			listenId = this.onConfigChange('currentPanelName', render);
+			listenId = this.onConfigChange('currentPanelName', render) || 0;
 		};
 
 		const onFontsizeChange = () => {

@@ -9,7 +9,7 @@ import { IElement } from './interface';
 export class ModelElement extends IElement {
 	/** 弹窗简介 */
 	profile: HTMLDivElement = el('div', {
-		innerText: '弹窗来自: OCS-' + $gm.getInfos().script.version,
+		innerText: '弹窗来自: OCS ' + ($gm.getInfos()?.script.version || ''),
 		className: 'model-profile'
 	});
 
@@ -89,9 +89,9 @@ export class ModelElement extends IElement {
 		this.cancelButton !== null && this.footer.append(this.cancelButton);
 		this.confirmButton !== null && this.footer.append(this.confirmButton);
 
-		$.onresize(this, (modal) => {
-			modal.style.maxHeight = window.innerHeight - 100 + 'px';
-			modal.style.maxWidth = window.innerWidth - 50 + 'px';
+		$.onresize(this.body, (modal) => {
+			this.body.style.maxHeight = window.innerHeight - 100 + 'px';
+			this.body.style.maxWidth = window.innerWidth - 50 + 'px';
 		});
 	}
 }

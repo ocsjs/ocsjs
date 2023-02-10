@@ -1,3 +1,5 @@
+/* global Tampermonkey */
+
 /**
  * 油猴封装库
  *
@@ -9,72 +11,14 @@
  */
 export const $gm = {
 	/** 全局 unsafeWindow 对象 */
-	unsafeWindow: globalThis.unsafeWindow as Window & { [x: string]: any },
-
-	/**
-	 * 通过key获取存储的值
-	 * @param key 键
-	 * @param defaultValue 默认值
-	 * @returns
-	 */
-	getValue(key: string, defaultValue?: any) {
-		// eslint-disable-next-line no-undef
-		return GM_getValue(key, defaultValue);
-	},
-
-	/** GM_deleteValue */
-	deleteValue(key: string) {
-		// eslint-disable-next-line no-undef
-		GM_deleteValue(key);
-	},
-
-	/** GM_listValues */
-	listValues() {
-		// eslint-disable-next-line no-undef
-		return GM_listValues();
-	},
-
-	/**
-	 * GM_setValue 存储值
-	 * @param key 键
-	 * @param value 值
-	 * @returns
-	 */
-	setValue(key: string, value: any) {
-		// eslint-disable-next-line no-undef
-		GM_setValue(key, value);
-	},
-
-	/** GM_addValueChangeListener */
-	addConfigChangeListener(key: string, handler: (pre: any, curr: any, remote: boolean) => any) {
-		// eslint-disable-next-line no-undef
-		return GM_addValueChangeListener(key, (_, pre, curr, remote) => {
-			handler(pre, curr, remote);
-		});
-	},
-
-	/** GM_removeValueChangeListener */
-	removeConfigChangeListener(listenerId: number) {
-		// eslint-disable-next-line no-undef
-		GM_removeValueChangeListener(listenerId);
-	},
-
-	/** GM_getTab */
-	getTab(callback: (obj: any) => void) {
-		// eslint-disable-next-line no-undef
-		GM_getTab(callback);
-	},
-
-	/** GM_saveTab */
-	setTab(value: object) {
-		// eslint-disable-next-line no-undef
-		GM_saveTab(value);
-	},
+	unsafeWindow: (typeof globalThis.unsafeWindow === 'undefined'
+		? globalThis.window
+		: globalThis.unsafeWindow) as Window & { [x: string]: any },
 
 	/** 获取 GM_info */
-	getInfos() {
+	getInfos(): Tampermonkey.ScriptInfo | undefined {
 		// eslint-disable-next-line no-undef
-		return GM_info;
+		return typeof globalThis.GM_getTab === 'undefined' ? undefined : GM_info;
 	},
 
 	/**
@@ -96,7 +40,7 @@ export const $gm = {
 		}
 	) {
 		const { onclick, ondone, important, duration = 0 } = options || {};
-		const { icon, name } = $gm.getInfos().script;
+		const { icon, name } = $gm.getInfos()?.script || {};
 		// eslint-disable-next-line no-undef
 		GM_notification({
 			title: name,

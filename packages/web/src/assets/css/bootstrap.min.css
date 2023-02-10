@@ -249,7 +249,7 @@ pre {
 	display: block;
 	margin-top: 0;
 	margin-bottom: 1rem;
-	overflow: auto;
+	overflow: overlaylay;
 	font-size: 0.875em;
 }
 pre code {

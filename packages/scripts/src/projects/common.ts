@@ -8,6 +8,7 @@ import {
 	$message,
 	parseAnswererWrappers,
 	$gm,
+	$store,
 	Project,
 	Script,
 	$creator,
@@ -144,9 +145,6 @@ export const CommonProject = Project.create({
 						);
 					}
 				},
-				results: {
-					defaultValue: [] as SimplifyWorkResult[]
-				},
 				totalQuestionCount: {
 					defaultValue: 0
 				},
@@ -188,10 +186,12 @@ export const CommonProject = Project.create({
 				};
 
 				/** 渲染结果面板 */
-				const render = () => {
-					if (this.cfg.results.length) {
+				const render = async () => {
+					const results: SimplifyWorkResult[] = await $store.getTab('common.work-results.results');
+
+					if (results.length) {
 						// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
-						if (this.cfg.results[this.cfg.currentResultIndex] === undefined) {
+						if (results[this.cfg.currentResultIndex] === undefined) {
 							this.cfg.currentResultIndex = 0;
 						}
 
@@ -206,7 +206,7 @@ export const CommonProject = Project.create({
 							list.style.maxHeight = window.innerHeight / 2 + 'px';
 
 							/** 渲染序号 */
-							const nums = this.cfg.results.map((result, index) => {
+							const nums = results.map((result, index) => {
 								return el('span', { className: 'search-results-num', innerText: (index + 1).toString() }, (num) => {
 									setNumStyle(result, num, index);
 
@@ -225,7 +225,7 @@ export const CommonProject = Project.create({
 
 							list.replaceChildren(...nums);
 							// 初始显示指定序号的结果
-							resultContainer.replaceChildren(createResult(this.cfg.results[this.cfg.currentResultIndex]));
+							resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
 
 							panel.body.replaceChildren(list, resultContainer);
 						} else {
@@ -239,7 +239,7 @@ export const CommonProject = Project.create({
 							const resultContainer = el('div', { className: 'work-result-question-container' });
 
 							/** 左侧渲染题目列表 */
-							const questions = this.cfg.results.map((result, index) => {
+							const questions = results.map((result, index) => {
 								return el(
 									'div',
 
@@ -284,7 +284,7 @@ export const CommonProject = Project.create({
 											mouseoverIndex = -1;
 											question.classList.remove('hover');
 											// 重新显示指定序号的结果
-											resultContainer.replaceChildren(createResult(this.cfg.results[this.cfg.currentResultIndex]));
+											resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
 										};
 
 										question.onclick = () => {
@@ -304,9 +304,9 @@ export const CommonProject = Project.create({
 							list.replaceChildren(...questions);
 							// 初始显示指定序号的结果
 							if (mouseoverIndex === -1) {
-								resultContainer.replaceChildren(createResult(this.cfg.results[this.cfg.currentResultIndex]));
+								resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
 							} else {
-								resultContainer.replaceChildren(createResult(this.cfg.results[mouseoverIndex]));
+								resultContainer.replaceChildren(createResult(results[mouseoverIndex]));
 							}
 
 							panel.body.replaceChildren(
@@ -385,7 +385,7 @@ export const CommonProject = Project.create({
 				render();
 				this.onConfigChange('type', render);
 				this.onConfigChange('resolverIndex', render);
-				this.onConfigChange('results', debounce(render, 1000, { maxWait: 1000 }));
+				$store.addChangeListener('common.work-results.result', debounce(render, 1000, { maxWait: 1000 }));
 			}
 		}),
 		settings: new Script({
@@ -544,7 +544,7 @@ export const CommonProject = Project.create({
 					visualSwitcher.style.cursor = 'default';
 					closeButton.style.cursor = 'default';
 
-					return el('div', { className: 'user-guide' }, [
+					return el('div', { className: 'user-guide card' }, [
 						$creator.notes(
 							[
 								[
@@ -618,7 +618,9 @@ export const CommonProject = Project.create({
 					]);
 				};
 				this.on('render', ({ panel, header }) => {
-					panel.body.replaceChildren(el('hr'), createGuide({ panel, header }));
+					const guide = createGuide({ panel, header });
+					guide.style.width = '600px';
+					panel.body.replaceChildren(el('hr'), guide);
 				});
 
 				if (this.cfg.showGuide && this.panel && this.header) {

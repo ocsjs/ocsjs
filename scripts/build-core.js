@@ -7,6 +7,7 @@ const { version } = require('../package.json');
 const execOut = util.promisify(require('./utils').execOut);
 const { createUserScript } = require('../packages/utils');
 const path = require('path');
+const { readFileSync, writeFileSync } = require('fs');
 
 function cleanOutput() {
 	return del(['../dist', '../lib'], { force: true });
@@ -93,6 +94,20 @@ async function createUserJs(cb) {
 	opts.metadata.resource = [`STYLE file://${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`];
 	opts.entry = path.join(__dirname, '../packages/scripts/entry.dev.js');
 	opts.dist = path.join(__dirname, '../dist/ocs.user.dev.js');
+
+	/** 将 unicode 转换成正常中文 */
+	const content = readFileSync(path.join(__dirname, '../dist/ocs.user.js')).toString();
+	writeFileSync(
+		path.join(__dirname, '../dist/ocs.user.js'),
+
+		// eslint-disable-next-line no-eval
+		JSON.parse(
+			JSON.stringify(`${content}`).replace(/\\\\u([\d\w]{4})/gi, function (match, grp) {
+				return String.fromCharCode(parseInt(grp, 16));
+			})
+		)
+	);
+
 	await createUserScript(opts);
 }
 

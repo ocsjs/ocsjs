@@ -1,6 +1,6 @@
 import { $creator } from '../utils/creator';
 import { el } from '../utils/dom';
-import { $gm } from '../utils/tampermonkey';
+import { $store } from '../utils/store';
 
 import { ConfigTagMap } from './configs/interface';
 import { IElement } from './interface';
@@ -16,6 +16,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 	wrapper: HTMLDivElement = el('div', { className: 'config-wrapper' });
 	key: string = '';
 	tag?: T;
+	defaultValue: any;
 	provider!: ConfigTagMap[keyof ConfigTagMap];
 	/** 将本地修改后的值同步到元素中 */
 	sync?: boolean;
@@ -23,20 +24,20 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 	_onload?: (this: ConfigTagMap[T], el: this) => void;
 
 	get value() {
-		return $gm.getValue(this.key);
+		return $store.get(this.key);
 	}
 
 	connectedCallback() {
 		const createInput = () => {
 			this.provider = el('input');
 			if (['checkbox', 'radio'].some((t) => t === this.attrs?.type)) {
-				this.provider.checked = $gm.getValue(this.key, false);
+				this.provider.checked = $store.get(this.key, this.defaultValue);
 				const provider = this.provider;
 				provider.onchange = () => {
-					$gm.setValue(this.key, provider.checked);
+					$store.set(this.key, provider.checked);
 				};
 			} else {
-				this.provider.value = $gm.getValue(this.key, '');
+				this.provider.value = $store.get(this.key, this.defaultValue);
 				this.provider.setAttribute('value', this.provider.value);
 
 				this.provider.onchange = () => {
@@ -51,10 +52,10 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 						} else if (_max && val > _max) {
 							this.provider.value = _max.toString();
 						} else {
-							$gm.setValue(this.key, val);
+							$store.set(this.key, val);
 						}
 					} else {
-						$gm.setValue(this.key, this.provider.value);
+						$store.set(this.key, this.provider.value);
 					}
 				};
 			}
@@ -67,17 +68,17 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 			case 'select': {
 				this.provider = el('select');
 				// select 表情不能直接设置 value ，需要根据子元素 selected
-				this.provider.setAttribute('value', $gm.getValue(this.key));
+				this.provider.setAttribute('value', $store.get(this.key, this.defaultValue));
 				this.provider.onchange = () => {
-					$gm.setValue(this.key, this.provider.value);
+					$store.set(this.key, this.provider.value);
 				};
 				break;
 			}
 			case 'textarea': {
 				this.provider = el('textarea');
-				this.provider.value = $gm.getValue(this.key, '');
+				this.provider.value = $store.get(this.key, this.defaultValue);
 				this.provider.onchange = () => {
-					$gm.setValue(this.key, this.provider.value);
+					$store.set(this.key, this.provider.value);
 				};
 				break;
 			}
@@ -98,7 +99,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 
 		// 处理跨域
 		if (this.sync) {
-			$gm.addConfigChangeListener(this.key, (pre, curr, remote) => {
+			$store.addChangeListener(this.key, (pre, curr, remote) => {
 				this.provider.value = curr;
 			});
 		}

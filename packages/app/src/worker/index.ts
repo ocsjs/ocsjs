@@ -1,48 +1,38 @@
-import EventEmitter from 'events';
 import { Instance as Chalk } from 'chalk';
 import { LoggerCore } from '../logger.core';
-import { ScriptWorkerAction, ScriptWorkerActions } from './types';
-import { basename } from 'path';
+import path, { basename } from 'path';
+import fs from 'fs';
 import { chromium, BrowserContext, Page, LaunchOptions } from 'playwright-core';
-import { PageScreencaster } from '../screencast.browser';
+import { AppStore } from '../../types';
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
-/** 动作集合 */
-const actions: Map<keyof ScriptWorkerActions, ScriptWorkerAction> = new Map();
-
 /** 脚本工作线程 */
-export class ScriptWorker extends EventEmitter {
+export class ScriptWorker {
+	uid: string = '';
 	browser?: BrowserContext;
 	logger?: LoggerCore;
 	/** 拓展路径 */
 	extensionPaths: string[] = [];
-	screencaster = new PageScreencaster(
-		{ everyNthFrame: 5, quality: 100, format: 'png', maxHeight: 920, maxWidth: 1080 },
-		async ({ base64 }) => {
-			this.emit('page-image', base64);
-		}
-	);
+	store?: AppStore;
 
-	pageId: string = '';
-	pages: Record<string, Page> = {};
+	init({ store, uid, cachePath }: { store: AppStore; uid: string; cachePath: string }) {
+		console.log('正在初始化进程...');
 
-	constructor({ extensionPaths }: { extensionPaths: string[] }) {
-		super();
-		this.extensionPaths = extensionPaths;
-		process.on('unhandledRejection', (e) => this.error('未处理的错误!', e));
-		process.on('uncaughtException', (e) => this.error('未处理的错误!', e));
+		this.store = store;
+
+		this.uid = uid;
+		// 拓展文件夹路径
+
+		this.extensionPaths = fs
+			.readdirSync(store.paths.extensionsFolder)
+			.map((file) => path.join(store.paths.extensionsFolder, file));
+
+		// 初始化日志
+		this.logger = new LoggerCore(store.paths['logs-path'], false, 'script', path.basename(cachePath));
+
+		console.log('初始化成功');
 	}
 
-	/** 任务调度 */
-	dispatch(actionName: keyof ScriptWorkerActions, data: any) {
-		actions.get(actionName)?.target.call(this, data);
-	}
-
-	@Action('launch', {
-		name: '启动',
-		destroyWhenError: true,
-		enableLogger: true
-	})
 	async launch(
 		options: Required<Pick<LaunchOptions, 'executablePath' | 'headless' | 'args'>> & {
 			userDataDir: string;
@@ -63,80 +53,76 @@ export class ScriptWorker extends EventEmitter {
 
 		/** 启动脚本 */
 		await launchScripts({
+			extensionPaths: this.extensionPaths,
 			onLaunch: (browser) => {
 				this.browser = browser;
+
+				browser.route(`**/*`, (route) => {
+					const headers = route.request().headers();
+					headers['browser-uid'] = this.uid;
+					route.continue({ headers });
+				});
+
+				/** URL事件解析器 */
+				this.browser?.on('page', (page) => {
+					const match = page.url().match(/ocs-action_(.+)/);
+					if (match?.[1]) {
+						const action = match[1];
+
+						const actions: any = {
+							'bring-to-top': () => {
+								// 通过命令行打开此页面后会置顶浏览器，并自动关闭当前事件页面
+								page.close();
+							}
+						};
+
+						actions[action]();
+					}
+				});
+
 				// 浏览器启动完成
-				this.emit('launched');
+				send('launched');
 			},
+			uid: this.uid,
 			...options
 		});
 
-		// 开始传递图像
+		// 浏览器初始化完成
+		send('init');
+	}
 
-		const listenPage = async (page: Page) => {
-			if (this.browser) {
-				const id = Date.now().toString();
-				this.pages[id] = page;
-				await this.pageSwitch(id);
-				page.on('load', async () => {
-					this.emit('page-load', { id, url: page.url(), title: await page.title() });
-				});
-				// 当页面关闭时
-				page.once('close', async () => {
-					this.pageClose(id);
-				});
-			}
-		};
+	async close() {
+		await this.browser?.close();
+		this.browser = undefined;
+		send('browser-closed');
+	}
 
-		if (this.browser) {
-			listenPage(this.browser.pages()[0]);
-			this.browser.on('page', listenPage);
+	/** 跳转到特殊图像共享浏览器窗口 */
+	async gotoWebRTCPage() {
+		const page = await this.browser?.newPage();
+		if (page) {
+			await page
+				.evaluate((uid) => {
+					document.title = uid;
+					document.body.innerHTML = `正在获取图像中，请勿操作。`;
+				}, this.uid)
+				.catch(() => {});
+			setTimeout(() => {
+				send('webrtc-page-loaded');
+			}, 1000);
 		}
 	}
 
-	@Action('page-close', { name: '关闭标签页' })
-	async pageClose(pageId: string) {
-		const page = this.pages[pageId];
-		if (this.browser && page) {
-			// 如果关闭的是当前页，则切换，并重新传递影像
-			if (this.pageId === pageId) {
-				const newId = Object.keys(this.pages).at(-1);
-				if (newId) {
-					// 改变当前 id
-					this.pageId = newId;
-					// 删除浏览器记录
-					Reflect.deleteProperty(this.pages, pageId);
-					// 传递事件
-					this.emit('page-switch', newId);
-					await this.pageSwitch(newId);
-				}
-			}
-			// 关闭浏览器
-			if (!page.isClosed()) {
+	/** 关闭特殊图像共享浏览器窗口 */
+	async closeWebRTCPage() {
+		const pages = this.browser?.pages() || [];
+		for (const page of pages) {
+			const title = await page.title();
+			if (title === this.uid) {
 				await page.close();
 			}
-			this.emit('page-close', { id: pageId });
 		}
-	}
-
-	@Action('browser-close', { name: '关闭浏览器' })
-	browserClose() {
-		this.destroy();
-	}
-
-	@Action('page-switch', { name: '页面切换' })
-	async pageSwitch(pageId: string) {
-		const page = this.pages[pageId];
-		if (page) {
-			await this.screencaster.stop();
-			await this.screencaster.start(page);
-			this.pageId = pageId;
-		}
-	}
-
-	destroy() {
-		this.browser?.close();
-		this.browser = undefined;
+		send('webrtc-page-closed');
 	}
 
 	debug(...msg: any[]) {
@@ -154,38 +140,6 @@ export class ScriptWorker extends EventEmitter {
 	error(...msg: any[]) {
 		console.log(bgRedBright(loggerPrefix()), ...msg);
 	}
-}
-
-/**
- * 动作装饰器，通过反射自动分配动作
- * @param actionName 动作名称，对应进程传递的 action 参数
- * @param options 动作附加参数
- */
-function Action(actionName: keyof ScriptWorkerActions, options: Omit<ScriptWorkerAction, 'target'>): MethodDecorator {
-	return (target: any, key: any, descriptor: TypedPropertyDescriptor<any>) => {
-		// @ts-ignore
-		const original: Function = descriptor.value;
-		// @ts-ignore
-		descriptor.value = async function (opts: any) {
-			try {
-				target.info(`${options.name}任务开始`);
-				await original.call(this, opts || undefined);
-				target.info(`${options.name}任务完成`);
-			} catch (err) {
-				// @ts-ignore
-				target.error(`${options.name}任务错误：${err}`);
-				if (options.destroyWhenError) {
-					target.destroy.call(this);
-				}
-			}
-		};
-
-		actions.set(actionName, {
-			// @ts-ignore
-			target: descriptor.value,
-			...options
-		});
-	};
 }
 
 /** 格式化浏览器拓展启动参数 */
@@ -207,10 +161,14 @@ export async function launchScripts({
 	args,
 	userDataDir,
 	scripts,
+	extensionPaths,
+	uid,
 	onLaunch
 }: Required<Pick<LaunchOptions, 'executablePath' | 'headless' | 'args'>> & {
 	userDataDir: string;
 	scripts: string[];
+	extensionPaths: any[];
+	uid: string;
 	onLaunch?: (browser: BrowserContext) => void;
 }) {
 	return new Promise<void>((resolve, reject) => {
@@ -220,39 +178,64 @@ export async function launchScripts({
 				executablePath,
 				args: [
 					'--no-sandbox',
-					'--disable-setuid-sandbox',
-					'--disable-dev-shm-usage',
-					'--disable-accelerated-2d-canvas',
+					'--window-position=0,0',
+					/** 自动播放无需用户点击页面 */
+					'--no-user-gesture-required',
+					/** 允许拓展访问本地文件 */
+					// '--disable-extensions-file-access-check',
 					'--no-first-run',
-					'--disable-gpu',
+					'--disable-popup-blocking',
 					...args
 				],
 				headless
 			})
-			.then((browser) => {
-				onLaunch?.(browser);
+			.then(async (browser) => {
+				browser.once('close', () => {
+					send('browser-closed');
+				});
 
 				const [blankPage] = browser.pages();
+				await blankPage.goto('http://localhost:15319/index.html#/bookmarks');
 
-				blankPage.setContent('正在等待浏览器插件加载。。。');
+				const html = (tip: string, loading: boolean = true) =>
+					blankPage.evaluate(
+						(state) =>
+							// @ts-ignore
+							window.setBookmarkLoadingState(state),
+						{ tip, loading }
+					);
 
-				// 等待插件加载完成
-				browser.once('page', async (extensionPage) => {
-					await blankPage.setContent('正在安装脚本。。。');
-					await extensionPage.close();
-					const [page] = browser.pages();
-					// 载入本地脚本
-					for (const url of scripts) {
+				onLaunch?.(browser);
+
+				// 等待一秒后才开始执行操作， 因为需要根据 title 进行影像传输。
+				setTimeout(async () => {
+					const setup = async () => {
+						await html('正在安装脚本。。。');
+						const [page] = browser.pages();
+						// 载入本地脚本
 						try {
-							await initScript(url, page);
+							await initScripts(scripts, browser, page);
 						} catch (e) {
 							// @ts-ignore
-							await blankPage.setContent('脚本载入失败，请手动更新，或者忽略。' + e.message);
+							console.error(e);
+							// await html('脚本载入失败，请手动更新，或者忽略。' + e.message);
 						}
+						await html('初始化进程完毕。', false);
+						resolve();
+					};
+
+					if (extensionPaths.length === 0) {
+						await html('浏览器脚本管理拓展为空！将无法运行脚本，如想运行脚本，请在软件左侧浏览器拓展中安装。', false);
+					} else {
+						await html('正在等待浏览器拓展加载。。。');
+
+						// 等待拓展加载完成
+						browser.once('page', async (extensionPage) => {
+							await extensionPage.close();
+							setup();
+						});
 					}
-					await blankPage.setContent('初始化进程完毕。');
-					resolve();
-				});
+				}, 1000);
 			})
 			.catch((err) => {
 				reject(err);
@@ -264,31 +247,53 @@ export async function launchScripts({
  * 安装/更新脚本
  *
  */
-function initScript(url: string, page: Page) {
-	console.log('install ', url);
+async function initScripts(urls: string[], browser: BrowserContext, page: Page) {
+	console.log('install ', urls);
+	let installCont = 0;
 
-	return new Promise<void>((resolve, reject) => {
-		/** 获取最新资源信息 */
-		Promise.all([page.context().waitForEvent('page'), page.evaluate((url) => (window.location.href = url), url)])
-			.then(([installPage]) => {
-				// 检测脚本是否安装/更新完毕
-				const interval = setInterval(async () => {
-					if (installPage.isClosed()) {
-						clearInterval(interval);
-						setTimeout(resolve, 1000);
-					} else {
-						// 置顶页面，防止点击安装失败
-						await installPage.bringToFront();
-						await installPage.evaluate(() => {
-							const input = (document.querySelector('button.primary') ||
-								document.querySelector('input')) as HTMLElement;
-							input?.click();
-						});
-					}
-				}, 3000);
-			})
-			.catch((err) => {
-				reject(err);
-			});
-	});
+	for (const url of urls) {
+		try {
+			await page.goto(url);
+		} catch {}
+	}
+
+	// 检测脚本是否安装/更新完毕
+	const tryInstall = async () => {
+		if (browser.pages().length !== 0) {
+			const installPage = browser.pages().find((p) => /extension:\/\//.test(p.url()));
+			if (installPage) {
+				// 置顶页面，防止点击安装失败
+				await installPage.bringToFront();
+				await installPage.evaluate(() => {
+					const btn = (document.querySelector('[class*="primary"]') ||
+						document.querySelector('[type*="button"]')) as HTMLElement;
+					btn?.click();
+				});
+
+				await sleep(1000);
+
+				if (installPage.isClosed()) {
+					installCont++;
+				}
+				if (installCont !== urls.length) {
+					await tryInstall();
+				}
+			} else if (installCont === urls.length) {
+				//
+			} else {
+				await sleep(1000);
+				await tryInstall();
+			}
+		}
+	};
+
+	await tryInstall();
+}
+
+function send(event: string, ...args: any[]) {
+	process.send?.({ event, args });
+}
+
+function sleep(t: number) {
+	return new Promise((resolve, reject) => setTimeout(resolve, t));
 }

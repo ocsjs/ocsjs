@@ -2,8 +2,9 @@ import debounce from 'lodash/debounce';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { $gm } from './tampermonkey';
 import { SimplifyWorkResult, WorkResult } from '../core/worker/interface';
+import { $string } from './string';
+import { $store } from './store';
 
 /**
  * 公共的工具库
@@ -17,11 +18,11 @@ export const $ = {
 		const proxy = new Proxy(script.cfg, {
 			set(target, propertyKey, value) {
 				const key = $.namespaceKey(script.namespace, propertyKey);
-				$gm.setValue(key, value);
+				$store.set(key, value);
 				return Reflect.set(target, propertyKey, value);
 			},
 			get(target, propertyKey) {
-				const value = $gm.getValue($.namespaceKey(script.namespace, propertyKey));
+				const value = $store.get($.namespaceKey(script.namespace, propertyKey));
 				Reflect.set(target, propertyKey, value);
 				return value;
 			}
@@ -31,7 +32,7 @@ export const $ = {
 		for (const key in script.configs) {
 			if (Object.prototype.hasOwnProperty.call(script.configs, key)) {
 				const element = Reflect.get(script.configs, key);
-				Reflect.set(proxy, key, $gm.getValue($.namespaceKey(script.namespace, key), element.defaultValue));
+				Reflect.set(proxy, key, $store.get($.namespaceKey(script.namespace, key), element.defaultValue));
 			}
 		}
 
@@ -188,5 +189,15 @@ export const $ = {
 		}
 
 		return res;
+	},
+	/** 加载自定义元素 */
+	loadCustomElements(elements: { new (): HTMLElement }[]) {
+		for (const element of elements) {
+			const name = $string.humpToTarget(element.name, '-');
+			// 不能重复加载
+			if (customElements.get(name) === undefined) {
+				customElements.define(name, element);
+			}
+		}
 	}
 };

@@ -1,5 +1,7 @@
 {
 	"cSpell.words": [
+		"jsdom",
+		"axios",
 		"historychange",
 		"isclose",
 		"isstop",
@@ -12,6 +14,7 @@
 		"onrun",
 		"Tesseract",
 		"traineddata",
+		"webrtc",
 		"xmlhttp",
 		"zhihuishu"
 	],

@@ -1,7 +1,7 @@
 import { HeaderElement } from '../elements/header';
 import { ScriptPanelElement } from '../elements/script.panel';
 import { $ } from '../utils/common';
-import { $gm } from '../utils/tampermonkey';
+import { $store } from '../utils/store';
 import { CommonEventEmitter } from './common';
 import { Config } from './config';
 import EventEmitter from 'events';
@@ -144,12 +144,12 @@ export class Script<
 	) {
 		const _key = $.namespaceKey(this.namespace, key.toString());
 
-		return $gm.addConfigChangeListener(_key, (pre, curr, remote) => {
-			handler(curr, pre, remote);
+		return $store.addChangeListener(_key, (pre, curr, remote) => {
+			handler(curr, pre, !!remote);
 		});
 	}
 
 	offConfigChange(id: number) {
-		$gm.removeConfigChangeListener(id);
+		$store.removeChangeListener(id);
 	}
 }

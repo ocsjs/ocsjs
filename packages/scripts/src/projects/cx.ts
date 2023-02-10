@@ -20,7 +20,8 @@ import {
 	DefaultWork,
 	splitAnswer,
 	$message,
-	MessageElement
+	MessageElement,
+	$store
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
@@ -161,18 +162,18 @@ export const CXProject = Project.create({
 						const phoneLogin = $el('#back');
 						const idLogin = $el('#otherlogin');
 
-						const phone = $gm.getValue('cx.login.phone');
-						const password = $gm.getValue('cx.login.password');
-						const school = $gm.getValue('cx.login.school');
-						const id = $gm.getValue('cx.login.id');
+						const phone = $store.get('cx.login.phone');
+						const password = $store.get('cx.login.password');
+						const school = $store.get('cx.login.school');
+						const id = $store.get('cx.login.id');
 
 						if (this.cfg.type === 'phone') {
 							if (phone && password) {
 								phoneLogin?.click();
 								await $.sleep(1000);
 								// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
-								$el('#phone').value = $gm.getValue('cx.login.phone');
-								$el('#pwd').value = $gm.getValue('cx.login.password');
+								$el('#phone').value = $store.get('cx.login.phone');
+								$el('#pwd').value = $store.get('cx.login.password');
 
 								// 点击登录
 								await $.sleep(1000);
@@ -186,7 +187,7 @@ export const CXProject = Project.create({
 								await $.sleep(1000);
 								const search = $el('#inputunitname');
 								search.focus();
-								search.value = $gm.getValue('cx.login.school');
+								search.value = $store.get('cx.login.school');
 								// @ts-ignore
 								$.unsafeWindow.search(search);
 
@@ -194,8 +195,8 @@ export const CXProject = Project.create({
 								await $.sleep(2000);
 
 								$el('#r1b > li').click();
-								$el('#uname').value = $gm.getValue('cx.login.id');
-								$el('#password').value = $gm.getValue('cx.login.password');
+								$el('#uname').value = $store.get('cx.login.id');
+								$el('#password').value = $store.get('cx.login.password');
 
 								$message('info', { content: '请输入验证码后点击登录。' });
 							} else {
@@ -398,7 +399,7 @@ export function workOrExam(
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
 	// 清空搜索结果
-	CommonProject.scripts.workResults.cfg.results = [];
+	$store.setTab('common.work-results.results', []);
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -540,7 +541,7 @@ export function workOrExam(
 
 		/** 完成答题后 */
 		onResultsUpdate(res) {
-			CommonProject.scripts.workResults.cfg.results = $.simplifyWorkResult(res);
+			$store.setTab('common.work-results.results', $.simplifyWorkResult(res));
 		},
 		onResolveUpdate(res) {
 			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;

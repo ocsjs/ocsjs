@@ -1,14 +1,15 @@
 {
 	"name": "@ocsjs/app",
-	"version": "1.6.0",
+	"version": "2.0.0",
 	"description": "app package of ocs",
-	"main": "./lib/types.js",
+	"main": "./lib/index.js",
 	"types": "./lib/types.d.ts",
 	"scripts": {
-		"dev": "tsc && chcp 65001 && electron .",
-		"dev:mac": "tsc &&  electron .",
+		"dev": "tsc &&  chcp 65001 && electron .",
+		"dev:mac": "tsc && electron .",
 		"pack": "tsc && electron-builder --config ./electron.builder.json --dir",
-		"dist": "tsc && electron-builder --config ./electron.builder.json"
+		"dist": "tsc && electron-builder --config ./electron.builder.json",
+		"proxy": "HTTPS_PROXY=127.0.0.1:7890"
 	},
 	"devDependencies": {
 		"@types/adm-zip": "^0.4.34",
@@ -24,6 +25,7 @@
 		"adm-zip": "^0.5.9",
 		"axios": "^0.25.0",
 		"chalk": "4.1.0",
+		"chromium": "^3.0.3",
 		"dayjs": "^1.10.7",
 		"electron-store": "^8.0.1",
 		"express": "^4.18.1",

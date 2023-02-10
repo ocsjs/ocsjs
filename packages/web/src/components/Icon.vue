@@ -1,27 +1,38 @@
 <template>
-	<component :is="slots.default ? Space : span">
-		<IconFont
-			class="ocs-icon"
-			:type="type"
+	<component
+		:is="slots.default ? Space : span"
+		class="d-flex"
+	>
+		<span
+			:style="{ color, fontSize: size ? size + 'px' : 'inherit' }"
+			:class="'material-icons' + (theme === 'filled' ? '' : '-' + theme)"
 			:title="title"
-			:class="{ active }"
-		/>
+		>
+			{{ type }}
+		</span>
+
 		<span><slot /></span>
 	</component>
 </template>
 
 <script setup lang="ts">
-import { Space } from 'ant-design-vue';
+import { Space } from '@arco-design/web-vue';
 import { h, toRefs, useSlots } from 'vue';
 const span = h('span');
 interface IconProps {
+	theme?: 'outlined' | 'filled' | 'rounded' | 'sharp' | 'two-tone';
 	type: string;
 	title?: string;
 	active?: boolean;
+	color?: string;
+	size?: number;
 }
 const slots = useSlots();
 const props = withDefaults(defineProps<IconProps>(), {
-	title: ''
+	theme: 'outlined',
+	title: '',
+	size: undefined,
+	color: undefined
 });
 const { type } = toRefs(props);
 </script>
@@ -29,9 +40,5 @@ const { type } = toRefs(props);
 <style scoped lang="less">
 .active {
 	color: #1890ff;
-}
-
-.ocs-icon.anticon {
-	transform: translate(0px, -1px);
 }
 </style>

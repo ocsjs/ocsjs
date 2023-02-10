@@ -1,57 +1,122 @@
 <template>
-	<div class="col-12 ps-3 pe-3 m-auto">
+	<div class="col-12 p-2 m-auto">
+		<div class="text-secondary markdown mb-2">
+			启动浏览器后将会自动 <code>加载/更新</code> 以下脚本到浏览器，如果不想开启自动加载/更新，可以关闭。
+		</div>
+
+		<div class="mb-2">
+			<a-space>
+				<div>
+					<label for="local-file">
+						<a-button
+							size="mini"
+							@click="selectScriptFile"
+						>
+							+ 添加本地脚本
+						</a-button>
+					</label>
+					<input
+						id="local-file"
+						style="display: none"
+						name="local-file"
+						type="file"
+						accept=".js"
+						@change="addScriptFromFile"
+					/>
+				</div>
+				<a-button
+					size="mini"
+					@click="enableAll"
+				>
+					全部开启加载
+				</a-button>
+				<a-button
+					size="mini"
+					@click="closeAll"
+				>
+					全部关闭加载
+				</a-button>
+			</a-space>
+		</div>
+
 		<a-tabs
 			v-model:activeKey="activeKey"
 			class="h-100"
 		>
 			<a-tab-pane
 				key="web"
-				tab="脚本列表"
+				title="脚本列表"
 			>
-				<div v-if="store.scripts.length === 0">
+				<div v-if="store.render.scripts.length === 0">
 					<a-empty description="暂无数据, 请在上方“搜索脚本”中选择喜欢的脚本进行添加哦~" />
 				</div>
 				<div
 					v-else
 					class="p-2"
 				>
-					<p class="text-secondary markdown">
-						启动浏览器后将会自动 <code>安装/更新</code> 以下脚本到浏览器。
-						<label for="local-file">
-							<span style="color: #1890ff; cursor: pointer"> + 添加本地脚本</span>
-						</label>
-						<input
-							id="local-file"
-							style="display: none"
-							name="local-file"
-							type="file"
-							accept=".js"
-							@change="addLocalScript"
-						/>
-					</p>
+					<ScriptList :scripts="store.render.scripts">
+						<template #infos="{ script }">
+							<a-tooltip>
+								<template #content>
+									<a-descriptions
+										size="mini"
+										:label-style="{ color: 'white', verticalAlign: 'top' }"
+										:value-style="{ color: 'white' }"
+										:column="1"
+									>
+										<a-descriptions-item label="脚本名"> {{ script.info?.name || '' }} </a-descriptions-item>
+										<a-descriptions-item label="脚本简介"> {{ script.info?.description || '' }}</a-descriptions-item>
+										<a-descriptions-item
+											v-if="script.info?.url"
+											label="脚本主页"
+										>
+											<template v-if="script.info.url.startsWith('http')">
+												<a :href="script.info?.url || ''"> {{ script.info?.url || '' }} </a>
+											</template>
+											<template v-else>
+												<div
+													style="text-decoration: underline; cursor: pointer"
+													@click="shell.showItemInFolder(script.info!.url)"
+												>
+													{{ script.info?.url }}
+												</div>
+											</template>
+										</a-descriptions-item>
+										<a-descriptions-item label="脚本地址"> {{ script.url || '' }}</a-descriptions-item>
+									</a-descriptions>
+								</template>
+								<a-tag>
+									<Icon type="info" />
+								</a-tag>
+							</a-tooltip>
+						</template>
 
-					<ScriptList :scripts="store.scripts">
 						<template #actions="{ script }">
-							<a-tooltip title="移除脚本">
-								<a-button
-									size="small"
-									danger
-									type="primary"
-									class="user-script-action"
-									@click="onRemoveScript(script)"
-								>
-									<Icon type="icon-delete" />
-								</a-button>
+							<a-tooltip content="移除脚本">
+								<a-popconfirm @ok="onRemoveScript(script)">
+									<template #content>
+										<div>删除后将不能恢复数据！</div>
+										<div>请您记住此脚本名，方便后续查找。</div>
+									</template>
+									<a-button
+										size="small"
+										status="danger"
+										class="user-script-action"
+									>
+										<Icon type="delete" />
+									</a-button>
+								</a-popconfirm>
 							</a-tooltip>
 
-							<a-tooltip :title="script.enable ? '关闭脚本自动安装' : '开启脚本自动安装'">
+							<a-tooltip :content="script.enable ? '关闭脚本自动加载' : '开启脚本自动加载'">
 								<a-button
 									size="small"
-									:type="script.enable ? 'primary' : 'default'"
+									:type="script.enable ? 'outline' : undefined"
 									class="user-script-action"
+									style="background: white"
 									@click="script.enable = !script.enable"
 								>
-									<Icon :type="script.enable ? 'icon-timeout' : 'icon-play-circle'" />
+									<Icon :type="script.enable ? 'pause' : 'play_circle_outline'" />
 								</a-button>
 							</a-tooltip>
 						</template>
@@ -60,15 +125,15 @@
 			</a-tab-pane>
 			<a-tab-pane
 				key="search"
-				tab="脚本搜索"
+				title="脚本搜索"
 			>
 				<div class="user-script-page">
 					<div class="col-12 actions d-flex">
 						<a-input-search
 							v-model:value="searchValue"
 							placeholder="输入脚本名进行搜索"
-							enter-button
-							@search="onSearch"
+							search-button
+							@change="onSearch"
 						/>
 					</div>
 
@@ -77,13 +142,15 @@
 							<a-tab-pane
 								v-for="item of engineSearchList"
 								:key="item.engine.name"
-								:tab="item.engine.name"
+								:title="item.engine.name"
 							>
 								<div v-if="item.loading">
-									<a-skeleton active />
+									<a-skeleton animation>
+										<a-skeleton-line :rows="3" />
+									</a-skeleton>
 								</div>
 								<div v-else-if="item.error">
-									<a-empty description="请求出错，请重新尝试" />
+									<a-empty description="请求出错，可能是服务器问题，或者网络问题，请重新尝试。" />
 								</div>
 								<div v-else-if="item.list.length === 0">
 									<a-empty description="暂无数据" />
@@ -107,10 +174,10 @@
 												size="small"
 												class="user-script-action"
 												:disabled="alreadyInstalled"
-												:type="alreadyInstalled ? 'default' : 'primary'"
+												:type="alreadyInstalled ? undefined : 'outline'"
 												@click="onAddScript(script)"
 											>
-												<Icon type="icon-plus" /> {{ alreadyInstalled ? '已添加' : '添加' }}
+												<Icon type="add" /> {{ alreadyInstalled ? '已添加' : '添加' }}
 											</a-button>
 										</template>
 									</ScriptList>
@@ -125,14 +192,16 @@
 </template>
 
 <script setup lang="ts">
-import { message } from 'ant-design-vue';
 import { ref } from 'vue';
-
 import { config } from '../../config';
 import { store, StoreUserScript } from '../../store';
 import { ScriptSearchEngine } from '../../types/search';
-import { NodeJS } from '../../utils/export';
 import ScriptList from './ScriptList.vue';
+import Icon from '../../components/Icon.vue';
+import { addScriptFromFile } from '../../utils/user-scripts';
+import { electron } from '../../utils/node';
+
+const { shell } = electron;
 
 /** 搜索列表 */
 const engineSearchList = ref<
@@ -159,16 +228,17 @@ function onSearch(value: string) {
 		item.error = false;
 		try {
 			const commonScripts = await item.engine.search(value, 1, 10);
-			console.log('commonScripts', commonScripts);
 
 			item.list = commonScripts.map((s) => ({
 				id: s.id,
 				url: s.code_url,
 				enable: true,
-				info: s
+				info: s,
+				isLocalScript: false
 			}));
 		} catch (err) {
 			console.log(err);
+			item.list = [];
 			item.error = true;
 		}
 		item.loading = false;
@@ -176,72 +246,27 @@ function onSearch(value: string) {
 }
 
 function onAddScript(script: StoreUserScript) {
-	store.scripts.push(script);
+	store.render.scripts.push(script);
 }
 
 function onRemoveScript(script: StoreUserScript) {
-	store.scripts.splice(store.scripts.indexOf(script), 1);
+	store.render.scripts.splice(store.render.scripts.indexOf(script), 1);
 }
 
-/**
- * 添加并且解析本地脚本
- */
-function addLocalScript(e: any) {
-	const file = e.target.files[0] as File;
-	if (file.path.endsWith('.user.js')) {
-		NodeJS.fs.stat(file.path, (err, stat) => {
-			if (err === null) {
-				NodeJS.fs.readFile(file.path, (err, buffer) => {
-					if (err === null) {
-						const metadata =
-							buffer.toString().match(/\/\/\s+==UserScript==([\s\S]+)\/\/\s+==\/UserScript==/)?.[1] || '';
-						// 解析函数
-						const getMetadata = (key: string) => {
-							const reg = `//\\s+\\@${key}\\s+(.*?)\\n`;
-							return (
-								metadata
-									.match(RegExp(reg, 'g'))
-									?.map((line) => line.match(RegExp(reg))?.[1] || '')
-									.filter((line) => !!line) || []
-							);
-						};
+function selectScriptFile() {
+	// @ts-ignore
+	document.querySelector('#local-file').click();
+}
 
-						if (metadata === '') {
-							message.error('脚本格式不正确，请选择能够解析的用户脚本。');
-						} else {
-							const id = Date.now();
-							store.scripts.push({
-								id,
-								url: file.path,
-								enable: true,
-								info: {
-									id,
-									url: file.path,
-									authors: getMetadata('author').map((a) => ({ name: a, url: '' })) || [],
-									description: getMetadata('description')[0],
-									license: getMetadata('license')[0],
-									name: '【本地脚本】' + getMetadata('name')[0],
-									version: getMetadata('version')[0],
-									code_url: file.path,
-									ratings: 0,
-									total_installs: 0,
-									daily_installs: 0,
-									createTime: stat.ctime.getTime(),
-									updateTime: stat.mtime.getTime()
-								}
-							});
-						}
-					} else {
-						message.error('文件读取失败 : ' + err.message);
-					}
-				});
-			} else {
-				message.error('文件读取失败 : ' + err.message);
-			}
-		});
-	} else {
-		message.error('用户脚本必须以 .user.js 作为文件后缀');
-	}
+function enableAll() {
+	store.render.scripts.forEach((val) => {
+		val.enable = true;
+	});
+}
+function closeAll() {
+	store.render.scripts.forEach((val) => {
+		val.enable = false;
+	});
 }
 </script>
 
@@ -258,5 +283,9 @@ function addLocalScript(e: any) {
 
 .user-script-action + .user-script-action {
 	margin-top: 4px;
+}
+
+.dis {
+	color: white !important;
 }
 </style>

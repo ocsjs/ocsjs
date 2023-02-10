@@ -4,7 +4,6 @@ import {
 	Script,
 	$script,
 	$el,
-	$gm,
 	el,
 	$$el,
 	OCSWorker,
@@ -12,7 +11,8 @@ import {
 	StringUtils,
 	$message,
 	$,
-	$model
+	$model,
+	$store
 } from '@ocsjs/core';
 import type { Config, ConfigElement, MessageElement, CommonWorkOptions } from '@ocsjs/core';
 import { CommonProject } from './common';
@@ -127,17 +127,17 @@ export const ZHSProject = Project.create({
 						const phoneLogin = $el('#qSignin');
 						const idLogin = $el('#qStudentID');
 
-						const phone = $gm.getValue('zhs.login.phone');
-						const password = $gm.getValue('zhs.login.password');
-						const school = $gm.getValue('zhs.login.school');
-						const id = $gm.getValue('zhs.login.id');
+						const phone = $store.get('zhs.login.phone');
+						const password = $store.get('zhs.login.password');
+						const school = $store.get('zhs.login.school');
+						const id = $store.get('zhs.login.id');
 
 						if (this.cfg.type === 'phone') {
 							if (phone && password) {
 								phoneLogin.click();
-								// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 $gm.getValue 进行获取
-								$el('#lUsername').value = $gm.getValue('zhs.login.phone');
-								$el('#lPassword').value = $gm.getValue('zhs.login.password');
+								// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 $store.set 进行获取
+								$el('#lUsername').value = $store.get('zhs.login.phone');
+								$el('#lPassword').value = $store.get('zhs.login.password');
 							} else {
 								$message('warn', { content: '信息未填写完整，登录停止。' });
 							}
@@ -146,14 +146,14 @@ export const ZHSProject = Project.create({
 								idLogin.click();
 								const search = $el('#quickSearch');
 								search.onfocus?.(new FocusEvent('focus'));
-								search.value = $gm.getValue('zhs.login.school');
+								search.value = $store.get('zhs.login.school');
 								search.onclick?.(new MouseEvent('click'));
 								// 等待搜索
 								await $.sleep(2000);
 
 								$el('#schoolListCode > li').click();
-								$el('#clCode').value = $gm.getValue('zhs.login.id');
-								$el('#clPassword').value = $gm.getValue('zhs.login.password');
+								$el('#clCode').value = $store.get('zhs.login.id');
+								$el('#clPassword').value = $store.get('zhs.login.password');
 							} else {
 								$message('warn', { content: '信息未填写完整，登录停止。' });
 							}
@@ -294,6 +294,9 @@ export const ZHSProject = Project.create({
 				}
 			},
 			oncomplete() {
+				// 置顶当前脚本
+				$script.pin(this);
+
 				const vue = $el('.video-study')?.__vue__;
 				let stopInterval: any = 0;
 				let stopMessage: MessageElement;
@@ -473,6 +476,14 @@ export const ZHSProject = Project.create({
 						}
 					}
 				}, 1000);
+
+				// 10秒后还没加载出来，则结束
+				setTimeout(() => {
+					if (vue.videoList.length === 0) {
+						finish();
+						clearInterval(interval);
+					}
+				}, 10 * 1000);
 			}
 		}),
 		'xnk-study': new Script({
@@ -484,29 +495,59 @@ export const ZHSProject = Project.create({
 					defaultValue: $creator.notes(['章节测试请大家观看完视频后手动打开。', '此课程不能使用倍速。']).outerHTML
 				},
 				restudy: restudy,
-				volume: volume,
-				definition: definition
+				volume: volume
 			},
 			oncomplete() {
-				/** 查找任务 */
-				let list = $$el('.file-item');
+				// 置顶当前脚本
+				$script.pin(this);
 
-				/** 如果不是复习模式，则排除掉已经完成的任务 */
-				if (!this.cfg.restudy) {
-					list = list.filter((el) => el.querySelector('.icon-finish') === null);
-				}
+				const finish = () => {
+					$model('alert', {
+						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
+					});
+				};
 
-				const item = list[0];
-				if (item) {
-					if (item.classList.contains('active')) {
-						watch({ volume: this.cfg.volume, playbackRate: 1, definition: this.cfg.definition }, () => {
-							/** 下一章 */
-							if (list[1]) list[1].click();
-						});
-					} else {
-						item.click();
+				// 监听音量
+				this.onConfigChange('volume', (curr) => {
+					$el<HTMLVideoElement>('video').volume = curr;
+				});
+
+				let list: HTMLElement[] = [];
+
+				const interval = setInterval(async () => {
+					/** 查找任务 */
+					list = $$el('.icon-video').map((icon) => icon.parentElement as HTMLElement);
+
+					// 等待视频加载完成
+					if (list.length) {
+						clearInterval(interval);
+
+						/** 如果不是复习模式，则排除掉已经完成的任务 */
+						if (!this.cfg.restudy) {
+							list = list.filter((el) => el.querySelector('.icon-finish') === null);
+						}
+
+						const item = list[0];
+						if (item) {
+							if (item.classList.contains('active')) {
+								watch({ volume: this.cfg.volume, playbackRate: 1 }, () => {
+									/** 下一章 */
+									if (list[1]) list[1].click();
+								});
+							} else {
+								// 为什么不播放，因为点击后会刷新整个页面，加载后就会运行上面的那个 if 语句
+								item.click();
+							}
+						}
 					}
-				}
+				}, 1000);
+
+				setTimeout(() => {
+					if (list.length === 0) {
+						finish();
+						clearInterval(interval);
+					}
+				}, 10 * 1000);
 			}
 		}),
 		'gxk-work-and-exam-guide': new Script({
@@ -547,6 +588,9 @@ export const ZHSProject = Project.create({
 			configs: workConfigs,
 
 			oncomplete() {
+				// 置顶当前脚本
+				$script.pin(this);
+
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('upload', changeMsg);
 				this.onConfigChange('auto', changeMsg);
@@ -627,6 +671,9 @@ export const ZHSProject = Project.create({
 			},
 
 			async oncomplete() {
+				// 置顶当前脚本
+				$script.pin(this);
+
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 
 				this.onConfigChange('auto', changeMsg);
@@ -682,6 +729,9 @@ export const ZHSProject = Project.create({
 			configs: workConfigs,
 
 			oncomplete() {
+				// 置顶当前脚本
+				$script.pin(this);
+
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('upload', changeMsg);
 				this.onConfigChange('auto', changeMsg);
@@ -730,7 +780,7 @@ export const ZHSProject = Project.create({
  * @returns
  */
 async function watch(
-	options: { volume: number; playbackRate: number; definition: 'line1bq' | 'line1gq' },
+	options: { volume: number; playbackRate: number; definition?: 'line1bq' | 'line1gq' },
 	onended: () => void
 ) {
 	let video = $el<HTMLVideoElement>('video');
@@ -890,7 +940,7 @@ function gxkWorkOrExam(
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
 	// 清空搜索结果
-	CommonProject.scripts.workResults.cfg.results = [];
+	$store.setTab('common.work-results.results', []);
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -934,7 +984,7 @@ function gxkWorkOrExam(
 		},
 		/** 完成答题后 */
 		onResultsUpdate(res) {
-			CommonProject.scripts.workResults.cfg.results = $.simplifyWorkResult(res);
+			$store.setTab('common.work-results.results', $.simplifyWorkResult(res));
 		},
 		onResolveUpdate(res) {
 			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
@@ -1014,7 +1064,7 @@ function xnkWork({ answererWrappers, period, timeout, retry, thread }: CommonWor
 	$message('info', { content: '开始作业' });
 
 	// 清空搜索结果
-	CommonProject.scripts.workResults.cfg.results = [];
+	$store.setTab('common.work-results.results', []);
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -1057,7 +1107,7 @@ function xnkWork({ answererWrappers, period, timeout, retry, thread }: CommonWor
 		},
 
 		onResultsUpdate(res) {
-			CommonProject.scripts.workResults.cfg.results = $.simplifyWorkResult(res);
+			$store.setTab('common.work-results.results', $.simplifyWorkResult(res));
 		},
 		onResolveUpdate(res) {
 			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;

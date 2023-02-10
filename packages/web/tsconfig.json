@@ -11,7 +11,8 @@
 		"esModuleInterop": true,
 		"lib": ["esnext", "dom"],
 		"skipLibCheck": true,
-		"outDir": "./lib"
+		"outDir": "./lib",
+		"typeRoots": ["./src/env.d.ts"]
 	},
 	"include": ["src/**/*.ts", "src/**/*.d.ts"]
 }

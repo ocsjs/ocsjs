@@ -1,5 +1,8 @@
 import { reactive, shallowRef } from 'vue';
 import { RouteRecordRaw } from 'vue-router';
+
+import page from '@/pages/index.vue';
+import bookmarks from '@/pages/bookmarks.vue';
 import setting from '@/pages/setting/index.vue';
 import browsers from '@/pages/browsers/index.vue';
 import dashboard from '@/pages/dashboard/index.vue';
@@ -21,72 +24,85 @@ export const config = reactive({
 	 */
 	routes: [
 		{
-			name: 'browsers',
+			name: 'index',
 			path: '/',
-			component: shallowRef(browsers),
-			meta: {
-				icon: 'icon-chrome',
-				filledIcon: 'icon-chrome-fill',
-				title: '浏览器列表'
-			}
-		},
-		{
-			name: 'dashboard',
-			path: '/dashboard',
-			component: shallowRef(dashboard),
-			meta: {
-				icon: 'icon-image',
-				filledIcon: 'icon-image-fill',
-				title: '仪表盘'
-			}
-		},
-		{
-			name: 'user-scripts',
-			path: '/user-scripts',
-			component: shallowRef(userScripts),
-			meta: {
-				icon: 'icon-bug',
-				filledIcon: 'icon-bug-fill',
-				title: '用户脚本'
-			}
-		},
-		{
-			name: 'extensions',
-			path: '/extensions',
-			component: shallowRef(extensions),
-			meta: {
-				icon: 'icon-pintu',
-				filledIcon: 'icon-pintu1',
-				title: '浏览器拓展',
-				tutorial: {
-					step: 3,
-					placement: 'rightTop',
-					tooltip: '4. 浏览器拓展会对用户脚本进行管理以及解析和运行。'
+			redirect: '/browsers',
+			component: shallowRef(page),
+			children: [
+				{
+					name: 'browsers',
+					path: 'browsers',
+					component: shallowRef(browsers),
+					meta: {
+						icon: 'view_list',
+						filledIcon: 'view_list',
+						title: '浏览器列表'
+					}
+				},
+				{
+					name: 'dashboard',
+					path: 'dashboard',
+					component: shallowRef(dashboard),
+					meta: {
+						icon: 'image',
+						filledIcon: 'image',
+						title: '监控台'
+					}
+				},
+				{
+					name: 'user-scripts',
+					path: 'user-scripts',
+					component: shallowRef(userScripts),
+					meta: {
+						icon: 'code',
+						filledIcon: 'code',
+						title: '用户脚本'
+					}
+				},
+				{
+					name: 'extensions',
+					path: 'extensions',
+					component: shallowRef(extensions),
+					meta: {
+						icon: 'extension',
+						filledIcon: 'extension',
+						title: '浏览器拓展',
+						tutorial: {
+							step: 3,
+							placement: 'rightTop',
+							tooltip: '4. 浏览器拓展会对用户脚本进行管理以及解析和运行。'
+						}
+					}
+				},
+				{
+					name: 'setting',
+					path: 'setting',
+					component: shallowRef(setting),
+					meta: {
+						icon: 'settings',
+						filledIcon: 'settings',
+						title: '设置'
+					}
 				}
-			}
+			]
 		},
 		{
-			name: 'setting',
-			path: '/setting',
-			component: shallowRef(setting),
+			name: 'bookmarks',
+			path: '/bookmarks',
+			component: shallowRef(bookmarks),
 			meta: {
-				icon: 'icon-setting',
-				filledIcon: 'icon-setting-fill',
-				title: '设置'
+				icon: 'view_list',
+				filledIcon: 'view_list',
+				title: '书签列表',
+				/** 隐藏在左侧菜单栏 */
+				hideInMenu: true
 			}
 		}
 	] as RouteRecordRaw[],
 	/** 主题预设 */
-	themes: [
-		{
-			key: 'theme-light',
-			name: '白昼'
-		},
-		{
-			key: 'theme-night',
-			name: '黑夜'
-		}
-	],
+	themes: {
+		dark: false
+	},
 
 	/** 浏览器拓展搜索引擎 */
 	extensionSearchEngines: [
@@ -101,47 +117,6 @@ export const config = reactive({
 	] as ExtensionSearchEngine[],
 	/** 用户脚本搜索引擎 */
 	scriptSearchEngines: [
-		{
-			name: 'GreasyFork',
-			homepage: 'https://greasyfork.org',
-			search: async (keyword: string, page: number, size: number) => {
-				const data = await remote.methods.call(
-					'get',
-					'https://greasyfork.org/zh-CN/scripts.json?' +
-						new URLSearchParams({
-							q: keyword,
-							page: page <= 0 ? '1' : page.toString()
-						})
-				);
-
-				let list = data as GreasyForkUserScript[];
-
-				list = list.sort((a, b) => {
-					return b.daily_installs - a.daily_installs;
-				});
-
-				return list.map((item) => {
-					const ratings = (item.good_ratings / (item.good_ratings + item.bad_ratings)) * 10;
-
-					return {
-						url: item.url,
-						name: item.name,
-						description: item.description,
-						homepage: item.url,
-						id: item.id,
-						createTime: new Date(item.created_at).getTime(),
-						updateTime: new Date(item.code_updated_at).getTime(),
-						daily_installs: item.daily_installs,
-						total_installs: item.total_installs,
-						authors: item.users,
-						ratings: ratings ? parseFloat(ratings.toFixed(1)) : 0,
-						code_url: item.code_url,
-						license: item.license,
-						version: item.version
-					} as CommonUserScript;
-				});
-			}
-		},
 		{
 			name: 'ScriptCat - 脚本猫',
 			homepage: 'https://scriptcat.org',
@@ -182,6 +157,47 @@ export const config = reactive({
 						updateTime: item.updatetime * 1000,
 						daily_installs: item.today_install,
 						total_installs: item.total_install
+					} as CommonUserScript;
+				});
+			}
+		},
+		{
+			name: 'GreasyFork',
+			homepage: 'https://greasyfork.org',
+			search: async (keyword: string, page: number, size: number) => {
+				const data = await remote.methods.call(
+					'get',
+					'https://greasyfork.org/zh-CN/scripts.json?' +
+						new URLSearchParams({
+							q: keyword,
+							page: page <= 0 ? '1' : page.toString()
+						})
+				);
+
+				let list = data as GreasyForkUserScript[];
+
+				list = list.sort((a, b) => {
+					return b.daily_installs - a.daily_installs;
+				});
+
+				return list.map((item) => {
+					const ratings = (item.good_ratings / (item.good_ratings + item.bad_ratings)) * 10;
+
+					return {
+						url: item.url,
+						name: item.name,
+						description: item.description,
+						homepage: item.url,
+						id: item.id,
+						createTime: new Date(item.created_at).getTime(),
+						updateTime: new Date(item.code_updated_at).getTime(),
+						daily_installs: item.daily_installs,
+						total_installs: item.total_installs,
+						authors: item.users,
+						ratings: ratings ? parseFloat(ratings.toFixed(1)) : 0,
+						code_url: item.code_url,
+						license: item.license,
+						version: item.version
 					} as CommonUserScript;
 				});
 			}

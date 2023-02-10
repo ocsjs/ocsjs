@@ -9,8 +9,6 @@ html,
 	max-height: 100%;
 	min-width: 500px;
 	min-height: 300px;
-
-	box-shadow: 0px 0px 8px black;
 }
 
 #app {
@@ -26,7 +24,7 @@ html,
 /* 设置滚动条的样式 */
 ::-webkit-scrollbar {
 	width: 10px;
-	height: 10px;
+	height: 6px;
 }
 
 /* 滚动槽 */
@@ -42,27 +40,27 @@ html,
 }
 
 /** 通知栏样式 */
-.ant-notification {
+.arco-notification {
 	/** 主容器 */
-	.ant-notification-notice {
+	.arco-notification-notice {
 		padding: 12px;
 	}
 
 	/** 底部按钮 */
-	.ant-notification-notice-btn {
+	.arco-notification-notice-btn {
 		margin-top: 8px;
 	}
 
-	.ant-notification-notice-with-icon .ant-notification-notice-description {
+	.arco-notification-notice-with-icon .arco-notification-notice-description {
 		margin-left: 0;
 		font-size: 12px;
 	}
 
-	.ant-notification-notice-with-icon .ant-notification-notice-message {
+	.arco-notification-notice-with-icon .arco-notification-notice-message {
 		margin-left: 36px;
 	}
 
-	.ant-notification-notice-description {
+	.arco-notification-notice-description {
 		overflow: auto;
 	}
 }
@@ -72,6 +70,11 @@ html,
 }
 
 .markdown {
+	font-size: 14px;
+	border: 1px solid #e6e6e6;
+	border-radius: 4px;
+	padding: 4px;
+
 	code {
 		margin: 0px 2px !important;
 		padding: 2px 4px !important;
@@ -88,56 +91,54 @@ em {
 }
 
 body {
-	.ant-tree li span.ant-tree-iconEle {
+	.arco-tree li span.arco-tree-iconEle {
 		vertical-align: unset;
 	}
 
-	.ant-tree li .ant-tree-node-content-wrapper {
+	.arco-tree li .arco-tree-node-content-wrapper {
 		padding: 0;
 	}
 
-	.ant-tree li {
+	.arco-tree li {
 		padding: 0px 8px 0px 0px !important;
 		text-overflow: hidden;
 		overflow: hidden;
 		white-space: nowrap;
 	}
 
-	.ant-tree-title {
+	.arco-tree-title {
 		padding: 4px 8px 4px 0px !important;
 	}
 
-	.ant-tree * {
+	.arco-tree * {
 		animation-duration: 0s !important;
 		animation: none !important;
 		transition: none !important;
 	}
 
-	.ant-tree-iconEle.ant-tree-icon__customize {
+	.arco-tree-iconEle.arco-tree-icon__customize {
 		width: 18px;
 	}
 
-	.ant-tree li span.ant-tree-switcher {
+	.arco-tree li span.arco-tree-switcher {
 		width: 18px;
 	}
 }
 
+@night-color-primary: #4898e2;
 @night-color: #bfbbb3;
-@night-bg-color: #32302f;
+@night-color-secondary: #9c9992;
+@night-bg-color: #2c2c2c;
 @night-active: #61a5e4;
 @night-border-color: #4b4848;
 
-body.theme-light {
-	#title {
-		ul li {
-			color: #504949;
-		}
-	}
-}
-
-body.theme-night {
+body[arco-theme='dark'] {
 	color: @night-color;
 	background-color: @night-bg-color;
+
+	.text-secondary {
+		color: @night-color-secondary !important;
+	}
 
 	#title {
 		ul li {
@@ -155,68 +156,16 @@ body.theme-night {
 		background: #c9bfbf98;
 	}
 
-	// 文字颜色
-	.ant-modal-confirm-content,
-	.ant-modal-confirm-title,
-	.ant-tree-title,
-	.ant-dropdown-menu-item,
-	.ant-tabs {
-		color: @night-color !important;
-	}
-
-	.anticon {
-		color: @night-color !important;
-	}
-
-	// 激活的文字颜色
-	.anticon.active,
-	.ant-tabs-nav .ant-tabs-tab-active,
+	a,
 	a.link {
 		color: @night-active !important;
 	}
 
-	// 文字颜色 + 背景颜色
-	.ant-tag,
-	.ant-input-number,
-	.ant-input,
-	.ant-input-affix-wrapper,
-	.ant-select,
-	.ant-select-item,
-	.ant-modal-content,
-	.ant-modal-header,
-	.ant-modal-title,
-	.ant-select-selector,
-	.ant-table,
-	.ant-table-thead > tr > th,
-	.ant-table-cell-fix-right {
-		background: @night-bg-color !important;
-		color: @night-color !important;
-	}
-
-	.ant-switch {
-		background: @night-color !important;
-	}
-
-	// 选择背景
-	.ant-switch-checked,
-	li.ant-tree-treenode-selected > span.ant-tree-node-content-wrapper::before {
-		background: @night-active !important;
-	}
-
 	// 边框颜色
-
 	.border-end,
 	.border-start,
 	.border-bottom,
-	.border-top,
-	.ant-tabs-bar,
-	.ant-modal-footer,
-	.ant-modal-header,
-	[class*='ant-input'],
-	.ant-select-selector,
-	.ant-table-tbody > tr > td,
-	.ant-table-thead > tr > th,
-	.ant-table-cell-fix-right {
+	.border-top {
 		border-color: @night-border-color !important;
 	}
 
@@ -225,30 +174,9 @@ body.theme-night {
 		box-shadow: none !important;
 	}
 
-	// 下拉框
-
-	.ant-select-dropdown,
-	.ant-dropdown-menu {
-		border: 1px solid;
-		border-color: @night-border-color !important;
-		background: @night-bg-color !important;
-	}
-	// 下拉框分割线
-	.ant-dropdown-menu-item-divider {
-		background: @night-border-color;
-	}
-
 	// 鼠标选择
-	.ant-table-row-hover td,
-	.ant-dropdown-menu-item:hover,
-	.ant-select-item:hover,
-	li span.ant-tree-node-content-wrapper:hover::before {
-		background: #686868 !important;
-	}
-
-	// 下拉框已经选中的元素
-	.ant-select-item.ant-select-item-option-selected {
-		background: @night-active !important;
+	.entity:hover {
+		background: #3b3b3b !important;
 	}
 
 	// 截图边框
@@ -257,8 +185,39 @@ body.theme-night {
 		border-color: @night-border-color !important;
 	}
 
-	// 垂直分割线
-	.ant-divider-vertical {
-		border-color: @night-border-color !important;
+	// 目录路径栏
+	.breadcrumb {
+		background-color: @night-bg-color;
+		border: 1px solid @night-border-color;
 	}
+	.path-item {
+		color: @night-color;
+	}
+
+	// 实体
+	.entity {
+		border-bottom: 1px solid @night-border-color;
+	}
+}
+
+.arco-trigger-popup {
+	animation-duration: 0s !important;
+	animation: none !important;
+	transition: none !important;
+
+	* {
+		animation-duration: 0s !important;
+		animation: none !important;
+		transition: none !important;
+	}
+}
+
+.arco-dropdown-option-content {
+	font-size: 12px;
+	line-height: 28px;
+}
+
+/** 简单模式下不要有头部间隔 */
+.arco-modal-simple .arco-modal-header {
+	margin-bottom: 0px;
 }

@@ -5,10 +5,11 @@
 	"asar": false,
 	"copyright": "Copyright © 2021 ${author}",
 	"nsis": {
-		"oneClick": true
+		"oneClick": false,
+		"allowToChangeInstallationDirectory": true
 	},
 	"win": {
-		"icon": "public/favicon.ico",
+		"icon": "public/favicon.png",
 		"artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
 		"target": [
 			{
@@ -21,7 +22,7 @@
 		]
 	},
 	"mac": {
-		"icon": "public/favicon.ico",
+		"icon": "public/favicon.icns",
 		"artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
 		"target": "default"
 	}

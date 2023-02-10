@@ -1,4 +1,4 @@
-import { createWindow } from '../main';
+import { createWindow } from '../window';
 import { app, BrowserWindow } from 'electron';
 import { existsSync, statSync } from 'fs';
 
