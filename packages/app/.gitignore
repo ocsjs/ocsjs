@@ -2,7 +2,7 @@
 
 pnpm-lock.yaml
 package-lock.json
-public
+public/
 
 # rollup-plugin-visualizer
 stats.html
