@@ -16,7 +16,7 @@
 		"@types/axios": "^0.14.0",
 		"@types/node-forge": "^1.0.0",
 		"@types/semver": "^7.3.9",
-		"electron": "17.0.0",
+		"electron": "23.0.0",
 		"electron-builder": "^23.1.0"
 	},
 	"dependencies": {

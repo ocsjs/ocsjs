@@ -1,8 +1,6 @@
 // @ts-check
-import { BrowserWindow, app, shell } from 'electron';
+import { BrowserWindow, shell } from 'electron';
 import path from 'path';
-
-app.disableHardwareAcceleration();
 
 export function createWindow() {
 	const win = new BrowserWindow({
@@ -12,10 +10,11 @@ export function createWindow() {
 		minWidth: 1000,
 		center: true,
 		show: false,
-
-		type: 'desktop',
 		hasShadow: true,
 		autoHideMenuBar: true,
+		titleBarStyle: 'hidden',
+		titleBarOverlay: true,
+		frame: false,
 		webPreferences: {
 			// 关闭拼写矫正
 			spellcheck: false,

@@ -14,6 +14,7 @@ import { startupServer } from './src/tasks/startup.server';
 
 // 设置 webrtc 的影像帧率比例，最高100，太高会造成卡顿，默认50
 app.commandLine.appendSwitch('webrtc-max-cpu-consumption-percentage', '1');
+app.disableHardwareAcceleration();
 
 /** 获取单进程锁 */
 const gotTheLock = app.requestSingleInstanceLock();

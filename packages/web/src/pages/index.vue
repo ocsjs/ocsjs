@@ -18,7 +18,7 @@
 								<Icon
 									class="icon"
 									:type="item.meta.icon"
-									:theme="item.path === currentRoute.path ? 'filled' : 'outlined'"
+									:theme="item.name === currentRoute.name ? 'filled' : 'outlined'"
 								/>
 							</a-tooltip>
 						</div>
@@ -72,11 +72,11 @@
 </template>
 
 <script setup lang="ts">
-import { nextTick, onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref } from 'vue';
 import { RouteRecordRaw, useRouter } from 'vue-router';
 import Title from '../components/Title.vue';
 import { router, routes, CustomRouteType } from '../route';
-import { initTheme, setAlwaysOnTop, setAutoLaunch, store } from '../store';
+import { changeTheme, setAlwaysOnTop, setAutoLaunch, store } from '../store';
 import { about, fetchRemoteNotify, sleep } from '../utils';
 import { notify } from '../utils/notify';
 import { remote } from '../utils/remote';
@@ -88,6 +88,7 @@ import BrowserPanel from '../components/browsers/BrowserPanel.vue';
 import { currentBrowser } from '../fs';
 import { electron, inBrowser } from '../utils/node';
 import Setup from '../components/Setup.vue';
+import { getWindowsRelease } from '../utils/os';
 
 const { ipcRenderer } = electron;
 const version = ref('');
@@ -99,6 +100,16 @@ onUnmounted(() => closeAllBrowser(false));
 ipcRenderer.on('close', () => closeAllBrowser(true));
 
 onMounted(async () => {
+	/** 设置窗口边框 */
+	remote.os.call('platform').then(async (platform) => {
+		if (platform === 'win32') {
+			const release = await getWindowsRelease();
+			if (release !== 'win11') {
+				document.documentElement.classList.add('window-frame');
+			}
+		}
+	});
+
 	/** 检测环境 */
 	// @ts-ignore
 	if (inBrowser) {
@@ -127,36 +138,34 @@ onMounted(async () => {
 	remote.logger.call('info', 'render store init');
 	setAutoLaunch();
 	setAlwaysOnTop();
-	initTheme();
+	changeTheme();
 
-	nextTick(() => {
-		/** 打开关于软件 */
-		if (store.render.state.first) {
-			about();
+	/** 打开关于软件 */
+	if (store.render.state.first) {
+		about();
+	}
+
+	/** 监听屏幕变化 */
+	onResize();
+	window.addEventListener('resize', onResize);
+
+	/** 获取最新远程通知 */
+	fetchRemoteNotify(false);
+
+	/** 如果正在更新的话，获取更新进度 */
+	ipcRenderer.on('download', (e, channel, rate, totalLength, chunkLength) => {
+		if (channel === 'update') {
+			notify(
+				'OCS更新程序',
+				`更新中: ${(chunkLength / 1024 / 1024).toFixed(2)}MB/${(totalLength / 1024 / 1024).toFixed(2)}MB`,
+				'updater',
+				{
+					type: 'info',
+					duration: 5,
+					close: false
+				}
+			);
 		}
-
-		/** 监听屏幕变化 */
-		onResize();
-		window.addEventListener('resize', onResize);
-
-		/** 获取最新远程通知 */
-		fetchRemoteNotify(false);
-
-		/** 如果正在更新的话，获取更新进度 */
-		ipcRenderer.on('download', (e, channel, rate, totalLength, chunkLength) => {
-			if (channel === 'update') {
-				notify(
-					'OCS更新程序',
-					`更新中: ${(chunkLength / 1024 / 1024).toFixed(2)}MB/${(totalLength / 1024 / 1024).toFixed(2)}MB`,
-					'updater',
-					{
-						type: 'info',
-						duration: 5,
-						close: false
-					}
-				);
-			}
-		});
 	});
 });
 
@@ -178,21 +187,23 @@ async function closeAllBrowser(quit: boolean) {
 			onOk: async () => {
 				const m = Modal.info({ content: '正在关闭所有浏览器...', closable: false, maskClosable: false, footer: false });
 
-				// 最久5秒后关闭
-				setTimeout(() => {
+				const close = () => {
 					if (quit) {
 						remote.app.call('exit');
 					}
-
 					m.close();
-				}, 5000);
+				};
 
+				// 最久5秒后关闭
+				const timeout = setTimeout(close, 5000);
 				try {
 					for (const process of processes) {
 						await process.close();
 						await sleep(100);
 					}
 				} catch {}
+				clearTimeout(timeout);
+				close();
 			}
 		});
 	} else {
@@ -220,7 +231,7 @@ function onResize() {
 
 .main {
 	display: grid;
-	grid-template-rows: 24px calc(100vh - 24px);
+	grid-template-rows: 32px calc(100vh - 32px);
 	grid-template-areas:
 		'header'
 		'main ';
@@ -228,6 +239,7 @@ function onResize() {
 
 .sider {
 	-webkit-app-region: no-drag;
+	user-select: none;
 	width: 48px;
 	padding: 4px;
 	text-align: center;
@@ -235,8 +247,9 @@ function onResize() {
 	justify-content: center;
 
 	.sider-items {
-		.sider-item {
-			margin-top: 8px;
+		padding-top: 12px;
+		.sider-item + .sider-item {
+			margin-top: 22px;
 		}
 
 		.icon {

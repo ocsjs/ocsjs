@@ -236,14 +236,19 @@ function openDevTools() {
 
 <style scoped lang="less">
 .title {
+	-webkit-app-region: drag;
 	width: 100%;
 	display: flex;
 	align-items: center;
+	/** 系统自带控件高度为 32 */
+	height: 32px;
 	cursor: default;
 
 	.title-item {
+		-webkit-app-region: no-drag;
 		padding: 0px 8px;
 		font-size: 14px;
+		cursor: pointer;
 
 		&:hover {
 			background-color: #f0f0f0;

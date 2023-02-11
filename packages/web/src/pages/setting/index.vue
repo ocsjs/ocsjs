@@ -19,6 +19,7 @@
 					<a-switch
 						v-model="store.render.setting.theme.dark"
 						size="small"
+						@click="changeTheme"
 					/>
 				</Description>
 			</Card>
@@ -109,7 +110,7 @@
 import Card from '../../components/Card.vue';
 import Description from '../../components/Description.vue';
 import Path from '../../components/Path.vue';
-import { store } from '../../store';
+import { changeTheme, store } from '../../store';
 import { remote } from '../../utils/remote';
 import BrowserPath from '../../components/setting/BrowserPath.vue';
 import OCSConfigs from '../../components/OCSConfigs.vue';
