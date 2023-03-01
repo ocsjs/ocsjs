@@ -14,7 +14,7 @@ import {
 	$model,
 	$store
 } from '@ocsjs/core';
-import type { Config, ConfigElement, MessageElement, CommonWorkOptions } from '@ocsjs/core';
+import type { MessageElement, CommonWorkOptions } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workConfigs, definition, volume, restudy } from '../utils/configs';
 import { createWorkerControl, optimizationTextWithImage } from '../utils/work';
@@ -52,127 +52,7 @@ export const ZHSProject = Project.create({
 				$script.pin(this);
 			}
 		}),
-		login: new Script({
-			name: '登录脚本',
-			url: [['登录页面', 'https://passport.zhihuishu.com/login']],
-			level: 9,
-			namespace: 'zhs.login',
-			configs: {
-				notes: {
-					defaultValue: $creator.notes([
-						'脚本会自动输入账号密码，但是需要手动填写验证码。',
-						'脚本用于辅助软件登录，如不想使用可直接关闭。'
-					]).outerHTML
-				},
-				disable: {
-					label: '关闭此脚本',
-					defaultValue: false,
-					attrs: { type: 'checkbox' }
-				},
-				type: {
-					label: '登录类型',
-					tag: 'select',
-					defaultValue: 'phone' as 'phone' | 'id',
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value') || '', [
-								['phone', '手机号登录'],
-								['id', '学号登录']
-							])
-						);
-					}
-				}
-			},
-			onrender({ panel }) {
-				let els: Record<string, ConfigElement<any>>;
-				/** 监听更改 */
-				this.onConfigChange('type', () => {
-					for (const key in els) {
-						if (Object.prototype.hasOwnProperty.call(els, key)) {
-							els[key].remove();
-						}
-					}
-					// 删除后重新渲染
-					render();
-				});
 
-				const render = () => {
-					/** 动态创建设置 */
-					const passwordConfig: Config = { label: '密码', defaultValue: '', attrs: { type: 'password' } };
-					if (this.cfg.type === 'phone') {
-						els = $creator.configs('zhs.login', {
-							phone: { label: '手机', defaultValue: '' },
-							password: passwordConfig
-						});
-					} else {
-						els = $creator.configs('zhs.login', {
-							school: { label: '学校', defaultValue: '' },
-							id: { label: '学号', defaultValue: '' },
-							password: passwordConfig
-						});
-					}
-
-					for (const key in els) {
-						if (Object.prototype.hasOwnProperty.call(els, key)) {
-							panel.configsBody.append(els[key]);
-						}
-					}
-				};
-
-				render();
-			},
-			oncomplete() {
-				if (!this.cfg.disable) {
-					const id = setTimeout(async () => {
-						const phoneLogin = $el('#qSignin');
-						const idLogin = $el('#qStudentID');
-
-						const phone = $store.get('zhs.login.phone');
-						const password = $store.get('zhs.login.password');
-						const school = $store.get('zhs.login.school');
-						const id = $store.get('zhs.login.id');
-
-						if (this.cfg.type === 'phone') {
-							if (phone && password) {
-								phoneLogin.click();
-								// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 $store.set 进行获取
-								$el('#lUsername').value = $store.get('zhs.login.phone');
-								$el('#lPassword').value = $store.get('zhs.login.password');
-							} else {
-								$message('warn', { content: '信息未填写完整，登录停止。' });
-							}
-						} else {
-							if (school && id && password) {
-								idLogin.click();
-								const search = $el('#quickSearch');
-								search.onfocus?.(new FocusEvent('focus'));
-								search.value = $store.get('zhs.login.school');
-								search.onclick?.(new MouseEvent('click'));
-								// 等待搜索
-								await $.sleep(2000);
-
-								$el('#schoolListCode > li').click();
-								$el('#clCode').value = $store.get('zhs.login.id');
-								$el('#clPassword').value = $store.get('zhs.login.password');
-							} else {
-								$message('warn', { content: '信息未填写完整，登录停止。' });
-							}
-						}
-
-						// 点击登录
-						await $.sleep(1000);
-						$el('#f_sign_up .wall-sub-btn').click();
-					}, 3000);
-					const close = el('a', '取消');
-					const msg = $message('info', { content: el('span', ['3秒后自动登录。', close]) });
-					close.href = '#';
-					close.onclick = () => {
-						clearTimeout(id);
-						msg.remove();
-					};
-				}
-			}
-		}),
 		'gxk-study': new Script({
 			name: '共享课学习脚本',
 			url: [['共享课学习页面', 'studyvideoh5.zhihuishu.com']],
@@ -706,17 +586,17 @@ export const ZHSProject = Project.create({
 					/** 显示答题控制按钮 */
 					createWorkerControl(this, () => worker);
 
-					if (this.cfg.auto === false) {
+					if (this.cfg.auto) {
+						await waitForQuestionsLoad();
+						// 识别文字
+						recognize();
+						start();
+					} else {
 						this.event.emit('done');
 						$message('warn', {
 							duration: 0,
 							content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
 						});
-					} else {
-						await waitForQuestionsLoad();
-						// 识别文字
-						recognize();
-						start();
 					}
 				}
 			}

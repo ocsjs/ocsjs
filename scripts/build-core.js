@@ -93,7 +93,7 @@ async function createUserJs(cb) {
 	opts.metadata.require = ['file://' + path.join(__dirname, '../dist/index.js')];
 	opts.metadata.resource = [`STYLE file://${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`];
 	opts.entry = path.join(__dirname, '../packages/scripts/entry.dev.js');
-	opts.dist = path.join(__dirname, '../dist/ocs.user.dev.js');
+	opts.dist = path.join(__dirname, '../dist/ocs.dev.user.js');
 
 	/** 将 unicode 转换成正常中文 */
 	const content = readFileSync(path.join(__dirname, '../dist/ocs.user.js')).toString();

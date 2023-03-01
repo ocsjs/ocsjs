@@ -1,4 +1,4 @@
-import { AnswererWrapper } from '../core/worker/answer.wrapper.handler';
+import { AnswererWrapper } from '../core/answer-wrapper/interface';
 import { WorkUploadType } from '../core/worker/interface';
 import { ConfigElement } from '../elements/config';
 import { Script } from '../interfaces';
@@ -8,6 +8,7 @@ import { $message, $model } from '../projects/render';
 import { $ } from './common';
 import { ElementChildren, ElementHandler, el } from './dom';
 import { $elements } from './elements';
+import { $gm } from './tampermonkey';
 
 export interface CommonWorkOptions {
 	period: number;
@@ -56,8 +57,10 @@ export const $creator = {
 	 */
 	tooltip<T extends HTMLElement>(target: T) {
 		target.setAttribute('data-title', target.title);
-		// 取消默认title，避免系统默认事件重复显示
-		target.removeAttribute('title');
+		// 油猴环境下，取消默认title，避免系统默认事件重复显示
+		if (typeof $gm.unsafeWindow !== 'undefined') {
+			target.removeAttribute('title');
+		}
 
 		const onMouseMove = (e: MouseEvent) => {
 			$elements.tooltip.style.top = e.y + 'px';
@@ -66,12 +69,14 @@ export const $creator = {
 		const showTitle = (e: MouseEvent) => {
 			const dataTitle = target.getAttribute('data-title');
 			if (dataTitle) {
-				$elements.tooltip.style.display = 'block';
 				$elements.tooltip.innerHTML = dataTitle.split('\n').join('<br>') || '';
 				$elements.tooltip.style.top = e.y + 'px';
 				$elements.tooltip.style.left = e.x + 'px';
+				$elements.tooltip.style.display = 'block';
+			} else {
+				$elements.tooltip.style.display = 'none';
 			}
-			$elements.tooltip.style.display = 'block';
+
 			window.addEventListener('mousemove', onMouseMove);
 		};
 		const hideTitle = () => {

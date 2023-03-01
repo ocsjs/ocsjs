@@ -1,0 +1,36 @@
+.container-info {
+  border-radius: 2px;
+  border-left: 8px solid #1890ff;
+  background-color: rgba(98, 180, 255, 0.19);
+  padding: 1px 1px 1px 20px;
+  margin: 12px 0px;
+}
+.container-warning {
+  border-radius: 2px;
+  border-left: 8px solid #faad14;
+  background-color: rgba(252, 199, 96, 0.19);
+  padding: 1px 1px 1px 20px;
+  margin: 12px 0px;
+}
+.container-success {
+  border-radius: 2px;
+  border-left: 8px solid #52c41a;
+  background-color: rgba(138, 215, 100, 0.19);
+  padding: 1px 1px 1px 20px;
+  margin: 12px 0px;
+}
+.container-error {
+  border-radius: 2px;
+  border-left: 8px solid #f5222d;
+  background-color: rgba(248, 105, 113, 0.19);
+  padding: 1px 1px 1px 20px;
+  margin: 12px 0px;
+}
+.container-title {
+  font-size: 18px;
+  font-weight: bold;
+}
+.container-body {
+  line-height: 5px;
+  font-weight: 300;
+}

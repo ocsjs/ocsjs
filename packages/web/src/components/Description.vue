@@ -33,6 +33,7 @@ const { label, desc, textClass } = toRefs(props);
 .desc {
 	word-wrap: break-word;
 	word-break: break-all;
+	font-size: 14px;
 }
 
 .desc-label {

@@ -1,5 +1,12 @@
 <template>
-	<div class="title border-bottom ps-2">
+	<div class="title ps-2">
+		<span>
+			<img
+				width="18"
+				class="me-3"
+				src="../../public/favicon.png"
+			/>
+		</span>
 		<a-dropdown
 			class="tittle-dropdown"
 			position="bl"
@@ -22,6 +29,7 @@
 				<a-doption @click="relaunch"> 重启软件 </a-doption>
 				<a-doption @click="openLog"> 日志目录 </a-doption>
 				<a-doption @click="openDevTools"> 开发者工具 </a-doption>
+				<a-doption @click="reset"> 重置软件设置 </a-doption>
 			</template>
 		</a-dropdown>
 		<a-dropdown
@@ -125,16 +133,16 @@
 					style="width: 200px"
 					@click="about"
 				>
-					关于软件
+					使用教程
 				</a-doption>
-				<a-doption @click="allNotify"> 全部通知 </a-doption>
+				<a-doption @click="allNotify"> 查看通知 </a-doption>
 
 				<TitleLink
-					title="官网教程"
+					title="软件官网"
 					url="https://docs.ocsjs.com/"
 				/>
 				<TitleLink
-					title="软件更新"
+					title="其他版本"
 					url="https://docs.ocsjs.com/docs/资源下载/app-downloads"
 				/>
 			</template>
@@ -146,11 +154,12 @@
 import { fetchRemoteNotify, date, about } from '../utils';
 import { remote } from '../utils/remote';
 import TitleLink from './TitleLink.vue';
-import { Message } from '@arco-design/web-vue';
+import { Message, Modal } from '@arco-design/web-vue';
 import { store } from '../store/index';
 import { electron } from '../utils/node';
 import { currentBrowser, currentFolder, currentEntities, currentSearchedEntities } from '../fs/index';
 import { root } from '../fs/folder';
+import { h } from 'vue';
 
 const { shell } = electron;
 
@@ -182,21 +191,36 @@ function allNotify() {
 function importData() {
 	remote.dialog
 		.call('showOpenDialog', {
-			title: '选择数据文件',
-			buttonLabel: '导出',
+			title: '选择导入的数据文件',
+			buttonLabel: '导入',
 			filters: [{ extensions: ['ocsdata'], name: 'ocsdata' }]
 		})
 		.then(async ({ canceled, filePaths }) => {
-			if (canceled === false && filePaths) {
+			if (canceled === false && filePaths.length) {
 				try {
 					const text = await remote.fs.call('readFileSync', filePaths[0], { encoding: 'utf8' });
 					JSON.parse(text.toString());
-					await remote.fs.call('copyFileSync', filePaths[0], store['config-path']);
-					Message.success('导入成功！数据重启后生效。');
+					await remote.fs.call('copyFileSync', filePaths[0], store.paths['config-path']);
+
+					Modal.success({
+						title: '导入成功',
+						content: () =>
+							h('div', [
+								'数据重启软件后生效。',
+								'如果您是导入其他电脑的OCS数据，请注意导入后重新初始化设置，或者自行重新安装脚本管理器。'
+							]),
+						okText: '重启软件',
+						cancelText: '稍后重启',
+						hideCancel: false,
+						simple: false,
+						onOk() {
+							remote.app.call('relaunch');
+							remote.app.call('exit', 0);
+						}
+					});
 				} catch (err) {
 					Message.error('数据有误! : ' + err);
 				}
-				// NodeJS.fs.copyFileSync(store['config-path'], filePath);
 			}
 		});
 }
@@ -209,7 +233,7 @@ function exportData() {
 		})
 		.then(async ({ canceled, filePath }) => {
 			if (canceled === false && filePath) {
-				await remote.fs.call('copyFileSync', store['config-path'], filePath + '.ocsdata');
+				await remote.fs.call('copyFileSync', store.paths['config-path'], filePath + '.ocsdata');
 				Message.success('导出成功！');
 			}
 		});
@@ -232,6 +256,14 @@ function openDevTools() {
 
 	remote.webContents.call('openDevTools');
 }
+
+/** 重置设置 */
+function reset() {
+	// @ts-ignore
+	store.version = undefined;
+	remote.app.call('relaunch');
+	remote.app.call('exit', 0);
+}
 </script>
 
 <style scoped lang="less">
@@ -243,6 +275,11 @@ function openDevTools() {
 	/** 系统自带控件高度为 32 */
 	height: 32px;
 	cursor: default;
+	border-bottom: 1px solid #f3f3f3;
+
+	z-index: 999999;
+	position: relative;
+	background-color: white;
 
 	.title-item {
 		-webkit-app-region: no-drag;

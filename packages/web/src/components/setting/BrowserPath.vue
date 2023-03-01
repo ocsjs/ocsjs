@@ -3,6 +3,7 @@
 		<a-input
 			v-model="launchOptions.executablePath"
 			size="small"
+			placeholder="输入您的浏览器路径，否则无法正常启动，路径获取教程点击右侧问号查看。"
 			class="w-100"
 			@blur="onDiy"
 		>
@@ -13,12 +14,12 @@
 					</template>
 					<template #content>
 						<div>
-							<b>谷歌浏览器</b> : 打开谷歌浏览器 <br />
+							<b>- 谷歌浏览器</b> : 打开谷歌浏览器 <br />
 							在地址栏输入
 							<b>chrome://version</b> 并回车， 找到 <b>可执行文件路径</b> 复制粘贴即可
 						</div>
 						<div>
-							<b>Edge浏览器</b> : 打开Edge浏览器<br />
+							<b>- Edge浏览器</b> : 打开Edge浏览器<br />
 							在地址栏输入
 							<b>edge://version</b> 并回车， 找到 <b>可执行文件路径</b> 复制粘贴即可
 						</div>

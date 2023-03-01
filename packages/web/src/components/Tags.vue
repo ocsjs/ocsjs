@@ -1,5 +1,5 @@
 <template>
-	<a-tooltip :content="readOnly ? '标签分类' : ''">
+	<a-tooltip content="标签分类">
 		<a-space
 			v-if="readOnly === false || tags.length > 0"
 			class="flex-wrap"
@@ -41,9 +41,7 @@
 				:size="props.size"
 				@click="showModel"
 			>
-				<a-tooltip content="添加新的标签">
-					<icon-plus />
-				</a-tooltip>
+				添加 <icon-plus />
 			</a-tag>
 		</a-space>
 	</a-tooltip>

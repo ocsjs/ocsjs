@@ -1,5 +1,6 @@
 import { app } from 'electron';
 import path from 'path';
+import Store from 'electron-store';
 
 export const appStore = {
 	name: app.getName(),
@@ -12,19 +13,24 @@ export const appStore = {
 		'logs-path': app.getPath('logs'),
 		'config-path': path.resolve(app.getPath('userData'), './config.json'),
 		/** 加载拓展路径 */
-		extensionsFolder: path.resolve(app.getPath('exe'), '../extensions'),
+		extensionsFolder: path.resolve(app.getPath('userData'), './extensions'),
 		/** 浏览器用户数据文件夹 */
-		userDataDirsFolder: path.resolve(app.getPath('exe'), '../userDataDirs'),
+		userDataDirsFolder: path.resolve(app.getPath('userData'), './userDataDirs'),
 		/** 浏览器下载文件夹 */
-		downloadFolder: path.resolve(app.getPath('exe'), '../downloads')
+		downloadFolder: path.resolve(app.getPath('userData'), './downloads')
+	},
+	/** 窗口设置 */
+	window: {
+		/** 开机自启 */
+		alwaysOnTop: false,
+		autoLaunch: false
 	},
 	/** 本地服务器数据 */
 	server: {
 		port: 15319
 	},
 	/** 渲染进程数据 */
-	render: {
-		/** 渲染进程浏览器数据 */
-		browser: {}
-	}
+	render: {} as { [x: string]: any }
 };
+
+export const store = new Store<typeof appStore>();

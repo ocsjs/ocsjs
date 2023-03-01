@@ -83,10 +83,24 @@
 											</template>
 										</a-descriptions-item>
 										<a-descriptions-item label="脚本地址"> {{ script.url || '' }}</a-descriptions-item>
+										<a-descriptions-item label="id"> {{ script.id || '' }} </a-descriptions-item>
 									</a-descriptions>
 								</template>
 								<a-tag>
 									<Icon type="info" />
+								</a-tag>
+							</a-tooltip>
+
+							<a-tooltip
+								v-if="script.isLocalScript"
+								content="当前脚本处于您计算机本地，因此不能实时获取网络数据进行更新，但软件依然会尝试重复加载以保证您的文件修改后的代码仍能同步到浏览器中。"
+							>
+								<a-tag> 本地脚本 </a-tag>
+							</a-tooltip>
+
+							<a-tooltip content="来源网站">
+								<a-tag>
+									{{ getSearchEngine(script.url)?.name || '未知来源' }}
 								</a-tag>
 							</a-tooltip>
 						</template>
@@ -157,7 +171,7 @@
 								</div>
 								<div
 									v-else
-									class="user-script-list"
+									class="user-script-list p-2"
 								>
 									<div class="pb-1">
 										数据来源 :
@@ -169,15 +183,15 @@
 									</div>
 
 									<ScriptList :scripts="item.list">
-										<template #actions="{ script, alreadyInstalled }">
+										<template #actions="data">
 											<a-button
 												size="small"
 												class="user-script-action"
-												:disabled="alreadyInstalled"
-												:type="alreadyInstalled ? undefined : 'outline'"
-												@click="onAddScript(script)"
+												:disabled="data.alreadyInstalled"
+												:type="data.alreadyInstalled ? undefined : 'outline'"
+												@click="onAddScript(data.script)"
 											>
-												<Icon type="add" /> {{ alreadyInstalled ? '已添加' : '添加' }}
+												<Icon type="add" /> {{ data.alreadyInstalled ? '已添加' : '添加' }}
 											</a-button>
 										</template>
 									</ScriptList>
@@ -267,6 +281,11 @@ function closeAll() {
 	store.render.scripts.forEach((val) => {
 		val.enable = false;
 	});
+}
+
+/** 判断脚本来源 */
+function getSearchEngine(url: string) {
+	return config.scriptSearchEngines.find((e) => new URL(e.homepage).host === new URL(url).host);
 }
 </script>
 

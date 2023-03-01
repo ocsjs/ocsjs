@@ -1,19 +1,16 @@
 // @ts-check
 
 import { app } from 'electron';
-import Store from 'electron-store';
 import { existsSync, mkdirSync } from 'fs';
-import { appStore } from '../store';
+import { appStore, store } from '../store';
 import { valid, coerce, clean, gt, SemVer } from 'semver';
 import defaultsDeep from 'lodash/defaultsDeep';
 
 /**
  * 初始化配置
  */
-export function initStore() {
-	const store = new Store<typeof appStore>();
-
-	const version = store.get('version');
+export async function initStore() {
+	const version = store.store.version;
 
 	// 是否需要初始化
 	if (typeof version === 'string') {
@@ -26,9 +23,11 @@ export function initStore() {
 			store.store = defaultsDeep(store.store, appStore);
 		}
 	} else {
-		const browser = store.store.render?.browser || {};
+		const render = store.store.render || {};
 		// 初始化设置
-		store.store = Object.assign(appStore, { browser });
+		store.store = appStore;
+		// 恢复 render 数据
+		store.store.render = render;
 	}
 
 	if (!existsSync(store.store.paths.userDataDirsFolder)) {

@@ -1,29 +1,35 @@
 {
 	"$schema": "https://json.schemastore.org/electron-builder.json",
 	"appId": "ocs.enncy.cn",
-	"productName": "ocs",
+	"extraMetadata": {
+		"name": "OCS Desktop",
+		"description": "OCS 浏览器自动化神器，一键浏览器多开，用户脚本环境一键配置。"
+	},
+	"productName": "OCS Desktop",
 	"asar": false,
 	"copyright": "Copyright © 2021 ${author}",
 	"nsis": {
 		"oneClick": false,
 		"allowToChangeInstallationDirectory": true
 	},
+
 	"win": {
 		"icon": "public/favicon.png",
-		"artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
+		"artifactName": "ocs-${version}-setup-${os}-${arch}.${ext}",
 		"target": [
 			{
 				"target": "nsis",
 				"arch": ["x64"]
 			},
 			{
-				"target": "zip"
+				"target": "nsis",
+				"arch": ["ia32"]
 			}
 		]
 	},
 	"mac": {
 		"icon": "public/favicon.icns",
-		"artifactName": "${productName}-${version}-setup-${os}-${arch}.${ext}",
+		"artifactName": "ocs-${version}-setup-${os}-${arch}.${ext}",
 		"target": "default"
 	}
 }

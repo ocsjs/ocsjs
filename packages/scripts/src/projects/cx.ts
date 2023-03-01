@@ -1,6 +1,6 @@
+/** global Ext videojs getTeacherAjax  */
+
 import {
-	ConfigElement,
-	Config,
 	OCSWorker,
 	defaultAnswerWrapperHandler,
 	$creator,
@@ -9,7 +9,6 @@ import {
 	$script,
 	$el,
 	$gm,
-	el,
 	$$el,
 	$,
 	$model,
@@ -21,15 +20,18 @@ import {
 	splitAnswer,
 	$message,
 	MessageElement,
-	$store
+	$store,
+	domSearch,
+	domSearchAll
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
-import { auto, workConfigs } from '../utils/configs';
+import { auto, workConfigs, volume, restudy } from '../utils/configs';
 import { createWorkerControl, optimizationTextWithImage } from '../utils/work';
 import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
+import { $console } from './background';
 
 /**
  *
@@ -39,19 +41,168 @@ import Typr from 'typr.js';
  *  GM_setValue: 文件太大影响I/O速度
  */
 // @ts-ignore
-$gm.unsafeWindow.typrMapping = Object.create({});
+$gm.unsafeWindow.typrMapping = undefined;
+
+const state = {
+	study: {
+		currentMedia: undefined as HTMLMediaElement | undefined,
+		videojs: Object.create({})
+	}
+};
 
 export const CXProject = Project.create({
 	name: '学习通',
 	level: 99,
 	domains: ['chaoxing.com', 'edu.cn', 'org.cn'],
 	scripts: {
+		reg: new Script({
+			name: '繁体字识别',
+			url: [['章节测试', '/work/doHomeWorkNew']],
+			hideInPanel: true,
+			oncomplete() {
+				setTimeout(async () => {
+					await mappingRecognize();
+				}, 3000);
+			}
+		}),
+		studyDispatcher: new Script({
+			name: '课程学习调度器',
+			url: [['课程学习页面', '/mycourse/studentstudy']],
+			namespace: 'cx.new.study-dispatcher',
+			hideInPanel: true,
+			async oncomplete() {
+				// 开始任务切换
+				const restudy = CXProject.scripts.study.cfg.restudy;
+
+				$script.pin(CXProject.scripts.study);
+
+				if (!restudy) {
+					// 如果不是复习模式，则寻找需要运行的任务
+					const params = new URLSearchParams(window.location.href);
+					const mooc = params.get('mooc2');
+					/** 切换新版 */
+					if (mooc === null) {
+						params.set('mooc2', '1');
+						window.location.replace(decodeURIComponent(params.toString()));
+						return;
+					}
+
+					let chapters = CXAnalyses.getChapterInfos();
+
+					chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
+
+					if (chapters.length === 0) {
+						$message('warn', { content: '页面任务点数量为空! 请刷新重试!' });
+					} else {
+						const params = new URLSearchParams(window.location.href);
+						const courseId = params.get('courseId');
+						const classId = params.get('clazzid');
+						setTimeout(() => {
+							//  进入需要进行的章节，并且当前章节未被选中
+							if ($$el(`.posCatalog_active[id="cur${chapters[0].chapterId}"]`).length === 0) {
+								$gm.unsafeWindow.getTeacherAjax(courseId, classId, chapters[0].chapterId);
+							}
+						}, 1000);
+					}
+				}
+			}
+		}),
 		study: new Script({
 			name: '课程学习',
 			namespace: 'cx.new.study',
-			url: []
+			url: [
+				['任务点页面', '/knowledge/cards'],
+				['阅读任务点', '/readsvr/book/mooc']
+			],
+			configs: {
+				playbackRate: {
+					label: '视频倍速',
+					tag: 'select',
+					attrs: {
+						title:
+							'高倍速(大于1倍)可能导致: \n- 记录清空\n- 频繁验证码\n超星后台可以看到学习时长\n请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。'
+					},
+					defaultValue: '1',
+					onload() {
+						this.append(
+							...$creator.selectOptions(this.getAttribute('value') || '', [
+								['1', '1x'],
+								['2', '2x'],
+								['4', '4x'],
+								['8', '8x'],
+								['16', '16x']
+							])
+						);
+					}
+				},
+				volume,
+				restudy,
+				...workConfigs,
+				forceWork: {
+					label: '强制答题',
+					defaultValue: false,
+					attrs: {
+						type: 'checkbox',
+						title:
+							'当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)'
+					}
+				},
+				'randomWork-choice': {
+					defaultValue: false,
+					label: '随机选择',
+					attrs: { type: 'checkbox', title: '随机选择任意一个选项' }
+				},
+				'randomWork-complete': {
+					defaultValue: false,
+					label: '随机填空',
+					attrs: { type: 'checkbox', title: '随机填写以下任意一个文案' }
+				},
+				'randomWork-completeTexts-textarea': {
+					defaultValue: ['不会', '不知道', '不清楚', '不懂', '不会写'].join('\n'),
+					label: '随机填空文案',
+					tag: 'textarea',
+					attrs: { title: '每行一个，随机填入' }
+				},
+
+				tasks: {
+					defaultValue: []
+				}
+			},
+			async oncomplete() {
+				/** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */
+				if (/\/readsvr\/book\/mooc/.test(location.href)) {
+					$console.log('阅读脚本启动');
+					setTimeout(() => {
+						// @ts-ignore
+						// eslint-disable-next-line no-undef
+						readweb.goto(epage);
+					}, 5000);
+
+					return;
+				}
+
+				await $.sleep(5000);
+
+				const updateMediaState = () => {
+					if (state.study.currentMedia) {
+						// 倍速设置
+						state.study.currentMedia.playbackRate = parseInt(this.cfg.playbackRate);
+						// 音量设置
+						state.study.currentMedia.volume = this.cfg.volume;
+					}
+				};
+
+				this.onConfigChange('playbackRate', updateMediaState);
+				this.onConfigChange('volume', updateMediaState);
+
+				await study({
+					...this.cfg,
+					playbackRate: parseInt(this.cfg.playbackRate),
+					workOptions: { ...CommonProject.scripts.settings.cfg, upload: this.cfg.upload }
+				});
+			}
 		}),
-		'chapter-guide': new Script({
+		chapterGuide: new Script({
 			name: '章节提示',
 			namespace: 'cx.chapter.guide',
 			url: [['课程章节', '/mooc2-ans/mycourse/studentcourse']],
@@ -65,6 +216,7 @@ export const CXProject = Project.create({
 				}
 			},
 			oncomplete() {
+				$script.pin(this);
 				const run = () => {
 					if (this.cfg.autoStudy) {
 						this.cfg.notes = '请点击任意章节进入课程，5秒后自动进入。';
@@ -87,133 +239,6 @@ export const CXProject = Project.create({
 				this.onConfigChange('autoStudy', run);
 			}
 		}),
-		login: new Script({
-			name: '登录脚本',
-			url: [['新版登录页面', 'passport2.chaoxing.com/login']],
-			level: 9,
-			namespace: 'cx.new.login',
-			configs: {
-				notes: {
-					defaultValue: el('ul', [
-						el('li', '脚本会自动输入账号密码，但是需要手动填写验证码。'),
-						el('li', '脚本用于辅助软件登录，如不想使用可直接关闭。')
-					]).outerHTML
-				},
-				disable: {
-					label: '关闭此脚本',
-					defaultValue: false,
-					attrs: { type: 'checkbox' }
-				},
-				type: {
-					label: '登录类型',
-					tag: 'select',
-					defaultValue: 'phone' as 'phone' | 'id',
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value') || '', [
-								['phone', '手机号登录'],
-								['id', '学号登录']
-							])
-						);
-					}
-				}
-			},
-			onrender({ panel }) {
-				let els: Record<string, ConfigElement<any>>;
-				/** 监听更改 */
-				this.onConfigChange('type', () => {
-					for (const key in els) {
-						if (Object.prototype.hasOwnProperty.call(els, key)) {
-							els[key].remove();
-						}
-					}
-					// 删除后重新渲染
-					render();
-				});
-
-				const render = () => {
-					/** 动态创建设置 */
-					const passwordConfig: Config = { label: '密码', defaultValue: '', attrs: { type: 'password' } };
-					if (this.cfg.type === 'phone') {
-						els = $creator.configs('cx.login', {
-							phone: { label: '手机', defaultValue: '' },
-							password: passwordConfig
-						});
-					} else {
-						els = $creator.configs('cx.login', {
-							school: { label: '学校', defaultValue: '' },
-							id: { label: '学号', defaultValue: '' },
-							password: passwordConfig
-						});
-					}
-
-					for (const key in els) {
-						if (Object.prototype.hasOwnProperty.call(els, key)) {
-							panel.configsBody.append(els[key]);
-						}
-					}
-				};
-
-				render();
-			},
-			oncomplete() {
-				if (!this.cfg.disable) {
-					const id = setTimeout(async () => {
-						const phoneLogin = $el('#back');
-						const idLogin = $el('#otherlogin');
-
-						const phone = $store.get('cx.login.phone');
-						const password = $store.get('cx.login.password');
-						const school = $store.get('cx.login.school');
-						const id = $store.get('cx.login.id');
-
-						if (this.cfg.type === 'phone') {
-							if (phone && password) {
-								phoneLogin?.click();
-								await $.sleep(1000);
-								// 动态生成的 config 并不会记录在 this.cfg 中,但是仍然会按照 {namespace + key} 的形式保存在本地存储中，所以这里用 getValue 进行获取
-								$el('#phone').value = $store.get('cx.login.phone');
-								$el('#pwd').value = $store.get('cx.login.password');
-
-								// 点击登录
-								await $.sleep(1000);
-								$el('#loginBtn').click();
-							} else {
-								$message('warn', { content: '信息未填写完整，登录停止。' });
-							}
-						} else {
-							if (school && id && password) {
-								idLogin?.click();
-								await $.sleep(1000);
-								const search = $el('#inputunitname');
-								search.focus();
-								search.value = $store.get('cx.login.school');
-								// @ts-ignore
-								$.unsafeWindow.search(search);
-
-								// 等待搜索
-								await $.sleep(2000);
-
-								$el('#r1b > li').click();
-								$el('#uname').value = $store.get('cx.login.id');
-								$el('#password').value = $store.get('cx.login.password');
-
-								$message('info', { content: '请输入验证码后点击登录。' });
-							} else {
-								$message('warn', { content: '信息未填写完整，登录停止。' });
-							}
-						}
-					}, 3000);
-					const close = el('a', '取消');
-					const msg = $message('info', { content: el('span', ['3秒后自动登录。', close]) });
-					close.href = '#';
-					close.onclick = () => {
-						clearTimeout(id);
-						msg.remove();
-					};
-				}
-			}
-		}),
 		guide: new Script({
 			name: '使用提示',
 			url: [
@@ -229,7 +254,7 @@ export const CXProject = Project.create({
 					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
 				}
 			},
-			oncomplete() {
+			onactive() {
 				$script.pin(this);
 			}
 		}),
@@ -282,7 +307,7 @@ export const CXProject = Project.create({
 				}
 			}
 		}),
-		'exam-redirect': new Script({
+		examRedirect: new Script({
 			name: '考试整卷预览脚本',
 			url: [['新版考试页面', 'exam-ans/exam/test/reVersionTestStartNew']],
 			hideInPanel: true,
@@ -356,7 +381,7 @@ export const CXProject = Project.create({
 				}
 			}
 		}),
-		'version-redirect': new Script({
+		versionRedirect: new Script({
 			name: '版本切换脚本',
 			url: [
 				['', 'mooc2=0'],
@@ -387,6 +412,38 @@ export const CXProject = Project.create({
 						window.location.replace(decodeURIComponent(params.toString()));
 					}
 				}
+			}
+		}),
+		rateHack: new Script({
+			name: '屏蔽倍速限制',
+			hideInPanel: true,
+			url: [['', '/ananas/modules/video/']],
+			onstart() {
+				rateHack();
+			}
+		}),
+		copyHack: new Script({
+			name: '屏蔽复制粘贴限制',
+			hideInPanel: true,
+			url: [['所有页面', /.*/]],
+			onstart() {
+				try {
+					if (typeof $gm.unsafeWindow.$EDITORUI !== 'undefined') {
+						const EDITORUI = $gm.unsafeWindow.$EDITORUI;
+						for (const key in EDITORUI) {
+							const ui = EDITORUI[key];
+							// eslint-disable-next-line no-proto
+							if (ui?.__proto__?.uiName === 'editor') {
+								ui.editor.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
+								$console.log('成功屏蔽复制粘贴限制');
+							}
+						}
+					}
+				} catch {}
+			},
+			oncomplete() {
+				this.onstart?.();
+				setTimeout(() => this.onstart?.(), 5000);
 			}
 		})
 	}
@@ -455,31 +512,7 @@ export function workOrExam(
 		work: async (ctx) => {
 			const { elements, searchResults } = ctx;
 			const typeInput = elements.type[0] as HTMLInputElement;
-			const val = parseInt(typeInput.value);
-			/**
-			 * cx 题目类型 ：
-			 * 0 单选题
-			 * 1 多选题
-			 * 2 简答题
-			 * 3 判断题
-			 * 4 填空题
-			 * 5 名词解释
-			 * 6 论述题
-			 * 7 计算题
-			 * 11 连线题
-			 */
-			const type: 'single' | 'multiple' | 'judgement' | 'completion' | 'line' | undefined =
-				val === 0
-					? 'single'
-					: val === 1
-					? 'multiple'
-					: val === 3
-					? 'judgement'
-					: [2, 4, 5, 6, 7].some((t) => t === val)
-					? 'completion'
-					: val === 11
-					? 'line'
-					: undefined;
+			const type = getQuestionType(parseInt(typeInput.value));
 
 			if (type && type !== 'line') {
 				const resolver = defaultQuestionResolve(ctx)[type];
@@ -608,11 +641,7 @@ async function mappingRecognize() {
 		$gm.unsafeWindow.top.typrMapping ||
 		// @ts-ignore
 		$gm.unsafeWindow.typrMapping ||
-		(await request('https://cdn.ocsjs.com/resources/font/table.json', {
-			type: 'GM_xmlhttpRequest',
-			method: 'get',
-			contentType: 'json'
-		}));
+		(await loadTyprMapping());
 
 	/** 判断是否有繁体字 */
 	const fontFaceEl = Array.from(document.head.querySelectorAll('style')).find((style) =>
@@ -620,11 +649,14 @@ async function mappingRecognize() {
 	);
 	// @ts-ignore
 	const fontMap = $gm.unsafeWindow.typrMapping;
+
 	if (fontFaceEl) {
 		// 解析font-cxsecret字体
 		const font = fontFaceEl.textContent?.match(/base64,([\w\W]+?)'/)?.[1];
 
 		if (font) {
+			$console.log('正在识别繁体字');
+
 			const code = Typr.parse(base64ToUint8Array(font));
 
 			// 匹配解密字体
@@ -645,13 +677,17 @@ async function mappingRecognize() {
 				for (const key in match) {
 					const word = String.fromCharCode(parseInt(key));
 					const value = String.fromCharCode(match[key]);
+
 					while (html.indexOf(word) !== -1) {
 						html = html.replace(word, value);
 					}
 				}
+
 				el.innerHTML = html;
 				el.classList.remove('font-cxsecret'); // 移除字体加密
 			});
+
+			$console.log('识别繁体字完成。');
 		}
 	}
 
@@ -663,6 +699,15 @@ async function mappingRecognize() {
 		}
 		return buffer;
 	}
+}
+
+async function loadTyprMapping() {
+	$console.log('正在加载繁体字库。');
+	return await request('https://cdn.ocsjs.com/resources/font/table.json', {
+		type: 'GM_xmlhttpRequest',
+		method: 'get',
+		contentType: 'json'
+	});
 }
 
 /**
@@ -723,3 +768,549 @@ const CXAnalyses = {
 		}) as HTMLElement[];
 	}
 };
+
+/**
+ * 屏蔽倍速限制
+ */
+function rateHack() {
+	try {
+		hack();
+		window.document.addEventListener('readystatechange', hack);
+		window.addEventListener('load', hack);
+	} catch (e) {
+		console.error(e);
+	}
+
+	function hack() {
+		const videojs = $gm.unsafeWindow.videojs;
+		const Ext = $gm.unsafeWindow.Ext;
+
+		if (typeof videojs !== 'undefined' && typeof Ext !== 'undefined') {
+			Ext.define('ans.VideoJs', {
+				override: 'ans.VideoJs',
+				constructor: function (b: any) {
+					b = b || {};
+					const e = this;
+					e.addEvents(['seekstart']);
+					e.mixins.observable.constructor.call(e, b);
+					const c = videojs(b.videojs, e.params2VideoOpt(b.params), function () {});
+					Ext.fly(b.videojs).on('contextmenu', function (f: any) {
+						f.preventDefault();
+					});
+					Ext.fly(b.videojs).on('keydown', function (f: any) {
+						if (f.keyCode === 32 || f.keyCode === 37 || f.keyCode === 39 || f.keyCode === 107) {
+							f.preventDefault();
+						}
+					});
+					if (c.videoJsResolutionSwitcher) {
+						c.on('resolutionchange', function () {
+							const g = c.currentResolution();
+							const f = g.sources ? g.sources[0].res : false;
+							Ext.setCookie('resolution', f);
+						});
+					}
+				}
+			});
+		}
+	}
+}
+
+/**
+ * cx 任务学习
+ */
+export async function study(opts: {
+	auto: boolean;
+	restudy: boolean;
+	forceWork: boolean;
+	playbackRate: number;
+	volume: number;
+	workOptions: CommonWorkOptions;
+}) {
+	const tasks = searchTask(opts);
+
+	for (const task of tasks) {
+		try {
+			await $.sleep(3000);
+			await task();
+		} catch (e) {
+			$console.error('未知错误', e);
+		}
+	}
+
+	// 下一章按钮
+	const { next } = domSearch({ next: '.next[onclick^="PCount.next"]' }, top?.document);
+
+	// 如果按钮显示
+	if (next !== null && next.style.display === 'block') {
+		// 如果即将切换到下一章节
+		if (CXAnalyses.isInFinalTab()) {
+			if (CXAnalyses.isStuckInBreakingMode()) {
+				$message('warn', {
+					content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
+				});
+				return;
+			}
+		}
+
+		$console.log('完成, 即将跳转, 如卡死请自行点击下一章。');
+		await $.sleep(3000);
+		next.click();
+		// 如果当前存在任务点未完成，则跳过，运行下一章
+		await $.sleep(3000);
+		domSearch({ confirm: '.jobFinishTip .nextChapter' }, top?.document).confirm?.click();
+	} else {
+		if (CXAnalyses.isInFinalChapter()) {
+			if (CXAnalyses.isFinishedAllChapters()) {
+				$message('success', { content: '全部任务点已完成！' });
+			} else {
+				$message('warn', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
+			}
+		} else {
+			$message('error', { content: '下一章按钮不存在，请尝试刷新或者手动切换下一章。' });
+		}
+	}
+}
+
+export function searchIFrame(root: Document) {
+	let list = Array.from(root.querySelectorAll('iframe'));
+	const result: HTMLIFrameElement[] = [];
+	while (list.length) {
+		const frame = list.shift();
+
+		try {
+			if (frame && frame?.contentWindow?.document) {
+				result.push(frame);
+				const frames = frame?.contentWindow?.document.querySelectorAll('iframe');
+				list = list.concat(Array.from(frames || []));
+			}
+		} catch (e) {
+			// @ts-ignore
+			console.log(e.message);
+			console.log({ frame });
+		}
+	}
+	return result;
+}
+
+/**
+ * 搜索任务点
+ */
+function searchTask(opts: {
+	auto: boolean;
+	restudy: boolean;
+	forceWork: boolean;
+	playbackRate: number;
+	volume: number;
+	workOptions: CommonWorkOptions;
+}): (() => Promise<void> | undefined)[] {
+	return searchIFrame(document)
+		.map((frame) => {
+			const { media, read, chapterTest } = domSearch(
+				{
+					media: 'video,audio',
+					chapterTest: '.TiMu',
+					read: '#img.imglook'
+				},
+				frame.contentDocument || document
+			);
+
+			function getJob() {
+				if (media) {
+					return mediaTask(opts, media as any, frame);
+				} else if (read) {
+					return readTask(frame);
+				} else if (chapterTest) {
+					return chapterTestTask(frame, opts.auto, opts.workOptions);
+				}
+			}
+			if (media || read || chapterTest) {
+				return () => {
+					// @ts-ignore
+					let _parent = frame.contentWindow;
+					// @ts-ignore
+					let jobIndex = getValidNumber(frame.contentWindow?._jobindex, _parent._jobindex);
+
+					while (_parent) {
+						// @ts-ignore
+						jobIndex = getValidNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
+						// @ts-ignore
+						const attachments = _parent?.JC?.attachments || _parent.attachments;
+
+						if (attachments && typeof jobIndex === 'number') {
+							const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
+							const jobName = name || title || (bookname ? bookname + author : undefined) || '未知任务';
+
+							// 直接重复学习，不执行任何判断, 章节测试和阅读等任务除外
+							if (opts.restudy && !chapterTest && !read) {
+								$console.log(jobName, '即将重新学习。');
+								return getJob();
+							} else if (attachments[jobIndex]?.job === true) {
+								$console.log(jobName, '即将开始。');
+								return getJob();
+							} else if (chapterTest && opts.forceWork) {
+								$console.log(jobName, '开启强制答题。');
+								return getJob();
+							} else {
+								$console.log(jobName, '已经完成，即将跳过。');
+								break;
+							}
+						}
+						// @ts-ignore
+						if (_parent.parent === _parent) {
+							break;
+						}
+						// @ts-ignore
+						_parent = _parent.parent;
+					}
+				};
+			} else {
+				return undefined;
+			}
+		})
+		.filter((f) => f) as any[];
+}
+
+/**
+ * 永久固定显示视频进度
+ */
+export function fixedVideoProgress() {
+	if (state.study.videojs) {
+		const { bar } = domSearch({ bar: '.vjs-control-bar' }, state.study.videojs as any);
+		if (bar) {
+			bar.style.opacity = '1';
+		}
+	}
+}
+
+/**
+ * 播放视频和音频
+ */
+function mediaTask(
+	setting: { playbackRate: number; volume: number },
+	media: HTMLMediaElement,
+	frame: HTMLIFrameElement
+) {
+	const { playbackRate = 1, volume = 0 } = setting;
+
+	// @ts-ignore
+	const { videojs } = domSearch({ videojs: '#video,#audio' }, frame.contentDocument || document);
+
+	if (!videojs) {
+		$message('error', { content: '视频检测不到，请尝试刷新或者手动切换下一章。' });
+		return;
+	}
+
+	state.study.videojs = videojs;
+	state.study.currentMedia = media;
+
+	// 固定视频进度
+	fixedVideoProgress();
+
+	/**
+	 * 视频播放
+	 */
+	return new Promise<void>((resolve) => {
+		if (media) {
+			media.volume = volume;
+			media.play();
+			media.playbackRate = playbackRate;
+
+			async function playFunction() {
+				// @ts-ignore
+				if (!media.ended && !media.__played__) {
+					// 重新播放
+					await $.sleep(1000);
+					media.play();
+				} else {
+					// @ts-ignore
+					media.__played__ = true;
+					$console.log('视频播放完毕');
+					// @ts-ignore
+					media.removeEventListener('pause', playFunction);
+				}
+			}
+
+			media.addEventListener('pause', playFunction);
+
+			media.addEventListener('ended', () => resolve());
+		}
+	});
+}
+
+/**
+ * 阅读 ppt
+ */
+async function readTask(frame?: HTMLIFrameElement) {
+	// @ts-ignore
+	const finishJob = frame?.contentWindow?.finishJob;
+	if (finishJob) finishJob();
+	await $.sleep(3000);
+}
+
+/**
+ * 章节测验
+ */
+async function chapterTestTask(
+	frame: HTMLIFrameElement,
+	auto: boolean,
+	{ answererWrappers, period, timeout, retry, upload, thread, skipAnswered }: CommonWorkOptions
+) {
+	if (!auto) {
+		return $console.warn('自动答题未开启，请在课程学习设置中开启或者忽略此信息。');
+	}
+
+	$console.info('开始章节测试');
+
+	const frameWindow = frame.contentWindow?.window;
+
+	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
+
+	// 清空搜索结果
+	$store.setTab('common.work-results.results', []);
+	// 置顶搜索结果面板
+	$script.pin(CommonProject.scripts.workResults);
+
+	/** 新建答题器 */
+	const worker = new OCSWorker({
+		root: TiMu,
+		elements: {
+			title: '.Zy_TItle .clearfix',
+			/**
+			 * 兼容各种选项
+			 *
+			 * ul li .after 单选多选
+			 * ul li label:not(.after) 判断题
+			 * ul li textarea 填空题
+			 */
+			options: 'ul li .after,ul li textarea,ul textarea,ul li label:not(.before)',
+			type: 'input[id^="answertype"]',
+			lineAnswerInput: '.line_answer input[name^=answer]',
+			lineSelectBox: '.line_answer_ct .selectBox ',
+			checkedChoice: '[class="before-after-checkbox Hover"]'
+		},
+		/** 其余配置 */
+		requestPeriod: period ?? 3,
+		resolvePeriod: 0,
+		timeout: timeout ?? 30,
+		retry: retry ?? 2,
+		thread: thread ?? 1,
+		/** 默认搜题方法构造器 */
+		answerer: (elements, type, ctx) => {
+			const title: string = StringUtils.of(
+				elements.title
+					.filter((t) => t.innerText)
+					.map((t) => optimizationTextWithImage(t))
+					.join(',')
+			)
+				.nowrap()
+				.nospace()
+				.toString()
+				.trim()
+				/** 新版题目冗余 */
+				.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
+				/** 旧版题目冗余 */
+				.replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
+				.trim();
+
+			if (title) {
+				return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
+			} else {
+				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+			}
+		},
+
+		work: async (ctx) => {
+			const { elements, searchResults } = ctx;
+			const typeInput = elements.type[0] as HTMLInputElement;
+			const type = getQuestionType(parseInt(typeInput.value));
+
+			if (type && type !== 'line') {
+				const resolver = defaultQuestionResolve(ctx)[type];
+
+				const handler: DefaultWork<any>['handler'] = (type, answer, option) => {
+					// 如果存在已经选择的选项
+					if (skipAnswered && elements.checkedChoice.length) {
+						// 跳过
+					} else {
+						if (type === 'judgement' || type === 'single' || type === 'multiple') {
+							if (elements.checkedChoice.length === 0) {
+								option.click();
+							}
+						} else if (type === 'completion' && answer.trim()) {
+							const text = option.querySelector('textarea');
+							const textareaFrame = option.querySelector('iframe');
+							if (text) {
+								text.value = answer;
+							}
+							if (textareaFrame?.contentDocument) {
+								textareaFrame.contentDocument.body.innerHTML = answer;
+							}
+							if (option.parentElement) {
+								/** 如果存在保存按钮则点击 */
+								$el('[onclick*=saveQuestion]', option.parentElement)?.click();
+							}
+						}
+					}
+				};
+
+				return await resolver(searchResults, elements.options, handler);
+			}
+			// 连线题自定义处理
+			else if (type && type === 'line') {
+				for (const answers of searchResults.map((res) => res.answers.map((ans) => ans.answer))) {
+					let ans = answers;
+					if (ans.length === 1) {
+						ans = splitAnswer(ans[0]);
+					}
+					if (ans.length !== 0 && elements.lineAnswerInput) {
+						//  选择答案
+						for (let index = 0; index < elements.lineSelectBox.length; index++) {
+							const box = elements.lineSelectBox[index];
+							if (ans[index]) {
+								$el(`li[data=${ans[index]}] a`, box).click();
+								await $.sleep(200);
+							}
+						}
+
+						return { finish: true };
+					}
+				}
+
+				return { finish: false };
+			}
+
+			return { finish: false };
+		},
+
+		/** 完成答题后 */
+		async onResultsUpdate(res, curr) {
+			await $store.setTab('common.work-results.results', $.simplifyWorkResult(res));
+
+			// 没有完成时随机作答
+			if (!curr.result?.finish && curr.resolving === false) {
+				const options = curr.ctx?.elements?.options || [];
+
+				const typeInput = curr.ctx?.elements?.type[0] as HTMLInputElement | undefined;
+				const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
+
+				if (
+					CXProject.scripts.study.cfg['randomWork-choice'] &&
+					(type === 'judgement' || type === 'single' || type === 'multiple')
+				) {
+					$console.log('正在随机作答');
+
+					const option = options[Math.floor(Math.random() * options.length)];
+					// @ts-ignore 随机选择选项
+					option.parentElement?.querySelector('a,label')?.click();
+				} else if (CXProject.scripts.study.cfg['randomWork-complete'] && type === 'completion') {
+					$console.log('正在随机作答');
+
+					// 随机填写答案
+					for (const option of options) {
+						const textarea = option.parentElement?.querySelector('textarea');
+						const completeTexts = CXProject.scripts.study.cfg['randomWork-completeTexts-textarea']
+							.split('\n')
+							.filter(Boolean);
+						const text = completeTexts[Math.floor(Math.random() * completeTexts.length)];
+						const textareaFrame = option.parentElement?.querySelector('iframe');
+
+						if (text) {
+							if (textarea) {
+								textarea.value = text;
+							}
+							if (textareaFrame?.contentDocument) {
+								textareaFrame.contentDocument.body.innerHTML = text;
+							}
+						} else {
+							$console.error('请设置随机填空的文案');
+						}
+
+						await $.sleep(500);
+					}
+				}
+			}
+		},
+		onResolveUpdate(res) {
+			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
+			CommonProject.scripts.workResults.cfg.requestIndex = worker.requestIndex;
+			CommonProject.scripts.workResults.cfg.resolverIndex = worker.resolverIndex;
+		},
+		async onElementSearched(elements) {
+			const typeInput = elements.type[0] as HTMLInputElement;
+			const type = parseInt(typeInput.value);
+			/** 判断题转换成文字，以便于答题程序判断 */
+			if (type === 3) {
+				elements.options.forEach((option) => {
+					const ri = option.querySelector('.ri');
+					const span = document.createElement('span');
+					span.innerText = ri ? '√' : '×';
+					option.appendChild(span);
+				});
+			}
+		}
+	});
+
+	const results = await worker.doWork();
+
+	// 处理提交
+	await worker.uploadHandler({
+		type: upload,
+		results,
+		async callback(finishedRate, uploadable) {
+			$message('info', {
+				content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
+			});
+
+			await $.sleep(5000);
+
+			if (uploadable) {
+				// @ts-ignore 提交
+				frameWindow.btnBlueSubmit();
+
+				await $.sleep(3000);
+				/** 确定按钮 */
+				// @ts-ignore 确定
+				frameWindow.submitCheckTimes();
+			} else {
+				// @ts-ignore 禁止弹窗
+				frameWindow.alert = () => {};
+				// @ts-ignore 暂时保存
+				frameWindow.noSubmit();
+			}
+		}
+	});
+}
+
+/**
+ * 获取有效的数字
+ * @param nums
+ */
+export function getValidNumber(...nums: number[]) {
+	return nums.map((num) => (typeof num === 'number' ? num : undefined)).find((num) => num !== undefined);
+}
+
+/**
+ * cx 题目类型 ：
+ * 0 单选题
+ * 1 多选题
+ * 2 简答题
+ * 3 判断题
+ * 4 填空题
+ * 5 名词解释
+ * 6 论述题
+ * 7 计算题
+ * 11 连线题
+ */
+function getQuestionType(val: number): 'single' | 'multiple' | 'judgement' | 'completion' | 'line' | undefined {
+	return val === 0
+		? 'single'
+		: val === 1
+		? 'multiple'
+		: val === 3
+		? 'judgement'
+		: [2, 4, 5, 6, 7].some((t) => t === val)
+		? 'completion'
+		: val === 11
+		? 'line'
+		: undefined;
+}

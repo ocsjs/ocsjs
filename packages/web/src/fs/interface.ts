@@ -1,3 +1,5 @@
+import { RawPlaywrightScript } from '../components/playwright-scripts';
+
 export type FolderType = 'folder' | 'root';
 export type BrowserType = 'browser';
 export type EntityTypes = BrowserType | FolderType;
@@ -48,6 +50,8 @@ export interface BrowserOptions extends EntityOptions {
 	histories: BrowserOperateHistory[];
 	/** 浏览器存储，可通过接口与脚本进行交互访问 */
 	store: Record<string, any>;
+	/** 自动化脚本列表 */
+	playwrightScripts: RawPlaywrightScript[];
 }
 
 /**

@@ -144,13 +144,20 @@ export const $ = {
 			textContent: el?.textContent
 		} as any;
 	},
+
 	/**
 	 * 监听页面宽度变化
+	 * @param el 任意元素，如果此元素被移除，则不执行 resize 回调
+	 * @param handler resize 回调
 	 */
 	onresize<E extends HTMLElement>(el: E, handler: (el: E) => void) {
 		const resize = debounce(() => {
-			if (el.parentElement === null) {
-				window.removeEventListener('reset', resize);
+			/**
+			 * 如果元素被删除，则移除监听器
+			 * 不使用 el.parentElement 是因为如果是顶级元素，例如 shadowRoot 中的一级子元素， el.parentNode 不为空，但是 el.parentElement 为空
+			 */
+			if (el.parentNode === null) {
+				window.removeEventListener('resize', resize);
 			} else {
 				handler(el);
 			}

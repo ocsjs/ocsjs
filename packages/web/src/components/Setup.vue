@@ -171,7 +171,7 @@ async function downloadExtension(extension: ExtensionResource) {
 async function downloadScript() {
 	const name = 'OCS 网课助手';
 	state.downloading = `正在下载脚本 : ${name} ...`;
-	await addScriptFromUrl({ url: state.resource.ocsjs, name: name });
+	await addScriptFromUrl(state.resource.ocsjs);
 }
 
 function notNow() {

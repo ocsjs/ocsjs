@@ -190,13 +190,15 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 					}
 				}
 
-				results[i] = {
+				const currentResult = {
 					requesting: false,
 					resolving: true,
 					ctx: ctx,
 					error: error,
 					type: type
 				};
+
+				results[i] = currentResult;
 
 				if (resultPromise) {
 					resolvers.push({
@@ -210,7 +212,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 					});
 				}
 
-				this.opts.onResultsUpdate?.(results);
+				await this.opts.onResultsUpdate?.(results, currentResult);
 
 				/** 间隔 */
 				await $.sleep((this.opts.requestPeriod ?? 3) * 1000);
@@ -232,7 +234,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 							/** 设置答题完成 */
 							results[resolver.index].resolving = false;
 							/** 回调 */
-							await this.opts.onResultsUpdate?.(results);
+							await this.opts.onResultsUpdate?.(results, results[resolver.index]);
 							await this.opts.onResolveUpdate?.(results[resolver.index]);
 						} catch (e) {
 							results[resolver.index].result = { finish: false };

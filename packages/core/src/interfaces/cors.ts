@@ -1,4 +1,5 @@
 import { $ } from '../utils/common';
+import { $const } from '../utils/const';
 import { $store } from '../utils/store';
 
 /**
@@ -35,7 +36,7 @@ export class CorsEventEmitter {
 	 */
 	emit(name: string, args: any[], callback: (returnValue: any, remote: boolean) => void): void {
 		$store
-			.getTab('uid')
+			.getTab($const.TAB_UID)
 			.then((uid: string) => {
 				const id = $.uuid().replace(/-/g, '');
 				const key = uid + '.' + this.eventKey(name);
@@ -65,14 +66,14 @@ export class CorsEventEmitter {
 
 	/**
 	 * 监听跨域事件
-	 * @param name 事件名
+	 * @param name 事件名，全局唯一
 	 * @param handler 处理器，可以通过处理器返回任意值作为另外一端的回调值
 	 * @returns
 	 */
 	on(name: string, handler: (args: any[]) => any) {
 		return new Promise<number>((resolve) => {
 			$store
-				.getTab('uid')
+				.getTab($const.TAB_UID)
 				.then((uid: string) => {
 					const key = uid + '.' + this.eventKey(name);
 					const originId = this.eventMap.get(key);

@@ -7,6 +7,7 @@ import { Entity } from './entity';
 import { Folder, root } from './folder';
 import { BrowserOptions, BrowserOperateHistory, Tag, BrowserType, EntityOptions } from './interface';
 import { remote } from '../utils/remote';
+import { RawPlaywrightScript } from '../components/playwright-scripts';
 
 export class Browser extends Entity implements BrowserOptions {
 	type: BrowserType;
@@ -17,6 +18,7 @@ export class Browser extends Entity implements BrowserOptions {
 	histories: BrowserOperateHistory[];
 	parent: string;
 	store: Record<string, any> = reactive({});
+	playwrightScripts: RawPlaywrightScript[];
 
 	constructor(opts: BrowserOptions & EntityOptions) {
 		super(opts);
@@ -28,6 +30,7 @@ export class Browser extends Entity implements BrowserOptions {
 		this.histories = opts.histories;
 		this.parent = opts.parent;
 		this.store = opts.store;
+		this.playwrightScripts = opts.playwrightScripts;
 	}
 
 	/**
@@ -57,9 +60,9 @@ export class Browser extends Entity implements BrowserOptions {
 	async relaunch() {
 		const process = Process.from(this.uid);
 		process?.emit('relaunching');
-		this.histories.unshift({ action: '重启', time: Date.now() });
 		await process?.close();
 		await process?.launch();
+		this.histories.unshift({ action: '重启', time: Date.now() });
 		process?.emit('relaunched');
 	}
 

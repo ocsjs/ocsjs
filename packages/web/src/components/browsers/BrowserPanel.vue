@@ -1,18 +1,32 @@
 <template>
 	<div
 		ref="profileElement"
-		class="overflow-auto profile pt-2"
+		class="overflow-auto profile"
 	>
+		<div class="float-end ps-3 pe-3">
+			<BrowserOperators
+				:browser="instance"
+				tooltip-position="br"
+				icon-class="fs-4"
+			>
+				<template #split>
+					<a-divider direction="vertical" />
+				</template>
+			</BrowserOperators>
+		</div>
+
+		<a-divider class="mt-1 mb-1" />
+
 		<a-descriptions :column="1">
 			<a-descriptions-item label="文件名">
-				{{ browser.name }}
+				{{ instance.name }}
 			</a-descriptions-item>
 			<a-descriptions-item label="创建时间">
-				{{ datetime(browser.createTime) }}
+				{{ datetime(instance.createTime) }}
 			</a-descriptions-item>
 			<a-descriptions-item label="文件位置">
 				{{
-					Folder.from(browser.parent)
+					Folder.from(instance.parent)
 						?.flatParents()
 						.map((f) => f.name)
 						.join(' / ')
@@ -25,11 +39,11 @@
 				</a-button>
 			</a-descriptions-item>
 			<a-descriptions-item label="缓存路径">
-				{{ browser.cachePath }}
+				{{ instance.cachePath }}
 			</a-descriptions-item>
 		</a-descriptions>
 
-		<a-divider />
+		<a-divider class="mt-1 mb-1" />
 
 		<a-descriptions
 			v-if="instance"
@@ -61,6 +75,34 @@
 					}"
 					allow-clear
 				/>
+			</a-descriptions-item>
+
+			<a-descriptions-item label="自动化脚本">
+				<div
+					id="bp-playwright-scripts"
+					data-label="自动化脚本"
+				>
+					<a-tooltip>
+						<template #content>
+							启动浏览器后会运行 “自动化脚本”。每个自动化脚本会开启一个新的页面。 选择并确定后,
+							需要在浏览器设置里修改配置。
+							<a-divider class="mt-1 mb-1" />
+							提示1：自动化脚本拥有操控页面的所有权限，与用户脚本不同的是，用户脚本是运行在页面中，权限比较少。<br />
+							提示2：通常用来辅助用户脚本一起配合运行。
+						</template>
+
+						<a-button
+							size="mini"
+							@click="state.showPlaywrightScriptSelector = true"
+						>
+							设置 <icon-settings />
+						</a-button>
+					</a-tooltip>
+
+					<div class="mt-2">
+						<PlaywrightScripts v-model:playwright-scripts="instance.playwrightScripts"></PlaywrightScripts>
+					</div>
+				</div>
 			</a-descriptions-item>
 
 			<a-descriptions-item label="OCS配置">
@@ -101,13 +143,22 @@
 				</a-modal>
 			</a-descriptions-item>
 
+			<a-descriptions-item label="日志输出">
+				<div
+					id="bp-xterm"
+					data-label="日志输出"
+				>
+					<XTerm :uid="instance.uid"></XTerm>
+				</div>
+			</a-descriptions-item>
+
 			<a-descriptions-item label="操作历史">
 				<div
 					id="bp-file-history"
 					data-label="操作历史"
 					class="histories"
 				>
-					<template v-if="browser.histories.length">
+					<template v-if="instance.histories.length">
 						<a-button
 							size="mini"
 							class="mb-2"
@@ -122,7 +173,7 @@
 
 						<a-timeline>
 							<template
-								v-for="(history, index) of browser.histories"
+								v-for="(history, index) of instance.histories"
 								:key="index"
 							>
 								<a-timeline-item>
@@ -145,6 +196,18 @@
 				</div>
 			</a-descriptions-item>
 		</a-descriptions>
+
+		<a-modal
+			v-model:visible="state.showPlaywrightScriptSelector"
+			:footer="false"
+		>
+			<template #title> 选择自动化脚本 </template>
+			<PlaywrightScriptSelector
+				v-model:playwright-scripts="instance.playwrightScripts"
+				style="max-height: 70vh; overflow: overlay"
+				@confirm="state.showPlaywrightScriptSelector = false"
+			></PlaywrightScriptSelector>
+		</a-modal>
 	</div>
 </template>
 
@@ -152,7 +215,6 @@
 import { store } from '../../store';
 import { Browser } from '../../fs/browser';
 import { datetime } from '../../utils';
-
 import Tags from '../Tags.vue';
 import Icon from '../Icon.vue';
 import OCSPanel from '../OCSPanel.vue';
@@ -160,6 +222,10 @@ import { BrowserOptions, Tag } from '../../fs/interface';
 import { Folder } from '../../fs/folder';
 import { currentBrowser } from '../../fs/index';
 import { reactive, onMounted, nextTick, ref } from 'vue';
+import PlaywrightScriptSelector from '../playwright-scripts/PlaywrightScriptSelector.vue';
+import PlaywrightScripts from '../playwright-scripts/PlaywrightScriptList.vue';
+import XTerm from '../XTerm.vue';
+import BrowserOperators from './BrowserOperators.vue';
 
 const props = defineProps<{
 	browser: BrowserOptions;
@@ -169,7 +235,8 @@ const instance = Browser.from(props.browser.uid);
 const profileElement = ref<HTMLElement>();
 
 const state = reactive({
-	showCode: false
+	showCode: false,
+	showPlaywrightScriptSelector: false
 });
 
 function createTag(tag: Tag) {
@@ -208,7 +275,7 @@ function clearHistory() {
 onMounted(() => {
 	nextTick(() => {
 		const configs = Array.from(document.querySelectorAll('[id^=bp-]')) as HTMLElement[];
-		console.log(configs);
+
 		const toc = document.createElement('div');
 		toc.classList.add('bp-toc');
 		const bp = document.querySelector('#browser-panel');

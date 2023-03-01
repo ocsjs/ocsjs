@@ -1,43 +1,51 @@
 <template>
 	<a-config-provider :locale="zhCN">
 		<div class="row h-100 w-100 p-0 m-0">
-			<div class="col-auto border-end sider h-100">
-				<div class="sider-items">
-					<template
-						v-for="(item, index) in ((routes.find((r) => r.name === 'index')?.children || []) as CustomRouteType[])"
-						:key="index"
-					>
-						<div
-							class="sider-item"
-							@click="clickMenu(item)"
-						>
-							<a-tooltip
-								:content="item.meta.title"
-								position="right"
-							>
-								<Icon
-									class="icon"
-									:type="item.meta.icon"
-									:theme="item.name === currentRoute.name ? 'filled' : 'outlined'"
-								/>
-							</a-tooltip>
-						</div>
-					</template>
-				</div>
-
-				<div class="text-secondary version">
-					{{ version }}
-				</div>
-			</div>
 			<div class="col p-0 m-0">
 				<div class="row main h-100 w-100 p-0 m-0">
 					<div class="col-12 p-0 m-0"><Title id="title" /></div>
-					<div class="col-12 p-0 m-0 overflow-auto">
-						<router-view v-slot="{ Component }">
-							<keep-alive>
-								<component :is="Component" />
-							</keep-alive>
-						</router-view>
+					<div class="col-12 p-0 m-0 overflow-auto d-flex">
+						<div
+							style="width: 48px"
+							class="h-100"
+						>
+							<div class="col-auto sider h-100">
+								<div class="sider-items">
+									<template
+										v-for="(item, index) in 
+									((routes.find((r) => r.name === 'index')?.children || []) as CustomRouteType[])"
+										:key="index"
+									>
+										<div
+											class="sider-item"
+											@click="clickMenu(item)"
+										>
+											<a-tooltip
+												:content="item.meta.title"
+												position="right"
+											>
+												<Icon
+													class="icon"
+													:type="item.meta.icon"
+													:theme="item.name === currentRoute.name ? 'filled' : 'outlined'"
+												/>
+											</a-tooltip>
+										</div>
+									</template>
+								</div>
+
+								<div class="text-secondary version mb-1">
+									{{ version }}
+								</div>
+							</div>
+						</div>
+						<div style="width: calc(100% - 48px)">
+							<router-view v-slot="{ Component }">
+								<keep-alive>
+									<component :is="Component" />
+								</keep-alive>
+							</router-view>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -47,6 +55,7 @@
 		<a-drawer
 			v-if="currentBrowser"
 			id="browser-panel"
+			popup-container="#component"
 			:closable="false"
 			:visible="!!currentBrowser"
 			:width="600"
@@ -72,12 +81,12 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouteRecordRaw, useRouter } from 'vue-router';
 import Title from '../components/Title.vue';
 import { router, routes, CustomRouteType } from '../route';
-import { changeTheme, setAlwaysOnTop, setAutoLaunch, store } from '../store';
-import { about, fetchRemoteNotify, sleep } from '../utils';
+import { store } from '../store';
+import { about, changeTheme, fetchRemoteNotify, setAlwaysOnTop, setAutoLaunch, sleep } from '../utils';
 import { notify } from '../utils/notify';
 import { remote } from '../utils/remote';
 import Icon from '../components/Icon.vue';
@@ -89,6 +98,7 @@ import { currentBrowser } from '../fs';
 import { electron, inBrowser } from '../utils/node';
 import Setup from '../components/Setup.vue';
 import { getWindowsRelease } from '../utils/os';
+import cloneDeep from 'lodash/cloneDeep';
 
 const { ipcRenderer } = electron;
 const version = ref('');
@@ -167,6 +177,39 @@ onMounted(async () => {
 			);
 		}
 	});
+
+	/** 监听主题变化 */
+	watch(
+		() => cloneDeep(store.render.setting.theme),
+		(cur, prev) => {
+			if (cur.dark) {
+				// 设置为暗黑主题
+				document.body.setAttribute('arco-theme', 'dark');
+			} else {
+				// 恢复亮色主题
+				document.body.removeAttribute('arco-theme');
+			}
+		}
+	);
+
+	watch(
+		store,
+		(newStore) => {
+			if (inBrowser) {
+				localStorage.setItem('ocs-app-store', JSON.stringify(newStore));
+			} else {
+				remote['electron-store'].set('store', JSON.parse(JSON.stringify(newStore)));
+			}
+		},
+		{ deep: true }
+	);
+
+	watch(() => store.window.autoLaunch, setAutoLaunch);
+	watch(() => store.window.alwaysOnTop, setAlwaysOnTop);
+
+	window.onresize = () => {
+		store.render.state.height = document.documentElement.clientHeight;
+	};
 });
 
 onUnmounted(() => {
@@ -241,13 +284,16 @@ function onResize() {
 	-webkit-app-region: no-drag;
 	user-select: none;
 	width: 48px;
+	flex: 0 0 48px;
 	padding: 4px;
 	text-align: center;
 	display: flex;
 	justify-content: center;
+	border-right: 1px solid #f3f3f3;
 
 	.sider-items {
 		padding-top: 12px;
+
 		.sider-item + .sider-item {
 			margin-top: 22px;
 		}
@@ -307,6 +353,10 @@ function onResize() {
 			background-color: #ececec;
 		}
 	}
+}
+
+.app-container {
+	flex: 0 0 auto;
 }
 
 @keyframes slide-in {

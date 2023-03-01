@@ -1,12 +1,10 @@
 import debounce from 'lodash/debounce';
-import cloneDeep from 'lodash/cloneDeep';
 import {
 	el,
-	$,
 	defaultAnswerWrapperHandler,
 	$model,
 	$message,
-	parseAnswererWrappers,
+	AnswerWrapperParser,
 	$gm,
 	$store,
 	Project,
@@ -17,6 +15,7 @@ import {
 
 import type { ScriptPanelElement, HeaderElement, AnswererWrapper } from '@ocsjs/core';
 import { definedProjects } from '../index';
+import { $console } from './background';
 
 export const CommonProject = Project.create({
 	name: '通用',
@@ -84,7 +83,7 @@ export const CommonProject = Project.create({
 									})
 								],
 								(div) => {
-									div.style.width = window.outerWidth < 1000 ? '400px' : '600px';
+									div.style.width = '400px';
 								}
 							)
 						);
@@ -187,9 +186,9 @@ export const CommonProject = Project.create({
 
 				/** 渲染结果面板 */
 				const render = async () => {
-					const results: SimplifyWorkResult[] = await $store.getTab('common.work-results.results');
+					const results: SimplifyWorkResult[] | undefined = await $store.getTab('common.work-results.results');
 
-					if (results.length) {
+					if (results?.length) {
 						// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
 						if (results[this.cfg.currentResultIndex] === undefined) {
 							this.cfg.currentResultIndex = 0;
@@ -198,10 +197,10 @@ export const CommonProject = Project.create({
 						// 渲染序号或者题目列表
 						if (this.cfg.type === 'numbers') {
 							const resultContainer = el('div', {}, (res) => {
-								res.style.width = window.outerWidth < 1000 ? '400px' : '600px';
+								res.style.width = '400px';
 							});
 
-							list.style.width = window.outerWidth < 1000 ? '400px' : '600px';
+							list.style.width = '400px';
 							list.style.marginBottom = '12px';
 							list.style.maxHeight = window.innerHeight / 2 + 'px';
 
@@ -231,35 +230,35 @@ export const CommonProject = Project.create({
 						} else {
 							/** 左侧题目列表 */
 
-							list.style.width = window.outerWidth < 1000 ? '400px' : '600px';
+							list.style.width = '400px';
 							list.style.overflow = 'auto';
 							list.style.maxHeight = window.innerHeight / 2 + 'px';
 
 							/** 右侧结果 */
 							const resultContainer = el('div', { className: 'work-result-question-container' });
-
+							const nums: HTMLSpanElement[] = [];
 							/** 左侧渲染题目列表 */
 							const questions = results.map((result, index) => {
+								/** 左侧序号 */
+								const num = el(
+									'span',
+									{
+										className: 'search-results-num',
+										innerHTML: (index + 1).toString()
+									},
+									(num) => {
+										num.style.marginRight = '12px';
+										num.style.display = 'inline-block';
+										setNumStyle(result, num, index);
+									}
+								);
+
+								nums.push(num);
+
 								return el(
 									'div',
 
-									[
-										/** 左侧序号 */
-										el(
-											'span',
-											{
-												className: 'search-results-num',
-												innerHTML: (index + 1).toString()
-											},
-											(num) => {
-												num.style.marginRight = '12px';
-												num.style.display = 'inline-block';
-												setNumStyle(result, num, index);
-											}
-										),
-
-										result.question
-									],
+									[num, result.question],
 									(question) => {
 										question.className = 'search-results-question';
 
@@ -288,9 +287,13 @@ export const CommonProject = Project.create({
 										};
 
 										question.onclick = () => {
+											for (const n of nums) {
+												n.classList.remove('active');
+											}
 											for (const q of questions) {
 												q.classList.remove('active');
 											}
+											nums[index].classList.add('active');
 											question.classList.add('active');
 											// 更新显示序号
 											this.cfg.currentResultIndex = index;
@@ -329,6 +332,17 @@ export const CommonProject = Project.create({
 						behavior: 'auto'
 					});
 
+					const tip = el('div', [
+						el('div', { className: 'search-results-num requesting' }, 'n'),
+						'表示搜索中 ',
+						el('br'),
+						el('div', { className: 'search-results-num resolving' }, 'n'),
+						'表示已搜索但未开始答题 ',
+						el('br'),
+						el('div', { className: 'search-results-num' }, 'n'),
+						'表示已搜索已答题 '
+					]);
+
 					/** 添加信息 */
 					panel.body.prepend(
 						el('hr'),
@@ -337,48 +351,52 @@ export const CommonProject = Project.create({
 							[
 								`当前搜题: ${this.cfg.requestIndex + 1}/${this.cfg.totalQuestionCount}`,
 								' , ',
-								`当前答题: ${this.cfg.resolverIndex + 1}/${this.cfg.totalQuestionCount}`
+								`当前答题: ${this.cfg.resolverIndex + 1}/${this.cfg.totalQuestionCount}`,
+								' , ',
+								el('a', '查看提示', (btn) => {
+									btn.addEventListener('click', () => {
+										$model('confirm', {
+											content: tip
+										});
+									});
+								})
 							],
 							(div) => {
 								div.style.marginBottom = '12px';
 							}
 						),
-						el('div', [
-							'提示：',
-							el('span', { className: 'search-results-num requesting' }, '1'),
-							'表示搜索中 ',
-							el('span', { className: 'search-results-num resolving' }, '1'),
-							'表示已搜索但未开始答题 ',
-							el('span', { className: 'search-results-num' }, '1'),
-							'表示已搜索已答题 '
-						]),
+
 						el('hr')
 					);
 				};
 
 				/** 渲染结果列表 */
-				const createResult = (result: SimplifyWorkResult) => {
-					const error = el('span', {}, (el) => (el.style.color = 'red'));
+				const createResult = (result: SimplifyWorkResult | undefined) => {
+					if (result) {
+						const error = el('span', {}, (el) => (el.style.color = 'red'));
 
-					if (result.requesting && result.resolving) {
-						return el('div', [result.question, el('hr'), '当前题目还未开始搜索，请稍等。']);
-					} else {
-						if (result.error) {
-							error.innerText = result.error;
-							return el('div', [result.question, el('hr'), error]);
-						} else if (result.searchResults.length === 0) {
-							error.innerText = '此题未搜索到答案';
-							return el('div', [result.question, el('hr'), error]);
+						if (result.requesting && result.resolving) {
+							return el('div', [result.question, el('hr'), '当前题目还未开始搜索，请稍等。']);
 						} else {
-							error.innerText = '此题未完成, 可能是没有匹配的选项。';
-							return el('div', [
-								...(result.finish ? [] : [result.resolving ? '正在等待答题中，请稍等。' : error]),
-								el('search-results-element', {
-									results: result.searchResults,
-									question: result.question
-								})
-							]);
+							if (result.error) {
+								error.innerText = result.error;
+								return el('div', [result.question, el('hr'), error]);
+							} else if (result.searchResults.length === 0) {
+								error.innerText = '此题未搜索到答案';
+								return el('div', [result.question, el('hr'), error]);
+							} else {
+								error.innerText = '此题未完成, 可能是没有匹配的选项。';
+								return el('div', [
+									...(result.finish ? [] : [result.resolving ? '正在等待答题中，请稍等。' : error]),
+									el('search-results-element', {
+										results: result.searchResults,
+										question: result.question
+									})
+								]);
+							}
 						}
+					} else {
+						return el('div', 'undefined');
 					}
 				};
 
@@ -413,11 +431,11 @@ export const CommonProject = Project.create({
 						type: 'button'
 					},
 					onload() {
-						const aws: any[] = CommonProject.scripts.settings.cfg.answererWrappers;
+						const aws: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
 						this.value = `点击重新配置${aws.length ? '，当前有' + aws.length + '个可用题库' : ''}`;
 
 						this.onclick = () => {
-							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers;
+							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
 							const copy = $creator.copy('复制题库配置', JSON.stringify(aw));
 
 							const list = el('div', [
@@ -444,7 +462,7 @@ export const CommonProject = Project.create({
 								async onConfirm(value) {
 									if (value) {
 										try {
-											const aw = await parseAnswererWrappers(value);
+											const aw = await AnswerWrapperParser.from(value);
 											CommonProject.scripts.settings.cfg.answererWrappers = aw;
 
 											$model('alert', {
@@ -524,105 +542,25 @@ export const CommonProject = Project.create({
 		}),
 		guide: new Script({
 			name: '使用教程',
-			url: [['所有页面', /.*/]],
+			url: [
+				['智慧树首页', 'https://www.zhihuishu.com/'],
+				['智慧树个人中心', 'https://onlineweb.zhihuishu.com/onlinestuh5'],
+				['超星首页', 'https://www.chaoxing.com/'],
+				['超星个人中心', 'http://i.chaoxing.com/']
+			],
 			namespace: 'common.guide',
 			configs: {
 				showGuide: { defaultValue: true, label: '进入页面，显示使用教程', attrs: { type: 'checkbox' } }
 			},
-
+			onrender({ panel, header }) {
+				const guide = createGuide({ panel, header });
+				guide.style.width = '460px';
+				panel.body.replaceChildren(el('hr'), guide);
+			},
+			onhistorychange() {
+				this.oncomplete?.();
+			},
 			oncomplete() {
-				const createGuide = ({ panel, header }: { panel: ScriptPanelElement; header: HeaderElement }) => {
-					const projectSelector = header.projectSelector?.cloneNode(true) as HTMLSelectElement;
-					const logo = header.logo?.cloneNode(true) as HTMLDivElement;
-					const expandSwitcher = header.expandSwitcher?.cloneNode(true) as HTMLDivElement;
-					const visualSwitcher = header.visualSwitcher?.cloneNode(true) as HTMLDivElement;
-					const closeButton = header.closeButton?.cloneNode(true) as HTMLDivElement;
-					projectSelector.style.display = 'inline-block';
-					projectSelector.querySelectorAll('select').forEach((el) => (el.disabled = true));
-					logo.style.cursor = 'default';
-					expandSwitcher.style.cursor = 'default';
-					visualSwitcher.style.cursor = 'default';
-					closeButton.style.cursor = 'default';
-
-					return el('div', { className: 'user-guide card' }, [
-						$creator.notes(
-							[
-								[
-									'OCS会根据当前的页面自动选择脚本进行运行，如果没有达到您预期的效果，则代表当前页面并没有脚本运行。',
-									'以下是全部支持的网课以及包含的脚本（点击下列详情展开查看）:',
-									...definedProjects().map((project) => {
-										return el('details', [
-											el('summary', project.name),
-											el(
-												'ul',
-												Object.keys(project.scripts).map((key) => {
-													const script = project.scripts[key];
-
-													return el(
-														'li',
-														[
-															el('b', script.name),
-															$creator.notes([
-																el('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
-
-																[
-																	'运行页面：',
-																	el(
-																		'ul',
-																		script.url.map((i) =>
-																			el('li', [
-																				i[0],
-																				'：',
-																				i[1] instanceof RegExp
-																					? i[1].toString().replace(/\\/g, '').slice(1, -1)
-																					: el('a', { href: i[1], target: '_blank' }, i[1])
-																			])
-																		)
-																	)
-																]
-															])
-														],
-														(li) => {
-															li.style.marginBottom = '12px';
-														}
-													);
-												}),
-												(ul) => {
-													ul.style.paddingLeft = '42px';
-												}
-											)
-										]);
-									}),
-									el('br')
-								],
-
-								[
-									'以下是窗口顶部菜单栏的按钮说明:',
-									$creator.notes([
-										el('span', [
-											projectSelector,
-											' 部分脚本会提供操作页面（包含脚本设置和脚本提示）。此按钮可以选择指定的脚本页面进行显示。'
-										]),
-										el('span', [logo, ' 点击查看官网教程']),
-										el('span', [expandSwitcher, ' 可以 展开/收缩 脚本操作页面。']),
-										el('span', [visualSwitcher, ' 可以 展开/收缩 窗口。']),
-										el('span', [closeButton, ' ', closeButton.getAttribute('data-title') || ''])
-									]),
-									el('br')
-								],
-
-								'最后温馨提示：请将浏览器页面保持最大化，或者缩小窗口，不能最小化，可能导致脚本卡死！'
-							],
-							'ol'
-						)
-					]);
-				};
-				this.on('render', ({ panel, header }) => {
-					const guide = createGuide({ panel, header });
-					guide.style.width = '600px';
-					panel.body.replaceChildren(el('hr'), guide);
-				});
-
 				if (this.cfg.showGuide && this.panel && this.header) {
 					$model('confirm', {
 						title: '使用教程',
@@ -635,34 +573,8 @@ export const CommonProject = Project.create({
 				}
 			}
 		}),
-		dev: new Script({
-			name: '开发者调试页面',
-			// 使用时从打包中的代码修改此处为 true
-			hideInPanel: true,
-			url: [['所有页面', /.*/]],
-			configs: () => {
-				const configs = cloneDeep(
-					$.getAllRawConfigs(
-						definedProjects()
-							.map((p) => Object.keys(p.scripts).map((key) => p.scripts[key]))
-							.flat()
-							.filter((s) => s.name !== '开发者调试页面')
-					)
-				);
-
-				for (const key in configs) {
-					if (Object.prototype.hasOwnProperty.call(configs, key)) {
-						const element = configs[key];
-						element.sync = true;
-						element.attrs = element.attrs || {};
-						element.attrs.disabled = true;
-					}
-				}
-				return configs;
-			}
-		}),
 		hack: new Script({
-			name: '页面复制粘贴限制解除脚本',
+			name: '页面复制粘贴限制解除',
 			url: [['所有页面', /.*/]],
 			hideInPanel: true,
 			onactive() {
@@ -671,6 +583,16 @@ export const CommonProject = Project.create({
 			oncomplete() {
 				enableCopy();
 				setTimeout(() => enableCopy(), 3000);
+			}
+		}),
+		disableDialog: new Script({
+			name: '禁止弹窗',
+			url: [],
+			onstart() {
+				try {
+					$gm.unsafeWindow.alert = (msg) => $console.warn(`已拦截弹窗: ${msg}`);
+					window.alert = self.alert = (msg) => $console.warn(`已拦截弹窗: ${msg}`);
+				} catch (e) {}
 			}
 		})
 	}
@@ -721,3 +643,95 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 		)
 	);
 }
+
+const createGuide = ({ panel, header }: { panel: ScriptPanelElement; header: HeaderElement }) => {
+	const projectSelector = header.projectSelector?.cloneNode(true) as HTMLSelectElement;
+	const logo = header.logo?.cloneNode(true) as HTMLDivElement;
+	const expandSwitcher = header.expandSwitcher?.cloneNode(true) as HTMLDivElement;
+	const visualSwitcher = header.visualSwitcher?.cloneNode(true) as HTMLDivElement;
+	const closeButton = header.closeButton?.cloneNode(true) as HTMLDivElement;
+
+	if (projectSelector.style) {
+		projectSelector.style.display = 'inline-block';
+		projectSelector.querySelectorAll('select').forEach((el) => (el.disabled = true));
+		logo.style.cursor = 'default';
+		expandSwitcher.style.cursor = 'default';
+		visualSwitcher.style.cursor = 'default';
+		closeButton.style.cursor = 'default';
+	}
+
+	return el('div', { className: 'user-guide card' }, [
+		$creator.notes(
+			[
+				[
+					'OCS会根据当前的页面自动选择脚本进行运行，并出现使用提示。',
+					'如果没有达到您预期的效果，则代表当前页面并没有脚本运行。',
+					'以下是全部支持的网课以及包含的脚本（点击下列详情展开查看）:',
+					...definedProjects().map((project) => {
+						return el('details', [
+							el('summary', project.name),
+							el(
+								'ul',
+								Object.keys(project.scripts).map((key) => {
+									const script = project.scripts[key];
+
+									return el(
+										'li',
+										[
+											el('b', script.name),
+											$creator.notes([
+												el('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
+
+												[
+													'运行页面：',
+													el(
+														'ul',
+														script.url.map((i) =>
+															el('li', [
+																i[0],
+																'：',
+																i[1] instanceof RegExp
+																	? i[1].toString().replace(/\\/g, '').slice(1, -1)
+																	: el('a', { href: i[1], target: '_blank' }, i[1])
+															])
+														)
+													)
+												]
+											])
+										],
+										(li) => {
+											li.style.marginBottom = '12px';
+										}
+									);
+								}),
+								(ul) => {
+									ul.style.paddingLeft = '42px';
+								}
+							)
+						]);
+					}),
+					el('br')
+				],
+
+				[
+					'以下是窗口顶部菜单栏的按钮说明:',
+					$creator.notes([
+						el('span', [
+							projectSelector,
+							' 部分脚本会提供操作页面（包含脚本设置和脚本提示）。',
+							el('div', ['此按钮可以选择指定的脚本页面进行显示。'])
+						]),
+						el('span', [logo, ' 点击查看官网教程']),
+						el('span', [expandSwitcher, ' 可以 展开/收缩 脚本操作页面。']),
+						el('span', [visualSwitcher, ' 可以 展开/收缩 窗口。']),
+						el('span', [closeButton, ' ', closeButton.getAttribute('data-title') || ''])
+					]),
+					el('br')
+				],
+
+				['最后温馨提示：请将浏览器页面保持最大化，或者缩小窗口，不能最小化，', '否则可能导致脚本卡死！']
+			],
+			'ol'
+		)
+	]);
+};

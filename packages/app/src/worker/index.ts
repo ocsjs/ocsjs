@@ -4,7 +4,12 @@ import path, { basename } from 'path';
 import fs from 'fs';
 import { chromium, BrowserContext, Page, LaunchOptions } from 'playwright-core';
 import { AppStore } from '../../types';
+import axios from 'axios';
+import * as Scripts from '../scripts/index';
+import { Config, PlaywrightScript } from '../scripts/automation/interface';
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
+
+type PS = { name: string; configs: Record<string, Config> };
 
 /** 脚本工作线程 */
 export class ScriptWorker {
@@ -13,24 +18,38 @@ export class ScriptWorker {
 	logger?: LoggerCore;
 	/** 拓展路径 */
 	extensionPaths: string[] = [];
+	/** 执行的自动化脚本列表 */
+	playwrightScripts: PS[] = [];
 	store?: AppStore;
 
-	init({ store, uid, cachePath }: { store: AppStore; uid: string; cachePath: string }) {
-		console.log('正在初始化进程...');
+	init({
+		store,
+		uid,
+		cachePath,
+		playwrightScripts
+	}: {
+		store: AppStore;
+		uid: string;
+		cachePath: string;
+		playwrightScripts: PS[];
+	}) {
+		this.debug('正在初始化进程...');
 
 		this.store = store;
 
 		this.uid = uid;
 		// 拓展文件夹路径
-
 		this.extensionPaths = fs
 			.readdirSync(store.paths.extensionsFolder)
 			.map((file) => path.join(store.paths.extensionsFolder, file));
 
+		// 自动化脚本
+		this.playwrightScripts = playwrightScripts;
+
 		// 初始化日志
 		this.logger = new LoggerCore(store.paths['logs-path'], false, 'script', path.basename(cachePath));
 
-		console.log('初始化成功');
+		this.debug('初始化成功');
 	}
 
 	async launch(
@@ -53,14 +72,35 @@ export class ScriptWorker {
 
 		/** 启动脚本 */
 		await launchScripts({
-			extensionPaths: this.extensionPaths,
 			onLaunch: (browser) => {
 				this.browser = browser;
 
-				browser.route(`**/*`, (route) => {
-					const headers = route.request().headers();
-					headers['browser-uid'] = this.uid;
-					route.continue({ headers });
+				/** 代理 ocs 脚本请求 */
+				browser.route(/http(?:s):\/\/ocs-app(.+)/, (route) => {
+					axios
+						.get(
+							route
+								.request()
+								.url()
+								.replace(/http(?:s):\/\/ocs-app\/(.+)/, `http://localhost:${this.store?.server.port || 3000}/$1`),
+							{
+								headers: {
+									'browser-uid': this.uid
+								}
+							}
+						)
+						.then((result) => {
+							route.fulfill({
+								status: 200,
+								json: result.data
+							});
+						})
+						.catch((err) => {
+							route.fulfill({
+								status: 500,
+								json: { error: err }
+							});
+						});
 				});
 
 				/** URL事件解析器 */
@@ -83,6 +123,8 @@ export class ScriptWorker {
 				// 浏览器启动完成
 				send('launched');
 			},
+			extensionPaths: this.extensionPaths,
+			playwrightScripts: this.playwrightScripts,
 			uid: this.uid,
 			...options
 		});
@@ -162,12 +204,14 @@ export async function launchScripts({
 	userDataDir,
 	scripts,
 	extensionPaths,
+	playwrightScripts,
 	uid,
 	onLaunch
 }: Required<Pick<LaunchOptions, 'executablePath' | 'headless' | 'args'>> & {
 	userDataDir: string;
 	scripts: string[];
 	extensionPaths: any[];
+	playwrightScripts: PS[];
 	uid: string;
 	onLaunch?: (browser: BrowserContext) => void;
 }) {
@@ -176,17 +220,7 @@ export async function launchScripts({
 			.launchPersistentContext(userDataDir, {
 				viewport: null,
 				executablePath,
-				args: [
-					'--no-sandbox',
-					'--window-position=0,0',
-					/** 自动播放无需用户点击页面 */
-					'--no-user-gesture-required',
-					/** 允许拓展访问本地文件 */
-					// '--disable-extensions-file-access-check',
-					'--no-first-run',
-					'--disable-popup-blocking',
-					...args
-				],
+				args: ['--window-position=0,0', '--no-first-run', ...args],
 				headless
 			})
 			.then(async (browser) => {
@@ -197,20 +231,23 @@ export async function launchScripts({
 				const [blankPage] = browser.pages();
 				await blankPage.goto('http://localhost:15319/index.html#/bookmarks');
 
-				const html = (tip: string, loading: boolean = true) =>
-					blankPage.evaluate(
+				const html = async (tips: string | string[], opts?: { loading?: boolean; warn?: boolean }) => {
+					const { loading = true, warn = false } = opts || {};
+					await blankPage.evaluate(
 						(state) =>
 							// @ts-ignore
 							window.setBookmarkLoadingState(state),
-						{ tip, loading }
+						{ tips: Array.isArray(tips) ? tips : [tips], loading, warn }
 					);
+				};
 
 				onLaunch?.(browser);
 
-				// 等待一秒后才开始执行操作， 因为需要根据 title 进行影像传输。
-				setTimeout(async () => {
-					const setup = async () => {
-						await html('正在安装脚本。。。');
+				const setup = async () => {
+					const warn: string[] = [];
+					// 安装用户脚本
+					if (scripts.length) {
+						await html('【提示】正在安装用户脚本。。。');
 						const [page] = browser.pages();
 						// 载入本地脚本
 						try {
@@ -220,22 +257,46 @@ export async function launchScripts({
 							console.error(e);
 							// await html('脚本载入失败，请手动更新，或者忽略。' + e.message);
 						}
-						await html('初始化进程完毕。', false);
-						resolve();
-					};
-
-					if (extensionPaths.length === 0) {
-						await html('浏览器脚本管理拓展为空！将无法运行脚本，如想运行脚本，请在软件左侧浏览器拓展中安装。', false);
 					} else {
-						await html('正在等待浏览器拓展加载。。。');
-
-						// 等待拓展加载完成
-						browser.once('page', async (extensionPage) => {
-							await extensionPage.close();
-							setup();
-						});
+						warn.push('检测到您的软件中并未安装任何用户脚本，或者全部脚本处于不加载状态，可能会导致预期脚本不运行。');
 					}
-				}, 1000);
+
+					if (playwrightScripts.length) {
+						// 执行自动化脚本
+						for (const ps of playwrightScripts) {
+							await html(`【提示】正在执行自动化脚本 - ${ps.name} ...`);
+							const configs = transformScriptConfigToRaw(ps.configs);
+
+							for (const key in Scripts) {
+								if (Object.prototype.hasOwnProperty.call(Scripts, key)) {
+									const script: PlaywrightScript = Reflect.get(Scripts, key);
+									if (script.name === ps.name) {
+										script.on('script-data', console.log);
+										script.on('script-error', console.error);
+										await script.run(await browser.newPage(), configs);
+									}
+								}
+							}
+						}
+					}
+
+					await html(['初始化完成。'].concat(warn), { loading: false, warn: !!warn.length });
+				};
+
+				// 等待拓展加载完成
+				browser.once('page', async (extensionPage) => {
+					await extensionPage.close();
+					await setup();
+				});
+
+				if (extensionPaths.length === 0) {
+					await html('【警告】浏览器脚本管理拓展为空！将无法运行脚本，如想运行脚本，请在软件左侧浏览器拓展中安装。', {
+						loading: false,
+						warn: true
+					});
+				} else {
+					await html('【提示】正在等待浏览器拓展加载。。。');
+				}
 			})
 			.catch((err) => {
 				reject(err);
@@ -296,4 +357,14 @@ function send(event: string, ...args: any[]) {
 
 function sleep(t: number) {
 	return new Promise((resolve, reject) => setTimeout(resolve, t));
+}
+
+function transformScriptConfigToRaw(configs: PS['configs']) {
+	const raw = Object.create({});
+	for (const key in configs) {
+		if (Object.prototype.hasOwnProperty.call(configs, key)) {
+			Reflect.set(raw, key, configs[key].value);
+		}
+	}
+	return raw;
 }

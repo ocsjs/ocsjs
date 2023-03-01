@@ -108,7 +108,7 @@ const actions = (rowIndex: number) =>
 					{
 						type: 'text',
 						size: 'small',
-						onClick: () => installExtension(extensions.value, extensions[rowIndex])
+						onClick: () => installExtension(extensions.value, extensions.value[rowIndex])
 					},
 					() => ['安装']
 			  )

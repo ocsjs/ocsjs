@@ -1,4 +1,5 @@
 import { $creator, Config, WorkUploadType } from '@ocsjs/core';
+import { createRangeTooltip } from '.';
 
 /**
  * 可复用的配置参数
@@ -10,16 +11,7 @@ export const volume: Config = {
 	attrs: { type: 'range', step: '0.05', min: '0', max: '1' },
 	defaultValue: 0,
 	onload() {
-		this.addEventListener('change', () => {
-			this.setAttribute(
-				'data-title',
-				(parseFloat(this.value || this.getAttribute('value') || '0') * 100).toFixed() + '%'
-			);
-		});
-		this.setAttribute(
-			'data-title',
-			(parseFloat(this.value || this.getAttribute('value') || '0') * 100).toFixed() + '%'
-		);
+		createRangeTooltip(this, '0', (val) => `${parseFloat(val) * 100}%`);
 	}
 };
 
@@ -46,7 +38,7 @@ export const definition: Config = {
 };
 
 /** 开启自动答题 */
-export const auto = {
+export const auto: Config = {
 	label: '开启自动答题',
 	attrs: { type: 'checkbox' },
 	defaultValue: false
@@ -63,7 +55,7 @@ export const workConfigs = {
 	auto: {
 		label: '开启自动答题',
 		attrs: { type: 'checkbox' },
-		defaultValue: false
+		defaultValue: true
 	} as Config<any, boolean>,
 
 	upload: {

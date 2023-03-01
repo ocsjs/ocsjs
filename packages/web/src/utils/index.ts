@@ -6,6 +6,7 @@ import { remote } from './remote';
 import { notify } from './notify';
 import { electron } from './node';
 import { OCSApi } from '@ocsjs/common/src/api';
+import MarkdownText from '../components/MarkdownText.vue';
 
 const { ipcRenderer } = electron;
 
@@ -240,48 +241,46 @@ function installListener(name: string, channel: string, rate: number, chunkLengt
 /** 显示关于软件说明 */
 export async function about() {
 	store.render.state.first = false;
-	const version = await remote.app.call('getVersion');
+	const guide = await remote.methods.call('get', 'https://cdn.ocsjs.com/articles/app/guide.md');
 	Modal.info({
-		title: '关于软件',
+		title: '软件使用教程',
 		closable: true,
-		simple: false,
+		simple: true,
 		maskClosable: true,
+		footer: false,
+		width: 800,
 		content: () =>
-			h('div', [
-				h('p', {
-					innerHTML:
-						'&nbsp;&nbsp;OCS桌面版软件通过操控浏览器可以进行浏览器多开（每个浏览器数据不共享，可以实现每个网站登录不同的账号），并且有强大的浏览器管理功能以及浏览器屏幕监控功能。'
-				}),
-				h('p', {
-					innerHTML:
-						'&nbsp;&nbsp;通过安装用户脚本管理器（例如脚本猫，油猴），并安装拥有各种功能的用户脚本，可以拓展更多浏览器功能。'
-				}),
-
-				h('ul', { style: { paddingLeft: '12px' } }, [
-					h('li', '软件版本 : ' + version),
-					h('li', [
-						h('span', '软件官网 : '),
-						h(
-							'a',
-							{
-								href: '#',
-								onClick: () => electron.shell.openExternal('https://docs.ocsjs.com/')
-							},
-							'https://docs.ocsjs.com'
-						)
-					]),
-					h('li', [
-						h('span', '软件下载 : '),
-						h(
-							'a',
-							{
-								href: '#',
-								onClick: () => electron.shell.openExternal('https://docs.ocsjs.com/docs/资源下载/app-downloads')
-							},
-							'https://docs.ocsjs.com/docs/资源下载/app-downloads'
-						)
-					])
-				])
-			])
+			h(MarkdownText, {
+				content: guide,
+				style: {
+					maxHeight: '70vh'
+				}
+			})
 	});
+}
+
+export function changeTheme() {
+	if (store.render.setting.theme.dark) {
+		// 设置为暗黑主题
+		document.body.setAttribute('arco-theme', 'dark');
+		remote.win.call('setTitleBarOverlay', {
+			color: '#2C2C2C',
+			symbolColor: 'white'
+		});
+	} else {
+		// 恢复亮色主题
+		document.body.removeAttribute('arco-theme');
+		remote.win.call('setTitleBarOverlay', {
+			color: '#fff',
+			symbolColor: 'black'
+		});
+	}
+}
+
+export function setAutoLaunch() {
+	remote.methods.call('autoLaunch');
+}
+
+export function setAlwaysOnTop() {
+	remote.win.call('setAlwaysOnTop', store.window.alwaysOnTop);
 }

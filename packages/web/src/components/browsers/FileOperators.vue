@@ -4,7 +4,17 @@
 			<a-button size="mini">
 				<Icon type="more_horiz"> 更多 </Icon>
 			</a-button>
-			<template #content> </template>
+			<template #content>
+				<a-dsubmenu
+					trigger="hover"
+					value="option-1"
+				>
+					批量创建
+					<template #content>
+						<a-doption @click="state.showPlaywrightScriptSelector = true"> 自动化脚本浏览器 </a-doption>
+					</template>
+				</a-dsubmenu>
+			</template>
 		</a-dropdown>
 
 		<a-button
@@ -17,10 +27,43 @@
 		<a-button
 			size="mini"
 			type="outline"
-			@click="newBrowser"
+			@click="newBrowser()"
 		>
 			<Icon type="web"> 新建浏览器 </Icon>
 		</a-button>
+
+		<a-modal
+			v-model:visible="state.showPlaywrightScriptSelector"
+			:footer="false"
+		>
+			<template #title> 选择模板进行批量创建 </template>
+			<PlaywrightScriptSelector
+				v-model:playwright-scripts="state.playwrightScripts"
+				style="max-height: 70vh; overflow: overlay"
+				:multiple="false"
+				@confirm="(state.showPlaywrightScriptSelector = false), showMultipleCreateTable()"
+			></PlaywrightScriptSelector>
+		</a-modal>
+
+		<a-modal
+			v-model:visible="state.showPlaywrightScriptTable"
+			:footer="false"
+			:closable="true"
+			:mask-closable="false"
+			:width="900"
+		>
+			<template #title> 批量创建：{{ state.selectedPS?.name }} </template>
+			<PlaywrightScriptTable
+				v-if="state.selectedPS"
+				:raw-playwright-script="state.selectedPS"
+				@cancel="state.showPlaywrightScriptTable = false"
+				@confirm="multipleCreate"
+			></PlaywrightScriptTable>
+			<a-empty
+				v-else
+				description="请选择模板"
+			/>
+		</a-modal>
 	</a-space>
 </template>
 
@@ -32,14 +75,32 @@ import { store } from '../../store';
 
 import { resetSearch } from '../../utils/entity';
 import Icon from '../Icon.vue';
-import { remote } from '../../utils/remote';
 import { inBrowser } from '../../utils/node';
 import { Entity } from '../../fs/entity';
+import { reactive, onMounted } from 'vue';
+import { RawPlaywrightScript } from '../playwright-scripts';
+import PlaywrightScriptSelector from '../playwright-scripts/PlaywrightScriptSelector.vue';
+import PlaywrightScriptTable from '../playwright-scripts/PlaywrightScriptTable.vue';
+import { remote } from '../../utils/remote';
 
-async function newFolder() {
+const state = reactive({
+	showPlaywrightScriptSelector: false,
+	showPlaywrightScriptTable: false,
+	playwrightScripts: [] as RawPlaywrightScript[],
+	selectedPS: undefined as RawPlaywrightScript | undefined
+});
+
+const folder = store.paths.userDataDirsFolder;
+let spe = '\\';
+
+onMounted(async () => {
+	spe = await remote.path.get('sep');
+});
+
+function newFolder() {
 	// 关闭搜索模式
 	resetSearch();
-	const id = await Entity.uuid();
+	const id = Entity.uuid();
 
 	const folder = new Folder({
 		uid: id,
@@ -52,25 +113,50 @@ async function newFolder() {
 	});
 	currentFolder.value.children[id] = folder;
 }
-async function newBrowser() {
+function newBrowser(opts?: { name: string; playwrightScripts?: RawPlaywrightScript[]; store?: object }) {
 	// 关闭搜索模式
 	resetSearch();
-	const id = await Entity.uuid();
+	const id = Entity.uuid();
 
 	currentFolder.value.children[id] = new Browser({
 		type: 'browser',
 		uid: id,
-		name: '未命名浏览器',
+		name: opts?.name || '未命名浏览器',
 		checked: false,
 		createTime: Date.now(),
 		notes: '',
-		tags: [],
 		renaming: true,
 		parent: currentFolder.value.uid,
 		histories: [{ action: '创建', time: Date.now() }],
-		cachePath: inBrowser ? '' : await remote.path.call('join', store.paths.userDataDirsFolder, id),
-		store: {}
+		cachePath: inBrowser ? '' : folder.endsWith(spe) ? folder + id : folder + spe + id,
+		tags: [],
+		store: opts?.store || {},
+		playwrightScripts: opts?.playwrightScripts || []
 	});
+}
+
+function showMultipleCreateTable() {
+	state.showPlaywrightScriptTable = true;
+	state.selectedPS = state.playwrightScripts[0];
+}
+
+async function multipleCreate(
+	raw: RawPlaywrightScript,
+	configsList: (RawPlaywrightScript['configs'] & { browserName: string })[]
+) {
+	for (const configs of configsList) {
+		newBrowser({
+			name: configs.browserName,
+			playwrightScripts: [
+				{
+					name: raw.name,
+					configs: configs
+				}
+			]
+		});
+	}
+
+	state.showPlaywrightScriptTable = false;
 }
 </script>
 

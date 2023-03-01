@@ -1,10 +1,7 @@
 <template>
 	<div class="col-12 p-2 m-auto">
 		<div class="text-secondary markdown mb-2">
-			<div>浏览器多开的数量取决于电脑的配置，自行根据实际情况尝试。</div>
-			<div>
-				当全部浏览器加载完成后（导航页加载完成）才能开启监控，如果浏览器过多请勿开启，否则容易造成卡顿，CPU过载。
-			</div>
+			<div>浏览器多开的数量取决于电脑的配置，自行根据实际情况尝试。建议全部浏览器加载完成后再开启监控。</div>
 		</div>
 
 		<div class="d-flex mb-1 align-items-center">
@@ -12,6 +9,20 @@
 				<template #split>
 					<a-divider direction="vertical" />
 				</template>
+
+				<a-tooltip
+					content="显示每个浏览器的图像，如果太多浏览器可能会造成电脑卡顿"
+					position="bl"
+				>
+					<a-button
+						size="mini"
+						type="outline"
+						:disabled="processes.length === 0"
+						@click="state.show = !state.show"
+					>
+						{{ state.show ? '暂停' : '开始' }}监控
+					</a-button>
+				</a-tooltip>
 
 				<a-switch v-model="store.render.dashboard.details.tags">
 					<template #checked> 显示标签 </template>
@@ -25,7 +36,7 @@
 
 				<a-select
 					v-model="store.render.dashboard.num"
-					size="small"
+					size="mini"
 					style="width: 100px"
 					:options="[1, 2, 4, 6, 8].map((i) => ({ value: i, label: `显示${i}列` }))"
 				>
@@ -33,7 +44,7 @@
 
 				<a-select
 					v-model="store.render.dashboard.video.aspectRatio"
-					size="small"
+					size="mini"
 					style="width: 140px"
 					:options="[[0,'默认'], [4/3,'4:3'], [16/9,'16:9'], ]
 				.map((i) => 
@@ -43,16 +54,7 @@
 					<template #prefix> 横纵比 </template>
 				</a-select>
 
-				<a-tooltip content="显示每个浏览器的图像，如果太多浏览器可能会造成电脑卡顿">
-					<a-button
-						size="small"
-						type="outline"
-						:disabled="processes.length === 0"
-						@click="state.show = !state.show"
-					>
-						{{ state.show ? '暂停' : '开始' }}监控
-					</a-button>
-				</a-tooltip>
+				<div></div>
 			</a-space>
 		</div>
 
@@ -222,6 +224,12 @@ const state = reactive({
 	show: false,
 	loading: false
 });
+
+defineEmits<{
+	(e: '1', v: string): void;
+	(e: '2', v: string): void;
+	(e: '3', v: string): void;
+}>();
 
 const debounceRefreshVideo = debounce(refreshVideo, 1000);
 

@@ -1,3 +1,5 @@
+/* global  EventListener  */
+
 import { HeaderElement } from '../elements/header';
 import { ScriptPanelElement } from '../elements/script.panel';
 import { $ } from '../utils/common';
@@ -116,13 +118,15 @@ export class Script<
 		onactive,
 		oncomplete,
 		onbeforeunload,
-		onrender
+		onrender,
+		onhistorychange
 	}: ScriptOptions<T> & {
 		onstart?: (this: Script<T>, ...args: any) => any;
 		onactive?: (this: Script<T>, ...args: any) => any;
 		oncomplete?: (this: Script<T>, ...args: any) => any;
 		onbeforeunload?: (this: Script<T>, ...args: any) => any;
 		onrender?: (this: Script<T>, elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
+		onhistorychange?: (this: Script<T>, type: 'push' | 'replace', ...args: any[]) => any;
 	}) {
 		super();
 		this.name = name;
@@ -136,6 +140,7 @@ export class Script<
 		this.oncomplete = oncomplete;
 		this.onbeforeunload = onbeforeunload;
 		this.onrender = onrender;
+		this.onhistorychange = onhistorychange;
 	}
 
 	onConfigChange<K extends keyof T>(
@@ -149,7 +154,7 @@ export class Script<
 		});
 	}
 
-	offConfigChange(id: number) {
-		$store.removeChangeListener(id);
+	offConfigChange(listener: number | EventListener) {
+		$store.removeChangeListener(listener);
 	}
 }

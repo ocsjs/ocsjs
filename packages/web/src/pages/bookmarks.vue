@@ -3,15 +3,41 @@
 		<a-spin
 			class="w-100 h-100 p-3"
 			:loading="state.loading"
-			:tip="state.tip"
 		>
+			<template #element>
+				<div><icon-loading /></div>
+				<div
+					v-for="(tip, index) of state.tips"
+					:key="index"
+					style="font-size: 12px"
+				>
+					{{ tip }}
+				</div>
+			</template>
+
 			<h1>OCS 导航页</h1>
-			<div
-				class="bookmarks-blockquote text-secondary mb-3"
-				style="font-size: 14px"
-			>
-				<div>进入浏览器并等待初始化后，即可使用安装的浏览器脚本管理拓展，进行脚本的运行。</div>
-				<div>如果您使用的是 “OCS 网课助手”，请打开以下任意一个网课平台即可，会出现脚本悬浮窗，并有对应的使用教程。</div>
+			<div id="notes">
+				<div
+					class="bookmarks-blockquote text-secondary mb-3"
+					style="font-size: 14px"
+				>
+					<div>进入浏览器并等待初始化后，即可使用安装的浏览器脚本管理拓展，进行脚本的运行。</div>
+					<div>
+						如果您使用的是 “OCS 网课助手”，请打开以下任意一个网课平台即可，会出现脚本悬浮窗，并有对应的使用教程。
+					</div>
+				</div>
+
+				<div
+					class="bookmarks-blockquote text-secondary mb-3"
+					:class="{ warn: state.warn }"
+				>
+					<div
+						v-for="(tip, index) of state.tips"
+						:key="index"
+					>
+						{{ tip }}
+					</div>
+				</div>
 			</div>
 			<template
 				v-for="item of bookmarks"
@@ -89,7 +115,8 @@ const bookmarks = ref<BookMark[]>([]);
 
 const state = reactive({
 	loading: false,
-	tip: '浏览器初始化...'
+	warn: false,
+	tips: ['浏览器初始化中...']
 });
 
 // @ts-ignore 暴露方法给 playwright 脚本
@@ -147,6 +174,10 @@ onMounted(async () => {
 .bookmarks-blockquote {
 	border-left: 6px solid #8db1e7;
 	padding-left: 12px;
+
+	&.warn {
+		border-left: 6px solid #e4cc61;
+	}
 }
 .bookmarks {
 	height: 100%;

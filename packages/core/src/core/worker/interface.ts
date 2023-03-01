@@ -1,4 +1,4 @@
-import { SearchResult } from './answer.wrapper.handler';
+import { SearchResult } from '../answer-wrapper/interface';
 
 export type ElementResolver<R> = (root: HTMLElement | Document) => R;
 export type RawElements = Record<
@@ -204,7 +204,7 @@ export type WorkOptions<E extends RawElements> = {
 	/** 当元素被搜索到 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>) => void | Promise<void>;
 	/** 监听搜题结果 */
-	onResultsUpdate?: (res: WorkResult<E>[]) => void | Promise<void>;
+	onResultsUpdate?: (res: WorkResult<E>[], currentResult: WorkResult<E>) => void | Promise<void>;
 	/** 监听答题结果 */
 	onResolveUpdate?: (res: WorkResult<E>) => void | Promise<void>;
 };

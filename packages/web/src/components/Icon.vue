@@ -1,7 +1,7 @@
 <template>
 	<component
 		:is="slots.default ? Space : span"
-		class="d-flex"
+		class="d-inline-flex"
 	>
 		<span
 			:style="{ color, fontSize: size ? size + 'px' : 'inherit' }"

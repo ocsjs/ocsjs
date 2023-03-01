@@ -1,5 +1,3 @@
-import { inBrowser } from '../utils/node';
-import { remote } from '../utils/remote';
 import { EntityOptions, EntityTypes } from './interface';
 
 export abstract class Entity implements EntityOptions {
@@ -17,10 +15,8 @@ export abstract class Entity implements EntityOptions {
 		this.renaming = opts.renaming;
 	}
 
-	static async uuid() {
-		return (
-			inBrowser ? Date.now().toFixed(0) + (Math.random() * 1000).toFixed(0) : await remote.crypto.call('randomUUID')
-		).replace(/-/g, '');
+	static uuid() {
+		return uuid().replace(/-/g, '');
 	}
 
 	/** 定位 */
@@ -31,4 +27,12 @@ export abstract class Entity implements EntityOptions {
 	abstract remove(...args: any[]): void;
 	/** 选择 */
 	abstract select(...args: any[]): void;
+}
+
+function uuid() {
+	return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+		const r = (Math.random() * 16) | 0;
+		const v = c === 'x' ? r : (r & 0x3) | 0x8;
+		return v.toString(16);
+	});
 }

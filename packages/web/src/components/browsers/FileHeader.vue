@@ -1,5 +1,5 @@
 <template>
-	<a-row class="pt-1 pb-1 border-bottom align-items-center entity-properties">
+	<a-row class="pt-1 border-bottom align-items-center entity-properties">
 		<a-col
 			v-if="isShow('checkbox')"
 			flex="32px"
@@ -10,7 +10,7 @@
 		<a-col
 			v-if="isShow('name')"
 			class="entity-property"
-			flex="160px"
+			flex="300px"
 		>
 			文件名
 		</a-col>
@@ -27,7 +27,7 @@
 			</a-col>
 			<a-col
 				class="entity-property"
-				flex="250px"
+				flex="200px"
 			>
 				<a-divider
 					class="ms-0 m-1"
@@ -67,5 +67,9 @@ function isShow(type: 'checkbox' | 'icon' | 'name' | 'extra' | 'actions') {
 .entity-properties {
 	background-color: #f7f7f7;
 	color: #4d4d4d;
+
+	.entity-property {
+		font-size: 12px;
+	}
 }
 </style>

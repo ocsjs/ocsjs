@@ -8,39 +8,51 @@
 			<slot name="split"></slot>
 		</template>
 		<template v-if="process === undefined || process.status === 'closed'">
-			<a-tooltip content="启动">
+			<a-tooltip
+				content="启动"
+				:position="tooltipPosition"
+			>
 				<Icon
 					type="play_circle"
 					color="#165dff"
-					class="fs-6"
+					:class="iconClass"
 					@click="instance?.launch()"
 				/>
 			</a-tooltip>
 		</template>
 
 		<template v-else-if="process.status === 'launched'">
-			<a-tooltip content="置顶">
+			<a-tooltip
+				content="置顶"
+				:position="tooltipPosition"
+			>
 				<Icon
 					type="push_pin"
-					class="fs-6"
+					:class="iconClass"
 					color="#165dff"
 					@click="instance?.bringToFront()"
 				/>
 			</a-tooltip>
 
-			<a-tooltip content="重启">
+			<a-tooltip
+				content="重启"
+				:position="tooltipPosition"
+			>
 				<Icon
 					type="sync"
-					class="fs-6"
+					:class="iconClass"
 					color="#165dff"
 					@click="instance?.relaunch()"
 				/>
 			</a-tooltip>
 
-			<a-tooltip content="关闭">
+			<a-tooltip
+				content="关闭"
+				:position="tooltipPosition"
+			>
 				<Icon
 					type="cancel"
-					class="fs-6"
+					:class="iconClass"
 					color="#ff0000db"
 					@click="instance?.close()"
 				/>
@@ -61,10 +73,17 @@ import { computed } from 'vue';
 import { Browser } from '../../fs/browser';
 import { BrowserOptions } from '../../fs/interface';
 
-const props = defineProps<{
-	browser: BrowserOptions;
-	space?: boolean;
-}>();
+const props = withDefaults(
+	defineProps<{
+		browser: BrowserOptions;
+		tooltipPosition?: 'top' | 'br';
+		iconClass?: string;
+	}>(),
+	{
+		tooltipPosition: 'top',
+		iconClass: 'fs-6'
+	}
+);
 const instance = Browser.from(props.browser.uid);
 const process = computed(() => Process.from(props.browser.uid));
 </script>

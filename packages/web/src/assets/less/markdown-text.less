@@ -1,0 +1,235 @@
+@text-color: rgba(0, 0, 0, 0.65); // 主文本色
+@text-color-secondary: rgba(0, 0, 0, 0.45); // 次文本色
+@disabled-color: rgba(0, 0, 0, 0.25); // 失效色
+@primary-color: #1890ff; // 全局主色
+
+.markdown-text {
+	details {
+		border-radius: 2px;
+		padding: 30px 0px 30px 20px;
+		border-left: 8px solid rgb(212, 212, 212);
+		background-color: mix(@disabled-color, rgba(255, 255, 255, 0.1), 10%);
+	}
+
+	img {
+		max-width: 100%;
+	}
+
+	h3,
+	h4,
+	h5,
+	h6 {
+		font-weight: bold;
+	}
+
+	// 标题中的 inline code
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6 {
+		code {
+			padding: 0.4rem 0.6rem;
+			background-color: #f0f0f0;
+			border-radius: 6px;
+			font-size: 1.5rem;
+			font-weight: bold;
+		}
+
+		&:hover .header-anchor {
+			display: inline-block;
+		}
+	}
+
+	// Inline code
+	p,
+	a,
+	span,
+	li {
+		code {
+			padding: 0.2rem 0.5rem;
+			background-color: #f0f0f0;
+			border-radius: 6px;
+			font-size: 1rem;
+			font-weight: bold;
+		}
+	}
+
+	// Indented code
+	pre:not([class]) > code:not([class]) {
+		display: block;
+		padding: 20px;
+		background-color: #f0f0f0;
+		font-family: monospace;
+		margin: 0px;
+	}
+
+	// Block code
+	pre.hljs {
+		padding: 20px;
+	}
+
+	// Block code
+	.block-code {
+		&:hover {
+			.line-suffix {
+				.code-lang {
+					transition: all 0.3s ease-out;
+					transform: translate(0px, 12px);
+					opacity: 1;
+					visibility: visible;
+				}
+				.code-copy {
+					transition: all 0.3s ease-out;
+					transform: translate(0px, 12px);
+					opacity: 1;
+					visibility: visible;
+				}
+			}
+		}
+
+		.line-suffix {
+			display: flex;
+			width: 100%;
+			justify-content: flex-end;
+			height: 0px;
+			.code-lang {
+				height: 14px;
+				transition: all 0.3s ease-in;
+				opacity: 0;
+				visibility: hidden;
+				background-color: #81818159;
+			}
+
+			.code-copy {
+				height: 14px;
+				transition: all 0.3s ease-in;
+				opacity: 0;
+				visibility: hidden;
+				background-color: #81818159;
+			}
+
+			span {
+				color: white;
+				padding: 4px 4px 4px 4px;
+				margin: 0px 10px 0px 10px;
+				border-radius: 4px;
+				cursor: pointer;
+				.none-select();
+			}
+		}
+
+		pre {
+			margin-top: 4px;
+			padding: 0px 20px 10px 0px;
+			display: flex;
+
+			code {
+				max-width: 100%;
+				padding: 20px;
+				padding-bottom: 10px;
+				overflow: auto;
+			}
+
+			// 行数
+			.line-count {
+				padding: 20px;
+				color: #9e9e9e;
+				border-right: 1px solid rgb(0, 0, 0);
+				.none-select();
+			}
+		}
+	}
+
+	// 标签钩子样式
+	.header-anchor {
+		display: none;
+	}
+
+	// 文本选择样式
+	::selection {
+		color: white;
+		background-color: #3368f4;
+	}
+
+	// >
+	blockquote {
+		border-radius: 2px;
+		padding: 4px 0px 4px 20px;
+		margin: 12px 0px;
+		font-size: 14px;
+		color: @text-color;
+		border-left: 8px solid @disabled-color;
+		background-color: mix(@disabled-color, rgba(255, 255, 255, 0.1), 10%);
+
+		p {
+			margin-bottom: 0px;
+		}
+	}
+
+	/**
+        以下是 table 样式
+    */
+	table {
+		border-spacing: 0px;
+		text-indent: unset;
+		box-sizing: unset;
+		border-collapse: unset;
+	}
+
+	// 标题样式
+	table tr th {
+		font-weight: 700;
+		background-color: #e5e7eb;
+	}
+
+	// 偶数样式
+	table tr:nth-child(even) {
+		background-color: #f5f5f5;
+	}
+
+	th,
+	td {
+		border: 1px solid #ddd;
+		padding: 10px;
+	}
+
+	// 分割线样式
+	hr {
+		background: #e8e8e8;
+		margin: 24px 0px 24px 0px;
+		padding: 0px;
+		border: unset;
+		height: 1.5px;
+	}
+
+	a::selection {
+		color: blue;
+	}
+
+	a {
+		color: mix(@primary-color, rgb(255, 255, 255), 90%);
+	}
+
+	ul {
+		li {
+			line-height: 26px;
+		}
+		margin-block-start: 0.5em;
+		margin-block-end: 1em;
+		padding-inline-start: 18px;
+	}
+
+	.toc-li {
+		display: block;
+	}
+
+	.none-select {
+		-moz-user-select: none;
+		-webkit-user-select: none;
+		-ms-user-select: none;
+		-khtml-user-select: none;
+		user-select: none;
+	}
+}

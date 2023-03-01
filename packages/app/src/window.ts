@@ -9,13 +9,16 @@ export function createWindow() {
 		minHeight: 600,
 		minWidth: 1000,
 		center: true,
-		show: false,
 		hasShadow: true,
 		autoHideMenuBar: true,
 		titleBarStyle: 'hidden',
-		titleBarOverlay: true,
+		titleBarOverlay: {
+			color: 'white',
+			symbolColor: 'black'
+		},
 		frame: false,
 		webPreferences: {
+			zoomFactor: 1,
 			// 关闭拼写矫正
 			spellcheck: false,
 			webSecurity: true,
@@ -24,8 +27,6 @@ export function createWindow() {
 			contextIsolation: false
 		}
 	});
-
-	win.webContents.setZoomFactor(1);
 
 	win.webContents.on('will-navigate', (event, url) => {
 		event.preventDefault();

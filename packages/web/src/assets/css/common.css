@@ -12,7 +12,7 @@ html,
 }
 /** 兼容 win11 以下的软件不会自动带有阴影和边框 */
 html.window-frame {
-  border: 1px solid gray;
+  border: 1px solid #e1e1e1;
   overflow: hidden;
   box-shadow: 0px 0px 12px #d3d3d3;
 }
@@ -121,6 +121,10 @@ body[arco-theme='dark'] .bp-toc {
 body[arco-theme='dark'] .text-secondary {
   color: #aaaaaa !important;
 }
+body[arco-theme='dark'] .title {
+  color: #cccccc;
+  background-color: #2c2c2c;
+}
 body[arco-theme='dark'] #title ul li {
   color: #cccccc;
 }
@@ -181,4 +185,13 @@ body[arco-theme='dark'] .entity-properties {
 /** 简单模式下不要有头部间隔 */
 .arco-modal-simple .arco-modal-header {
   margin-bottom: 0px;
+}
+/** 防止被标题栏遮挡 */
+.arco-drawer-container,
+.arco-modal-container {
+  top: 32px;
+}
+.arco-notification-list,
+.arco-message-list {
+  top: 52px;
 }

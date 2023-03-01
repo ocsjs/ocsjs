@@ -1,5 +1,4 @@
-import cloneDeep from 'lodash/cloneDeep';
-import { reactive, watch } from 'vue';
+import { reactive } from 'vue';
 import { remote } from '../utils/remote';
 import defaultsDeep from 'lodash/defaultsDeep';
 import { AppStore, UserScripts } from '@ocsjs/app';
@@ -47,11 +46,6 @@ export type WebStore = {
 		launchOptions: {
 			executablePath: string;
 		};
-		/** 窗口设置 */
-		window: {
-			alwaysOnTop: boolean;
-			autoLaunch: boolean;
-		};
 
 		/** 当前的主题 */
 		theme: {
@@ -59,6 +53,8 @@ export type WebStore = {
 		};
 		/** ocs 特殊配置 */
 		ocs: {
+			/** 当前配置名 */
+			currentProjectName: string;
 			/** 全局配置 */
 			store: any;
 		};
@@ -70,11 +66,12 @@ export type WebStore = {
 		setup: boolean;
 		mini: boolean;
 		responsive: 'mini' | 'small';
+		height: number;
 	};
 };
 
 /** 数据存储对象 */
-export const store = reactive<AppStore & { render: WebStore }>(
+export const store: AppStore & { render: WebStore } = reactive(
 	defaultsDeep(
 		inBrowser ? JSON.parse(localStorage.getItem('ocs-app-store') || '{}') : remote['electron-store'].get('store'),
 		{
@@ -119,11 +116,8 @@ export const store = reactive<AppStore & { render: WebStore }>(
 					theme: {
 						dark: false
 					},
-					window: {
-						alwaysOnTop: false,
-						autoLaunch: false
-					},
 					ocs: {
+						currentProjectName: '',
 						store: {}
 					}
 				},
@@ -131,70 +125,18 @@ export const store = reactive<AppStore & { render: WebStore }>(
 					first: true,
 					setup: true,
 					mini: false,
-					responsive: 'small'
+					responsive: 'small',
+					height: document.documentElement.clientHeight
 				}
 			} as WebStore
 		}
 	)
 );
 
+console.log(store);
+
 /** 根目录 */
 export const files = reactive<File[]>([]);
 
 /** 打开的文件 */
 export const openedFiles = reactive(new Map<string, File>());
-
-/** 监听主题变化 */
-watch(
-	() => cloneDeep(store.render.setting.theme),
-	(cur, prev) => {
-		if (cur.dark) {
-			// 设置为暗黑主题
-			document.body.setAttribute('arco-theme', 'dark');
-		} else {
-			// 恢复亮色主题
-			document.body.removeAttribute('arco-theme');
-		}
-	}
-);
-
-watch(
-	store,
-	(newStore) => {
-		if (inBrowser) {
-			localStorage.setItem('ocs-app-store', JSON.stringify(newStore));
-		} else {
-			remote['electron-store'].set('store', JSON.parse(JSON.stringify(newStore)));
-		}
-	},
-	{ deep: true }
-);
-
-watch(() => store.render.setting.window.autoLaunch, setAutoLaunch);
-watch(() => store.render.setting.window.alwaysOnTop, setAlwaysOnTop);
-
-export function changeTheme() {
-	if (store.render.setting.theme.dark) {
-		// 设置为暗黑主题
-		document.body.setAttribute('arco-theme', 'dark');
-		remote.win.call('setTitleBarOverlay', {
-			color: '#2C2C2C',
-			symbolColor: 'white'
-		});
-	} else {
-		// 恢复亮色主题
-		document.body.removeAttribute('arco-theme');
-		remote.win.call('setTitleBarOverlay', {
-			color: '#fff',
-			symbolColor: 'black'
-		});
-	}
-}
-
-export function setAutoLaunch() {
-	remote.methods.call('autoLaunch');
-}
-
-export function setAlwaysOnTop() {
-	remote.win.call('setAlwaysOnTop', store.render.setting.window.alwaysOnTop);
-}

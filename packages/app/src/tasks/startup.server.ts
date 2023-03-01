@@ -1,21 +1,23 @@
 import express from 'express';
-import Store from 'electron-store';
 import getPort from 'get-port';
 import { Logger } from '../logger';
-import { appStore } from '../store';
 import path from 'path';
 import axios from 'axios';
-import { app as electronApp } from 'electron';
+import { store } from '../store';
+import os from 'os';
+import { getProjectPath } from '../utils';
+import { canOCR, det, ocr } from '../utils/ocr';
+
 const logger = Logger('server');
 
 interface Folder {
 	uid: string;
 	children: Record<string, Folder>;
+	store: any;
 }
 
 export async function startupServer() {
 	const app = express();
-	const store = new Store<typeof appStore & { [x: string]: any }>();
 
 	app.use((req, res, next) => {
 		res.setHeader('Access-Control-Allow-Origin', req.headers.origin || 'unknown');
@@ -32,22 +34,32 @@ export async function startupServer() {
 	app.use(express.urlencoded({ extended: false }));
 	app.use(express.json());
 
+	app.get('/state', (req, res) => {
+		res.json({
+			public: path.join(getProjectPath(), './public'),
+			project: getProjectPath()
+		});
+	});
+
 	app.get('/ocs-global-setting', (req, res) => {
-		// @ts-ignore
 		res.json(store.store.render.setting.ocs);
 	});
 
 	/** 获取 browser 数据 */
 	app.get('/browser', (req, res) => {
-		const uid = req.query.uid?.toString();
+		const uid = req.headers['browser-uid']?.toString();
 		if (uid) {
 			// @ts-ignore
 			const folder: Folder = store.store.render.browser.root;
 			let temp: Folder | undefined;
-			const list = [folder];
+			const list: any[] = [folder];
 			while (list.length > 0) {
 				temp = list.shift();
 				if (temp && temp.uid === uid) {
+					// 当独立配置为空的时候使用全局配置
+					if (Object.keys(temp.store).length === 0) {
+						temp.store = store?.store?.render?.setting?.ocs?.store || {};
+					}
 					return res.json(temp);
 				}
 
@@ -80,12 +92,31 @@ export async function startupServer() {
 		res.send('正在执行脚本 : ' + req.path + ' 请勿操作。');
 	});
 
-	// 静态资源
-	app.use(
-		express.static(electronApp.isPackaged ? path.resolve(__dirname, '../../../public') : path.resolve('./public/'))
-	);
+	// ocr 验证码破解
+	app.post('/ocr', async (req, res) => {
+		const base64 = req.body.ocr?.toString();
+		const det_target = req.body.det_target?.toString();
+		const det_bg = req.body.det_bg?.toString();
 
-	const port = await getPort({ port: [15319, 153120, 15321] });
+		if (canOCR()) {
+			try {
+				if (base64) {
+					res.json({ canOCR: true, ocr: await ocr(base64) });
+				} else if (det_target && det_bg) {
+					res.json({ canOCR: true, det: await det(det_target, det_bg) });
+				}
+			} catch (err) {
+				res.json({ canOCR: true, error: err });
+			}
+		} else {
+			res.json({ canOCR: false });
+		}
+	});
+
+	// 静态资源
+	app.use(express.static(path.join(getProjectPath(), './public')));
+
+	const port = await getPort({ port: [15319, 15320, 15321] });
 
 	store.store.server = store.store.server || {};
 	store.store.server.port = port;
@@ -93,4 +124,23 @@ export async function startupServer() {
 	app.listen(port, () => {
 		logger.info('服务启动成功，端口：', port);
 	});
+
+	/** 为后续多主机控制做准备 */
+	const localIP = getLocalIP();
+	if (localIP) {
+		app.listen(port, localIP, () => {
+			logger.info(`局域网服务启动成功 : ${localIP}:${port}`);
+		});
+	}
+}
+/** 获取局域网IP */
+function getLocalIP() {
+	const interfaces = os.networkInterfaces();
+	for (const devName in interfaces) {
+		for (const iface of interfaces[devName] || []) {
+			if (iface.family === 'IPv4' && iface.address !== '127.0.0.1' && !iface.internal) {
+				return iface.address;
+			}
+		}
+	}
 }

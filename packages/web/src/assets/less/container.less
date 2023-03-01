@@ -1,0 +1,40 @@
+@primary-color: #1890ff; // 全局主色
+@link-color: #1890ff; // 链接色
+@success-color: #52c41a; // 成功色
+@warning-color: #faad14; // 警告色
+@error-color: #f5222d; // 错误色
+@heading-color: rgba(0, 0, 0, 0.85); // 标题色
+@text-color: rgba(0, 0, 0, 0.65); // 主文本色
+@text-color-secondary: rgba(0, 0, 0, 0.45); // 次文本色
+@disabled-color: rgba(0, 0, 0, 0.25); // 失效色
+@border-color-base: #d9d9d9; // 边框色
+
+
+.container{
+    .create(info,@primary-color);
+    .create(warning,@warning-color);
+    .create(success,@success-color);
+    .create(error,@error-color);
+
+
+    .create(@name,@color){
+        &-@{name}{
+            border-radius: 2px;
+            border-left: 8px solid @color;
+            background-color: mix(@color,rgba(255,255,255,0.1),10%);
+            padding: 1px 1px 1px 20px;
+            margin: 12px 0px;
+        }
+    }
+
+    &-title{
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    &-body {
+        line-height: 5px;
+        font-weight: 300;
+    }
+
+}

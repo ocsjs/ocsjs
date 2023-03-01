@@ -34,7 +34,9 @@
 		"node-forge": "1.0.0",
 		"playwright-core": "^1.28.0",
 		"semver": "^7.3.5",
-		"tesseract.js": "^2.1.5"
+		"systeminformation": "^5.17.10",
+		"tesseract.js": "^2.1.5",
+		"xlsx": "^0.17.5"
 	},
 	"repository": {
 		"type": "git",

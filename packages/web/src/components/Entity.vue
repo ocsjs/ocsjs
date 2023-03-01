@@ -74,7 +74,7 @@ const props = withDefaults(
 		widths?: { name: number | 'auto'; actions: number | 'auto' };
 	}>(),
 	{
-		widths: () => ({ name: 160, actions: 'auto' })
+		widths: () => ({ name: 300, actions: 'auto' })
 	}
 );
 

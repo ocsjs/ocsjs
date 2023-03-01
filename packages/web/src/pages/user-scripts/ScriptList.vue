@@ -55,12 +55,6 @@
 							:script="script"
 							name="infos"
 						></slot>
-						<a-tooltip
-							v-if="script.isLocalScript"
-							content="当前脚本处于您计算机本地，因此不能实时获取网络数据进行更新，但软件依然会尝试重复加载以保证您的文件修改后的代码仍能同步到浏览器中。"
-						>
-							<a-tag> 本地脚本 </a-tag>
-						</a-tooltip>
 
 						<a-tooltip content="今日安装">
 							<a-tag color="blue">
@@ -86,8 +80,18 @@
 							</a-tag>
 						</a-tooltip>
 
-						<a-tag title="创建时间"> {{ new Date(script.info.createTime).toLocaleDateString() }} 创建 </a-tag>
-						<a-tag title="更新时间"> {{ getElapsedTime(script.info.updateTime) }} 前更新 </a-tag>
+						<a-tag
+							v-if="script.info.createTime > 0"
+							title="创建时间"
+						>
+							{{ new Date(script.info.createTime).toLocaleDateString() }} 创建
+						</a-tag>
+						<a-tag
+							v-if="script.info.updateTime > 0"
+							title="更新时间"
+						>
+							{{ getElapsedTime(script.info.updateTime) }} 前更新
+						</a-tag>
 					</a-space>
 				</div>
 			</div>
@@ -110,7 +114,7 @@
 				<slot
 					name="actions"
 					:script="script"
-					:already-installed="store.render.scripts.find((s) => s.id === script.id) !== undefined"
+					:already-installed="isAlreadyInstalled(script)"
 				/>
 			</div>
 		</div>
@@ -162,6 +166,13 @@ function getElapsedTime(t: number) {
 		return Math.floor(elapsed / time);
 	}
 	return result;
+}
+
+/**
+ * 判断是否安装
+ */
+function isAlreadyInstalled(sc: StoreUserScript) {
+	return store.render.scripts.find((s) => s.id === sc.id) !== undefined;
 }
 </script>
 
@@ -220,11 +231,11 @@ function getElapsedTime(t: number) {
 	border-bottom: 1px solid #bdbdbd;
 	border-radius: 4px;
 	padding: 8px 12px;
-	box-shadow: 0px 2px 4px -2px #bdbdbd;
+	box-shadow: 0px 2px 4px 0px #d7d7d7;
 }
 
 .user-script-active {
-	box-shadow: 0px 2px 4px -2px #1890ff;
+	box-shadow: 0px 2px 4px 0px #9ec6eb;
 }
 
 .user-script + .user-script {

@@ -26,7 +26,6 @@ export class ScriptPanelElement extends IElement {
 	name?: string;
 
 	connectedCallback() {
-		this.replaceChildren();
 		this.separator.innerText = this.name || '';
 		this.append(this.separator);
 		this.append(this.notesContainer);

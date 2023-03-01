@@ -4,14 +4,14 @@
 			<Card title="基本设置">
 				<Description label="开机自启">
 					<a-switch
-						v-model="store['auto-launch']"
+						v-model="store.window.autoLaunch"
 						size="small"
 					/>
 				</Description>
 
 				<Description label="窗口置顶">
 					<a-switch
-						v-model="store.render.setting.window.alwaysOnTop"
+						v-model="store.window.alwaysOnTop"
 						size="small"
 					/>
 				</Description>
@@ -43,11 +43,12 @@
 					>
 						<div
 							id="ocs-global-configs"
+							style="height: 90vh"
 							class="m-2"
 						>
 							<OCSConfigs
 								v-show="state.loading === false"
-								:store="store.render.setting.ocs.store"
+								v-model:store="store.render.setting.ocs.store"
 								@error="(err) => (state.err = err)"
 								@loaded="() => (state.loading = false)"
 								@loading="() => (state.loading = true)"
@@ -85,6 +86,10 @@
 					label="配置文件"
 					name="config-path"
 				/>
+				<Path
+					label="软件路径"
+					name="exe-path"
+				/>
 			</Card>
 
 			<div class="mt-4">
@@ -110,11 +115,12 @@
 import Card from '../../components/Card.vue';
 import Description from '../../components/Description.vue';
 import Path from '../../components/Path.vue';
-import { changeTheme, store } from '../../store';
+import { store } from '../../store';
 import { remote } from '../../utils/remote';
 import BrowserPath from '../../components/setting/BrowserPath.vue';
 import OCSConfigs from '../../components/OCSConfigs.vue';
 import { reactive } from 'vue';
+import { changeTheme } from '../../utils';
 
 const state = reactive({
 	/** 是否加载 */

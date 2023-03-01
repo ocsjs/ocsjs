@@ -1,6 +1,6 @@
 import { Project } from '../interfaces/project';
-
 import { $ } from './common';
+import { $const } from './const';
 import { $store } from './store';
 
 /**
@@ -19,9 +19,9 @@ export interface StartConfig {
  */
 export async function start(startConfig: StartConfig) {
 	// 添加当前标签唯一id
-	const uid = await $store.getTab('uid');
+	const uid = await $store.getTab($const.TAB_UID);
 	if (uid === undefined) {
-		await $store.setTab('uid', $.uuid());
+		await $store.setTab($const.TAB_UID, $.uuid());
 	}
 
 	/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
@@ -35,34 +35,6 @@ export async function start(startConfig: StartConfig) {
 	});
 
 	const scripts = $.getMatchedScripts(startConfig.projects, [location.href]);
-
-	for (const script of scripts) {
-		/**
-		 * 以下是在每个脚本加载之后，统计每个脚本当前所运行的页面链接，链接不会重复
-		 * 初始化页面的脚本可以根据此链接列表，进行脚本页面的生成
-		 */
-
-		const _onstart = script.onstart;
-		script.onstart = (...args: any) => {
-			_onstart?.call(script, ...args);
-			const urls: string[] = Array.from($store.get('_urls_', []));
-			const urlHasInRecord = urls.find((u) => u === location.href);
-			if (!urlHasInRecord) {
-				$store.set('_urls_', urls.concat(location.href));
-			}
-		};
-
-		const _onbeforeunload = script.onbeforeunload;
-		script.onbeforeunload = (...args: any) => {
-			const prevent = _onbeforeunload?.call(script, ...args);
-			const urls: string[] = Array.from($store.get('_urls_', []));
-			const urlIndex = urls.findIndex((u) => u === location.href);
-			if (urlIndex !== -1) {
-				$store.set('_urls_', urls.splice(urlIndex, 1));
-			}
-			return prevent;
-		};
-	}
 
 	/** 执行脚本 */
 	scripts.forEach((script) => {
@@ -97,6 +69,14 @@ export async function start(startConfig: StartConfig) {
 			scripts.forEach((script) => {
 				script.emit('complete');
 				script.oncomplete?.(startConfig);
+			});
+
+			/**
+			 * 每个脚本加载之后，统计每个脚本当前所运行的页面链接，链接不会重复
+			 * 初始化页面的脚本可以根据此链接列表，进行脚本页面的生成
+			 */
+			$store.getTab('_urls_').then((urls) => {
+				$store.setTab(`_urls_`, Array.from(new Set(urls || [])).concat(location.href));
 			});
 		}
 	});

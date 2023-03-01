@@ -24,13 +24,12 @@
 		<!-- 文件操作 -->
 		<FileMultipleOperators></FileMultipleOperators>
 
-		<a-divider class="mt-1 mb-1"></a-divider>
-
 		<template v-if="Object.keys(currentEntities).length === 0">
-			<a-empty
-				class="p-3"
-				description="暂无任何浏览器"
-			></a-empty>
+			<div class="d-flex align-items-center mt-5">
+				<a-empty class="p-3">
+					<div>暂无浏览器，可点击上方的帮助查看使用教程哦~</div>
+				</a-empty>
+			</div>
 		</template>
 		<template v-else-if="currentSearchedEntities !== undefined && currentSearchedEntities.length === 0">
 			<a-empty
@@ -111,7 +110,7 @@
 							</a-col>
 
 							<!-- 标签 -->
-							<a-col flex="250px">
+							<a-col flex="180px">
 								<Tags
 									:tags="child.tags"
 									:read-only="true"

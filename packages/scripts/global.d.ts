@@ -1,4 +1,4 @@
-import * as Core from '@ocsjs/core';
+import * as Core from './src/index';
 
 declare global {
 	export declare const OCS: typeof Core;

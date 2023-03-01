@@ -1,10 +1,10 @@
-/** 异步任务 */
-
+import { app } from 'electron';
+import path from 'path';
 import AdmZip from 'adm-zip';
 import axios from 'axios';
 import { createWriteStream } from 'fs';
 import { finished } from 'stream/promises';
-import { Logger } from './logger';
+import { Logger } from '../logger';
 
 const taskLogger = Logger('task');
 const logger = Logger('utils');
@@ -68,4 +68,9 @@ export function unzip(input: string, output: string) {
 		zip.extractAllTo(output, true);
 		resolve();
 	});
+}
+
+export function getProjectPath() {
+	/** 这里多退出一层是因为打包后是运行在 ./lib 下面的 */
+	return app.isPackaged ? app.getAppPath() : path.resolve('./');
 }

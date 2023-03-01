@@ -9,6 +9,7 @@ import os from 'os';
 import crypto from 'crypto';
 import ElectronStore from 'electron-store';
 import { OCSApi, getValidBrowsers } from '@ocsjs/common';
+import si from 'systeminformation';
 
 /**
  * 注册主进程远程通信事件
@@ -83,7 +84,8 @@ const methods = {
 	},
 	zip: zip,
 	unzip: unzip,
-	getValidBrowsers: getValidBrowsers
+	getValidBrowsers: getValidBrowsers,
+	systemProcesses: () => si.processes()
 };
 
 /**

@@ -8,6 +8,7 @@ import { Browser } from '../fs/browser';
 import { Message } from '@arco-design/web-vue';
 import EventEmitter from 'events';
 import { child_process } from './node';
+import { notify } from './notify';
 
 export type RemoteScriptWorker = <W extends keyof ScriptWorker = keyof ScriptWorker>(
 	event: W,
@@ -27,6 +28,8 @@ export class Process extends EventEmitter {
 	browser: Browser;
 	/** 浏览器启动参数 */
 	launchOptions: Required<LaunchOptions>;
+	/** 输出 */
+	logs: string[] = [];
 
 	video: HTMLVideoElement | undefined = undefined;
 	stream: MediaStream | undefined = undefined;
@@ -55,9 +58,20 @@ export class Process extends EventEmitter {
 		);
 		this.worker = createRemoteScriptWorker(this.shell);
 
-		this.shell.stdout?.on('data', (data: any) => onConsole?.(data.toString()));
-		this.shell.stderr?.on('data', (data: any) => onConsole?.(data.toString()));
-		this.shell.stderr?.on('data', (data: any) => remote.logger.call('error', String(data)));
+		this.shell.stdout?.on('data', (data: any) => {
+			this.logs.push(data.toString());
+			onConsole?.(data.toString());
+		});
+		this.shell.stderr?.on('data', (data: any) => {
+			onConsole?.(data.toString());
+			remote.logger.call('error', String(data));
+			this.logs.push(`${this.browser.name} 错误`, data);
+			notify(`${this.browser.name} 错误`, data, this.browser.uid, {
+				duration: 60 * 1000,
+				copy: true,
+				type: 'error'
+			});
+		});
 
 		/** 监听器 */
 		const listeners: Record<string, (...args: any[]) => void> = {
@@ -81,7 +95,12 @@ export class Process extends EventEmitter {
 		});
 
 		// 初始化进程数据
-		this.worker('init', { store, cachePath: this.browser.cachePath, uid: this.uid });
+		this.worker('init', {
+			store,
+			cachePath: this.browser.cachePath,
+			uid: this.uid,
+			playwrightScripts: this.browser.playwrightScripts
+		});
 	}
 
 	/** 启动文件 */

@@ -1,0 +1,81 @@
+import { writeFile, mkdirSync, existsSync, rmSync, writeFileSync } from 'fs';
+import path from 'path';
+import { getProjectPath } from './index';
+import { randomUUID } from 'crypto';
+import child_process from 'child_process';
+
+/**
+ * 使用 ddddocr 进行验证码识别
+ * @param base64 图片 base64
+ */
+export function ocr(base64: string) {
+	return new Promise<string>((resolve, reject) => {
+		const uuid = randomUUID();
+		const img_cache = path.join(getProjectPath(), './bin/ocr/img_cache');
+		if (!existsSync(img_cache)) {
+			mkdirSync(img_cache, { recursive: true });
+		}
+		const img = path.join(img_cache, uuid + '.png');
+		writeFile(img, base64, 'base64', () => {
+			const cmd = [path.join(getProjectPath(), './bin/ocr/ocr.exe'), '--ocr', img].join(' ');
+			child_process.exec(cmd, (err, stdout, stderr) => {
+				if (err || stderr) {
+					reject(err || stderr);
+				} else {
+					resolve(stdout.trim());
+				}
+				// 删除图片
+				if (existsSync(img)) {
+					rmSync(img);
+				}
+			});
+		});
+	});
+}
+
+/**
+ * 使用 ddddocr 进行滑块识别
+ *
+ * @param det_target_base64 滑块图片
+ * @param det_bg_base64 滑块背景图片
+ *
+ * target_y: 滑块高度
+ * target: [x1,y1,x2,y2]
+ */
+export function det(det_target_base64: string, det_bg_base64: string) {
+	return new Promise<{
+		target_y: number;
+		target: [number, number, number, number];
+	}>((resolve, reject) => {
+		const img_cache = path.join(getProjectPath(), './bin/ocr/img_cache');
+		if (!existsSync(img_cache)) {
+			mkdirSync(img_cache, { recursive: true });
+		}
+		const img1 = path.join(img_cache, randomUUID() + '.png');
+		const img2 = path.join(img_cache, randomUUID() + '.png');
+		writeFileSync(img1, det_target_base64, 'base64');
+		writeFileSync(img2, det_bg_base64, 'base64');
+
+		const cmd = [path.join(getProjectPath(), './bin/ocr/ocr.exe'), '--det-target', img1, '--det-bg', img2].join(' ');
+
+		child_process.exec(cmd, (err, stdout, stderr) => {
+			if (err || stderr) {
+				reject(err || stderr);
+			} else {
+				resolve(JSON.parse(stdout.trim().replace(/'/g, '"')));
+			}
+			// 删除图片
+			if (existsSync(img1)) {
+				rmSync(img1);
+			}
+			if (existsSync(img2)) {
+				rmSync(img2);
+			}
+		});
+	});
+}
+
+/** 判断是否能够进行验证码识别 */
+export function canOCR() {
+	return existsSync(path.join(getProjectPath(), './bin/ocr/ocr.exe'));
+}

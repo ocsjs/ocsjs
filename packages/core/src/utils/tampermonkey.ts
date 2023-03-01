@@ -1,4 +1,4 @@
-/* global Tampermonkey */
+/* global Tampermonkey GM_getTab */
 
 /**
  * 油猴封装库
@@ -18,7 +18,11 @@ export const $gm = {
 	/** 获取 GM_info */
 	getInfos(): Tampermonkey.ScriptInfo | undefined {
 		// eslint-disable-next-line no-undef
-		return typeof globalThis.GM_getTab === 'undefined' ? undefined : GM_info;
+		return typeof GM_info === 'undefined' ? undefined : GM_info;
+	},
+	/** 与 $store.getTab 不同的是这个直接获取全部 tab 对象 */
+	getTab(callback: (obj: any) => void) {
+		return typeof GM_getTab === 'undefined' ? undefined : GM_getTab(callback);
 	},
 
 	/**
