@@ -130,10 +130,8 @@ export const $creator = {
 		});
 	},
 	// 创建脚本面板
-	scriptPanel(script: Script, opts: { projectName: string; expandAll: boolean; onload?: (el: ConfigElement) => void }) {
-		const scriptPanel = el('script-panel-element', {
-			name: opts.expandAll ? opts.projectName + '-' + script.name : script.name
-		});
+	scriptPanel(script: Script, opts: { projectName: string; onload?: (el: ConfigElement) => void }) {
+		const scriptPanel = el('script-panel-element', { name: script.name });
 
 		// 监听提示内容改变
 		script.onConfigChange('notes', (pre, curr) => {

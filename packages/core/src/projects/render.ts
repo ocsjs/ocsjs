@@ -54,8 +54,17 @@ const RenderScript = new Script({
 	configs: {
 		x: { defaultValue: window.innerWidth * 0.1 },
 		y: { defaultValue: window.innerWidth * 0.1 },
-		visual: { defaultValue: 'normal' },
-		expandAll: { defaultValue: false },
+
+		/**
+		 * - minimize: 最小化
+		 * - close: 关闭
+		 * - normal: 正常
+		 */
+		visual: { defaultValue: 'normal' as 'minimize' | 'normal' | 'close' },
+		// 首次关闭时警告
+		firstCloseAlert: {
+			defaultValue: true
+		},
 		fontsize: {
 			label: '字体大小（像素）',
 			attrs: { type: 'number', min: 10, max: 36, step: 1 },
@@ -147,7 +156,7 @@ const RenderScript = new Script({
 				el(
 					'div',
 					{
-						className: ['project-selector', this.cfg.expandAll ? 'expand-all' : ''].join(' '),
+						className: 'project-selector',
 						title: '点击选择脚本操作页面，部分脚本会提供操作页面（包含脚本设置和脚本提示）。'
 					},
 					[projectSelector]
@@ -215,7 +224,7 @@ const RenderScript = new Script({
 		};
 
 		const initPanelAndScript = (projectName: string, script: Script) => {
-			const panel = $creator.scriptPanel(script, { expandAll: this.cfg.expandAll, projectName });
+			const panel = $creator.scriptPanel(script, { projectName });
 			script.projectName = projectName;
 			script.panel = panel;
 			script.header = container.header;
@@ -234,15 +243,14 @@ const RenderScript = new Script({
 			}
 
 			if (!this.cfg.expandAll) {
-				const index = list.findIndex((i) => isCurrentPanel(i.script.projectName, i.script, currentPanelName));
-				const targetIndex = index === -1 ? 0 : index;
+			const index = list.findIndex((i) => isCurrentPanel(i.script.projectName, i.script, currentPanelName));
+			const targetIndex = index === -1 ? 0 : index;
 
-				if (list[targetIndex]) {
-					return [list[targetIndex]];
+			if (list[targetIndex]) {
+				return [list[targetIndex]];
+			} else {
+				return [list[0]];
 				}
-			}
-
-			return list;
 		};
 
 		/** 处理面板位置 */
@@ -300,13 +308,13 @@ const RenderScript = new Script({
 			const scripts = list.map((i) => i.script);
 
 			if (!this.cfg.expandAll) {
-				const index = scripts.findIndex((s) => isCurrentPanel(s.projectName, s, currentPanelName));
+			const index = scripts.findIndex((s) => isCurrentPanel(s.projectName, s, currentPanelName));
 
-				const script = scripts[index === -1 ? 0 : index];
-				if (script?.panel) {
-					// 执行重新渲染钩子
-					script.onrender?.({ panel: script.panel, header: container.header });
-					script.emit('render', { panel: script.panel, header: container.header });
+			const script = scripts[index === -1 ? 0 : index];
+			if (script?.panel) {
+				// 执行重新渲染钩子
+				script.onrender?.({ panel: script.panel, header: container.header });
+				script.emit('render', { panel: script.panel, header: container.header });
 				}
 			} else {
 				// 如果全部展开
