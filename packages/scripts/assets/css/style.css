@@ -153,7 +153,7 @@ container-element {
 }
 .body {
   padding: 0px 24px 24px 24px;
-  overflow: overlay;
+  overflow: auto;
   width: auto;
   height: 100%;
 }
@@ -165,7 +165,7 @@ script-panel-element {
   border-radius: 4px;
   padding: 8px 8px 12px 8px;
   resize: both;
-  overflow: overlay;
+  overflow: auto;
 }
 script-panel-element .script-panel-body {
   padding: 0px 8px;
@@ -199,6 +199,7 @@ script-panel-element + script-panel-element {
   max-width: 200px;
   height: auto;
   border-radius: 2px;
+  line-height: 18px;
 }
 .configs {
   display: table;
@@ -456,7 +457,7 @@ model-element .model-title {
 }
 model-element .model-body {
   margin: 12px 0px;
-  overflow: overlay;
+  overflow: auto;
 }
 model-element .model-footer {
   display: flex;
@@ -654,7 +655,7 @@ model-element.confirm .model-input {
 }
 search-results-element {
   display: block;
-  overflow: overlay;
+  overflow: auto;
 }
 search-results-element .search-result {
   margin-bottom: 12px;
@@ -710,7 +711,7 @@ search-results-element .search-result:hover .copy {
 .console {
   max-height: 300px;
   max-width: 400px;
-  overflow: overlay;
+  overflow: auto;
   background-color: #292929;
   padding: 12px 6px;
   color: #ececec;
@@ -742,7 +743,7 @@ search-results-element .search-result:hover .copy {
 /* 设置滚动条的样式 */
 ::-webkit-scrollbar {
   width: 10px;
-  height: 6px;
+  height: 10px;
 }
 /* 滚动槽 */
 ::-webkit-scrollbar-track {
@@ -755,4 +756,33 @@ search-results-element .search-result:hover .copy {
   border-radius: 4px;
   background: rgba(0, 0, 0, 0.253);
   box-shadow: inset006pxrgba(0, 0, 0, 0.3);
+}
+.markdown {
+  max-width: 400px;
+  max-height: 50vh;
+  overflow: auto;
+}
+.markdown code {
+  padding: 2px 4px;
+  background-color: #f0f0f0;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.markdown blockquote {
+  padding: 4px 4px 4px 12px;
+  margin: 0px;
+  color: #b5b5b5;
+  border-left: #ababab 2px solid;
+}
+.markdown blockquote p {
+  margin: 0px;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6,
+.markdown p {
+  margin: 8px 0px;
 }
