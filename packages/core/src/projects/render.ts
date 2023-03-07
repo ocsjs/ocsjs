@@ -208,7 +208,23 @@ const RenderScript = new Script({
 					className: 'close  ',
 					innerText: 'x',
 					title: '点击关闭窗口（不会影响脚本运行，连续点击三次页面任意位置可以重新唤出窗口）',
-					onclick: () => (this.cfg.visual = 'close')
+					onclick: () => {
+						if (this.cfg.firstCloseAlert) {
+							$model('confirm', {
+								content: $creator.notes([
+									'关闭脚本页面后，快速点击页面三下（可以在悬浮窗设置中调整次数）即可重新显示脚本。',
+									'请确认是否关闭。（此后不再显示此弹窗）'
+								]),
+								onConfirm: () => {
+									this.cfg.visual = 'close'
+									this.cfg.firstCloseAlert = false
+								},
+							})
+						} else {
+							this.cfg.visual = 'close'
+						}
+
+					}
 				})
 			);
 
