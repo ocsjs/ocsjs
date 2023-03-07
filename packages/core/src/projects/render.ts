@@ -369,6 +369,8 @@ const RenderScript = new Script({
 		if (matchedScripts.length !== 0 && self === top) {
 			// 创建样式元素
 			container.append(el('style', {}, style || ''), $elements.messageContainer);
+			// 防止浏览器不兼容，如果兼容的话会自动替换此文案
+			container.body.append(el('div', { className: 'card' }, [$creator.notes(['OCS警告 : ', '当前浏览器版本过低或者不兼容，请下载其他浏览器，', '例如谷歌浏览器或者微软浏览器。'])]))
 			$elements.root.append(container);
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);
@@ -383,6 +385,12 @@ const RenderScript = new Script({
 			// 处理面板位置
 			handlePosition();
 			onFontsizeChange();
+
+			(async () => {
+				const urls = await $store.getTab($const.TAB_URLS);
+				const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
+				rerender(urls || [], currentPanelName || '');
+			})();
 
 			/** 使用 debounce 避免页面子 iframe 刷新过多 */
 			$store.addTabChangeListener(

@@ -167,6 +167,36 @@ export const BackgroundProject = Project.create({
 				panel.replaceChildren(div);
 				logs.at(-1)?.scrollIntoView();
 			}
+		}),
+		browserCheck: new Script({
+			name: '浏览器版本检测',
+			url: [['所有页面', /.*/]],
+			oncomplete() {
+
+				if (self === top) {
+					const match = navigator.userAgent.match(/Chrome\/(\d+)/)
+					const version = match ? parseInt(match[1]) : undefined
+					if (version) {
+						// dom.replaceChildren 在 chrome 86 以上版本才能使用
+						if (version < 86) {
+							$model('alert', {
+								content: $creator.notes([
+									'检测到您当前的浏览器版本过低，可能导致脚本无法运行，请下载/更新以下推荐浏览器：',
+									[
+										'- 微软浏览器(Edge) : ',
+										el('a', { href: 'https://www.microsoft.com/zh-cn/edge', target: '_blank' }, 'https://www.microsoft.com/zh-cn/edge')
+									],
+									[
+										'- 谷歌浏览器(Chrome) : ',
+										el('a', { href: 'https://www.google.com/intl/zh-CN/chrome/', target: '_blank' }, 'https://www.google.com/intl/zh-CN/chrome/')
+									],
+								]).outerHTML
+							})
+						}
+
+					}
+				}
+			}
 		})
 	}
 });
