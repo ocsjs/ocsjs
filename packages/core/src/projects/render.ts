@@ -265,8 +265,16 @@ const RenderScript = new Script({
 			if (list[targetIndex]) {
 				return [list[targetIndex]];
 			} else {
-				return [list[0]];
+				// 如果第一个存在
+				if (list[0]) {
+					return [list[0]];
+				} else {
+					return [{
+						script: RenderProject.scripts.render,
+						panel: initPanelAndScript(RenderProject.name, RenderProject.scripts.render)
+					}] as { script: Script; panel: ScriptPanelElement }[]
 				}
+			}
 		};
 
 		/** 处理面板位置 */
@@ -375,10 +383,12 @@ const RenderScript = new Script({
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);
 
-			const urls = await $store.getTab($const.TAB_URLS);
-			const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
+			(async () => {
+				const urls = await $store.getTab($const.TAB_URLS);
+				const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
 
-			rerender(urls || [], currentPanelName || '');
+				rerender(urls || [], currentPanelName || '');
+			})();
 
 			// 初始化模态框系统
 			initModelSystem();
@@ -402,7 +412,7 @@ const RenderScript = new Script({
 			);
 
 			$store.addTabChangeListener($const.TAB_CURRENT_PANEL_NAME, async (currentPanelName) => {
-				const urls = await $store.getTab($const.TAB_URLS);
+				const urls = await $store.getTab($const.TAB_URLS) || [location.href]
 				rerender(urls, currentPanelName);
 			});
 			this.onConfigChange('fontsize', onFontsizeChange);
