@@ -66,6 +66,17 @@ export const BackgroundProject = Project.create({
 				}
 			}
 		}),
+		appLoginHelper: new Script({
+			name: '软件登录辅助',
+			'url': [['超星登录', 'passport2.chaoxing.com/login'], ['智慧树登录', 'passport.zhihuishu.com/login']],
+			onactive() {
+				// 将面板移动至左侧顶部，防止挡住软件登录
+				RenderProject.scripts.render.cfg.x = 10
+				RenderProject.scripts.render.cfg.y = 10
+				RenderProject.scripts.render.cfg.visual = 'minimize'
+			}
+
+		}),
 		dev: new Script({
 			name: '开发者调试',
 			namespace: 'background.dev',
