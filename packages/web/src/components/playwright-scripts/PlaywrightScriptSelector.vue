@@ -90,7 +90,8 @@ function confirm() {
 	const playwrightScripts = selectedScripts.value
 		.map((s) => scripts.value.find((ps) => ps.name === s))
 		.filter(Boolean) as RawPlaywrightScript[];
-	emits('update:playwrightScripts', playwrightScripts);
+	// 使用拷贝消除响应式特性
+	emits('update:playwrightScripts', JSON.parse(JSON.stringify(playwrightScripts)));
 	emits('confirm');
 }
 
