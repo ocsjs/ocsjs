@@ -382,6 +382,25 @@ export const CXProject = Project.create({
 				}
 			}
 		}),
+		guide: new Script({
+			name: '使用提示',
+			url: [
+				['首页', 'https://www.chaoxing.com'],
+				['旧版个人首页', 'chaoxing.com/space/index'],
+				['新版个人首页', 'chaoxing.com/base'],
+				['课程首页', 'chaoxing.com/mycourse']
+			],
+			level: 99,
+			namespace: 'cx.guide',
+			configs: {
+				notes: {
+					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
+				}
+			},
+			onactive() {
+				$script.pin(this);
+			}
+		}),
 		versionRedirect: new Script({
 			name: '版本切换脚本',
 			url: [
@@ -446,7 +465,59 @@ export const CXProject = Project.create({
 				this.onstart?.();
 				setTimeout(() => this.onstart?.(), 5000);
 			}
-		})
+		}),
+		recognize: new Script({
+			name: '繁体字识别',
+			url: [['章节测试', '/work/doHomeWorkNew']],
+			hideInPanel: true,
+			oncomplete() {
+				setTimeout(async () => {
+					await mappingRecognize();
+				}, 3000);
+			}
+		}),
+		studyDispatcher: new Script({
+			name: '课程学习调度器',
+			url: [['课程学习页面', '/mycourse/studentstudy']],
+			namespace: 'cx.new.study-dispatcher',
+			hideInPanel: true,
+			async oncomplete() {
+				// 开始任务切换
+				const restudy = CXProject.scripts.study.cfg.restudy;
+
+				$script.pin(CXProject.scripts.study);
+
+				if (!restudy) {
+					// 如果不是复习模式，则寻找需要运行的任务
+					const params = new URLSearchParams(window.location.href);
+					const mooc = params.get('mooc2');
+					/** 切换新版 */
+					if (mooc === null) {
+						params.set('mooc2', '1');
+						window.location.replace(decodeURIComponent(params.toString()));
+						return;
+					}
+
+					let chapters = CXAnalyses.getChapterInfos();
+
+					chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
+
+					if (chapters.length === 0) {
+						$message('warn', { content: '页面任务点数量为空! 请刷新重试!' });
+					} else {
+						const params = new URLSearchParams(window.location.href);
+						const courseId = params.get('courseId');
+						const classId = params.get('clazzid');
+						setTimeout(() => {
+							//  进入需要进行的章节，并且当前章节未被选中
+							if ($$el(`.posCatalog_active[id="cur${chapters[0].chapterId}"]`).length === 0) {
+								$gm.unsafeWindow.getTeacherAjax(courseId, classId, chapters[0].chapterId);
+							}
+						}, 1000);
+					}
+				}
+			}
+		}),
 	}
 });
 
