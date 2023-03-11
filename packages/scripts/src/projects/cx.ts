@@ -1253,8 +1253,8 @@ async function chapterTestTask(
 								option.click();
 							}
 						} else if (type === 'completion' && answer.trim()) {
-							const text = option.querySelector('textarea');
-							const textareaFrame = option.querySelector('iframe');
+							const text = option.parentElement?.querySelector('textarea');
+							const textareaFrame = option.parentElement?.querySelector('iframe');
 							if (text) {
 								text.value = answer;
 							}
