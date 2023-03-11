@@ -31,6 +31,7 @@
 	},
 	"homepage": "https://github.com/ocsjs/ocsjs#readme",
 	"devDependencies": {
+		"@types/marked": "^4.0.8",
 		"@types/md5": "^2.3.2",
 		"@types/tampermonkey": "^4.0.5",
 		"vite": "^2.9.15",
@@ -41,7 +42,10 @@
 		"@rollup/plugin-commonjs": "^24.0.0",
 		"browser-env": "^3.3.0",
 		"lodash": "^4.17.21",
+		"markdown-it": "^13.0.1",
+		"marked": "^4.2.12",
 		"md5": "^2.3.0",
+		"semver": "^7.3.5",
 		"typr.js": "^1.0.0"
 	}
 }

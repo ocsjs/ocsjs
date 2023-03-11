@@ -14,7 +14,7 @@ export function request<T extends 'json' | 'text'>(
 		headers?: Record<string, string>;
 		data?: Record<string, string>;
 	}
-): Promise<T extends 'json' ? Record<string, any> : string> {
+): Promise<T extends 'json' ? any : string> {
 	return new Promise((resolve, reject) => {
 		try {
 			/** 默认参数 */
@@ -55,7 +55,7 @@ export function request<T extends 'json' | 'text'>(
 			} else {
 				const fet: (...args: any[]) => Promise<Response> = env === 'node' ? require('node-fetch').default : fetch;
 
-				fet(url, { contentType, body: method === 'post' ? data : undefined, method, headers })
+				fet(url, { contentType, body: method === 'post' ? JSON.stringify(data) : undefined, method, headers })
 					.then((response) => {
 						if (contentType === 'json') {
 							response.json().then(resolve).catch(reject);

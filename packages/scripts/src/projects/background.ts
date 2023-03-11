@@ -1,4 +1,5 @@
-import { $creator, $gm, $store, Project, Script, el, request } from '@ocsjs/core';
+import { $creator, $gm, $model, $store, Project, RenderProject, Script, el, request } from '@ocsjs/core';
+import gt from 'semver/functions/gt';
 
 const state = {
 	console: {
@@ -20,10 +21,18 @@ export const BackgroundProject = Project.create({
 			name: '软件配置同步',
 			namespace: 'background.app',
 			url: [['所有页面', /./]],
+			level: -1,
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
-						['如果您使用OCS软件启动浏览器，并使用此脚本，', '我们会同步软件中的配置到此脚本上，方便多个浏览器的管理。'],
+						[
+							el('span', [
+								'如果您使用',
+								el('a', { href: 'https://docs.ocsjs.com/docs/app', target: '_blank' }, 'OCS桌面软件'),
+								'启动浏览器，并使用此脚本，'
+							]),
+							'我们会同步软件中的配置到此脚本上，方便多个浏览器的管理。'
+						],
 						'如果不是，您可以忽略此脚本。'
 					]).outerHTML
 				},
@@ -68,14 +77,17 @@ export const BackgroundProject = Project.create({
 		}),
 		appLoginHelper: new Script({
 			name: '软件登录辅助',
-			'url': [['超星登录', 'passport2.chaoxing.com/login'], ['智慧树登录', 'passport.zhihuishu.com/login']],
+			url: [
+				['超星登录', 'passport2.chaoxing.com/login'],
+				['智慧树登录', 'passport.zhihuishu.com/login']
+			],
+			hideInPanel: true,
 			onactive() {
 				// 将面板移动至左侧顶部，防止挡住软件登录
-				RenderProject.scripts.render.cfg.x = 10
-				RenderProject.scripts.render.cfg.y = 10
-				RenderProject.scripts.render.cfg.visual = 'minimize'
+				RenderProject.scripts.render.cfg.x = 10;
+				RenderProject.scripts.render.cfg.y = 10;
+				RenderProject.scripts.render.cfg.visual = 'minimize';
 			}
-
 		}),
 		dev: new Script({
 			name: '开发者调试',
@@ -92,8 +104,7 @@ export const BackgroundProject = Project.create({
 					$gm.unsafeWindow.OCS_CONTEXT = self;
 				});
 				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn]));
-			},
-			oncomplete() {}
+			}
 		}),
 		console: new Script({
 			name: '日志',
@@ -150,7 +161,15 @@ export const BackgroundProject = Project.create({
 
 						return item;
 					});
-					div.replaceChildren(...logs);
+					if (logs.length) {
+						div.replaceChildren(...logs);
+					} else {
+						div.replaceChildren(
+							el('div', '暂无任何日志', (div) => {
+								div.style.textAlign = 'center';
+							})
+						);
+					}
 
 					return { div, logs };
 				};
@@ -171,8 +190,8 @@ export const BackgroundProject = Project.create({
 		browserCheck: new Script({
 			name: '浏览器版本检测',
 			url: [['所有页面', /.*/]],
+			hideInPanel: true,
 			oncomplete() {
-
 				if (self === top) {
 					const match = navigator.userAgent.match(/Chrome\/(\d+)/);
 					const version = match ? parseInt(match[1]) : undefined;
@@ -217,33 +236,37 @@ export const BackgroundProject = Project.create({
 			},
 			oncomplete() {
 				if (self === top) {
-
 					if (this.cfg.notToday === -1 || this.cfg.notToday !== new Date().getDate()) {
 						const infos = $gm.getInfos();
 						if (infos) {
 							// 避免阻挡用户操作，这里等页面运行一段时间后再进行更新提示
 							setTimeout(async () => {
-								const version: { 'last-version': string; resource: Record<string, string>, notes: string[] } = await request(
-									'https://cdn.ocsjs.com/ocs-version.json?t=' + Date.now(),
-									{ method: 'get', type: 'fetch' }
-								);
+								const version: { 'last-version': string; resource: Record<string, string>; notes: string[] } =
+									await request('https://cdn.ocsjs.com/ocs-version.json?t=' + Date.now(), {
+										method: 'get',
+										type: 'fetch'
+									});
 								if (gt(version['last-version'], infos.script.version)) {
 									const model = $model('confirm', {
 										content: $creator.notes([
 											`检测到新版本发布 ${version['last-version']} ：`,
 											[...(version.notes || [])]
 										]),
-										cancelButton: el('button', { className: 'base-style-button-secondary', innerText: '今日不再提示' }, (btn) => {
-											btn.onclick = () => {
-												this.cfg.notToday = new Date().getDate()
-												model?.remove()
+										cancelButton: el(
+											'button',
+											{ className: 'base-style-button-secondary', innerText: '今日不再提示' },
+											(btn) => {
+												btn.onclick = () => {
+													this.cfg.notToday = new Date().getDate();
+													model?.remove();
+												};
 											}
-										}),
+										),
 										confirmButton: el('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
 											btn.onclick = () => {
-												window.open(version.resource[infos.scriptHandler], '_blank')
-												model?.remove()
-											}
+												window.open(version.resource[infos.scriptHandler], '_blank');
+												model?.remove();
+											};
 										})
 									});
 								}

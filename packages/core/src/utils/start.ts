@@ -45,10 +45,16 @@ export async function start(startConfig: StartConfig) {
 	/** 防止 onactive 执行两次 */
 	let active = false;
 
-	/** 存在一开始就是 active 的情况 */
+	/**
+	 * 如果页面加载元素较少，或者网速极快的情况下
+	 * 存在一开始就是 active 或者 complete 的情况
+	 */
 	if (document.readyState === 'interactive') {
 		active = true;
 		scripts.forEach((script) => script.onactive?.(startConfig));
+	} else if (document.readyState === 'complete') {
+		scripts.forEach((script) => script.onactive?.(startConfig));
+		scripts.forEach((script) => script.oncomplete?.(startConfig));
 	}
 
 	/**

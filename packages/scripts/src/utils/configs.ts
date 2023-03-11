@@ -48,7 +48,7 @@ export const auto: Config = {
 export const workConfigs = {
 	notes: {
 		defaultValue: $creator.notes([
-			'答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。',
+			'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 			'可以搭配 “通用-在线搜题” 一起使用。'
 		]).outerHTML
 	} as Config<any, string>,

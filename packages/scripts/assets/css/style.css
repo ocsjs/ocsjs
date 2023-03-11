@@ -70,6 +70,35 @@ hr {
 .base-style-button:disabled:active {
   box-shadow: none;
 }
+.base-style-button-secondary {
+  appearance: none;
+  border-radius: 4px;
+  border: 1px solid #2c92ff;
+  color: #409eff;
+  cursor: pointer;
+  margin-bottom: 4px;
+  color: gray;
+  background-color: white;
+  border: 1px solid #dcdcdc;
+}
+.base-style-button-secondary:active {
+  box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.base-style-button-secondary + .base-style-button-secondary {
+  margin-left: 12px;
+}
+.base-style-button-secondary:hover {
+  background-color: #7abbff24;
+}
+.base-style-button-secondary:disabled {
+  background-color: white;
+  border: 1px solid #c0c0c0;
+  color: #aeaeae;
+  cursor: not-allowed;
+}
+.base-style-button-secondary:disabled:active {
+  box-shadow: none;
+}
 container-element.close {
   display: none;
 }
@@ -177,6 +206,7 @@ script-panel-element + script-panel-element {
   margin-top: 12px;
 }
 .card {
+  background-color: white;
   border-radius: 2px;
   padding: 0px 8px;
 }

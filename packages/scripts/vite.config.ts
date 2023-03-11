@@ -29,6 +29,7 @@ export default defineConfig({
 		emptyOutDir: false,
 		/** 是否压缩代码 */
 		minify: false,
+
 		/** 打包库， 全局名字为 OCS */
 		lib: {
 			entry: './src/index.ts',

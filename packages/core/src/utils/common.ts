@@ -198,7 +198,7 @@ export const $ = {
 		return res;
 	},
 	/** 加载自定义元素 */
-	loadCustomElements(elements: { new (): HTMLElement }[]) {
+	loadCustomElements(elements: { new(): HTMLElement }[]) {
 		for (const element of elements) {
 			const name = $string.humpToTarget(element.name, '-');
 			// 不能重复加载

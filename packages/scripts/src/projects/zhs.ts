@@ -29,6 +29,7 @@ export const ZHSProject = Project.create({
 	name: '智慧树',
 	level: 99,
 	domains: ['zhihuishu.com'],
+	studyProject: true,
 	scripts: {
 		guide: new Script({
 			name: '使用提示',
@@ -284,7 +285,7 @@ export const ZHSProject = Project.create({
 								record?.courses.find((c) => c.name === vue.data.courseInfo.name)?.time || 0
 							)}`
 						});
-					} catch {}
+					} catch { }
 				};
 
 				const interval = setInterval(async () => {
@@ -496,7 +497,6 @@ export const ZHSProject = Project.create({
 							worker = gxkWorkOrExam('work', opts);
 						},
 						ondone: () => this.event.emit('done'),
-						upload: this.cfg.upload,
 						...CommonProject.scripts.settings.cfg
 					});
 				};
@@ -577,8 +577,8 @@ export const ZHSProject = Project.create({
 						ondone: () => {
 							this.event.emit('done');
 						},
-						upload: 'nomove',
-						...CommonProject.scripts.settings.cfg
+
+						...CommonProject.scripts.settings.cfg, upload: 'nomove',
 					});
 				};
 
@@ -645,7 +645,6 @@ export const ZHSProject = Project.create({
 						ondone: () => {
 							this.event.emit('done');
 						},
-						upload: this.cfg.upload,
 						...CommonProject.scripts.settings.cfg
 					});
 				};
@@ -784,7 +783,7 @@ function waitForQuestionsLoad() {
  */
 function hack() {
 	const vue = $el('.video-study')?.__vue__;
-	const empty = () => {};
+	const empty = () => { };
 	vue.checkout = empty;
 	vue.notTrustScript = empty;
 	vue.checkoutNotTrustScript = empty;

@@ -236,7 +236,7 @@ export const $creator = {
 		const { onrun, ondone, ...opts } = options;
 
 		if (opts.answererWrappers.length === 0) {
-			$model('alert', { content: '题库配置为空，请设置。' });
+			$model('alert', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
 			ondone?.(opts);
 		} else {
 			$message('info', {

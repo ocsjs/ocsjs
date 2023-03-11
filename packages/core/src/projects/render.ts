@@ -67,11 +67,11 @@ const RenderScript = new Script({
 		},
 		fontsize: {
 			label: '字体大小（像素）',
-			attrs: { type: 'number', min: 10, max: 36, step: 1 },
+			attrs: { type: 'number', min: 12, max: 24, step: 1 },
 			defaultValue: 14
 		},
 		switchPoint: {
-			label: '窗口连续点击切换点（次数）',
+			label: '窗口显示连点（次数）',
 			attrs: {
 				type: 'number',
 				min: 3,
@@ -140,9 +140,8 @@ const RenderScript = new Script({
 							const options = scripts.map((script, i) =>
 								el('option', {
 									value: project.name + '-' + script.name,
-									label: project.name + '-' + script.name,
-									selected:
-										currentPanelName === undefined ? i === 0 : isCurrentPanel(project.name, script, currentPanelName)
+									label: script.name,
+									selected: isCurrentPanel(project.name, script, currentPanelName)
 								})
 							);
 
@@ -164,26 +163,6 @@ const RenderScript = new Script({
 			);
 
 			container.header.projectSelector = projectSelectorDiv;
-
-			/** 是否展开所有脚本 */
-			const isExpandAll = () => this.cfg.expandAll === true;
-			/** 脚本切换按钮 */
-			const expandSwitcher = $creator.tooltip(
-				el('div', {
-					className: 'panel-switch',
-					title: isExpandAll() ? '收缩脚本' : '展开脚本',
-					innerText: isExpandAll() ? '-' : '≡',
-					onclick: () => {
-						this.cfg.expandAll = !isExpandAll();
-						expandSwitcher.title = this.cfg.expandAll ? '收缩脚本' : '展开脚本';
-						expandSwitcher.innerText = this.cfg.expandAll ? '-' : '≡';
-						projectSelectorDiv.classList.toggle('expand-all');
-						// 替换元素
-						renderBody(urls, currentPanelName);
-					}
-				})
-			);
-			container.header.expandSwitcher = expandSwitcher;
 
 			/** 窗口是否最小化 */
 			const isMinimize = () => this.cfg.visual === 'minimize';
@@ -212,18 +191,17 @@ const RenderScript = new Script({
 						if (this.cfg.firstCloseAlert) {
 							$model('confirm', {
 								content: $creator.notes([
-									'关闭脚本页面后，快速点击页面三下（可以在悬浮窗设置中调整次数）即可重新显示脚本。',
+									'关闭脚本页面后，快速点击页面三下（可以在悬浮窗设置中调整次数）即可重新显示脚本。如果三下无效，可以尝试删除脚本重新安装。',
 									'请确认是否关闭。（此后不再显示此弹窗）'
 								]),
 								onConfirm: () => {
-									this.cfg.visual = 'close'
-									this.cfg.firstCloseAlert = false
-								},
-							})
+									this.cfg.visual = 'close';
+									this.cfg.firstCloseAlert = false;
+								}
+							});
 						} else {
-							this.cfg.visual = 'close'
+							this.cfg.visual = 'close';
 						}
-
 					}
 				})
 			);
@@ -233,7 +211,6 @@ const RenderScript = new Script({
 				container.header.profile || '',
 				container.header.projectSelector || '',
 				container.header.logo || '',
-				container.header.expandSwitcher || '',
 				container.header.visualSwitcher || '',
 				container.header.closeButton || ''
 			);
@@ -258,7 +235,6 @@ const RenderScript = new Script({
 				}
 			}
 
-			if (!this.cfg.expandAll) {
 			const index = list.findIndex((i) => isCurrentPanel(i.script.projectName, i.script, currentPanelName));
 			const targetIndex = index === -1 ? 0 : index;
 
@@ -269,10 +245,12 @@ const RenderScript = new Script({
 				if (list[0]) {
 					return [list[0]];
 				} else {
-					return [{
-						script: RenderProject.scripts.render,
-						panel: initPanelAndScript(RenderProject.name, RenderProject.scripts.render)
-					}] as { script: Script; panel: ScriptPanelElement }[]
+					return [
+						{
+							script: RenderProject.scripts.render,
+							panel: initPanelAndScript(RenderProject.name, RenderProject.scripts.render)
+						}
+					] as { script: Script; panel: ScriptPanelElement }[];
 				}
 			}
 		};
@@ -331,7 +309,6 @@ const RenderScript = new Script({
 			// 触发 onrender 钩子
 			const scripts = list.map((i) => i.script);
 
-			if (!this.cfg.expandAll) {
 			const index = scripts.findIndex((s) => isCurrentPanel(s.projectName, s, currentPanelName));
 
 			const script = scripts[index === -1 ? 0 : index];
@@ -339,14 +316,6 @@ const RenderScript = new Script({
 				// 执行重新渲染钩子
 				script.onrender?.({ panel: script.panel, header: container.header });
 				script.emit('render', { panel: script.panel, header: container.header });
-				}
-			} else {
-				// 如果全部展开
-				for (const script of scripts) {
-					if (script.panel) {
-						script.onrender?.({ panel: script.panel, header: container.header });
-					}
-				}
 			}
 		};
 
@@ -378,7 +347,15 @@ const RenderScript = new Script({
 			// 创建样式元素
 			container.append(el('style', {}, style || ''), $elements.messageContainer);
 			// 防止浏览器不兼容，如果兼容的话会自动替换此文案
-			container.body.append(el('div', { className: 'card' }, [$creator.notes(['OCS警告 : ', '当前浏览器版本过低或者不兼容，请下载其他浏览器，', '例如谷歌浏览器或者微软浏览器。'])]))
+			container.body.append(
+				el('div', { className: 'card' }, [
+					$creator.notes([
+						'OCS警告 : ',
+						'当前浏览器版本过低或者不兼容，请下载其他浏览器，',
+						'例如谷歌浏览器或者微软浏览器。'
+					])
+				])
+			);
 			$elements.root.append(container);
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);
@@ -396,12 +373,6 @@ const RenderScript = new Script({
 			handlePosition();
 			onFontsizeChange();
 
-			(async () => {
-				const urls = await $store.getTab($const.TAB_URLS);
-				const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
-				rerender(urls || [], currentPanelName || '');
-			})();
-
 			/** 使用 debounce 避免页面子 iframe 刷新过多 */
 			$store.addTabChangeListener(
 				$const.TAB_URLS,
@@ -412,7 +383,7 @@ const RenderScript = new Script({
 			);
 
 			$store.addTabChangeListener($const.TAB_CURRENT_PANEL_NAME, async (currentPanelName) => {
-				const urls = await $store.getTab($const.TAB_URLS) || [location.href]
+				const urls = (await $store.getTab($const.TAB_URLS)) || [location.href];
 				rerender(urls, currentPanelName);
 			});
 			this.onConfigChange('fontsize', onFontsizeChange);

@@ -22,7 +22,8 @@ import {
 	MessageElement,
 	$store,
 	domSearch,
-	domSearchAll
+	domSearchAll,
+	SearchResult
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
@@ -32,6 +33,9 @@ import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
 import { $console } from './background';
+import { el } from '../../../core/src/utils/dom';
+import { createRangeTooltip } from '../utils';
+import debounce from 'lodash/debounce';
 
 /**
  *
@@ -48,66 +52,15 @@ const state = {
 		currentMedia: undefined as HTMLMediaElement | undefined,
 		videojs: Object.create({}),
 		hacked: false
-	},
+	}
 };
 
 export const CXProject = Project.create({
 	name: '学习通',
 	level: 99,
 	domains: ['chaoxing.com', 'edu.cn', 'org.cn'],
+	studyProject: true,
 	scripts: {
-		reg: new Script({
-			name: '繁体字识别',
-			url: [['章节测试', '/work/doHomeWorkNew']],
-			hideInPanel: true,
-			oncomplete() {
-				setTimeout(async () => {
-					await mappingRecognize();
-				}, 3000);
-			}
-		}),
-		studyDispatcher: new Script({
-			name: '课程学习调度器',
-			url: [['课程学习页面', '/mycourse/studentstudy']],
-			namespace: 'cx.new.study-dispatcher',
-			hideInPanel: true,
-			async oncomplete() {
-				// 开始任务切换
-				const restudy = CXProject.scripts.study.cfg.restudy;
-
-				$script.pin(CXProject.scripts.study);
-
-				if (!restudy) {
-					// 如果不是复习模式，则寻找需要运行的任务
-					const params = new URLSearchParams(window.location.href);
-					const mooc = params.get('mooc2');
-					/** 切换新版 */
-					if (mooc === null) {
-						params.set('mooc2', '1');
-						window.location.replace(decodeURIComponent(params.toString()));
-						return;
-					}
-
-					let chapters = CXAnalyses.getChapterInfos();
-
-					chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
-
-					if (chapters.length === 0) {
-						$message('warn', { content: '页面任务点数量为空! 请刷新重试!' });
-					} else {
-						const params = new URLSearchParams(window.location.href);
-						const courseId = params.get('courseId');
-						const classId = params.get('clazzid');
-						setTimeout(() => {
-							//  进入需要进行的章节，并且当前章节未被选中
-							if ($$el(`.posCatalog_active[id="cur${chapters[0].chapterId}"]`).length === 0) {
-								$gm.unsafeWindow.getTeacherAjax(courseId, classId, chapters[0].chapterId);
-							}
-						}, 1000);
-					}
-				}
-			}
-		}),
 		study: new Script({
 			name: '课程学习',
 			namespace: 'cx.new.study',
@@ -116,57 +69,45 @@ export const CXProject = Project.create({
 				['阅读任务点', '/readsvr/book/mooc']
 			],
 			configs: {
+				notes: {
+					defaultValue: $creator.notes([
+						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
+						['任务点不是顺序执行，如果某一个任务没有动', '请查看是否有其他任务正在学习，耐心等待即可。'],
+						'闯关模式请注意题库如果没完成，需要自己完成才能解锁章节。'
+					]).outerHTML
+				},
 				playbackRate: {
 					label: '视频倍速',
-					tag: 'select',
 					attrs: {
+						type: 'range',
 						title:
-							'高倍速(大于1倍)可能导致: \n- 记录清空\n- 频繁验证码\n超星后台可以看到学习时长\n请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。'
+							'高倍速(大于1倍)可能导致: \n- 学习记录清空\n- 频繁验证码\n超星后台可以看到学习时长\n请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。',
+						step: 0.5,
+						min: 1,
+						max: 16
 					},
-					defaultValue: '1',
+					defaultValue: 1,
 					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value') || '', [
-								['1', '1x'],
-								['2', '2x'],
-								['4', '4x'],
-								['8', '8x'],
-								['16', '16x']
-							])
-						);
+						createRangeTooltip(this, '1', (val) => (parseFloat(val) > 2 ? `${val}x - 高倍速警告！` : `${val}x`));
 					}
 				},
 				volume,
-				restudy,
-				...workConfigs,
-				forceWork: {
-					label: '强制答题',
-					defaultValue: false,
-					attrs: {
-						type: 'checkbox',
-						title:
-							'当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)'
-					}
-				},
-				'randomWork-choice': {
-					defaultValue: false,
-					label: '随机选择',
-					attrs: { type: 'checkbox', title: '随机选择任意一个选项' }
-				},
-				'randomWork-complete': {
-					defaultValue: false,
-					label: '随机填空',
-					attrs: { type: 'checkbox', title: '随机填写以下任意一个文案' }
-				},
-				'randomWork-completeTexts-textarea': {
-					defaultValue: ['不会', '不知道', '不清楚', '不懂', '不会写'].join('\n'),
-					label: '随机填空文案',
-					tag: 'textarea',
-					attrs: { title: '每行一个，随机填入' }
-				},
-
-				tasks: {
-					defaultValue: []
+				restudy
+			},
+			onrender({ panel }) {
+				if (!CommonProject.scripts.settings.cfg.answererWrappers?.length) {
+					const setting = el('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
+					setting.onclick = () => $script.pin(CommonProject.scripts.settings);
+					panel.body.replaceChildren(
+						el('hr'),
+						el('div', {}, [
+							'【警告】检测到未设置题库配置，将无法自动答题，',
+							el('br'),
+							'请切换到 ',
+							setting,
+							' 页面进行配置。'
+						])
+					);
 				}
 			},
 			async oncomplete() {
@@ -187,7 +128,7 @@ export const CXProject = Project.create({
 				const updateMediaState = () => {
 					if (state.study.currentMedia) {
 						// 倍速设置
-						state.study.currentMedia.playbackRate = parseInt(this.cfg.playbackRate);
+						state.study.currentMedia.playbackRate = parseFloat(this.cfg.playbackRate.toString());
 						// 音量设置
 						state.study.currentMedia.volume = this.cfg.volume;
 					}
@@ -198,8 +139,8 @@ export const CXProject = Project.create({
 
 				await study({
 					...this.cfg,
-					playbackRate: parseInt(this.cfg.playbackRate),
-					workOptions: { ...CommonProject.scripts.settings.cfg, upload: this.cfg.upload }
+					playbackRate: parseFloat(this.cfg.playbackRate.toString()),
+					workOptions: { ...CommonProject.scripts.settings.cfg }
 				});
 			}
 		}),
@@ -240,25 +181,6 @@ export const CXProject = Project.create({
 				this.onConfigChange('autoStudy', run);
 			}
 		}),
-		guide: new Script({
-			name: '使用提示',
-			url: [
-				['首页', 'https://chaoxing.com'],
-				['旧版个人首页', 'chaoxing.com/space/index'],
-				['新版个人首页', 'chaoxing.com/base'],
-				['课程首页', 'chaoxing.com/mycourse']
-			],
-			level: 99,
-			namespace: 'cx.guide',
-			configs: {
-				notes: {
-					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
-				}
-			},
-			onactive() {
-				$script.pin(this);
-			}
-		}),
 		work: new Script({
 			name: '作业脚本',
 			url: [['作业页面', '/mooc2/work/dowork']],
@@ -286,7 +208,7 @@ export const CXProject = Project.create({
 					warn?.remove();
 					// 识别繁体字
 					await mappingRecognize();
-					worker = workOrExam('work', { upload: this.cfg.upload, ...CommonProject.scripts.settings.cfg });
+					worker = workOrExam('work', CommonProject.scripts.settings.cfg);
 				};
 
 				if (this.cfg.auto) {
@@ -296,7 +218,6 @@ export const CXProject = Project.create({
 						ondone: () => {
 							this.event.emit('done');
 						},
-						upload: this.cfg.upload,
 						...CommonProject.scripts.settings.cfg
 					});
 				} else {
@@ -356,7 +277,7 @@ export const CXProject = Project.create({
 					warn?.remove();
 					// 识别繁体字
 					await mappingRecognize();
-					worker = workOrExam('exam', { upload: 'nomove', ...CommonProject.scripts.settings.cfg });
+					worker = workOrExam('exam', { ...CommonProject.scripts.settings.cfg, upload: 'nomove' });
 				};
 
 				/** 显示答题控制按钮 */
@@ -370,8 +291,8 @@ export const CXProject = Project.create({
 						ondone: () => {
 							this.event.emit('done');
 						},
-						upload: 'nomove',
-						...CommonProject.scripts.settings.cfg
+						...CommonProject.scripts.settings.cfg,
+						upload: 'nomove'
 					});
 				} else {
 					this.event.emit('done');
@@ -517,7 +438,7 @@ export const CXProject = Project.create({
 					}
 				}
 			}
-		}),
+		})
 	}
 });
 
@@ -548,7 +469,11 @@ export function workOrExam(
 			type: type === 'exam' ? 'input[name^="type"]' : 'input[id^="answertype"]',
 			lineAnswerInput: '.line_answer input[name^=answer]',
 			lineSelectBox: '.line_answer_ct .selectBox ',
-			checkedChoice: '[class*="check_answer"]'
+			checkedChoice: '[class*="check_answer"]',
+			/** 阅读理解 */
+			reading: '.reading_answer',
+			/** 完形填空 */
+			filling: '.filling_answer'
 		},
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
@@ -586,10 +511,10 @@ export function workOrExam(
 			const typeInput = elements.type[0] as HTMLInputElement;
 			const type = getQuestionType(parseInt(typeInput.value));
 
-			if (type && type !== 'line') {
+			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = defaultQuestionResolve(ctx)[type];
 
-				const handler: DefaultWork<any>['handler'] = (type, answer, option) => {
+				return await resolver(searchResults, elements.options, (type, answer, option) => {
 					// 如果存在已经选择的选项
 					if (skipAnswered && elements.checkedChoice.length) {
 						// 跳过
@@ -613,9 +538,7 @@ export function workOrExam(
 							}
 						}
 					}
-				};
-
-				return await resolver(searchResults, elements.options, handler);
+				});
 			}
 			// 连线题自定义处理
 			else if (type && type === 'line') {
@@ -624,12 +547,12 @@ export function workOrExam(
 					if (ans.length === 1) {
 						ans = splitAnswer(ans[0]);
 					}
-					if (ans.length !== 0 && elements.lineAnswerInput) {
+					if (ans.filter(Boolean).length !== 0 && elements.lineAnswerInput) {
 						//  选择答案
 						for (let index = 0; index < elements.lineSelectBox.length; index++) {
 							const box = elements.lineSelectBox[index];
 							if (ans[index]) {
-								$el(`li[data=${ans[index]}] a`, box).click();
+								$el(`li[data=${ans[index]}] a`, box)?.click();
 								await $.sleep(200);
 							}
 						}
@@ -639,6 +562,14 @@ export function workOrExam(
 				}
 
 				return { finish: false };
+			}
+			// 完形填空
+			else if (type && type === 'fill') {
+				return readerAndFillHandle(searchResults, elements.filling);
+			}
+			// 阅读理解
+			else if (type && type === 'reader') {
+				return readerAndFillHandle(searchResults, elements.reading);
 			}
 
 			return { finish: false };
@@ -845,8 +776,8 @@ const CXAnalyses = {
  * 屏蔽倍速限制
  */
 function rateHack() {
-	state.study.hacked = false
-	let dragCount = 0
+	state.study.hacked = false;
+	let dragCount = 0;
 	try {
 		hack();
 		window.document.addEventListener('readystatechange', hack);
@@ -863,29 +794,29 @@ function rateHack() {
 			if (state.study.hacked) {
 				return;
 			}
-			state.study.hacked = true
+			state.study.hacked = true;
 
-			const _origin = videojs.getPlugin('seekBarControl')
+			const _origin = videojs.getPlugin('seekBarControl');
 			const plugin = videojs.extend(videojs.getPlugin('plugin'), {
 				constructor: function (videoExt: any, data: any) {
-					const _sendLog = data.sendLog
+					const _sendLog = data.sendLog;
 					data.sendLog = (...args: any[]) => {
 						if (args[1] === 'drag') {
 							dragCount++;
 							// 开始播放的时候偶尔会卡顿，导致一直触发 drag 事件（超星的BUG）
 							// 这里如果卡顿太多，尝试暂停视频，然后等待视频自动开始。
 							if (dragCount > 100) {
-								dragCount = 0
-								$el('video')?.pause()
+								dragCount = 0;
+								$el('video')?.pause();
 							}
 						} else {
-							_sendLog.apply(data, args)
+							_sendLog.apply(data, args);
 						}
-					}
+					};
 
-					_origin.apply(_origin.prototype, [videoExt, data])
+					_origin.apply(_origin.prototype, [videoExt, data]);
 				}
-			})
+			});
 
 			videojs.registerPlugin('seekBarControl', plugin);
 
@@ -895,7 +826,7 @@ function rateHack() {
 				constructor: function (data: any) {
 					this.addEvents(['seekstart']);
 					this.mixins.observable.constructor.call(this, data);
-					const vjs = videojs(data.videojs, this.params2VideoOpt(data.params), function () { });
+					const vjs = videojs(data.videojs, this.params2VideoOpt(data.params), function () {});
 					Ext.fly(data.videojs).on('contextmenu', function (f: any) {
 						f.preventDefault();
 					});
@@ -926,7 +857,7 @@ function rateHack() {
 				}
 			});
 
-			console.log('视频解析完成')
+			console.log('视频解析完成');
 		}
 	}
 }
@@ -935,9 +866,7 @@ function rateHack() {
  * cx 任务学习
  */
 export async function study(opts: {
-	auto: boolean;
 	restudy: boolean;
-	forceWork: boolean;
 	playbackRate: number;
 	volume: number;
 	workOptions: CommonWorkOptions;
@@ -1012,9 +941,7 @@ export function searchIFrame(root: Document) {
  * 搜索任务点
  */
 function searchTask(opts: {
-	auto: boolean;
 	restudy: boolean;
-	forceWork: boolean;
 	playbackRate: number;
 	volume: number;
 	workOptions: CommonWorkOptions;
@@ -1036,7 +963,7 @@ function searchTask(opts: {
 				} else if (read) {
 					return readTask(frame);
 				} else if (chapterTest) {
-					return chapterTestTask(frame, opts.auto, opts.workOptions);
+					return chapterTestTask(frame, opts.workOptions);
 				}
 			}
 			if (media || read || chapterTest) {
@@ -1061,9 +988,9 @@ function searchTask(opts: {
 								$console.log(jobName, '即将重新学习。');
 								return getJob();
 							} else if (attachments[jobIndex]?.job === true) {
-								$console.log(jobName, '即将开始。');
+								$console.log('正在学习：', jobName);
 								return getJob();
-							} else if (chapterTest && opts.forceWork) {
+							} else if (chapterTest && CommonProject.scripts.settings.cfg.forceWork) {
 								$console.log(jobName, '开启强制答题。');
 								return getJob();
 							} else {
@@ -1127,24 +1054,35 @@ function mediaTask(
 	 */
 	return new Promise<void>((resolve) => {
 		if (media) {
+			// 播放
+			const play = () => {
+				return new Promise((resolve, reject) => {
+					const isPlaying =
+						media.currentTime > 0 && !media.paused && !media.ended && media.readyState > media.HAVE_CURRENT_DATA;
+					if (!isPlaying) {
+						media
+							.play()
+							.then((result) => {
+								resolve(isPlaying);
+							})
+							.catch((err) => {
+								resolve(isPlaying);
+								console.error(err);
+							});
+					}
+				});
+			};
+
 			media.volume = volume;
-			media.play();
+			play();
 			media.playbackRate = playbackRate;
 
-			async function playFunction() {
-				// @ts-ignore
-				if (!media.ended && !media.__played__) {
-					// 重新播放
-					await $.sleep(1000);
-					media.play();
-				} else {
-					// @ts-ignore
-					media.__played__ = true;
+			const playFunction = debounce(() => {
+				if (!play()) {
 					$console.log('视频播放完毕');
-					// @ts-ignore
 					media.removeEventListener('pause', playFunction);
 				}
-			}
+			}, 1000);
 
 			media.addEventListener('pause', playFunction);
 
@@ -1168,11 +1106,15 @@ async function readTask(frame?: HTMLIFrameElement) {
  */
 async function chapterTestTask(
 	frame: HTMLIFrameElement,
-	auto: boolean,
+
 	{ answererWrappers, period, timeout, retry, upload, thread, skipAnswered }: CommonWorkOptions
 ) {
 	if (!auto) {
 		return $console.warn('自动答题未开启，请在课程学习设置中开启或者忽略此信息。');
+	}
+
+	if (answererWrappers === undefined || answererWrappers.length === 0) {
+		return $console.warn('检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。');
 	}
 
 	$console.info('开始章节测试');
@@ -1238,9 +1180,9 @@ async function chapterTestTask(
 		work: async (ctx) => {
 			const { elements, searchResults } = ctx;
 			const typeInput = elements.type[0] as HTMLInputElement;
-			const type = getQuestionType(parseInt(typeInput.value));
+			const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
 
-			if (type && type !== 'line') {
+			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = defaultQuestionResolve(ctx)[type];
 
 				const handler: DefaultWork<any>['handler'] = (type, answer, option) => {
@@ -1278,7 +1220,7 @@ async function chapterTestTask(
 					if (ans.length === 1) {
 						ans = splitAnswer(ans[0]);
 					}
-					if (ans.length !== 0 && elements.lineAnswerInput) {
+					if (ans.filter(Boolean).length !== 0 && elements.lineAnswerInput) {
 						//  选择答案
 						for (let index = 0; index < elements.lineSelectBox.length; index++) {
 							const box = elements.lineSelectBox[index];
@@ -1309,24 +1251,21 @@ async function chapterTestTask(
 				const typeInput = curr.ctx?.elements?.type[0] as HTMLInputElement | undefined;
 				const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
 
-				if (
-					CXProject.scripts.study.cfg['randomWork-choice'] &&
-					(type === 'judgement' || type === 'single' || type === 'multiple')
-				) {
+				const commonSetting = CommonProject.scripts.settings.cfg;
+
+				if (commonSetting['randomWork-choice'] && (type === 'judgement' || type === 'single' || type === 'multiple')) {
 					$console.log('正在随机作答');
 
 					const option = options[Math.floor(Math.random() * options.length)];
 					// @ts-ignore 随机选择选项
 					option.parentElement?.querySelector('a,label')?.click();
-				} else if (CXProject.scripts.study.cfg['randomWork-complete'] && type === 'completion') {
+				} else if (commonSetting['randomWork-complete'] && type === 'completion') {
 					$console.log('正在随机作答');
 
 					// 随机填写答案
 					for (const option of options) {
 						const textarea = option.parentElement?.querySelector('textarea');
-						const completeTexts = CXProject.scripts.study.cfg['randomWork-completeTexts-textarea']
-							.split('\n')
-							.filter(Boolean);
+						const completeTexts = commonSetting['randomWork-completeTexts-textarea'].split('\n').filter(Boolean);
 						const text = completeTexts[Math.floor(Math.random() * completeTexts.length)];
 						const textareaFrame = option.parentElement?.querySelector('iframe');
 
@@ -1353,9 +1292,10 @@ async function chapterTestTask(
 		},
 		async onElementSearched(elements) {
 			const typeInput = elements.type[0] as HTMLInputElement;
-			const type = parseInt(typeInput.value);
+			const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
+
 			/** 判断题转换成文字，以便于答题程序判断 */
-			if (type === 3) {
+			if (type === 'judgement') {
 				elements.options.forEach((option) => {
 					const ri = option.querySelector('.ri');
 					const span = document.createElement('span');
@@ -1416,8 +1356,12 @@ export function getValidNumber(...nums: number[]) {
  * 6 论述题
  * 7 计算题
  * 11 连线题
+ * 14 完形填空
+ * 15 阅读理解
  */
-function getQuestionType(val: number): 'single' | 'multiple' | 'judgement' | 'completion' | 'line' | undefined {
+function getQuestionType(
+	val: number
+): 'single' | 'multiple' | 'judgement' | 'completion' | 'line' | 'fill' | 'reader' | undefined {
 	return val === 0
 		? 'single'
 		: val === 1
@@ -1428,5 +1372,35 @@ function getQuestionType(val: number): 'single' | 'multiple' | 'judgement' | 'co
 		? 'completion'
 		: val === 11
 		? 'line'
+		: val === 14
+		? 'fill'
+		: val === 15
+		? 'reader'
 		: undefined;
+}
+
+/** 阅读理解和完形填空的共同处理器 */
+async function readerAndFillHandle(searchResults: SearchResult[], list: HTMLElement[]) {
+	for (const answers of searchResults.map((res) => res.answers.map((ans) => ans.answer))) {
+		let ans = answers;
+
+		if (ans.length === 1) {
+			ans = splitAnswer(ans[0]);
+		}
+
+		if (ans.filter(Boolean).length !== 0 && list.length !== 0) {
+			for (let index = 0; index < ans.length; index++) {
+				const item = list[index];
+				if (item) {
+					/** 获取每个小题中的准确答案选项 并点击 */
+					$el(`span.saveSingleSelect[data="${ans[index]}"]`, item)?.click();
+					await $.sleep(200);
+				}
+			}
+
+			return { finish: true };
+		}
+	}
+
+	return { finish: false };
 }
