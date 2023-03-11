@@ -1,6 +1,6 @@
 {
 	"name": "@ocsjs/app",
-	"version": "2.0.0",
+	"version": "2.0.4",
 	"description": "app package of ocs",
 	"main": "./lib/index.js",
 	"types": "./lib/types.d.ts",

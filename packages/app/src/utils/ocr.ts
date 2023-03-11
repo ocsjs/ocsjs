@@ -1,8 +1,9 @@
 import { writeFile, mkdirSync, existsSync, rmSync, writeFileSync } from 'fs';
 import path from 'path';
-import { getProjectPath } from './index';
 import { randomUUID } from 'crypto';
 import child_process from 'child_process';
+import { getProjectPath } from '.';
+
 
 /**
  * 使用 ddddocr 进行验证码识别

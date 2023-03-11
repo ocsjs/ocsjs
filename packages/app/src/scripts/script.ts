@@ -1,4 +1,5 @@
-import { EventsRecord, TypedEventEmitter } from './interface';
+import { Page } from 'playwright-core';
+import { BaseAutomationEvents, Config, ConfigValueRecord, EventsRecord, TypedEventEmitter } from './interface';
 
 export type RunFunction = (...args: any[]) => any;
 
@@ -32,3 +33,27 @@ export abstract class AutomationScript<
 	Run extends RunFunction = RunFunction,
 	E extends EventsRecord = EventsRecord
 > extends Script<Run, E> {}
+
+export class ConfigsRequiredAutomationScript<
+	C extends Record<string, Config> = Record<string, Config>,
+	RF extends RunFunction = RunFunction,
+	E extends EventsRecord = EventsRecord
+> extends AutomationScript<RF, E> {
+	name: string;
+	configs: C;
+
+	constructor(configs: C, options: ScriptOptions<RF>) {
+		super(options);
+		this.name = options.name;
+		this.run = options.run;
+		this.configs = configs;
+	}
+}
+
+export class PlaywrightScript<
+	C extends Record<string, Config> = Record<string, Config>
+> extends ConfigsRequiredAutomationScript<
+	C,
+	(page: Page, configs: ConfigValueRecord<C>) => any,
+	BaseAutomationEvents
+> {}

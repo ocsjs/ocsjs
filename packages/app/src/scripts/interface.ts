@@ -44,3 +44,18 @@ export class TypedEventEmitter<E extends EventsRecord = EventsRecord> extends Ev
 		return super.prependOnceListener(eventName, listener);
 	}
 }
+
+export type BaseAutomationEvents = {
+	'script-error': (...msg: string[]) => void;
+	'script-data': (...msg: string[]) => void;
+};
+
+export interface Config {
+	label: string;
+	value: any;
+	hide?: boolean;
+}
+
+export type ConfigValueRecord<C extends Record<string, Config>> = {
+	[K in keyof C]: C[K]['value'];
+};

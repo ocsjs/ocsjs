@@ -54,8 +54,8 @@
 						style="width: 300px; overflow-x: auto; white-space: nowrap"
 					>
 						<template
-							v-for="(config, index) of arrayLikeConfigs"
-							:key="index"
+							v-for="config of arrayLikeConfigs"
+							:key="config.key"
 						>
 							<a-option
 								:label="config.label"
@@ -102,7 +102,7 @@ import { Modal, TableColumnData } from '@arco-design/web-vue';
 import uniqueId from 'lodash/uniqueId';
 import { store } from '../../store';
 import Icon from '../Icon.vue';
-import { Config } from '@ocsjs/app/src/scripts/automation/interface';
+import { Config } from '@ocsjs/app/src/scripts/interface';
 import { remote } from '../../utils/remote';
 import xlsx from 'xlsx';
 
@@ -134,7 +134,7 @@ const state = reactive({
 	/** 存在数据的行索引 */
 	validDataIndex: new Set<number>(),
 	/** 浏览器名字生成规则 */
-	browserNameFields: arrayLikeConfigs.value.map((c) => c.label)
+	browserNameFields: arrayLikeConfigs.value.map((c) => c.key)
 });
 
 const columns = ref<TableColumnData[]>([

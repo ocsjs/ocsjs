@@ -5,8 +5,8 @@ import fs from 'fs';
 import { chromium, BrowserContext, Page, LaunchOptions } from 'playwright-core';
 import { AppStore } from '../../types';
 import axios from 'axios';
-import * as Scripts from '../scripts/index';
-import { Config, PlaywrightScript } from '../scripts/automation/interface';
+import { scripts as PlaywrightScripts } from '../scripts/index';
+import { Config } from '../scripts/interface';
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
 
 type PS = { name: string; configs: Record<string, Config> };
@@ -77,18 +77,26 @@ export class ScriptWorker {
 
 				/** 代理 ocs 脚本请求 */
 				browser.route(/http(?:s):\/\/ocs-app(.+)/, (route) => {
-					axios
-						.get(
-							route
-								.request()
-								.url()
-								.replace(/http(?:s):\/\/ocs-app\/(.+)/, `http://localhost:${this.store?.server.port || 3000}/$1`),
-							{
-								headers: {
-									'browser-uid': this.uid
-								}
-							}
-						)
+					const request = route.request();
+					const url = request
+						.url()
+						.replace(/http(?:s):\/\/ocs-app\/(.+)/, `http://localhost:${this.store?.server.port || 3000}/$1`);
+
+					let res;
+
+					if (request.method().toLowerCase() === 'get') {
+						res = axios.get(url, {
+							headers: { 'browser-uid': this.uid },
+							timeout: 60 * 1000
+						});
+					} else {
+						res = axios.post(url, request.postDataJSON(), {
+							headers: { 'browser-uid': this.uid },
+							timeout: 60 * 1000
+						});
+					}
+
+					res
 						.then((result) => {
 							route.fulfill({
 								status: 200,
@@ -148,7 +156,7 @@ export class ScriptWorker {
 					document.title = uid;
 					document.body.innerHTML = `正在获取图像中，请勿操作。`;
 				}, this.uid)
-				.catch(() => {});
+				.catch(console.error);
 			setTimeout(() => {
 				send('webrtc-page-loaded');
 			}, 1000);
@@ -220,6 +228,8 @@ export async function launchScripts({
 			.launchPersistentContext(userDataDir, {
 				viewport: null,
 				executablePath,
+				ignoreDefaultArgs: ['--disable-popup-blocking'],
+				ignoreHTTPSErrors: true,
 				args: ['--window-position=0,0', '--no-first-run', ...args],
 				headless
 			})
@@ -267,13 +277,14 @@ export async function launchScripts({
 							await html(`【提示】正在执行自动化脚本 - ${ps.name} ...`);
 							const configs = transformScriptConfigToRaw(ps.configs);
 
-							for (const key in Scripts) {
-								if (Object.prototype.hasOwnProperty.call(Scripts, key)) {
-									const script: PlaywrightScript = Reflect.get(Scripts, key);
-									if (script.name === ps.name) {
-										script.on('script-data', console.log);
-										script.on('script-error', console.error);
+							for (const script of PlaywrightScripts) {
+								if (script.name === ps.name) {
+									script.on('script-data', console.log);
+									script.on('script-error', console.error);
+									try {
 										await script.run(await browser.newPage(), configs);
+									} catch (err) {
+										console.error(err);
 									}
 								}
 							}

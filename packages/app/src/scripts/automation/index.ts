@@ -1,1 +1,2 @@
-export * from './wk/index';
+export * from './wk';
+export * from './common';

@@ -5,14 +5,19 @@ import { store } from '../store';
 /**
  * 添加并且解析本地脚本
  */
-export async function addScriptFromFile(e: any) {
-	const file = e.target.files[0] as File;
-
-	const text = await remote.fs.call('readFileSync', file.path, { encoding: 'utf8' });
-	addLocalScript(file.path, text.toString());
-
-	// 最后删除文件对象，防止选中同一个文件时不执行事件
-	e.target.value = '';
+export function addScriptFromFile() {
+	remote.dialog
+		.call('showOpenDialog', {
+			title: '选择脚本文件(.user.js)',
+			buttonLabel: '添加脚本',
+			filters: [{ extensions: ['js', 'user.js'], name: '用户脚本' }]
+		})
+		.then(async ({ canceled, filePaths }) => {
+			if (canceled === false && filePaths.length) {
+				const text = await remote.fs.call('readFileSync', filePaths[0], { encoding: 'utf8' });
+				await addLocalScript(filePaths[0], text.toString());
+			}
+		});
 }
 
 async function addLocalScript(uri: string, text: string) {

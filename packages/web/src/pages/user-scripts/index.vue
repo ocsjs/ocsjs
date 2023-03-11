@@ -7,22 +7,12 @@
 		<div class="mb-2">
 			<a-space>
 				<div>
-					<label for="local-file">
-						<a-button
-							size="mini"
-							@click="selectScriptFile"
-						>
-							+ 添加本地脚本
-						</a-button>
-					</label>
-					<input
-						id="local-file"
-						style="display: none"
-						name="local-file"
-						type="file"
-						accept=".js"
-						@change="addScriptFromFile"
-					/>
+					<a-button
+						size="mini"
+						@click="addScriptFromFile"
+					>
+						+ 添加本地脚本
+					</a-button>
 				</div>
 				<a-button
 					size="mini"
@@ -265,11 +255,6 @@ function onAddScript(script: StoreUserScript) {
 
 function onRemoveScript(script: StoreUserScript) {
 	store.render.scripts.splice(store.render.scripts.indexOf(script), 1);
-}
-
-function selectScriptFile() {
-	// @ts-ignore
-	document.querySelector('#local-file').click();
 }
 
 function enableAll() {

@@ -83,8 +83,8 @@
 					:setting="true"
 				/>
 				<Path
-					label="配置文件"
-					name="config-path"
+					label="软件存储"
+					name="user-data-path"
 				/>
 				<Path
 					label="软件路径"

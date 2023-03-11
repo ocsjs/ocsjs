@@ -268,33 +268,41 @@ const RenderScript = new Script({
 			}
 
 			container.style.left = this.cfg.x + 'px';
-			container.style.top = Math.max(this.cfg.y, 10) + 'px';
+			container.style.top = this.cfg.y + 'px';
 			const positionHandler = () => {
 				this.cfg.x = container.offsetLeft;
-				this.cfg.y = Math.max(container.offsetTop, 10);
+				this.cfg.y = container.offsetTop;
 			};
+			this.onConfigChange(
+				'x',
+				debounce((x) => (container.style.left = x + 'px'), 200)
+			);
+			this.onConfigChange(
+				'y',
+				debounce((y) => (container.style.top = y + 'px'), 200)
+			);
 			enableElementDraggable(container.header, container, positionHandler);
+		};
+
+		/** 切换面板状态 */
+		const visual = (value: string) => {
+			container.className = '';
+			// 最小化
+			if (value === 'minimize') {
+				container.classList.add('minimize');
+			}
+			// 关闭
+			else if (value === 'close') {
+				container.classList.add('close');
+			}
+			// 展开
+			else {
+				container.classList.add('normal');
+			}
 		};
 
 		/** 处理面板可视状态 */
 		const handleVisible = () => {
-			/** 切换面板状态 */
-			const visual = (value: string) => {
-				container.className = '';
-
-				// 最小化
-				if (value === 'minimize') {
-					container.classList.add('minimize');
-				}
-				// 关闭
-				else if (value === 'close') {
-					container.classList.add('close');
-				}
-				// 展开
-				else {
-					container.classList.add('normal');
-				}
-			};
 			window.addEventListener('click', (e) => {
 				// 三击以上重置位置
 				if (e.detail === Math.max(this.cfg.switchPoint, 3)) {
@@ -312,6 +320,17 @@ const RenderScript = new Script({
 
 		/** 替换 body 中的内容 */
 		const renderBody = async (urls: string[], currentPanelName: string) => {
+			// 防止浏览器不兼容，如果兼容的话会自动替换此文案
+			container.body.append(
+				el('div', { className: 'card' }, [
+					$creator.notes([
+						'OCS警告 : ',
+						'当前浏览器版本过低或者不兼容，请下载其他浏览器，',
+						'例如谷歌浏览器或者微软浏览器。'
+					])
+				])
+			);
+
 			const list = await createBody(urls, currentPanelName);
 
 			container.body.replaceChildren(...list.map((i) => i.panel));
@@ -347,25 +366,15 @@ const RenderScript = new Script({
 			container.style.font = `${this.cfg.fontsize}px  Menlo, Monaco, Consolas, 'Courier New', monospace`;
 		};
 
-		const rerender = (urls: string[], currentPanelName: string) => {
+		const rerender = async (urls: string[], currentPanelName: string) => {
 			initHeader(urls, currentPanelName);
-			renderBody(urls, currentPanelName);
+			await renderBody(urls, currentPanelName);
 		};
 
 		/** 在顶级页面显示操作面板 */
 		if (matchedScripts.length !== 0 && self === top) {
 			// 创建样式元素
 			container.append(el('style', {}, style || ''), $elements.messageContainer);
-			// 防止浏览器不兼容，如果兼容的话会自动替换此文案
-			container.body.append(
-				el('div', { className: 'card' }, [
-					$creator.notes([
-						'OCS警告 : ',
-						'当前浏览器版本过低或者不兼容，请下载其他浏览器，',
-						'例如谷歌浏览器或者微软浏览器。'
-					])
-				])
-			);
 			$elements.root.append(container);
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);

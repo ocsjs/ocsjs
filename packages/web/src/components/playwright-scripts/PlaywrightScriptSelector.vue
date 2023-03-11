@@ -59,8 +59,8 @@
 </template>
 
 <script setup lang="ts">
-import * as Scripts from '@ocsjs/app/src/scripts/index';
-import { ref, reactive } from 'vue';
+import { scripts as Scripts } from '@ocsjs/app/src/scripts/index';
+import { ref, reactive, computed } from 'vue';
 import { RawPlaywrightScript } from './index';
 
 const state = reactive({
@@ -83,7 +83,7 @@ const emits = defineEmits<{
 	(e: 'confirm');
 }>();
 
-const scripts = ref<RawPlaywrightScript[]>(createPlaywrightScripts());
+const scripts = computed<RawPlaywrightScript[]>(() => Scripts.filter((s) => s.name.includes(state.search)));
 const selectedScripts = ref<string[]>(props.playwrightScripts.map((s) => s.name));
 
 function confirm() {
@@ -110,16 +110,6 @@ function select(ps: RawPlaywrightScript) {
 
 function isSelected(ps: RawPlaywrightScript) {
 	return selectedScripts.value.find((s) => s === ps.name) !== undefined;
-}
-
-function createPlaywrightScripts(): RawPlaywrightScript[] {
-	const list: RawPlaywrightScript[] = [];
-	for (const key in Scripts) {
-		if (Object.prototype.hasOwnProperty.call(Scripts, key)) {
-			list.push(Scripts[key]);
-		}
-	}
-	return list;
 }
 </script>
 

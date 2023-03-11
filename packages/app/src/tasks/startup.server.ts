@@ -104,6 +104,8 @@ export async function startupServer() {
 					res.json({ canOCR: true, ocr: await ocr(base64) });
 				} else if (det_target && det_bg) {
 					res.json({ canOCR: true, det: await det(det_target, det_bg) });
+				} else {
+					res.send({ error: '参数缺失!' })
 				}
 			} catch (err) {
 				res.json({ canOCR: true, error: err });

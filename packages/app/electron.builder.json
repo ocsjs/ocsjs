@@ -9,9 +9,14 @@
 	"asar": false,
 	"copyright": "Copyright © 2021 ${author}",
 	"nsis": {
-		"oneClick": false,
-		"allowToChangeInstallationDirectory": true
+		"oneClick": true
 	},
+	"extraFiles": [
+		{
+			"from": "./bin",
+			"to": "./bin"
+		}
+	],
 
 	"win": {
 		"icon": "public/favicon.png",
@@ -20,10 +25,6 @@
 			{
 				"target": "nsis",
 				"arch": ["x64"]
-			},
-			{
-				"target": "nsis",
-				"arch": ["ia32"]
 			}
 		]
 	},

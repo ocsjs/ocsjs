@@ -1,8 +1,7 @@
 import type { Page } from 'playwright-core';
-import { BaseAutomationEvents, PlaywrightScript } from '../interface';
 import { slowType } from '../../utils';
 import axios from 'axios';
-import { TypedEventEmitter } from '../../interface';
+import { PlaywrightScript } from '../../script';
 
 export const CXUnitLoginScript = new PlaywrightScript(
 	{
@@ -35,7 +34,7 @@ export const CXUnitLoginScript = new PlaywrightScript(
 					await page.type('#uname', configs.id);
 					await page.type('#password', configs.password);
 
-					await login(page, CXUnitLoginScript, {
+					await login(page, {
 						ocrApiUrl: 'http://localhost:15319/ocr',
 						ocrApiImageKey: 'ocr'
 					});
@@ -66,7 +65,7 @@ export const CXPhoneLoginScript = new PlaywrightScript(
 					await page.type('#phone', configs.phone);
 					await page.type('#pwd', configs.password);
 
-					await login(page, CXPhoneLoginScript);
+					await login(page);
 				}
 			} catch (err) {
 				CXPhoneLoginScript.emit('script-error', String(err));
@@ -77,7 +76,6 @@ export const CXPhoneLoginScript = new PlaywrightScript(
 
 function login(
 	page: Page,
-	events: TypedEventEmitter<BaseAutomationEvents>,
 	opts?: {
 		ocrApiUrl?: string;
 		ocrApiImageKey?: string;
@@ -96,8 +94,7 @@ function login(
 		page.on('load', listenerLogin);
 		// 1分钟登录超时
 		const timeout = setTimeout(() => {
-			events.emit('script-error', '登录超时,请重试。');
-			resolve();
+			reject(new Error('登录超时,请重试。'));
 		}, 60 * 1000);
 
 		// 重试5次
@@ -118,15 +115,17 @@ function login(
 						const buffer = await page.screenshot({ clip: box });
 						Reflect.set(body, opts.ocrApiImageKey, buffer.toString('base64'));
 						const {
-							data: { ocr: code, canOCR }
+							data: { ocr: code, canOCR, error }
 						} = await axios.post(opts.ocrApiUrl, body);
 						if (canOCR) {
 							/** 破解验证码 */
 							if (code) {
 								await page.fill('#vercode', code);
+							} else if (error) {
+								console.error('error', error);
 							}
 						} else {
-							throw new Error('未检测到图片验证码识别模块, 请手动输入验证码。');
+							return reject(new Error('未检测到图片验证码识别模块, 请手动输入验证码。'));
 						}
 					}
 				}
@@ -152,13 +151,13 @@ function login(
 			if (vercodeMsg.concat(errors).some((str) => str.includes('验证码'))) {
 				if (tryCount === 0) {
 					clearTimeout(timeout);
-					events.emit('script-error', vercodeMsg.join('\n').trim());
+					reject(new Error(vercodeMsg.join('\n').trim() + '，请尝试手动输入。'));
 				} else {
 					await tryLogin();
 				}
 			} else if (errors.length) {
 				clearTimeout(timeout);
-				events.emit('script-error', errors.join('\n').trim());
+				reject(new Error(errors.join('\n').trim()));
 			} else {
 				clearTimeout(timeout);
 			}

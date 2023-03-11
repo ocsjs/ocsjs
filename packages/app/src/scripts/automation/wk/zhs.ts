@@ -1,7 +1,7 @@
 import { Page } from 'playwright-core';
 import { slowType } from '../../utils';
-import { PlaywrightScript } from '../interface';
 import axios from 'axios';
+import { PlaywrightScript } from '../../script';
 
 export const ZHSUnitLoginScript = new PlaywrightScript(
 	{
@@ -131,26 +131,44 @@ async function verify(page: Page, opts: { ocrApiUrl: string; detTargetKey: strin
 			Reflect.set(body, opts.detBackgroundKey, det_bg_base64);
 
 			const data = await axios.post(opts.ocrApiUrl, body);
-			/** 破解验证码 */
-			if (data?.data?.canOCR) {
-				const result: { target_y: number; target: number[] } = data?.data?.det;
+			console.log('zhs ocr', JSON.stringify(data?.data));
 
-				const bg_rect = await det_target_el.evaluate((node) => node.getBoundingClientRect());
-				const x1 = bg_rect.x + 10;
-				const y1 = bg_rect.y + result.target_y;
-				const x2 = bg_rect.x + result.target[0] + 20;
-				const y2 = bg_rect.y + result.target[1];
-
-				await page.mouse.move(x1, y1);
-				await page.mouse.down();
-				await page.mouse.move(x2, y2, { steps: 10 });
-				await page.mouse.up();
-
-				try {
-					await page.waitForNavigation({ timeout: 3000, waitUntil: 'domcontentloaded' });
-				} catch {}
+			if (data?.data?.error) {
+				console.error(data.data.error);
 			} else {
-				throw new Error('未检测到图片验证码识别模块, 请手动输入验证码。');
+				if (data?.data?.canOCR) {
+					/** 破解滑块验证码 */
+					const result: { target_y: number; target: number[] } = data?.data?.det;
+
+					if (result) {
+						const bg_rect = await det_target_el.evaluate((node) => node.getBoundingClientRect());
+						const x1 = bg_rect.x + 10;
+						const y1 = bg_rect.y + result.target_y;
+						const x2 = bg_rect.x + result.target[0] + 20;
+						const y2 = bg_rect.y + result.target[1];
+
+						await page.mouse.move(x1, y1);
+						await page.mouse.down();
+						await page.mouse.move(x2, y2, { steps: 10 });
+						await page.mouse.up();
+
+						try {
+							await page.waitForNavigation({ timeout: 3000, waitUntil: 'domcontentloaded' });
+						} catch {}
+					} else {
+						console.error(`OCR_DET: `, {
+							data,
+							opts,
+							det_bg_src,
+							det_target_src,
+							det_target_base64: det_target_base64.length,
+							det_bg_base64: det_bg_base64.length
+						});
+						throw new Error('滑块验证识别失败，请尝试手动登录。');
+					}
+				} else {
+					throw new Error('未检测到图片验证码识别模块, 请手动输入验证码。');
+				}
 			}
 		}
 	}

@@ -121,14 +121,14 @@ export class Process extends EventEmitter {
 								...this.launchOptions
 							});
 						} else {
-							Message.error('浏览器路径不存在，请修改。');
+							Message.error('浏览器路径不存在，请在软件设置中修改');
 						}
 					})
 					.catch((err) => {
 						Message.error('浏览器路径读取错误 : ', err);
 					});
 			} else {
-				Message.error('浏览器路径不存在，请修改。');
+				Message.error('浏览器路径不存在，请在软件设置中修改');
 			}
 		});
 	}

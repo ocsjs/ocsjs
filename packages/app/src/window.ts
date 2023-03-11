@@ -17,6 +17,7 @@ export function createWindow() {
 			symbolColor: 'black'
 		},
 		frame: false,
+		show: false,
 		webPreferences: {
 			zoomFactor: 1,
 			// 关闭拼写矫正

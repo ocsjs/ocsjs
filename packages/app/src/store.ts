@@ -2,6 +2,8 @@ import { app } from 'electron';
 import path from 'path';
 import Store from 'electron-store';
 
+// IO操作只能在 app.getPath('userData') 下进行，否则会有权限问题。
+
 export const appStore = {
 	name: app.getName(),
 	version: app.getVersion(),

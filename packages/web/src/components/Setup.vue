@@ -144,7 +144,9 @@ onMounted(async () => {
 		const infos = await getRemoteInfos();
 
 		state.resource.browsers = await remote.methods.call('getValidBrowsers');
-		state.browser = state.resource.browsers[0].name;
+		if (state.resource.browsers.length) {
+			state.browser = state.resource.browsers[0].name;
+		}
 
 		state.resource.extensions = infos.extensions;
 		state.resource.ocsjs = infos.resource.userjs;
@@ -157,6 +159,7 @@ onMounted(async () => {
 		state.extension = state.resource.extensions[0].name;
 	} catch (err) {
 		state.error = true;
+		console.error(err);
 		Message.error(String(err));
 	} finally {
 		state.loading = false;

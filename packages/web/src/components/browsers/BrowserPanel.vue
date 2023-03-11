@@ -98,7 +98,6 @@
 							设置 <icon-settings />
 						</a-button>
 					</a-tooltip>
-
 					<div class="mt-2">
 						<PlaywrightScripts v-model:playwright-scripts="instance.playwrightScripts"></PlaywrightScripts>
 					</div>
@@ -231,6 +230,7 @@ const props = defineProps<{
 	browser: BrowserOptions;
 }>();
 
+// 这里因为 BrowserPanel 使用的是侧边栏，侧边栏关闭时会自动销毁对象，所以不用做 compute 计算处理
 const instance = Browser.from(props.browser.uid);
 const profileElement = ref<HTMLElement>();
 

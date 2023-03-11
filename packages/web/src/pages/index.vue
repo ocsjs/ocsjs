@@ -92,7 +92,7 @@ import { remote } from '../utils/remote';
 import Icon from '../components/Icon.vue';
 import zhCN from '@arco-design/web-vue/es/locale/lang/zh-cn';
 import { processes } from '../utils/process';
-import { Modal } from '@arco-design/web-vue';
+import { Message, Modal } from '@arco-design/web-vue';
 import BrowserPanel from '../components/browsers/BrowserPanel.vue';
 import { currentBrowser } from '../fs';
 import { electron, inBrowser } from '../utils/node';
@@ -170,11 +170,10 @@ onMounted(async () => {
 			'updater',
 			{
 				type: 'info',
-					duration: 5,
-					close: false
-				}
-			);
-		}
+				duration: 0,
+				close: false
+			}
+		);
 	});
 
 	/** 监听主题变化 */
@@ -243,7 +242,9 @@ async function closeAllBrowser(quit: boolean) {
 						await process.close();
 						await sleep(100);
 					}
-				} catch {}
+				} catch (err) {
+					Message.error(err);
+				}
 				clearTimeout(timeout);
 				close();
 			}

@@ -19,6 +19,8 @@ function registerRemote<T>(eventName: string) {
 	function sendSync(channel: string, ...args: any[]): any {
 		const res = ipcRenderer.sendSync(channel, ...args);
 		if (res?.error) {
+			console.log(res);
+
 			notify('remote 模块错误', res.error, 'remote', { copy: true, type: 'error' });
 		}
 		return res;
@@ -28,6 +30,7 @@ function registerRemote<T>(eventName: string) {
 		return new Promise((resolve) => {
 			ipcRenderer.once(args[0], (e: any, ...respondArgs) => {
 				if (respondArgs[0].error) {
+					console.log({ respondArgs, channel, args });
 					notify('remote 模块错误', respondArgs[0].error, 'remote', { copy: true, type: 'error' });
 				} else {
 					resolve(respondArgs[0].data);

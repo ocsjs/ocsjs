@@ -1,5 +1,3 @@
-// @ts-check
-
 import { app } from 'electron';
 import { remoteRegister } from './src/tasks/remote.register';
 import { initStore } from './src/tasks/init.store';
@@ -10,13 +8,21 @@ import { task } from './src/utils';
 import { handleError } from './src/tasks/error.handler';
 import { updater } from './src/tasks/updater';
 import { startupServer } from './src/tasks/startup.server';
+import { ocrUnzip } from './src/tasks/ocr.unzip';
 
 app.setName('ocs');
 
 // 设置 webrtc 的影像帧率比例，最高100，太高会造成卡顿，默认50
 app.commandLine.appendSwitch('webrtc-max-cpu-consumption-percentage', '1');
-// 看网上争议比较多这里开启硬件加速试试
-// app.disableHardwareAcceleration();
+// 防止软件崩溃以及兼容
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-gpu-rasterization');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('--no-sandbox');
+app.disableHardwareAcceleration();
 
 /** 获取单进程锁 */
 const gotTheLock = app.requestSingleInstanceLock();
@@ -36,6 +42,7 @@ function bootstrap() {
 				task('启动接口服务', () => startupServer());
 			}),
 			task('初始化自动启动', () => autoLaunch()),
+			task('OCR模块解压', () => ocrUnzip()),
 			task('启动渲染进程', async () => {
 				await app.whenReady();
 				const window = createWindow();
@@ -60,6 +67,9 @@ function bootstrap() {
 					await window.loadURL('http://localhost:3000');
 					window.webContents.openDevTools();
 				}
+
+				// 加载完成显示，解决一系列的显示/黑屏问题
+				window.show();
 
 				if (app.isPackaged) {
 					task('软件更新', () => updater(window));

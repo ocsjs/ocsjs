@@ -11,62 +11,67 @@ import ElectronStore from 'electron-store';
 import { OCSApi, getValidBrowsers } from '@ocsjs/common';
 import si from 'systeminformation';
 
+
 /**
  * 注册主进程远程通信事件
  * @param name 事件前缀名称
  * @param target 事件目标
  */
 function registerRemoteEvent(name: string, target: any) {
-	// const logger = Logger('remote');
-	ipcMain
-		.on(name + '-get', (event, [property]) => {
-			try {
-				// logger.info({ event: name + '-get', args: [property] });
-				event.returnValue = target[property];
-			} catch (e) {
-				event.returnValue = { error: e };
-			}
-		})
-		.on(name + '-set', (event, [property, value]) => {
-			try {
-				// logger.info({ event: name + '-set', args: [property, value] });
-				event.returnValue = target[property] = value;
-			} catch (e) {
-				event.returnValue = { error: e };
-			}
-		})
-
-		/** 异步调用 */
-		.on(
-			name + '-call',
-			async (
-				event,
-				[
-					/** 回调id */
-					respondChannel,
-					property,
-					...args
-				]
-			) => {
-				// logger.info({ event: name + '-call', args });
+	const logger = Logger('remote');
+	try {
+		ipcMain
+			.on(name + '-get', (event, [property]) => {
 				try {
-					const result = await target[property](...args);
-					event.reply(respondChannel, { data: result });
+					// logger.info({ event: name + '-get', args: [property] });
+					event.returnValue = target[property];
 				} catch (e) {
-					event.reply(respondChannel, { error: e });
+					event.returnValue = { error: e };
 				}
-			}
-		)
+			})
+			.on(name + '-set', (event, [property, value]) => {
+				try {
+					// logger.info({ event: name + '-set', args: [property, value] });
+					event.returnValue = target[property] = value;
+				} catch (e) {
+					event.returnValue = { error: e };
+				}
+			})
 
-		/** 同步调用 */
-		.on(name + '-call-sync', (event, [property, ...args]) => {
-			try {
-				// logger.info({ event: name + '-call-sync', args: [property] });
-				event.returnValue = target[property](...args);
-			} catch (e) {
-				event.returnValue = { error: e };
-			}
-		});
+			/** 异步调用 */
+			.on(
+				name + '-call',
+				async (
+					event,
+					[
+						/** 回调id */
+						respondChannel,
+						property,
+						...args
+					]
+				) => {
+					// logger.info({ event: name + '-call', args });
+					try {
+						const result = await target[property](...args);
+						event.reply(respondChannel, { data: result });
+					} catch (e) {
+						event.reply(respondChannel, { error: e });
+					}
+				}
+			)
+
+			/** 同步调用 */
+			.on(name + '-call-sync', (event, [property, ...args]) => {
+				try {
+					// logger.info({ event: name + '-call-sync', args: [property] });
+					event.returnValue = target[property](...args);
+				} catch (e) {
+					event.returnValue = { error: e };
+				}
+			});
+	} catch (err) {
+		logger.error(err)
+	}
 }
 
 let win: BrowserWindow | undefined;
