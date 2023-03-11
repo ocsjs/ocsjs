@@ -257,11 +257,21 @@ const RenderScript = new Script({
 
 		/** 处理面板位置 */
 		const handlePosition = () => {
-			container.style.top = this.cfg.y + 'px';
+			if (this.cfg.x > document.documentElement.clientWidth || this.cfg.x < 0) {
+				this.cfg.x = 10;
+				this.cfg.y = 10;
+			}
+
+			if (this.cfg.y > document.documentElement.clientHeight || this.cfg.y < 0) {
+				this.cfg.x = 10;
+				this.cfg.y = 10;
+			}
+
 			container.style.left = this.cfg.x + 'px';
+			container.style.top = Math.max(this.cfg.y, 10) + 'px';
 			const positionHandler = () => {
 				this.cfg.x = container.offsetLeft;
-				this.cfg.y = container.offsetTop;
+				this.cfg.y = Math.max(container.offsetTop, 10);
 			};
 			enableElementDraggable(container.header, container, positionHandler);
 		};
