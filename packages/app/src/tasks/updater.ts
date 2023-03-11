@@ -20,15 +20,15 @@ export async function updater(win: BrowserWindow) {
 	/** 自动更新 */
 	if (newVersion) {
 		const { url, tag, description } = newVersion;
+		const feat = description?.feat?.map((s) => `    + ${s}`) || [];
+		const fix = description?.fix?.map((s) => `    + ${s}`) || [];
 		// @ts-ignore
 		const { response } = await dialog.showMessageBox(null, {
 			title: 'OCS软件自动更新程序',
 			message: [
 				`检测到最新版本：${tag}`,
-				'新增功能:',
-				description?.feat?.map((s) => `    + ${s}`).join('\n'),
-				'修复BUG:',
-				description?.fix?.map((s) => `    - ${s}`).join('\n'),
+				...(feat.length ? ['新增功能：', feat.join('\n')] : []),
+				...[fix.length ? ['修复BUG: ', fix.join('\n')] : []],
 				'',
 				'是否更新 ?'
 			].join('\n'),
@@ -57,7 +57,7 @@ export async function updater(win: BrowserWindow) {
 			try {
 				/** 下载最新版本 */
 				await downloadFile(url, dest, (rate: any, totalLength: any, chunkLength: any) => {
-					win?.webContents?.send('download', 'update', rate, totalLength, chunkLength);
+					win?.webContents?.send('update-download', rate, totalLength, chunkLength);
 				});
 
 				/** 解压缩 */
@@ -71,14 +71,14 @@ export async function updater(win: BrowserWindow) {
 						// @ts-ignore
 						dialog.showMessageBox(null, {
 							title: 'OCS更新程序',
-							message: '即将重启软件...',
+							message: '更新完毕，即将重启软件...',
 							type: 'warning',
 							noLink: true
 						});
 						setTimeout(() => {
 							app.relaunch();
 							app.quit();
-						}, 2000);
+						}, 1000);
 					})
 					.catch((err) => logger.error('更新失败', err));
 			} catch (e) {

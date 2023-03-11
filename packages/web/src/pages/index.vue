@@ -163,14 +163,13 @@ onMounted(async () => {
 	fetchRemoteNotify(false);
 
 	/** 如果正在更新的话，获取更新进度 */
-	ipcRenderer.on('download', (e, channel, rate, totalLength, chunkLength) => {
-		if (channel === 'update') {
-			notify(
-				'OCS更新程序',
-				`更新中: ${(chunkLength / 1024 / 1024).toFixed(2)}MB/${(totalLength / 1024 / 1024).toFixed(2)}MB`,
-				'updater',
-				{
-					type: 'info',
+	ipcRenderer.on('update-download', (e, rate, totalLength, chunkLength) => {
+		notify(
+			'OCS更新程序',
+			`更新中: ${(chunkLength / 1024 / 1024).toFixed(2)}MB/${(totalLength / 1024 / 1024).toFixed(2)}MB`,
+			'updater',
+			{
+				type: 'info',
 					duration: 5,
 					close: false
 				}
