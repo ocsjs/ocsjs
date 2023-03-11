@@ -46,8 +46,9 @@ $gm.unsafeWindow.typrMapping = undefined;
 const state = {
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined,
-		videojs: Object.create({})
-	}
+		videojs: Object.create({}),
+		hacked: false
+	},
 };
 
 export const CXProject = Project.create({
@@ -773,6 +774,8 @@ const CXAnalyses = {
  * 屏蔽倍速限制
  */
 function rateHack() {
+	state.study.hacked = false
+	let dragCount = 0
 	try {
 		hack();
 		window.document.addEventListener('readystatechange', hack);
@@ -786,31 +789,73 @@ function rateHack() {
 		const Ext = $gm.unsafeWindow.Ext;
 
 		if (typeof videojs !== 'undefined' && typeof Ext !== 'undefined') {
+			if (state.study.hacked) {
+				return;
+			}
+			state.study.hacked = true
+
+			const _origin = videojs.getPlugin('seekBarControl')
+			const plugin = videojs.extend(videojs.getPlugin('plugin'), {
+				constructor: function (videoExt: any, data: any) {
+					const _sendLog = data.sendLog
+					data.sendLog = (...args: any[]) => {
+						if (args[1] === 'drag') {
+							dragCount++;
+							// 开始播放的时候偶尔会卡顿，导致一直触发 drag 事件（超星的BUG）
+							// 这里如果卡顿太多，尝试暂停视频，然后等待视频自动开始。
+							if (dragCount > 100) {
+								dragCount = 0
+								$el('video')?.pause()
+							}
+						} else {
+							_sendLog.apply(data, args)
+						}
+					}
+
+					_origin.apply(_origin.prototype, [videoExt, data])
+				}
+			})
+
+			videojs.registerPlugin('seekBarControl', plugin);
+
+			// 重写超星视频插件
 			Ext.define('ans.VideoJs', {
 				override: 'ans.VideoJs',
-				constructor: function (b: any) {
-					b = b || {};
-					const e = this;
-					e.addEvents(['seekstart']);
-					e.mixins.observable.constructor.call(e, b);
-					const c = videojs(b.videojs, e.params2VideoOpt(b.params), function () {});
-					Ext.fly(b.videojs).on('contextmenu', function (f: any) {
+				constructor: function (data: any) {
+					this.addEvents(['seekstart']);
+					this.mixins.observable.constructor.call(this, data);
+					const vjs = videojs(data.videojs, this.params2VideoOpt(data.params), function () { });
+					Ext.fly(data.videojs).on('contextmenu', function (f: any) {
 						f.preventDefault();
 					});
-					Ext.fly(b.videojs).on('keydown', function (f: any) {
+					Ext.fly(data.videojs).on('keydown', function (f: any) {
 						if (f.keyCode === 32 || f.keyCode === 37 || f.keyCode === 39 || f.keyCode === 107) {
 							f.preventDefault();
 						}
 					});
-					if (c.videoJsResolutionSwitcher) {
-						c.on('resolutionchange', function () {
-							const g = c.currentResolution();
-							const f = g.sources ? g.sources[0].res : false;
-							Ext.setCookie('resolution', f);
+
+					// 保存清晰度设置
+					if (vjs.videoJsResolutionSwitcher) {
+						vjs.on('resolutionchange', function () {
+							const cr = vjs.currentResolution();
+							const re = cr.sources ? cr.sources[0].res : false;
+							Ext.setCookie('resolution', re);
 						});
 					}
+
+					// 保存公网设置
+					if (vjs.videoJsPlayLine) {
+						vjs.on('playlinechange', function () {
+							const cp = vjs.currentPlayline();
+							Ext.setCookie('net', cp.net);
+						});
+					}
+
+					// 下面连着一个倍速限制方法，这里直接不写，实现可以倍速
 				}
 			});
+
+			console.log('视频解析完成')
 		}
 	}
 }
