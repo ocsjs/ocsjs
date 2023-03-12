@@ -285,7 +285,7 @@ export const ZHSProject = Project.create({
 								record?.courses.find((c) => c.name === vue.data.courseInfo.name)?.time || 0
 							)}`
 						});
-					} catch { }
+					} catch {}
 				};
 
 				const interval = setInterval(async () => {
@@ -578,7 +578,8 @@ export const ZHSProject = Project.create({
 							this.event.emit('done');
 						},
 
-						...CommonProject.scripts.settings.cfg, upload: 'nomove',
+						...CommonProject.scripts.settings.cfg,
+						upload: 'nomove'
 					});
 				};
 
@@ -688,7 +689,8 @@ async function watch(
 
 	video.play().catch(() => {
 		$model('alert', {
-			content: '由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放。',
+			content:
+				'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须静音。',
 			onClose: async () => {
 				video.play();
 			}
@@ -783,7 +785,7 @@ function waitForQuestionsLoad() {
  */
 function hack() {
 	const vue = $el('.video-study')?.__vue__;
-	const empty = () => { };
+	const empty = () => {};
 	vue.checkout = empty;
 	vue.notTrustScript = empty;
 	vue.checkoutNotTrustScript = empty;
@@ -883,6 +885,18 @@ function gxkWorkOrExam(
 	worker
 		.doWork()
 		.then(async (results) => {
+			// 保存题目
+			const text = el('span', '正在保存题目中，请勿操作...');
+			const modal = $model('alert', { content: text });
+
+			for (let index = 0; index < worker.totalQuestionCount; index++) {
+				// 下一页
+				$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
+				await $.sleep(1000);
+			}
+			text.innerText = '所有题目保存成功。';
+			setTimeout(() => modal?.remove(), 2000);
+
 			if (type === 'exam') {
 				$message('info', { content: '考试完成，为了安全考虑，请自行检查后自行点击提交！' });
 			} else {
@@ -913,21 +927,6 @@ function gxkWorkOrExam(
 					}
 				});
 			}
-
-			// 保存题目
-
-			const text = el('span', '正在保存题目中，请勿操作...');
-			const modal = $model('alert', { content: text });
-
-			for (let index = 0; index < worker.totalQuestionCount; index++) {
-				// 下一页
-				$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
-				await $.sleep(1000);
-			}
-			text.innerText = '所有题目保存成功。';
-			setTimeout(() => modal?.remove(), 3000);
-
-			$message('success', { duration: 0, content: '作业已完成。' });
 		})
 		.catch((err) => {
 			$message('error', { content: '答题程序发生错误 : ' + err.message });
