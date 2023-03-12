@@ -98,6 +98,17 @@ export class ObjectStoreProvider implements StoreProvider {
  * 油猴存储器
  */
 export class GMStoreProvider implements StoreProvider {
+	constructor() {
+		// 当页面首次加载时删除之前的监听数据
+		if (self === top) {
+			for (const val of GM_listValues()) {
+				if (val.startsWith('_tab_change_')) {
+					GM_deleteValue(val);
+				}
+			}
+		}
+	}
+
 	/** 获取本地能够触发 tab 监听的key */
 	getTabChangeHandleKey(tabUid: string, key: string) {
 		return `_tab_change_${tabUid}_${key}`;
