@@ -35,7 +35,6 @@ import Typr from 'typr.js';
 import { $console } from './background';
 import { el } from '../../../core/src/utils/dom';
 import { createRangeTooltip } from '../utils';
-import debounce from 'lodash/debounce';
 
 /**
  *
@@ -62,7 +61,7 @@ export const CXProject = Project.create({
 	studyProject: true,
 	scripts: {
 		study: new Script({
-			name: '课程学习',
+			name: '🧑‍💻 课程学习',
 			namespace: 'cx.new.study',
 			url: [
 				['任务点页面', '/knowledge/cards'],
@@ -145,7 +144,7 @@ export const CXProject = Project.create({
 			}
 		}),
 		chapterGuide: new Script({
-			name: '章节提示',
+			name: '💡 章节提示',
 			namespace: 'cx.chapter.guide',
 			url: [['课程章节', '/mooc2-ans/mycourse/studentcourse']],
 			level: 9,
@@ -182,7 +181,7 @@ export const CXProject = Project.create({
 			}
 		}),
 		work: new Script({
-			name: '作业脚本',
+			name: '🧑‍💻 作业脚本',
 			url: [['作业页面', '/mooc2/work/dowork']],
 			namespace: 'cx.new.work',
 			level: 99,
@@ -239,7 +238,7 @@ export const CXProject = Project.create({
 			}
 		}),
 		exam: new Script({
-			name: '考试脚本',
+			name: '🧑‍💻 考试脚本',
 			url: [['整卷预览页面', '/mooc2/exam/preview']],
 			namespace: 'cx.new.exam',
 			level: 99,
@@ -304,7 +303,7 @@ export const CXProject = Project.create({
 			}
 		}),
 		guide: new Script({
-			name: '使用提示',
+			name: '💡 使用提示',
 			url: [
 				['首页', 'https://www.chaoxing.com'],
 				['旧版个人首页', 'chaoxing.com/space/index'],
@@ -1054,35 +1053,31 @@ function mediaTask(
 	 */
 	return new Promise<void>((resolve) => {
 		if (media) {
-			// 播放
-			const play = () => {
-				return new Promise((resolve, reject) => {
-					const isPlaying =
-						media.currentTime > 0 && !media.paused && !media.ended && media.readyState > media.HAVE_CURRENT_DATA;
-					if (!isPlaying) {
-						media
-							.play()
-							.then((result) => {
-								resolve(isPlaying);
-							})
-							.catch((err) => {
-								resolve(isPlaying);
-								console.error(err);
-							});
-					}
-				});
-			};
-
 			media.volume = volume;
-			play();
-			media.playbackRate = playbackRate;
+			media
+				.play()
+				.then(() => {
+					media.playbackRate = playbackRate;
+				})
+				.catch(() => {
+					$model('alert', {
+						content:
+							'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须静音。',
+						onClose: async () => {
+							media.play();
+						}
+					});
+				});
 
-			const playFunction = debounce(() => {
-				if (!play()) {
+			const playFunction = async () => {
+				if (media.ended) {
 					$console.log('视频播放完毕');
 					media.removeEventListener('pause', playFunction);
+				} else {
+					await $.sleep(1000);
+					media.play();
 				}
-			}, 1000);
+			};
 
 			media.addEventListener('pause', playFunction);
 
