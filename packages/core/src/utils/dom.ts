@@ -130,7 +130,7 @@ export function enableElementDraggable(header: HTMLElement, target: HTMLElement,
 		pos3 = e.clientX;
 		pos4 = e.clientY;
 		// set the element's new position:
-		target.style.top = target.offsetTop - pos2 + 'px';
+		target.style.top = Math.max(target.offsetTop - pos2, 10) + 'px';
 		target.style.left = target.offsetLeft - pos1 + 'px';
 	}
 

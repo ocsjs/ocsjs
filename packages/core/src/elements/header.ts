@@ -5,20 +5,8 @@ export class HeaderElement extends IElement {
 	closeButton?: HTMLDivElement;
 	/** 最小化/最大化按钮 */
 	visualSwitcher?: HTMLDivElement;
-	/** 工程选择器 */
-	projectSelector?: HTMLDivElement;
-	/** logo */
-	logo?: HTMLDivElement;
-	/** 简介 */
-	profile?: HTMLDivElement;
 
 	connectedCallback() {
-		this.append(
-			this.profile || '',
-			this.projectSelector || '',
-			this.logo || '',
-			this.visualSwitcher || '',
-			this.closeButton || ''
-		);
+		this.append(this.visualSwitcher || '', this.closeButton || '');
 	}
 }

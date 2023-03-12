@@ -17,97 +17,8 @@ export const BackgroundProject = Project.create({
 	domains: [],
 	level: -99,
 	scripts: {
-		app: new Script({
-			name: '软件配置同步',
-			namespace: 'background.app',
-			url: [['所有页面', /./]],
-			level: -1,
-			configs: {
-				notes: {
-					defaultValue: $creator.notes([
-						[
-							el('span', [
-								'如果您使用',
-								el('a', { href: 'https://docs.ocsjs.com/docs/app', target: '_blank' }, 'OCS桌面软件'),
-								'启动浏览器，并使用此脚本，'
-							]),
-							'我们会同步软件中的配置到此脚本上，方便多个浏览器的管理。'
-						],
-						'如果不是，您可以忽略此脚本。'
-					]).outerHTML
-				},
-				sync: {
-					defaultValue: false
-				},
-				name: {
-					defaultValue: ''
-				}
-			},
-			onrender({ panel }) {
-				const update = () => {
-					if (this.cfg.sync) {
-						const tip = el('div', { className: 'notes card' }, [`当前成功同步软件中 “${this.cfg.name}” 文件的配置.`]);
-						panel.append(tip);
-					}
-				};
-				update();
-				this.onConfigChange('sync', update);
-			},
-			async oncomplete() {
-				if (self === top) {
-					this.cfg.sync = false;
-					try {
-						const res = await request('https://ocs-app/browser', { type: 'fetch', method: 'get', contentType: 'json' });
-
-						if (res.name && res.store) {
-							for (const key in res.store) {
-								if (Object.prototype.hasOwnProperty.call(res.store, key)) {
-									$store.set(key, res.store[key]);
-								}
-							}
-
-							this.cfg.name = res.name;
-							this.cfg.sync = true;
-						}
-					} catch {
-						//
-					}
-				}
-			}
-		}),
-		appLoginHelper: new Script({
-			name: '软件登录辅助',
-			url: [
-				['超星登录', 'passport2.chaoxing.com/login'],
-				['智慧树登录', 'passport.zhihuishu.com/login']
-			],
-			hideInPanel: true,
-			onactive() {
-				// 将面板移动至左侧顶部，防止挡住软件登录
-				RenderProject.scripts.render.cfg.x = 10;
-				RenderProject.scripts.render.cfg.y = 10;
-				RenderProject.scripts.render.cfg.visual = 'minimize';
-			}
-		}),
-		dev: new Script({
-			name: '开发者调试',
-			namespace: 'background.dev',
-			url: [['所有页面', /./]],
-			configs: {
-				notes: {
-					defaultValue: '开发人员调试用。<br>注入OCS_CONTEXT全局变量。用户可忽略此页面。'
-				}
-			},
-			onrender({ panel }) {
-				const injectBtn = el('button', { className: 'base-style-button' }, '点击注入全局变量');
-				injectBtn.addEventListener('click', () => {
-					$gm.unsafeWindow.OCS_CONTEXT = self;
-				});
-				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn]));
-			}
-		}),
 		console: new Script({
-			name: '日志',
+			name: '📄日志',
 			url: [['所有', /.*/]],
 			namespace: 'render.console',
 			configs: {
@@ -183,8 +94,97 @@ export const BackgroundProject = Project.create({
 
 				const { div, logs } = showLogs();
 
-				panel.replaceChildren(div);
+				panel.body.replaceChildren(div);
 				logs.at(-1)?.scrollIntoView();
+			}
+		}),
+		app: new Script({
+			name: '🔄️软件配置同步',
+			namespace: 'background.app',
+			url: [['所有页面', /./]],
+			level: -1,
+			configs: {
+				notes: {
+					defaultValue: $creator.notes([
+						[
+							el('span', [
+								'如果您使用',
+								el('a', { href: 'https://docs.ocsjs.com/docs/app', target: '_blank' }, 'OCS桌面软件'),
+								'启动浏览器，并使用此脚本，'
+							]),
+							'我们会同步软件中的配置到此脚本上，方便多个浏览器的管理。'
+						],
+						'如果不是，您可以忽略此脚本。'
+					]).outerHTML
+				},
+				sync: {
+					defaultValue: false
+				},
+				name: {
+					defaultValue: ''
+				}
+			},
+			onrender({ panel }) {
+				const update = () => {
+					if (this.cfg.sync) {
+						const tip = el('div', { className: 'notes card' }, [`当前成功同步软件中 “${this.cfg.name}” 文件的配置.`]);
+						panel.append(tip);
+					}
+				};
+				update();
+				this.onConfigChange('sync', update);
+			},
+			async oncomplete() {
+				if (self === top) {
+					this.cfg.sync = false;
+					try {
+						const res = await request('https://ocs-app/browser', { type: 'fetch', method: 'get', contentType: 'json' });
+
+						if (res.name && res.store) {
+							for (const key in res.store) {
+								if (Object.prototype.hasOwnProperty.call(res.store, key)) {
+									$store.set(key, res.store[key]);
+								}
+							}
+
+							this.cfg.name = res.name;
+							this.cfg.sync = true;
+						}
+					} catch {
+						//
+					}
+				}
+			}
+		}),
+		dev: new Script({
+			name: '🛠️开发者调试',
+			namespace: 'background.dev',
+			url: [['所有页面', /./]],
+			configs: {
+				notes: {
+					defaultValue: '开发人员调试用。<br>注入OCS_CONTEXT全局变量。用户可忽略此页面。'
+				}
+			},
+			onrender({ panel }) {
+				const injectBtn = el('button', { className: 'base-style-button' }, '点击注入全局变量');
+				injectBtn.addEventListener('click', () => {
+					$gm.unsafeWindow.OCS_CONTEXT = self;
+				});
+				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn]));
+			}
+		}),
+		appLoginHelper: new Script({
+			name: '软件登录辅助',
+			url: [
+				['超星登录', 'passport2.chaoxing.com/login'],
+				['智慧树登录', 'passport.zhihuishu.com/login']
+			],
+			hideInPanel: true,
+			oncomplete() {
+				// 将面板移动至左侧顶部，防止挡住软件登录
+				RenderProject.scripts.render.cfg.x = 10;
+				RenderProject.scripts.render.cfg.y = 40;
+				RenderProject.scripts.render.cfg.visual = 'minimize';
 			}
 		}),
 		browserCheck: new Script({

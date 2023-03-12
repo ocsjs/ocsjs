@@ -1,4 +1,5 @@
 import { ScriptPanelElement, definedCustomElements } from '../elements';
+import { DropdownElement } from '../elements/dropdown';
 import { MessageElement } from '../elements/message';
 import { ModelElement } from '../elements/model';
 import { cors } from '../interfaces/cors';
@@ -42,13 +43,20 @@ export type ModelAttrs = Pick<
 	};
 };
 
+const closeSvg =
+	'<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>';
+const minimizeSvg =
+	'<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 13H5v-2h14v2z"/></svg>';
+const expandSvg =
+	'<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M18 4H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 14H6V6h12v12z"/></svg>';
+
 /**
  * 内置的渲染脚本，包含在内置的 RenderProject 类中。搭配 start 函数进行整个脚本的悬浮窗构成创建
  *
  * 可以不用悬浮窗也能执行脚本的生命周期，但是不会执行 render 这个生命周期
  */
 const RenderScript = new Script({
-	name: '悬浮窗',
+	name: '⚙️悬浮窗设置',
 	url: [['所有', /.*/]],
 	namespace: 'render.panel',
 	configs: {
@@ -96,21 +104,9 @@ const RenderScript = new Script({
 		/** 创建头部元素 */
 		const initHeader = (urls: string[], currentPanelName: string) => {
 			const infos = $gm.getInfos();
-			/** 图标 */
-			container.header.logo = $creator.tooltip(
-				el('img', {
-					src: infos?.script.icon || 'https://cdn.ocsjs.com/logo.png',
-					width: 18,
-					className: 'logo',
-					title: '官方教程',
-					onclick: () => {
-						window.open(infos?.script.homepage || 'https://docs.ocsjs.com', '_blank');
-					}
-				})
-			);
 
-			/** 版本简介 */
-			container.header.profile = $creator.tooltip(
+			/** 版本  */
+			const profile = $creator.tooltip(
 				el(
 					'div',
 					{ className: 'profile', title: '菜单栏（可拖动区域）' },
@@ -118,51 +114,52 @@ const RenderScript = new Script({
 				)
 			);
 
-			/** 面板切换器 */
-			const projectSelector = el(
-				'select',
-				{
-					id: 'project-selector',
-					onchange: async () => {
-						await $store.setTab($const.TAB_CURRENT_PANEL_NAME, projectSelector.value);
-					}
-				},
-				async (select) => {
-					const sortedProjects = projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
+			const scriptDropdowns: DropdownElement[] = [];
 
-					for (const project of sortedProjects) {
-						const scripts = $.getMatchedScripts([project], urls)
-							.filter((s) => !s.hideInPanel)
-							.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
-						if (scripts.length) {
-							const group = el('optgroup', { label: project.name });
+			const sortedProjects = projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
 
-							const options = scripts.map((script, i) =>
-								el('option', {
-									value: project.name + '-' + script.name,
-									label: script.name,
-									selected: isCurrentPanel(project.name, script, currentPanelName)
-								})
-							);
+			for (const project of sortedProjects) {
+				const scripts = $.getMatchedScripts([project], urls)
+					.filter((s) => !s.hideInPanel)
+					.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
+				if (scripts.length) {
+					const dropdown = el('dropdown-element');
 
-							group.append(...options);
-							select.append(group);
+					let selected = false;
+
+					const options = scripts.map((script, i) => {
+						const optionSelected = isCurrentPanel(project.name, script, currentPanelName);
+						const option = el('option', {
+							value: project.name + '-' + script.name,
+							label: script.name
+						});
+
+						if (optionSelected) {
+							option.classList.add('active');
 						}
-					}
-				}
-			);
-			const projectSelectorDiv = $creator.tooltip(
-				el(
-					'div',
-					{
-						className: 'project-selector',
-						title: '点击选择脚本操作页面，部分脚本会提供操作页面（包含脚本设置和脚本提示）。'
-					},
-					[projectSelector]
-				)
-			);
 
-			container.header.projectSelector = projectSelectorDiv;
+						if (selected !== true && optionSelected) {
+							selected = true;
+						}
+
+						option.onclick = () => {
+							$store.setTab($const.TAB_CURRENT_PANEL_NAME, project.name + '-' + script.name);
+						};
+
+						return option;
+					});
+
+					if (selected) {
+						dropdown.classList.add('active');
+					}
+
+					dropdown.triggerElement = el('div', { className: 'dropdown-trigger-element ' }, project.name);
+					dropdown.triggerElement.style.padding = '0px 8px';
+					dropdown.content.append(...options);
+
+					scriptDropdowns.push(dropdown);
+				}
+			}
 
 			/** 窗口是否最小化 */
 			const isMinimize = () => this.cfg.visual === 'minimize';
@@ -171,11 +168,11 @@ const RenderScript = new Script({
 				el('div', {
 					className: 'switch ',
 					title: isMinimize() ? '点击展开窗口' : '点击最小化窗口',
-					innerText: isMinimize() ? '□' : '-',
+					innerHTML: isMinimize() ? expandSvg : minimizeSvg,
 					onclick: () => {
 						this.cfg.visual = isMinimize() ? 'normal' : 'minimize';
 						visualSwitcher.title = isMinimize() ? '点击展开窗口' : '点击最小化窗口';
-						visualSwitcher.innerText = isMinimize() ? '□' : '-';
+						visualSwitcher.innerHTML = isMinimize() ? expandSvg : minimizeSvg;
 					}
 				})
 			);
@@ -185,7 +182,7 @@ const RenderScript = new Script({
 			container.header.closeButton = $creator.tooltip(
 				el('div', {
 					className: 'close  ',
-					innerText: 'x',
+					innerHTML: closeSvg,
 					title: '点击关闭窗口（不会影响脚本运行，连续点击三次页面任意位置可以重新唤出窗口）',
 					onclick: () => {
 						if (this.cfg.firstCloseAlert) {
@@ -208,9 +205,8 @@ const RenderScript = new Script({
 
 			container.header.replaceChildren();
 			container.header.append(
-				container.header.profile || '',
-				container.header.projectSelector || '',
-				container.header.logo || '',
+				profile,
+				...scriptDropdowns,
 				container.header.visualSwitcher || '',
 				container.header.closeButton || ''
 			);
@@ -273,6 +269,8 @@ const RenderScript = new Script({
 				this.cfg.x = container.offsetLeft;
 				this.cfg.y = container.offsetTop;
 			};
+			enableElementDraggable(container.header, container, positionHandler);
+
 			this.onConfigChange(
 				'x',
 				debounce((x) => (container.style.left = x + 'px'), 200)
@@ -281,7 +279,6 @@ const RenderScript = new Script({
 				'y',
 				debounce((y) => (container.style.top = y + 'px'), 200)
 			);
-			enableElementDraggable(container.header, container, positionHandler);
 		};
 
 		/** 切换面板状态 */

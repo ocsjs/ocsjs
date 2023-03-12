@@ -1,5 +1,6 @@
 import { ConfigElement } from './config';
 import { ContainerElement } from './container';
+import { DropdownElement } from './dropdown';
 import { HeaderElement } from './header';
 import { MessageElement } from './message';
 import { ModelElement } from './model';
@@ -21,5 +22,6 @@ export const definedCustomElements = [
 	ModelElement,
 	MessageElement,
 	ScriptPanelElement,
-	SearchResultsElement
+	SearchResultsElement,
+	DropdownElement
 ];

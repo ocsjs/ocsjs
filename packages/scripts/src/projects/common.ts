@@ -27,7 +27,7 @@ export const CommonProject = Project.create({
 	level: 1,
 	scripts: {
 		guide: new Script({
-			name: '使用教程',
+			name: '📖 使用教程',
 			url: [['所有页面', /.*/]],
 			namespace: 'common.guide',
 			onrender({ panel, header }) {
@@ -48,7 +48,7 @@ export const CommonProject = Project.create({
 			}
 		}),
 		notify: new Script({
-			name: '通知提示',
+			name: '📢 通知提示',
 			url: [['', /.*/]],
 			namespace: 'common.notify',
 			configs: {
@@ -70,7 +70,7 @@ export const CommonProject = Project.create({
 			}
 		}),
 		settings: new Script({
-			name: '全局设置',
+			name: '⚙️ 全局设置',
 			url: [['所有页面', /.*/]],
 			namespace: 'common.settings',
 			configs: {
@@ -242,7 +242,7 @@ export const CommonProject = Project.create({
 			onbeforeunload() {}
 		}),
 		onlineSearch: new Script({
-			name: '在线搜题',
+			name: '🔎 在线搜题',
 			url: [['所有页面', /.*/]],
 			namespace: 'common.online-search',
 			configs: {
@@ -334,7 +334,7 @@ export const CommonProject = Project.create({
 			}
 		}),
 		workResults: new Script({
-			name: '搜索结果',
+			name: '📄 搜索结果',
 			url: [['所有页面', /.*/]],
 			namespace: 'common.work-results',
 			configs: {
@@ -627,7 +627,7 @@ export const CommonProject = Project.create({
 			}
 		}),
 		changelog: new Script({
-			name: '版本更新',
+			name: '📦 版本更新',
 			url: [['', /.*/]],
 			namespace: 'common.changelog',
 			configs: {
