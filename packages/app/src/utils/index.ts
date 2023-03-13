@@ -63,10 +63,15 @@ export function zip(input: string, output: string) {
  */
 
 export function unzip(input: string, output: string) {
-	return new Promise<void>((resolve) => {
+	return new Promise<void>((resolve, reject) => {
 		const zip = new AdmZip(input);
-		zip.extractAllTo(output, true);
-		resolve();
+		zip.extractAllToAsync(output, true, (err) => {
+			if (err) {
+				reject(err);
+			} else {
+				resolve();
+			}
+		});
 	});
 }
 

@@ -5,12 +5,16 @@ import { existsSync, mkdirSync } from 'fs';
 import { appStore, store } from '../store';
 import { valid, coerce, clean, gt, SemVer } from 'semver';
 import defaultsDeep from 'lodash/defaultsDeep';
+import { Logger } from '../logger';
+
+const logger = Logger('store-init');
 
 /**
  * 初始化配置
  */
 export async function initStore() {
 	const version = store.store.version;
+	logger.log('version', version);
 
 	// 是否需要初始化
 	if (typeof version === 'string') {
@@ -23,12 +27,16 @@ export async function initStore() {
 			store.store = defaultsDeep(store.store, appStore);
 		}
 	} else {
-		const render = store.store.render || {};
+		const render = store.store.render ? JSON.parse(JSON.stringify(store.store.render)) : {};
+		appStore.render = render;
 		// 初始化设置
 		store.store = appStore;
-		// 恢复 render 数据
-		store.store.render = render;
+
+		logger.log('store', store.store);
 	}
+
+	// 强制更新 exe-path
+	store.store.paths['exe-path'] = app.getPath('exe');
 
 	if (!existsSync(store.store.paths.userDataDirsFolder)) {
 		mkdirSync(store.store.paths.userDataDirsFolder, { recursive: true });

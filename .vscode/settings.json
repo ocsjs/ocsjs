@@ -1,10 +1,10 @@
 {
 	"cSpell.words": [
-		"jsdom",
 		"axios",
 		"historychange",
 		"isclose",
 		"isstop",
+		"jsdom",
 		"nomove",
 		"ondefault",
 		"ondone",
@@ -12,6 +12,7 @@
 		"onprevent",
 		"onrender",
 		"onrun",
+		"sider",
 		"Tesseract",
 		"traineddata",
 		"webrtc",
@@ -35,5 +36,8 @@
 	/** 鼠标滚动速度 */
 	"editor.mouseWheelScrollSensitivity": 2,
 	/** 不生成 @return 的 jsdoc */
-	"typescript.suggest.jsdoc.generateReturns": false
+	"typescript.suggest.jsdoc.generateReturns": false,
+	"[typescript]": {
+		"editor.defaultFormatter": "esbenp.prettier-vscode"
+	}
 }

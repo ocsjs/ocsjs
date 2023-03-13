@@ -13,8 +13,8 @@
 	},
 	"extraFiles": [
 		{
-			"from": "./bin",
-			"to": "./bin"
+			"from": "./bin/ocr.zip",
+			"to": "./bin/ocr.zip"
 		}
 	],
 
