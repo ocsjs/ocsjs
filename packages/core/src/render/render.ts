@@ -1,9 +1,8 @@
-import { ScriptPanelElement, definedCustomElements } from '../elements';
+import { definedCustomElements } from '../elements';
 import { DropdownElement } from '../elements/dropdown';
 import { MessageElement } from '../elements/message';
 import { ModelElement } from '../elements/model';
 import { cors } from '../interfaces/cors';
-import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
 import { $ } from '../utils/common';
 import { $const } from '../utils/const';
@@ -55,8 +54,8 @@ const expandSvg =
  *
  * 可以不用悬浮窗也能执行脚本的生命周期，但是不会执行 render 这个生命周期
  */
-const RenderScript = new Script({
-	name: '⚙️悬浮窗设置',
+export const RenderScript = new Script({
+	name: '🪟 窗口设置',
 	url: [['所有', /.*/]],
 	namespace: 'render.panel',
 	configs: {
@@ -92,6 +91,9 @@ const RenderScript = new Script({
 	},
 
 	async onactive({ style, projects }: StartConfig) {
+		/** 兼容低版本浏览器 */
+		handleLowLevelBrowser();
+
 		/** 加载自定义元素 */
 		$.loadCustomElements(definedCustomElements);
 
@@ -116,49 +118,50 @@ const RenderScript = new Script({
 
 			const scriptDropdowns: DropdownElement[] = [];
 
-			const sortedProjects = projects.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
+			for (const project of projects) {
+				const dropdown = el('dropdown-element');
 
-			for (const project of sortedProjects) {
-				const scripts = $.getMatchedScripts([project], urls)
-					.filter((s) => !s.hideInPanel)
-					.sort(({ level: a = 0 }, { level: b = 0 }) => b - a);
-				if (scripts.length) {
-					const dropdown = el('dropdown-element');
+				let selected = false;
 
-					let selected = false;
+				const options: HTMLOptionElement[] = [];
 
-					const options = scripts.map((script, i) => {
-						const optionSelected = isCurrentPanel(project.name, script, currentPanelName);
-						const option = el('option', {
-							value: project.name + '-' + script.name,
-							label: script.name
-						});
+				for (const key in project.scripts) {
+					if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
+						const script = project.scripts[key];
+						// 只显示需要显示的面板
+						if (!script.hideInPanel) {
+							const optionSelected = isCurrentPanel(project.name, script, currentPanelName);
+							const option = el('option', {
+								value: project.name + '-' + script.name,
+								label: script.name
+							});
 
-						if (optionSelected) {
-							option.classList.add('active');
+							if (optionSelected) {
+								option.classList.add('active');
+							}
+
+							if (selected !== true && optionSelected) {
+								selected = true;
+							}
+
+							option.onclick = () => {
+								$store.setTab($const.TAB_CURRENT_PANEL_NAME, project.name + '-' + script.name);
+							};
+
+							options.push(option);
 						}
-
-						if (selected !== true && optionSelected) {
-							selected = true;
-						}
-
-						option.onclick = () => {
-							$store.setTab($const.TAB_CURRENT_PANEL_NAME, project.name + '-' + script.name);
-						};
-
-						return option;
-					});
-
-					if (selected) {
-						dropdown.classList.add('active');
 					}
-
-					dropdown.triggerElement = el('div', { className: 'dropdown-trigger-element ' }, project.name);
-					dropdown.triggerElement.style.padding = '0px 8px';
-					dropdown.content.append(...options);
-
-					scriptDropdowns.push(dropdown);
 				}
+
+				if (selected) {
+					dropdown.classList.add('active');
+				}
+
+				dropdown.triggerElement = el('div', { className: 'dropdown-trigger-element ' }, project.name);
+				dropdown.triggerElement.style.padding = '0px 8px';
+				dropdown.content.append(...options);
+
+				scriptDropdowns.push(dropdown);
 			}
 
 			/** 窗口是否最小化 */
@@ -210,45 +213,6 @@ const RenderScript = new Script({
 				container.header.visualSwitcher || '',
 				container.header.closeButton || ''
 			);
-		};
-
-		const initPanelAndScript = (projectName: string, script: Script) => {
-			const panel = $creator.scriptPanel(script, { projectName });
-			script.projectName = projectName;
-			script.panel = panel;
-			script.header = container.header;
-			return panel;
-		};
-
-		/** 创建内容 */
-		const createBody = async (urls: string[], currentPanelName: string) => {
-			const list: { script: Script; panel: ScriptPanelElement }[] = [];
-
-			for (const project of projects) {
-				const scripts = $.getMatchedScripts([project], urls).filter((s) => !s.hideInPanel);
-				for (const script of scripts) {
-					list.push({ script, panel: initPanelAndScript(project.name, script) });
-				}
-			}
-
-			const index = list.findIndex((i) => isCurrentPanel(i.script.projectName, i.script, currentPanelName));
-			const targetIndex = index === -1 ? 0 : index;
-
-			if (list[targetIndex]) {
-				return [list[targetIndex]];
-			} else {
-				// 如果第一个存在
-				if (list[0]) {
-					return [list[0]];
-				} else {
-					return [
-						{
-							script: RenderProject.scripts.render,
-							panel: initPanelAndScript(RenderProject.name, RenderProject.scripts.render)
-						}
-					] as { script: Script; panel: ScriptPanelElement }[];
-				}
-			}
 		};
 
 		/** 处理面板位置 */
@@ -316,32 +280,26 @@ const RenderScript = new Script({
 		};
 
 		/** 替换 body 中的内容 */
-		const renderBody = async (urls: string[], currentPanelName: string) => {
-			// 防止浏览器不兼容，如果兼容的话会自动替换此文案
-			container.body.append(
-				el('div', { className: 'card' }, [
-					$creator.notes([
-						'OCS警告 : ',
-						'当前浏览器版本过低或者不兼容，请下载其他浏览器，',
-						'例如谷歌浏览器或者微软浏览器。'
-					])
-				])
-			);
+		const renderBody = async (currentPanelName: string) => {
+			for (const project of projects) {
+				for (const key in project.scripts) {
+					if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
+						const script = project.scripts[key];
 
-			const list = await createBody(urls, currentPanelName);
+						if (isCurrentPanel(project.name, script, currentPanelName)) {
+							const panel = $creator.scriptPanel(script, { projectName: project.name });
+							script.projectName = project.name;
+							script.panel = panel;
+							script.header = container.header;
 
-			container.body.replaceChildren(...list.map((i) => i.panel));
+							// 执行重新渲染钩子
+							script.onrender?.({ panel: script.panel, header: container.header });
+							script.emit('render', { panel: script.panel, header: container.header });
 
-			// 触发 onrender 钩子
-			const scripts = list.map((i) => i.script);
-
-			const index = scripts.findIndex((s) => isCurrentPanel(s.projectName, s, currentPanelName));
-
-			const script = scripts[index === -1 ? 0 : index];
-			if (script?.panel) {
-				// 执行重新渲染钩子
-				script.onrender?.({ panel: script.panel, header: container.header });
-				script.emit('render', { panel: script.panel, header: container.header });
+							container.body.replaceChildren(script.panel);
+						}
+					}
+				}
 			}
 		};
 
@@ -365,7 +323,7 @@ const RenderScript = new Script({
 
 		const rerender = async (urls: string[], currentPanelName: string) => {
 			initHeader(urls, currentPanelName);
-			await renderBody(urls, currentPanelName);
+			await renderBody(currentPanelName);
 		};
 
 		/** 在顶级页面显示操作面板 */
@@ -492,30 +450,19 @@ export function $message(
 	return message;
 }
 
-/**
- * 内置渲染工程，包含主要悬浮窗构建脚本 RenderScript
- *
- * 使用 start 函数进行调用
- *
- * 可以帮助其他工程进行页面构建，如果不引用，则不会出现悬浮窗已经设置表单区域。
- *
- * @example
- *
- * OCS.start({
- * 		style: 'xxx',
- * 		projects: [OCS.RenderProject, ...其他工程]
- * })
- *
- */
-export const RenderProject = Project.create({
-	name: '渲染',
-	domains: [],
-	scripts: {
-		render: RenderScript
-	}
-});
-
 /** 判断这个脚本是否为当前显示页面 */
 function isCurrentPanel(projectName: string | undefined, script: Script, currentPanelName: string) {
 	return projectName + '-' + script.name === currentPanelName || script.namespace === currentPanelName;
+}
+
+/** 兼容低版本浏览器 */
+function handleLowLevelBrowser() {
+	if (typeof Element.prototype.replaceChildren === 'undefined') {
+		Element.prototype.replaceChildren = function (...nodes: (string | Node)[]) {
+			this.innerHTML = '';
+			for (const node of nodes) {
+				this.append(node);
+			}
+		};
+	}
 }

@@ -1,4 +1,4 @@
-import { Project, RenderProject } from '@ocsjs/core';
+import { Project } from '@ocsjs/core';
 import { CommonProject } from './projects/common';
 import { ZHSProject } from './projects/zhs';
 import { CXProject } from './projects/cx';
@@ -13,5 +13,5 @@ export { ZHSProject } from './projects/zhs';
 export { CXProject } from './projects/cx';
 
 export function definedProjects(): Project[] {
-	return [BackgroundProject, RenderProject, CommonProject, ZHSProject, CXProject];
+	return [ZHSProject, CXProject, CommonProject, BackgroundProject];
 }

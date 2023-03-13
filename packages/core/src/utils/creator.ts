@@ -3,7 +3,7 @@ import { WorkUploadType } from '../core/worker/interface';
 import { ConfigElement } from '../elements/config';
 import { Script } from '../interfaces';
 import { Config } from '../interfaces/config';
-import { $message, $model } from '../projects/render';
+import { $message, $model } from '../render/render';
 
 import { $ } from './common';
 import { ElementChildren, ElementHandler, el } from './dom';

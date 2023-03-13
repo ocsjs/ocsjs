@@ -85,7 +85,6 @@ export class Script<
 	namespace?: string;
 	/** 后台脚本（不提供管理页面） */
 	hideInPanel?: boolean;
-	level?: number;
 	/** 通过 configs 映射并经过解析后的配置对象 */
 	cfg: { [K in keyof T]: T[K]['defaultValue'] } & { notes?: string } = {} as any;
 	/** 经过初始化页面脚本注入的页面元素，如果初始化脚本未运行，则此元素为空 */

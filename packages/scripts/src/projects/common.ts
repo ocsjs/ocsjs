@@ -645,6 +645,8 @@ export const CommonProject = Project.create({
 				panel.body.replaceChildren(el('div', { className: 'markdown card', innerHTML: markdown(md) }));
 			}
 		}),
+		/** 渲染脚本，窗口渲染主要脚本 */
+		render: RenderScript,
 		hack: new Script({
 			name: '页面复制粘贴限制解除',
 			url: [['所有页面', /.*/]],
