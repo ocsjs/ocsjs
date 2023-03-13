@@ -27,12 +27,11 @@ const hasCapture = false;
 /** 工程导出 */
 export const ZHSProject = Project.create({
 	name: '智慧树',
-	level: 99,
 	domains: ['zhihuishu.com'],
 	studyProject: true,
 	scripts: {
 		guide: new Script({
-			name: '使用提示',
+			name: '💡 使用提示',
 			url: [
 				['学习首页', 'https://onlineweb.zhihuishu.com/onlinestuh5'],
 				['首页', 'https://www.zhihuishu.com/']
@@ -53,9 +52,34 @@ export const ZHSProject = Project.create({
 				$script.pin(this);
 			}
 		}),
-
+		'gxk-work-and-exam-guide': new Script({
+			name: '💡 共享课作业考试提示',
+			url: [['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']],
+			namespace: 'zhs.work.gxk-guide',
+			level: 999,
+			configs: {
+				notes: {
+					defaultValue: $creator.notes(
+						[
+							[
+								el('b', '在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置'),
+								el('b', '并在作业和考试脚本中开启自动答题选项，否则将无法正常答题。')
+							],
+							'考试自动答题在设置中开启，并点击进入即可使用',
+							'进入考试页面后需要刷新一下。',
+							'考试功能因为被频繁针对所以不稳定, 大家预留好其他搜题方式。'
+						],
+						'ol'
+					).outerHTML
+				}
+			},
+			oncomplete() {
+				// 置顶
+				$script.pin(this);
+			}
+		}),
 		'gxk-study': new Script({
-			name: '共享课学习脚本',
+			name: '🧑‍💻 共享课学习脚本',
 			url: [['共享课学习页面', 'studyvideoh5.zhihuishu.com']],
 			level: 999,
 			namespace: 'zhs.gxk.study',
@@ -368,7 +392,7 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		'xnk-study': new Script({
-			name: '校内课学习脚本',
+			name: '🧑‍💻 校内课学习脚本',
 			url: [['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']],
 			namespace: 'zhs.xnk.study',
 			configs: {
@@ -431,34 +455,8 @@ export const ZHSProject = Project.create({
 				}, 10 * 1000);
 			}
 		}),
-		'gxk-work-and-exam-guide': new Script({
-			name: '共享课作业考试提示',
-			url: [['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']],
-			namespace: 'zhs.work.gxk-guide',
-			level: 999,
-			configs: {
-				notes: {
-					defaultValue: $creator.notes(
-						[
-							[
-								el('b', '在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置'),
-								el('b', '并在作业和考试脚本中开启自动答题选项，否则将无法正常答题。')
-							],
-							'考试自动答题在设置中开启，并点击进入即可使用',
-							'进入考试页面后需要刷新一下。',
-							'考试功能因为被频繁针对所以不稳定, 大家预留好其他搜题方式。'
-						],
-						'ol'
-					).outerHTML
-				}
-			},
-			oncomplete() {
-				// 置顶
-				$script.pin(this);
-			}
-		}),
 		'gxk-work': new Script({
-			name: '共享课作业脚本',
+			name: '✍️ 共享课作业脚本',
 			url: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
 				/** 在列表中也提供设置页面 */
@@ -524,9 +522,8 @@ export const ZHSProject = Project.create({
 				}
 			}
 		}),
-
 		'gxk-exam': new Script({
-			name: '共享课考试脚本',
+			name: '✍️ 共享课考试脚本',
 			url: [
 				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
 				/** 在列表中也提供设置页面 */
@@ -603,7 +600,7 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		'xnk-work': new Script({
-			name: '校内课作业考试脚本',
+			name: '✍️ 校内课作业考试脚本',
 			url: [['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList']],
 			namespace: 'zhs.xnk.work',
 			level: 99,

@@ -45,6 +45,8 @@ hr {
 }
 .base-style-button {
   appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
   border-radius: 4px;
   background-color: white;
   border: 1px solid #2c92ff;
@@ -72,6 +74,8 @@ hr {
 }
 .base-style-button-secondary {
   appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
   border-radius: 4px;
   border: 1px solid #2c92ff;
   color: #409eff;
@@ -316,6 +320,8 @@ script-panel-element + script-panel-element {
 }
 .configs .configs-body config-element .config-wrapper input[type='button'] {
   appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
   border-radius: 4px;
   background-color: white;
   border: 1px solid #2c92ff;
@@ -343,6 +349,8 @@ script-panel-element + script-panel-element {
 }
 .configs .configs-body config-element .config-wrapper input[type='checkbox'] {
   appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
   width: fit-content;
   min-width: 36px;
   height: 20px;
@@ -404,7 +412,7 @@ script-panel-element + script-panel-element {
   display: flex;
   border-radius: 4px;
   padding: 4px 12px;
-  margin: 0px 24px 4px 24px;
+  margin-bottom: 4px;
 }
 .message-container message-element .message-content-container {
   margin-right: 8px;
@@ -510,6 +518,8 @@ model-element .model-input:hover {
 }
 model-element .model-cancel-button {
   appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
   border-radius: 4px;
   border: 1px solid #2c92ff;
   color: #409eff;
@@ -539,6 +549,8 @@ model-element .model-cancel-button:disabled:active {
 }
 model-element .model-confirm-button {
   appearance: none;
+  -moz-appearance: none;
+  -webkit-appearance: none;
   border-radius: 4px;
   background-color: white;
   border: 1px solid #2c92ff;

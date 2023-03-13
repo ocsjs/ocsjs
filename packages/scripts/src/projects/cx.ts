@@ -1,4 +1,4 @@
-/** global Ext videojs getTeacherAjax  */
+/** global Ext videojs getTeacherAjax jobs */
 
 import {
 	OCSWorker,
@@ -44,28 +44,52 @@ import { createRangeTooltip } from '../utils';
  *  GM_setValue: 文件太大影响I/O速度
  */
 // @ts-ignore
-$gm.unsafeWindow.typrMapping = undefined;
+top.typrMapping = top.typrMapping || undefined;
+
+// @ts-ignore 任务点
+top.jobs = top.jobs || [];
 
 const state = {
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined,
 		videojs: Object.create({}),
-		hacked: false
+		hacked: false,
+		answererWrapperUnsetMessage: undefined as MessageElement | undefined
 	}
 };
 
 export const CXProject = Project.create({
 	name: '学习通',
-	level: 99,
 	domains: ['chaoxing.com', 'edu.cn', 'org.cn'],
 	studyProject: true,
 	scripts: {
+		guide: new Script({
+			name: '💡 使用提示',
+			url: [
+				['首页', 'https://www.chaoxing.com'],
+				['旧版个人首页', 'chaoxing.com/space/index'],
+				['新版个人首页', 'chaoxing.com/base'],
+				['课程首页', 'chaoxing.com/mycourse']
+			],
+			level: 99,
+			namespace: 'cx.guide',
+			configs: {
+				notes: {
+					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
+				}
+			},
+			onactive() {
+				$script.pin(this);
+			}
+		}),
 		study: new Script({
 			name: '🧑‍💻 课程学习',
 			namespace: 'cx.new.study',
 			url: [
 				['任务点页面', '/knowledge/cards'],
-				['阅读任务点', '/readsvr/book/mooc']
+				['阅读任务点', '/readsvr/book/mooc'],
+				['任务点', /ananas\/modules.*/]
+				// 旧版浏览器好像不能识别二级 iframe ， 所以不能使用 'work/doHomeWorkNew' 以及其他二级 iframe 来触发路由
 			],
 			configs: {
 				notes: {
@@ -91,23 +115,35 @@ export const CXProject = Project.create({
 					}
 				},
 				volume,
-				restudy
+				restudy,
+				/**
+				 *
+				 * 开启的任务点
+				 *
+				 * media : 音视频
+				 * ppt : 文档和书籍翻阅
+				 * test : 章节测试
+				 * read : 阅读
+				 * live : 直播课
+				 *
+				 */
+				enable: {
+					defaultValue: ['media', 'ppt', 'test', 'read', 'live'] as ('media' | 'ppt' | 'test' | 'read' | 'live')[]
+				}
 			},
 			onrender({ panel }) {
 				if (!CommonProject.scripts.settings.cfg.answererWrappers?.length) {
 					const setting = el('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
 					setting.onclick = () => $script.pin(CommonProject.scripts.settings);
-					panel.body.replaceChildren(
-						el('hr'),
-						el('div', {}, [
-							'【警告】检测到未设置题库配置，将无法自动答题，',
-							el('br'),
-							'请切换到 ',
-							setting,
-							' 页面进行配置。'
-						])
-					);
+					if (state.study.answererWrapperUnsetMessage === undefined) {
+						state.study.answererWrapperUnsetMessage = $message('warn', {
+							content: el('span', {}, ['检测到未设置题库配置，将无法自动答题，请切换到 ', setting, ' 页面进行配置。']),
+							duration: 0
+						});
+					}
 				}
+
+				panel.body.append(el('input', { type: 'checkbox' }));
 			},
 			async oncomplete() {
 				/** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */
@@ -122,66 +158,42 @@ export const CXProject = Project.create({
 					return;
 				}
 
-				await $.sleep(5000);
+				// 收集任务点
+				if (/ananas\/modules.*/.test(location.href)) {
+					await $.sleep(3000);
+					const job = searchJob({
+						...this.cfg,
+						playbackRate: parseFloat(this.cfg.playbackRate.toString()),
+						workOptions: { ...CommonProject.scripts.settings.cfg }
+					});
 
-				const updateMediaState = () => {
-					if (state.study.currentMedia) {
-						// 倍速设置
-						state.study.currentMedia.playbackRate = parseFloat(this.cfg.playbackRate.toString());
-						// 音量设置
-						state.study.currentMedia.volume = this.cfg.volume;
+					if (job) {
+						// @ts-ignore
+						top.jobs.push(job);
 					}
-				};
-
-				this.onConfigChange('playbackRate', updateMediaState);
-				this.onConfigChange('volume', updateMediaState);
-
-				await study({
-					...this.cfg,
-					playbackRate: parseFloat(this.cfg.playbackRate.toString()),
-					workOptions: { ...CommonProject.scripts.settings.cfg }
-				});
-			}
-		}),
-		chapterGuide: new Script({
-			name: '💡 章节提示',
-			namespace: 'cx.chapter.guide',
-			url: [['课程章节', '/mooc2-ans/mycourse/studentcourse']],
-			level: 9,
-			configs: {
-				notes: { defaultValue: '请点击任意章节进入课程。' },
-				autoStudy: {
-					label: '5秒后自动进入课程',
-					defaultValue: true,
-					attrs: { type: 'checkbox' }
+					return;
 				}
-			},
-			oncomplete() {
-				$script.pin(this);
-				const run = () => {
-					if (this.cfg.autoStudy) {
-						this.cfg.notes = '请点击任意章节进入课程，5秒后自动进入。';
-						const list = $$el('.catalog_task .catalog_jindu');
-						setTimeout(() => {
-							if (list.length) {
-								list[0].click();
-							} else {
-								this.cfg.notes = '全部任务已完成！';
-								$model('alert', {
-									content: '全部任务已完成！',
-									notification: true,
-									notificationOptions: { important: true, duration: 0 }
-								});
-							}
-						}, 5000);
-					}
-				};
-				run();
-				this.onConfigChange('autoStudy', run);
+
+				// 主要处理
+				if (/\/knowledge\/cards/.test(location.href)) {
+					const updateMediaState = () => {
+						if (state.study.currentMedia) {
+							// 倍速设置
+							state.study.currentMedia.playbackRate = parseFloat(this.cfg.playbackRate.toString());
+							// 音量设置
+							state.study.currentMedia.volume = this.cfg.volume;
+						}
+					};
+
+					this.onConfigChange('playbackRate', updateMediaState);
+					this.onConfigChange('volume', updateMediaState);
+
+					await study();
+				}
 			}
 		}),
 		work: new Script({
-			name: '🧑‍💻 作业脚本',
+			name: '✍️ 作业脚本',
 			url: [['作业页面', '/mooc2/work/dowork']],
 			namespace: 'cx.new.work',
 			level: 99,
@@ -228,17 +240,8 @@ export const CXProject = Project.create({
 				}
 			}
 		}),
-		examRedirect: new Script({
-			name: '考试整卷预览脚本',
-			url: [['新版考试页面', 'exam-ans/exam/test/reVersionTestStartNew']],
-			hideInPanel: true,
-			oncomplete() {
-				$message('info', { content: '即将跳转到整卷预览页面进行考试。' });
-				setTimeout(() => $gm.unsafeWindow.topreview(), 3000);
-			}
-		}),
 		exam: new Script({
-			name: '🧑‍💻 考试脚本',
+			name: '✍️ 考试脚本',
 			url: [['整卷预览页面', '/mooc2/exam/preview']],
 			namespace: 'cx.new.exam',
 			level: 99,
@@ -302,25 +305,6 @@ export const CXProject = Project.create({
 				}
 			}
 		}),
-		guide: new Script({
-			name: '💡 使用提示',
-			url: [
-				['首页', 'https://www.chaoxing.com'],
-				['旧版个人首页', 'chaoxing.com/space/index'],
-				['新版个人首页', 'chaoxing.com/base'],
-				['课程首页', 'chaoxing.com/mycourse']
-			],
-			level: 99,
-			namespace: 'cx.guide',
-			configs: {
-				notes: {
-					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
-				}
-			},
-			onactive() {
-				$script.pin(this);
-			}
-		}),
 		versionRedirect: new Script({
 			name: '版本切换脚本',
 			url: [
@@ -354,6 +338,15 @@ export const CXProject = Project.create({
 				}
 			}
 		}),
+		examRedirect: new Script({
+			name: '考试整卷预览脚本',
+			url: [['新版考试页面', 'exam-ans/exam/test/reVersionTestStartNew']],
+			hideInPanel: true,
+			oncomplete() {
+				$message('info', { content: '即将跳转到整卷预览页面进行考试。' });
+				setTimeout(() => $gm.unsafeWindow.topreview(), 3000);
+			}
+		}),
 		rateHack: new Script({
 			name: '屏蔽倍速限制',
 			hideInPanel: true,
@@ -384,16 +377,6 @@ export const CXProject = Project.create({
 			oncomplete() {
 				this.onstart?.();
 				setTimeout(() => this.onstart?.(), 5000);
-			}
-		}),
-		recognize: new Script({
-			name: '繁体字识别',
-			url: [['章节测试', '/work/doHomeWorkNew']],
-			hideInPanel: true,
-			oncomplete() {
-				setTimeout(async () => {
-					await mappingRecognize();
-				}, 3000);
 			}
 		}),
 		studyDispatcher: new Script({
@@ -636,21 +619,16 @@ export function workOrExam(
  * 繁体字识别-字典匹配
  * @see 参考 https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
  */
-async function mappingRecognize() {
+async function mappingRecognize(doc: Document = document) {
 	// @ts-ignore
-	$gm.unsafeWindow.typrMapping =
-		// @ts-ignore
-		$gm.unsafeWindow.top.typrMapping ||
-		// @ts-ignore
-		$gm.unsafeWindow.typrMapping ||
-		(await loadTyprMapping());
+	top.typrMapping = top.typrMapping || (await loadTyprMapping());
 
 	/** 判断是否有繁体字 */
-	const fontFaceEl = Array.from(document.head.querySelectorAll('style')).find((style) =>
+	const fontFaceEl = Array.from(doc.head.querySelectorAll('style')).find((style) =>
 		style.textContent?.includes('font-cxsecret')
 	);
 	// @ts-ignore
-	const fontMap = $gm.unsafeWindow.typrMapping;
+	const fontMap = top.typrMapping;
 
 	if (fontFaceEl) {
 		// 解析font-cxsecret字体
@@ -672,7 +650,7 @@ async function mappingRecognize() {
 				match[i.toString()] = fontMap[hex];
 			}
 
-			const fonts = CXAnalyses.getSecretFont();
+			const fonts = CXAnalyses.getSecretFont(doc);
 			// 替换加密字体
 			fonts.forEach((el, index) => {
 				let html = el.innerHTML;
@@ -864,22 +842,50 @@ function rateHack() {
 /**
  * cx 任务学习
  */
-export async function study(opts: {
-	restudy: boolean;
-	playbackRate: number;
-	volume: number;
-	workOptions: CommonWorkOptions;
-}) {
-	const tasks = searchTask(opts);
+export async function study() {
+	// @ts-ignore 清空全部任务点，并等待新的任务点加载运行
+	top.jobs = [];
+	// 是否没有任务点
+	let noJob = true;
+	// 此页面是否通过
+	let pass = false;
 
-	for (const task of tasks) {
-		try {
-			await $.sleep(3000);
-			await task();
-		} catch (e) {
-			$console.error('未知错误', e);
+	/** 一直检测任务点 */
+	const checkAndRunTask = async () => {
+		// 如果此页面没通过
+		if (pass === false) {
+			// @ts-ignore 搜索全部任务，并执行第一个
+			const job = top.jobs.shift();
+			if (job) {
+				noJob = false;
+				try {
+					await job();
+				} catch (e) {
+					$console.error('未知错误', e);
+				}
+			} else {
+				noJob = true;
+			}
+			await $.sleep(1000);
+			// 继续递归检测
+			await checkAndRunTask();
 		}
-	}
+	};
+
+	checkAndRunTask();
+
+	// 如果10秒内没有检测到任务，则结束此页面任务检测，跳转下一页
+	await new Promise<void>((resolve) => {
+		const interval = setInterval(() => {
+			if (noJob) {
+				clearInterval(interval);
+				resolve();
+			}
+		}, 10 * 1000);
+	});
+
+	// 通过
+	pass = true;
 
 	// 下一章按钮
 	const { next } = domSearch({ next: '.next[onclick^="PCount.next"]' }, top?.document);
@@ -915,7 +921,7 @@ export async function study(opts: {
 	}
 }
 
-export function searchIFrame(root: Document) {
+function searchIFrame(root: Document) {
 	let list = Array.from(root.querySelectorAll('iframe'));
 	const result: HTMLIFrameElement[] = [];
 	while (list.length) {
@@ -939,77 +945,96 @@ export function searchIFrame(root: Document) {
 /**
  * 搜索任务点
  */
-function searchTask(opts: {
+function searchJob(opts: {
 	restudy: boolean;
 	playbackRate: number;
 	volume: number;
 	workOptions: CommonWorkOptions;
-}): (() => Promise<void> | undefined)[] {
-	return searchIFrame(document)
-		.map((frame) => {
-			const { media, read, chapterTest } = domSearch(
-				{
-					media: 'video,audio',
-					chapterTest: '.TiMu',
-					read: '#img.imglook'
-				},
-				frame.contentDocument || document
-			);
+}): { (): Promise<void> | undefined } | undefined {
+	const doc = $gm.unsafeWindow.document;
+	const win = $gm.unsafeWindow;
 
-			function getJob() {
-				if (media) {
-					return mediaTask(opts, media as any, frame);
-				} else if (read) {
-					return readTask(frame);
-				} else if (chapterTest) {
-					return chapterTestTask(frame, opts.workOptions);
-				}
+	const searchJobElement = (root: Window | HTMLIFrameElement) => {
+		return domSearch(
+			{
+				media: 'video,audio',
+				chapterTest: '.TiMu',
+				read: '#img.imglook'
+			},
+			root instanceof Window ? root.document : root.contentWindow!.document
+		);
+	};
+
+	const search = (root: Window | HTMLIFrameElement) => {
+		const { media, read, chapterTest } = searchJobElement(root);
+
+		function getJob() {
+			if (media) {
+				return mediaTask(opts, media as any, doc);
+			} else if (read) {
+				return readTask(doc);
 			}
-			if (media || read || chapterTest) {
-				return () => {
+			// 章节测试是在 anans/modules 下的 iframe 里面
+			else if (chapterTest && root instanceof HTMLIFrameElement) {
+				return chapterTestTask(root, opts.workOptions);
+			}
+		}
+		if (media || read || chapterTest) {
+			return () => {
+				// @ts-ignore
+				let _parent = root instanceof Window ? root : root.contentWindow;
+				// @ts-ignore
+				let jobIndex = root._jobindex;
+				// 递归寻找任务点信息，判断是否要进行任务点
+				while (_parent) {
 					// @ts-ignore
-					let _parent = frame.contentWindow;
+					jobIndex = getValidNumber(jobIndex, root.contentWindow._jobindex, _parent._jobindex);
 					// @ts-ignore
-					let jobIndex = getValidNumber(frame.contentWindow?._jobindex, _parent._jobindex);
+					const attachments = _parent?.JC?.attachments || _parent.attachments;
 
-					while (_parent) {
-						// @ts-ignore
-						jobIndex = getValidNumber(jobIndex, frame.contentWindow?._jobindex, _parent._jobindex);
-						// @ts-ignore
-						const attachments = _parent?.JC?.attachments || _parent.attachments;
+					if (attachments && typeof jobIndex === 'number') {
+						const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
+						const jobName = name || title || (bookname ? bookname + author : undefined) || '未知任务';
 
-						if (attachments && typeof jobIndex === 'number') {
-							const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
-							const jobName = name || title || (bookname ? bookname + author : undefined) || '未知任务';
-
-							// 直接重复学习，不执行任何判断, 章节测试和阅读等任务除外
-							if (opts.restudy && !chapterTest && !read) {
-								$console.log(jobName, '即将重新学习。');
-								return getJob();
-							} else if (attachments[jobIndex]?.job === true) {
-								$console.log('正在学习：', jobName);
-								return getJob();
-							} else if (chapterTest && CommonProject.scripts.settings.cfg.forceWork) {
-								$console.log(jobName, '开启强制答题。');
-								return getJob();
-							} else {
-								$console.log(jobName, '已经完成，即将跳过。');
-								break;
-							}
-						}
-						// @ts-ignore
-						if (_parent.parent === _parent) {
+						// 直接重复学习，不执行任何判断, 章节测试和阅读等任务除外
+						if (opts.restudy && !chapterTest && !read) {
+							$console.log(jobName, '即将重新学习。');
+							return getJob();
+						} else if (attachments[jobIndex]?.job === true) {
+							$console.log('正在学习：', jobName);
+							return getJob();
+						} else if (chapterTest && CommonProject.scripts.settings.cfg.forceWork) {
+							$console.log(jobName, '开启强制答题。');
+							return getJob();
+						} else {
+							$console.log(jobName, '已经完成，即将跳过。');
 							break;
 						}
-						// @ts-ignore
-						_parent = _parent.parent;
 					}
-				};
-			} else {
-				return undefined;
+					// @ts-ignore
+					if (_parent.parent === _parent) {
+						break;
+					}
+					// @ts-ignore
+					_parent = _parent.parent;
+				}
+			};
+		} else {
+			return undefined;
+		}
+	};
+
+	// 找自身以及全部子iframe
+	let job = search(win);
+
+	if (!job) {
+		for (const iframe of searchIFrame(doc)) {
+			job = search(iframe);
+			if (job) {
+				return job;
 			}
-		})
-		.filter((f) => f) as any[];
+		}
+	}
 }
 
 /**
@@ -1027,15 +1052,11 @@ export function fixedVideoProgress() {
 /**
  * 播放视频和音频
  */
-function mediaTask(
-	setting: { playbackRate: number; volume: number },
-	media: HTMLMediaElement,
-	frame: HTMLIFrameElement
-) {
+function mediaTask(setting: { playbackRate: number; volume: number }, media: HTMLMediaElement, doc: Document) {
 	const { playbackRate = 1, volume = 0 } = setting;
 
 	// @ts-ignore
-	const { videojs } = domSearch({ videojs: '#video,#audio' }, frame.contentDocument || document);
+	const { videojs } = domSearch({ videojs: '#video,#audio' }, doc);
 
 	if (!videojs) {
 		$message('error', { content: '视频检测不到，请尝试刷新或者手动切换下一章。' });
@@ -1065,6 +1086,7 @@ function mediaTask(
 							'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须静音。',
 						onClose: async () => {
 							media.play();
+							media.playbackRate = playbackRate;
 						}
 					});
 				});
@@ -1076,6 +1098,7 @@ function mediaTask(
 				} else {
 					await $.sleep(1000);
 					media.play();
+					media.playbackRate = playbackRate;
 				}
 			};
 
@@ -1089,9 +1112,9 @@ function mediaTask(
 /**
  * 阅读 ppt
  */
-async function readTask(frame?: HTMLIFrameElement) {
+async function readTask(doc?: Document) {
 	// @ts-ignore
-	const finishJob = frame?.contentWindow?.finishJob;
+	const finishJob = doc?.contentWindow?.finishJob;
 	if (finishJob) finishJob();
 	await $.sleep(3000);
 }
@@ -1101,9 +1124,11 @@ async function readTask(frame?: HTMLIFrameElement) {
  */
 async function chapterTestTask(
 	frame: HTMLIFrameElement,
-
 	{ answererWrappers, period, timeout, retry, upload, thread, skipAnswered }: CommonWorkOptions
 ) {
+	// 繁体字识别
+	await mappingRecognize(frame.contentWindow?.window.document);
+
 	if (!auto) {
 		return $console.warn('自动答题未开启，请在课程学习设置中开启或者忽略此信息。');
 	}
@@ -1115,7 +1140,6 @@ async function chapterTestTask(
 	$console.info('开始章节测试');
 
 	const frameWindow = frame.contentWindow?.window;
-
 	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
 	// 清空搜索结果
