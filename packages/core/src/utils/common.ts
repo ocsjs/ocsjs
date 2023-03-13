@@ -198,7 +198,7 @@ export const $ = {
 		return res;
 	},
 	/** 加载自定义元素 */
-	loadCustomElements(elements: { new(): HTMLElement }[]) {
+	loadCustomElements(elements: { new (): HTMLElement }[]) {
 		for (const element of elements) {
 			const name = $string.humpToTarget(element.name, '-');
 			// 不能重复加载
@@ -206,5 +206,9 @@ export const $ = {
 				customElements.define(name, element);
 			}
 		}
+	},
+	/** 是否处于顶级 window ，而不是子 iframe */
+	isInTopWindow() {
+		return self === top;
 	}
 };

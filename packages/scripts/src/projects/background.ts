@@ -1,5 +1,6 @@
-import { $creator, $gm, $model, $store, Project, RenderProject, Script, el, request } from '@ocsjs/core';
+import { $, $creator, $gm, $model, $store, Project, Script, el, request } from '@ocsjs/core';
 import gt from 'semver/functions/gt';
+import { CommonProject } from './common';
 
 const state = {
 	console: {
@@ -15,10 +16,9 @@ export type LogType = 'log' | 'info' | 'debug' | 'warn' | 'error';
 export const BackgroundProject = Project.create({
 	name: '后台',
 	domains: [],
-	level: -99,
 	scripts: {
 		console: new Script({
-			name: '📄日志',
+			name: '📄日志输出',
 			url: [['所有', /.*/]],
 			namespace: 'render.console',
 			configs: {
@@ -89,13 +89,13 @@ export const BackgroundProject = Project.create({
 					this.onConfigChange('logs', () => {
 						const { div, logs } = showLogs();
 						panel.replaceChildren(div);
-						logs.at(-1)?.scrollIntoView();
+						logs[logs.length - 1]?.scrollIntoView();
 					}) || 0;
 
 				const { div, logs } = showLogs();
 
 				panel.body.replaceChildren(div);
-				logs.at(-1)?.scrollIntoView();
+				logs[logs.length - 1]?.scrollIntoView();
 			}
 		}),
 		app: new Script({
@@ -135,7 +135,7 @@ export const BackgroundProject = Project.create({
 				this.onConfigChange('sync', update);
 			},
 			async oncomplete() {
-				if (self === top) {
+				if ($.isInTopWindow()) {
 					this.cfg.sync = false;
 					try {
 						const res = await request('https://ocs-app/browser', { type: 'fetch', method: 'get', contentType: 'json' });
@@ -182,45 +182,10 @@ export const BackgroundProject = Project.create({
 			hideInPanel: true,
 			oncomplete() {
 				// 将面板移动至左侧顶部，防止挡住软件登录
-				RenderProject.scripts.render.cfg.x = 10;
-				RenderProject.scripts.render.cfg.y = 40;
-				RenderProject.scripts.render.cfg.visual = 'minimize';
-			}
-		}),
-		browserCheck: new Script({
-			name: '浏览器版本检测',
-			url: [['所有页面', /.*/]],
-			hideInPanel: true,
-			oncomplete() {
-				if (self === top) {
-					const match = navigator.userAgent.match(/Chrome\/(\d+)/);
-					const version = match ? parseInt(match[1]) : undefined;
-					if (version) {
-						// dom.replaceChildren 在 chrome 86 以上版本才能使用
-						if (version < 86) {
-							$model('alert', {
-								content: $creator.notes([
-									'检测到您当前的浏览器版本过低，可能导致脚本无法运行，请下载/更新以下推荐浏览器：',
-									[
-										'- 微软浏览器(Edge) : ',
-										el(
-											'a',
-											{ href: 'https://www.microsoft.com/zh-cn/edge/download', target: '_blank' },
-											'https://www.microsoft.com/zh-cn/edge'
-										)
-									],
-									[
-										'- 谷歌浏览器(Chrome) : ',
-										el(
-											'a',
-											{ href: 'https://www.google.com/intl/zh-CN/chrome/', target: '_blank' },
-											'https://www.google.com/intl/zh-CN/chrome/'
-										)
-									]
-								]).outerHTML
-							});
-						}
-					}
+				if ($.isInTopWindow()) {
+					CommonProject.scripts.render.cfg.x = 10;
+					CommonProject.scripts.render.cfg.y = 40;
+					CommonProject.scripts.render.cfg.visual = 'minimize';
 				}
 			}
 		}),
@@ -235,7 +200,7 @@ export const BackgroundProject = Project.create({
 				}
 			},
 			oncomplete() {
-				if (self === top) {
+				if ($.isInTopWindow()) {
 					if (this.cfg.notToday === -1 || this.cfg.notToday !== new Date().getDate()) {
 						const infos = $gm.getInfos();
 						if (infos) {
@@ -273,6 +238,31 @@ export const BackgroundProject = Project.create({
 							}, 10 * 1000);
 						}
 					}
+				}
+			}
+		}),
+		visibleCheck: new Script({
+			name: '浏览器窗口检测脚本',
+			url: [
+				['超星学习页面', '/mycourse/studentstudy'],
+				['智慧树共享课学习页面', 'studyvideoh5.zhihuishu.com'],
+				['智慧树校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']
+			],
+			hideInPanel: true,
+			oncomplete() {
+				if ($.isInTopWindow()) {
+					// 每分钟检测
+					const interval = setInterval(() => {
+						if (document.hidden) {
+							$model('alert', {
+								content: $creator.notes([
+									'请不要最小化浏览器，或者切换到其他页面，可能会导致脚本停止运行或者卡死！',
+									'可以适当缩小浏览器尺寸，并放置在桌面上，使用其他软件时不会影响脚本运行。'
+								])
+							});
+							clearInterval(interval);
+						}
+					}, 60 * 1000);
 				}
 			}
 		})

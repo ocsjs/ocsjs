@@ -12,7 +12,9 @@ import {
 	request,
 	$creator,
 	SimplifyWorkResult,
-	$script
+	$script,
+	RenderScript,
+	$
 } from '@ocsjs/core';
 
 import type { ScriptPanelElement, HeaderElement, AnswererWrapper } from '@ocsjs/core';
@@ -24,7 +26,6 @@ import { workConfigs } from '../utils/configs';
 export const CommonProject = Project.create({
 	name: '通用',
 	domains: [],
-	level: 1,
 	scripts: {
 		guide: new Script({
 			name: '📖 使用教程',
@@ -123,19 +124,20 @@ export const CommonProject = Project.create({
 								cancelButton: el('button', {
 									className: 'model-cancel-button',
 									innerText: '清空题库配置',
-									onclick() {
+									onclick: () => {
 										$message('success', { content: '已清空，在答题前请记得重新配置。' });
 										model?.remove();
 										CommonProject.scripts.settings.cfg.answererWrappers = [];
+										this.value = '点击配置';
 									}
 								}),
-								async onConfirm(value) {
+								onConfirm: async (value) => {
 									if (value) {
 										try {
 											const aw = await AnswerWrapperParser.from(value);
 											if (aw.length) {
 												CommonProject.scripts.settings.cfg.answererWrappers = aw;
-
+												this.value = '当前有' + aw.length + '个可用题库';
 												$model('alert', {
 													content: el('div', [
 														el('div', '配置成功，打开具有答题脚本的页面后即可自动答题，解析到的题库如下所示:'),
@@ -231,15 +233,16 @@ export const CommonProject = Project.create({
 				}
 			},
 			oncomplete() {
-				this.onConfigChange('notification', (open) => {
-					if (open) {
-						$gm.notification('您已开启系统通知，如果脚本有重要情况需要处理，则会发起通知提示您。', {
-							duration: 5
-						});
-					}
-				});
-			},
-			onbeforeunload() {}
+				if ($.isInTopWindow()) {
+					this.onConfigChange('notification', (open) => {
+						if (open) {
+							$gm.notification('您已开启系统通知，如果脚本有重要情况需要处理，则会发起通知提示您。', {
+								duration: 5
+							});
+						}
+					});
+				}
+			}
 		}),
 		onlineSearch: new Script({
 			name: '🔎 在线搜题',
