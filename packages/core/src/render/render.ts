@@ -125,43 +125,48 @@ export const RenderScript = new Script({
 
 				const options: HTMLOptionElement[] = [];
 
-				for (const key in project.scripts) {
-					if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
-						const script = project.scripts[key];
-						// 只显示需要显示的面板
-						if (!script.hideInPanel) {
-							const optionSelected = isCurrentPanel(project.name, script, currentPanelName);
-							const option = el('option', {
-								value: project.name + '-' + script.name,
-								label: script.name
-							});
+				// 如果整个工程下面有一个需要显示的脚本，那此工程就添加到头部
+				const scripts = $.getMatchedScripts([project], urls).filter((s) => !s.hideInPanel);
 
-							if (optionSelected) {
-								option.classList.add('active');
+				if (scripts.length) {
+					for (const key in project.scripts) {
+						if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
+							const script = project.scripts[key];
+							// 只显示需要显示的面板
+							if (!script.hideInPanel) {
+								const optionSelected = isCurrentPanel(project.name, script, currentPanelName);
+								const option = el('option', {
+									value: project.name + '-' + script.name,
+									label: script.name
+								});
+
+								if (optionSelected) {
+									option.classList.add('active');
+								}
+
+								if (selected !== true && optionSelected) {
+									selected = true;
+								}
+
+								option.onclick = () => {
+									$store.setTab($const.TAB_CURRENT_PANEL_NAME, project.name + '-' + script.name);
+								};
+
+								options.push(option);
 							}
-
-							if (selected !== true && optionSelected) {
-								selected = true;
-							}
-
-							option.onclick = () => {
-								$store.setTab($const.TAB_CURRENT_PANEL_NAME, project.name + '-' + script.name);
-							};
-
-							options.push(option);
 						}
 					}
+
+					if (selected) {
+						dropdown.classList.add('active');
+					}
+
+					dropdown.triggerElement = el('div', { className: 'dropdown-trigger-element ' }, project.name);
+					dropdown.triggerElement.style.padding = '0px 8px';
+					dropdown.content.append(...options);
+
+					scriptDropdowns.push(dropdown);
 				}
-
-				if (selected) {
-					dropdown.classList.add('active');
-				}
-
-				dropdown.triggerElement = el('div', { className: 'dropdown-trigger-element ' }, project.name);
-				dropdown.triggerElement.style.padding = '0px 8px';
-				dropdown.content.append(...options);
-
-				scriptDropdowns.push(dropdown);
 			}
 
 			/** 窗口是否最小化 */
@@ -328,6 +333,9 @@ export const RenderScript = new Script({
 
 		/** 在顶级页面显示操作面板 */
 		if (matchedScripts.length !== 0 && self === top) {
+			/** 移除上一次加载页面时遗留下来的 url 加载数据 */
+			$store.setTab($const.TAB_URLS, []);
+
 			// 创建样式元素
 			container.append(el('style', {}, style || ''), $elements.messageContainer);
 			$elements.root.append(container);
@@ -338,7 +346,7 @@ export const RenderScript = new Script({
 				const urls = await $store.getTab($const.TAB_URLS);
 				const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
 
-				rerender(urls || [], currentPanelName || '');
+				await rerender(defaults.urls(urls), defaults.panelName(currentPanelName));
 			})();
 
 			// 初始化模态框系统
@@ -350,15 +358,15 @@ export const RenderScript = new Script({
 			/** 使用 debounce 避免页面子 iframe 刷新过多 */
 			$store.addTabChangeListener(
 				$const.TAB_URLS,
-				debounce(async (urls: string[] = [location.href]) => {
+				debounce(async (urls: string[]) => {
 					const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
-					rerender(urls, currentPanelName);
+					rerender(defaults.urls(urls), defaults.panelName(currentPanelName));
 				}, 2000)
 			);
 
 			$store.addTabChangeListener($const.TAB_CURRENT_PANEL_NAME, async (currentPanelName) => {
 				const urls = (await $store.getTab($const.TAB_URLS)) || [location.href];
-				rerender(urls, currentPanelName);
+				rerender(defaults.urls(urls), defaults.panelName(currentPanelName));
 			});
 			this.onConfigChange('fontsize', onFontsizeChange);
 		}
@@ -366,6 +374,14 @@ export const RenderScript = new Script({
 		handleVisible();
 	}
 });
+
+/** 默认值 */
+const defaults = {
+	/** 当前页面存在默认页面 */
+	urls: (urls: string[]) => (urls.length ? urls : [location.href]),
+	/** 默认面板名 */
+	panelName: (name: string) => name || RenderScript.namespace || ''
+};
 
 /**
  * 创建一个模态框代替原生的 alert, confirm, prompt

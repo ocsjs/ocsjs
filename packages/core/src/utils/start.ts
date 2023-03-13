@@ -81,8 +81,8 @@ export async function start(startConfig: StartConfig) {
 			 * 每个脚本加载之后，统计每个脚本当前所运行的页面链接，链接不会重复
 			 * 初始化页面的脚本可以根据此链接列表，进行脚本页面的生成
 			 */
-			$store.getTab('_urls_').then((urls) => {
-				$store.setTab(`_urls_`, Array.from(new Set(urls || [])).concat(location.href));
+			$store.getTab($const.TAB_URLS).then((urls) => {
+				$store.setTab($const.TAB_URLS, Array.from(new Set(urls || [])).concat(location.href));
 			});
 		}
 	});
