@@ -107,65 +107,93 @@ export const ZJYProject = Project.create({
 				// 展开目录
 				const sildeDirectory = $el('.sildeDirectory');
 				sildeDirectory?.click();
+				// 收回目录
 				await $.sleep(1000);
 				sildeDirectory?.click();
 
-				/** 展开下一个列表 */
-				const getNextTopicListOpener = () =>
-					$$el('.topicList')
-						.find((c) => $el('.topicCellContainer', c)?.children.length === 0)
-						?.querySelector('a');
-
-				/** 展开下一个模块 */
-				const getNextModuleOpener = () =>
-					$$el('.moduleList').find((c) => $el('.moduleTopicContainer', c)?.children.length === 0);
-
+				/** 获取当前节点 */
 				const getActiveNode = () => $el('li[data-cellid].active');
-
-				const getNextNode = () => {
+				/** 获取当前的列表 */
+				const getActiveNodeList = () => getActiveNode()?.parentElement?.parentElement;
+				/** 获取当前的模块 */
+				const getActiveModel = () => getActiveNodeList()?.parentElement?.parentElement;
+				/** 获取下一个节点 */
+				const getNextNode = async () => {
+					// 获取当前节点
 					const active = getActiveNode();
+
 					if (active) {
+						// 获取在同一列表下的下一个任务点
 						const next = $el(`li[data-upcellid="${active.dataset.cellid}"]`);
+
 						if (next) {
 							return next;
 						}
-					}
-				};
+						// 如果没有说明当前列表已经完成
+						else {
+							// 获取当前列表
+							const list = getActiveNodeList();
 
-				// 下一章
-				const next = async () => {
-					let el;
-					let tlo;
-					let mo;
-					while (!el) {
-						el = getNextNode();
-						if (!el) {
-							tlo = getNextTopicListOpener();
-							mo = getNextModuleOpener();
+							if (list) {
+								const nextList = $el(`li[data-uptopicid="${list.dataset.topicid}"]`);
 
-							/**
-							 * 如果找不到目标节点，说明没有展开
-							 * 这里递归展开直到找到为止
-							 */
+								if (nextList) {
+									// 如果还未加载资源
+									if ($el('.topicCellContainer', nextList)?.children.length === 0) {
+										$el('.topicData', nextList)?.click();
+										// 等待加载
+										await $.sleep(5000);
+									}
+									return $el('li[data-upcellid="0"]', nextList);
+								}
+								// 如果没有说明当前模块已经完成
+								else {
+									// 获取当前模块
+									const _module = getActiveModel();
 
-							if (tlo) {
-								tlo.click();
-								await $.sleep(5000);
-							} else if (mo) {
-								mo.click();
-								await $.sleep(5000);
+									if (_module) {
+										const modules = $$el('[data-moduleid]');
+										let nextModule: HTMLElement | undefined;
+
+										for (let index = 0; index < modules.length; index++) {
+											if (modules[index] === _module) {
+												nextModule = modules[index + 1];
+												break;
+											}
+										}
+
+										if (nextModule) {
+											// 如果还未加载资源
+											if ($el('.moduleTopicContainer', nextModule)?.children.length === 0) {
+												$el('.moduleData', nextModule)?.click();
+												// 等待加载
+												await $.sleep(5000);
+											}
+
+											const nextList = $el('li[data-uptopicid="0"]', nextModule);
+											if (nextList) {
+												// 如果还未加载资源
+												if ($el('.topicCellContainer', nextList)?.children.length === 0) {
+													$el('.topicData', nextList)?.click();
+													// 等待加载
+													await $.sleep(5000);
+												}
+												return $el('li[data-upcellid="0"]', nextList);
+											} else {
+												//
+											}
+										} else {
+											//
+										}
+									} else {
+										//
+									}
+								}
 							} else {
-								// 如果都没有，则说明已经全部展开
-								break;
+								//
 							}
 						}
-
-						await $.sleep(3000);
 					}
-
-					el && el.click();
-
-					return !!el;
 				};
 
 				const studyLoop = async () => {
@@ -178,11 +206,13 @@ export const ZJYProject = Project.create({
 					try {
 						const active = getActiveNode();
 						if (active) {
-							await start(active.textContent || '未知任务', document);
-
-							if (await next()) {
+							await start(active.innerText || '未知任务', document);
+							const next = await getNextNode();
+							if (next) {
+								next.click();
 								await studyLoop();
 							} else {
+								console.log('检测不到下一章任务点，请检查是否已经全部完成。');
 								$model('alert', {
 									content: '检测不到下一章任务点，请检查是否已经全部完成。'
 								});

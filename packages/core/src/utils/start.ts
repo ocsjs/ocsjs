@@ -1,3 +1,4 @@
+/* global GM_info */
 import { Project } from '../interfaces/project';
 import { $ } from './common';
 import { $const } from './const';
@@ -18,6 +19,34 @@ export interface StartConfig {
  * @param startConfig 启动配置
  */
 export async function start(startConfig: StartConfig) {
+	// 环境检测
+	if (
+		[
+			'GM_getTab',
+			'GM_saveTab',
+			'GM_setValue',
+			'GM_getValue',
+			'unsafeWindow',
+			'GM_listValues',
+			'GM_deleteValue',
+			'GM_notification',
+			'GM_xmlhttpRequest',
+			'GM_getResourceText',
+			'GM_addValueChangeListener',
+			'GM_removeValueChangeListener'
+		].some((api) => typeof Reflect.get(globalThis, api) === 'undefined')
+	) {
+		const open = confirm(
+			`OCS网课脚本不支持当前的脚本管理器（${GM_info.scriptHandler}）。` +
+				'请前往 https://docs.ocsjs.com/docs/script 下载指定的脚本管理器，例如 “Scriptcat 脚本猫” 或者 “Tampermonkey 油猴”'
+		);
+
+		if (open) {
+			window.location.href = 'https://docs.ocsjs.com/docs/script';
+		}
+		return;
+	}
+
 	// 添加当前标签唯一id
 	const uid = await $store.getTab($const.TAB_UID);
 	if (uid === undefined) {
