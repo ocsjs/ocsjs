@@ -19,7 +19,14 @@ export const ICVEProject = Project.create({
 			url: [['课程学习页面', 'course.icve.com.cn/learnspace/learn/learn/templateeight/index.action']],
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['请手动点击任意章节以触发自动学习脚本']).outerHTML
+					defaultValue: $creator.notes([
+						['请手动点击任意章节以触发自动学习脚本', '只需点击一次后续无需点击，脚本会自动学习。'],
+						[
+							'如果视频进入后一直是黑屏，请手动点击播放按钮，',
+							'如果还是黑屏，则为该视频无法播放，',
+							'请联系智慧职教客服进行询问。'
+						]
+					]).outerHTML
 				},
 				volume,
 				playbackRate: {
@@ -145,6 +152,19 @@ export const ICVEProject = Project.create({
 						});
 					}
 				};
+			}
+		}),
+		guide: new Script({
+			name: '💡 使用提示',
+			url: [['首页', 'user.icve.com.cn']],
+			namespace: 'icve.guide',
+			configs: {
+				notes: {
+					defaultValue: $creator.notes(['点击任意课程进入。']).outerHTML
+				}
+			},
+			oncomplete() {
+				$script.pin(this);
 			}
 		})
 	}
