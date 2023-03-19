@@ -265,6 +265,25 @@ export const BackgroundProject = Project.create({
 					}, 60 * 1000);
 				}
 			}
+		}),
+		errorHandle: new Script({
+			name: '全局错误捕获',
+			url: [['', /.*/]],
+			onstart() {
+				const projects = definedProjects();
+				for (const project of projects) {
+					for (const key in project.scripts) {
+						if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
+							const script = project.scripts[key];
+							script.on('scripterror', (err) => {
+								const msg = `[${project.name} - ${script.name}] : ${err}`;
+								console.error(msg);
+								$console.error(msg);
+							});
+						}
+					}
+				}
+			}
 		})
 	}
 });

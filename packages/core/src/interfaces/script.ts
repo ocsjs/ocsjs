@@ -44,9 +44,11 @@ type ScriptEvent = {
 	render: (elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
 	/** 在页面离开时执行的事件 */
 	beforeunload: (...args: any[]) => undefined | boolean;
+	/** 发生错误时 */
+	scripterror: (err: string) => void;
 };
 
-export class BaseScript<E extends Record<string | symbol, (...args: any[]) => any>> extends CommonEventEmitter<E> {
+export class BaseScript<E extends ScriptEvent = ScriptEvent> extends CommonEventEmitter<E> {
 	/** 在脚本加载时立即运行的钩子 */
 	onstart?: (...args: any[]) => any;
 	/** 在页面初始化完成时（元素可被访问）时运行的钩子 */
@@ -59,15 +61,14 @@ export class BaseScript<E extends Record<string | symbol, (...args: any[]) => an
 	onrender?: (elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
 	/** 在页面离开时执行的钩子 */
 	onbeforeunload?: (...args: any[]) => undefined | boolean;
+	/** 发生错误时 */
+	onerror?: (err: string) => void;
 }
 
 /**
  * 脚本
  */
-export class Script<
-	T extends ScriptConfigs = ScriptConfigs,
-	Events extends ScriptEvent = ScriptEvent
-> extends BaseScript<Events> {
+export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript<ScriptEvent> {
 	/** 未经处理的 configs 原对象 */
 	private _configs?: ScriptConfigsProvider<T>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
@@ -134,12 +135,12 @@ export class Script<
 		this.excludes = excludes;
 		this._configs = configs;
 		this.hideInPanel = hideInPanel;
-		this.onstart = onstart;
-		this.onactive = onactive;
-		this.oncomplete = oncomplete;
-		this.onbeforeunload = onbeforeunload;
-		this.onrender = onrender;
-		this.onhistorychange = onhistorychange;
+		this.onstart = this.errorHandler(onstart);
+		this.onactive = this.errorHandler(onactive);
+		this.oncomplete = this.errorHandler(oncomplete);
+		this.onbeforeunload = this.errorHandler(onbeforeunload);
+		this.onrender = this.errorHandler(onrender);
+		this.onhistorychange = this.errorHandler(onhistorychange);
 	}
 
 	onConfigChange<K extends keyof T>(
@@ -155,5 +156,20 @@ export class Script<
 
 	offConfigChange(listener: number | EventListener) {
 		$store.removeChangeListener(listener);
+	}
+
+	private errorHandler(func?: Function) {
+		return (...args: any[]) => {
+			try {
+				return func?.apply(this, args);
+			} catch (err) {
+				console.error(err);
+				if (err instanceof Error) {
+					this.emit('scripterror', err.message);
+				} else {
+					this.emit('scripterror', String(err));
+				}
+			}
+		};
 	}
 }
