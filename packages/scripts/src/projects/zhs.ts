@@ -14,15 +14,23 @@ import {
 	$model,
 	$store
 } from '@ocsjs/core';
-import type { MessageElement, CommonWorkOptions } from '@ocsjs/core';
-import { CommonProject } from './common';
+import type { MessageElement } from '@ocsjs/core';
+import { CommonProject, TAB_WORK_RESULTS_KEY } from './common';
 import { workConfigs, definition, volume, restudy } from '../utils/configs';
-import { createWorkerControl, optimizationTextWithImage } from '../utils/work';
+import { createWorkerControl, optimizationTextWithImage, simplifyWorkResult } from '../utils/work';
+import { CommonWorkOptions, playMedia, workPreCheckMessage } from '../utils';
+import { $console } from './background';
 
 // 学习是否暂停
 let stop = false;
 // 是否存在验证码
 const hasCapture = false;
+
+const state = {
+	study: {
+		currentMedia: undefined as HTMLMediaElement | undefined
+	}
+};
 
 /** 工程导出 */
 export const ZHSProject = Project.create({
@@ -147,19 +155,22 @@ export const ZHSProject = Project.create({
 					$creator.button('⏰检测是否需要规律学习', {}, (btn) => {
 						btn.style.marginRight = '12px';
 						btn.onclick = () => {
-							$el('.iconbaizhoumoshi-xueqianbidu').click();
+							$el('.iconbaizhoumoshi-xueqianbidu')?.click();
 
 							setTimeout(() => {
-								const num = parseInt(
-									$el('.preschool-Mustread-div').innerText.match(/学习习惯成绩（(\d+)分）/)?.[1] || '0'
-								);
-								$model('alert', {
-									content:
-										`当前课程习惯分占比为${num}分，` +
-										(num
-											? `需要规律学习${num}天, 每天定时观看半小时即可。（如果不想拿习惯分可以忽略）`
-											: '可一直观看学习，无需定时停止。')
-								});
+								const pmd = $el('.preschool-Mustread-div');
+								if (pmd) {
+									const num = parseInt(pmd.innerText.match(/学习习惯成绩（(\d+)分）/)?.[1] || '0');
+									$model('alert', {
+										content:
+											`当前课程习惯分占比为${num}分，` +
+											(num
+												? `需要规律学习${num}天, 每天定时观看半小时即可。（如果不想拿习惯分可以忽略）`
+												: '可一直观看学习，无需定时停止。')
+									});
+								} else {
+									$model('alert', { content: '检测失败' });
+								}
 							}, 100);
 						};
 					}),
@@ -219,7 +230,7 @@ export const ZHSProject = Project.create({
 							} else {
 								clearInterval(stopInterval);
 								stop = true;
-								$el<HTMLVideoElement>('video').pause();
+								$el<HTMLVideoElement>('video')?.pause();
 								$model('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
 							}
 						}, 1000);
@@ -239,7 +250,7 @@ export const ZHSProject = Project.create({
 
 				// 监听音量
 				this.onConfigChange('volume', (curr) => {
-					$el<HTMLVideoElement>('video').volume = curr;
+					state.study.currentMedia && (state.study.currentMedia.volume = curr);
 				});
 
 				// 监听速度
@@ -278,7 +289,9 @@ export const ZHSProject = Project.create({
 				/** 固定视频进度 */
 				const fixProcessBar = () => {
 					const bar = $el('.controlsBar');
-					bar.style.display = 'block';
+					if (bar) {
+						bar.style.display = 'block';
+					}
 				};
 
 				let timeMessage: MessageElement;
@@ -414,7 +427,7 @@ export const ZHSProject = Project.create({
 
 				// 监听音量
 				this.onConfigChange('volume', (curr) => {
-					$el<HTMLVideoElement>('video').volume = curr;
+					state.study.currentMedia && (state.study.currentMedia.volume = curr);
 				});
 
 				let list: HTMLElement[] = [];
@@ -490,7 +503,7 @@ export const ZHSProject = Project.create({
 					warn?.remove();
 					// 识别文字
 					recognize();
-					$creator.workPreCheckMessage({
+					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('work', opts);
 						},
@@ -567,7 +580,7 @@ export const ZHSProject = Project.create({
 
 				/** 开始考试 */
 				const start = () => {
-					$creator.workPreCheckMessage({
+					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('exam', opts);
 						},
@@ -636,7 +649,7 @@ export const ZHSProject = Project.create({
 				}
 
 				const start = () => {
-					$creator.workPreCheckMessage({
+					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = xnkWork(opts);
 						},
@@ -660,8 +673,6 @@ async function watch(
 	options: { volume: number; playbackRate: number; definition?: 'line1bq' | 'line1gq' },
 	onended: () => void
 ) {
-	let video = $el<HTMLVideoElement>('video');
-
 	const set = async () => {
 		// 设置清晰度
 		switchLine(options.definition);
@@ -672,37 +683,39 @@ async function watch(
 		await $.sleep(500);
 
 		// 上面操作会导致元素刷新，这里重新获取视频
-		video = $el<HTMLVideoElement>('video');
-		// 如果已经播放完了，则重置视频进度
-		video.currentTime = 1;
-		await $.sleep(500);
+		const video = $el<HTMLVideoElement>('video');
+		state.study.currentMedia = video;
 
-		// 音量
-		video.volume = options.volume;
-		await $.sleep(500);
+		if (video) {
+			// 如果已经播放完了，则重置视频进度
+			video.currentTime = 1;
+			await $.sleep(500);
+
+			// 音量
+			video.volume = options.volume;
+			await $.sleep(500);
+		}
+
+		return video;
 	};
 
-	await set();
+	const video = await set();
 
-	video.play().catch(() => {
-		$model('alert', {
-			content:
-				'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须静音。',
-			onClose: async () => {
+	if (video) {
+		playMedia(() => video.play());
+
+		video.onpause = async () => {
+			if (!video.ended && stop === false) {
+				await waitForCaptcha();
+				await $.sleep(1000);
 				video.play();
 			}
-		});
-	});
+		};
 
-	video.onpause = async () => {
-		if (!video.ended && stop === false) {
-			await waitForCaptcha();
-			await $.sleep(1000);
-			video.play();
-		}
-	};
-
-	video.onended = onended;
+		video.onended = onended;
+	} else {
+		$console.error('未检测到视频，请刷新重试。');
+	}
 }
 
 /**
@@ -813,12 +826,12 @@ function recognize() {
  */
 function gxkWorkOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, timeout, retry, upload, thread }: CommonWorkOptions
+	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
 	// 清空搜索结果
-	$store.setTab('common.work-results.results', []);
+	$store.setTab(TAB_WORK_RESULTS_KEY, []);
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -832,8 +845,6 @@ function gxkWorkOrExam(
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
-		timeout: timeout ?? 30,
-		retry: retry ?? 2,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) =>
@@ -862,7 +873,7 @@ function gxkWorkOrExam(
 		},
 		/** 完成答题后 */
 		onResultsUpdate(res) {
-			$store.setTab('common.work-results.results', $.simplifyWorkResult(res));
+			$store.setTab(TAB_WORK_RESULTS_KEY, simplifyWorkResult(res));
 		},
 		onResolveUpdate(res) {
 			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
@@ -882,13 +893,21 @@ function gxkWorkOrExam(
 	worker
 		.doWork()
 		.then(async (results) => {
+			await $.sleep(stopSecondWhenFinish * 1000);
+
 			// 保存题目
 			const text = el('span', '正在保存题目中，请勿操作...');
 			const modal = $model('alert', { content: text });
 
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
 				// 下一页
-				$el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)').click();
+				const next = $el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)');
+				if (next) {
+					next.click();
+				} else {
+					$console.error('未找到下一页按钮。');
+				}
+
 				await $.sleep(1000);
 			}
 			text.innerText = '所有题目保存成功。';
@@ -935,11 +954,11 @@ function gxkWorkOrExam(
 /**
  * 校内学分课的作业
  */
-function xnkWork({ answererWrappers, period, timeout, retry, thread }: CommonWorkOptions) {
+function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 
 	// 清空搜索结果
-	$store.setTab('common.work-results.results', []);
+	$store.setTab(TAB_WORK_RESULTS_KEY, []);
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -953,8 +972,6 @@ function xnkWork({ answererWrappers, period, timeout, retry, thread }: CommonWor
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
-		timeout: timeout ?? 30,
-		retry: retry ?? 2,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
@@ -982,7 +999,7 @@ function xnkWork({ answererWrappers, period, timeout, retry, thread }: CommonWor
 		},
 
 		onResultsUpdate(res) {
-			$store.setTab('common.work-results.results', $.simplifyWorkResult(res));
+			$store.setTab(TAB_WORK_RESULTS_KEY, simplifyWorkResult(res));
 		},
 		onResolveUpdate(res) {
 			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;

@@ -87,7 +87,8 @@ export function el<K extends AllElementTagKeys>(
  * 选择元素，效果等同于 document.querySelector(selector)
  */
 export function $el<T extends HTMLElement>(selector: string, root: HTMLElement | Document = window.document) {
-	return root.querySelector(selector) as T & { [x: string]: any };
+	const el = root.querySelector(selector);
+	return el === null ? undefined : (el as (T & { [x: string]: any }) | undefined);
 }
 
 /**

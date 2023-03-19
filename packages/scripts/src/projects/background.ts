@@ -1,6 +1,7 @@
 import { $, $creator, $gm, $model, $store, Project, Script, el, request } from '@ocsjs/core';
 import gt from 'semver/functions/gt';
 import { CommonProject } from './common';
+import { definedProjects } from '..';
 
 const state = {
 	console: {
@@ -18,7 +19,7 @@ export const BackgroundProject = Project.create({
 	domains: [],
 	scripts: {
 		console: new Script({
-			name: '📄日志输出',
+			name: '📄 日志输出',
 			url: [['所有', /.*/]],
 			namespace: 'render.console',
 			configs: {
@@ -88,18 +89,20 @@ export const BackgroundProject = Project.create({
 				state.console.listener.logs =
 					this.onConfigChange('logs', () => {
 						const { div, logs } = showLogs();
-						panel.replaceChildren(div);
+						panel.body.replaceChildren(div);
 						logs[logs.length - 1]?.scrollIntoView();
 					}) || 0;
 
 				const { div, logs } = showLogs();
 
 				panel.body.replaceChildren(div);
-				logs[logs.length - 1]?.scrollIntoView();
+				setTimeout(() => {
+					logs[logs.length - 1]?.scrollIntoView();
+				}, 100);
 			}
 		}),
 		app: new Script({
-			name: '🔄️软件配置同步',
+			name: '🔄️ 软件配置同步',
 			namespace: 'background.app',
 			url: [['所有页面', /./]],
 			level: -1,
@@ -138,7 +141,11 @@ export const BackgroundProject = Project.create({
 				if ($.isInTopWindow()) {
 					this.cfg.sync = false;
 					try {
-						const res = await request('https://ocs-app/browser', { type: 'fetch', method: 'get', contentType: 'json' });
+						const res = await request('https://ocs-app/browser', {
+							type: 'fetch',
+							method: 'get',
+							responseType: 'json'
+						});
 
 						if (res.name && res.store) {
 							for (const key in res.store) {
@@ -157,7 +164,7 @@ export const BackgroundProject = Project.create({
 			}
 		}),
 		dev: new Script({
-			name: '🛠️开发者调试',
+			name: '🛠️ 开发者调试',
 			namespace: 'background.dev',
 			url: [['所有页面', /./]],
 			configs: {

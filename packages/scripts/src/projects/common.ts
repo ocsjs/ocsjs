@@ -19,9 +19,10 @@ import {
 
 import type { ScriptPanelElement, HeaderElement, AnswererWrapper } from '@ocsjs/core';
 import { definedProjects } from '../index';
-import { $console } from './background';
 import { markdown } from '../utils/markdown';
 import { workConfigs } from '../utils/configs';
+
+export const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
 export const CommonProject = Project.create({
 	name: '通用',
@@ -64,7 +65,7 @@ export const CommonProject = Project.create({
 				panel.body.replaceChildren('加载中...');
 				const md = await request('https://cdn.ocsjs.com/articles/ocs/notify.md', {
 					type: 'fetch',
-					contentType: 'text',
+					responseType: 'text',
 					method: 'get'
 				});
 				panel.body.replaceChildren(el('div', { className: 'card markdown', innerHTML: markdown(md) }));
@@ -140,7 +141,7 @@ export const CommonProject = Project.create({
 												this.value = '当前有' + aw.length + '个可用题库';
 												$model('alert', {
 													content: el('div', [
-														el('div', '配置成功，打开具有答题脚本的页面后即可自动答题，解析到的题库如下所示:'),
+														el('div', ['🎉 配置成功，刷新网页后重新答题即可。', '解析到的题库如下所示:']),
 														...createAnswererWrapperList(aw)
 													])
 												});
@@ -163,10 +164,16 @@ export const CommonProject = Project.create({
 					}
 				},
 				upload: workConfigs.upload,
-				skipAnswered: {
-					label: '跳过已经完成的题目',
-					attrs: { type: 'checkbox', title: '当题目中的选项大于一个已经被选中，则将跳过此题的答题。' },
-					defaultValue: true
+				stopSecondWhenFinish: {
+					label: '答题结束后暂停（秒）',
+					attrs: {
+						type: 'number',
+						min: 3,
+						step: 1,
+						max: 9999,
+						title: '自动答题脚本结束后暂停的时间（方便查看和检查）。'
+					},
+					defaultValue: 3
 				},
 				uncheckAllChoice: {
 					label: '清空答案',
@@ -196,16 +203,6 @@ export const CommonProject = Project.create({
 					},
 					defaultValue: 3
 				},
-				timeout: {
-					label: '处理超时时间（秒）',
-					attrs: { type: 'number', min: 3, step: 1, max: 60, title: '每道题最多做n秒, 超过则跳过此题。' },
-					defaultValue: 30
-				},
-				retry: {
-					label: '超时重试次数',
-					attrs: { type: 'number', min: 0, step: 1, max: 3 },
-					defaultValue: 1
-				},
 				forceWork: {
 					label: '(仅超星)强制答题',
 					defaultValue: false,
@@ -232,6 +229,72 @@ export const CommonProject = Project.create({
 					attrs: { title: '每行一个，随机填入' }
 				}
 			},
+			onrender({ panel }) {
+				// 更新题库状态
+				const updateState = async () => {
+					// 清空元素
+					panel.body.replaceChildren(el('hr'));
+
+					const refresh = el(
+						'button',
+						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
+						'🔄️刷新状态'
+					);
+					refresh.onclick = () => {
+						updateState();
+					};
+					panel.body.append(refresh);
+
+					if (this.cfg.answererWrappers.length) {
+						const table = el('table');
+						table.style.width = '100%';
+						this.cfg.answererWrappers.forEach(async (item) => {
+							const t = Date.now();
+							let success = false;
+							let error;
+							const res = await Promise.race([
+								(async () => {
+									try {
+										return request(new URL(item.url).origin + '/?t=' + t, {
+											type: 'GM_xmlhttpRequest',
+											method: 'get',
+											responseType: 'text',
+											headers: {
+												'Content-Type': 'text/html'
+											}
+										});
+									} catch (err) {
+										error = err;
+										return false;
+									}
+								})(),
+								(async () => {
+									await $.sleep(10 * 1000);
+									return false;
+								})()
+							]);
+							if (res) {
+								success = true;
+							} else {
+								success = false;
+							}
+
+							const body = el('tbody');
+							body.append(el('td', item.name));
+							body.append(el('td', success ? '连接成功🟢' : error ? '连接失败🔴' : '连接超时🟡'));
+							body.append(el('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
+							table.append(body);
+						});
+						panel.body.append(table);
+					} else {
+						panel.body.append(el('div', '暂无任何题库...'));
+					}
+				};
+				updateState();
+				this.onConfigChange('answererWrappers', () => {
+					updateState();
+				});
+			},
 			oncomplete() {
 				if ($.isInTopWindow()) {
 					this.onConfigChange('notification', (open) => {
@@ -244,100 +307,8 @@ export const CommonProject = Project.create({
 				}
 			}
 		}),
-		onlineSearch: new Script({
-			name: '🔎 在线搜题',
-			url: [['所有页面', /.*/]],
-			namespace: 'common.online-search',
-			configs: {
-				notes: {
-					defaultValue: '查题前请在 “通用-全局设置” 中设置题库配置，才能进行在线搜题。'
-				},
-				selectSearch: {
-					label: '划词搜索',
-					defaultValue: true,
-					attrs: { type: 'checkbox', title: '使用鼠标滑动选择页面中的题目进行搜索。' }
-				},
-				selection: {
-					defaultValue: ''
-				}
-			},
-			oncomplete() {
-				if (this.cfg.selectSearch) {
-					document.addEventListener(
-						'selectionchange',
-						debounce(() => {
-							this.cfg.selection = document.getSelection()?.toString() || '';
-						}, 500)
-					);
-				}
-			},
-			onrender({ panel }) {
-				const content = el('div', '请输入题目进行搜索：', (content) => {
-					content.style.marginBottom = '12px';
-				});
-				const input = el('input', { placeholder: '请尽量保证题目完整，不要漏字哦。' }, (input) => {
-					input.className = 'base-style-input';
-					input.style.flex = '1';
-				});
-
-				const search = async (value: string) => {
-					content.replaceChildren(el('span', '搜索中...'));
-
-					if (value) {
-						const t = Date.now();
-						const results = await defaultAnswerWrapperHandler(CommonProject.scripts.settings.cfg.answererWrappers, {
-							title: value
-						});
-						// 耗时计算
-						const resume = ((Date.now() - t) / 1000).toFixed(2);
-
-						content.replaceChildren(
-							el(
-								'div',
-								[
-									el('div', `搜索到 ${results.map((r) => r.answers).flat().length} 个结果，共耗时 ${resume} 秒`),
-									el('search-results-element', {
-										results: results.map((res) => ({
-											results: res.answers.map((ans) => [ans.question, ans.answer] as [string, string]),
-											homepage: res.homepage,
-											name: res.name
-										})),
-										question: value
-									})
-								],
-								(div) => {
-									div.style.width = '400px';
-								}
-							)
-						);
-					} else {
-						content.replaceChildren(el('span', '题目不能为空！'));
-					}
-				};
-
-				const button = el('button', '搜索', (button) => {
-					button.className = 'base-style-button';
-					button.onclick = () => {
-						search(input.value);
-					};
-				});
-				const searchContainer = el('div', [input, button], (div) => {
-					div.style.display = 'flex';
-				});
-
-				// 监听划词变化
-				this.onConfigChange('selection', (curr) => {
-					// 判断是否处于搜索页面，搜索框可见
-					if (input.parentElement) {
-						input.value = curr;
-					}
-				});
-
-				panel.body.append(el('div', [el('hr'), content, searchContainer]));
-			}
-		}),
 		workResults: new Script({
-			name: '📄 搜索结果',
+			name: '🌏 搜索结果',
 			url: [['所有页面', /.*/]],
 			namespace: 'common.work-results',
 			configs: {
@@ -400,7 +371,7 @@ export const CommonProject = Project.create({
 						num.classList.add('requesting');
 					} else if (result.resolving) {
 						num.classList.add('resolving');
-					} else if (result.error || result.searchResults.length === 0 || result.finish === false) {
+					} else if (result.error || result.searchInfos.length === 0 || result.finish === false) {
 						num.classList.add('error');
 					} else if (index === this.cfg.currentResultIndex) {
 						num.classList.add('active');
@@ -409,7 +380,9 @@ export const CommonProject = Project.create({
 
 				/** 渲染结果面板 */
 				const render = async () => {
-					const results: SimplifyWorkResult[] | undefined = await $store.getTab('common.work-results.results');
+					const results: SimplifyWorkResult[] | undefined = await $store.getTab(TAB_WORK_RESULTS_KEY);
+
+					console.log('results', results);
 
 					if (results?.length) {
 						// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
@@ -429,7 +402,7 @@ export const CommonProject = Project.create({
 
 							/** 渲染序号 */
 							const nums = results.map((result, index) => {
-								return el('span', { className: 'search-results-num', innerText: (index + 1).toString() }, (num) => {
+								return el('span', { className: 'search-infos-num', innerText: (index + 1).toString() }, (num) => {
 									setNumStyle(result, num, index);
 
 									num.onclick = () => {
@@ -466,7 +439,7 @@ export const CommonProject = Project.create({
 								const num = el(
 									'span',
 									{
-										className: 'search-results-num',
+										className: 'search-infos-num',
 										innerHTML: (index + 1).toString()
 									},
 									(num) => {
@@ -483,12 +456,12 @@ export const CommonProject = Project.create({
 
 									[num, result.question],
 									(question) => {
-										question.className = 'search-results-question';
+										question.className = 'search-infos-question';
 
 										if (
 											result.requesting === false &&
 											result.resolving === false &&
-											(result.error || result.searchResults.length === 0 || result.finish === false)
+											(result.error || result.searchInfos.length === 0 || result.finish === false)
 										) {
 											question.classList.add('error');
 										} else if (index === this.cfg.currentResultIndex) {
@@ -556,13 +529,13 @@ export const CommonProject = Project.create({
 					});
 
 					const tip = el('div', [
-						el('div', { className: 'search-results-num requesting' }, 'n'),
+						el('div', { className: 'search-infos-num requesting' }, 'n'),
 						'表示搜索中 ',
 						el('br'),
-						el('div', { className: 'search-results-num resolving' }, 'n'),
+						el('div', { className: 'search-infos-num resolving' }, 'n'),
 						'表示已搜索但未开始答题 ',
 						el('br'),
-						el('div', { className: 'search-results-num' }, 'n'),
+						el('div', { className: 'search-infos-num' }, 'n'),
 						'表示已搜索已答题 '
 					]);
 
@@ -604,15 +577,15 @@ export const CommonProject = Project.create({
 							if (result.error) {
 								error.innerText = result.error;
 								return el('div', [result.question, el('hr'), error]);
-							} else if (result.searchResults.length === 0) {
+							} else if (result.searchInfos.length === 0) {
 								error.innerText = '此题未搜索到答案';
 								return el('div', [result.question, el('hr'), error]);
 							} else {
 								error.innerText = '此题未完成, 可能是没有匹配的选项。';
 								return el('div', [
 									...(result.finish ? [] : [result.resolving ? '正在等待答题中，请稍等。' : error]),
-									el('search-results-element', {
-										results: result.searchResults,
+									el('search-infos-element', {
+										infos: result.searchInfos,
 										question: result.question
 									})
 								]);
@@ -626,7 +599,99 @@ export const CommonProject = Project.create({
 				render();
 				this.onConfigChange('type', render);
 				this.onConfigChange('resolverIndex', render);
-				$store.addChangeListener('common.work-results.result', debounce(render, 1000, { maxWait: 1000 }));
+				$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
+			}
+		}),
+		onlineSearch: new Script({
+			name: '🔎 在线搜题',
+			url: [['所有页面', /.*/]],
+			namespace: 'common.online-search',
+			configs: {
+				notes: {
+					defaultValue: '查题前请在 “通用-全局设置” 中设置题库配置，才能进行在线搜题。'
+				},
+				selectSearch: {
+					label: '划词搜索',
+					defaultValue: true,
+					attrs: { type: 'checkbox', title: '使用鼠标滑动选择页面中的题目进行搜索。' }
+				},
+				selection: {
+					defaultValue: ''
+				}
+			},
+			oncomplete() {
+				if (this.cfg.selectSearch) {
+					document.addEventListener(
+						'selectionchange',
+						debounce(() => {
+							this.cfg.selection = document.getSelection()?.toString() || '';
+						}, 500)
+					);
+				}
+			},
+			onrender({ panel }) {
+				const content = el('div', '请输入题目进行搜索：', (content) => {
+					content.style.marginBottom = '12px';
+				});
+				const input = el('input', { placeholder: '请尽量保证题目完整，不要漏字哦。' }, (input) => {
+					input.className = 'base-style-input';
+					input.style.flex = '1';
+				});
+
+				const search = async (value: string) => {
+					content.replaceChildren(el('span', '搜索中...'));
+
+					if (value) {
+						const t = Date.now();
+						const infos = await defaultAnswerWrapperHandler(CommonProject.scripts.settings.cfg.answererWrappers, {
+							title: value
+						});
+						// 耗时计算
+						const resume = ((Date.now() - t) / 1000).toFixed(2);
+
+						content.replaceChildren(
+							el(
+								'div',
+								[
+									el('div', `搜索到 ${infos.map((i) => i.results).flat().length} 个结果，共耗时 ${resume} 秒`),
+									el('search-infos-element', {
+										infos: infos.map((info) => ({
+											results: info.results.map((res) => [res.question, res.answer] as [string, string]),
+											homepage: info.homepage,
+											name: info.name
+										})),
+										question: value
+									})
+								],
+								(div) => {
+									div.style.width = '400px';
+								}
+							)
+						);
+					} else {
+						content.replaceChildren(el('span', '题目不能为空！'));
+					}
+				};
+
+				const button = el('button', '搜索', (button) => {
+					button.className = 'base-style-button';
+					button.onclick = () => {
+						search(input.value);
+					};
+				});
+				const searchContainer = el('div', [input, button], (div) => {
+					div.style.display = 'flex';
+				});
+
+				// 监听划词变化
+				this.onConfigChange('selection', (curr) => {
+					// 判断是否处于搜索页面，搜索框可见
+					if (input.parentElement) {
+						input.value = curr;
+					}
+				});
+
+				panel.body.append(el('div', [el('hr'), content, searchContainer]));
 			}
 		}),
 		changelog: new Script({
@@ -642,7 +707,7 @@ export const CommonProject = Project.create({
 				panel.body.replaceChildren('加载中...');
 				const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md', {
 					type: 'fetch',
-					contentType: 'text',
+					responseType: 'text',
 					method: 'get'
 				});
 				panel.body.replaceChildren(el('div', { className: 'markdown card', innerHTML: markdown(md) }));
@@ -664,11 +729,16 @@ export const CommonProject = Project.create({
 		}),
 		disableDialog: new Script({
 			name: '禁止弹窗',
-			url: [],
+			url: [['所有页面', /.*/]],
+			hideInPanel: true,
 			onstart() {
 				try {
-					$gm.unsafeWindow.alert = (msg) => $console.warn(`已拦截弹窗: ${msg}`);
-					window.alert = self.alert = (msg) => $console.warn(`已拦截弹窗: ${msg}`);
+					$gm.unsafeWindow.alert = (msg) => {
+						$model('alert', {
+							profile: '弹窗来自：' + location.origin,
+							content: msg
+						});
+					};
 				} catch (e) {}
 			}
 		})

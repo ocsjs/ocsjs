@@ -11,9 +11,7 @@ import {
 	$gm,
 	$$el,
 	$,
-	$model,
 	StringUtils,
-	CommonWorkOptions,
 	request,
 	defaultQuestionResolve,
 	DefaultWork,
@@ -23,35 +21,41 @@ import {
 	$store,
 	domSearch,
 	domSearchAll,
-	SearchResult
+	SearchInformation
 } from '@ocsjs/core';
 
-import { CommonProject } from './common';
+import { CommonProject, TAB_WORK_RESULTS_KEY } from './common';
 import { auto, workConfigs, volume, restudy } from '../utils/configs';
-import { createWorkerControl, optimizationTextWithImage } from '../utils/work';
+import { createWorkerControl, optimizationTextWithImage, simplifyWorkResult } from '../utils/work';
 import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
 import { $console } from './background';
 import { el } from '../../../core/src/utils/dom';
-import { createRangeTooltip } from '../utils';
+import { CommonWorkOptions, createRangeTooltip, playMedia, workPreCheckMessage } from '../utils';
 
-/**
- *
- *  将繁体字映射载入内存。
- *  为什么不存 localStorage 和 GM_setValue
- *  localStorage: 存在被检测风险，谁都能访问
- *  GM_setValue: 文件太大影响I/O速度
- */
-// @ts-ignore
-top.typrMapping = top.typrMapping || undefined;
+try {
+	/**
+	 *
+	 *  将繁体字映射载入内存。
+	 *  为什么不存 localStorage 和 GM_setValue
+	 *  localStorage: 存在被检测风险，谁都能访问
+	 *  GM_setValue: 文件太大影响I/O速度
+	 */
+	// @ts-ignore
+	top.typrMapping = top.typrMapping || undefined;
 
-// @ts-ignore 任务点
-top.jobs = top.jobs || [];
+	// @ts-ignore 任务点
+	top.jobs = top.jobs || [];
+
+	// @ts-ignore 当前视频
+	top.currentMedia = top.currentMedia || undefined;
+
+	// 加 try 是因为跨域面板无法操作
+} catch {}
 
 const state = {
 	study: {
-		currentMedia: undefined as HTMLMediaElement | undefined,
 		videojs: Object.create({}),
 		hacked: false,
 		answererWrapperUnsetMessage: undefined as MessageElement | undefined
@@ -60,7 +64,13 @@ const state = {
 
 export const CXProject = Project.create({
 	name: '学习通',
-	domains: ['chaoxing.com', 'edu.cn', 'org.cn'],
+	domains: [
+		'chaoxing.com',
+		'edu.cn',
+		'org.cn',
+		// 学银在线
+		'xueyinonline.com'
+	],
 	studyProject: true,
 	scripts: {
 		guide: new Script({
@@ -116,6 +126,11 @@ export const CXProject = Project.create({
 				},
 				volume,
 				restudy,
+				autoNextPage: {
+					label: '自动下一章',
+					attrs: { type: 'checkbox' },
+					defaultValue: true
+				},
 				/**
 				 *
 				 * 开启的任务点
@@ -127,8 +142,20 @@ export const CXProject = Project.create({
 				 * live : 直播课
 				 *
 				 */
-				enable: {
-					defaultValue: ['media', 'ppt', 'test', 'read', 'live'] as ('media' | 'ppt' | 'test' | 'read' | 'live')[]
+				enableMedia: {
+					label: '开启-音视频',
+					attrs: { type: 'checkbox', title: '开启：音频和视频的自动播放' },
+					defaultValue: true
+				},
+				enablePPT: {
+					label: '开启-PPT/书籍',
+					attrs: { type: 'checkbox', title: '开启：PPT/书籍自动翻阅' },
+					defaultValue: true
+				},
+				enableChapterTest: {
+					label: '开启-章节测试',
+					attrs: { type: 'checkbox', title: '开启：章节测试自动答题' },
+					defaultValue: true
 				}
 			},
 			onrender({ panel }) {
@@ -142,8 +169,6 @@ export const CXProject = Project.create({
 						});
 					}
 				}
-
-				panel.body.append(el('input', { type: 'checkbox' }));
 			},
 			async oncomplete() {
 				/** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */
@@ -160,12 +185,13 @@ export const CXProject = Project.create({
 
 				// 收集任务点
 				if (/ananas\/modules.*/.test(location.href)) {
-					await $.sleep(3000);
+					await $.sleep(5000);
 					const job = searchJob({
 						...this.cfg,
 						playbackRate: parseFloat(this.cfg.playbackRate.toString()),
 						workOptions: { ...CommonProject.scripts.settings.cfg }
 					});
+					console.log(location.href, job);
 
 					if (job) {
 						// @ts-ignore
@@ -177,11 +203,12 @@ export const CXProject = Project.create({
 				// 主要处理
 				if (/\/knowledge\/cards/.test(location.href)) {
 					const updateMediaState = () => {
-						if (state.study.currentMedia) {
-							// 倍速设置
-							state.study.currentMedia.playbackRate = parseFloat(this.cfg.playbackRate.toString());
-							// 音量设置
-							state.study.currentMedia.volume = this.cfg.volume;
+						// @ts-ignore
+						if (top.currentMedia) {
+							// @ts-ignore 倍速设置
+							top.currentMedia.playbackRate = parseFloat(this.cfg.playbackRate.toString());
+							// @ts-ignore 音量设置
+							top.currentMedia.volume = this.cfg.volume;
 						}
 					};
 
@@ -197,10 +224,12 @@ export const CXProject = Project.create({
 			url: [['作业页面', '/mooc2/work/dowork']],
 			namespace: 'cx.new.work',
 			level: 99,
-			configs: workConfigs,
+			configs: {
+				auto: workConfigs.auto,
+				notes: workConfigs.notes
+			},
 			async oncomplete() {
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('upload', changeMsg);
 				this.onConfigChange('auto', changeMsg);
 
 				let worker: OCSWorker<any> | undefined;
@@ -224,7 +253,7 @@ export const CXProject = Project.create({
 
 				if (this.cfg.auto) {
 					// 自动开始
-					$creator.workPreCheckMessage({
+					workPreCheckMessage({
 						onrun: start,
 						ondone: () => {
 							this.event.emit('done');
@@ -279,6 +308,9 @@ export const CXProject = Project.create({
 					warn?.remove();
 					// 识别繁体字
 					await mappingRecognize();
+					if (CommonProject.scripts.settings.cfg.answererWrappers.length === 0) {
+						return $message('error', { content: '题库配置为空！请前往全局设置进行题库配置后再刷新此页面进行答题。' });
+					}
 					worker = workOrExam('exam', { ...CommonProject.scripts.settings.cfg, upload: 'nomove' });
 				};
 
@@ -288,7 +320,7 @@ export const CXProject = Project.create({
 				this.on('render', () => createWorkerControl(this, () => worker));
 
 				if (this.cfg.auto) {
-					$creator.workPreCheckMessage({
+					workPreCheckMessage({
 						onrun: start,
 						ondone: () => {
 							this.event.emit('done');
@@ -303,6 +335,39 @@ export const CXProject = Project.create({
 						content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
 					});
 				}
+			}
+		}),
+		autoRead: new Script({
+			name: '🧑‍💻 自动阅读',
+			url: [
+				['阅读页面', '/ztnodedetailcontroller/visitnodedetail'],
+				['课程首页', /chaoxing.com\/course\/217910244\.html/]
+			],
+			configs: {
+				notes: {
+					defaultValue: '正在自动阅读中...<br>60秒后自动翻页'
+				}
+			},
+			oncomplete() {
+				let top = 0;
+				const interval = setInterval(() => {
+					top += (document.documentElement.scrollHeight - window.innerHeight) / 60;
+					window.scrollTo({
+						behavior: 'smooth',
+						top: top
+					});
+				}, 1000);
+
+				setTimeout(() => {
+					clearInterval(interval);
+					// 下一页
+					const next = $el('.nodeItem.r i');
+					if (next) {
+						next.click();
+					} else {
+						$console.log('未检测到下一页');
+					}
+				}, 63 * 1000);
 			}
 		}),
 		versionRedirect: new Script({
@@ -368,7 +433,7 @@ export const CXProject = Project.create({
 							// eslint-disable-next-line no-proto
 							if (ui?.__proto__?.uiName === 'editor') {
 								ui.editor.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
-								$console.log('成功屏蔽复制粘贴限制');
+								console.log('成功屏蔽复制粘贴限制');
 							}
 						}
 					}
@@ -426,12 +491,12 @@ export const CXProject = Project.create({
 
 export function workOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, timeout, retry, upload, thread, skipAnswered, uncheckAllChoice }: CommonWorkOptions
+	{ answererWrappers, period, upload, thread, uncheckAllChoice, stopSecondWhenFinish }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
 	// 清空搜索结果
-	$store.setTab('common.work-results.results', []);
+	$store.setTab(TAB_WORK_RESULTS_KEY, []);
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -441,7 +506,7 @@ export function workOrExam(
 		elements: {
 			title: [
 				/** 题目标题 */
-				(root) => $el('h3', root)
+				(root) => $el<any>('h3', root)
 				// /** 连线题第一组 */
 				// (root) => $el('.line_wid_half.fl', root),
 				// /** 连线题第二组 */
@@ -451,7 +516,6 @@ export function workOrExam(
 			type: type === 'exam' ? 'input[name^="type"]' : 'input[id^="answertype"]',
 			lineAnswerInput: '.line_answer input[name^=answer]',
 			lineSelectBox: '.line_answer_ct .selectBox ',
-			checkedChoice: '[class*="check_answer"]',
 			/** 阅读理解 */
 			reading: '.reading_answer',
 			/** 完形填空 */
@@ -460,71 +524,64 @@ export function workOrExam(
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
 		resolvePeriod: 0,
-		timeout: timeout ?? 30,
-		retry: retry ?? 2,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
-			const title: string = StringUtils.of(
-				elements.title
-					.filter((t) => t.innerText)
-					.map((t) => optimizationTextWithImage(t))
-					.join(',')
-			)
-				.nowrap()
-				.nospace()
-				.toString()
-				.trim()
-				/** 新版题目冗余 */
-				.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
-				/** 旧版题目冗余 */
-				.replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
-				.trim();
+			if (elements.title) {
+				const title: string = StringUtils.of(elements.title.map((t) => optimizationTextWithImage(t)).join(','))
+					.nowrap()
+					.nospace()
+					.toString()
+					.trim()
+					/** 新版题目冗余 */
+					.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
+					/** 旧版题目冗余 */
+					.replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
+					.trim();
 
-			if (title) {
-				return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
+				if (title) {
+					return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
+				} else {
+					throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+				}
 			} else {
 				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
 			}
 		},
 
 		work: async (ctx) => {
-			const { elements, searchResults } = ctx;
+			const { elements, searchInfos } = ctx;
 			const typeInput = elements.type[0] as HTMLInputElement;
 			const type = getQuestionType(parseInt(typeInput.value));
 
 			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = defaultQuestionResolve(ctx)[type];
 
-				return await resolver(searchResults, elements.options, (type, answer, option) => {
+				return await resolver(searchInfos, elements.options, (type, answer, option) => {
 					// 如果存在已经选择的选项
-					if (skipAnswered && elements.checkedChoice.length) {
-						// 跳过
-					} else {
-						if (type === 'judgement' || type === 'single' || type === 'multiple') {
-							if (elements.checkedChoice.length === 0) {
-								option.click();
-							}
-						} else if (type === 'completion' && answer.trim()) {
-							const text = option.querySelector('textarea');
-							const textareaFrame = option.querySelector('iframe');
-							if (text) {
-								text.value = answer;
-							}
-							if (textareaFrame?.contentDocument) {
-								textareaFrame.contentDocument.body.innerHTML = answer;
-							}
-							if (option.parentElement) {
-								/** 如果存在保存按钮则点击 */
-								$el('[onclick*=saveQuestion]', option.parentElement)?.click();
-							}
+					if (type === 'judgement' || type === 'single' || type === 'multiple') {
+						if ($$el('[class*="check_answer"]', option).length === 0) {
+							option.click();
+						}
+					} else if (type === 'completion' && answer.trim()) {
+						const text = option.querySelector('textarea');
+						const textareaFrame = option.querySelector('iframe');
+						if (text) {
+							text.value = answer;
+						}
+						if (textareaFrame?.contentDocument) {
+							textareaFrame.contentDocument.body.innerHTML = answer;
+						}
+						if (option.parentElement) {
+							/** 如果存在保存按钮则点击 */
+							$el('[onclick*=saveQuestion]', option.parentElement)?.click();
 						}
 					}
 				});
 			}
 			// 连线题自定义处理
 			else if (type && type === 'line') {
-				for (const answers of searchResults.map((res) => res.answers.map((ans) => ans.answer))) {
+				for (const answers of searchInfos.map((info) => info.results.map((res) => res.answer))) {
 					let ans = answers;
 					if (ans.length === 1) {
 						ans = splitAnswer(ans[0]);
@@ -547,11 +604,11 @@ export function workOrExam(
 			}
 			// 完形填空
 			else if (type && type === 'fill') {
-				return readerAndFillHandle(searchResults, elements.filling);
+				return readerAndFillHandle(searchInfos, elements.filling);
 			}
 			// 阅读理解
 			else if (type && type === 'reader') {
-				return readerAndFillHandle(searchResults, elements.reading);
+				return readerAndFillHandle(searchInfos, elements.reading);
 			}
 
 			return { finish: false };
@@ -559,7 +616,7 @@ export function workOrExam(
 
 		/** 完成答题后 */
 		onResultsUpdate(res) {
-			$store.setTab('common.work-results.results', $.simplifyWorkResult(res));
+			$store.setTab(TAB_WORK_RESULTS_KEY, simplifyWorkResult(res));
 		},
 		onResolveUpdate(res) {
 			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
@@ -568,8 +625,8 @@ export function workOrExam(
 		},
 		async onElementSearched(elements) {
 			if (uncheckAllChoice) {
-				for (const el of elements.checkedChoice) {
-					el.parentElement?.click();
+				for (const el of elements.options) {
+					el.click();
 					await $.sleep(200);
 				}
 			}
@@ -578,10 +635,12 @@ export function workOrExam(
 
 	worker
 		.doWork()
-		.then((results) => {
+		.then(async (results) => {
 			if (type === 'exam') {
 				$message('success', { duration: 0, content: '考试完成，为了安全考虑，请自行检查后自行点击提交！' });
 			} else {
+				await $.sleep(stopSecondWhenFinish * 1000);
+
 				// 处理提交
 				worker.uploadHandler({
 					type: upload,
@@ -594,7 +653,7 @@ export function workOrExam(
 						await $.sleep(5000);
 						if (uploadable) {
 							//  提交
-							$el('.completeBtn').click();
+							$el('.completeBtn')?.click();
 							await $.sleep(2000);
 							// @ts-ignore 确定
 							// eslint-disable-next-line no-undef
@@ -686,7 +745,7 @@ async function loadTyprMapping() {
 	return await request('https://cdn.ocsjs.com/resources/font/table.json', {
 		type: 'GM_xmlhttpRequest',
 		method: 'get',
-		contentType: 'json'
+		responseType: 'json'
 	});
 }
 
@@ -854,6 +913,8 @@ export async function study() {
 	const checkAndRunTask = async () => {
 		// 如果此页面没通过
 		if (pass === false) {
+			// @ts-ignore
+
 			// @ts-ignore 搜索全部任务，并执行第一个
 			const job = top.jobs.shift();
 			if (job) {
@@ -887,37 +948,57 @@ export async function study() {
 	// 通过
 	pass = true;
 
-	// 下一章按钮
-	const { next } = domSearch({ next: '.next[onclick^="PCount.next"]' }, top?.document);
+	// @ts-ignore
+	top._preChapterId = '';
 
-	// 如果按钮显示
-	if (next !== null && next.style.display === 'block') {
-		// 如果即将切换到下一章节
-		if (CXAnalyses.isInFinalTab()) {
-			if (CXAnalyses.isStuckInBreakingMode()) {
-				$message('warn', {
-					content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
-				});
-				return;
-			}
-		}
+	// 下一章
+	const next = () => {
+		const curCourseId = $el<HTMLInputElement>('#curCourseId', top?.document);
+		const curChapterId = $el<HTMLInputElement>('#curChapterId', top?.document);
+		const curClazzId = $el<HTMLInputElement>('#curClazzId', top?.document);
 
-		$console.log('完成, 即将跳转, 如卡死请自行点击下一章。');
-		await $.sleep(3000);
-		next.click();
-		// 如果当前存在任务点未完成，则跳过，运行下一章
-		await $.sleep(3000);
-		domSearch({ confirm: '.jobFinishTip .nextChapter' }, top?.document).confirm?.click();
-	} else {
-		if (CXAnalyses.isInFinalChapter()) {
-			if (CXAnalyses.isFinishedAllChapters()) {
-				$message('success', { content: '全部任务点已完成！' });
-			} else {
-				$message('warn', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
+		console.log(curChapterId?.value, curCourseId?.value, curClazzId?.value);
+
+		// @ts-ignore
+		if (curChapterId?.value === top._preChapterId) {
+			// 如果即将切换到下一章节
+			if (CXAnalyses.isInFinalTab()) {
+				if (CXAnalyses.isStuckInBreakingMode()) {
+					$message('warn', {
+						content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
+					});
+				}
 			}
 		} else {
-			$message('error', { content: '下一章按钮不存在，请尝试刷新或者手动切换下一章。' });
+			if (CXAnalyses.isInFinalChapter()) {
+				if (CXAnalyses.isFinishedAllChapters()) {
+					$message('success', { content: '全部任务点已完成！' });
+				} else {
+					$message('warn', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
+				}
+			} else {
+				if (curChapterId && curCourseId && curClazzId) {
+					// @ts-ignore
+					top._preChapterId = curChapterId.value;
+
+					/**
+					 * count, chapterId, courseId, clazzid, knowledgestr, checkType
+					 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
+					 */
+					// @ts-ignore
+					$gm.unsafeWindow.top?.PCount.next('1', curChapterId.value, curCourseId.value, curClazzId.value, '');
+				} else {
+					$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
+				}
+			}
 		}
+	};
+
+	if (CXProject.scripts.study.cfg.autoNextPage) {
+		$console.info('页面任务点已完成，即将切换下一章。');
+		next();
+	} else {
+		$console.warn('页面任务点已完成，自动下一章已关闭，请手动切换。');
 	}
 }
 
@@ -968,57 +1049,46 @@ function searchJob(opts: {
 	const search = (root: Window | HTMLIFrameElement) => {
 		const { media, read, chapterTest } = searchJobElement(root);
 
-		function getJob() {
-			if (media) {
-				return mediaTask(opts, media as any, doc);
-			} else if (read) {
-				return readTask(doc);
-			}
-			// 章节测试是在 anans/modules 下的 iframe 里面
-			else if (chapterTest && root instanceof HTMLIFrameElement) {
-				return chapterTestTask(root, opts.workOptions);
-			}
-		}
 		if (media || read || chapterTest) {
-			return () => {
+			const attachment: {
+				/** 只有当 module 为 音视频时才会有这个属性 */
+				isPassed: boolean | undefined;
+				/** 是否为任务点 */
+				job: boolean | undefined;
+				property: {
+					mid: string;
+					module: 'insertbook' | 'insertdoc' | 'insertflash' | 'work' | 'insertaudio' | 'insertvideo';
+					name?: string;
+					author?: string;
+					bookname?: string;
+					publisher?: string;
+				};
+			} =
 				// @ts-ignore
-				let _parent = root instanceof Window ? root : root.contentWindow;
-				// @ts-ignore
-				let jobIndex = root._jobindex;
-				// 递归寻找任务点信息，判断是否要进行任务点
-				while (_parent) {
-					// @ts-ignore
-					jobIndex = getValidNumber(jobIndex, root.contentWindow._jobindex, _parent._jobindex);
-					// @ts-ignore
-					const attachments = _parent?.JC?.attachments || _parent.attachments;
+				win.parent.attachments[getValidNumber(win._jobindex, win.parent._jobindex)];
+			// console.log('attachment', { opts, media, read, chapterTest, attachment });
 
-					if (attachments && typeof jobIndex === 'number') {
-						const { name, title, bookname, author } = attachments[jobIndex]?.property || {};
-						const jobName = name || title || (bookname ? bookname + author : undefined) || '未知任务';
-
-						// 直接重复学习，不执行任何判断, 章节测试和阅读等任务除外
-						if (opts.restudy && !chapterTest && !read) {
-							$console.log(jobName, '即将重新学习。');
-							return getJob();
-						} else if (attachments[jobIndex]?.job === true) {
-							$console.log('正在学习：', jobName);
-							return getJob();
-						} else if (chapterTest && CommonProject.scripts.settings.cfg.forceWork) {
-							$console.log(jobName, '开启强制答题。');
-							return getJob();
-						} else {
-							$console.log(jobName, '已经完成，即将跳过。');
-							break;
-						}
-					}
-					// @ts-ignore
-					if (_parent.parent === _parent) {
-						break;
-					}
-					// @ts-ignore
-					_parent = _parent.parent;
+			if (CXProject.scripts.study.cfg.enableMedia && media) {
+				// 重复学习，或者未完成
+				if (opts.restudy || attachment.job) {
+					$console.log(`即将${opts.restudy ? '重新' : ''}播放 : `, attachment.property.name);
+					return () => mediaTask(opts, media as HTMLMediaElement, doc);
 				}
-			};
+			} else if (CXProject.scripts.study.cfg.enableChapterTest && chapterTest && root instanceof HTMLIFrameElement) {
+				// 强制答题，或者未完成
+				if (attachment.job || CommonProject.scripts.settings.cfg.forceWork) {
+					$console.log(
+						CommonProject.scripts.settings.cfg.forceWork ? '开启强制答题 : ' : '开始答题 : ',
+						attachment.property.name
+					);
+					return () => chapterTestTask(root, opts.workOptions);
+				}
+			} else if (CXProject.scripts.study.cfg.enablePPT && read) {
+				if (attachment.job) {
+					$console.log('正在学习 ：', attachment.property.name);
+					return () => readTask(doc);
+				}
+			}
 		} else {
 			return undefined;
 		}
@@ -1035,6 +1105,8 @@ function searchJob(opts: {
 			}
 		}
 	}
+
+	return job;
 }
 
 /**
@@ -1064,7 +1136,8 @@ function mediaTask(setting: { playbackRate: number; volume: number }, media: HTM
 	}
 
 	state.study.videojs = videojs;
-	state.study.currentMedia = media;
+	// @ts-ignore
+	top.currentMedia = media;
 
 	// 固定视频进度
 	fixedVideoProgress();
@@ -1075,21 +1148,9 @@ function mediaTask(setting: { playbackRate: number; volume: number }, media: HTM
 	return new Promise<void>((resolve) => {
 		if (media) {
 			media.volume = volume;
-			media
-				.play()
-				.then(() => {
-					media.playbackRate = playbackRate;
-				})
-				.catch(() => {
-					$model('alert', {
-						content:
-							'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须静音。',
-						onClose: async () => {
-							media.play();
-							media.playbackRate = playbackRate;
-						}
-					});
-				});
+			playMedia(() => media.play()).then(() => {
+				media.playbackRate = playbackRate;
+			});
 
 			const playFunction = async () => {
 				if (media.ended) {
@@ -1124,7 +1185,7 @@ async function readTask(doc?: Document) {
  */
 async function chapterTestTask(
 	frame: HTMLIFrameElement,
-	{ answererWrappers, period, timeout, retry, upload, thread, skipAnswered }: CommonWorkOptions
+	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
 ) {
 	// 繁体字识别
 	await mappingRecognize(frame.contentWindow?.window.document);
@@ -1142,8 +1203,10 @@ async function chapterTestTask(
 	const frameWindow = frame.contentWindow?.window;
 	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
+	console.log({ TiMu, frameWindow });
+
 	// 清空搜索结果
-	$store.setTab('common.work-results.results', []);
+	$store.setTab(TAB_WORK_RESULTS_KEY, []);
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -1162,23 +1225,15 @@ async function chapterTestTask(
 			options: 'ul li .after,ul li textarea,ul textarea,ul li label:not(.before)',
 			type: 'input[id^="answertype"]',
 			lineAnswerInput: '.line_answer input[name^=answer]',
-			lineSelectBox: '.line_answer_ct .selectBox ',
-			checkedChoice: '[class="before-after-checkbox Hover"]'
+			lineSelectBox: '.line_answer_ct .selectBox '
 		},
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
 		resolvePeriod: 0,
-		timeout: timeout ?? 30,
-		retry: retry ?? 2,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
-			const title: string = StringUtils.of(
-				elements.title
-					.filter((t) => t.innerText)
-					.map((t) => optimizationTextWithImage(t))
-					.join(',')
-			)
+			const title: string = StringUtils.of(elements.title.map((t) => optimizationTextWithImage(t)).join(','))
 				.nowrap()
 				.nospace()
 				.toString()
@@ -1197,44 +1252,41 @@ async function chapterTestTask(
 		},
 
 		work: async (ctx) => {
-			const { elements, searchResults } = ctx;
+			const { elements, searchInfos } = ctx;
 			const typeInput = elements.type[0] as HTMLInputElement;
 			const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
 
 			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = defaultQuestionResolve(ctx)[type];
 
-				const handler: DefaultWork<any>['handler'] = (type, answer, option) => {
-					// 如果存在已经选择的选项
-					if (skipAnswered && elements.checkedChoice.length) {
-						// 跳过
-					} else {
-						if (type === 'judgement' || type === 'single' || type === 'multiple') {
-							if (elements.checkedChoice.length === 0) {
-								option.click();
-							}
-						} else if (type === 'completion' && answer.trim()) {
-							const text = option.parentElement?.querySelector('textarea');
-							const textareaFrame = option.parentElement?.querySelector('iframe');
-							if (text) {
-								text.value = answer;
-							}
-							if (textareaFrame?.contentDocument) {
-								textareaFrame.contentDocument.body.innerHTML = answer;
-							}
-							if (option.parentElement) {
-								/** 如果存在保存按钮则点击 */
-								$el('[onclick*=saveQuestion]', option.parentElement)?.click();
-							}
+				const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
+					if (type === 'judgement' || type === 'single' || type === 'multiple') {
+						if (option.parentElement?.querySelector('label input')?.getAttribute('checked') === 'checked') {
+							// 跳过
+						} else {
+							option.click();
+						}
+					} else if (type === 'completion' && answer.trim()) {
+						const text = option.parentElement?.querySelector('textarea');
+						const textareaFrame = option.parentElement?.querySelector('iframe');
+						if (text) {
+							text.value = answer;
+						}
+						if (textareaFrame?.contentDocument) {
+							textareaFrame.contentDocument.body.innerHTML = answer;
+						}
+						if (option.parentElement) {
+							/** 如果存在保存按钮则点击 */
+							$el('[onclick*=saveQuestion]', option.parentElement)?.click();
 						}
 					}
 				};
 
-				return await resolver(searchResults, elements.options, handler);
+				return await resolver(searchInfos, elements.options, handler);
 			}
 			// 连线题自定义处理
 			else if (type && type === 'line') {
-				for (const answers of searchResults.map((res) => res.answers.map((ans) => ans.answer))) {
+				for (const answers of searchInfos.map((info) => info.results.map((res) => res.answer))) {
 					let ans = answers;
 					if (ans.length === 1) {
 						ans = splitAnswer(ans[0]);
@@ -1244,7 +1296,7 @@ async function chapterTestTask(
 						for (let index = 0; index < elements.lineSelectBox.length; index++) {
 							const box = elements.lineSelectBox[index];
 							if (ans[index]) {
-								$el(`li[data=${ans[index]}] a`, box).click();
+								$el(`li[data=${ans[index]}] a`, box)?.click();
 								await $.sleep(200);
 							}
 						}
@@ -1261,7 +1313,9 @@ async function chapterTestTask(
 
 		/** 完成答题后 */
 		async onResultsUpdate(res, curr) {
-			await $store.setTab('common.work-results.results', $.simplifyWorkResult(res));
+			console.log('curr', curr);
+
+			await $store.setTab(TAB_WORK_RESULTS_KEY, simplifyWorkResult(res));
 
 			// 没有完成时随机作答
 			if (!curr.result?.finish && curr.resolving === false) {
@@ -1326,6 +1380,8 @@ async function chapterTestTask(
 	});
 
 	const results = await worker.doWork();
+
+	await $.sleep(stopSecondWhenFinish * 1000);
 
 	// 处理提交
 	await worker.uploadHandler({
@@ -1399,8 +1455,8 @@ function getQuestionType(
 }
 
 /** 阅读理解和完形填空的共同处理器 */
-async function readerAndFillHandle(searchResults: SearchResult[], list: HTMLElement[]) {
-	for (const answers of searchResults.map((res) => res.answers.map((ans) => ans.answer))) {
+async function readerAndFillHandle(searchInfos: SearchInformation[], list: HTMLElement[]) {
+	for (const answers of searchInfos.map((info) => info.results.map((res) => res.answer))) {
 		let ans = answers;
 
 		if (ans.length === 1) {
