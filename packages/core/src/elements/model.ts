@@ -8,10 +8,7 @@ import { IElement } from './interface';
  */
 export class ModelElement extends IElement {
 	/** 弹窗简介 */
-	profile: HTMLDivElement = el('div', {
-		innerText: '弹窗来自: OCS ' + ($gm.getInfos()?.script.version || ''),
-		className: 'model-profile'
-	});
+	profile?: string;
 
 	/** 弹窗标题 */
 	_title: HTMLDivElement = el('div', { className: 'model-title' });
@@ -53,6 +50,12 @@ export class ModelElement extends IElement {
 
 	connectedCallback() {
 		this.classList.add(this.type);
+		// 弹窗来源
+		const profile = el('div', {
+			innerText: this.profile || '弹窗来自: OCS ' + ($gm.getInfos()?.script.version || ''),
+			className: 'model-profile'
+		});
+
 		// 标题
 		this._title.innerText = this.title;
 		// 模态框内容
@@ -64,7 +67,7 @@ export class ModelElement extends IElement {
 
 		// 底部
 		this.footer.append(this.modalInput);
-		this.append(this.profile, this._title, this.body, this.footer);
+		this.append(profile, this._title, this.body, this.footer);
 		this.style.width = (this.width || 400) + 'px';
 		if (this.cancelButton === undefined) {
 			this.cancelButton = el('button', { className: 'model-cancel-button' });

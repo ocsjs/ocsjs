@@ -12,6 +12,7 @@
 		"onprevent",
 		"onrender",
 		"onrun",
+		"scripterror",
 		"sider",
 		"Tesseract",
 		"traineddata",

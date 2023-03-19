@@ -7,7 +7,6 @@ const { version } = require('../package.json');
 const execOut = util.promisify(require('./utils').execOut);
 const { createUserScript } = require('../packages/utils');
 const path = require('path');
-const { readFileSync, writeFileSync } = require('fs');
 
 function cleanOutput() {
 	return del(['../dist', '../lib'], { force: true });
@@ -49,7 +48,9 @@ async function createUserJs(cb) {
 				version: version,
 				description: `OCS(online-course-script) 网课助手，专注于帮助大学生从网课中释放出来。让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 ${ocs
 					.definedProjects()
-					.map((s) => s.name)}，等网课的学习，作业。具体的功能请查看官网的功能列表 https://docs.ocsjs.com 。`,
+					.filter((p) => p.studyProject)
+					.map((s) => `【${s.name}】`)
+					.join(' ')}，等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面，OCS官网 https://docs.ocsjs.com 。`,
 				author: 'enncy',
 				license: 'MIT',
 				namespace: 'https://enncy.cn',
@@ -94,19 +95,6 @@ async function createUserJs(cb) {
 	opts.metadata.resource = [`STYLE file://${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`];
 	opts.entry = path.join(__dirname, '../packages/scripts/entry.dev.js');
 	opts.dist = path.join(__dirname, '../dist/ocs.dev.user.js');
-
-	/** 将 unicode 转换成正常中文 */
-	const content = readFileSync(path.join(__dirname, '../dist/ocs.user.js')).toString();
-	writeFileSync(
-		path.join(__dirname, '../dist/ocs.user.js'),
-
-		// eslint-disable-next-line no-eval
-		JSON.parse(
-			JSON.stringify(`${content}`).replace(/\\\\u([\d\w]{4})/gi, function (match, grp) {
-				return String.fromCharCode(parseInt(grp, 16));
-			})
-		)
-	);
 
 	await createUserScript(opts);
 }

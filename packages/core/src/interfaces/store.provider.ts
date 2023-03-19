@@ -100,7 +100,7 @@ export class ObjectStoreProvider implements StoreProvider {
 export class GMStoreProvider implements StoreProvider {
 	constructor() {
 		// 当页面首次加载时删除之前的监听数据
-		if (self === top) {
+		if (self === top && typeof globalThis.GM_listValues !== 'undefined') {
 			for (const val of GM_listValues()) {
 				if (val.startsWith('_tab_change_')) {
 					GM_deleteValue(val);

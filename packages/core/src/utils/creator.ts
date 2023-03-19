@@ -1,25 +1,10 @@
-import { AnswererWrapper } from '../core/answer-wrapper/interface';
-import { WorkUploadType } from '../core/worker/interface';
 import { ConfigElement } from '../elements/config';
 import { Script } from '../interfaces';
 import { Config } from '../interfaces/config';
-import { $message, $model } from '../render/render';
-
 import { $ } from './common';
 import { ElementChildren, ElementHandler, el } from './dom';
 import { $elements } from './elements';
 import { $gm } from './tampermonkey';
-
-export interface CommonWorkOptions {
-	period: number;
-	timeout: number;
-	retry: number;
-	thread: number;
-	upload: WorkUploadType;
-	skipAnswered: boolean;
-	uncheckAllChoice: boolean;
-	answererWrappers: AnswererWrapper[];
-}
 
 export interface PreventTextOptions {
 	/** 按钮文字 */
@@ -225,37 +210,5 @@ export const $creator = {
 		}, delay * 1000);
 
 		return span;
-	},
-	/** 创建答题预处理信息 */
-	workPreCheckMessage(
-		options: CommonWorkOptions & {
-			onrun: (opts: CommonWorkOptions) => void;
-			ondone?: (opts: CommonWorkOptions) => void;
-		}
-	) {
-		const { onrun, ondone, ...opts } = options;
-
-		if (opts.answererWrappers.length === 0) {
-			$model('alert', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
-			ondone?.(opts);
-		} else {
-			$message('info', {
-				duration: 5,
-				content: el('span', [
-					'5秒后自动答题。并切换到“通用-搜索结果”。',
-					$creator.preventText({
-						name: '点击取消此次答题',
-						delay: 5,
-						ondefault: (span) => {
-							onrun(opts);
-						},
-						onprevent(span) {
-							$message('warn', { content: '已关闭此次的自动答题。' });
-							ondone?.(opts);
-						}
-					})
-				])
-			});
-		}
 	}
 };

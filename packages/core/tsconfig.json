@@ -10,7 +10,8 @@
 		"forceConsistentCasingInFileNames": true,
 		"lib": ["DOM"],
 		"jsx": "preserve",
-		"resolveJsonModule": true
+		"resolveJsonModule": true,
+		"downlevelIteration": true
 	},
 	"include": ["./src/**/*.ts"]
 }

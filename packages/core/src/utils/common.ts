@@ -2,7 +2,6 @@ import debounce from 'lodash/debounce';
 import { Config } from '../interfaces/config';
 import { Project } from '../interfaces/project';
 import { Script } from '../interfaces/script';
-import { SimplifyWorkResult, WorkResult } from '../core/worker/interface';
 import { $string } from './string';
 import { $store } from './store';
 
@@ -165,38 +164,7 @@ export const $ = {
 		resize();
 		window.addEventListener('resize', resize);
 	},
-	/** 将 {@link WorkResult} 转换成 {@link SimplifyWorkResult} */
-	simplifyWorkResult(results: WorkResult<any>[]): SimplifyWorkResult[] {
-		const res: SimplifyWorkResult[] = [];
 
-		for (const wr of results) {
-			res.push({
-				requesting: wr.requesting,
-				resolving: wr.resolving,
-				error: wr.error,
-				question: (
-					wr.ctx?.elements.title
-						?.map((t) => t?.innerText || '')
-						.filter(Boolean)
-						.join(',') || '无'
-				)
-					/** cx新版题目冗余 */
-					.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
-					/** cx旧版题目冗余 */
-					.replace(/[[|(|【|（]..题[\]|)|】|）]/, ''),
-				finish: wr.result?.finish,
-				searchResults:
-					wr.ctx?.searchResults.map((sr) => ({
-						error: sr.error?.message,
-						name: sr.name,
-						homepage: sr.homepage,
-						results: sr.answers.map((ans) => [ans.question, ans.answer])
-					})) || []
-			});
-		}
-
-		return res;
-	},
 	/** 加载自定义元素 */
 	loadCustomElements(elements: { new (): HTMLElement }[]) {
 		for (const element of elements) {

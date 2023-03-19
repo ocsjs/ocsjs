@@ -183,7 +183,7 @@ script-panel-element {
   background-color: white;
   border-radius: 0px 0px 8px 8px;
   padding: 0px 8px 12px 8px;
-  resize: both;
+  resize: vertical;
   overflow: auto;
 }
 script-panel-element .script-panel-body {
@@ -637,7 +637,7 @@ model-element.confirm .model-input {
 .user-guide > li {
   padding: 4px 0px;
 }
-.search-results-question {
+.search-infos-question {
   white-space: nowrap;
   cursor: pointer;
   padding: 4px 0px;
@@ -645,16 +645,16 @@ model-element.confirm .model-input {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.search-results-question.hover {
+.search-infos-question.hover {
   color: #00488d;
 }
-.search-results-question.active {
+.search-infos-question.active {
   color: #1890ff;
 }
-.search-results-question.error {
+.search-infos-question.error {
   color: #ff6b6ded;
 }
-.search-results-num {
+.search-infos-num {
   width: 22px;
   margin: 2px;
   height: 20px;
@@ -666,50 +666,50 @@ model-element.confirm .model-input {
   cursor: pointer;
   border: 1px solid #63b4ff;
 }
-.search-results-num.requesting {
+.search-infos-num.requesting {
   border: 1px solid #b6b6b6;
   background-color: white;
   color: inherit;
 }
-.search-results-num.resolving {
+.search-infos-num.resolving {
   border: 1px solid #1890ff;
   background-color: white;
   color: #1890ff;
 }
-.search-results-num.active {
+.search-infos-num.active {
   background-color: #1890ff;
   color: white;
 }
-.search-results-num.error {
+.search-infos-num.error {
   border: 1px solid #ff8789ed;
   background-color: #ff6b6ded;
   color: white;
 }
-search-results-element {
+search-infos-element {
   display: block;
   overflow: auto;
 }
-search-results-element .search-result {
+search-infos-element .search-result {
   margin-bottom: 12px;
   padding-left: 12px;
 }
-search-results-element .search-result .question {
+search-infos-element .search-result .question {
   font-weight: bold;
 }
-search-results-element .search-result .answer {
+search-infos-element .search-result .answer {
   color: #7c7c7c;
 }
-search-results-element .search-result .answer code {
+search-infos-element .search-result .answer code {
   background-color: #f3f3f3;
   padding: 2px 4px;
   border-radius: 2px;
   margin: 4px;
   line-height: 20px;
 }
-search-results-element .search-result .copy {
+search-infos-element .search-result .copy {
   display: none;
 }
-search-results-element .search-result:hover .copy {
+search-infos-element .search-infos:hover .copy {
   display: inline;
   font-size: 12px;
 }
@@ -725,7 +725,7 @@ search-results-element .search-result:hover .copy {
 .work-result-question-container {
   position: absolute;
   width: 400px;
-  left: -85%;
+  left: -100%;
   top: 0px;
   background: white;
   border: 1px solid #cbcbcb;

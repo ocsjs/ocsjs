@@ -27,6 +27,7 @@ export type ModelAttrs = Pick<
 	| 'cancelButton'
 	| 'confirmButton'
 	| 'inputDefaultValue'
+	| 'profile'
 > & {
 	/** 取消生成窗口的关闭按钮 */
 	disableWrapperCloseable?: boolean;
@@ -55,7 +56,7 @@ const expandSvg =
  * 可以不用悬浮窗也能执行脚本的生命周期，但是不会执行 render 这个生命周期
  */
 export const RenderScript = new Script({
-	name: '🪟 窗口设置',
+	name: '🖼️ 窗口设置',
 	url: [['所有', /.*/]],
 	namespace: 'render.panel',
 	configs: {
@@ -378,7 +379,7 @@ export const RenderScript = new Script({
 /** 默认值 */
 const defaults = {
 	/** 当前页面存在默认页面 */
-	urls: (urls: string[]) => (urls.length ? urls : [location.href]),
+	urls: (urls: string[]) => (urls && urls.length ? urls : [location.href]),
 	/** 默认面板名 */
 	panelName: (name: string) => name || RenderScript.namespace || ''
 };
