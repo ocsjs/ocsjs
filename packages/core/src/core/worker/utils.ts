@@ -24,6 +24,7 @@ export function defaultWorkTypeResolver(ctx: WorkContext<any>): QuestionTypes | 
 
 /** 判断答案是否为A-Z的文本, 并且字符序号依次递增, 并且 每个字符是否都只出现了一次 */
 export function isPlainAnswer(answer: string) {
+	answer = answer.trim();
 	if (answer.length > 8 || !/[A-Z]/.test(answer)) {
 		return false;
 	}

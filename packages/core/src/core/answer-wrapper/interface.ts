@@ -1,17 +1,17 @@
 /** 题目答案 */
-export interface Answer {
+export interface Result {
 	question: string;
 	answer: string;
 }
 
-/** 题库查询结果 */
-export interface SearchResult {
+/** 题库查询信息 */
+export interface SearchInformation {
 	url: string;
 	name: string;
 	/** 主页 */
 	homepage?: string;
 	/** 题目答案 */
-	answers: Answer[];
+	results: Result[];
 	/** 请求响应内容 */
 	response: any;
 	/** 请求发起内容 */

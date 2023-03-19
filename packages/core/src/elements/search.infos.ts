@@ -7,14 +7,14 @@ import { IElement } from './interface';
 
 /** 判断是否有网络图片格式的文本，有则替换成 img 标签  */
 const transformImgLink = (str: string) =>
-	str.replace(/https?:\/\/.*?\.(png|jpg|jpeg|gif)/g, (match) => `<img src="${match}" />`);
+	str.replace(/https?:\/\/.*?ananas.*?\.(png|jpg|jpeg|gif)/g, (match) => `<img src="${match}" />`);
 
 /**
  * 搜索结果元素
  */
-export class SearchResultsElement extends IElement {
+export class SearchInfosElement extends IElement {
 	/** 搜索结果 [题目，答案] */
-	results: SimplifyWorkResult['searchResults'] = [];
+	infos: SimplifyWorkResult['searchInfos'] = [];
 	/** 当前的题目 */
 	question: string = '';
 
@@ -22,28 +22,31 @@ export class SearchResultsElement extends IElement {
 		const question = transformImgLink(this.question || '无');
 
 		this.append(
-			el('div', [question, $creator.copy('复制', question)], (div) => {
+			el('div', [el('span', { innerHTML: question }), $creator.copy('复制', question)], (div) => {
 				div.style.padding = '4px';
 			}),
 			el('hr')
 		);
 
 		this.append(
-			...this.results.map((res) => {
+			...this.infos.map((info) => {
 				return el('details', { open: true }, [
-					el('summary', [el('a', { href: res.homepage, innerText: res.name })]),
-					...(res.error
+					el('summary', [el('a', { href: info.homepage, innerText: info.name })]),
+					...(info.error
 						? /** 显示错误信息 */
-						  [el('span', { className: 'error' }, ['此题库搜题时发生错误：', res.error || '网络错误或者未知错误'])]
+						  [el('span', { className: 'error' }, ['此题库搜题时发生错误：', info.error || '网络错误或者未知错误'])]
 						: /** 显示结果列表 */
 						  [
-								...res.results.map((ans) => {
+								...info.results.map((ans) => {
 									const title = transformImgLink(ans[0] || this.question || '无');
 									const answer = transformImgLink(ans[1] || '无');
 
 									return el('div', { className: 'search-result' }, [
 										/** 题目 */
-										el('div', { className: 'question' }, [el('span', title), $creator.copy('复制', title)]),
+										el('div', { className: 'question' }, [
+											el('span', { innerHTML: title }),
+											$creator.copy('复制', title)
+										]),
 										/** 答案 */
 										el('div', { className: 'answer' }, [
 											el('span', '答案：'),

@@ -10,7 +10,7 @@ export function request<T extends 'json' | 'text'>(
 	opts: {
 		type: 'fetch' | 'GM_xmlhttpRequest';
 		method?: 'get' | 'post';
-		contentType?: T;
+		responseType?: T;
 		headers?: Record<string, string>;
 		data?: Record<string, string>;
 	}
@@ -18,7 +18,7 @@ export function request<T extends 'json' | 'text'>(
 	return new Promise((resolve, reject) => {
 		try {
 			/** 默认参数 */
-			const { contentType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
+			const { responseType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
 			/** 环境变量 */
 			const env = $.isInBrowser() ? 'browser' : 'node';
 
@@ -29,12 +29,12 @@ export function request<T extends 'json' | 'text'>(
 					GM_xmlhttpRequest({
 						url,
 						method: method === 'get' ? 'GET' : 'POST',
-						data: new URLSearchParams(data).toString(),
-						headers: headers,
-						responseType: 'json',
+						data: Object.keys(data).length ? new URLSearchParams(data).toString() : undefined,
+						headers: Object.keys(headers).length ? headers : undefined,
+						responseType: responseType === 'json' ? 'json' : undefined,
 						onload: (response) => {
 							if (response.status === 200) {
-								if (contentType === 'json') {
+								if (responseType === 'json') {
 									try {
 										resolve(JSON.parse(response.responseText));
 									} catch (error) {
@@ -47,7 +47,10 @@ export function request<T extends 'json' | 'text'>(
 								reject(response.responseText);
 							}
 						},
-						onerror: reject
+						onerror: (err) => {
+							console.error('GM_xmlhttpRequest error', err);
+							reject(err);
+						}
 					});
 				} else {
 					reject(new Error('GM_xmlhttpRequest is not defined'));
@@ -55,9 +58,9 @@ export function request<T extends 'json' | 'text'>(
 			} else {
 				const fet: (...args: any[]) => Promise<Response> = env === 'node' ? require('node-fetch').default : fetch;
 
-				fet(url, { contentType, body: method === 'post' ? JSON.stringify(data) : undefined, method, headers })
+				fet(url, { body: method === 'post' ? JSON.stringify(data) : undefined, method, headers })
 					.then((response) => {
-						if (contentType === 'json') {
+						if (responseType === 'json') {
 							response.json().then(resolve).catch(reject);
 						} else {
 							// @ts-ignore

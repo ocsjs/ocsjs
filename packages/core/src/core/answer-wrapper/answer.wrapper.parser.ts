@@ -62,7 +62,7 @@ export class AnswerWrapperParser {
 	/** 从 url 中解析 */
 	static async fromURL(url: string) {
 		const text = await request(url, {
-			contentType: 'text',
+			responseType: 'text',
 			method: 'get',
 			type: 'fetch'
 		});

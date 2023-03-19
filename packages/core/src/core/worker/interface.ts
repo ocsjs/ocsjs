@@ -1,4 +1,4 @@
-import { SearchResult } from '../answer-wrapper/interface';
+import { SearchInformation } from '../answer-wrapper/interface';
 
 export type ElementResolver<R> = (root: HTMLElement | Document) => R;
 export type RawElements = Record<
@@ -22,7 +22,7 @@ export type SearchedElements<E, T> = Record<keyof E, T> & {
 export interface WorkContext<E> {
 	root: HTMLElement;
 	elements: SearchedElements<E, HTMLElement[]>;
-	searchResults: SearchResult[];
+	searchInfos: SearchInformation[];
 }
 
 /** 题目类型 */
@@ -62,12 +62,12 @@ export interface SimplifyWorkResult {
 	requesting: boolean;
 	/** 正在等待 答题 线程处理 */
 	resolving: boolean;
-	/** 搜索结果 */
-	searchResults: {
+	/** 查题信息 */
+	searchInfos: {
 		/** 题目名 */
-		name: SearchResult['name'];
+		name: SearchInformation['name'];
 		/** 题库链接 */
-		homepage?: SearchResult['homepage'];
+		homepage?: SearchInformation['homepage'];
 		/** 题库搜索错误信息 */
 		error?: string;
 		/** 搜索结果 [题目，答案] */
@@ -77,8 +77,8 @@ export interface SimplifyWorkResult {
 
 /** 答案题目处理器 */
 export type QuestionResolver<E> = (
-	/** 答案 */
-	searchResults: SearchResult[],
+	/** 查题信息 */
+	searchInfos: SearchInformation[],
 	/** 选项 */
 	options: HTMLElement[],
 	handler: (
@@ -177,7 +177,7 @@ export type AnswererType<E> = (
 	elements: SearchedElements<E, HTMLElement[]>,
 	type: string | undefined,
 	ctx: WorkContext<SearchedElements<E, HTMLElement[]>>
-) => SearchResult[] | Promise<SearchResult[]>;
+) => SearchInformation[] | Promise<SearchInformation[]>;
 
 /**
  * 答题器参数
@@ -195,10 +195,6 @@ export type WorkOptions<E extends RawElements> = {
 	requestPeriod?: number;
 	/** 答题间隔（秒）, 如果过快可能导致保存答案失败啊，或者被检测到 */
 	resolvePeriod?: number;
-	/** 回答器请求超时时间（秒） */
-	timeout?: number;
-	/** 回答器请求重试次数 */
-	retry?: number;
 	/** 多线程数量（个） */
 	thread?: number;
 	/** 当元素被搜索到 */

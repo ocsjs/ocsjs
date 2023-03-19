@@ -81,7 +81,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 
 		for (const q of questionRoot) {
 			const ctx: WorkContext<E> = {
-				searchResults: [],
+				searchInfos: [],
 				root: q,
 				elements: domSearchAll<E>(this.opts.elements, q)
 			};
@@ -121,72 +121,93 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				let type;
 				let error: string | undefined;
 
-				/** 获取题目类型 */
-				if (typeof this.opts.work === 'object') {
-					type =
-						this.opts.work.type === undefined
-							? // 使用默认解析器
-							  defaultWorkTypeResolver(ctx)
-							: // 自定义解析器
-							typeof this.opts.work.type === 'string'
-							? this.opts.work.type
-							: this.opts.work.type(ctx);
-				}
-
-				/** 检查是否暂停中 */
-				if (this.isStop) {
-					await new Promise<void>((resolve, reject) => {
-						const interval = setInterval(() => {
-							if (this.isStop === false) {
-								clearInterval(interval);
-								resolve();
-							}
-						}, 200);
-					});
-				}
-
-				/** 查找题目 */
-				const searchResults = await this.doAnswer(ctx.elements, type, ctx);
-
-				let resultPromise: { (): Promise<ResolverResult> } | undefined;
-
-				if (!searchResults) {
-					error = '答案获取失败, 请重新运行, 或者忽略此题。';
-				} else {
-					// 答案为 undefined 的情况， 需要赋值给一个空字符串，因为可能传回的题目中带有其他提示信息，或者题目里包含答案。
-					searchResults.forEach((res) => {
-						res.answers = res.answers.map((ans) => {
-							ans.answer = ans.answer ? ans.answer : '';
-							return ans;
-						});
-					});
-
-					ctx.searchResults = searchResults;
-
-					if (searchResults.length === 0) {
-						error = '搜索不到答案, 请重新运行, 或者忽略此题。';
+				try {
+					/** 获取题目类型 */
+					if (typeof this.opts.work === 'object') {
+						type =
+							this.opts.work.type === undefined
+								? // 使用默认解析器
+								  defaultWorkTypeResolver(ctx)
+								: // 自定义解析器
+								typeof this.opts.work.type === 'string'
+								? this.opts.work.type
+								: this.opts.work.type(ctx);
 					}
 
-					/** 开始处理 */
-					if (typeof this.opts.work === 'object') {
-						if (ctx.elements.options) {
-							/** 使用默认处理器 */
+					/** 检查是否暂停中 */
+					if (this.isStop) {
+						await new Promise<void>((resolve, reject) => {
+							const interval = setInterval(() => {
+								if (this.isStop === false) {
+									clearInterval(interval);
+									resolve();
+								}
+							}, 200);
+						});
+					}
 
-							if (type) {
-								const resolver = defaultQuestionResolve(ctx)[type];
-								const handler = this.opts.work.handler;
-								resultPromise = async () =>
-									await resolver(searchResults, ctx.elements.options as HTMLElement[], handler);
+					/** 查找题目 */
+					const searchInfos = await this.doAnswer(ctx.elements, type, ctx);
+
+					let resultPromise: { (): Promise<ResolverResult> } | undefined;
+
+					if (!searchInfos) {
+						error = '答案获取失败, 请重新运行, 或者忽略此题。';
+					} else {
+						// 答案为 undefined 的情况， 需要赋值给一个空字符串，因为可能传回的题目中带有其他提示信息，或者题目里包含答案。
+						searchInfos.forEach((info) => {
+							info.results = info.results.map((ans) => {
+								ans.answer = ans.answer ? ans.answer : '';
+								return ans;
+							});
+						});
+
+						ctx.searchInfos = searchInfos;
+
+						if (searchInfos.length === 0) {
+							error = '搜索不到答案, 请重新运行, 或者忽略此题。';
+						}
+
+						/** 开始处理 */
+						if (typeof this.opts.work === 'object') {
+							if (ctx.elements.options) {
+								/** 使用默认处理器 */
+
+								if (type) {
+									const resolver = defaultQuestionResolve(ctx)[type];
+									const handler = this.opts.work.handler;
+									resultPromise = async () =>
+										await resolver(searchInfos, ctx.elements.options as HTMLElement[], handler);
+								} else {
+									error = '题目类型解析失败, 请自行提供解析器, 或者忽略此题。';
+								}
 							} else {
-								error = '题目类型解析失败, 请自行提供解析器, 或者忽略此题。';
+								error = 'elements.options 为空 ! 使用默认处理器, 必须提供题目选项的选择器。';
 							}
 						} else {
-							error = 'elements.options 为空 ! 使用默认处理器, 必须提供题目选项的选择器。';
+							/** 使用自定义处理器 */
+							const work = this.opts.work;
+							resultPromise = async () => await work(ctx);
 						}
+					}
+
+					if (resultPromise) {
+						resolvers.push({
+							func: resultPromise,
+							index: i
+						});
 					} else {
-						/** 使用自定义处理器 */
-						const work = this.opts.work;
-						resultPromise = async () => await work(ctx);
+						resolvers.push({
+							func: async () => ({ finish: false }),
+							index: i
+						});
+					}
+				} catch (err) {
+					console.error(err);
+					if (err instanceof Error) {
+						error = err.message;
+					} else {
+						error = String(err);
 					}
 				}
 
@@ -199,18 +220,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				};
 
 				results[i] = currentResult;
-
-				if (resultPromise) {
-					resolvers.push({
-						func: resultPromise,
-						index: i
-					});
-				} else {
-					resolvers.push({
-						func: async () => ({ finish: false }),
-						index: i
-					});
-				}
 
 				await this.opts.onResultsUpdate?.(results, currentResult);
 
@@ -278,9 +287,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 
 	/** 获取答案 */
 	private async doAnswer(elements: WorkContext<E>['elements'], type: string | undefined, ctx: WorkContext<E>) {
-		const { timeout: _t, retry: _r } = this.opts;
-		const timeout = _t ?? 60;
-		let retry = _r ?? 2;
+		const timeout = 30;
 		/** 解析选项，可以自定义查题器 */
 
 		const answer = async () => {
@@ -292,12 +299,10 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		};
 
 		let answers = await answer();
+		await $.sleep(3000);
 		if (!answers) {
-			/** 重试获取答案 */
-			while (retry && !answers) {
-				answers = await answer();
-				retry--;
-			}
+			/** 重试一次获取答案 */
+			answers = await answer();
 		}
 
 		return answers;

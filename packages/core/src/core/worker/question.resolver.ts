@@ -14,23 +14,10 @@ export function defaultQuestionResolve<E>(
 		 *
 		 * 在多个题库给出的答案中，找出最相似的答案
 		 */
-		async single(results, options, handler) {
-			// 是否为纯ABCD答案
-			for (const result of results) {
-				for (const answer of result.answers) {
-					const ans = StringUtils.nowrap(answer.answer).trim();
-					if (ans.length === 1 && isPlainAnswer(ans)) {
-						const index = ans.charCodeAt(0) - 65;
-						await handler('single', options[index].innerText, options[index], ctx);
-						await $.sleep(500);
-						return { finish: true, option: options[index] };
-					}
-				}
-			}
-
+		async single(infos, options, handler) {
 			/** 配对选项的相似度 */
 			const ratings = answerSimilar(
-				results.map((res) => res.answers.map((ans) => ans.answer)).flat(),
+				infos.map((res) => res.results.map((res) => res.answer)).flat(),
 				options.map((el) => el.innerText)
 			);
 			/**  找出最相似的选项 */
@@ -52,6 +39,20 @@ export function defaultQuestionResolve<E>(
 					ratings: ratings.map((r) => r.rating)
 				};
 			}
+
+			// 是否为纯ABCD答案
+			for (const info of infos) {
+				for (const res of info.results) {
+					const ans = StringUtils.nowrap(res.answer).trim();
+					if (ans.length === 1 && isPlainAnswer(ans)) {
+						const index = ans.charCodeAt(0) - 65;
+						await handler('single', options[index].innerText, options[index], ctx);
+						await $.sleep(500);
+						return { finish: true, option: options[index] };
+					}
+				}
+			}
+
 			return { finish: false };
 		},
 		/**
@@ -59,88 +60,102 @@ export function defaultQuestionResolve<E>(
 		 *
 		 * 匹配每个题库的答案，找出匹配数量最多的题库，并且选择
 		 */
-		async multiple(results, options, handler) {
+		async multiple(infos, options, handler) {
 			/** 最终的回答列表 */
 			const targetAnswers: string[][] = [];
 			/** 最终的选项 */
 			const targetOptions: HTMLElement[][] = [];
 
-			// 各个题库的序号
-			let count = 0;
-			for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
-				targetAnswers[count] = [];
-				targetOptions[count] = [];
+			const list: {
+				/** 匹配的选项 */
+				options: HTMLElement[];
+				/** 匹配的答案 */
+				answers: string[];
+				ratings: number[];
+				/** 总匹配度 */
+				similarSum: number;
+				/** 匹配数量 */
+				similarCount: number;
+			}[] = [];
 
-				// 判断选项是否完全存在于答案里面
-				options.forEach((el, i) => {
-					if (answers.some((answer) => answer.includes(removeRedundant(el.innerText)))) {
-						targetAnswers[count][i] = el.innerText;
-						targetOptions[count][i] = el;
+			const results = infos.map((info) => info.results).flat();
+
+			/**
+			 * 遍历题库结果
+			 * 选出结果中包含答案最多的一个
+			 */
+			for (let i = 0; i < results.length; i++) {
+				const result = results[i];
+				list[i] = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
+
+				// 每个答案可能存在多个选项需要分割
+				const answers = splitAnswer(result.answer);
+				console.log('answers', { answer: result.answer, answers });
+
+				const ratings = answerSimilar(
+					answers,
+					options.map((o) => removeRedundant(o.innerText))
+				);
+				for (let j = 0; j < ratings.length; j++) {
+					const rating = ratings[j];
+					if (rating.rating > 0.6) {
+						list[i].options.push(options[j]);
+						list[i].answers.push(ratings[j].target);
+						list[i].ratings.push(ratings[j].rating);
+						list[i].similarSum += rating.rating;
+						list[i].similarCount += 1;
 					}
+				}
+			}
+
+			const match = list
+				.filter((i) => i.similarCount !== 0)
+				.sort((a, b) => {
+					const bsc = b.similarCount * 100;
+					const asc = a.similarCount * 100;
+					const bss = b.similarSum;
+					const ass = a.similarSum;
+
+					// similarCount 由于是匹配的数量，其结果决定排序，
+					// similarSum 是匹配精度，其结果决定同样数量的情况下，哪一个的精度更高
+
+					// 高到低排序
+					return bsc + bss - asc + ass;
 				});
 
-				// 判断是否为纯ABCD答案
-				for (const answer of answers) {
-					const ans = StringUtils.nowrap(answer).trim();
-					if (isPlainAnswer(ans)) {
-						for (let i = 0; i < ans.length; i++) {
-							const index = ans.charCodeAt(i) - 65;
-							targetAnswers[count][i] = options[index].innerText;
-							targetOptions[count][i] = options[index];
-						}
-					}
-				}
-
-				if (targetAnswers[count].length === 0) {
-					const ratings = answerSimilar(
-						answers,
-						options.map((el) => el.innerText)
-					).sort((a, b) => b.rating - a.rating);
-
-					// 匹配相似率
-					if (ratings.some((rating) => rating.rating > 0.6)) {
-						options.forEach((el, i) => {
-							if (ratings[i].rating > 0.6) {
-								targetAnswers[count][i] = el.innerText;
-								targetOptions[count][i] = el;
-							}
-						});
-					}
-				}
-
-				count++;
-			}
-
-			/** 查找每个题库里面是否存在答案 ， 并且找到答案数量较多的一个 */
-			let max = 0;
-			let index = -1;
-			for (let i = 0; i < targetOptions.length; i++) {
-				const len = targetAnswers[i].filter((ans) => ans !== undefined).length;
-				if (len > max) {
-					max = len;
-					index = i;
-				}
-			}
-
-			/** 如果答案不存在 */
-			if (index === -1) {
-				return { finish: false };
-			} else {
-				targetAnswers[index] = targetAnswers[index].filter((ans) => ans !== undefined);
-				targetOptions[index] = targetOptions[index].filter((ans) => ans !== undefined);
-
-				for (let i = 0; i < targetOptions[index].length; i++) {
-					await handler('multiple', targetAnswers[index][i], targetOptions[index][i], ctx);
+			if (match[0]) {
+				for (let i = 0; i < match[0].options.length; i++) {
+					await handler('multiple', match[0].answers[i], match[0].options[i], ctx);
 					// 暂停一会防止点击过快
 					await $.sleep(500);
 				}
 
-				return { finish: true, targetOptions, targetAnswers };
+				return { finish: true, match, targetOptions, targetAnswers };
+			} else {
+				const plainOptions = [];
+				// 纯ABCD答案
+				for (const result of results) {
+					const ans = StringUtils.nowrap(result.answer).trim();
+					if (isPlainAnswer(ans)) {
+						for (const char of ans) {
+							const index = char.charCodeAt(0) - 65;
+							await handler('single', options[index].innerText, options[index], ctx);
+							await $.sleep(500);
+							plainOptions.push(options[index]);
+						}
+					}
+				}
+
+				if (plainOptions.length) {
+					return { finish: true, plainOptions };
+				} else {
+					return { finish: false };
+				}
 			}
 		},
 		/** 判断题处理器 */
-		async judgement(results, options, handler) {
-			for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
+		async judgement(infos, options, handler) {
+			for (const answers of infos.map((info) => info.results.map((res) => res.answer))) {
 				const correctWords = ['是', '对', '正确', '√', '对的', '是的', '正确的', 'true', 'yes', '1'];
 				const incorrectWords = [
 					'非',
@@ -197,8 +212,8 @@ export function defaultQuestionResolve<E>(
 			return { finish: false };
 		},
 		/** 填空题处理器 */
-		async completion(results, options, handler) {
-			for (const answers of results.map((res) => res.answers.map((ans) => ans.answer))) {
+		async completion(infos, options, handler) {
+			for (const answers of infos.map((info) => info.results.map((res) => res.answer))) {
 				// 排除空答案
 				let ans = answers.filter((ans) => ans);
 				if (ans.length === 1) {

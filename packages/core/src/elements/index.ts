@@ -5,7 +5,7 @@ import { HeaderElement } from './header';
 import { MessageElement } from './message';
 import { ModelElement } from './model';
 import { ScriptPanelElement } from './script.panel';
-import { SearchResultsElement } from './search.results';
+import { SearchInfosElement } from './search.infos';
 
 export { ConfigElement } from './config';
 export { ContainerElement } from './container';
@@ -13,7 +13,7 @@ export { HeaderElement } from './header';
 export { MessageElement } from './message';
 export { ModelElement } from './model';
 export { ScriptPanelElement } from './script.panel';
-export { SearchResultsElement } from './search.results';
+export { SearchInfosElement } from './search.infos';
 
 export const definedCustomElements = [
 	ConfigElement,
@@ -22,6 +22,6 @@ export const definedCustomElements = [
 	ModelElement,
 	MessageElement,
 	ScriptPanelElement,
-	SearchResultsElement,
+	SearchInfosElement,
 	DropdownElement
 ];

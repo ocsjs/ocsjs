@@ -25,21 +25,21 @@ export function clearString(str: string, ...exclude: string[]) {
  *
  * ```js
  *
- * answerSimilar( ['3'], ['1+2','3','4','错误的例子'] ) // [0, 1, 0, 0]
+ * answerSimilar( ['3'], ['1+2','3','4','错误的选项'] ) // [0, 1, 0, 0]
  *
- * answerSimilar( ['hello world','console.log("hello world")'], ['console.log("hello world")','hello world','1','错误的例子'] ) // [1, 1, 0, 0]
+ * answerSimilar( ['hello world','console.log("hello world")'], ['console.log("hello world")','hello world','1','错误的选项'] ) // [1, 1, 0, 0]
  *
  * ```
  *
  */
 export function answerSimilar(answers: string[], options: string[]): Rating[] {
-	answers = answers.map(removeRedundant);
-	options = options.map(removeRedundant);
+	const _answers = answers.map(removeRedundant);
+	const _options = options.map(removeRedundant);
 
 	const similar =
-		answers.length !== 0
-			? options.map((option) => findBestMatch(option, answers).bestMatch)
-			: options.map((opt) => ({ rating: 0, target: '' } as Rating));
+		_answers.length !== 0
+			? _options.map((option) => findBestMatch(option, _answers).bestMatch)
+			: _options.map(() => ({ rating: 0, target: '' } as Rating));
 
 	return similar;
 }

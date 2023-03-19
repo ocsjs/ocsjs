@@ -1,4 +1,4 @@
-import { AnswererWrapper, SearchResult, Answer } from './interface';
+import { AnswererWrapper, SearchInformation, Result } from './interface';
 import { request } from '../utils/request';
 
 /**
@@ -38,8 +38,8 @@ export async function defaultAnswerWrapperHandler(
 	answererWrappers: AnswererWrapper[],
 	// 上下文解析环境
 	env: any
-): Promise<SearchResult[]> {
-	const searchResults: SearchResult[] = [];
+): Promise<SearchInformation[]> {
+	const searchInfos: SearchInformation[] = [];
 	const temp: AnswererWrapper[] = JSON.parse(JSON.stringify(answererWrappers));
 	// 多线程请求
 	await Promise.all(
@@ -57,7 +57,7 @@ export async function defaultAnswerWrapperHandler(
 			} = wrapper;
 			try {
 				// 答案列表
-				let answers: Answer[] = [];
+				let results: Result[] = [];
 				// 构造请求数据
 				const data: Record<string, string> = Object.create({});
 				/** 构造一个请求数据 */
@@ -86,34 +86,34 @@ export async function defaultAnswerWrapperHandler(
 				if (info && Array.isArray(info)) {
 					/** 如果返回一个二维数组 */
 					if (info.every((item: any) => Array.isArray(item))) {
-						answers = answers.concat(
+						results = results.concat(
 							info.map((item: any) => ({
 								question: item[0],
 								answer: item[1]
 							}))
 						);
 					} else {
-						answers.push({
+						results.push({
 							question: info[0],
 							answer: info[1]
 						});
 					}
 				}
 
-				searchResults.push({
+				searchInfos.push({
 					url: wrapper.url,
 					name,
 					homepage,
-					answers,
+					results,
 					response: responseData,
 					data: requestData
 				});
 			} catch (error) {
-				searchResults.push({
+				searchInfos.push({
 					url: wrapper.url,
 					name,
 					homepage,
-					answers: [],
+					results: [],
 					response: undefined,
 					data: undefined,
 					error: error as any
@@ -136,5 +136,5 @@ export async function defaultAnswerWrapperHandler(
 		return str;
 	}
 
-	return searchResults;
+	return searchInfos;
 }
