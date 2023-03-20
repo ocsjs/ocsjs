@@ -43,8 +43,6 @@ export type ModelAttrs = Pick<
 	};
 };
 
-const closeSvg =
-	'<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>';
 const minimizeSvg =
 	'<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 13H5v-2h14v2z"/></svg>';
 const expandSvg =
@@ -60,6 +58,12 @@ export const RenderScript = new Script({
 	url: [['所有', /.*/]],
 	namespace: 'render.panel',
 	configs: {
+		notes: {
+			defaultValue: $creator.notes([
+				['如果需要隐藏整个窗口，可以点击下方隐藏按钮，', '隐藏后可以快速三击屏幕中的任意地方', '来重新显示窗口。'],
+				'窗口连续点击显示的次数可以自定义，默认为三次'
+			]).outerHTML
+		},
 		x: { defaultValue: window.innerWidth * 0.1 },
 		y: { defaultValue: window.innerWidth * 0.1 },
 
@@ -89,6 +93,27 @@ export const RenderScript = new Script({
 			},
 			defaultValue: 3
 		}
+	},
+	onrender({ panel }) {
+		const closeBtn = el('button', { className: 'base-style-button' }, '隐藏窗口');
+		closeBtn.onclick = () => {
+			if (this.cfg.firstCloseAlert) {
+				$model('confirm', {
+					content: $creator.notes([
+						'隐藏脚本页面后，快速点击页面三下（可以在悬浮窗设置中调整次数）即可重新显示脚本。如果三下无效，可以尝试删除脚本重新安装。',
+						'请确认是否关闭。（此后不再显示此弹窗）'
+					]),
+					onConfirm: () => {
+						this.cfg.visual = 'close';
+						this.cfg.firstCloseAlert = false;
+					}
+				});
+			} else {
+				this.cfg.visual = 'close';
+			}
+		};
+
+		panel.body.replaceChildren(el('hr'), closeBtn);
 	},
 
 	async onactive({ style, projects }: StartConfig) {
@@ -187,38 +212,8 @@ export const RenderScript = new Script({
 			);
 			container.header.visualSwitcher = visualSwitcher;
 
-			/** 窗口关闭按钮 */
-			container.header.closeButton = $creator.tooltip(
-				el('div', {
-					className: 'close  ',
-					innerHTML: closeSvg,
-					title: '点击关闭窗口（不会影响脚本运行，连续点击三次页面任意位置可以重新唤出窗口）',
-					onclick: () => {
-						if (this.cfg.firstCloseAlert) {
-							$model('confirm', {
-								content: $creator.notes([
-									'关闭脚本页面后，快速点击页面三下（可以在悬浮窗设置中调整次数）即可重新显示脚本。如果三下无效，可以尝试删除脚本重新安装。',
-									'请确认是否关闭。（此后不再显示此弹窗）'
-								]),
-								onConfirm: () => {
-									this.cfg.visual = 'close';
-									this.cfg.firstCloseAlert = false;
-								}
-							});
-						} else {
-							this.cfg.visual = 'close';
-						}
-					}
-				})
-			);
-
 			container.header.replaceChildren();
-			container.header.append(
-				profile,
-				...scriptDropdowns,
-				container.header.visualSwitcher || '',
-				container.header.closeButton || ''
-			);
+			container.header.append(profile, ...scriptDropdowns, container.header.visualSwitcher || '');
 		};
 
 		/** 处理面板位置 */
@@ -277,7 +272,7 @@ export const RenderScript = new Script({
 					container.style.left = e.x + 'px';
 					this.cfg.x = e.x;
 					this.cfg.y = e.y;
-					this.cfg.visual = this.cfg.visual === 'close' ? 'normal' : this.cfg.visual;
+					this.cfg.visual = 'normal';
 				}
 			});
 			// 跨域监听状态切换
@@ -343,6 +338,9 @@ export const RenderScript = new Script({
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);
 
+			// 首先处理窗口状态，防止下方的IO速度过慢可能导致窗口闪烁
+			handleVisible();
+
 			(async () => {
 				const urls = await $store.getTab($const.TAB_URLS);
 				const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
@@ -371,8 +369,6 @@ export const RenderScript = new Script({
 			});
 			this.onConfigChange('fontsize', onFontsizeChange);
 		}
-
-		handleVisible();
 	}
 });
 
