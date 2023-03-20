@@ -96,33 +96,33 @@ export const ICVEProject = Project.create({
 					const win = iframe?.contentWindow;
 					if (win) {
 						const doc = win.document;
-						if (iframe.src.includes('content_video.action')) {
+						if (iframe.src.includes('content_video.action') || iframe.src.includes('content_audio.action')) {
 							// 视频
-							const video = $el<HTMLVideoElement>('video', doc);
-							state.study.currentMedia = video;
+							const media = $el<HTMLMediaElement>('video,audio', doc);
+							state.study.currentMedia = media;
 
-							if (video) {
-								if (video.ended) {
-									video.currentTime = 0;
+							if (media) {
+								if (media.ended) {
+									media.currentTime = 0;
 								}
 
-								video.playbackRate = this.cfg.playbackRate;
-								video.volume = this.cfg.volume;
+								media.playbackRate = this.cfg.playbackRate;
+								media.volume = this.cfg.volume;
 
 								await new Promise<void>((resolve, reject) => {
 									try {
-										video.addEventListener('ended', async () => {
+										media.addEventListener('ended', async () => {
 											await $.sleep(3000);
 											resolve();
 										});
-										video.addEventListener('pause', async () => {
-											if (!video.ended) {
+										media.addEventListener('pause', async () => {
+											if (!media.ended) {
 												await $.sleep(1000);
-												playMedia(() => video.play());
+												playMedia(() => media.play());
 											}
 										});
 										// 开始播放
-										playMedia(() => video.play());
+										playMedia(() => media.play());
 									} catch (err) {
 										reject(err);
 									}
