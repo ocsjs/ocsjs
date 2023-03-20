@@ -203,6 +203,11 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 						});
 					}
 				} catch (err) {
+					resolvers.push({
+						func: async () => ({ finish: false }),
+						index: i
+					});
+
 					console.error(err);
 					if (err instanceof Error) {
 						error = err.message;
