@@ -97,8 +97,7 @@ export const CXProject = Project.create({
 			namespace: 'cx.new.study',
 			url: [
 				['任务点页面', '/knowledge/cards'],
-				['阅读任务点', '/readsvr/book/mooc'],
-				['任务点', /ananas\/modules.*/]
+				['阅读任务点', '/readsvr/book/mooc']
 				// 旧版浏览器好像不能识别二级 iframe ， 所以不能使用 'work/doHomeWorkNew' 以及其他二级 iframe 来触发路由
 			],
 			configs: {
@@ -143,17 +142,17 @@ export const CXProject = Project.create({
 				 *
 				 */
 				enableMedia: {
-					label: '开启-音视频',
+					label: '开启-音视频自动播放',
 					attrs: { type: 'checkbox', title: '开启：音频和视频的自动播放' },
 					defaultValue: true
 				},
 				enablePPT: {
-					label: '开启-PPT/书籍',
+					label: '开启-PPT/书籍自动完成',
 					attrs: { type: 'checkbox', title: '开启：PPT/书籍自动翻阅' },
 					defaultValue: true
 				},
 				enableChapterTest: {
-					label: '开启-章节测试',
+					label: '开启-章节测试自动答题',
 					attrs: { type: 'checkbox', title: '开启：章节测试自动答题' },
 					defaultValue: true
 				}
@@ -183,23 +182,6 @@ export const CXProject = Project.create({
 					return;
 				}
 
-				// 收集任务点
-				if (/ananas\/modules.*/.test(location.href)) {
-					await $.sleep(5000);
-					const job = searchJob({
-						...this.cfg,
-						playbackRate: parseFloat(this.cfg.playbackRate.toString()),
-						workOptions: { ...CommonProject.scripts.settings.cfg }
-					});
-					console.log(location.href, job);
-
-					if (job) {
-						// @ts-ignore
-						top.jobs.push(job);
-					}
-					return;
-				}
-
 				// 主要处理
 				if (/\/knowledge\/cards/.test(location.href)) {
 					const updateMediaState = () => {
@@ -215,7 +197,11 @@ export const CXProject = Project.create({
 					this.onConfigChange('playbackRate', updateMediaState);
 					this.onConfigChange('volume', updateMediaState);
 
-					await study();
+					await study({
+						...this.cfg,
+						playbackRate: parseFloat(this.cfg.playbackRate.toString()),
+						workOptions: { ...CommonProject.scripts.settings.cfg }
+					});
 				}
 			}
 		}),
@@ -341,7 +327,7 @@ export const CXProject = Project.create({
 			name: '🧑‍💻 自动阅读',
 			url: [
 				['阅读页面', '/ztnodedetailcontroller/visitnodedetail'],
-				['课程首页', /chaoxing.com\/course\/217910244\.html/]
+				['课程首页', /chaoxing.com\/course\/\d+\.html/]
 			],
 			configs: {
 				notes: {
@@ -349,6 +335,15 @@ export const CXProject = Project.create({
 				}
 			},
 			oncomplete() {
+				if (/chaoxing.com\/course\/\d+\.html/.test(location.href)) {
+					const texts = $$el('.course_section .chapterText');
+					if (texts.length) {
+						// 自动进入章节
+						texts[0].click();
+					}
+					return;
+				}
+
 				let top = 0;
 				const interval = setInterval(() => {
 					top += (document.documentElement.scrollHeight - window.innerHeight) / 60;
@@ -892,61 +887,75 @@ function rateHack() {
 					// 下面连着一个倍速限制方法，这里直接不写，实现可以倍速
 				}
 			});
-
-			console.log('视频解析完成');
 		}
 	}
 }
 
+type Attachment = {
+	/** 只有当 module 为 音视频时才会有这个属性 */
+	isPassed: boolean | undefined;
+	/** 是否为任务点 */
+	job: boolean | undefined;
+	property: {
+		mid: string;
+		module: 'insertbook' | 'insertdoc' | 'insertflash' | 'work' | 'insertaudio' | 'insertvideo';
+		name?: string;
+		author?: string;
+		bookname?: string;
+		publisher?: string;
+	};
+};
+
+type Job = {
+	mid: string;
+	attachment: Attachment;
+	func: () => Promise<void>;
+};
+
 /**
  * cx 任务学习
  */
-export async function study() {
+export async function study(opts: {
+	restudy: boolean;
+	playbackRate: number;
+	volume: number;
+	workOptions: CommonWorkOptions;
+}) {
 	// @ts-ignore 清空全部任务点，并等待新的任务点加载运行
 	top.jobs = [];
-	// 是否没有任务点
-	let noJob = true;
-	// 此页面是否通过
-	let pass = false;
 
-	/** 一直检测任务点 */
-	const checkAndRunTask = async () => {
-		// 如果此页面没通过
-		if (pass === false) {
-			// @ts-ignore
+	let searching = true;
 
-			// @ts-ignore 搜索全部任务，并执行第一个
-			const job = top.jobs.shift();
-			if (job) {
-				noJob = false;
-				try {
-					await job();
-				} catch (e) {
-					$console.error('未知错误', e);
-				}
-			} else {
-				noJob = true;
+	/** 考虑到网速级慢的同学，所以10秒后如果还没有任务点才停止 */
+	setTimeout(() => {
+		searching = false;
+	}, 10 * 1000);
+
+	/**
+	 * 递归运行任务点，一旦有新的任务点被检测到直接开始
+	 * 如果10秒内既没有任务点，也暂停了搜索，则当前则没有任务点
+	 */
+	const runJobs = async () => {
+		// @ts-ignore
+		const job = searchJob(opts, top.jobs);
+		// 如果存在任务点
+		if (job) {
+			try {
+				await job.func();
+			} catch (e) {
+				$console.error('未知错误', e);
 			}
 			await $.sleep(1000);
-			// 继续递归检测
-			await checkAndRunTask();
+			await runJobs();
+		}
+		// 或者正在搜索
+		else if (searching) {
+			await $.sleep(1000);
+			await runJobs();
 		}
 	};
 
-	checkAndRunTask();
-
-	// 如果10秒内没有检测到任务，则结束此页面任务检测，跳转下一页
-	await new Promise<void>((resolve) => {
-		const interval = setInterval(() => {
-			if (noJob) {
-				clearInterval(interval);
-				resolve();
-			}
-		}, 10 * 1000);
-	});
-
-	// 通过
-	pass = true;
+	await runJobs();
 
 	// @ts-ignore
 	top._preChapterId = '';
@@ -956,8 +965,7 @@ export async function study() {
 		const curCourseId = $el<HTMLInputElement>('#curCourseId', top?.document);
 		const curChapterId = $el<HTMLInputElement>('#curChapterId', top?.document);
 		const curClazzId = $el<HTMLInputElement>('#curClazzId', top?.document);
-
-		console.log(curChapterId?.value, curCourseId?.value, curClazzId?.value);
+		const count = $$el('#prev_tab .prev_ul li', top?.document);
 
 		// @ts-ignore
 		if (curChapterId?.value === top._preChapterId) {
@@ -986,7 +994,13 @@ export async function study() {
 					 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
 					 */
 					// @ts-ignore
-					$gm.unsafeWindow.top?.PCount.next('1', curChapterId.value, curCourseId.value, curClazzId.value, '');
+					$gm.unsafeWindow.top?.PCount.next(
+						count.length.toString(),
+						curChapterId.value,
+						curCourseId.value,
+						curClazzId.value,
+						''
+					);
 				} else {
 					$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
 				}
@@ -996,6 +1010,7 @@ export async function study() {
 
 	if (CXProject.scripts.study.cfg.autoNextPage) {
 		$console.info('页面任务点已完成，即将切换下一章。');
+		await $.sleep(3000);
 		next();
 	} else {
 		$console.warn('页面任务点已完成，自动下一章已关闭，请手动切换。');
@@ -1017,7 +1032,6 @@ function searchIFrame(root: Document) {
 		} catch (e) {
 			// @ts-ignore
 			console.log(e.message);
-			console.log({ frame });
 		}
 	}
 	return result;
@@ -1026,67 +1040,92 @@ function searchIFrame(root: Document) {
 /**
  * 搜索任务点
  */
-function searchJob(opts: {
-	restudy: boolean;
-	playbackRate: number;
-	volume: number;
-	workOptions: CommonWorkOptions;
-}): { (): Promise<void> | undefined } | undefined {
-	const doc = $gm.unsafeWindow.document;
-	const win = $gm.unsafeWindow;
+function searchJob(
+	opts: {
+		restudy: boolean;
+		playbackRate: number;
+		volume: number;
+		workOptions: CommonWorkOptions;
+	},
+	jobs: Job[]
+): Job | undefined {
+	const knowCardWin = $gm.unsafeWindow;
 
-	const searchJobElement = (root: Window | HTMLIFrameElement) => {
+	const searchJobElement = (root: HTMLIFrameElement) => {
 		return domSearch(
 			{
 				media: 'video,audio',
 				chapterTest: '.TiMu',
 				read: '#img.imglook'
 			},
-			root instanceof Window ? root.document : root.contentWindow!.document
+			root.contentWindow!.document
 		);
 	};
 
-	const search = (root: Window | HTMLIFrameElement) => {
+	const search = (root: HTMLIFrameElement): Job | undefined => {
+		const win = root.contentWindow;
+
 		const { media, read, chapterTest } = searchJobElement(root);
 
-		if (media || read || chapterTest) {
-			const attachment: {
-				/** 只有当 module 为 音视频时才会有这个属性 */
-				isPassed: boolean | undefined;
-				/** 是否为任务点 */
-				job: boolean | undefined;
-				property: {
-					mid: string;
-					module: 'insertbook' | 'insertdoc' | 'insertflash' | 'work' | 'insertaudio' | 'insertvideo';
-					name?: string;
-					author?: string;
-					bookname?: string;
-					publisher?: string;
-				};
-			} =
-				// @ts-ignore
-				win.parent.attachments[getValidNumber(win._jobindex, win.parent._jobindex)];
-			// console.log('attachment', { opts, media, read, chapterTest, attachment });
+		if (win && (media || read || chapterTest)) {
+			const doc = win.document;
 
-			if (CXProject.scripts.study.cfg.enableMedia && media) {
-				// 重复学习，或者未完成
-				if (opts.restudy || attachment.job) {
-					$console.log(`即将${opts.restudy ? '重新' : ''}播放 : `, attachment.property.name);
-					return () => mediaTask(opts, media as HTMLMediaElement, doc);
-				}
-			} else if (CXProject.scripts.study.cfg.enableChapterTest && chapterTest && root instanceof HTMLIFrameElement) {
-				// 强制答题，或者未完成
-				if (attachment.job || CommonProject.scripts.settings.cfg.forceWork) {
-					$console.log(
-						CommonProject.scripts.settings.cfg.forceWork ? '开启强制答题 : ' : '开始答题 : ',
-						attachment.property.name
-					);
-					return () => chapterTestTask(root, opts.workOptions);
-				}
-			} else if (CXProject.scripts.study.cfg.enablePPT && read) {
-				if (attachment.job) {
-					$console.log('正在学习 ：', attachment.property.name);
-					return () => readTask(doc);
+			const attachment: Attachment | undefined =
+				// @ts-ignore
+				knowCardWin.attachments[getValidNumber(win._jobindex, win.parent._jobindex)];
+
+			// 任务点去重
+			if (attachment && jobs.every((job) => job.mid !== attachment.property.mid)) {
+				if (media) {
+					if (!CXProject.scripts.study.cfg.enableMedia) {
+						$console.warn(`音视频自动学习功能已关闭。${attachment.property.name} 即将跳过`);
+					}
+					// 重复学习，或者未完成
+					if (opts.restudy || attachment.job) {
+						return {
+							mid: attachment.property.mid,
+							attachment: attachment,
+							func: () => {
+								$console.log(`即将${opts.restudy ? '重新' : ''}播放 : `, attachment.property.name);
+								return mediaTask(opts, media as HTMLMediaElement, doc);
+							}
+						};
+					}
+				} else if (chapterTest) {
+					if (!CXProject.scripts.study.cfg.enableChapterTest) {
+						$console.warn(`章节测试自动答题功能已关闭。${attachment.property.name} 即将跳过`);
+					}
+
+					// 强制答题，或者未完成
+					if (attachment.job || CommonProject.scripts.settings.cfg.forceWork) {
+						return {
+							mid: attachment.property.mid,
+							attachment: attachment,
+							func: () => {
+								$console.log(
+									CommonProject.scripts.settings.cfg.forceWork ? '开启强制答题 : ' : '开始答题 : ',
+									attachment.property.name
+								);
+
+								return chapterTestTask(root, opts.workOptions);
+							}
+						};
+					}
+				} else if (read) {
+					if (!CXProject.scripts.study.cfg.enablePPT) {
+						$console.warn(`PPT/书籍阅读功能已关闭。${attachment.property.name} 即将跳过`);
+					}
+
+					if (attachment.job) {
+						return {
+							mid: attachment.property.mid,
+							attachment: attachment,
+							func: () => {
+								$console.log('正在学习 ：', attachment.property.name);
+								return readTask(win);
+							}
+						};
+					}
 				}
 			}
 		} else {
@@ -1094,15 +1133,12 @@ function searchJob(opts: {
 		}
 	};
 
-	// 找自身以及全部子iframe
-	let job = search(win);
+	let job;
 
-	if (!job) {
-		for (const iframe of searchIFrame(doc)) {
-			job = search(iframe);
-			if (job) {
-				return job;
-			}
+	for (const iframe of searchIFrame(knowCardWin.document)) {
+		job = search(iframe);
+		if (job) {
+			return job;
 		}
 	}
 
@@ -1124,14 +1160,14 @@ export function fixedVideoProgress() {
 /**
  * 播放视频和音频
  */
-function mediaTask(setting: { playbackRate: number; volume: number }, media: HTMLMediaElement, doc: Document) {
+async function mediaTask(setting: { playbackRate: number; volume: number }, media: HTMLMediaElement, doc: Document) {
 	const { playbackRate = 1, volume = 0 } = setting;
 
 	// @ts-ignore
 	const { videojs } = domSearch({ videojs: '#video,#audio' }, doc);
 
 	if (!videojs) {
-		$message('error', { content: '视频检测不到，请尝试刷新或者手动切换下一章。' });
+		$console.error('视频检测不到，请尝试刷新或者手动切换下一章。');
 		return;
 	}
 
@@ -1145,37 +1181,38 @@ function mediaTask(setting: { playbackRate: number; volume: number }, media: HTM
 	/**
 	 * 视频播放
 	 */
-	return new Promise<void>((resolve) => {
-		if (media) {
-			media.volume = volume;
-			playMedia(() => media.play()).then(() => {
+	await new Promise<void>((resolve, reject) => {
+		const playFunction = async () => {
+			if (!media.ended) {
+				await $.sleep(1000);
+				media.play();
 				media.playbackRate = playbackRate;
-			});
+			}
+		};
 
-			const playFunction = async () => {
-				if (media.ended) {
-					$console.log('视频播放完毕');
-					media.removeEventListener('pause', playFunction);
-				} else {
-					await $.sleep(1000);
-					media.play();
-					media.playbackRate = playbackRate;
-				}
-			};
+		media.addEventListener('pause', playFunction);
 
-			media.addEventListener('pause', playFunction);
+		media.addEventListener('ended', () => {
+			$console.log('视频播放完毕');
+			media.removeEventListener('pause', playFunction);
+			resolve();
+		});
 
-			media.addEventListener('ended', () => resolve());
-		}
+		$console.log('视频开始播放');
+		media.volume = volume;
+		playMedia(() => media.play())
+			.then(() => {
+				media.playbackRate = playbackRate;
+			})
+			.catch(reject);
 	});
 }
 
 /**
  * 阅读 ppt
  */
-async function readTask(doc?: Document) {
-	// @ts-ignore
-	const finishJob = doc?.contentWindow?.finishJob;
+async function readTask(win: Window & { finishJob?: Function }) {
+	const finishJob = win.finishJob;
 	if (finishJob) finishJob();
 	await $.sleep(3000);
 }
@@ -1190,10 +1227,6 @@ async function chapterTestTask(
 	// 繁体字识别
 	await mappingRecognize(frame.contentWindow?.window.document);
 
-	if (!auto) {
-		return $console.warn('自动答题未开启，请在课程学习设置中开启或者忽略此信息。');
-	}
-
 	if (answererWrappers === undefined || answererWrappers.length === 0) {
 		return $console.warn('检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。');
 	}
@@ -1202,8 +1235,6 @@ async function chapterTestTask(
 
 	const frameWindow = frame.contentWindow?.window;
 	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
-
-	console.log({ TiMu, frameWindow });
 
 	// 清空搜索结果
 	$store.setTab(TAB_WORK_RESULTS_KEY, []);
@@ -1313,8 +1344,6 @@ async function chapterTestTask(
 
 		/** 完成答题后 */
 		async onResultsUpdate(res, curr) {
-			console.log('curr', curr);
-
 			await $store.setTab(TAB_WORK_RESULTS_KEY, simplifyWorkResult(res));
 
 			// 没有完成时随机作答
@@ -1388,9 +1417,7 @@ async function chapterTestTask(
 		type: upload,
 		results,
 		async callback(finishedRate, uploadable) {
-			$message('info', {
-				content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
-			});
+			$console.info(`完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `);
 
 			await $.sleep(5000);
 
