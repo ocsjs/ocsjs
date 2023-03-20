@@ -56,24 +56,35 @@ export function createRangeTooltip(
 	input.setAttribute('data-title', transform(input.value || input.getAttribute('value') || defaultValue));
 }
 
-export function playMedia(playFunction: () => Promise<void>) {
-	return new Promise((resolve, reject) => {
-		// 有些网课会改变 media.play 方法，所以可能不是一个 promise
-		const playRes = playFunction();
-		console.log('playRes', playFunction, playRes);
-
-		playRes?.then(resolve).catch((err) => {
-			console.log('play error', err);
-
-			if (String(err).includes(`failed because the user didn't interact with the document first`)) {
-				$model('alert', {
-					content:
-						'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须先在设置页面静音，然后重新运行脚本。',
-					onClose: () => playFunction().then(resolve).catch(reject)
-				});
-			} else {
+// 有些网课会改变 media.play 方法，所以可能不是一个 promise
+export async function playMedia(playFunction: () => Promise<void> | undefined) {
+	//  尝试播放
+	const tryPlayMedia = () => {
+		return new Promise<void>((resolve, reject) => {
+			try {
+				const playRes = playFunction();
+				if (playRes) {
+					playRes.then(resolve).catch(reject);
+				} else {
+					resolve();
+				}
+			} catch (err) {
 				reject(err);
 			}
 		});
-	});
+	};
+
+	try {
+		await tryPlayMedia();
+	} catch (err) {
+		if (String(err).includes(`failed because the user didn't interact with the document first`)) {
+			$model('alert', {
+				content:
+					'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须先在设置页面静音，然后重新运行脚本。',
+				onClose: async () => {
+					await tryPlayMedia();
+				}
+			});
+		}
+	}
 }
