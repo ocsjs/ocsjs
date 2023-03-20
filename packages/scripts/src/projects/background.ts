@@ -248,34 +248,10 @@ export const BackgroundProject = Project.create({
 				}
 			}
 		}),
-		visibleCheck: new Script({
-			name: '浏览器窗口检测脚本',
-			url: [
-				['超星学习页面', '/mycourse/studentstudy'],
-				['智慧树共享课学习页面', 'studyvideoh5.zhihuishu.com'],
-				['智慧树校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']
-			],
-			hideInPanel: true,
-			oncomplete() {
-				if ($.isInTopWindow()) {
-					// 每分钟检测
-					const interval = setInterval(() => {
-						if (document.hidden) {
-							$model('alert', {
-								content: $creator.notes([
-									'请不要最小化浏览器，或者切换到其他页面，可能会导致脚本停止运行或者卡死！',
-									'可以适当缩小浏览器尺寸，并放置在桌面上，使用其他软件时不会影响脚本运行。'
-								])
-							});
-							clearInterval(interval);
-						}
-					}, 60 * 1000);
-				}
-			}
-		}),
 		errorHandle: new Script({
 			name: '全局错误捕获',
 			url: [['', /.*/]],
+			hideInPanel: true,
 			onstart() {
 				const projects = definedProjects();
 				for (const project of projects) {

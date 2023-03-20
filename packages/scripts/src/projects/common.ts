@@ -746,15 +746,6 @@ export const CommonProject = Project.create({
 });
 
 function enableCopy() {
-	try {
-		const d = document;
-		const b = document.body;
-		d.onselectstart = d.oncopy = d.onpaste = d.onkeydown = d.oncontextmenu = () => true;
-		b.onselectstart = b.oncopy = b.onpaste = b.onkeydown = b.oncontextmenu = () => true;
-	} catch (err) {
-		console.error('页面复制粘贴功能开启失败', err);
-	}
-
 	const style = document.createElement('style');
 	style.innerHTML = `
 		html * {
@@ -765,7 +756,7 @@ function enableCopy() {
 		  user-select: text !important;
 		}`;
 
-	document.body.appendChild(style);
+	document.head.append(style);
 }
 
 function createAnswererWrapperList(aw: AnswererWrapper[]) {
