@@ -560,7 +560,7 @@ export function workOrExam(
 				return await resolver(searchInfos, elements.options, (type, answer, option) => {
 					// 如果存在已经选择的选项
 					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						if ($$el('[class*="check_answer"]', option).length === 0) {
+						if (option.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
 							option.click();
 						}
 					} else if (type === 'completion' && answer.trim()) {
@@ -910,13 +910,14 @@ type Attachment = {
 		author?: string;
 		bookname?: string;
 		publisher?: string;
+		title?: string;
 	};
 };
 
 type Job = {
 	mid: string;
 	attachment: Attachment;
-	func: () => Promise<void>;
+	func: { (): Promise<void> } | undefined;
 };
 
 /**
@@ -930,7 +931,7 @@ export async function study(opts: {
 }) {
 	await $.sleep(3000);
 
-	const finishedJobs: Job[] = [];
+	const searchedJobs: Job[] = [];
 
 	let searching = true;
 
@@ -945,15 +946,15 @@ export async function study(opts: {
 	 */
 	const runJobs = async () => {
 		// @ts-ignore
-		const job = searchJob(opts, finishedJobs);
+		const job = searchJob(opts, searchedJobs);
 		// 如果存在任务点
-		if (job) {
+		if (job && job.func) {
 			try {
 				await job.func();
 			} catch (e) {
 				$console.error('未知错误', e);
 			}
-			finishedJobs.push(job);
+
 			await $.sleep(1000);
 			await runJobs();
 		}
@@ -1053,7 +1054,7 @@ function searchJob(
 		volume: number;
 		workOptions: CommonWorkOptions;
 	},
-	finishedJobs: Job[]
+	searchedJobs: Job[]
 ): Job | undefined {
 	const knowCardWin = $gm.unsafeWindow;
 
@@ -1081,54 +1082,57 @@ function searchJob(
 				knowCardWin.attachments[getValidNumber(win._jobindex, win.parent._jobindex)];
 
 			// 任务点去重
-			if (attachment && finishedJobs.find((job) => job.mid === attachment.property.mid) === undefined) {
+			if (attachment && searchedJobs.find((job) => job.mid === attachment.property.mid) === undefined) {
+				const { name, title, bookname, author } = attachment.property;
+				const jobName = name || title || (bookname ? bookname + author : undefined) || '未知任务';
+
+				let func: { (): Promise<any> } | undefined;
 				if (media) {
 					if (!CXProject.scripts.study.cfg.enableMedia) {
-						$console.warn(`音视频自动学习功能已关闭。${attachment.property.name} 即将跳过`);
-					}
-					// 重复学习，或者未完成
-					if (opts.restudy || attachment.job) {
-						return {
-							mid: attachment.property.mid,
-							attachment: attachment,
-							func: () => {
-								$console.log(`即将${opts.restudy ? '重新' : ''}播放 : `, attachment.property.name);
+						$console.warn(`音视频自动学习功能已关闭。${jobName} 即将跳过`);
+					} else {
+						// 重复学习，或者未完成
+						if (opts.restudy || attachment.job) {
+							func = () => {
+								$console.log(`即将${opts.restudy ? '重新' : ''}播放 : `, jobName);
 								return mediaTask(opts, media as HTMLMediaElement, doc);
-							}
-						};
+							};
+						}
 					}
 				} else if (chapterTest) {
 					if (!CXProject.scripts.study.cfg.enableChapterTest) {
-						$console.warn(`章节测试自动答题功能已关闭。${attachment.property.name} 即将跳过`);
-					}
-
-					if (attachment.job) {
-						return {
-							mid: attachment.property.mid,
-							attachment: attachment,
-							func: () => {
-								$console.log('开始答题 : ', attachment.property.name);
+						$console.warn(`章节测试自动答题功能已关闭。${jobName} 即将跳过`);
+					} else {
+						if (attachment.job) {
+							func = () => {
+								$console.log('开始答题 : ', jobName);
 
 								return chapterTestTask(root, opts.workOptions);
-							}
-						};
+							};
+						}
 					}
 				} else if (read) {
 					if (!CXProject.scripts.study.cfg.enablePPT) {
-						$console.warn(`PPT/书籍阅读功能已关闭。${attachment.property.name} 即将跳过`);
-					}
-
-					if (attachment.job) {
-						return {
-							mid: attachment.property.mid,
-							attachment: attachment,
-							func: () => {
-								$console.log('正在学习 ：', attachment.property.name);
+						$console.warn(`PPT/书籍阅读功能已关闭。${jobName} 即将跳过`);
+					} else {
+						if (attachment.job) {
+							func = () => {
+								$console.log('正在学习 ：', jobName);
 								return readTask(win);
-							}
-						};
+							};
+						}
 					}
 				}
+
+				const job = {
+					mid: attachment.property.mid,
+					attachment: attachment,
+					func: func
+				};
+
+				searchedJobs.push(job);
+
+				return job;
 			}
 		} else {
 			return undefined;

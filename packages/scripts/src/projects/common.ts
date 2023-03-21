@@ -373,8 +373,6 @@ export const CommonProject = Project.create({
 				const render = async () => {
 					const results: SimplifyWorkResult[] | undefined = await $store.getTab(TAB_WORK_RESULTS_KEY);
 
-					console.log('results', results);
-
 					if (results?.length) {
 						// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
 						if (results[this.cfg.currentResultIndex] === undefined) {
