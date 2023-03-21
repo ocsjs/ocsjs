@@ -203,15 +203,6 @@ export const CommonProject = Project.create({
 					},
 					defaultValue: 3
 				},
-				forceWork: {
-					label: '(仅超星)强制答题',
-					defaultValue: false,
-					attrs: {
-						type: 'checkbox',
-						title:
-							'当章节测试不是任务点时，强制自动答题。\n(左上角有黄点的代表此小节是任务点)\n(一般来说不是任务点的章节测试是不计分的)'
-					}
-				},
 				'randomWork-choice': {
 					defaultValue: false,
 					label: '(仅超星)随机选择',
