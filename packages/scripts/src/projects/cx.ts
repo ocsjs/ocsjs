@@ -21,7 +21,8 @@ import {
 	$store,
 	domSearch,
 	domSearchAll,
-	SearchInformation
+	SearchInformation,
+	$model
 } from '@ocsjs/core';
 
 import { CommonProject, TAB_WORK_RESULTS_KEY } from './common';
@@ -172,7 +173,7 @@ export const CXProject = Project.create({
 			async oncomplete() {
 				/** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */
 				if (/\/readsvr\/book\/mooc/.test(location.href)) {
-					$console.log('阅读脚本启动');
+					$console.log('正在完成书籍/PPT...');
 					setTimeout(() => {
 						// @ts-ignore
 						// eslint-disable-next-line no-undef
@@ -331,7 +332,11 @@ export const CXProject = Project.create({
 			],
 			configs: {
 				notes: {
-					defaultValue: '正在自动阅读中...<br>60秒后自动翻页'
+					defaultValue: $creator.notes([
+						'请手动点击进入阅读任务点',
+						'阅读任务点通常需要挂机一小时',
+						'等待完成后次日才会统计阅读时长'
+					]).outerHTML
 				}
 			},
 			oncomplete() {
@@ -748,13 +753,13 @@ async function loadTyprMapping() {
  * cx分析工具
  */
 const CXAnalyses = {
-	/** 是否处于闯关模式 */
-	isInBreakingMode() {
-		return Array.from(top?.document.querySelectorAll('.catalog_points_sa') || []).length !== 0;
+	/** 是否处于闯关模式或者解锁模式 */
+	isInSpecialMode() {
+		return Array.from(top?.document.querySelectorAll('.catalog_points_sa,.catalog_points_er') || []).length !== 0;
 	},
 	/** 是否为闯关模式，并且当前章节卡在最后一个待完成的任务点 */
 	isStuckInBreakingMode() {
-		if (this.isInBreakingMode()) {
+		if (this.isInSpecialMode()) {
 			const chapter = top?.document.querySelector('.posCatalog_active');
 			if (chapter) {
 				// @ts-ignore
@@ -896,6 +901,8 @@ type Attachment = {
 	isPassed: boolean | undefined;
 	/** 是否为任务点 */
 	job: boolean | undefined;
+	/** 这里注意，如果当前章节测试不是任务点，则没有 jobid */
+	jobid?: string;
 	property: {
 		mid: string;
 		module: 'insertbook' | 'insertdoc' | 'insertflash' | 'work' | 'insertaudio' | 'insertvideo';
@@ -921,8 +928,9 @@ export async function study(opts: {
 	volume: number;
 	workOptions: CommonWorkOptions;
 }) {
-	// @ts-ignore 清空全部任务点，并等待新的任务点加载运行
-	top.jobs = [];
+	await $.sleep(3000);
+
+	const finishedJobs: Job[] = [];
 
 	let searching = true;
 
@@ -937,7 +945,7 @@ export async function study(opts: {
 	 */
 	const runJobs = async () => {
 		// @ts-ignore
-		const job = searchJob(opts, top.jobs);
+		const job = searchJob(opts, finishedJobs);
 		// 如果存在任务点
 		if (job) {
 			try {
@@ -945,6 +953,7 @@ export async function study(opts: {
 			} catch (e) {
 				$console.error('未知错误', e);
 			}
+			finishedJobs.push(job);
 			await $.sleep(1000);
 			await runJobs();
 		}
@@ -967,50 +976,47 @@ export async function study(opts: {
 		const curClazzId = $el<HTMLInputElement>('#curClazzId', top?.document);
 		const count = $$el('#prev_tab .prev_ul li', top?.document);
 
-		// @ts-ignore
-		if (curChapterId?.value === top._preChapterId) {
-			// 如果即将切换到下一章节
-			if (CXAnalyses.isInFinalTab()) {
-				if (CXAnalyses.isStuckInBreakingMode()) {
-					$message('warn', {
-						content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
-					});
-				}
+		// 如果即将切换到下一章节
+		if (CXAnalyses.isInFinalTab()) {
+			if (CXAnalyses.isStuckInBreakingMode()) {
+				return $model('alert', {
+					content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
+				});
+			}
+		}
+
+		if (CXAnalyses.isInFinalChapter()) {
+			if (CXAnalyses.isFinishedAllChapters()) {
+				$model('alert', { content: '全部任务点已完成！' });
+			} else {
+				$model('alert', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
 			}
 		} else {
-			if (CXAnalyses.isInFinalChapter()) {
-				if (CXAnalyses.isFinishedAllChapters()) {
-					$message('success', { content: '全部任务点已完成！' });
-				} else {
-					$message('warn', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
-				}
-			} else {
-				if (curChapterId && curCourseId && curClazzId) {
-					// @ts-ignore
-					top._preChapterId = curChapterId.value;
+			if (curChapterId && curCourseId && curClazzId) {
+				// @ts-ignore
+				top._preChapterId = curChapterId.value;
 
-					/**
-					 * count, chapterId, courseId, clazzid, knowledgestr, checkType
-					 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
-					 */
-					// @ts-ignore
-					$gm.unsafeWindow.top?.PCount.next(
-						count.length.toString(),
-						curChapterId.value,
-						curCourseId.value,
-						curClazzId.value,
-						''
-					);
-				} else {
-					$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
-				}
+				/**
+				 * count, chapterId, courseId, clazzid, knowledgestr, checkType
+				 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
+				 */
+				// @ts-ignore
+				$gm.unsafeWindow.top?.PCount.next(
+					count.length.toString(),
+					curChapterId.value,
+					curCourseId.value,
+					curClazzId.value,
+					''
+				);
+			} else {
+				$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
 			}
 		}
 	};
 
 	if (CXProject.scripts.study.cfg.autoNextPage) {
 		$console.info('页面任务点已完成，即将切换下一章。');
-		await $.sleep(3000);
+		await $.sleep(5000);
 		next();
 	} else {
 		$console.warn('页面任务点已完成，自动下一章已关闭，请手动切换。');
@@ -1047,7 +1053,7 @@ function searchJob(
 		volume: number;
 		workOptions: CommonWorkOptions;
 	},
-	jobs: Job[]
+	finishedJobs: Job[]
 ): Job | undefined {
 	const knowCardWin = $gm.unsafeWindow;
 
@@ -1075,7 +1081,7 @@ function searchJob(
 				knowCardWin.attachments[getValidNumber(win._jobindex, win.parent._jobindex)];
 
 			// 任务点去重
-			if (attachment && jobs.every((job) => job.mid !== attachment.property.mid)) {
+			if (attachment && finishedJobs.find((job) => job.mid === attachment.property.mid) === undefined) {
 				if (media) {
 					if (!CXProject.scripts.study.cfg.enableMedia) {
 						$console.warn(`音视频自动学习功能已关闭。${attachment.property.name} 即将跳过`);
@@ -1096,16 +1102,12 @@ function searchJob(
 						$console.warn(`章节测试自动答题功能已关闭。${attachment.property.name} 即将跳过`);
 					}
 
-					// 强制答题，或者未完成
-					if (attachment.job || CommonProject.scripts.settings.cfg.forceWork) {
+					if (attachment.job) {
 						return {
 							mid: attachment.property.mid,
 							attachment: attachment,
 							func: () => {
-								$console.log(
-									CommonProject.scripts.settings.cfg.forceWork ? '开启强制答题 : ' : '开始答题 : ',
-									attachment.property.name
-								);
+								$console.log('开始答题 : ', attachment.property.name);
 
 								return chapterTestTask(root, opts.workOptions);
 							}
@@ -1233,7 +1235,7 @@ async function chapterTestTask(
 
 	$console.info('开始章节测试');
 
-	const frameWindow = frame.contentWindow?.window;
+	const frameWindow = frame.contentWindow;
 	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
 	// 清空搜索结果
