@@ -62,10 +62,16 @@
 				placeholder="输入标签名"
 				size="small"
 				style="width: 100%"
-				:options="options"
+				:data="options"
 				@search="handleSearch"
 			>
-				<template #option="{ value, color, count }">
+				<template
+					#option="{
+						data: {
+							raw: { value, count, color }
+						}
+					}"
+				>
 					<a-tag :color="color"> {{ value }} </a-tag>
 					<span style="float: right"> {{ count }} </span>
 				</template>
@@ -114,7 +120,7 @@ const emits = defineEmits<{
 const getOptions = () =>
 	object
 		.keys(store.render.browser.tags)
-		.map((key) => ({ value: key, ...store.render.browser.tags[key] }))
+		.map((key) => ({ value: key, label: key, ...store.render.browser.tags[key] }))
 		.sort((a, b) => b.count - a.count);
 
 const options = ref(getOptions());
@@ -138,9 +144,10 @@ const handleClose = (removeTag: Tag) => {
 
 const showModel = () => {
 	state.modalVisible = true;
-	nextTick(() => {
+	// 弹窗动作完成后，自动聚焦
+	setTimeout(() => {
 		inputRef.value.focus();
-	});
+	}, 300);
 };
 
 const handleInputConfirm = () => {
