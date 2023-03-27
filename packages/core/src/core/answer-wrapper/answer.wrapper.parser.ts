@@ -19,7 +19,7 @@ export class AnswerWrapperParser {
 					if (typeof item.url !== 'string') {
 						throw new Error(`第 ${i + 1} 个题库的 接口地址(url) 为空`);
 					}
-					if (typeof item.name !== 'string') {
+					if (typeof item.handler !== 'string') {
 						throw new Error(`第 ${i + 1} 个题库的 解析器(handler) 为空`);
 					}
 					if (item.headers && typeof item.headers !== 'object') {
