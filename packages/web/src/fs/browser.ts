@@ -59,23 +59,18 @@ export class Browser extends Entity implements BrowserOptions {
 	/** 重启浏览器 */
 	async relaunch() {
 		const process = Process.from(this.uid);
-		process?.emit('relaunching');
 		await process?.close();
-		await process?.launch();
-		this.histories.unshift({ action: '重启', time: Date.now() });
-		process?.emit('relaunched');
+		/**
+		 * 因为 process.close 会杀死进程，并删除 process 实例
+		 * 所以重新创建 process 实例并启动
+		 */
+		await this.launch();
 	}
 
 	/** 关闭浏览器 */
 	async close() {
 		const process = Process.from(this.uid);
 		await process?.close();
-
-		const index = processes.findIndex((p) => p.uid === this.uid);
-		if (index !== -1) {
-			processes.splice(index, 1);
-		}
-
 		this.histories.unshift({ action: '关闭', time: Date.now() });
 	}
 

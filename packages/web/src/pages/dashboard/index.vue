@@ -20,10 +20,11 @@
 					<a-button
 						size="mini"
 						type="outline"
-						:disabled="processes.length === 0"
+						:disabled="launchedProcesses.length === 0 || state.loading"
 						@click="state.show = !state.show"
 					>
-						{{ state.show ? '暂停' : '开始' }}监控
+						<template v-if="state.loading"> 加载中... </template>
+						<template v-else> {{ state.show ? '暂停' : '开始' }}监控 </template>
 					</a-button>
 				</a-tooltip>
 
@@ -87,7 +88,7 @@
 				}"
 			>
 				<template
-					v-for="pro of processes"
+					v-for="pro of launchedProcesses"
 					:key="pro.uid"
 				>
 					<div class="browser">
@@ -211,7 +212,7 @@
 </template>
 
 <script setup lang="ts">
-import { onDeactivated, watch, reactive } from 'vue';
+import { onDeactivated, watch, reactive, computed, onActivated } from 'vue';
 import { Process, processes } from '../../utils/process';
 import BrowserOperators from '../../components/browsers/BrowserOperators.vue';
 import { store } from '../../store';
@@ -220,7 +221,6 @@ import Tags from '../../components/Tags.vue';
 import { DesktopCapturerSource } from 'electron';
 import { remote } from '../../utils/remote';
 import { SelectOptionData } from '@arco-design/web-vue';
-import debounce from 'lodash/debounce';
 import EntityOperator from '../../components/EntityOperator.vue';
 
 const state = reactive({
@@ -228,16 +228,27 @@ const state = reactive({
 	loading: false
 });
 
-defineEmits<{
-	(e: '1', v: string): void;
-	(e: '2', v: string): void;
-	(e: '3', v: string): void;
-}>();
+const launchedProcesses = computed(() => processes.filter((p) => p.status === 'launched'));
 
-const debounceRefreshVideo = debounce(refreshVideo, 1000);
+// 监听已启动的浏览器，如果全部关闭，则关闭视频显示
+watch(
+	() => launchedProcesses.value.length,
+	(curr, pre) => {
+		// 如果全部关闭，则关闭视频显示
+		if (launchedProcesses.value.length === 0) {
+			// 触发 watch，关闭视频
+			state.show = false;
+		} else {
+			// 如果有新的进程加入，则刷新视频
+			if (state.show && curr > pre) {
+				refreshVideo();
+			}
+		}
+	}
+);
 
-// 当帧率和横纵比改变时，延迟更新视频
-watch(() => [store.render.dashboard.video.aspectRatio], debounceRefreshVideo);
+// 当横纵比改变时，延迟更新视频
+watch(() => [store.render.dashboard.video.aspectRatio], refreshVideo);
 // 当show改变时，即时更新
 watch(
 	() => state.show,
@@ -246,22 +257,19 @@ watch(
 	}
 );
 
-onDeactivated(() => {
-	state.show = false;
-	closeVideo();
+/** 离开时视频可能会暂停，所以这里进行一下处理 */
+onActivated(() => {
+	for (const process of launchedProcesses.value) {
+		process.video?.play();
+	}
 });
 
-/** 如果其中有一个重启了，全部重新刷新 */
-for (const process of processes) {
-	process.on('relaunching', () => {
-		process.video = undefined;
-		// 删除视频
-		document.querySelector(`#video-${process.uid}`)?.replaceChildren();
-	});
-	process.on('relaunched', () => {
-		debounceRefreshVideo();
-	});
-}
+/** 离开时暂停视频播放 ，好像离开时原生事件也会自动暂停。 */
+onDeactivated(() => {
+	for (const process of launchedProcesses.value) {
+		process.video?.pause();
+	}
+});
 
 /**
  * 关闭视频显示
@@ -294,6 +302,8 @@ async function refreshVideo() {
 
 	// 抓取屏幕
 	const sources: DesktopCapturerSource[] = await remote.desktopCapturer.call('getSources', { types: ['window'] });
+
+	console.log('sources', sources);
 
 	for (const process of processes) {
 		const res = await getBrowserVideo(process.uid, sources);

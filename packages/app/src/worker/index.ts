@@ -71,71 +71,87 @@ export class ScriptWorker {
 		options.args = formatExtensionArguments(this.extensionPaths);
 
 		/** 启动脚本 */
-		await launchScripts({
-			onLaunch: (browser) => {
-				this.browser = browser;
+		try {
+			await launchScripts({
+				onLaunch: (browser) => {
+					this.browser = browser;
 
-				/** 代理 ocs 脚本请求 */
-				browser.route(/http(?:s):\/\/ocs-app(.+)/, (route) => {
-					const request = route.request();
-					const url = request
-						.url()
-						.replace(/http(?:s):\/\/ocs-app\/(.+)/, `http://localhost:${this.store?.server.port || 3000}/$1`);
+					/** 代理 ocs 脚本请求 */
+					browser.route(/http(?:s):\/\/ocs-app(.+)/, (route) => {
+						const request = route.request();
+						const url = request
+							.url()
+							.replace(/http(?:s):\/\/ocs-app\/(.+)/, `http://localhost:${this.store?.server.port || 3000}/$1`);
 
-					let res;
+						let res;
 
-					if (request.method().toLowerCase() === 'get') {
-						res = axios.get(url, {
-							headers: { 'browser-uid': this.uid },
-							timeout: 60 * 1000
-						});
-					} else {
-						res = axios.post(url, request.postDataJSON(), {
-							headers: { 'browser-uid': this.uid },
-							timeout: 60 * 1000
-						});
-					}
-
-					res
-						.then((result) => {
-							route.fulfill({
-								status: 200,
-								json: result.data
+						if (request.method().toLowerCase() === 'get') {
+							res = axios.get(url, {
+								headers: { 'browser-uid': this.uid },
+								timeout: 60 * 1000
 							});
-						})
-						.catch((err) => {
-							route.fulfill({
-								status: 500,
-								json: { error: err }
+						} else {
+							res = axios.post(url, request.postDataJSON(), {
+								headers: { 'browser-uid': this.uid },
+								timeout: 60 * 1000
 							});
-						});
-				});
+						}
 
-				/** URL事件解析器 */
-				this.browser?.on('page', (page) => {
-					const match = page.url().match(/ocs-action_(.+)/);
-					if (match?.[1]) {
-						const action = match[1];
+						res
+							.then((result) => {
+								route.fulfill({
+									status: 200,
+									json: result.data
+								});
+							})
+							.catch((err) => {
+								route.fulfill({
+									status: 500,
+									json: { error: err }
+								});
+							});
+					});
 
-						const actions: any = {
-							'bring-to-top': () => {
-								// 通过命令行打开此页面后会置顶浏览器，并自动关闭当前事件页面
-								page.close();
-							}
-						};
+					/** URL事件解析器 */
+					this.browser?.on('page', (page) => {
+						const match = page.url().match(/ocs-action_(.+)/);
+						if (match?.[1]) {
+							const action = match[1];
 
-						actions[action]();
-					}
-				});
+							const actions: any = {
+								'bring-to-top': () => {
+									// 通过命令行打开此页面后会置顶浏览器，并自动关闭当前事件页面
+									page.close();
+								}
+							};
 
-				// 浏览器启动完成
-				send('launched');
-			},
-			extensionPaths: this.extensionPaths,
-			playwrightScripts: this.playwrightScripts,
-			uid: this.uid,
-			...options
-		});
+							actions[action]();
+						}
+					});
+
+					// 浏览器启动完成
+					send('launched');
+				},
+				extensionPaths: this.extensionPaths,
+				playwrightScripts: this.playwrightScripts,
+				bookmarksPageUrl: this.store
+					? `http://localhost:${this.store?.server.port || 15319}/index.html#/bookmarks`
+					: undefined,
+				serverPort: this.store?.server.port || 15319,
+				...options
+			});
+		} catch (err) {
+			// 浏览器异常关闭
+			if (err instanceof Error) {
+				if (err.message.includes('browser has been closed')) {
+					console.error('异常关闭，请尝试重启任务。', err.message);
+				} else {
+					console.error('错误 : ', err.message);
+				}
+			} else {
+				console.error('未知错误 : ', err);
+			}
+		}
 
 		// 浏览器初始化完成
 		send('init');
@@ -145,6 +161,7 @@ export class ScriptWorker {
 		await this.browser?.close();
 		this.browser = undefined;
 		send('browser-closed');
+		process.exit();
 	}
 
 	/** 跳转到特殊图像共享浏览器窗口 */
@@ -173,6 +190,10 @@ export class ScriptWorker {
 			}
 		}
 		send('webrtc-page-closed');
+	}
+
+	kill() {
+		process.exit();
 	}
 
 	debug(...msg: any[]) {
@@ -213,14 +234,22 @@ export async function launchScripts({
 	scripts,
 	extensionPaths,
 	playwrightScripts,
-	uid,
+	bookmarksPageUrl,
+	serverPort,
 	onLaunch
 }: Required<Pick<LaunchOptions, 'executablePath' | 'headless' | 'args'>> & {
+	/** 用户数据目录 */
 	userDataDir: string;
+	/** 自定义用户脚本URL */
 	scripts: string[];
+	/** 浏览器拓展路径 */
 	extensionPaths: any[];
+	/** 自动化脚本 */
 	playwrightScripts: PS[];
-	uid: string;
+	/** 初始导航页地址 */
+	bookmarksPageUrl?: string;
+	/** OCS服务器端口 */
+	serverPort: number;
 	onLaunch?: (browser: BrowserContext) => void;
 }) {
 	return new Promise<void>((resolve, reject) => {
@@ -236,77 +265,116 @@ export async function launchScripts({
 			.then(async (browser) => {
 				browser.once('close', () => {
 					send('browser-closed');
+					// 浏览器关闭跟随退出
+					process.exit();
 				});
 
-				const [blankPage] = browser.pages();
-				await blankPage.goto('http://localhost:15319/index.html#/bookmarks');
+				try {
+					const html = async (tips: string | string[], opts?: { loading?: boolean; warn?: boolean }) => {
+						const { loading = true, warn = false } = opts || {};
+						await blankPage.evaluate(
+							(state) => {
+								// @ts-ignore OCS官方导航页自带的方法
+								const setState = window.setBookmarkLoadingState;
+								if (setState) {
+									setState(state);
+								} else {
+									window.document.body.textContent = state.tips.join('\n');
+								}
+							},
+							{ tips: Array.isArray(tips) ? tips : [tips], loading, warn }
+						);
+					};
 
-				const html = async (tips: string | string[], opts?: { loading?: boolean; warn?: boolean }) => {
-					const { loading = true, warn = false } = opts || {};
-					await blankPage.evaluate(
-						(state) =>
-							// @ts-ignore
-							window.setBookmarkLoadingState(state),
-						{ tips: Array.isArray(tips) ? tips : [tips], loading, warn }
-					);
-				};
+					const [blankPage] = browser.pages();
+					await blankPage.goto(bookmarksPageUrl || 'about:blank');
 
-				onLaunch?.(browser);
-
-				const setup = async () => {
-					const warn: string[] = [];
-					// 安装用户脚本
-					if (scripts.length) {
-						await html('【提示】正在安装用户脚本。。。');
-						const [page] = browser.pages();
-						// 载入本地脚本
-						try {
-							await initScripts(scripts, browser, page);
-						} catch (e) {
-							// @ts-ignore
-							console.error(e);
-							// await html('脚本载入失败，请手动更新，或者忽略。' + e.message);
+					const setup = async () => {
+						const warn: string[] = [];
+						// 安装用户脚本
+						if (scripts.length) {
+							await html('【提示】正在安装用户脚本。。。');
+							const [page] = browser.pages();
+							// 载入本地脚本
+							try {
+								await initScripts(scripts, browser, page);
+							} catch (e) {
+								// @ts-ignore
+								console.error(e);
+								// await html('脚本载入失败，请手动更新，或者忽略。' + e.message);
+							}
+						} else {
+							warn.push('检测到您的软件中并未安装任何用户脚本，或者全部脚本处于不加载状态，可能会导致预期脚本不运行。');
 						}
-					} else {
-						warn.push('检测到您的软件中并未安装任何用户脚本，或者全部脚本处于不加载状态，可能会导致预期脚本不运行。');
-					}
 
-					if (playwrightScripts.length) {
-						// 执行自动化脚本
-						for (const ps of playwrightScripts) {
-							await html(`【提示】正在执行自动化脚本 - ${ps.name} ...`);
-							const configs = transformScriptConfigToRaw(ps.configs);
+						if (playwrightScripts.length) {
+							// 执行自动化脚本
+							for (const ps of playwrightScripts) {
+								await html(`【提示】正在执行自动化脚本 - ${ps.name} ...`);
+								const configs = transformScriptConfigToRaw(ps.configs);
 
-							for (const script of PlaywrightScripts) {
-								if (script.name === ps.name) {
-									script.on('script-data', console.log);
-									script.on('script-error', console.error);
-									try {
-										await script.run(await browser.newPage(), configs);
-									} catch (err) {
-										console.error(err);
+								for (const script of PlaywrightScripts) {
+									if (script.name === ps.name) {
+										script.on('script-data', console.log);
+										script.on('script-error', console.error);
+										try {
+											await script.run(await browser.newPage(), configs, {
+												ocrApiUrl: `http://localhost:${serverPort}/ocr`,
+												ocrApiImageKey: 'image',
+												detBackgroundKey: 'det_background',
+												detTargetKey: 'det_target'
+											});
+										} catch (err) {
+											console.error(err);
+										}
+										break;
 									}
 								}
 							}
 						}
+
+						await html(['初始化完成。'].concat(warn), { loading: false, warn: !!warn.length });
+					};
+
+					const extensionLoadListener = async (page: Page) => {
+						try {
+							clearTimeout(extensionLoadListenerInterval);
+							await page.close();
+							await setup();
+						} catch (err) {
+							reject(err);
+						}
+
+						// 触发onLaunch事件
+						onLaunch?.(browser);
+						// 启动完成
+						resolve();
+					};
+
+					// 等待拓展加载完成
+					browser.once('page', extensionLoadListener);
+
+					// 一分钟后，如果拓展还没加载完成，提示用户重新启动浏览器
+					const extensionLoadListenerInterval = setTimeout(() => {
+						browser.off('page', extensionLoadListener);
+						html('【警告】浏览器拓展加载超时，请尝试重启浏览器。', { loading: false, warn: true }).catch(reject);
+					}, 60 * 1000);
+
+					if (extensionPaths.length === 0) {
+						await html('【警告】浏览器脚本管理拓展为空！将无法运行脚本，如想运行脚本，请在软件左侧浏览器拓展中安装。', {
+							loading: false,
+							warn: true
+						});
+
+						// 触发onLaunch事件
+						onLaunch?.(browser);
+						// 启动完成
+						resolve();
+					} else {
+						await html('【提示】正在等待浏览器拓展加载。。。');
 					}
-
-					await html(['初始化完成。'].concat(warn), { loading: false, warn: !!warn.length });
-				};
-
-				// 等待拓展加载完成
-				browser.once('page', async (extensionPage) => {
-					await extensionPage.close();
-					await setup();
-				});
-
-				if (extensionPaths.length === 0) {
-					await html('【警告】浏览器脚本管理拓展为空！将无法运行脚本，如想运行脚本，请在软件左侧浏览器拓展中安装。', {
-						loading: false,
-						warn: true
-					});
-				} else {
-					await html('【提示】正在等待浏览器拓展加载。。。');
+				} catch (err) {
+					reject(err);
 				}
 			})
 			.catch((err) => {
@@ -370,6 +438,10 @@ function sleep(t: number) {
 	return new Promise((resolve, reject) => setTimeout(resolve, t));
 }
 
+/**
+ * 将脚本配置转换为可用的对象配置
+ * @param configs
+ */
 function transformScriptConfigToRaw(configs: PS['configs']) {
 	const raw = Object.create({});
 	for (const key in configs) {

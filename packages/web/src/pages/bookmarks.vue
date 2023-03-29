@@ -142,7 +142,7 @@ onMounted(async () => {
 			bookmarks.value[i].values[j] = site;
 
 			try {
-				const { data } = await axios.post(`http://localhost:${15319}/proxy`, {
+				const { data } = await axios.post(`https://ocs-app/proxy`, {
 					method: 'get',
 					url: site.url
 				});

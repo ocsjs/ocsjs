@@ -12,7 +12,7 @@
 			class="entity-property"
 			flex="300px"
 		>
-			文件名
+			浏览器名
 		</a-col>
 		<template v-if="isShow('extra')">
 			<a-col

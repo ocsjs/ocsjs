@@ -106,6 +106,7 @@ const version = ref('');
 // 当前路由
 const currentRoute = useRouter().currentRoute;
 
+// 监听软件关闭
 onUnmounted(() => closeAllBrowser(false));
 ipcRenderer.on('close', () => closeAllBrowser(true));
 

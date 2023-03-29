@@ -23,7 +23,7 @@ export class Process extends EventEmitter {
 	shell?: ChildProcess;
 	worker?: RemoteScriptWorker;
 	/** 状态 */
-	status: 'closed' | 'launching' | 'launched' = 'closed';
+	status: 'closed' | 'closing' | 'launching' | 'launched' = 'closed';
 	/** 浏览器实体信息 */
 	browser: Browser;
 	/** 浏览器启动参数 */
@@ -36,6 +36,14 @@ export class Process extends EventEmitter {
 
 	static from(uid: string) {
 		return processes.find((p) => p.uid === uid);
+	}
+
+	// 从进程列表中移除
+	static remove(uid: string) {
+		const index = processes.findIndex((p) => p.uid === uid);
+		if (index !== -1) {
+			processes.splice(index, 1);
+		}
 	}
 
 	constructor(browser: Browser, launchOptions: LaunchOptions) {
@@ -79,13 +87,18 @@ export class Process extends EventEmitter {
 			launched: async () => {
 				this.status = 'launched';
 			},
+			/**
+			 * 浏览器关闭
+			 * 可以由 browser.close() 关闭
+			 * 或者进程主动触发
+			 */
 			'browser-closed': () => {
-				this.status = 'closed';
+				console.log('browser-closed', this.uid);
+				// 从进程列表中移除
+				Process.remove(this.uid);
 			}
 		};
-		this.shell.on('close', () => {
-			this.status = 'closed';
-		});
+
 		this.shell.on('message', ({ event, args }: { event: string; args: any[] }) => {
 			// 将 shell 的事件共享到当前的对象
 			this.emit(event, ...args);
@@ -135,8 +148,11 @@ export class Process extends EventEmitter {
 
 	/** 关闭进程 */
 	async close() {
-		return new Promise<void>((resolve, reject) => {
+		// 标记为 closing ，使监控页面，以及操作栏的图标可以判断状态
+		this.status = 'closing';
+		return new Promise<void>((resolve) => {
 			this.once('browser-closed', resolve);
+			// 关闭进程
 			this.worker?.('close');
 		});
 	}

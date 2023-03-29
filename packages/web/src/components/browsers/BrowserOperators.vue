@@ -58,7 +58,9 @@
 				/>
 			</a-tooltip>
 		</template>
-		<template v-else-if="process.status === 'launching'">
+
+		<!-- 加载中 -->
+		<template v-else-if="process.status === 'launching' || process.status === 'closing'">
 			<icon-loading />
 		</template>
 
