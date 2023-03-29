@@ -1,24 +1,35 @@
 import { Message, Modal } from '@arco-design/web-vue';
-import { downloadZip } from '.';
-import { store } from '../store';
 import { remote } from './remote';
-import { ExtensionResource } from '@ocsjs/common';
+import { resourceLoader } from './resources.loader';
+import { notify } from './notify';
+import { ResourceFile } from './apis';
 
-type Extension = ExtensionResource & {
+type Extension = ResourceFile & {
 	installed?: boolean;
 };
 
 // 下载拓展
-export async function installExtension(extensions: Extension[], extension: Extension) {
+export async function installExtensions(extensions: Extension[], extension: Extension) {
 	if (extensions.filter((e) => e.installed).length > 0) {
-		Message.warning('脚本管理器已经存在，请卸载另外一个再尝试安装。');
-	} else {
-		await downloadZip({
-			name: extension.name,
-			filename: extension.name,
-			folder: store.paths.extensionsFolder,
-			url: extension.url
+		Message.warning({
+			content: `脚本管理器 ${extension.name} 已经存在，无需重复安装！`,
+			duration: 10 * 1000
 		});
+	} else {
+		await resourceLoader.download('extensions', extension);
+
+		notify('文件解压', `${extension.name} 解压中...`, 'download-file-' + extension.name, {
+			type: 'info',
+			duration: 0
+		});
+
+		await resourceLoader.unzip('extensions', extension);
+
+		notify('文件下载', `${extension.name} 下载完成！`, 'download-file-' + extension.name, {
+			type: 'success',
+			duration: 3000
+		});
+
 		extension.installed = true;
 
 		Modal.confirm({

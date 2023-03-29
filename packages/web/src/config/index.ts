@@ -7,11 +7,10 @@ import setting from '@/pages/setting/index.vue';
 import browsers from '@/pages/browsers/index.vue';
 import dashboard from '@/pages/dashboard/index.vue';
 import userScripts from '@/pages/user-scripts/index.vue';
-import extensions from '@/pages/extensions/index.vue';
+import resources from '@/pages/resources/index.vue';
 import { GreasyForkUserScript, ScriptCatUserScript, CommonUserScript } from '../types/user.script';
 import { remote } from '../utils/remote';
-import { ExtensionSearchEngine, ScriptSearchEngine } from '../types/search';
-import { getRemoteInfos } from '../utils';
+import { ScriptSearchEngine } from '../types/search';
 
 export const config = reactive({
 	/**
@@ -60,18 +59,13 @@ export const config = reactive({
 					}
 				},
 				{
-					name: 'extensions',
-					path: 'extensions',
-					component: shallowRef(extensions),
+					name: 'resources',
+					path: 'resources',
+					component: shallowRef(resources),
 					meta: {
-						icon: 'extension',
-						filledIcon: 'extension',
-						title: '浏览器拓展',
-						tutorial: {
-							step: 3,
-							placement: 'rightTop',
-							tooltip: '4. 浏览器拓展会对用户脚本进行管理以及解析和运行。'
-						}
+						icon: 'widgets',
+						filledIcon: 'widgets',
+						title: '应用中心'
 					}
 				},
 				{
@@ -104,17 +98,6 @@ export const config = reactive({
 		dark: false
 	},
 
-	/** 浏览器拓展搜索引擎 */
-	extensionSearchEngines: [
-		{
-			name: 'OCS官方拓展',
-			homepage: 'https://cdn.ocsjs.com',
-			async search() {
-				const data = await getRemoteInfos();
-				return data.extensions;
-			}
-		}
-	] as ExtensionSearchEngine[],
 	/** 用户脚本搜索引擎 */
 	scriptSearchEngines: [
 		{

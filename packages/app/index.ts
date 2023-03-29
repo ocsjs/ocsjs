@@ -8,7 +8,6 @@ import { task } from './src/utils';
 import { handleError } from './src/tasks/error.handler';
 import { updater } from './src/tasks/updater';
 import { startupServer } from './src/tasks/startup.server';
-import { ocrUnzip } from './src/tasks/ocr.unzip';
 
 app.setName('ocs');
 
@@ -42,7 +41,6 @@ function bootstrap() {
 				task('启动接口服务', () => startupServer());
 			}),
 			task('初始化自动启动', () => autoLaunch()),
-			task('OCR模块解压', () => ocrUnzip()),
 			task('启动渲染进程', async () => {
 				await app.whenReady();
 				const window = createWindow();

@@ -7,10 +7,9 @@ import fs from 'fs';
 import path from 'path';
 import os from 'os';
 import crypto from 'crypto';
-import ElectronStore from 'electron-store';
 import { OCSApi, getValidBrowsers } from '@ocsjs/common';
 import si from 'systeminformation';
-
+import { store } from '../store';
 
 /**
  * 注册主进程远程通信事件
@@ -70,7 +69,7 @@ function registerRemoteEvent(name: string, target: any) {
 				}
 			});
 	} catch (err) {
-		logger.error(err)
+		logger.error(err);
 	}
 }
 
@@ -98,7 +97,7 @@ const methods = {
  */
 export function remoteRegister(_win: BrowserWindow) {
 	win = _win;
-	registerRemoteEvent('electron-store', new ElectronStore());
+	registerRemoteEvent('electron-store', store);
 	registerRemoteEvent('fs', fs);
 	registerRemoteEvent('os', os);
 	registerRemoteEvent('path', path);

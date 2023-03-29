@@ -70,17 +70,10 @@
 				<Path
 					label="浏览器缓存路径"
 					name="userDataDirsFolder"
-					:setting="true"
-				/>
-				<Path
-					label="浏览器拓展路径"
-					name="extensionsFolder"
-					:setting="true"
 				/>
 				<Path
 					label="文件下载路径"
 					name="downloadFolder"
-					:setting="true"
 				/>
 				<Path
 					label="软件存储"

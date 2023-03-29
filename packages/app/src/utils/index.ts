@@ -2,7 +2,7 @@ import { app } from 'electron';
 import path from 'path';
 import AdmZip from 'adm-zip';
 import axios from 'axios';
-import { createWriteStream } from 'fs';
+import { createWriteStream, existsSync, mkdirSync } from 'fs';
 import { finished } from 'stream/promises';
 import { Logger } from '../logger';
 
@@ -33,6 +33,11 @@ export async function downloadFile(fileURL: string, outputURL: string, rateHandl
 		const rate = ((chunkLength / totalLength) * 100).toFixed(2);
 		rateHandler(parseFloat(rate), totalLength, chunkLength);
 	});
+
+	// 创建文件夹
+	if (existsSync(path.dirname(outputURL)) === false) {
+		mkdirSync(path.dirname(outputURL), { recursive: true });
+	}
 
 	const writer = createWriteStream(outputURL);
 	data.pipe(writer);

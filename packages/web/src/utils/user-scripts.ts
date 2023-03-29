@@ -55,6 +55,10 @@ async function addLocalScript(uri: string, text: string) {
 }
 
 export async function addScriptFromUrl(url: string) {
+	if (store.render.scripts.find((s) => s.url === url)) {
+		return Message.warning('当前脚本已安装。');
+	}
+
 	if (url.startsWith('http')) {
 		const text = await remote.methods.call('get', url);
 		const metadata = getMetadataFromScript(text);

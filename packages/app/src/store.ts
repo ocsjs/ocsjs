@@ -14,12 +14,12 @@ export const appStore = {
 		'exe-path': app.getPath('exe'),
 		'logs-path': app.getPath('logs'),
 		'config-path': path.resolve(app.getPath('userData'), './config.json'),
-		/** 加载拓展路径 */
-		extensionsFolder: path.resolve(app.getPath('userData'), './extensions'),
 		/** 浏览器用户数据文件夹 */
 		userDataDirsFolder: path.resolve(app.getPath('userData'), './userDataDirs'),
 		/** 浏览器下载文件夹 */
-		downloadFolder: path.resolve(app.getPath('userData'), './downloads')
+		downloadFolder: path.resolve(app.getPath('userData'), './downloads'),
+		/** 加载拓展路径 */
+		extensionsFolder: path.resolve(app.getPath('userData'), './downloads/extensions')
 	},
 	/** 窗口设置 */
 	window: {
@@ -35,4 +35,9 @@ export const appStore = {
 	render: {} as { [x: string]: any }
 };
 
+/**
+ * - electron 本地存储对象
+ * - 可以使用 store.store 访问
+ * - 设置数据请使用 store.set('key', value)
+ */
 export const store = new Store<typeof appStore>();

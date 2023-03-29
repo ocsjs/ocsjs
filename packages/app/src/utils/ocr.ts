@@ -2,8 +2,10 @@ import { writeFile, mkdirSync, existsSync, rmSync, writeFileSync } from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
 import child_process from 'child_process';
-import { ocr_path } from '../tasks/ocr.unzip';
 import { Logger } from '../logger';
+import { store } from '../store';
+
+const ocr_folder = path.join(store.store.paths.downloadFolder, './apps/ocr');
 
 const logger = Logger('ocr');
 
@@ -14,14 +16,14 @@ const logger = Logger('ocr');
 export function ocr(base64: string) {
 	return new Promise<string>((resolve, reject) => {
 		const uuid = randomUUID();
-		const img_cache = path.join(ocr_path, './img_cache');
+		const img_cache = path.join(ocr_folder, './img_cache');
 		if (!existsSync(img_cache)) {
 			mkdirSync(img_cache, { recursive: true });
 		}
 		const img = path.join(img_cache, uuid + '.png');
 		writeFile(img, base64, 'base64', () => {
 			// 要使用 "" 去包裹路径，防止出现空格
-			const cmd = [`"${path.join(ocr_path, './ocr.exe')}"`, '--ocr', `"${img}"`].join(' ');
+			const cmd = [`"${path.join(ocr_folder, './ocr.exe')}"`, '--ocr', `"${img}"`].join(' ');
 			logger.log('cmd', cmd);
 
 			child_process.exec(cmd, (err, stdout, stderr) => {
@@ -53,7 +55,7 @@ export function det(det_target_base64: string, det_bg_base64: string) {
 		target_y: number;
 		target: [number, number, number, number];
 	}>((resolve, reject) => {
-		const img_cache = path.join(ocr_path, './img_cache');
+		const img_cache = path.join(ocr_folder, './img_cache');
 		if (!existsSync(img_cache)) {
 			mkdirSync(img_cache, { recursive: true });
 		}
@@ -62,7 +64,7 @@ export function det(det_target_base64: string, det_bg_base64: string) {
 		writeFileSync(img1, det_target_base64, 'base64');
 		writeFileSync(img2, det_bg_base64, 'base64');
 
-		const cmd = [`"${path.join(ocr_path, './ocr.exe')}"`, '--det-target', `"${img1}"`, '--det-bg', `"${img2}"`].join(
+		const cmd = [`"${path.join(ocr_folder, './ocr.exe')}"`, '--det-target', `"${img1}"`, '--det-bg', `"${img2}"`].join(
 			' '
 		);
 
@@ -85,5 +87,5 @@ export function det(det_target_base64: string, det_bg_base64: string) {
 
 /** 判断是否能够进行验证码识别 */
 export function canOCR() {
-	return existsSync(path.join(ocr_path, './ocr.exe'));
+	return existsSync(path.join(ocr_folder, './ocr.exe'));
 }

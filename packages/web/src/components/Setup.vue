@@ -1,5 +1,25 @@
 <template>
-	<a-row :gutter="[24, 24]">
+	<template v-if="state.finish">
+		<a-result
+			status="success"
+			title="初始化完成"
+		>
+			<template #subtitle> 软件初始化已完成，您可以点击右上方的新建浏览器，进行浏览器多开（分身）体验。 </template>
+			<template #extra>
+				<a-button
+					type="primary"
+					@click="confirm"
+				>
+					确定
+				</a-button>
+			</template>
+		</a-result>
+	</template>
+
+	<a-row
+		v-else
+		:gutter="[24, 24]"
+	>
 		<a-col
 			class="text-secondary"
 			style="font-size: 12px"
@@ -63,7 +83,7 @@
 						<span> 脚本管理器 </span>
 					</a-col>
 					<a-col flex="auto">
-						<a-select v-model="state.extension">
+						<a-select v-model="state.selectedExtension">
 							<a-option
 								v-for="extension of state.resource.extensions"
 								:key="extension.name"
@@ -82,7 +102,13 @@
 						<span> 网课脚本 </span>
 					</a-col>
 					<a-col flex="auto">
-						<a-select default-value="OCS 网课助手"> </a-select>
+						<a-select v-model="state.selectedUserScript">
+							<a-option
+								v-for="userScript of state.resource.userScripts"
+								:key="userScript.name"
+								:label="userScript.name"
+							></a-option>
+						</a-select>
 					</a-col>
 				</a-row>
 			</a-col>
@@ -117,25 +143,36 @@ import { remote } from '../utils/remote';
 import { onMounted, reactive } from 'vue';
 import Icon from './Icon.vue';
 import { Message } from '@arco-design/web-vue';
-import { installExtension } from '../utils/extension';
+import { installExtensions } from '../utils/extension';
 import { addScriptFromUrl } from '../utils/user-scripts';
-import { ExtensionResource } from '@ocsjs/common';
 import { ValidBrowser } from '@ocsjs/common/lib/src/interface';
+import { ResourceLoader } from '../utils/resources.loader';
+import { ResourceFile } from '../utils/apis';
 
-type Extensions = ExtensionResource & { installed?: boolean };
+type Extension = ResourceFile & { installed?: boolean };
 
 const state = reactive({
 	resource: {
 		browsers: [] as ValidBrowser[],
-		extensions: [] as Extensions[],
-		ocsjs: ''
+		extensions: [] as Extension[],
+		userScripts: [] as ResourceFile[]
 	},
 	browser: '',
 	downloadPath: '',
-	extension: '',
+	// 选中的拓展
+	selectedExtension: '',
+	// 选中的脚本
+	selectedUserScript: '',
 	loading: false,
 	error: false,
-	downloading: ''
+	downloading: '',
+	// 初始化完成
+	finish: false
+});
+
+/** 资源加载器 */
+const resourceLoader = new ResourceLoader({
+	resourceRootPath: store.paths.downloadFolder
 });
 
 onMounted(async () => {
@@ -143,20 +180,24 @@ onMounted(async () => {
 	try {
 		const infos = await getRemoteInfos();
 
+		state.downloadPath = await remote.path.call('join', store.paths.downloadFolder);
+
+		// 检测有效的浏览器路径
 		state.resource.browsers = await remote.methods.call('getValidBrowsers');
 		if (state.resource.browsers.length) {
 			state.browser = state.resource.browsers[0].name;
 		}
 
-		state.resource.extensions = infos.extensions;
-		state.resource.ocsjs = infos.resource.userjs;
-
-		state.downloadPath = await remote.path.call('join', store.paths.downloadFolder);
+		// 获取最新的拓展和用户脚本信息
+		state.resource.extensions = infos.resourceGroups.find((group) => group.name === 'extensions')?.files || [];
+		state.resource.userScripts = infos.resourceGroups.find((group) => group.name === 'userjs')?.files || [];
 
 		for (const extension of state.resource.extensions) {
-			extension.installed = await remote.fs.call('existsSync', `${store.paths.extensionsFolder}/${extension.name}`);
+			extension.installed = await resourceLoader.isZipFileExists('extensions', extension);
 		}
-		state.extension = state.resource.extensions[0].name;
+		// 初始选中的信息
+		state.selectedExtension = state.resource.extensions[0].name;
+		state.selectedUserScript = state.resource.userScripts[0].name;
 	} catch (err) {
 		state.error = true;
 		console.error(err);
@@ -166,15 +207,14 @@ onMounted(async () => {
 	}
 });
 
-async function downloadExtension(extension: ExtensionResource) {
+async function downloadExtension(extension: Extension) {
 	state.downloading = `正在下载脚本管理器 : ${extension.name} ...`;
-	await installExtension(state.resource.extensions, extension);
+	await installExtensions(state.resource.extensions, extension);
 }
 
-async function downloadScript() {
-	const name = 'OCS 网课助手';
-	state.downloading = `正在下载脚本 : ${name} ...`;
-	await addScriptFromUrl(state.resource.ocsjs);
+async function downloadScript(userScript: ResourceFile) {
+	state.downloading = `正在下载脚本 : ${userScript.name} ...`;
+	await addScriptFromUrl(userScript.url);
 }
 
 function notNow() {
@@ -183,13 +223,15 @@ function notNow() {
 
 async function setup() {
 	const browser = state.resource.browsers.find((e) => e.name === state.browser);
-	const extension = state.resource.extensions.find((e) => e.name === state.extension);
+	const extension = state.resource.extensions.find((e) => e.name === state.selectedExtension);
+	const userScript = state.resource.userScripts.find((e) => e.name === state.selectedUserScript);
 
-	if (browser && extension) {
+	if (browser && extension && userScript) {
 		try {
 			store.render.setting.launchOptions.executablePath = browser.path;
-			await downloadScript();
+			await downloadScript(userScript);
 			await downloadExtension(extension);
+			state.finish = true;
 		} catch (err) {
 			Message.error('安装失败，请稍后重试，或者手动设置 : ' + err);
 		}
@@ -197,8 +239,15 @@ async function setup() {
 		Message.error('参数错误');
 	}
 
-	state.downloading = '';
 	store.render.state.setup = false;
+
+	setTimeout(() => {
+		confirm();
+	}, 10 * 1000);
+}
+
+function confirm() {
+	state.downloading = '';
 }
 </script>
 

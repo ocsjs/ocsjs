@@ -78,7 +78,6 @@ export const store: AppStore & { render: WebStore } = reactive(
 			render: {
 				scripts: [],
 				notifies: [],
-
 				browser: {
 					currentFolderUid: '',
 					currentBrowserUid: '',
@@ -133,7 +132,9 @@ export const store: AppStore & { render: WebStore } = reactive(
 	)
 );
 
-console.log(store);
+console.log('store', store);
+// @ts-ignore
+window.store = store;
 
 /** 根目录 */
 export const files = reactive<File[]>([]);

@@ -5,8 +5,8 @@ import { Message, Modal } from '@arco-design/web-vue';
 import { remote } from './remote';
 import { notify } from './notify';
 import { electron } from './node';
-import { OCSApi } from '@ocsjs/common/src/api';
 import MarkdownText from '../components/MarkdownText.vue';
+import { OCSApi } from './apis';
 
 const { ipcRenderer } = electron;
 
@@ -168,48 +168,6 @@ export async function download({
 	ipcRenderer.removeListener('download', listener);
 
 	return dest;
-}
-
-/**
- * 下载压缩包文件，并返回解压过后的文件夹绝对路径
- */
-export async function downloadZip({
-	name,
-	filename,
-	folder,
-	url
-}: {
-	/** 显示文件名 */
-	name: string;
-	/** 真实文件名，不要带后缀 */
-	filename: string;
-	/** 父文件夹路径 */
-	folder: string;
-	url: string;
-}) {
-	Message.info('正在下载 ' + name);
-
-	const zip = await remote.path.call('join', folder, `${filename}.zip`);
-	const unzip = await remote.path.call('join', folder, filename);
-	//  下载
-	await download({ name: name, dest: zip, url });
-
-	notify('文件解压', `${name} 解压中...`, 'download-file-' + name, {
-		type: 'info',
-		duration: 0
-	});
-
-	// 解压拓展
-	await remote.methods.call('unzip', zip, unzip);
-	// 删除压缩包
-	await remote.fs.call('unlinkSync', zip);
-
-	notify('文件下载', `${name} 下载完成！`, 'download-file-' + name, {
-		type: 'success',
-		duration: 3000
-	});
-
-	return unzip;
 }
 
 function installListener(name: string, channel: string, rate: number, chunkLength: number, totalLength: number) {

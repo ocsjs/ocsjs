@@ -5,7 +5,7 @@ import type fs from 'fs';
 import type os from 'os';
 import type path from 'path';
 import type crypto from 'crypto';
-import type ElectronStore from 'electron-store';
+import type Store from 'electron-store';
 import { electron } from './node';
 import type { OCSApi } from '@ocsjs/common';
 const { ipcRenderer } = electron;
@@ -69,7 +69,7 @@ function getRespondChannelId(property: string) {
 
 export const remote = {
 	// nodejs
-	'electron-store': registerRemote<ElectronStore>('electron-store'),
+	'electron-store': registerRemote<Store>('electron-store'),
 	fs: registerRemote<typeof fs>('fs'),
 	path: registerRemote<typeof path>('path'),
 	os: registerRemote<typeof os>('os'),

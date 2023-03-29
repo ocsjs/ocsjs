@@ -12,7 +12,7 @@ const logger = Logger('store-init');
 /**
  * 初始化配置
  */
-export async function initStore() {
+export function initStore() {
 	const version = store.store.version;
 	logger.log('version', version);
 
@@ -35,8 +35,8 @@ export async function initStore() {
 		logger.log('store', store.store);
 	}
 
-	// 强制更新 exe-path
-	store.store.paths['exe-path'] = app.getPath('exe');
+	// 强制更新路径
+	store.set('paths', appStore.paths);
 
 	if (!existsSync(store.store.paths.userDataDirsFolder)) {
 		mkdirSync(store.store.paths.userDataDirsFolder, { recursive: true });
