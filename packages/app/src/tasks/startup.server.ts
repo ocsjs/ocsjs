@@ -116,12 +116,11 @@ export async function startupServer() {
 	// 静态资源
 	app.use(express.static(path.join(getProjectPath(), './public')));
 
-	// 使用0作为随机端口号
-	const server = app.listen(0, () => {
+	const server = app.listen(15319, () => {
 		const address = server.address();
 		if (address && typeof address === 'object') {
 			// 存储本次服务的端口
-			store.set('server.port', address.port);
+			store.set('server.port', 15319);
 			logger.info(`OCS服务启动成功 => ${address.port}`);
 		}
 	});

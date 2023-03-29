@@ -44,6 +44,8 @@ export interface BookmarkResource {
 	values: {
 		name: string;
 		url: string;
+		description?: string;
+		icon?: string;
 	}[];
 	group: string;
 }

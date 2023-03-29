@@ -51,38 +51,25 @@
 				>
 					<div class="bookmark-card-body">
 						<div
-							v-for="mark of item.values"
-							:key="mark?.name"
+							v-for="bookmark of item.values"
+							:key="bookmark?.name"
 							class="bookmark"
 						>
 							<a
-								v-if="!!mark"
-								:href="mark.url"
+								v-if="!!bookmark"
+								:href="bookmark.url"
 								target="_blank"
 							>
 								<a-tooltip background-color="#6c6c6ccf">
 									<template #content>
-										<div>{{ mark.title }}</div>
-										<template v-if="mark.description">
-											<a-divider class="m-1" />
-											<div>{{ mark.description }}</div>
-										</template>
+										<div>{{ bookmark.description || '暂无描述' }}</div>
 									</template>
 									<div class="icon col-12">
-										<template v-if="mark.icon">
-											<img :src="mark.icon" />
-										</template>
-										<object
-											v-else
-											:data="mark.favicon"
-											type="image/png"
-										>
-											<img src="https://fonts.gstatic.com/s/i/materialiconsoutlined/public/v13/24px.svg" />
-										</object>
+										<img :src="bookmark.icon" />
 									</div>
 								</a-tooltip>
 								<div class="col-12 mt-1 text-black text-decoration-underline">
-									{{ mark.name }}
+									{{ bookmark.name }}
 								</div>
 							</a>
 						</div>
@@ -96,20 +83,10 @@
 <script setup lang="ts">
 import { onMounted, ref, reactive } from 'vue';
 import { getRemoteInfos } from '../utils';
-import { BookmarkResource } from '@ocsjs/common/lib/src/api';
-import axios from 'axios';
 import { Card } from '@arco-design/web-vue';
+import { BookmarkResource } from '../utils/apis';
 
-type BookMark = BookmarkResource & {
-	values: {
-		name: string;
-		url: string;
-		favicon: string;
-		description: string;
-		title: string;
-		icon: string;
-	}[];
-};
+type BookMark = BookmarkResource;
 
 const bookmarks = ref<BookMark[]>([]);
 
@@ -130,41 +107,13 @@ onMounted(async () => {
 	// 用 fori 是为了保证每个网站的位置固定
 
 	for (let i = 0; i < infos.bookmark.length; i++) {
-		const mark = infos.bookmark[i] as BookMark;
+		const bookmark = infos.bookmark[i] as BookMark;
 
-		mark.values.forEach(async (_, j) => {
-			const site = reactive(mark.values[j]);
-			const url = new URL(site.url);
-
-			site.favicon = `${url.origin}/favicon.ico`;
+		bookmark.values.forEach(async (_, j) => {
+			const site = reactive(bookmark.values[j]);
 			bookmarks.value[i] = bookmarks.value[i] || { group: '', values: [] };
-			bookmarks.value[i].group = mark.group;
+			bookmarks.value[i].group = bookmark.group;
 			bookmarks.value[i].values[j] = site;
-
-			try {
-				const { data } = await axios.post(`https://ocs-app/proxy`, {
-					method: 'get',
-					url: site.url
-				});
-
-				const html = String(data);
-
-				site.title = html.match(/<title>(.+?)<\/title>/)?.[1] || '';
-				site.description = html.match(/<meta.+?name="description".+?content="(.+?)".+?>/)?.[1] || '';
-				const icon = html.match(/<link.+?rel="icon".+?href="(.+?)".+?>/)?.[1] || '';
-
-				site.icon = icon
-					? icon.startsWith('http')
-						? icon
-						: icon.startsWith('//')
-						? `${site.url.startsWith('https') ? 'https' : 'http'}:${icon}`
-						: icon.startsWith('/')
-						? `${url.origin}${icon}`
-						: `${url.origin}/${icon}`
-					: '';
-			} catch (err) {
-				console.error(err);
-			}
 		});
 	}
 });

@@ -4,7 +4,6 @@ import path, { basename } from 'path';
 import fs from 'fs';
 import { chromium, BrowserContext, Page, LaunchOptions } from 'playwright-core';
 import { AppStore } from '../../types';
-import axios from 'axios';
 import { scripts as PlaywrightScripts } from '../scripts/index';
 import { Config } from '../scripts/interface';
 const { bgRedBright, bgBlueBright, bgYellowBright, bgGray } = new Chalk({ level: 2 });
@@ -76,42 +75,6 @@ export class ScriptWorker {
 				onLaunch: (browser) => {
 					this.browser = browser;
 
-					/** 代理 ocs 脚本请求 */
-					browser.route(/http(?:s):\/\/ocs-app(.+)/, (route) => {
-						const request = route.request();
-						const url = request
-							.url()
-							.replace(/http(?:s):\/\/ocs-app\/(.+)/, `http://localhost:${this.store?.server.port || 3000}/$1`);
-
-						let res;
-
-						if (request.method().toLowerCase() === 'get') {
-							res = axios.get(url, {
-								headers: { 'browser-uid': this.uid },
-								timeout: 60 * 1000
-							});
-						} else {
-							res = axios.post(url, request.postDataJSON(), {
-								headers: { 'browser-uid': this.uid },
-								timeout: 60 * 1000
-							});
-						}
-
-						res
-							.then((result) => {
-								route.fulfill({
-									status: 200,
-									json: result.data
-								});
-							})
-							.catch((err) => {
-								route.fulfill({
-									status: 500,
-									json: { error: err }
-								});
-							});
-					});
-
 					/** URL事件解析器 */
 					this.browser?.on('page', (page) => {
 						const match = page.url().match(/ocs-action_(.+)/);
@@ -138,13 +101,21 @@ export class ScriptWorker {
 					? `http://localhost:${this.store?.server.port || 15319}/index.html#/bookmarks`
 					: undefined,
 				serverPort: this.store?.server.port || 15319,
+				browserUid: this.uid,
 				...options
 			});
 		} catch (err) {
 			// 浏览器异常关闭
 			if (err instanceof Error) {
-				if (err.message.includes('browser has been closed')) {
+				if (
+					err.message.includes('browser has been closed') ||
+					err.message.includes('Target closed') ||
+					err.message.includes('Browser closed')
+				) {
 					console.error('异常关闭，请尝试重启任务。', err.message);
+					send('browser-closed');
+					// 浏览器关闭跟随退出
+					process.exit();
 				} else {
 					console.error('错误 : ', err.message);
 				}
@@ -236,6 +207,7 @@ export async function launchScripts({
 	playwrightScripts,
 	bookmarksPageUrl,
 	serverPort,
+	browserUid,
 	onLaunch
 }: Required<Pick<LaunchOptions, 'executablePath' | 'headless' | 'args'>> & {
 	/** 用户数据目录 */
@@ -250,16 +222,28 @@ export async function launchScripts({
 	bookmarksPageUrl?: string;
 	/** OCS服务器端口 */
 	serverPort: number;
+	/** 浏览器UID */
+	browserUid: string;
 	onLaunch?: (browser: BrowserContext) => void;
 }) {
 	return new Promise<void>((resolve, reject) => {
 		chromium
-			.launchPersistentContext(userDataDir, {
+			.launchPersistentContext('', {
 				viewport: null,
 				executablePath,
-				ignoreDefaultArgs: ['--disable-popup-blocking'],
+				ignoreDefaultArgs: true,
 				ignoreHTTPSErrors: true,
-				args: ['--window-position=0,0', '--no-first-run', ...args],
+				args: [
+					'--window-position=0,0',
+					'--no-first-run',
+					`--user-data-dir=${userDataDir}`,
+					// '--enable-automation',
+					'--no-default-browser-check',
+					// 关闭导航检测
+					'--disable-prompt-on-repost',
+					'--remote-debugging-pipe',
+					...args
+				],
 				headless
 			})
 			.then(async (browser) => {
@@ -267,6 +251,11 @@ export async function launchScripts({
 					send('browser-closed');
 					// 浏览器关闭跟随退出
 					process.exit();
+				});
+
+				// 防检测
+				browser.addInitScript({
+					content: 'Object.defineProperty(navigator, "webdriver", { get: () => false });console.log(navigator)'
 				});
 
 				try {
@@ -321,7 +310,7 @@ export async function launchScripts({
 											await script.run(await browser.newPage(), configs, {
 												ocrApiUrl: `http://localhost:${serverPort}/ocr`,
 												ocrApiImageKey: 'image',
-												detBackgroundKey: 'det_background',
+												detBackgroundKey: 'det_bg',
 												detTargetKey: 'det_target'
 											});
 										} catch (err) {
@@ -336,30 +325,6 @@ export async function launchScripts({
 						await html(['初始化完成。'].concat(warn), { loading: false, warn: !!warn.length });
 					};
 
-					const extensionLoadListener = async (page: Page) => {
-						try {
-							clearTimeout(extensionLoadListenerInterval);
-							await page.close();
-							await setup();
-						} catch (err) {
-							reject(err);
-						}
-
-						// 触发onLaunch事件
-						onLaunch?.(browser);
-						// 启动完成
-						resolve();
-					};
-
-					// 等待拓展加载完成
-					browser.once('page', extensionLoadListener);
-
-					// 一分钟后，如果拓展还没加载完成，提示用户重新启动浏览器
-					const extensionLoadListenerInterval = setTimeout(() => {
-						browser.off('page', extensionLoadListener);
-						html('【警告】浏览器拓展加载超时，请尝试重启浏览器。', { loading: false, warn: true }).catch(reject);
-					}, 60 * 1000);
-
 					if (extensionPaths.length === 0) {
 						await html('【警告】浏览器脚本管理拓展为空！将无法运行脚本，如想运行脚本，请在软件左侧浏览器拓展中安装。', {
 							loading: false,
@@ -371,6 +336,30 @@ export async function launchScripts({
 						// 启动完成
 						resolve();
 					} else {
+						const extensionLoadListener = async (page: Page) => {
+							try {
+								clearTimeout(extensionLoadListenerInterval);
+								await page.close();
+								await setup();
+							} catch (err) {
+								reject(err);
+							}
+
+							// 触发onLaunch事件
+							onLaunch?.(browser);
+							// 启动完成
+							resolve();
+						};
+
+						// 等待拓展加载完成
+						browser.once('page', extensionLoadListener);
+
+						// 一分钟后，如果拓展还没加载完成，提示用户重新启动浏览器
+						const extensionLoadListenerInterval = setTimeout(() => {
+							browser.off('page', extensionLoadListener);
+							html('【警告】浏览器拓展加载超时，请尝试重启浏览器。', { loading: false, warn: true }).catch(reject);
+						}, 60 * 1000);
+
 						await html('【提示】正在等待浏览器拓展加载。。。');
 					}
 				} catch (err) {

@@ -112,9 +112,6 @@ function login(
 			if (area !== null) {
 				/** 破解验证码 */
 				if (opts?.ocrApiUrl && opts?.ocrApiImageKey && area) {
-					/** 每次都点击保证是最新图片 */
-					await Promise.all([page.waitForLoadState('networkidle'), await area.click()]);
-
 					await breakVerifyCode(page, area, {
 						ocrApiUrl: opts.ocrApiUrl,
 						ocrApiImageKey: opts.ocrApiImageKey
