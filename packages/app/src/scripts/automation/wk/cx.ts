@@ -1,6 +1,5 @@
 import type { Page } from 'playwright-core';
-import { slowType } from '../../utils';
-import axios from 'axios';
+import { breakVerifyCode, slowType } from '../../utils';
 import { PlaywrightScript } from '../../script';
 
 export const CXUnitLoginScript = new PlaywrightScript(
@@ -20,7 +19,14 @@ export const CXUnitLoginScript = new PlaywrightScript(
 	},
 	{
 		name: '超星-学校机构登录',
-		async run(page, configs) {
+		async run(
+			page,
+			configs,
+			options?: {
+				ocrApiUrl?: string;
+				ocrApiImageKey?: string;
+			}
+		) {
 			try {
 				if (await isNotLogin(page)) {
 					/** 其他登录 */
@@ -35,8 +41,8 @@ export const CXUnitLoginScript = new PlaywrightScript(
 					await page.type('#password', configs.password);
 
 					await login(page, {
-						ocrApiUrl: 'http://localhost:15319/ocr',
-						ocrApiImageKey: 'ocr'
+						ocrApiUrl: options?.ocrApiUrl,
+						ocrApiImageKey: options?.ocrApiImageKey
 					});
 				}
 			} catch (err) {
@@ -108,26 +114,11 @@ function login(
 				if (opts?.ocrApiUrl && opts?.ocrApiImageKey && area) {
 					/** 每次都点击保证是最新图片 */
 					await Promise.all([page.waitForLoadState('networkidle'), await area.click()]);
-					const box = await area.boundingBox();
-					if (box) {
-						/** 请求验证码破解接口 */
-						const body = Object.create([]);
-						const buffer = await page.screenshot({ clip: box });
-						Reflect.set(body, opts.ocrApiImageKey, buffer.toString('base64'));
-						const {
-							data: { ocr: code, canOCR, error }
-						} = await axios.post(opts.ocrApiUrl, body);
-						if (canOCR) {
-							/** 破解验证码 */
-							if (code) {
-								await page.fill('#vercode', code);
-							} else if (error) {
-								console.error('error', error);
-							}
-						} else {
-							return reject(new Error('未检测到图片验证码识别模块, 请手动输入验证码。'));
-						}
-					}
+
+					await breakVerifyCode(page, area, {
+						ocrApiUrl: opts.ocrApiUrl,
+						ocrApiImageKey: opts.ocrApiImageKey
+					});
 				}
 			}
 
@@ -151,24 +142,25 @@ function login(
 			if (vercodeMsg.concat(errors).some((str) => str.includes('验证码'))) {
 				if (tryCount === 0) {
 					clearTimeout(timeout);
-					reject(new Error(vercodeMsg.join('\n').trim() + '，请尝试手动输入。'));
+					throw new Error(vercodeMsg.join('\n').trim() + '，请尝试手动输入。');
 				} else {
 					await tryLogin();
 				}
 			} else if (errors.length) {
 				clearTimeout(timeout);
-				reject(new Error(errors.join('\n').trim()));
+				throw new Error(errors.join('\n').trim());
 			} else {
 				clearTimeout(timeout);
 			}
 		};
 
-		tryLogin();
+		tryLogin().catch(reject);
 	});
 }
 
 async function isNotLogin(page: Page) {
-	await page.goto('https://i.chaoxing.com');
+	// 不能使用 https ，这里如果使用 https 在登录后会导致某些同学的课程无法访问
+	await page.goto('http://i.chaoxing.com/');
 	await page.waitForTimeout(2000);
 
 	return page.url().includes('passport2.chaoxing.com');

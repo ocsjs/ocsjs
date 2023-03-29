@@ -20,7 +20,15 @@ export const ZHSUnitLoginScript = new PlaywrightScript(
 	},
 	{
 		name: '智慧树-学校登录',
-		async run(page, configs) {
+		async run(
+			page,
+			configs,
+			options?: {
+				ocrApiUrl?: string;
+				detTargetKey?: string;
+				detBackgroundKey?: string;
+			}
+		) {
 			try {
 				if (await isNotLogin(page)) {
 					await page.click('#qStudentID');
@@ -47,16 +55,22 @@ export const ZHSUnitLoginScript = new PlaywrightScript(
 					await page.waitForTimeout(3000);
 					await page.click('.wall-sub-btn');
 
-					let count = 5;
-					while ((await isNotVerified(page)) && count > 0) {
-						count--;
-						await verify(page, {
-							ocrApiUrl: 'http://localhost:15319/ocr',
-							detTargetKey: 'det_target',
-							detBackgroundKey: 'det_bg'
-						});
+					if (options?.ocrApiUrl && options?.detTargetKey && options?.detBackgroundKey) {
+						let count = 5;
+						while (await isNotVerified(page)) {
+							if (count > 0) {
+								count--;
+								await verify(page, {
+									ocrApiUrl: options.ocrApiUrl,
+									detTargetKey: options.detTargetKey,
+									detBackgroundKey: options.detBackgroundKey
+								});
 
-						await page.waitForTimeout(2000);
+								await page.waitForTimeout(2000);
+							} else {
+								throw new Error('滑块识别失败，请手动登录。');
+							}
+						}
 					}
 				}
 			} catch (err) {
@@ -79,7 +93,15 @@ export const ZHSPhoneLoginScript = new PlaywrightScript(
 	},
 	{
 		name: '智慧树-手机密码登录',
-		async run(page, configs) {
+		async run(
+			page,
+			configs,
+			options?: {
+				ocrApiUrl?: string;
+				detTargetKey?: string;
+				detBackgroundKey?: string;
+			}
+		) {
 			try {
 				if (await isNotLogin(page)) {
 					await page.click('#qSignin');
@@ -88,16 +110,18 @@ export const ZHSPhoneLoginScript = new PlaywrightScript(
 					await page.waitForTimeout(3000);
 					await page.click('.wall-sub-btn');
 
-					let count = 5;
-					while ((await isNotVerified(page)) && count > 0) {
-						count--;
-						await verify(page, {
-							ocrApiUrl: 'http://localhost:15319/ocr',
-							detTargetKey: 'det_target',
-							detBackgroundKey: 'det_bg'
-						});
+					if (options?.ocrApiUrl && options?.detTargetKey && options?.detBackgroundKey) {
+						let count = 5;
+						while ((await isNotVerified(page)) && count > 0) {
+							count--;
+							await verify(page, {
+								ocrApiUrl: options.ocrApiUrl,
+								detTargetKey: options.detTargetKey,
+								detBackgroundKey: options.detBackgroundKey
+							});
 
-						await page.waitForTimeout(2000);
+							await page.waitForTimeout(2000);
+						}
 					}
 				}
 			} catch (err) {
@@ -174,7 +198,7 @@ async function verify(page: Page, opts: { ocrApiUrl: string; detTargetKey: strin
 	}
 }
 
-/** 是否通过验证 */
+/** 是否未通过验证 */
 async function isNotVerified(page: Page) {
 	await page.waitForTimeout(2000);
 
