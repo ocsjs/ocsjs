@@ -84,7 +84,7 @@ function renderOCS() {
 				script.cfg = Object.keys(script.cfg).length === 0 ? OCS.$.createConfigProxy(script) : script.cfg;
 
 				if (script.namespace && script.configs && script.hideInPanel !== false) {
-					const panel = OCS.$creator.scriptPanel(script, { expandAll: false, projectName: '' });
+					const panel = OCS.$creator.scriptPanel(script, { projectName: '' });
 
 					/** 添加到页面中，并执行 onrender 函数 */
 					OCS.$elements.root.append(panel);
@@ -100,7 +100,7 @@ function renderOCS() {
 		}
 
 		/** 挂载 ocs panel */
-		OCS.$el(`#ocs-browser-configs`).replaceChildren(OCS.$elements.panel);
+		OCS.$el(`#ocs-browser-configs`)?.replaceChildren(OCS.$elements.panel);
 		state.root = state.root || OCS.$elements.root;
 	}
 }
@@ -127,7 +127,7 @@ async function loadOCS() {
 		/** 双向绑定数据 */
 		OCS.ObjectStoreProvider._source.store = store.value;
 
-		state.projects = OCS.definedProjects().sort(({ level: l1 = 0 }, { level: l2 = 0 }) => l2 - l1);
+		state.projects = OCS.definedProjects();
 		emits('update:project', state.projects);
 		if (!Store.render.setting.ocs.currentProjectName) {
 			Store.render.setting.ocs.currentProjectName = state.projects[0].name;
@@ -156,9 +156,6 @@ onActivated(() => {
 });
 
 onDeactivated(() => {
-	// @ts-ignore
-	const OCS = global.OCS as typeof import('@ocsjs/scripts');
-	OCS.ObjectStoreProvider._source.store = {};
 	state.watchStopHandle?.();
 });
 </script>

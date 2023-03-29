@@ -1,6 +1,6 @@
 {
 	"name": "@ocsjs/app",
-	"version": "2.0.5",
+	"version": "2.0.6",
 	"description": "app package of ocs",
 	"main": "./lib/index.js",
 	"types": "./lib/types.d.ts",
@@ -29,7 +29,6 @@
 		"dayjs": "^1.10.7",
 		"electron-store": "^8.0.1",
 		"express": "^4.18.1",
-		"get-port": "5.1.1",
 		"lodash": "^4.17.21",
 		"node-forge": "1.0.0",
 		"playwright-core": "^1.28.0",

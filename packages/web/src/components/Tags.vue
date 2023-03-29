@@ -95,7 +95,7 @@
 	</a-modal>
 </template>
 <script setup lang="ts">
-import { ref, reactive, nextTick } from 'vue';
+import { ref, reactive } from 'vue';
 import { store } from '../store';
 import { Tag } from '../fs/interface';
 const object = Object;
