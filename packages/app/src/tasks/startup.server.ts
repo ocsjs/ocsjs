@@ -1,10 +1,8 @@
 import express from 'express';
-import getPort from 'get-port';
 import { Logger } from '../logger';
 import path from 'path';
 import axios from 'axios';
 import { store } from '../store';
-import os from 'os';
 import { getProjectPath } from '../utils';
 import { canOCR, det, ocr } from '../utils/ocr';
 
@@ -94,18 +92,18 @@ export async function startupServer() {
 
 	// ocr 验证码破解
 	app.post('/ocr', async (req, res) => {
-		const base64 = req.body.ocr?.toString();
+		const base64 = req.body.image?.toString();
 		const det_target = req.body.det_target?.toString();
 		const det_bg = req.body.det_bg?.toString();
 
 		if (canOCR()) {
 			try {
 				if (base64) {
-					res.json({ canOCR: true, ocr: await ocr(base64) });
+					res.json({ canOCR: true, code: await ocr(base64) });
 				} else if (det_target && det_bg) {
 					res.json({ canOCR: true, det: await det(det_target, det_bg) });
 				} else {
-					res.send({ error: '参数缺失!' })
+					res.send({ error: '参数缺失!' });
 				}
 			} catch (err) {
 				res.json({ canOCR: true, error: err });
@@ -118,31 +116,13 @@ export async function startupServer() {
 	// 静态资源
 	app.use(express.static(path.join(getProjectPath(), './public')));
 
-	const port = await getPort({ port: [15319, 15320, 15321] });
-
-	store.store.server = store.store.server || {};
-	store.store.server.port = port;
-
-	app.listen(port, () => {
-		logger.info('服务启动成功，端口：', port);
-	});
-
-	/** 为后续多主机控制做准备 */
-	const localIP = getLocalIP();
-	if (localIP) {
-		app.listen(port, localIP, () => {
-			logger.info(`局域网服务启动成功 : ${localIP}:${port}`);
-		});
-	}
-}
-/** 获取局域网IP */
-function getLocalIP() {
-	const interfaces = os.networkInterfaces();
-	for (const devName in interfaces) {
-		for (const iface of interfaces[devName] || []) {
-			if (iface.family === 'IPv4' && iface.address !== '127.0.0.1' && !iface.internal) {
-				return iface.address;
-			}
+	// 使用0作为随机端口号
+	const server = app.listen(0, () => {
+		const address = server.address();
+		if (address && typeof address === 'object') {
+			// 存储本次服务的端口
+			store.set('server.port', address.port);
+			logger.info(`OCS服务启动成功 => ${address.port}`);
 		}
-	}
+	});
 }
