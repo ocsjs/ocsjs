@@ -1,4 +1,4 @@
-import { $creator, $message, OCSWorker, Script, SimplifyWorkResult, StringUtils, WorkResult, el } from '@ocsjs/core';
+import { $creator, $message, OCSWorker, Script, SimplifyWorkResult, WorkResult, el } from '@ocsjs/core';
 import { workConfigs } from './configs';
 
 /**
@@ -43,22 +43,27 @@ export function createWorkerControl(
 /**
  * 图片识别，将图片链接追加到 text 中
  */
-export function optimizationTextWithImage(root: HTMLElement) {
+export function optimizationElementWithImage(root: HTMLElement) {
 	if (root) {
 		const el = root.cloneNode(true) as HTMLElement;
-
 		for (const img of Array.from(el.querySelectorAll('img'))) {
 			img.after(img.src);
 		}
-
-		return el.innerText;
-	} else {
-		return '';
+		return el;
 	}
+
+	return root;
 }
 
 /** 将 {@link WorkResult} 转换成 {@link SimplifyWorkResult} */
-export function simplifyWorkResult(results: WorkResult<any>[]): SimplifyWorkResult[] {
+export function simplifyWorkResult(
+	results: WorkResult<any>[],
+	/**
+	 * 标题处理方法
+	 * 在答题时使用相同的处理方法，可以使答题结果显示的题目与搜题的题目保持一致
+	 */
+	titleTransform?: (title: (HTMLElement | undefined)[]) => string
+): SimplifyWorkResult[] {
 	const res: SimplifyWorkResult[] = [];
 
 	for (const wr of results) {
@@ -66,17 +71,7 @@ export function simplifyWorkResult(results: WorkResult<any>[]): SimplifyWorkResu
 			requesting: wr.requesting,
 			resolving: wr.resolving,
 			error: wr.error,
-			question: StringUtils.of(
-				wr.ctx?.elements.title
-					?.filter(Boolean)
-					?.map((t) => optimizationTextWithImage(t as HTMLElement))
-					.join(',') || ''
-			)
-				.toString()
-				/** cx新版题目冗余 */
-				.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
-				/** cx旧版题目冗余 */
-				.replace(/[[|(|【|（]..题[\]|)|】|）]/, ''),
+			question: titleTransform?.(wr.ctx?.elements.title || []) || wr.ctx?.elements.title?.join(',') || '',
 			finish: wr.result?.finish,
 			searchInfos:
 				wr.ctx?.searchInfos.map((sr) => ({

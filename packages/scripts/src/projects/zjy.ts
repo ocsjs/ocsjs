@@ -41,7 +41,7 @@ export const ZJYProject = Project.create({
 	studyProject: true,
 	scripts: {
 		studyDispatcher: new Script({
-			name: '🧑‍💻 课程学习',
+			name: '🖥️ 课程学习',
 			url: [['课程页面', 'zjy2.icve.com.cn/study/process/process']],
 			namespace: 'zjy.study.dispatcher',
 			configs: {
@@ -81,7 +81,7 @@ export const ZJYProject = Project.create({
 			}
 		}),
 		study: new Script({
-			name: '🧑‍💻 学习脚本',
+			name: '🖥️ 学习脚本',
 			url: [['学习页面', 'zjy2.icve.com.cn/common/directory/directory.html']],
 			namespace: 'zjy.study.main',
 			configs: {

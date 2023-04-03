@@ -3,7 +3,7 @@ import { CommonProject } from './projects/common';
 import { ZHSProject } from './projects/zhs';
 import { CXProject } from './projects/cx';
 import { BackgroundProject } from './projects/background';
-import { ICVEProject } from './projects/icve';
+import { IcveMoocProject } from './projects/icve';
 import { ZJYProject } from './projects/zjy';
 
 /** 导出所有的 OCS 核心模块 */
@@ -14,8 +14,8 @@ export { CommonProject } from './projects/common';
 export { ZHSProject } from './projects/zhs';
 export { CXProject } from './projects/cx';
 export { ZJYProject } from './projects/zjy';
-export { ICVEProject } from './projects/icve';
+export { IcveMoocProject } from './projects/icve';
 
 export function definedProjects(): Project[] {
-	return [ICVEProject, ZJYProject, ZHSProject, CXProject, CommonProject, BackgroundProject];
+	return [IcveMoocProject, ZJYProject, ZHSProject, CXProject, CommonProject, BackgroundProject];
 }

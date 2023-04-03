@@ -8,16 +8,14 @@ import {
 	$$el,
 	OCSWorker,
 	defaultAnswerWrapperHandler,
-	StringUtils,
 	$message,
 	$,
-	$model,
-	$store
+	$model
 } from '@ocsjs/core';
 import type { MessageElement } from '@ocsjs/core';
-import { CommonProject, TAB_WORK_RESULTS_KEY } from './common';
+import { CommonProject } from './common';
 import { workConfigs, definition, volume, restudy } from '../utils/configs';
-import { createWorkerControl, optimizationTextWithImage, simplifyWorkResult } from '../utils/work';
+import { createWorkerControl, optimizationElementWithImage, simplifyWorkResult } from '../utils/work';
 import { CommonWorkOptions, playMedia, workPreCheckMessage } from '../utils';
 import { $console } from './background';
 
@@ -34,7 +32,7 @@ const state = {
 
 /** 工程导出 */
 export const ZHSProject = Project.create({
-	name: '智慧树',
+	name: '知到智慧树',
 	domains: ['zhihuishu.com'],
 	studyProject: true,
 	scripts: {
@@ -44,7 +42,6 @@ export const ZHSProject = Project.create({
 				['学习首页', 'https://onlineweb.zhihuishu.com/onlinestuh5'],
 				['首页', 'https://www.zhihuishu.com/']
 			],
-			level: 1,
 			namespace: 'zhs.guide',
 			configs: {
 				notes: {
@@ -61,10 +58,9 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		'gxk-work-and-exam-guide': new Script({
-			name: '💡 共享课作业考试提示',
+			name: '💡 共享课-作业考试提示',
 			url: [['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']],
 			namespace: 'zhs.work.gxk-guide',
-			level: 999,
 			configs: {
 				notes: {
 					defaultValue: $creator.notes(
@@ -87,9 +83,8 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		'gxk-study': new Script({
-			name: '🧑‍💻 共享课学习脚本',
+			name: '🖥️ 共享课-学习脚本',
 			url: [['共享课学习页面', 'studyvideoh5.zhihuishu.com']],
-			level: 999,
 			namespace: 'zhs.gxk.study',
 			configs: {
 				notes: {
@@ -99,7 +94,8 @@ export const ZHSProject = Project.create({
 							'请大家仔细打开视频上方的”学前必读“，查看成绩分布。',
 							'如果 “平时成绩-学习习惯成绩” 占比多的话，就需要规律学习。',
 							'每天定时半小时可获得一分习惯分。',
-							'如果不想要习惯分可忽略。'
+							'如果不想要习惯分可忽略。',
+							'不要最小化浏览器，可能导致脚本暂停。'
 						]
 					]).outerHTML
 				},
@@ -169,7 +165,7 @@ export const ZHSProject = Project.create({
 												: '可一直观看学习，无需定时停止。')
 									});
 								} else {
-									$model('alert', { content: '检测失败' });
+									$model('alert', { content: '检测失败，请确认在视频学习页面使用此按钮。' });
 								}
 							}, 100);
 						};
@@ -404,87 +400,19 @@ export const ZHSProject = Project.create({
 				}, 10 * 1000);
 			}
 		}),
-		'xnk-study': new Script({
-			name: '🧑‍💻 校内课学习脚本',
-			url: [['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']],
-			namespace: 'zhs.xnk.study',
-			configs: {
-				notes: {
-					defaultValue: $creator.notes(['章节测试请大家观看完视频后手动打开。', '此课程不能使用倍速。']).outerHTML
-				},
-				restudy: restudy,
-				volume: volume
-			},
-			oncomplete() {
-				// 置顶当前脚本
-				$script.pin(this);
-
-				const finish = () => {
-					$model('alert', {
-						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
-					});
-				};
-
-				// 监听音量
-				this.onConfigChange('volume', (curr) => {
-					state.study.currentMedia && (state.study.currentMedia.volume = curr);
-				});
-
-				let list: HTMLElement[] = [];
-
-				const interval = setInterval(async () => {
-					/** 查找任务 */
-					list = $$el('.icon-video').map((icon) => icon.parentElement as HTMLElement);
-
-					// 等待视频加载完成
-					if (list.length) {
-						clearInterval(interval);
-
-						/** 如果不是复习模式，则排除掉已经完成的任务 */
-						if (!this.cfg.restudy) {
-							list = list.filter((el) => el.querySelector('.icon-finish') === null);
-						}
-
-						const item = list[0];
-						if (item) {
-							if (item.classList.contains('active')) {
-								watch({ volume: this.cfg.volume, playbackRate: 1 }, () => {
-									/** 下一章 */
-									if (list[1]) list[1].click();
-								});
-							} else {
-								// 为什么不播放，因为点击后会刷新整个页面，加载后就会运行上面的那个 if 语句
-								item.click();
-							}
-						}
-					}
-				}, 1000);
-
-				setTimeout(() => {
-					if (list.length === 0) {
-						finish();
-						clearInterval(interval);
-					}
-				}, 10 * 1000);
-			}
-		}),
 		'gxk-work': new Script({
-			name: '✍️ 共享课作业脚本',
+			name: '✍️ 共享课-作业脚本',
 			url: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
 				/** 在列表中也提供设置页面 */
 				['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
 			],
 			namespace: 'zhs.gxk.work',
-			level: 99,
 			configs: workConfigs,
-
 			oncomplete() {
 				// 置顶当前脚本
 				$script.pin(this);
-
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('upload', changeMsg);
 				this.onConfigChange('auto', changeMsg);
 
 				let worker: OCSWorker<any> | undefined;
@@ -536,14 +464,13 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		'gxk-exam': new Script({
-			name: '✍️ 共享课考试脚本',
+			name: '✍️ 共享课-考试脚本',
 			url: [
 				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
 				/** 在列表中也提供设置页面 */
 				['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
 			],
 			namespace: 'zhs.gxk.exam',
-			level: 99,
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
@@ -612,11 +539,74 @@ export const ZHSProject = Project.create({
 				}
 			}
 		}),
+		'xnk-study': new Script({
+			name: '🖥️ 校内课-学习脚本',
+			url: [['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']],
+			namespace: 'zhs.xnk.study',
+			configs: {
+				notes: {
+					defaultValue: $creator.notes(['章节测试请大家观看完视频后手动打开。', '此课程不能使用倍速。']).outerHTML
+				},
+				restudy: restudy,
+				volume: volume
+			},
+			oncomplete() {
+				// 置顶当前脚本
+				$script.pin(this);
+
+				const finish = () => {
+					$model('alert', {
+						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
+					});
+				};
+
+				// 监听音量
+				this.onConfigChange('volume', (curr) => {
+					state.study.currentMedia && (state.study.currentMedia.volume = curr);
+				});
+
+				let list: HTMLElement[] = [];
+
+				const interval = setInterval(async () => {
+					/** 查找任务 */
+					list = $$el('.icon-video').map((icon) => icon.parentElement as HTMLElement);
+
+					// 等待视频加载完成
+					if (list.length) {
+						clearInterval(interval);
+
+						/** 如果不是复习模式，则排除掉已经完成的任务 */
+						if (!this.cfg.restudy) {
+							list = list.filter((el) => el.querySelector('.icon-finish') === null);
+						}
+
+						const item = list[0];
+						if (item) {
+							if (item.classList.contains('active')) {
+								watch({ volume: this.cfg.volume, playbackRate: 1 }, () => {
+									/** 下一章 */
+									if (list[1]) list[1].click();
+								});
+							} else {
+								// 为什么不播放，因为点击后会刷新整个页面，加载后就会运行上面的那个 if 语句
+								item.click();
+							}
+						}
+					}
+				}, 1000);
+
+				setTimeout(() => {
+					if (list.length === 0) {
+						finish();
+						clearInterval(interval);
+					}
+				}, 10 * 1000);
+			}
+		}),
 		'xnk-work': new Script({
-			name: '✍️ 校内课作业考试脚本',
+			name: '✍️ 校内课-作业考试脚本',
 			url: [['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList']],
 			namespace: 'zhs.xnk.work',
-			level: 99,
 			configs: workConfigs,
 
 			oncomplete() {
@@ -624,7 +614,6 @@ export const ZHSProject = Project.create({
 				$script.pin(this);
 
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('upload', changeMsg);
 				this.onConfigChange('auto', changeMsg);
 
 				let worker: OCSWorker<any> | undefined;
@@ -828,14 +817,21 @@ function gxkWorkOrExam(
 	type: 'work' | 'exam' = 'work',
 	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
 ) {
-	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
+	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'} ` });
 
+	// 置顶搜索结果面板
+	$script.pin(CommonProject.scripts.workResults);
 	// 刷新搜索结果状态
 	CommonProject.scripts.workResults.methods.refreshState();
 	// 清空搜索结果
 	CommonProject.scripts.workResults.methods.clearResults();
-	// 置顶搜索结果面板
-	$script.pin(CommonProject.scripts.workResults);
+
+	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
+		return titles
+			.filter((t) => t?.innerText)
+			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.join(',');
+	};
 
 	/** 新建答题器 */
 	const worker = new OCSWorker({
@@ -852,10 +848,7 @@ function gxkWorkOrExam(
 		answerer: (elements, type, ctx) =>
 			defaultAnswerWrapperHandler(answererWrappers, {
 				type,
-				title: elements.title
-					.filter((t) => t.innerText)
-					.map((t) => optimizationTextWithImage(t))
-					.join(','),
+				title: titleTransform(elements.title),
 				root: ctx.root
 			}),
 		work: {
@@ -900,6 +893,7 @@ function gxkWorkOrExam(
 			const modal = $model('alert', { content: text });
 
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
+				await $.sleep(1000);
 				// 下一页
 				const next = $el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)');
 				if (next) {
@@ -907,11 +901,9 @@ function gxkWorkOrExam(
 				} else {
 					$console.error('未找到下一页按钮。');
 				}
-
-				await $.sleep(1000);
 			}
 			text.innerText = '所有题目保存成功。';
-			setTimeout(() => modal?.remove(), 2000);
+			setTimeout(() => modal?.remove(), 1000);
 
 			if (type === 'exam') {
 				$message('info', { content: '考试完成，为了安全考虑，请自行检查后自行点击提交！' });
@@ -957,12 +949,19 @@ function gxkWorkOrExam(
 function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 
+	// 置顶搜索结果面板
+	$script.pin(CommonProject.scripts.workResults);
 	// 刷新搜索结果状态
 	CommonProject.scripts.workResults.methods.refreshState();
 	// 清空搜索结果
 	CommonProject.scripts.workResults.methods.clearResults();
-	// 置顶搜索结果面板
-	$script.pin(CommonProject.scripts.workResults);
+
+	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
+		return titles
+			.filter((t) => t?.innerText)
+			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.join(',');
+	};
 
 	const worker = new OCSWorker({
 		root: '.questionBox',
@@ -977,7 +976,7 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
-			const title = StringUtils.nowrap(elements.title[0].innerText).trim();
+			const title = titleTransform(elements.title);
 			if (title) {
 				return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
 			} else {

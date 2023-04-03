@@ -43,7 +43,7 @@ export const $creator = {
 	tooltip<T extends HTMLElement>(target: T) {
 		target.setAttribute('data-title', target.title);
 		// 油猴环境下，取消默认title，避免系统默认事件重复显示
-		if (typeof $gm.unsafeWindow !== 'undefined') {
+		if (typeof $gm.getInfos() !== 'undefined') {
 			target.removeAttribute('title');
 		}
 

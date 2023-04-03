@@ -18,16 +18,15 @@ import {
 	splitAnswer,
 	$message,
 	MessageElement,
-	$store,
 	domSearch,
 	domSearchAll,
 	SearchInformation,
 	$model
 } from '@ocsjs/core';
 
-import { CommonProject, TAB_WORK_RESULTS_KEY } from './common';
+import { CommonProject } from './common';
 import { auto, workConfigs, volume, restudy } from '../utils/configs';
-import { createWorkerControl, optimizationTextWithImage, simplifyWorkResult } from '../utils/work';
+import { createWorkerControl, optimizationElementWithImage, simplifyWorkResult } from '../utils/work';
 import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
@@ -64,7 +63,7 @@ const state = {
 };
 
 export const CXProject = Project.create({
-	name: '学习通',
+	name: '超星学习通',
 	domains: [
 		'chaoxing.com',
 		'edu.cn',
@@ -82,7 +81,6 @@ export const CXProject = Project.create({
 				['新版个人首页', 'chaoxing.com/base'],
 				['课程首页', 'chaoxing.com/mycourse']
 			],
-			level: 99,
 			namespace: 'cx.guide',
 			configs: {
 				notes: {
@@ -94,7 +92,7 @@ export const CXProject = Project.create({
 			}
 		}),
 		study: new Script({
-			name: '🧑‍💻 课程学习',
+			name: '🖥️ 课程学习',
 			namespace: 'cx.new.study',
 			url: [
 				['任务点页面', '/knowledge/cards'],
@@ -106,7 +104,8 @@ export const CXProject = Project.create({
 					defaultValue: $creator.notes([
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						['任务点不是顺序执行，如果某一个任务没有动', '请查看是否有其他任务正在学习，耐心等待即可。'],
-						'闯关模式请注意题库如果没完成，需要自己完成才能解锁章节。'
+						'闯关模式请注意题库如果没完成，需要自己完成才能解锁章节。',
+						'不要最小化浏览器，可能导致脚本暂停。'
 					]).outerHTML
 				},
 				playbackRate: {
@@ -210,7 +209,6 @@ export const CXProject = Project.create({
 			name: '✍️ 作业脚本',
 			url: [['作业页面', '/mooc2/work/dowork']],
 			namespace: 'cx.new.work',
-			level: 99,
 			configs: {
 				auto: workConfigs.auto,
 				notes: workConfigs.notes
@@ -260,7 +258,6 @@ export const CXProject = Project.create({
 			name: '✍️ 考试脚本',
 			url: [['整卷预览页面', '/mooc2/exam/preview']],
 			namespace: 'cx.new.exam',
-			level: 99,
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
@@ -325,7 +322,7 @@ export const CXProject = Project.create({
 			}
 		}),
 		autoRead: new Script({
-			name: '🧑‍💻 自动阅读',
+			name: '🖥️ 自动阅读',
 			url: [
 				['阅读页面', '/ztnodedetailcontroller/visitnodedetail'],
 				['课程首页', /chaoxing.com\/course\/\d+\.html/]
@@ -502,13 +499,34 @@ export function workOrExam(
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
+	// 处理作业和考试题目的方法
+	const workOrExamQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
+		const optimizationTitle = titles
+			.map((titleElement) => {
+				if (titleElement) {
+					const titleCloneEl = titleElement.cloneNode(true) as HTMLElement;
+					const childNodes = titleCloneEl.childNodes;
+					// 删除序号
+					childNodes[0].remove();
+					// 删除题型
+					childNodes[0].remove();
+					// 显示图片链接在题目中
+					return optimizationElementWithImage(titleCloneEl).innerText;
+				}
+				return '';
+			})
+			.join(',');
+
+		return StringUtils.of(optimizationTitle).nowrap().nospace().toString().trim();
+	};
+
 	/** 新建答题器 */
 	const worker = new OCSWorker({
 		root: '.questionLi',
 		elements: {
 			title: [
 				/** 题目标题 */
-				(root) => $el<any>('h3', root)
+				(root) => $el('h3', root) as HTMLElement
 				// /** 连线题第一组 */
 				// (root) => $el('.line_wid_half.fl', root),
 				// /** 连线题第二组 */
@@ -530,17 +548,8 @@ export function workOrExam(
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
 			if (elements.title) {
-				const title: string = StringUtils.of(elements.title.map((t) => optimizationTextWithImage(t)).join(','))
-					.nowrap()
-					.nospace()
-					.toString()
-					.trim()
-					/** 新版题目冗余 */
-					.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
-					/** 旧版题目冗余 */
-					.replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
-					.trim();
-
+				// 处理作业和考试题目
+				const title = workOrExamQuestionTitleTransform(elements.title);
 				if (title) {
 					return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
 				} else {
@@ -936,6 +945,8 @@ export async function study(opts: {
 
 	let searching = true;
 
+	let attachmentCount: number = $gm.unsafeWindow.attachments?.length || 0;
+
 	/** 考虑到网速级慢的同学，所以10秒后如果还没有任务点才停止 */
 	setTimeout(() => {
 		searching = false;
@@ -956,6 +967,13 @@ export async function study(opts: {
 				$console.error('未知错误', e);
 			}
 
+			await $.sleep(1000);
+			await runJobs();
+		}
+		// 每次 search 一次，就减少一次文件数量
+		// 如果不加这个判断，三个任务中，中间的任务不是任务点，则会导致下面的任务全部不执行。
+		else if (attachmentCount > 0) {
+			attachmentCount--;
 			await $.sleep(1000);
 			await runJobs();
 		}
@@ -1250,6 +1268,21 @@ async function chapterTestTask(
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
+	const chapterTestTaskQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
+		return (
+			StringUtils.of(titles.map((t) => (t ? optimizationElementWithImage(t).innerText : '')).join(','))
+				.nowrap()
+				.nospace()
+				.toString()
+				.trim()
+				/** 超星旧版作业题目冗余数据 */
+				.replace(/\(..题, .+?分\)/, '')
+				.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
+				.replace(/^\d+\.?/, '')
+				.trim()
+		);
+	};
+
 	/** 新建答题器 */
 	const worker = new OCSWorker({
 		root: TiMu,
@@ -1273,17 +1306,7 @@ async function chapterTestTask(
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
-			const title: string = StringUtils.of(elements.title.map((t) => optimizationTextWithImage(t)).join(','))
-				.nowrap()
-				.nospace()
-				.toString()
-				.trim()
-				/** 新版题目冗余 */
-				.replace(/\d+\.\s*\((.+题|名词解释|完形填空|阅读理解), .+分\)/, '')
-				/** 旧版题目冗余 */
-				.replace(/[[|(|【|（]..题[\]|)|】|）]/, '')
-				.trim();
-
+			const title = chapterTestTaskQuestionTitleTransform(elements.title);
 			if (title) {
 				return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
 			} else {

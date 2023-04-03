@@ -8,13 +8,13 @@ const state = {
 	}
 };
 
-export const ICVEProject = Project.create({
-	name: '智慧职教',
+export const IcveMoocProject = Project.create({
+	name: '智慧职教(MOOC学院)',
 	domains: ['icve.com.cn', 'course.icve.com.cn'],
 	studyProject: true,
 	scripts: {
 		study: new Script({
-			name: '🧑‍💻 课程学习',
+			name: '🖥️ 课程学习',
 			namespace: 'icve.study.main',
 			url: [['课程学习页面', 'course.icve.com.cn/learnspace/learn/learn/templateeight/index.action']],
 			configs: {
