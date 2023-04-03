@@ -66,7 +66,7 @@ export function defaultQuestionResolve<E>(
 			/** 最终的选项 */
 			const targetOptions: HTMLElement[][] = [];
 
-			const list: {
+			type Result = {
 				/** 匹配的选项 */
 				options: HTMLElement[];
 				/** 匹配的答案 */
@@ -76,7 +76,9 @@ export function defaultQuestionResolve<E>(
 				similarSum: number;
 				/** 匹配数量 */
 				similarCount: number;
-			}[] = [];
+			};
+
+			const list: Result[] = [];
 
 			const results = infos.map((info) => info.results).flat();
 
@@ -86,12 +88,27 @@ export function defaultQuestionResolve<E>(
 			 */
 			for (let i = 0; i < results.length; i++) {
 				const result = results[i];
-				list[i] = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
-
 				// 每个答案可能存在多个选项需要分割
 				const answers = splitAnswer(result.answer);
 				console.log('answers', { answer: result.answer, answers });
 
+				const matchResult: Result = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
+				// 判断选项是否完全存在于答案里面
+				for (const option of options) {
+					const ans = answers.find((answer) =>
+						answer.includes(removeRedundant(option.textContent || option.innerText))
+					);
+					if (ans) {
+						matchResult.options.push(option);
+						matchResult.answers.push(ans);
+						matchResult.ratings.push(1);
+						matchResult.similarSum += 1;
+						matchResult.similarCount += 1;
+					}
+				}
+
+				const ratingResult: Result = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
+				// 相似度匹配
 				const ratings = answerSimilar(
 					answers,
 					options.map((o) => removeRedundant(o.innerText))
@@ -99,12 +116,19 @@ export function defaultQuestionResolve<E>(
 				for (let j = 0; j < ratings.length; j++) {
 					const rating = ratings[j];
 					if (rating.rating > 0.6) {
-						list[i].options.push(options[j]);
-						list[i].answers.push(ratings[j].target);
-						list[i].ratings.push(ratings[j].rating);
-						list[i].similarSum += rating.rating;
-						list[i].similarCount += 1;
+						ratingResult.options.push(options[j]);
+						ratingResult.answers.push(ratings[j].target);
+						ratingResult.ratings.push(ratings[j].rating);
+						ratingResult.similarSum += rating.rating;
+						ratingResult.similarCount += 1;
 					}
+				}
+
+				// 如果全匹配大于 相似度匹配
+				if (matchResult.similarSum > ratingResult.similarSum) {
+					list[i] = matchResult;
+				} else {
+					list[i] = ratingResult;
 				}
 			}
 
