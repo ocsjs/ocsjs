@@ -10,16 +10,18 @@ import EventEmitter from 'events';
 
 export type ScriptConfigsProvider<T extends Record<string, Config>> = T | { (): T };
 
-export interface ScriptOptions<T extends Record<string, Config>> {
+export interface ScriptOptions<C extends Record<string, Config>> {
 	name: string;
 	/** 运行的链接，如果是 string 类型，可以提供用户跳转功能 [链接的解释,链接/正则表达式][] */
 	url: [string, string | RegExp][];
 	/** 排除的链接 [链接的解释,链接/正则表达式][] */
 	excludes?: [string, string | RegExp][];
-	level?: number;
+	/** 脚本唯一命名空间 */
 	namespace?: string;
+	/** 脚本提示 */
 	notes?: string[];
-	configs?: ScriptConfigsProvider<T>;
+	/** 脚本配置 */
+	configs?: ScriptConfigsProvider<C>;
 	/** 不显示脚本页 */
 	hideInPanel?: boolean;
 }
@@ -30,6 +32,8 @@ export type ScriptConfigs = {
 		defaultValue: string;
 	};
 } & Record<string, Config>;
+
+export type ScriptMethods = Record<string, (...args: any[]) => any>;
 
 type ScriptEvent = {
 	/** 在脚本加载时立即运行的事件 */
@@ -68,11 +72,14 @@ export class BaseScript<E extends ScriptEvent = ScriptEvent> extends CommonEvent
 /**
  * 脚本
  */
-export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript<ScriptEvent> {
+export class Script<
+	C extends ScriptConfigs = ScriptConfigs,
+	M extends ScriptMethods = ScriptMethods
+> extends BaseScript<ScriptEvent> {
 	/** 未经处理的 configs 原对象 */
-	private _configs?: ScriptConfigsProvider<T>;
+	private _configs?: ScriptConfigsProvider<C>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
-	private _resolvedConfigs?: T;
+	private _resolvedConfigs?: C;
 
 	/** 名字 */
 	name: string;
@@ -87,12 +94,13 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript<
 	/** 后台脚本（不提供管理页面） */
 	hideInPanel?: boolean;
 	/** 通过 configs 映射并经过解析后的配置对象 */
-	cfg: { [K in keyof T]: T[K]['defaultValue'] } & { notes?: string } = {} as any;
+	cfg: { [K in keyof C]: C[K]['defaultValue'] } & { notes?: string } = {} as any;
 	/** 经过初始化页面脚本注入的页面元素，如果初始化脚本未运行，则此元素为空 */
 	panel?: ScriptPanelElement;
 	/** 操作面板头部元素 */
 	header?: HeaderElement;
-
+	/** 脚本暴露给外部调用的方法 */
+	methods: M = Object.create({});
 	/** 自定义事件触发器，避免使用 script.emit , script.on 导致与原有的事件冲突，使用 script.event.emit 和 script.event.on */
 	event: EventEmitter = new EventEmitter();
 
@@ -119,14 +127,16 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript<
 		oncomplete,
 		onbeforeunload,
 		onrender,
-		onhistorychange
-	}: ScriptOptions<T> & {
-		onstart?: (this: Script<T>, ...args: any) => any;
-		onactive?: (this: Script<T>, ...args: any) => any;
-		oncomplete?: (this: Script<T>, ...args: any) => any;
-		onbeforeunload?: (this: Script<T>, ...args: any) => any;
-		onrender?: (this: Script<T>, elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
-		onhistorychange?: (this: Script<T>, type: 'push' | 'replace', ...args: any[]) => any;
+		onhistorychange,
+		methods
+	}: ScriptOptions<C> & {
+		onstart?: (this: Script<C, M>, ...args: any) => any;
+		onactive?: (this: Script<C, M>, ...args: any) => any;
+		oncomplete?: (this: Script<C, M>, ...args: any) => any;
+		onbeforeunload?: (this: Script<C, M>, ...args: any) => any;
+		onrender?: (this: Script<C, M>, elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
+		onhistorychange?: (this: Script<C, M>, type: 'push' | 'replace', ...args: any[]) => any;
+		methods?: (this: Script<C>) => M;
 	}) {
 		super();
 		this.name = name;
@@ -141,11 +151,20 @@ export class Script<T extends ScriptConfigs = ScriptConfigs> extends BaseScript<
 		this.onbeforeunload = this.errorHandler(onbeforeunload);
 		this.onrender = this.errorHandler(onrender);
 		this.onhistorychange = this.errorHandler(onhistorychange);
+		this.methods = methods?.bind(this)() || Object.create({});
+
+		if (this.methods) {
+			for (const key in methods) {
+				if (Reflect.has(this.methods, key) && typeof this.methods[key] !== 'function') {
+					Reflect.set(this.methods, key, this.errorHandler(this.methods[key]));
+				}
+			}
+		}
 	}
 
-	onConfigChange<K extends keyof T>(
+	onConfigChange<K extends keyof C>(
 		key: K,
-		handler: (curr: T[K]['defaultValue'], pre: T[K]['defaultValue'], remote: boolean) => any
+		handler: (curr: C[K]['defaultValue'], pre: C[K]['defaultValue'], remote: boolean) => any
 	) {
 		const _key = $.namespaceKey(this.namespace, key.toString());
 

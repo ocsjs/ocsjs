@@ -495,8 +495,10 @@ export function workOrExam(
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
+	// 刷新搜索结果状态
+	CommonProject.scripts.workResults.methods.refreshState();
 	// 清空搜索结果
-	$store.setTab(TAB_WORK_RESULTS_KEY, []);
+	CommonProject.scripts.workResults.methods.clearResults();
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -616,12 +618,11 @@ export function workOrExam(
 
 		/** 完成答题后 */
 		onResultsUpdate(res) {
-			$store.setTab(TAB_WORK_RESULTS_KEY, simplifyWorkResult(res));
+			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleTransform));
 		},
+		/** 监听答题结果 */
 		onResolveUpdate(res) {
-			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
-			CommonProject.scripts.workResults.cfg.requestIndex = worker.requestIndex;
-			CommonProject.scripts.workResults.cfg.resolverIndex = worker.resolverIndex;
+			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		},
 		async onElementSearched(elements) {
 			if (uncheckAllChoice) {
@@ -1242,8 +1243,10 @@ async function chapterTestTask(
 	const frameWindow = frame.contentWindow;
 	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
+	// 刷新搜索结果状态
+	CommonProject.scripts.workResults.methods.refreshState();
 	// 清空搜索结果
-	$store.setTab(TAB_WORK_RESULTS_KEY, []);
+	CommonProject.scripts.workResults.methods.clearResults();
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);
 
@@ -1350,7 +1353,9 @@ async function chapterTestTask(
 
 		/** 完成答题后 */
 		async onResultsUpdate(res, curr) {
-			await $store.setTab(TAB_WORK_RESULTS_KEY, simplifyWorkResult(res));
+			CommonProject.scripts.workResults.methods.setResults(
+				simplifyWorkResult(res, chapterTestTaskQuestionTitleTransform)
+			);
 
 			// 没有完成时随机作答
 			if (!curr.result?.finish && curr.resolving === false) {
@@ -1394,9 +1399,7 @@ async function chapterTestTask(
 			}
 		},
 		onResolveUpdate(res) {
-			CommonProject.scripts.workResults.cfg.totalQuestionCount = worker.totalQuestionCount;
-			CommonProject.scripts.workResults.cfg.requestIndex = worker.requestIndex;
-			CommonProject.scripts.workResults.cfg.resolverIndex = worker.resolverIndex;
+			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		},
 		async onElementSearched(elements) {
 			const typeInput = elements.type[0] as HTMLInputElement;

@@ -241,6 +241,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 
 					/** 如果存在答题处理 */
 					if (resolver) {
+						this.resolverIndex++;
 						try {
 							const result = await resolver.func();
 							/** 修改答题结果 */
@@ -255,7 +256,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 							results[resolver.index].resolving = false;
 							results[resolver.index].error = (e as any)?.message || e;
 						}
-						this.resolverIndex++;
 						loop();
 					} else {
 						/** 继续等待，直到处理数量等于题目数量 */

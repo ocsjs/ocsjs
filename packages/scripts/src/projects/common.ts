@@ -14,7 +14,8 @@ import {
 	SimplifyWorkResult,
 	$script,
 	RenderScript,
-	$
+	$,
+	WorkUploadType
 } from '@ocsjs/core';
 
 import type { ScriptPanelElement, HeaderElement, AnswererWrapper } from '@ocsjs/core';
@@ -22,7 +23,7 @@ import { definedProjects } from '../index';
 import { markdown } from '../utils/markdown';
 import { workConfigs } from '../utils/configs';
 
-export const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
+const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
 export const CommonProject = Project.create({
 	name: '通用',
@@ -342,6 +343,38 @@ export const CommonProject = Project.create({
 					defaultValue: 0
 				}
 			},
+			methods() {
+				return {
+					/**
+					 * 更新状态
+					 */
+					updateWorkState: (state: { totalQuestionCount: number; requestIndex: number; resolverIndex: number }) => {
+						this.cfg.totalQuestionCount = state.totalQuestionCount;
+						this.cfg.requestIndex = state.requestIndex;
+						this.cfg.resolverIndex = state.resolverIndex;
+					},
+					/**
+					 * 刷新状态
+					 */
+					refreshState: () => {
+						this.cfg.totalQuestionCount = 0;
+						this.cfg.requestIndex = 0;
+						this.cfg.resolverIndex = 0;
+					},
+					/**
+					 * 清空搜索结果
+					 */
+					clearResults: () => {
+						$store.setTab(TAB_WORK_RESULTS_KEY, []);
+					},
+					getResults(): Promise<SimplifyWorkResult[]> | undefined {
+						return $store.getTab(TAB_WORK_RESULTS_KEY) || undefined;
+					},
+					setResults(results: SimplifyWorkResult[]) {
+						$store.setTab(TAB_WORK_RESULTS_KEY, results);
+					}
+				};
+			},
 			onrender({ panel }) {
 				/** 记录滚动高度 */
 				let scrollPercent = 0;
@@ -370,8 +403,8 @@ export const CommonProject = Project.create({
 				};
 
 				/** 渲染结果面板 */
-				const render = async () => {
-					const results: SimplifyWorkResult[] | undefined = await $store.getTab(TAB_WORK_RESULTS_KEY);
+				const render = debounce(async () => {
+					const results: SimplifyWorkResult[] | undefined = await this.methods.getResults();
 
 					if (results?.length) {
 						// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
@@ -534,11 +567,12 @@ export const CommonProject = Project.create({
 						el(
 							'div',
 							[
-								`当前搜题: ${this.cfg.requestIndex + 1}/${this.cfg.totalQuestionCount}`,
+								`当前搜题: ${this.cfg.requestIndex}/${this.cfg.totalQuestionCount}`,
 								' , ',
-								`当前答题: ${this.cfg.resolverIndex + 1}/${this.cfg.totalQuestionCount}`,
+								`当前答题: ${this.cfg.resolverIndex}/${this.cfg.totalQuestionCount}`,
 								' , ',
 								el('a', '查看提示', (btn) => {
+									btn.style.cursor = 'pointer';
 									btn.addEventListener('click', () => {
 										$model('confirm', {
 											content: tip
@@ -553,7 +587,7 @@ export const CommonProject = Project.create({
 
 						el('hr')
 					);
-				};
+				}, 100);
 
 				/** 渲染结果列表 */
 				const createResult = (result: SimplifyWorkResult | undefined) => {
@@ -587,6 +621,7 @@ export const CommonProject = Project.create({
 
 				render();
 				this.onConfigChange('type', render);
+				this.onConfigChange('requestIndex', render);
 				this.onConfigChange('resolverIndex', render);
 				$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
 			}
