@@ -149,7 +149,7 @@ export const RenderScript = new Script({
 
 				let selected = false;
 
-				const options: HTMLOptionElement[] = [];
+				const options: HTMLDivElement[] = [];
 
 				// 如果整个工程下面有一个需要显示的脚本，那此工程就添加到头部
 				const scripts = $.getMatchedScripts([project], urls).filter((s) => !s.hideInPanel);
@@ -161,10 +161,7 @@ export const RenderScript = new Script({
 							// 只显示需要显示的面板
 							if (!script.hideInPanel) {
 								const optionSelected = isCurrentPanel(project.name, script, currentPanelName);
-								const option = el('option', {
-									value: project.name + '-' + script.name,
-									label: script.name
-								});
+								const option = el('div', { className: 'dropdown-option' }, script.name);
 
 								if (optionSelected) {
 									option.classList.add('active');

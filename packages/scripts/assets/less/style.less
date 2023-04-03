@@ -834,11 +834,15 @@ search-infos-element {
 .dropdown-content {
 	cursor: pointer;
 
-	option:hover {
+	.dropdown-option {
+		white-space: nowrap;
+	}
+
+	.dropdown-option:hover {
 		background-color: #f3f3f3;
 	}
 
-	option.active {
+	.dropdown-option.active {
 		color: #1890ff;
 	}
 }
