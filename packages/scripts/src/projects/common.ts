@@ -117,10 +117,15 @@ export const CommonProject = Project.create({
 							]);
 
 							const model = $model('prompt', {
-								content: el('div', [
-									'具体配置教程，请查看官网：',
-									el('a', { href: 'https://docs.ocsjs.com/docs/work' }, '自动答题教程'),
-									list
+								content: $creator.notes([
+									[
+										el('div', [
+											'具体配置教程，请查看官网：',
+											el('a', { href: 'https://docs.ocsjs.com/docs/work' }, '自动答题教程')
+										])
+									],
+									'如果题库配置无法粘贴，则说明此页面禁止粘贴，请尝试前往其他页面(网课主页或者学习页面)再尝试进行粘贴。',
+									...(aw.length ? [list] : [])
 								]),
 								placeholder: aw.length ? '重新输入' : '输入题库配置',
 								cancelButton: el('button', {
@@ -770,6 +775,34 @@ export const CommonProject = Project.create({
 });
 
 function enableCopy() {
+	// 将页面上的所有选择方法劫持，并强制返回 true
+	function hackSelect(target: HTMLElement | Document) {
+		const _original_select = target.onselectstart;
+		const _original_oncopy = target.oncopy;
+		const _original_onpaste = target.onpaste;
+		const _original_onkeydown = target.onkeydown;
+
+		target.onselectstart = (e: any) => {
+			_original_select?.apply(target, [e]);
+			return true;
+		};
+		target.oncopy = (e: any) => {
+			_original_oncopy?.apply(target, [e]);
+			return true;
+		};
+		target.onpaste = (e: any) => {
+			_original_onpaste?.apply(target, [e]);
+			return true;
+		};
+		target.onkeydown = (e: any) => {
+			_original_onkeydown?.apply(target, [e]);
+			return true;
+		};
+	}
+
+	hackSelect(document);
+	hackSelect(document.body);
+
 	const style = document.createElement('style');
 	style.innerHTML = `
 		html * {
