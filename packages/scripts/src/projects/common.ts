@@ -271,7 +271,7 @@ export const CommonProject = Project.create({
 							const res = await Promise.race([
 								(async () => {
 									try {
-										return request(new URL(item.url).origin + '/?t=' + t, {
+										return await request(new URL(item.url).origin + '/?t=' + t, {
 											type: 'GM_xmlhttpRequest',
 											method: 'get',
 											responseType: 'text',
@@ -306,10 +306,14 @@ export const CommonProject = Project.create({
 						panel.body.append(el('div', '暂无任何题库...'));
 					}
 				};
-				updateState();
-				this.onConfigChange('answererWrappers', () => {
+
+				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
+				if ($gm.getInfos() !== undefined) {
 					updateState();
-				});
+					this.onConfigChange('answererWrappers', () => {
+						updateState();
+					});
+				}
 			},
 			oncomplete() {
 				if ($.isInTopWindow()) {
