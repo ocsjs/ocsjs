@@ -105,7 +105,6 @@ export const BackgroundProject = Project.create({
 			name: '🔄️ 软件配置同步',
 			namespace: 'background.app',
 			url: [['所有页面', /./]],
-			level: -1,
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
@@ -141,8 +140,8 @@ export const BackgroundProject = Project.create({
 				if ($.isInTopWindow()) {
 					this.cfg.sync = false;
 					try {
-						const res = await request('https://ocs-app/browser', {
-							type: 'fetch',
+						const res = await request('http://localhost:15319/browser', {
+							type: 'GM_xmlhttpRequest',
 							method: 'get',
 							responseType: 'json'
 						});
