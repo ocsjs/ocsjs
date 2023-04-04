@@ -226,6 +226,29 @@ script-panel-element + script-panel-element {
   background: #e1e1e107;
   width: -webkit-fill-available;
 }
+.configs .lock {
+  filter: blur(1px);
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+.configs .lock-wrapper {
+  cursor: not-allowed !important;
+  border-radius: 4px;
+  position: absolute;
+  left: 16px;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.configs .lock-message {
+  background-color: #ffffff7d;
+  border-radius: 4px;
+  box-shadow: 0px 0px 12px #6a6a6a98;
+  padding: 2px;
+}
 .configs .configs-body {
   display: table-row-group;
 }
@@ -844,6 +867,7 @@ search-infos-element .search-infos:hover .copy {
 }
 .dropdown-content {
   cursor: pointer;
+  z-index: 999;
 }
 .dropdown-content .dropdown-option {
   white-space: nowrap;

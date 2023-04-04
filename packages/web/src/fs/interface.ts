@@ -48,8 +48,6 @@ export interface BrowserOptions extends EntityOptions {
 	renaming: boolean;
 	/** 历史 */
 	histories: BrowserOperateHistory[];
-	/** 浏览器存储，可通过接口与脚本进行交互访问 */
-	store: Record<string, any>;
 	/** 自动化脚本列表 */
 	playwrightScripts: RawPlaywrightScript[];
 }

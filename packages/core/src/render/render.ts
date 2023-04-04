@@ -92,6 +92,14 @@ export const RenderScript = new Script({
 				title: '设置当连续点击屏幕 N 次时，可以进行面板的 隐藏/显示 切换，默认连续点击屏幕三下'
 			},
 			defaultValue: 3
+		},
+		/** 锁定配置，防止用户改动 */
+		lockConfigs: {
+			defaultValue: false
+		},
+		/** 锁定配置时的提示信息 */
+		lockMessage: {
+			defaultValue: '当前脚本已锁定配置，无法修改'
 		}
 	},
 	onrender({ panel }) {
@@ -274,7 +282,6 @@ export const RenderScript = new Script({
 			});
 			// 跨域监听状态切换
 			this.onConfigChange('visual', (curr) => visual(curr));
-			visual(this.cfg.visual);
 		};
 
 		/** 替换 body 中的内容 */
@@ -285,16 +292,22 @@ export const RenderScript = new Script({
 						const script = project.scripts[key];
 
 						if (isCurrentPanel(project.name, script, currentPanelName)) {
-							const panel = $creator.scriptPanel(script, { projectName: project.name });
+							// 生成脚本面板
+							const panel = $creator.scriptPanel(script, {
+								projectName: project.name,
+								lockConfigs: this.cfg.lockConfigs
+							});
+							panel.lockWrapper.title = this.cfg.lockMessage;
+							panel.lockWrapper = $creator.tooltip(panel.lockWrapper);
 							script.projectName = project.name;
 							script.panel = panel;
 							script.header = container.header;
 
-							// 执行重新渲染钩子
-							script.onrender?.({ panel: script.panel, header: container.header });
-							script.emit('render', { panel: script.panel, header: container.header });
+							container.body.replaceChildren(panel);
 
-							container.body.replaceChildren(script.panel);
+							// 执行重新渲染钩子
+							script.onrender?.({ panel: panel, header: container.header });
+							script.emit('render', { panel: panel, header: container.header });
 						}
 					}
 				}
@@ -337,6 +350,8 @@ export const RenderScript = new Script({
 
 			// 首先处理窗口状态，防止下方的IO速度过慢可能导致窗口闪烁
 			handleVisible();
+			// 初始化面板可视状态
+			visual(this.cfg.visual);
 
 			(async () => {
 				const urls = await $store.getTab($const.TAB_URLS);

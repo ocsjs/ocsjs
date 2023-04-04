@@ -45,27 +45,7 @@ export async function startupServer() {
 
 	/** 获取 browser 数据 */
 	app.get('/browser', (req, res) => {
-		const uid = req.headers['browser-uid']?.toString();
-		if (uid) {
-			// @ts-ignore
-			const folder: Folder = store.store.render.browser.root;
-			let temp: Folder | undefined;
-			const list: any[] = [folder];
-			while (list.length > 0) {
-				temp = list.shift();
-				if (temp && temp.uid === uid) {
-					// 当独立配置为空的时候使用全局配置
-					if (Object.keys(temp.store).length === 0) {
-						temp.store = store?.store?.render?.setting?.ocs?.store || {};
-					}
-					return res.json(temp);
-				}
-
-				list.push(...(temp?.children ? Object.keys(temp.children).map((k) => temp!.children[k]) : []));
-			}
-		} else {
-			res.json({});
-		}
+		res.json(store?.store?.render?.setting?.ocs?.store || {});
 	});
 
 	/** 请求转发 */

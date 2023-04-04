@@ -1,4 +1,4 @@
-import { $, $creator, $gm, $model, $store, Project, Script, el, request } from '@ocsjs/core';
+import { $, $creator, $gm, $message, $model, $store, Project, RenderScript, Script, el, request } from '@ocsjs/core';
 import gt from 'semver/functions/gt';
 import { CommonProject } from './common';
 import { definedProjects } from '..';
@@ -114,7 +114,8 @@ export const BackgroundProject = Project.create({
 								el('a', { href: 'https://docs.ocsjs.com/docs/app', target: '_blank' }, 'OCS桌面软件'),
 								'启动浏览器，并使用此脚本，'
 							]),
-							'我们会同步软件中的配置到此脚本上，方便多个浏览器的管理。'
+							'我们会同步软件中的配置到此脚本上，方便多个浏览器的管理。',
+							'窗口设置以及后台面板所有设置不会进行同步。'
 						],
 						'如果不是，您可以忽略此脚本。'
 					]).outerHTML
@@ -122,22 +123,46 @@ export const BackgroundProject = Project.create({
 				sync: {
 					defaultValue: false
 				},
-				name: {
-					defaultValue: ''
+				connected: {
+					defaultValue: false
+				},
+				closeSync: {
+					defaultValue: false,
+					label: '关闭同步',
+					attrs: {
+						type: 'checkbox'
+					}
 				}
 			},
 			onrender({ panel }) {
+				// 同步面板不会被锁定
+				panel.lockWrapper.remove();
+				panel.configsBody.classList.remove('lock');
+
 				const update = () => {
 					if (this.cfg.sync) {
-						const tip = el('div', { className: 'notes card' }, [`当前成功同步软件中 “${this.cfg.name}” 文件的配置.`]);
-						panel.append(tip);
+						const tip = el('div', { className: 'notes card' }, [`已成功同步软件中的配置.`]);
+						panel.body.replaceChildren(el('hr'), tip);
+					} else if (this.cfg.connected) {
+						const tip = el('div', { className: 'notes card' }, [`已成功连接到软件，但配置为空。`]);
+						panel.body.replaceChildren(el('hr'), tip);
 					}
 				};
 				update();
+
 				this.onConfigChange('sync', update);
+				this.onConfigChange('connected', update);
+				this.onConfigChange('closeSync', (closeSync) => {
+					if (closeSync) {
+						this.cfg.sync = false;
+						this.cfg.connected = false;
+						RenderScript.cfg.lockConfigs = false;
+						$message('success', { content: '已关闭同步，刷新页面后生效' });
+					}
+				});
 			},
 			async oncomplete() {
-				if ($.isInTopWindow()) {
+				if ($.isInTopWindow() && this.cfg.closeSync === false) {
 					this.cfg.sync = false;
 					try {
 						const res = await request('http://localhost:15319/browser', {
@@ -146,18 +171,45 @@ export const BackgroundProject = Project.create({
 							responseType: 'json'
 						});
 
-						if (res.name && res.store) {
-							for (const key in res.store) {
-								if (Object.prototype.hasOwnProperty.call(res.store, key)) {
-									$store.set(key, res.store[key]);
+						this.cfg.connected = true;
+
+						if (res) {
+							for (const key in res) {
+								if (Object.prototype.hasOwnProperty.call(res, key)) {
+									// 排除渲染脚本的设置
+									if (RenderScript.namespace && key.startsWith(RenderScript.namespace)) {
+										Reflect.deleteProperty(res, key);
+									}
+									// 排除后台脚本的设置
+									for (const scriptKey in BackgroundProject.scripts) {
+										if (Object.prototype.hasOwnProperty.call(BackgroundProject.scripts, scriptKey)) {
+											const script: Script = Reflect.get(BackgroundProject.scripts, scriptKey);
+											if (script.namespace && key.startsWith(script.namespace)) {
+												Reflect.deleteProperty(res, key);
+											}
+										}
+									}
 								}
 							}
 
-							this.cfg.name = res.name;
+							console.log(res);
+
+							for (const key in res) {
+								if (Object.prototype.hasOwnProperty.call(res, key)) {
+									$store.set(key, res[key]);
+								}
+							}
+
 							this.cfg.sync = true;
+							RenderScript.cfg.lockConfigs = true;
+							RenderScript.cfg.lockMessage =
+								'🚫已同步OCS软件配置，如需修改请在软件设置中修改。或者前往 后台-软件配置同步 关闭配置同步。';
 						}
 					} catch {
-						//
+						this.cfg.sync = false;
+						this.cfg.connected = false;
+						RenderScript.cfg.lockConfigs = false;
+						RenderScript.cfg.lockMessage = '';
 					}
 				}
 			}

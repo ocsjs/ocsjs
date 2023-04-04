@@ -104,15 +104,6 @@
 				</div>
 			</a-descriptions-item>
 
-			<a-descriptions-item label="OCS配置">
-				<div
-					id="bp-ocs-config"
-					data-label="OCS配置"
-				>
-					<OCSPanel v-model:store="instance.store"></OCSPanel>
-				</div>
-			</a-descriptions-item>
-
 			<a-descriptions-item label="文件数据">
 				<a-button
 					id="bp-file-data"
@@ -216,7 +207,6 @@ import { Browser } from '../../fs/browser';
 import { datetime } from '../../utils';
 import Tags from '../Tags.vue';
 import Icon from '../Icon.vue';
-import OCSPanel from '../OCSPanel.vue';
 import { BrowserOptions, Tag } from '../../fs/interface';
 import { Folder } from '../../fs/folder';
 import { currentBrowser } from '../../fs/index';

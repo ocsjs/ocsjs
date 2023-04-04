@@ -115,8 +115,11 @@ export const $creator = {
 		});
 	},
 	// 创建脚本面板
-	scriptPanel(script: Script, opts: { projectName: string; onload?: (el: ConfigElement) => void }) {
-		const scriptPanel = el('script-panel-element', { name: script.name });
+	scriptPanel(
+		script: Script,
+		opts: { projectName: string; lockConfigs?: boolean; onload?: (el: ConfigElement) => void }
+	) {
+		const scriptPanel = el('script-panel-element', { name: script.name, lockConfigs: opts.lockConfigs });
 
 		// 监听提示内容改变
 		script.onConfigChange('notes', (pre, curr) => {
