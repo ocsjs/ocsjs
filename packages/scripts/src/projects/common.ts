@@ -63,7 +63,7 @@ export const CommonProject = Project.create({
 			},
 			async onrender({ panel }) {
 				panel.body.replaceChildren('加载中...');
-				const md = await request('https://cdn.ocsjs.com/articles/ocs/notify.md', {
+				const md = await request('https://cdn.ocsjs.com/articles/ocs/notify.md?t=' + Date.now(), {
 					type: 'GM_xmlhttpRequest',
 					responseType: 'text',
 					method: 'get'
@@ -766,7 +766,7 @@ export const CommonProject = Project.create({
 			},
 			async onrender({ panel }) {
 				panel.body.replaceChildren('加载中...');
-				const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md', {
+				const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
 					type: 'GM_xmlhttpRequest',
 					responseType: 'text',
 					method: 'get'
