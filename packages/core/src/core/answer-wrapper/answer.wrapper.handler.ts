@@ -1,5 +1,6 @@
 import { AnswererWrapper, SearchInformation, Result } from './interface';
 import { request } from '../utils/request';
+import { $ } from '../../utils';
 
 /**
  *
@@ -78,7 +79,10 @@ export async function defaultAnswerWrapperHandler(
 					headers: JSON.parse(JSON.stringify(headers || {}))
 				};
 				// 发送请求
-				const responseData = await request(url, requestData);
+				const responseData = await Promise.race([request(url, requestData), $.sleep(30 * 1000)]);
+				if (responseData === undefined) {
+					throw new Error('题库连接超时，请检查网络或者重试。');
+				}
 				/** 从 handler 获取搜索到的题目和回答 */
 
 				// eslint-disable-next-line no-new-func

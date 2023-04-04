@@ -736,6 +736,11 @@ search-infos-element .search-infos:hover .copy {
   display: inline;
   font-size: 12px;
 }
+search-infos-element .error {
+  color: #ff6b6ded;
+  display: inline-block;
+  padding-left: 12px;
+}
 .copy {
   margin-left: 4px;
   padding: 2px 4px;

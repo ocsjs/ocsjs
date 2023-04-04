@@ -34,7 +34,7 @@ export class SearchInfosElement extends IElement {
 					el('summary', [el('a', { href: info.homepage, innerText: info.name })]),
 					...(info.error
 						? /** 显示错误信息 */
-						  [el('span', { className: 'error' }, ['此题库搜题时发生错误：', info.error || '网络错误或者未知错误'])]
+						  [el('span', { className: 'error' }, [info.error || '网络错误或者未知错误'])]
 						: /** 显示结果列表 */
 						  [
 								...info.results.map((ans) => {

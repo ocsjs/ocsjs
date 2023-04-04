@@ -146,49 +146,43 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 						});
 					}
 
-					/** 查找题目 */
-					const searchInfos = await this.doAnswer(ctx.elements, type, ctx);
-
+					/** 查找答案 */
+					const searchInfos = await this.opts.answerer(ctx.elements, type, ctx);
 					let resultPromise: { (): Promise<ResolverResult> } | undefined;
 
-					if (!searchInfos) {
-						error = '答案获取失败, 请重新运行, 或者忽略此题。';
-					} else {
-						// 答案为 undefined 的情况， 需要赋值给一个空字符串，因为可能传回的题目中带有其他提示信息，或者题目里包含答案。
-						searchInfos.forEach((info) => {
-							info.results = info.results.map((ans) => {
-								ans.answer = ans.answer ? ans.answer : '';
-								return ans;
-							});
+					// 答案为 undefined 的情况， 需要赋值给一个空字符串，因为可能传回的题目中带有其他提示信息，或者题目里包含答案。
+					searchInfos.forEach((info) => {
+						info.results = info.results.map((ans) => {
+							ans.answer = ans.answer ? ans.answer : '';
+							return ans;
 						});
+					});
 
-						ctx.searchInfos = searchInfos;
+					ctx.searchInfos = searchInfos;
 
-						if (searchInfos.length === 0) {
-							error = '搜索不到答案, 请重新运行, 或者忽略此题。';
-						}
+					if (searchInfos.length === 0) {
+						error = '搜索不到答案, 请重新运行, 或者忽略此题。';
+					}
 
-						/** 开始处理 */
-						if (typeof this.opts.work === 'object') {
-							if (ctx.elements.options) {
-								/** 使用默认处理器 */
+					/** 开始处理 */
+					if (typeof this.opts.work === 'object') {
+						if (ctx.elements.options) {
+							/** 使用默认处理器 */
 
-								if (type) {
-									const resolver = defaultQuestionResolve(ctx)[type];
-									const handler = this.opts.work.handler;
-									resultPromise = async () =>
-										await resolver(searchInfos, ctx.elements.options as HTMLElement[], handler);
-								} else {
-									error = '题目类型解析失败, 请自行提供解析器, 或者忽略此题。';
-								}
+							if (type) {
+								const resolver = defaultQuestionResolve(ctx)[type];
+								const handler = this.opts.work.handler;
+								resultPromise = async () => await resolver(searchInfos, ctx.elements.options as HTMLElement[], handler);
 							} else {
-								error = 'elements.options 为空 ! 使用默认处理器, 必须提供题目选项的选择器。';
+								error = '题目类型解析失败, 请自行提供解析器, 或者忽略此题。';
 							}
 						} else {
-							/** 使用自定义处理器 */
-							const work = this.opts.work;
-							resultPromise = async () => await work(ctx);
+							error = 'elements.options 为空 ! 使用默认处理器, 必须提供题目选项的选择器。';
 						}
+					} else {
+						/** 使用自定义处理器 */
+						const work = this.opts.work;
+						resultPromise = async () => await work(ctx);
 					}
 
 					if (resultPromise) {
@@ -288,29 +282,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		this.isRunning = false;
 		this.emit('done');
 		return results;
-	}
-
-	/** 获取答案 */
-	private async doAnswer(elements: WorkContext<E>['elements'], type: string | undefined, ctx: WorkContext<E>) {
-		const timeout = 30;
-		/** 解析选项，可以自定义查题器 */
-
-		const answer = async () => {
-			return await Promise.race([
-				this.opts.answerer(elements, type, ctx),
-				/** 最长请求时间 */
-				$.sleep(timeout * 1000)
-			]);
-		};
-
-		let answers = await answer();
-		await $.sleep(3000);
-		if (!answers) {
-			/** 重试一次获取答案 */
-			answers = await answer();
-		}
-
-		return answers;
 	}
 
 	/** 答题结果处理器 */
