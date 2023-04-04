@@ -200,11 +200,6 @@ export const CommonProject = Project.create({
 					},
 					defaultValue: 3
 				},
-				uncheckAllChoice: {
-					label: '清空答案',
-					attrs: { type: 'checkbox', title: '在考试开始前，清空所有已经选择过的答案。' },
-					defaultValue: false
-				},
 				thread: {
 					label: '线程数量（个）',
 					attrs: {

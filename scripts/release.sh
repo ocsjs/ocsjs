@@ -31,7 +31,7 @@ if [ "$isRelease" = "y" ]; then
     # 发布
     npm publish &&
     # 提交
-    git push origin 4.0
+    git push origin 4.0 --tags
     echo "$version 发布成功"
     elif [ "$isRelease" = "n" ]; then
     echo "取消发布"

@@ -4,7 +4,6 @@ export interface CommonWorkOptions {
 	period: number;
 	thread: number;
 	upload: WorkUploadType;
-	uncheckAllChoice: boolean;
 	answererWrappers: AnswererWrapper[];
 	stopSecondWhenFinish: number;
 }

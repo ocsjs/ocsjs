@@ -488,7 +488,7 @@ export const CXProject = Project.create({
 
 export function workOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, upload, thread, uncheckAllChoice, stopSecondWhenFinish }: CommonWorkOptions
+	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
@@ -571,21 +571,21 @@ export function workOrExam(
 				return await resolver(searchInfos, elements.options, (type, answer, option) => {
 					// 如果存在已经选择的选项
 					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						if (option.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
+						if (option?.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
 							option.click();
 						}
 					} else if (type === 'completion' && answer.trim()) {
-						const text = option.querySelector('textarea');
-						const textareaFrame = option.querySelector('iframe');
+						const text = option?.querySelector('textarea');
+						const textareaFrame = option?.querySelector('iframe');
 						if (text) {
 							text.value = answer;
 						}
 						if (textareaFrame?.contentDocument) {
 							textareaFrame.contentDocument.body.innerHTML = answer;
 						}
-						if (option.parentElement) {
+						if (option?.parentElement) {
 							/** 如果存在保存按钮则点击 */
-							$el('[onclick*=saveQuestion]', option.parentElement)?.click();
+							$el('[onclick*=saveQuestion]', option?.parentElement)?.click();
 						}
 					}
 				});
@@ -632,14 +632,6 @@ export function workOrExam(
 		/** 监听答题结果 */
 		onResolveUpdate(res) {
 			CommonProject.scripts.workResults.methods.updateWorkState(worker);
-		},
-		async onElementSearched(elements) {
-			if (uncheckAllChoice) {
-				for (const el of elements.options) {
-					el.click();
-					await $.sleep(200);
-				}
-			}
 		}
 	});
 
@@ -1324,21 +1316,21 @@ async function chapterTestTask(
 
 				const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
 					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						if (option.parentElement?.querySelector('label input')?.getAttribute('checked') === 'checked') {
+						if (option?.parentElement?.querySelector('label input')?.getAttribute('checked') === 'checked') {
 							// 跳过
 						} else {
-							option.click();
+							option?.click();
 						}
 					} else if (type === 'completion' && answer.trim()) {
-						const text = option.parentElement?.querySelector('textarea');
-						const textareaFrame = option.parentElement?.querySelector('iframe');
+						const text = option?.parentElement?.querySelector('textarea');
+						const textareaFrame = option?.parentElement?.querySelector('iframe');
 						if (text) {
 							text.value = answer;
 						}
 						if (textareaFrame?.contentDocument) {
 							textareaFrame.contentDocument.body.innerHTML = answer;
 						}
-						if (option.parentElement) {
+						if (option?.parentElement) {
 							/** 如果存在保存按钮则点击 */
 							$el('[onclick*=saveQuestion]', option.parentElement)?.click();
 						}
@@ -1394,16 +1386,16 @@ async function chapterTestTask(
 
 					const option = options[Math.floor(Math.random() * options.length)];
 					// @ts-ignore 随机选择选项
-					option.parentElement?.querySelector('a,label')?.click();
+					option?.parentElement?.querySelector('a,label')?.click();
 				} else if (commonSetting['randomWork-complete'] && type === 'completion') {
 					$console.log('正在随机作答');
 
 					// 随机填写答案
 					for (const option of options) {
-						const textarea = option.parentElement?.querySelector('textarea');
+						const textarea = option?.parentElement?.querySelector('textarea');
 						const completeTexts = commonSetting['randomWork-completeTexts-textarea'].split('\n').filter(Boolean);
 						const text = completeTexts[Math.floor(Math.random() * completeTexts.length)];
-						const textareaFrame = option.parentElement?.querySelector('iframe');
+						const textareaFrame = option?.parentElement?.querySelector('iframe');
 
 						if (text) {
 							if (textarea) {
