@@ -817,7 +817,7 @@ function gxkWorkOrExam(
 	type: 'work' | 'exam' = 'work',
 	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
 ) {
-	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'} ` });
+	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
 	// 置顶搜索结果面板
 	$script.pin(CommonProject.scripts.workResults);

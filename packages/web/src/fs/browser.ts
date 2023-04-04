@@ -1,4 +1,4 @@
-import { nextTick, reactive } from 'vue';
+import { nextTick } from 'vue';
 import { store } from '../store';
 import { Process, processes } from '../utils/process';
 import { resetSearch } from '../utils/entity';
@@ -17,7 +17,6 @@ export class Browser extends Entity implements BrowserOptions {
 	cachePath: string;
 	histories: BrowserOperateHistory[];
 	parent: string;
-	store: Record<string, any> = reactive({});
 	playwrightScripts: RawPlaywrightScript[];
 
 	constructor(opts: BrowserOptions & EntityOptions) {
@@ -29,7 +28,6 @@ export class Browser extends Entity implements BrowserOptions {
 		this.cachePath = opts.cachePath;
 		this.histories = opts.histories;
 		this.parent = opts.parent;
-		this.store = opts.store;
 		this.playwrightScripts = opts.playwrightScripts;
 	}
 

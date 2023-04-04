@@ -147,7 +147,7 @@ export class ScriptWorker {
 				.catch(console.error);
 			setTimeout(() => {
 				send('webrtc-page-loaded');
-			}, 1000);
+			}, 3000);
 		}
 	}
 
