@@ -246,20 +246,26 @@ export const CommonProject = Project.create({
 				}
 			},
 			onrender({ panel }) {
+				panel.body.replaceChildren(el('hr'));
+				const refresh = el(
+					'button',
+					{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
+					'🔄️刷新题库状态'
+				);
+				refresh.onclick = () => {
+					updateState();
+				};
+				const tableContainer = el('div');
+				panel.body.append(refresh, tableContainer);
+
 				// 更新题库状态
 				const updateState = async () => {
 					// 清空元素
-					panel.body.replaceChildren(el('hr'));
+					tableContainer.replaceChildren();
+					refresh.toggleAttribute('disabled');
+					refresh.textContent = '🚫正在加载...';
 
-					const refresh = el(
-						'button',
-						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
-						'🔄️刷新状态'
-					);
-					refresh.onclick = () => {
-						updateState();
-					};
-					panel.body.append(refresh);
+					let loadedCount = 0;
 
 					if (this.cfg.answererWrappers.length) {
 						const table = el('table');
@@ -300,10 +306,18 @@ export const CommonProject = Project.create({
 							body.append(el('td', success ? '连接成功🟢' : error ? '连接失败🔴' : '连接超时🟡'));
 							body.append(el('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
 							table.append(body);
+							loadedCount++;
+
+							if (loadedCount === this.cfg.answererWrappers.length) {
+								setTimeout(() => {
+									refresh.textContent = '🔄️刷新题库状态';
+									refresh.toggleAttribute('disabled');
+								}, 3000);
+							}
 						});
-						panel.body.append(table);
+						tableContainer.append(table);
 					} else {
-						panel.body.append(el('div', '暂无任何题库...'));
+						tableContainer.append(el('div', '暂无任何题库...'));
 					}
 				};
 
