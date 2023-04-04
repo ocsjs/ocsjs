@@ -64,7 +64,7 @@ export const CommonProject = Project.create({
 			async onrender({ panel }) {
 				panel.body.replaceChildren('加载中...');
 				const md = await request('https://cdn.ocsjs.com/articles/ocs/notify.md', {
-					type: 'fetch',
+					type: 'GM_xmlhttpRequest',
 					responseType: 'text',
 					method: 'get'
 				});
@@ -407,13 +407,13 @@ export const CommonProject = Project.create({
 					 * 清空搜索结果
 					 */
 					clearResults: () => {
-						$store.setTab(TAB_WORK_RESULTS_KEY, []);
+						return $store.setTab(TAB_WORK_RESULTS_KEY, []);
 					},
 					getResults(): Promise<SimplifyWorkResult[]> | undefined {
 						return $store.getTab(TAB_WORK_RESULTS_KEY) || undefined;
 					},
 					setResults(results: SimplifyWorkResult[]) {
-						$store.setTab(TAB_WORK_RESULTS_KEY, results);
+						return $store.setTab(TAB_WORK_RESULTS_KEY, results);
 					}
 				};
 			},
@@ -772,7 +772,7 @@ export const CommonProject = Project.create({
 			async onrender({ panel }) {
 				panel.body.replaceChildren('加载中...');
 				const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md', {
-					type: 'fetch',
+					type: 'GM_xmlhttpRequest',
 					responseType: 'text',
 					method: 'get'
 				});
