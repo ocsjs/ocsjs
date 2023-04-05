@@ -26,8 +26,6 @@ export class ScriptPanelElement extends IElement {
 	lockWrapper: HTMLDivElement = el('div', { className: 'lock-wrapper' });
 	/** 面板名字 */
 	name?: string;
-	/** 是否锁定配置 */
-	lockConfigs?: boolean;
 
 	connectedCallback() {
 		this.separator.innerText = this.name || '';
@@ -35,12 +33,5 @@ export class ScriptPanelElement extends IElement {
 		this.append(this.notesContainer);
 		this.append(this.configsContainer);
 		this.append(this.body);
-
-		if (this.lockConfigs && this.configsBody.children.length) {
-			this.configsBody.classList.add('lock');
-			this.lockWrapper.style.width = (this.configsBody.clientWidth || this.clientWidth) + 'px';
-			this.lockWrapper.style.height = (this.configsBody.clientHeight || this.clientHeight) + 'px';
-			this.configsContainer.prepend(this.lockWrapper);
-		}
 	}
 }

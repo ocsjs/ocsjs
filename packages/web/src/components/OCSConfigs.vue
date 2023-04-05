@@ -82,8 +82,14 @@ function renderOCS() {
 
 				/** 为对象添加响应式特性，在设置值的时候同步到本地存储中 */
 				script.cfg = Object.keys(script.cfg).length === 0 ? OCS.$.createConfigProxy(script) : script.cfg;
+				const { notes, ...otherConfigs } = script.configs || {};
 
-				if (script.namespace && script.configs && script.hideInPanel !== false) {
+				if (
+					script.namespace &&
+					// 如果没有配置项，则不显示
+					Object.keys(otherConfigs).filter((k) => otherConfigs[k].label !== undefined).length &&
+					script.hideInPanel !== false
+				) {
 					const panel = OCS.$creator.scriptPanel(script, { projectName: '' });
 
 					/** 添加到页面中，并执行 onrender 函数 */

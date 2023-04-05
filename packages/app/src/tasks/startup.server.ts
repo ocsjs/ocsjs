@@ -45,7 +45,8 @@ export async function startupServer() {
 
 	/** 获取 browser 数据 */
 	app.get('/browser', (req, res) => {
-		res.json(store?.store?.render?.setting?.ocs?.store || {});
+		// 如果开启了同步配置，就返回，否则返回空对象
+		res.json(store?.store?.render?.setting?.ocs?.openSync ? store?.store?.render?.setting?.ocs?.store : {});
 	});
 
 	/** 请求转发 */

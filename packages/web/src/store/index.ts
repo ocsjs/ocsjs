@@ -57,6 +57,8 @@ export type WebStore = {
 			currentProjectName: string;
 			/** 全局配置 */
 			store: any;
+			/** 是否同步OCS配置 */
+			openSync: boolean;
 		};
 	};
 	state: {
@@ -117,7 +119,8 @@ export const store: AppStore & { render: WebStore } = reactive(
 					},
 					ocs: {
 						currentProjectName: '',
-						store: {}
+						store: {},
+						openSync: false
 					}
 				},
 				state: {

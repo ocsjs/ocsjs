@@ -27,7 +27,17 @@
 			<Card title="通用设置">
 				<BrowserPath></BrowserPath>
 
-				<Description label="OCS全局配置">
+				<Description label="OCS配置">
+					<a-switch v-model="store.render.setting.ocs.openSync">
+						<template #checked> 同步到全部浏览器中 </template>
+						<template #unchecked> 同步到全部浏览器中 </template>
+					</a-switch>
+
+					<a-divider
+						class="mt-2 mb-2"
+						direction="vertical"
+					/>
+
 					<a-button
 						v-if="state.loading === false && state.err === ''"
 						@click="state.show = true"

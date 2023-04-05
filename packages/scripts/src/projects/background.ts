@@ -156,7 +156,6 @@ export const BackgroundProject = Project.create({
 					if (closeSync) {
 						this.cfg.sync = false;
 						this.cfg.connected = false;
-						RenderScript.cfg.lockConfigs = false;
 						$message('success', { content: '已关闭同步，刷新页面后生效' });
 					}
 				});
@@ -173,7 +172,8 @@ export const BackgroundProject = Project.create({
 
 						this.cfg.connected = true;
 
-						if (res) {
+						if (res && Object.keys(res).length) {
+							// 排除几个特殊的设置
 							for (const key in res) {
 								if (Object.prototype.hasOwnProperty.call(res, key)) {
 									// 排除渲染脚本的设置
@@ -192,24 +192,46 @@ export const BackgroundProject = Project.create({
 								}
 							}
 
-							console.log(res);
-
+							// 同步所有的配置
 							for (const key in res) {
 								if (Object.prototype.hasOwnProperty.call(res, key)) {
 									$store.set(key, res[key]);
 								}
 							}
 
+							// 锁定面板
+							for (const projects of definedProjects()) {
+								for (const key in projects.scripts) {
+									if (Object.prototype.hasOwnProperty.call(projects.scripts, key)) {
+										const script = projects.scripts[key];
+										const originalRender = script.onrender;
+										// 重新定义渲染函数。在渲染后添加锁定面板的代码
+										script.onrender = ({ panel, header }) => {
+											originalRender?.({ panel, header });
+											if (panel.configsBody.children.length) {
+												panel.configsBody.classList.add('lock');
+												panel.lockWrapper.style.width = (panel.configsBody.clientWidth || panel.clientWidth) + 'px';
+												panel.lockWrapper.style.height = (panel.configsBody.clientHeight || panel.clientHeight) + 'px';
+												panel.configsContainer.prepend(panel.lockWrapper);
+
+												panel.lockWrapper.title =
+													'🚫已同步OCS软件配置，如需修改请在软件设置中修改。或者前往 后台-软件配置同步 关闭配置同步。';
+												panel.lockWrapper = $creator.tooltip(panel.lockWrapper);
+											}
+										};
+										// 重新执行渲染
+										if (script.panel && script.header) {
+											script.onrender({ panel: script.panel, header: script.header });
+										}
+									}
+								}
+							}
+
 							this.cfg.sync = true;
-							RenderScript.cfg.lockConfigs = true;
-							RenderScript.cfg.lockMessage =
-								'🚫已同步OCS软件配置，如需修改请在软件设置中修改。或者前往 后台-软件配置同步 关闭配置同步。';
 						}
 					} catch {
 						this.cfg.sync = false;
 						this.cfg.connected = false;
-						RenderScript.cfg.lockConfigs = false;
-						RenderScript.cfg.lockMessage = '';
 					}
 				}
 			}

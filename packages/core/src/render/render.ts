@@ -294,11 +294,8 @@ export const RenderScript = new Script({
 						if (isCurrentPanel(project.name, script, currentPanelName)) {
 							// 生成脚本面板
 							const panel = $creator.scriptPanel(script, {
-								projectName: project.name,
-								lockConfigs: this.cfg.lockConfigs
+								projectName: project.name
 							});
-							panel.lockWrapper.title = this.cfg.lockMessage;
-							panel.lockWrapper = $creator.tooltip(panel.lockWrapper);
 							script.projectName = project.name;
 							script.panel = panel;
 							script.header = container.header;
