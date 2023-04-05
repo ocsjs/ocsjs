@@ -28,7 +28,7 @@ export async function updater(win: BrowserWindow) {
 			message: [
 				`检测到最新版本：${tag}`,
 				...(feat.length ? ['新增功能：', feat.join('\n')] : []),
-				...[fix.length ? ['修复BUG: ', fix.join('\n')] : []],
+				...(fix.length ? ['修复BUG: ', fix.join('\n')] : []),
 				'',
 				'是否更新 ?'
 			].join('\n'),

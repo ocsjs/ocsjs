@@ -241,83 +241,83 @@ export const CommonProject = Project.create({
 				}
 			},
 			onrender({ panel }) {
-				panel.body.replaceChildren(el('hr'));
-				const refresh = el(
-					'button',
-					{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
-					'🔄️刷新题库状态'
-				);
-				refresh.onclick = () => {
-					updateState();
-				};
-				const tableContainer = el('div');
-				panel.body.append(refresh, tableContainer);
-
-				// 更新题库状态
-				const updateState = async () => {
-					// 清空元素
-					tableContainer.replaceChildren();
-					refresh.toggleAttribute('disabled');
-					refresh.textContent = '🚫正在加载...';
-
-					let loadedCount = 0;
-
-					if (this.cfg.answererWrappers.length) {
-						const table = el('table');
-						table.style.width = '100%';
-						this.cfg.answererWrappers.forEach(async (item) => {
-							const t = Date.now();
-							let success = false;
-							let error;
-							const res = await Promise.race([
-								(async () => {
-									try {
-										return await request(new URL(item.url).origin + '/?t=' + t, {
-											type: 'GM_xmlhttpRequest',
-											method: 'get',
-											responseType: 'text',
-											headers: {
-												'Content-Type': 'text/html'
-											}
-										});
-									} catch (err) {
-										error = err;
-										return false;
-									}
-								})(),
-								(async () => {
-									await $.sleep(10 * 1000);
-									return false;
-								})()
-							]);
-							if (res) {
-								success = true;
-							} else {
-								success = false;
-							}
-
-							const body = el('tbody');
-							body.append(el('td', item.name));
-							body.append(el('td', success ? '连接成功🟢' : error ? '连接失败🔴' : '连接超时🟡'));
-							body.append(el('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
-							table.append(body);
-							loadedCount++;
-
-							if (loadedCount === this.cfg.answererWrappers.length) {
-								setTimeout(() => {
-									refresh.textContent = '🔄️刷新题库状态';
-									refresh.toggleAttribute('disabled');
-								}, 3000);
-							}
-						});
-						tableContainer.append(table);
-					} else {
-						tableContainer.append(el('div', '暂无任何题库...'));
-					}
-				};
-
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
 				if ($gm.getInfos() !== undefined) {
+					panel.body.replaceChildren(el('hr'));
+					const refresh = el(
+						'button',
+						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
+						'🔄️刷新题库状态'
+					);
+					refresh.onclick = () => {
+						updateState();
+					};
+					const tableContainer = el('div');
+					panel.body.append(refresh, tableContainer);
+
+					// 更新题库状态
+					const updateState = async () => {
+						// 清空元素
+						tableContainer.replaceChildren();
+						refresh.toggleAttribute('disabled');
+						refresh.textContent = '🚫正在加载...';
+
+						let loadedCount = 0;
+
+						if (this.cfg.answererWrappers.length) {
+							const table = el('table');
+							table.style.width = '100%';
+							this.cfg.answererWrappers.forEach(async (item) => {
+								const t = Date.now();
+								let success = false;
+								let error;
+								const res = await Promise.race([
+									(async () => {
+										try {
+											return await request(new URL(item.url).origin + '/?t=' + t, {
+												type: 'GM_xmlhttpRequest',
+												method: 'get',
+												responseType: 'text',
+												headers: {
+													'Content-Type': 'text/html'
+												}
+											});
+										} catch (err) {
+											error = err;
+											return false;
+										}
+									})(),
+									(async () => {
+										await $.sleep(10 * 1000);
+										return false;
+									})()
+								]);
+								if (res) {
+									success = true;
+								} else {
+									success = false;
+								}
+
+								const body = el('tbody');
+								body.append(el('td', item.name));
+								body.append(el('td', success ? '连接成功🟢' : error ? '连接失败🔴' : '连接超时🟡'));
+								body.append(el('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
+								table.append(body);
+								loadedCount++;
+
+								if (loadedCount === this.cfg.answererWrappers.length) {
+									setTimeout(() => {
+										refresh.textContent = '🔄️刷新题库状态';
+										refresh.toggleAttribute('disabled');
+									}, 3000);
+								}
+							});
+							tableContainer.append(table);
+						} else {
+							tableContainer.append(el('div', '暂无任何题库...'));
+						}
+					};
+
 					updateState();
 					this.onConfigChange('answererWrappers', () => {
 						updateState();
