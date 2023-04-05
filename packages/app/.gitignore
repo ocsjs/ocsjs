@@ -4,6 +4,7 @@ pnpm-lock.yaml
 package-lock.json
 public/
 bin/
+tests/
 
 # rollup-plugin-visualizer
 stats.html

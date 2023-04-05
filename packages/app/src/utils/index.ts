@@ -1,10 +1,11 @@
-import { app } from 'electron';
+import { app, dialog } from 'electron';
 import path from 'path';
 import AdmZip from 'adm-zip';
 import axios from 'axios';
 import { createWriteStream, existsSync, mkdirSync } from 'fs';
 import { finished } from 'stream/promises';
 import { Logger } from '../logger';
+import xlsx from 'xlsx';
 
 const taskLogger = Logger('task');
 const logger = Logger('utils');
@@ -83,4 +84,24 @@ export function unzip(input: string, output: string) {
 export function getProjectPath() {
 	/** 这里多退出一层是因为打包后是运行在 ./lib 下面的 */
 	return app.isPackaged ? app.getAppPath() : path.resolve('./');
+}
+
+/**
+ * 导出excel
+ */
+export function exportExcel(excel: { sheetName: string; list: any[] }[], filename: string) {
+	dialog
+		.showSaveDialog({
+			title: '导出Excel',
+			defaultPath: filename
+		})
+		.then(({ canceled, filePath }) => {
+			if (!canceled && filePath) {
+				const book = xlsx.utils.book_new();
+				for (const item of excel) {
+					xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet(item.list), item.sheetName);
+				}
+				xlsx.writeFile(book, filePath);
+			}
+		});
 }

@@ -22,7 +22,7 @@
 				<template #browserName="{ record, column }">
 					<a-tooltip>
 						<template #content>
-							如果不填写，默认使用自动规则进行填充：<br />
+							如果留空，则默认使用自动规则进行填充：<br />
 							{{ state.browserNameFields.join('+') }}
 						</template>
 						<a-input
@@ -228,15 +228,22 @@ function onConfirm() {
 }
 
 function exportTemplateExcel() {
-	const book = xlsx.utils.book_new();
 	const template = Object.create({});
 	template.浏览器名 = '';
 	for (const config of arrayLikeConfigs.value) {
 		template[config.label] = '';
 	}
 
-	xlsx.utils.book_append_sheet(book, xlsx.utils.json_to_sheet([template]), 'Sheet1');
-	xlsx.writeFile(book, `${props.rawPlaywrightScript.name} 创建模板.xlsx`);
+	remote.methods.call(
+		'exportExcel',
+		[
+			{
+				sheetName: 'Sheet1',
+				list: [template]
+			}
+		],
+		`${props.rawPlaywrightScript.name} 创建模板.xlsx`
+	);
 }
 
 function importTemplateExcelConfirm() {

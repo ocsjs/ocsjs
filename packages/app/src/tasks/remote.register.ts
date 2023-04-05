@@ -10,6 +10,7 @@ import crypto from 'crypto';
 import { OCSApi, getValidBrowsers } from '@ocsjs/common';
 import si from 'systeminformation';
 import { store } from '../store';
+import { exportExcel } from '../utils/index';
 
 /**
  * 注册主进程远程通信事件
@@ -89,7 +90,8 @@ const methods = {
 	zip: zip,
 	unzip: unzip,
 	getValidBrowsers: getValidBrowsers,
-	systemProcesses: () => si.processes()
+	systemProcesses: () => si.processes(),
+	exportExcel: exportExcel
 };
 
 /**
