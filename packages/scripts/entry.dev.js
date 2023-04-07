@@ -1,7 +1,7 @@
 /* eslint-disable no-undef */
 /// <reference path="./global.d.ts" />
 
-const { start, definedProjects } = OCS;
+const { start, definedProjects, CommonProject } = OCS;
 
 (function () {
 	'use strict';
@@ -9,6 +9,7 @@ const { start, definedProjects } = OCS;
 	// 运行脚本
 	start({
 		style: GM_getResourceText('STYLE'),
-		projects: definedProjects()
+		projects: definedProjects(),
+		defaultPanelName: CommonProject.scripts.guide.namespace
 	});
 })();

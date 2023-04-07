@@ -12,6 +12,8 @@ export interface StartConfig {
 	style: string;
 	/** 项目列表 */
 	projects: Project[];
+	/** 默认面板名称 */
+	defaultPanelName: string;
 }
 
 /**

@@ -124,12 +124,20 @@ export const RenderScript = new Script({
 		panel.body.replaceChildren(el('hr'), closeBtn);
 	},
 
-	async onactive({ style, projects }: StartConfig) {
+	async onactive({ style, projects, defaultPanelName }: StartConfig) {
 		/** 兼容低版本浏览器 */
 		handleLowLevelBrowser();
 
 		/** 加载自定义元素 */
 		$.loadCustomElements(definedCustomElements);
+
+		/** 默认值 */
+		const defaults = {
+			/** 当前页面存在默认页面 */
+			urls: (urls: string[]) => (urls && urls.length ? urls : [location.href]),
+			/** 默认面板名 */
+			panelName: (name: string) => name || defaultPanelName || ''
+		};
 
 		/** 当前匹配到的脚本，并且面板不隐藏 */
 		const matchedScripts = $.getMatchedScripts(projects, [location.href]).filter((s) => !s.hideInPanel);
@@ -380,14 +388,6 @@ export const RenderScript = new Script({
 		}
 	}
 });
-
-/** 默认值 */
-const defaults = {
-	/** 当前页面存在默认页面 */
-	urls: (urls: string[]) => (urls && urls.length ? urls : [location.href]),
-	/** 默认面板名 */
-	panelName: (name: string) => name || RenderScript.namespace || ''
-};
 
 /**
  * 创建一个模态框代替原生的 alert, confirm, prompt

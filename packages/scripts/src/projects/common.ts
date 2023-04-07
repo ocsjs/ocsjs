@@ -253,18 +253,21 @@ export const CommonProject = Project.create({
 						updateState();
 					};
 					const tableContainer = el('div');
+					refresh.style.display = 'none';
+					tableContainer.style.display = 'none';
 					panel.body.append(refresh, tableContainer);
 
 					// 更新题库状态
 					const updateState = async () => {
 						// 清空元素
 						tableContainer.replaceChildren();
-						refresh.toggleAttribute('disabled');
-						refresh.textContent = '🚫正在加载...';
-
 						let loadedCount = 0;
 
 						if (this.cfg.answererWrappers.length) {
+							refresh.style.display = 'block';
+							tableContainer.style.display = 'block';
+							refresh.textContent = '🚫正在加载...';
+							refresh.setAttribute('disabled', 'true');
 							const table = el('table');
 							table.style.width = '100%';
 							this.cfg.answererWrappers.forEach(async (item) => {
@@ -308,13 +311,14 @@ export const CommonProject = Project.create({
 								if (loadedCount === this.cfg.answererWrappers.length) {
 									setTimeout(() => {
 										refresh.textContent = '🔄️刷新题库状态';
-										refresh.toggleAttribute('disabled');
+										refresh.removeAttribute('disabled');
 									}, 3000);
 								}
 							});
 							tableContainer.append(table);
 						} else {
-							tableContainer.append(el('div', '暂无任何题库...'));
+							refresh.style.display = 'none';
+							tableContainer.style.display = 'none';
 						}
 					};
 
