@@ -214,6 +214,8 @@ export const CXProject = Project.create({
 				notes: workConfigs.notes
 			},
 			async oncomplete() {
+				$script.pin(this);
+
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('auto', changeMsg);
 
@@ -270,6 +272,7 @@ export const CXProject = Project.create({
 				auto: auto
 			},
 			async oncomplete() {
+				$script.pin(this);
 				// 删除水印
 				$$el('body > .mask_div').forEach((el) => el.remove());
 
@@ -1270,7 +1273,9 @@ async function chapterTestTask(
 				/** 超星旧版作业题目冗余数据 */
 				.replace(/\(..题, .+?分\)/, '')
 				.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
-				.replace(/^\d+\.?/, '')
+				.replace(/^\d+\./, '')
+				.replace(/^\d+。/, '')
+				.replace(/^\d+、/, '')
 				.trim()
 		);
 	};
