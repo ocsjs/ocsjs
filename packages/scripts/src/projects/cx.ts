@@ -684,17 +684,23 @@ export function workOrExam(
  * @see 参考 https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
  */
 async function mappingRecognize(doc: Document = document) {
-	// @ts-ignore
-	top.typrMapping = top.typrMapping || (await loadTyprMapping());
+	let typrMapping = Object.create({});
+	try {
+		// @ts-ignore
+		top.typrMapping = top.typrMapping || (await loadTyprMapping());
+		// @ts-ignore
+		typrMapping = top.typrMapping;
+	} catch {
+		// 超星考试可能嵌套其他平台中，所以会存在跨域，这里需要处理一下跨域情况，如果是跨域直接在当前页面加载字库
+		typrMapping = await loadTyprMapping();
+	}
 
 	/** 判断是否有繁体字 */
 	const fontFaceEl = Array.from(doc.head.querySelectorAll('style')).find((style) =>
 		style.textContent?.includes('font-cxsecret')
 	);
-	// @ts-ignore
-	const fontMap = top.typrMapping;
-
-	if (fontFaceEl) {
+	const fontMap = typrMapping;
+	if (fontFaceEl && Object.keys(fontMap).length > 0) {
 		// 解析font-cxsecret字体
 		const font = fontFaceEl.textContent?.match(/base64,([\w\W]+?)'/)?.[1];
 
