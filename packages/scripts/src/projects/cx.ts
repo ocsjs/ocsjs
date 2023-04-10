@@ -752,12 +752,16 @@ async function mappingRecognize(doc: Document = document) {
 }
 
 async function loadTyprMapping() {
-	$console.log('正在加载繁体字库。');
-	return await request('https://cdn.ocsjs.com/resources/font/table.json', {
-		type: 'GM_xmlhttpRequest',
-		method: 'get',
-		responseType: 'json'
-	});
+	try {
+		$console.log('正在加载繁体字库。');
+		return await request('https://cdn.ocsjs.com/resources/font/table.json', {
+			type: 'GM_xmlhttpRequest',
+			method: 'get',
+			responseType: 'json'
+		});
+	} catch (err) {
+		$console.error('载繁体字库加载失败，请刷新页面重试：', String(err));
+	}
 }
 
 /**
