@@ -1273,9 +1273,7 @@ async function chapterTestTask(
 				/** 超星旧版作业题目冗余数据 */
 				.replace(/\(..题, .+?分\)/, '')
 				.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
-				.replace(/^\d+\./, '')
-				.replace(/^\d+。/, '')
-				.replace(/^\d+、/, '')
+				.replace(/^\d+[。、.]/, '')
 				.trim()
 		);
 	};
