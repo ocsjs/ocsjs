@@ -105,6 +105,8 @@ export const BackgroundProject = Project.create({
 			name: '🔄️ 软件配置同步',
 			namespace: 'background.app',
 			url: [['所有页面', /./]],
+			// 如果是在OCS软件中则不显示此页面
+			hideInPanel: $gm.getInfos() === undefined,
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
