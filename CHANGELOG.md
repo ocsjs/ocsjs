@@ -1,3 +1,30 @@
+## [4.2.26](https://github.com/ocsjs/ocsjs/compare/4.2.15...4.2.26) (2023-04-19)
+
+
+### Bug Fixes
+
+* **app:** 修复软件批量创建中无法导出模板的BUG ([7ba565e](https://github.com/ocsjs/ocsjs/commit/7ba565e569d003ac91d124bc09c001816df97edc))
+* **app:** 修复OCR初始化软件路径读取问题 ([2ef18e0](https://github.com/ocsjs/ocsjs/commit/2ef18e0e92dd65abda4516df9b9ee7a2f12f4d1c))
+* **scirpt:** 在OCS软件中不显示软件配置同步的面板 ([baf3815](https://github.com/ocsjs/ocsjs/commit/baf3815ec8670fed7d27250c4deb9a4c0094676a))
+* **script and app:** 修复脚本题库检测BUG，优化软件更新提示 ([7e217d1](https://github.com/ocsjs/ocsjs/commit/7e217d1a68ce840275bdf94ba3fa2265a73d3f13))
+* **script:** - 优化超星章节测试题目解析 ([6b39e40](https://github.com/ocsjs/ocsjs/commit/6b39e401cf7c9ad1af58651b1067b722c55236c0))
+* **script:** 对超星繁体字库加载进行异常处理 ([7a0c825](https://github.com/ocsjs/ocsjs/commit/7a0c825aec72d1af1cf7e9b33eb78660aea17713))
+* **script:** 删除清空答案选项 ([06936a5](https://github.com/ocsjs/ocsjs/commit/06936a558f67f1e9e80d9369e52697ed0f557e2f))
+* **script:** 修复超星输入框无法复制粘贴的BUG ([d8a3c30](https://github.com/ocsjs/ocsjs/commit/d8a3c300bcb7f25a186bb3e857f9d0e3c8aa5b9f))
+* **script:** 修复超星章节测试出现年份丢失的BUG ([941c0e9](https://github.com/ocsjs/ocsjs/commit/941c0e9ceeefc7270b1f6740f1061e7aed952e39))
+* **script:** 修复超星章节测试出现年份丢失的BUG ([2bc1ce1](https://github.com/ocsjs/ocsjs/commit/2bc1ce11bc6ecb0e34300611c3e0c2360624a2fc))
+* **script:** 修复搜索结果答案是图片但没有显示的BUG ([860d1fe](https://github.com/ocsjs/ocsjs/commit/860d1feb2fd480a8ba8cc6fcdfe9eda9ca06004a))
+* **script:** 修复智慧树考试无法识别题目的BUG ([5140d95](https://github.com/ocsjs/ocsjs/commit/5140d95aeb46ba13244eae73e3d3eb595c3cee1d))
+* **script:** 优化软件同步设置，优化题库状态显示 ([4e3cc96](https://github.com/ocsjs/ocsjs/commit/4e3cc967fc653f333cbb897404ac1f8f8ae65ab8))
+* **scripts:** 每次渲染强制更新通知和版本日志 ([7cc5347](https://github.com/ocsjs/ocsjs/commit/7cc53479e00205c1fae88c6ae3e353874bdff413))
+
+
+### Features
+
+* **script:** 添加题目冗余字段自定义删除功能 ([198e240](https://github.com/ocsjs/ocsjs/commit/198e2408fa90325731b8eae8e5b8e6e42609d102))
+
+
+
 ## [4.2.15](https://github.com/ocsjs/ocsjs/compare/4.2.11...4.2.15) (2023-04-04)
 
 

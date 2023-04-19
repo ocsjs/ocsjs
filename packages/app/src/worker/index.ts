@@ -239,8 +239,6 @@ export async function launchScripts({
 					`--user-data-dir=${userDataDir}`,
 					// '--enable-automation',
 					'--no-default-browser-check',
-					// 关闭导航检测
-					'--disable-prompt-on-repost',
 					'--remote-debugging-pipe',
 					...args
 				],

@@ -349,6 +349,7 @@ export const RenderScript = new Script({
 		/** 初始化模态框系统 */
 		const initModelSystem = () => {
 			// 添加 models 监听队列
+			// todo 偶尔会发生报错：caught (in promise) TypeError: undefined is not iterable (cannot read property Symbol(Symbol.iterator))
 			cors.on('model', async ([type, _attrs]) => {
 				return new Promise((resolve, reject) => {
 					const attrs = _attrs as ModelAttrs;
