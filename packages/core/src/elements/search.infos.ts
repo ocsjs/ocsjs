@@ -50,7 +50,7 @@ export class SearchInfosElement extends IElement {
 										/** 答案 */
 										el('div', { className: 'answer' }, [
 											el('span', '答案：'),
-											...splitAnswer(answer).map((a) => el('code', a)),
+											...splitAnswer(answer).map((a) => el('code', { innerHTML: a })),
 											$creator.copy('复制', splitAnswer(answer).join(' '))
 										])
 									]);
