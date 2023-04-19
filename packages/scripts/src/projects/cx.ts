@@ -6,7 +6,6 @@ import {
 	$creator,
 	Project,
 	Script,
-	$script,
 	$el,
 	$gm,
 	$$el,
@@ -87,8 +86,8 @@ export const CXProject = Project.create({
 					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
 				}
 			},
-			onactive() {
-				$script.pin(this);
+			oncomplete() {
+				CommonProject.scripts.render.methods.pin(this);
 			}
 		}),
 		study: new Script({
@@ -160,7 +159,7 @@ export const CXProject = Project.create({
 			onrender({ panel }) {
 				if (!CommonProject.scripts.settings.cfg.answererWrappers?.length) {
 					const setting = el('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
-					setting.onclick = () => $script.pin(CommonProject.scripts.settings);
+					setting.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
 					if (state.study.answererWrapperUnsetMessage === undefined) {
 						state.study.answererWrapperUnsetMessage = $message('warn', {
 							content: el('span', {}, ['检测到未设置题库配置，将无法自动答题，请切换到 ', setting, ' 页面进行配置。']),
@@ -214,7 +213,7 @@ export const CXProject = Project.create({
 				notes: workConfigs.notes
 			},
 			async oncomplete() {
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('auto', changeMsg);
@@ -272,7 +271,7 @@ export const CXProject = Project.create({
 				auto: auto
 			},
 			async oncomplete() {
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 				// 删除水印
 				$$el('body > .mask_div').forEach((el) => el.remove());
 
@@ -453,7 +452,7 @@ export const CXProject = Project.create({
 				// 开始任务切换
 				const restudy = CXProject.scripts.study.cfg.restudy;
 
-				$script.pin(CXProject.scripts.study);
+				CommonProject.scripts.render.methods.pin(CXProject.scripts.study);
 
 				if (!restudy) {
 					// 如果不是复习模式，则寻找需要运行的任务
@@ -500,7 +499,7 @@ export function workOrExam(
 	// 清空搜索结果
 	CommonProject.scripts.workResults.methods.clearResults();
 	// 置顶搜索结果面板
-	$script.pin(CommonProject.scripts.workResults);
+	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
 
 	// 处理作业和考试题目的方法
 	const workOrExamQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
@@ -1271,7 +1270,7 @@ async function chapterTestTask(
 	// 清空搜索结果
 	CommonProject.scripts.workResults.methods.clearResults();
 	// 置顶搜索结果面板
-	$script.pin(CommonProject.scripts.workResults);
+	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
 
 	const chapterTestTaskQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return (

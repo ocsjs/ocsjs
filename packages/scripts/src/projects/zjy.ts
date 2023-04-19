@@ -1,20 +1,8 @@
-import {
-	$,
-	$$el,
-	$creator,
-	$el,
-	$gm,
-	$message,
-	$model,
-	$script,
-	$store,
-	Project,
-	Script,
-	domSearch
-} from '@ocsjs/core';
+import { $, $$el, $creator, $el, $gm, $message, $model, $store, Project, Script, domSearch } from '@ocsjs/core';
 import { $console } from './background';
 import { playMedia } from '../utils';
 import { volume } from '../utils/configs';
+import { CommonProject } from './common';
 
 const state = {
 	loading: false,
@@ -94,7 +82,7 @@ export const ZJYProject = Project.create({
 				volume: volume
 			},
 			async onstart() {
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 
 				this.onConfigChange('volume', (volume) => {
 					if (state.study.currentMedia) {

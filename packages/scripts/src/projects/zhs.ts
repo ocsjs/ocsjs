@@ -2,7 +2,6 @@ import {
 	$creator,
 	Project,
 	Script,
-	$script,
 	$el,
 	el,
 	$$el,
@@ -54,7 +53,7 @@ export const ZHSProject = Project.create({
 			},
 			oncomplete() {
 				// 置顶
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 			}
 		}),
 		'gxk-work-and-exam-guide': new Script({
@@ -79,7 +78,7 @@ export const ZHSProject = Project.create({
 			},
 			oncomplete() {
 				// 置顶
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 			}
 		}),
 		'gxk-study': new Script({
@@ -207,7 +206,7 @@ export const ZHSProject = Project.create({
 			},
 			oncomplete() {
 				// 置顶当前脚本
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 
 				const vue = $el('.video-study')?.__vue__;
 				let stopInterval: any = 0;
@@ -409,9 +408,9 @@ export const ZHSProject = Project.create({
 			],
 			namespace: 'zhs.gxk.work',
 			configs: workConfigs,
-			oncomplete() {
+			async oncomplete() {
 				// 置顶当前脚本
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('auto', changeMsg);
 
@@ -494,7 +493,7 @@ export const ZHSProject = Project.create({
 
 			async oncomplete() {
 				// 置顶当前脚本
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 
@@ -568,7 +567,7 @@ export const ZHSProject = Project.create({
 			},
 			oncomplete() {
 				// 置顶当前脚本
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 
 				const finish = () => {
 					$model('alert', {
@@ -625,9 +624,9 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.xnk.work',
 			configs: workConfigs,
 
-			oncomplete() {
+			async oncomplete() {
 				// 置顶当前脚本
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('auto', changeMsg);
@@ -844,7 +843,7 @@ function gxkWorkOrExam(
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
 	// 置顶搜索结果面板
-	$script.pin(CommonProject.scripts.workResults);
+	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
 	// 刷新搜索结果状态
 	CommonProject.scripts.workResults.methods.refreshState();
 	// 清空搜索结果
@@ -917,7 +916,7 @@ function gxkWorkOrExam(
 			const modal = $model('alert', { content: text });
 
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
-				await $.sleep(1000);
+				await $.sleep(2000);
 				// 下一页
 				const next = $el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)');
 				if (next) {
@@ -974,7 +973,7 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 
 	// 置顶搜索结果面板
-	$script.pin(CommonProject.scripts.workResults);
+	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
 	// 刷新搜索结果状态
 	CommonProject.scripts.workResults.methods.refreshState();
 	// 清空搜索结果

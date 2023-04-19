@@ -102,6 +102,33 @@ export const RenderScript = new Script({
 			defaultValue: '当前脚本已锁定配置，无法修改'
 		}
 	},
+	// 暴露给外部的方法
+	methods() {
+		return {
+			/**
+			 * 判断当前脚本是否置顶
+			 * 因为在 4.2.x 版本之后，所有面板都会进行显示，某些脚本可以根据这个方法是否已显示在页面中
+			 * @param script 脚本
+			 */
+			isPinned: async (script: Script) => {
+				const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
+				return isCurrentPanel(script.projectName, script, currentPanelName);
+			},
+			/**
+			 * 将当前的脚本置顶
+			 * @param script 脚本
+			 */
+			pin: async (script: Script) => {
+				if (script.projectName) {
+					await $store.setTab($const.TAB_CURRENT_PANEL_NAME, `${script.projectName}-${script.name}`);
+				} else if (script.namespace) {
+					await $store.setTab($const.TAB_CURRENT_PANEL_NAME, script.namespace);
+				} else {
+					console.warn('[OCS]', `${script.name} 无法置顶， projectName 与 namespace 都为 undefined`);
+				}
+			}
+		};
+	},
 	onrender({ panel }) {
 		const closeBtn = el('button', { className: 'base-style-button' }, '隐藏窗口');
 		closeBtn.onclick = () => {

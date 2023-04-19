@@ -12,7 +12,6 @@ import {
 	request,
 	$creator,
 	SimplifyWorkResult,
-	$script,
 	RenderScript,
 	$,
 	WorkUploadType
@@ -39,10 +38,10 @@ export const CommonProject = Project.create({
 				home.onclick = () => window.open('https://docs.ocsjs.com', '_blank');
 
 				const notify = el('button', { className: 'base-style-button-secondary' }, '✨查看通知提示');
-				notify.onclick = () => $script.pin(CommonProject.scripts.notify);
+				notify.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.notify);
 
 				const changeLog = el('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
-				changeLog.onclick = () => $script.pin(CommonProject.scripts.changelog);
+				changeLog.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.changelog);
 
 				changeLog.style.marginBottom = '12px';
 				guide.style.width = '400px';
@@ -813,27 +812,29 @@ export const CommonProject = Project.create({
 function enableCopy() {
 	// 将页面上的所有选择方法劫持，并强制返回 true
 	function hackSelect(target: HTMLElement | Document) {
-		const _original_select = target.onselectstart;
-		const _original_oncopy = target.oncopy;
-		const _original_onpaste = target.onpaste;
-		const _original_onkeydown = target.onkeydown;
+		if (target) {
+			const _original_select = target.onselectstart;
+			const _original_oncopy = target.oncopy;
+			const _original_onpaste = target.onpaste;
+			const _original_onkeydown = target.onkeydown;
 
-		target.onselectstart = (e: any) => {
-			_original_select?.apply(target, [e]);
-			return true;
-		};
-		target.oncopy = (e: any) => {
-			_original_oncopy?.apply(target, [e]);
-			return true;
-		};
-		target.onpaste = (e: any) => {
-			_original_onpaste?.apply(target, [e]);
-			return true;
-		};
-		target.onkeydown = (e: any) => {
-			_original_onkeydown?.apply(target, [e]);
-			return true;
-		};
+			target.onselectstart = (e: any) => {
+				_original_select?.apply(target, [e]);
+				return true;
+			};
+			target.oncopy = (e: any) => {
+				_original_oncopy?.apply(target, [e]);
+				return true;
+			};
+			target.onpaste = (e: any) => {
+				_original_onpaste?.apply(target, [e]);
+				return true;
+			};
+			target.onkeydown = (e: any) => {
+				_original_onkeydown?.apply(target, [e]);
+				return true;
+			};
+		}
 	}
 
 	hackSelect(document);

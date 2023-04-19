@@ -1,6 +1,7 @@
-import { $el, Project, Script, $, $script, $$el, $creator, $model, $message } from '@ocsjs/core';
+import { $el, Project, Script, $, $$el, $creator, $model, $message } from '@ocsjs/core';
 import { volume } from '../utils/configs';
 import { createRangeTooltip, playMedia } from '../utils';
+import { CommonProject } from './common';
 
 const state = {
 	study: {
@@ -54,7 +55,7 @@ export const IcveMoocProject = Project.create({
 				}
 			},
 			async oncomplete() {
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 
 				await $.sleep(3000);
 
@@ -164,7 +165,7 @@ export const IcveMoocProject = Project.create({
 				}
 			},
 			oncomplete() {
-				$script.pin(this);
+				CommonProject.scripts.render.methods.pin(this);
 			}
 		})
 	}
