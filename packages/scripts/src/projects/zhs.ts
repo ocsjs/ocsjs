@@ -429,8 +429,6 @@ export const ZHSProject = Project.create({
 				/** 开始作业 */
 				const start = () => {
 					warn?.remove();
-					// 识别文字
-					recognize();
 					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('work', opts);
@@ -444,21 +442,28 @@ export const ZHSProject = Project.create({
 					/** 显示答题控制按钮 */
 					createWorkerControl(this, () => worker);
 
-					if (this.cfg.auto === false) {
-						this.event.emit('done');
-						warn = $message('warn', {
-							duration: 0,
-							content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
-						});
-					} else {
-						const interval = setInterval(() => {
-							const vue = $el('#app > div')?.__vue__;
-							if (vue?.alllQuestionTest) {
-								clearInterval(interval);
+					// 等待试卷加载
+					await waitForQuestionsLoad();
 
-								start();
-							}
-						}, 1000);
+					// 识别文字
+					recognize();
+
+					if (this.cfg.auto) {
+						start();
+					} else {
+						this.event.emit('done');
+						const startBtn = el('button', { className: 'base-style-button' }, '进入考试脚本');
+						startBtn.onclick = () => {
+							CommonProject.scripts.render.methods.pin(this);
+						};
+						const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
+						return $message('warn', {
+							duration: 0,
+							content: el('div', [
+								`'自动答题已被关闭！请${isPinned ? '' : '进入作业脚本，然后'}点击开始答题，或者忽略此警告。`,
+								isPinned ? '' : startBtn
+							])
+						});
 					}
 				}
 			}
@@ -524,16 +529,27 @@ export const ZHSProject = Project.create({
 					/** 显示答题控制按钮 */
 					createWorkerControl(this, () => worker);
 
+					// 等待试卷加载
+					await waitForQuestionsLoad();
+
+					// 识别文字
+					recognize();
+
 					if (this.cfg.auto) {
-						await waitForQuestionsLoad();
-						// 识别文字
-						recognize();
 						start();
 					} else {
 						this.event.emit('done');
-						$message('warn', {
+						const startBtn = el('button', { className: 'base-style-button' }, '进入考试脚本');
+						startBtn.onclick = () => {
+							CommonProject.scripts.render.methods.pin(this);
+						};
+						const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
+						return $message('warn', {
 							duration: 0,
-							content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
+							content: el('div', [
+								`'自动答题已被关闭！请${isPinned ? '' : '进入考试脚本，然后'}点击开始答题，或者忽略此警告。`,
+								isPinned ? '' : startBtn
+							])
 						});
 					}
 				}
@@ -631,9 +647,17 @@ export const ZHSProject = Project.create({
 				});
 
 				if (this.cfg.auto === false) {
+					const startBtn = el('button', { className: 'base-style-button' }, '进入作业脚本');
+					startBtn.onclick = () => {
+						CommonProject.scripts.render.methods.pin(this);
+					};
+					const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
 					return $message('warn', {
 						duration: 0,
-						content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
+						content: el('div', [
+							`'自动答题已被关闭！请${isPinned ? '' : '进入作业脚本，然后'}点击开始答题，或者忽略此警告。`,
+							isPinned ? '' : startBtn
+						])
 					});
 				}
 
