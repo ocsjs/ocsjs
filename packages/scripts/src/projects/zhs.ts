@@ -14,7 +14,12 @@ import {
 import type { MessageElement } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workConfigs, definition, volume, restudy } from '../utils/configs';
-import { createWorkerControl, optimizationElementWithImage, simplifyWorkResult } from '../utils/work';
+import {
+	createWorkerControl,
+	optimizationElementWithImage,
+	removeRedundantWords,
+	simplifyWorkResult
+} from '../utils/work';
 import { CommonWorkOptions, playMedia, workPreCheckMessage } from '../utils';
 import { $console } from './background';
 
@@ -838,7 +843,7 @@ function recognize() {
  */
 function gxkWorkOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
+	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
@@ -850,10 +855,13 @@ function gxkWorkOrExam(
 	CommonProject.scripts.workResults.methods.clearResults();
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return titles
-			.filter((t) => t?.innerText)
-			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
-			.join(',');
+		return removeRedundantWords(
+			titles
+				.filter((t) => t?.innerText)
+				.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+				.join(','),
+			redundanceWordsText.split('\n')
+		);
 	};
 
 	/** 新建答题器 */

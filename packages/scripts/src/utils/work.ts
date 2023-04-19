@@ -85,3 +85,13 @@ export function simplifyWorkResult(
 
 	return res;
 }
+
+/**
+ * 从题目中移除指定的冗余词
+ */
+export function removeRedundantWords(str: string, words: string[]) {
+	for (const word of words) {
+		str = str.replace(word, '');
+	}
+	return str;
+}

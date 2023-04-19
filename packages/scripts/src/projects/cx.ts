@@ -25,7 +25,12 @@ import {
 
 import { CommonProject } from './common';
 import { auto, workConfigs, volume, restudy } from '../utils/configs';
-import { createWorkerControl, optimizationElementWithImage, simplifyWorkResult } from '../utils/work';
+import {
+	createWorkerControl,
+	optimizationElementWithImage,
+	removeRedundantWords,
+	simplifyWorkResult
+} from '../utils/work';
 import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
@@ -515,7 +520,7 @@ export const CXProject = Project.create({
 
 export function workOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
+	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
@@ -544,7 +549,10 @@ export function workOrExam(
 			})
 			.join(',');
 
-		return StringUtils.of(optimizationTitle).nowrap().nospace().toString().trim();
+		return removeRedundantWords(
+			StringUtils.of(optimizationTitle).nowrap().nospace().toString().trim(),
+			redundanceWordsText.split('\n')
+		);
 	};
 
 	/** 新建答题器 */
@@ -1276,7 +1284,7 @@ async function readTask(win: Window & { finishJob?: Function }) {
  */
 async function chapterTestTask(
 	frame: HTMLIFrameElement,
-	{ answererWrappers, period, upload, thread, stopSecondWhenFinish }: CommonWorkOptions
+	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
 ) {
 	// 繁体字识别
 	await mappingRecognize(frame.contentWindow?.window.document);
@@ -1298,18 +1306,20 @@ async function chapterTestTask(
 	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
 
 	const chapterTestTaskQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return (
-			StringUtils.of(titles.map((t) => (t ? optimizationElementWithImage(t).innerText : '')).join(','))
-				.nowrap()
-				.nospace()
-				.toString()
-				.trim()
-				/** 超星旧版作业题目冗余数据 */
-				.replace(/\(..题, .+?分\)/, '')
-				.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
-				.replace(/^\d+[。、.]/, '')
-				.trim()
-		);
+		const transformed = StringUtils.of(
+			titles.map((t) => (t ? optimizationElementWithImage(t).innerText : '')).join(',')
+		)
+			.nowrap()
+			.nospace()
+			.toString()
+			.trim()
+			/** 超星旧版作业题目冗余数据 */
+			.replace(/\(..题, .+?分\)/, '')
+			.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
+			.replace(/^\d+[。、.]/, '')
+			.trim();
+
+		return removeRedundantWords(transformed, redundanceWordsText.split('\n'));
 	};
 
 	/** 新建答题器 */

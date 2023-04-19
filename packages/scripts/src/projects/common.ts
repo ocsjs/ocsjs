@@ -237,6 +237,12 @@ export const CommonProject = Project.create({
 					label: '(仅超星)随机填空文案',
 					tag: 'textarea',
 					attrs: { title: '每行一个，随机填入' }
+				},
+				redundanceWordsText: {
+					defaultValue: ['单选题(必考)', '填空题(必考)', '多选题(必考)'].join('\n'),
+					label: '题目冗余字段自动删除',
+					tag: 'textarea',
+					attrs: { title: '在搜题的时候自动删除多余的文字，以便提高搜题的准确度，每行一个。' }
 				}
 			},
 			onrender({ panel }) {

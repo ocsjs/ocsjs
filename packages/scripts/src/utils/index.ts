@@ -6,6 +6,7 @@ export interface CommonWorkOptions {
 	upload: WorkUploadType;
 	answererWrappers: AnswererWrapper[];
 	stopSecondWhenFinish: number;
+	redundanceWordsText: string;
 }
 
 /** 创建答题预处理信息 */
