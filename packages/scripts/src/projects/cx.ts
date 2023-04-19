@@ -116,15 +116,19 @@ export const CXProject = Project.create({
 					label: '视频倍速',
 					attrs: {
 						type: 'range',
-						title:
-							'高倍速(大于1倍)可能导致: \n- 学习记录清空\n- 频繁验证码\n超星后台可以看到学习时长\n请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。',
 						step: 0.5,
 						min: 1,
 						max: 16
 					},
 					defaultValue: 1,
 					onload() {
-						createRangeTooltip(this, '1', (val) => (parseFloat(val) > 2 ? `${val}x - 高倍速警告！` : `${val}x`));
+						createRangeTooltip(
+							this,
+							'1',
+							(val) =>
+								(parseFloat(val) > 2 ? `${val}x - 高倍速警告！` : `${val}x`) +
+								'\n\n高倍速(大于1倍)可能导致: \n- 学习记录清空\n- 频繁验证码\n超星后台可以看到学习时长，请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。'
+						);
 					}
 				},
 				volume,
