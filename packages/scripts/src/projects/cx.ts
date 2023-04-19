@@ -423,24 +423,49 @@ export const CXProject = Project.create({
 			name: '屏蔽复制粘贴限制',
 			hideInPanel: true,
 			url: [['所有页面', /.*/]],
-			onstart() {
-				try {
-					if (typeof $gm.unsafeWindow.$EDITORUI !== 'undefined') {
-						const EDITORUI = $gm.unsafeWindow.$EDITORUI;
-						for (const key in EDITORUI) {
-							const ui = EDITORUI[key];
-							// eslint-disable-next-line no-proto
-							if (ui?.__proto__?.uiName === 'editor') {
-								ui.editor.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
-								console.log('成功屏蔽复制粘贴限制');
+			methods() {
+				return {
+					/** 解除输入框无法复制粘贴 */
+					hackEditorPaste() {
+						try {
+							const instants = $gm.unsafeWindow?.UE?.instants || [];
+							for (const key in instants) {
+								const ue = instants[key];
+
+								// eslint-disable-next-line no-proto
+								if (ue?.textarea) {
+									let clipboardText = '';
+									/**
+									 * 因为在 beforepaste 中无法使用异步函数，所以这里曲线救国，直接在点击事件中获取剪贴板内容
+									 * 然后在 beforepaste 中使用。
+									 */
+									ue.body.addEventListener('click', async () => {
+										clipboardText = await navigator.clipboard.readText();
+									});
+									if ($gm.unsafeWindow.editorPaste) {
+										ue.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
+									}
+									if ($gm.unsafeWindow.myEditor_paste) {
+										ue.removeListener('beforepaste', $gm.unsafeWindow.myEditor_paste);
+									}
+									ue.addListener('beforepaste', async (ue: any, html: any) => {
+										html.html = clipboardText;
+										return true;
+									});
+								}
 							}
-						}
+						} catch {}
 					}
-				} catch {}
+				};
 			},
 			oncomplete() {
-				this.onstart?.();
-				setTimeout(() => this.onstart?.(), 5000);
+				const hackInterval = setInterval(() => {
+					if (typeof $gm.unsafeWindow.UE !== 'undefined') {
+						clearInterval(hackInterval);
+						this.methods.hackEditorPaste();
+						console.log('已解除输入框无法复制粘贴限制');
+					}
+				}, 500);
 			}
 		}),
 		studyDispatcher: new Script({
