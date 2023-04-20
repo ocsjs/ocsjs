@@ -179,23 +179,7 @@ export function defaultQuestionResolve<E>(
 		/** 判断题处理器 */
 		async judgement(infos, options, handler) {
 			for (const answers of infos.map((info) => info.results.map((res) => res.answer))) {
-				const correctWords = [
-					'是',
-					'对',
-					'正确',
-					'确定',
-					'√',
-					'对的',
-					'是的',
-					'正确的',
-					'true',
-					'True',
-					'yes',
-					'1',
-					'✔️',
-					'☑️',
-					'✅'
-				];
+				const correctWords = ['是', '对', '正确', '确定', '√', '对的', '是的', '正确的', 'true', 'True', 'yes', '1'];
 				const incorrectWords = [
 					'非',
 					'否',
@@ -212,10 +196,7 @@ export function defaultQuestionResolve<E>(
 					'false',
 					'False',
 					'no',
-					'0',
-					'✖️',
-					'❎',
-					'❌'
+					'0'
 				];
 
 				/** 答案显示正确 */
@@ -230,6 +211,15 @@ export function defaultQuestionResolve<E>(
 						const textShowCorrect = matches(el.innerText, correctWords);
 						/** 选项显示错误 */
 						const textShowIncorrect = matches(el.innerText, incorrectWords);
+
+						console.log({
+							el: el.innerText,
+							answerShowCorrect,
+							textShowCorrect,
+							answerShowIncorrect,
+							textShowIncorrect
+						});
+
 						if (answerShowCorrect && textShowCorrect) {
 							option = el;
 							await handler('judgement', answerShowCorrect, el, ctx);
