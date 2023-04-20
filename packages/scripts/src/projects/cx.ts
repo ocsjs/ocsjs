@@ -15,12 +15,12 @@ import {
 	defaultQuestionResolve,
 	DefaultWork,
 	splitAnswer,
-	$message,
 	MessageElement,
 	domSearch,
 	domSearchAll,
 	SearchInformation,
-	$model
+	$model,
+	$message
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
@@ -241,8 +241,6 @@ export const CXProject = Project.create({
 				/** 开始答题 */
 				const start = async () => {
 					warn?.remove();
-					// 识别繁体字
-					await mappingRecognize();
 					worker = workOrExam('work', CommonProject.scripts.settings.cfg);
 				};
 
@@ -301,8 +299,6 @@ export const CXProject = Project.create({
 				/** 开始考试 */
 				const start = async () => {
 					warn?.remove();
-					// 识别繁体字
-					await mappingRecognize();
 					if (CommonProject.scripts.settings.cfg.answererWrappers.length === 0) {
 						return $message('error', { content: '题库配置为空！请前往全局设置进行题库配置后再刷新此页面进行答题。' });
 					}
@@ -436,34 +432,44 @@ export const CXProject = Project.create({
 				return {
 					/** 解除输入框无法复制粘贴 */
 					hackEditorPaste() {
-						try {
-							const instants = $gm.unsafeWindow?.UE?.instants || [];
-							for (const key in instants) {
-								const ue = instants[key];
-
-								// eslint-disable-next-line no-proto
-								if (ue?.textarea) {
-									let clipboardText = '';
-									/**
-									 * 因为在 beforepaste 中无法使用异步函数，所以这里曲线救国，直接在点击事件中获取剪贴板内容
-									 * 然后在 beforepaste 中使用。
-									 */
-									ue.body.addEventListener('click', async () => {
-										clipboardText = await navigator.clipboard.readText();
-									});
-									if ($gm.unsafeWindow.editorPaste) {
-										ue.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
-									}
-									if ($gm.unsafeWindow.myEditor_paste) {
-										ue.removeListener('beforepaste', $gm.unsafeWindow.myEditor_paste);
-									}
-									ue.addListener('beforepaste', async (ue: any, html: any) => {
-										html.html = clipboardText;
-										return true;
-									});
+						if (typeof navigator.clipboard === 'undefined') {
+							$model('confirm', {
+								content:
+									'http协议下浏览器不支持剪贴板，无法解除输入框无法复制粘贴限制，请点击确认脚本将帮助你切换到https网站。',
+								onConfirm() {
+									window.location.protocol = 'https:';
 								}
-							}
-						} catch {}
+							});
+						} else {
+							try {
+								const instants = $gm.unsafeWindow?.UE?.instants || [];
+								for (const key in instants) {
+									const ue = instants[key];
+
+									// eslint-disable-next-line no-proto
+									if (ue?.textarea) {
+										let clipboardText = '';
+										/**
+										 * 因为在 beforepaste 中无法使用异步函数，所以这里曲线救国，直接在点击事件中获取剪贴板内容
+										 * 然后在 beforepaste 中使用。
+										 */
+										ue.body.addEventListener('click', async () => {
+											clipboardText = await navigator.clipboard.readText();
+										});
+										if ($gm.unsafeWindow.editorPaste) {
+											ue.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
+										}
+										if ($gm.unsafeWindow.myEditor_paste) {
+											ue.removeListener('beforepaste', $gm.unsafeWindow.myEditor_paste);
+										}
+										ue.addListener('beforepaste', async (ue: any, html: any) => {
+											html.html = clipboardText;
+											return true;
+										});
+									}
+								}
+							} catch {}
+						}
 					}
 				};
 			},
@@ -517,6 +523,18 @@ export const CXProject = Project.create({
 						}, 1000);
 					}
 				}
+			}
+		}),
+		cxSecretFontRecognize: new Script({
+			name: '繁体字识别',
+			hideInPanel: true,
+			url: [
+				['题目页面', 'work/doHomeWorkNew'],
+				['考试整卷预览', '/mooc2/exam/preview'],
+				['作业', '/mooc2/work/dowork']
+			],
+			async oncomplete() {
+				await mappingRecognize();
 			}
 		})
 	}
@@ -735,6 +753,16 @@ async function mappingRecognize(doc: Document = document) {
 	const fontFaceEl = Array.from(doc.head.querySelectorAll('style')).find((style) =>
 		style.textContent?.includes('font-cxsecret')
 	);
+
+	const base64ToUint8Array = (base64: string) => {
+		const data = window.atob(base64);
+		const buffer = new Uint8Array(data.length);
+		for (let i = 0; i < data.length; ++i) {
+			buffer[i] = data.charCodeAt(i);
+		}
+		return buffer;
+	};
+
 	const fontMap = typrMapping;
 	if (fontFaceEl && Object.keys(fontMap).length > 0) {
 		// 解析font-cxsecret字体
@@ -774,16 +802,9 @@ async function mappingRecognize(doc: Document = document) {
 			});
 
 			$console.log('识别繁体字完成。');
+		} else {
+			$console.log('未检测到繁体字。');
 		}
-	}
-
-	function base64ToUint8Array(base64: string) {
-		const data = window.atob(base64);
-		const buffer = new Uint8Array(data.length);
-		for (let i = 0; i < data.length; ++i) {
-			buffer[i] = data.charCodeAt(i);
-		}
-		return buffer;
 	}
 }
 
@@ -1290,9 +1311,6 @@ async function chapterTestTask(
 	frame: HTMLIFrameElement,
 	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
 ) {
-	// 繁体字识别
-	await mappingRecognize(frame.contentWindow?.window.document);
-
 	if (answererWrappers === undefined || answererWrappers.length === 0) {
 		return $console.warn('检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。');
 	}
