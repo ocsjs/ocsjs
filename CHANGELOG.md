@@ -1,3 +1,13 @@
+## [4.2.31](https://github.com/ocsjs/ocsjs/compare/4.2.29...4.2.31) (2023-04-20)
+
+
+### Bug Fixes
+
+* **script:** 修复超星图片题选择BUG ([93c520c](https://github.com/ocsjs/ocsjs/commit/93c520cfcea739cb12d3d0c11d05065e0f1e947a))
+* **script:** 优化智慧树共享课和校内课的作业和考试 ([c80b08c](https://github.com/ocsjs/ocsjs/commit/c80b08cec8099c335b7a2c0a38cbacf1585f5610))
+
+
+
 ## [4.2.29](https://github.com/ocsjs/ocsjs/compare/4.2.26...4.2.29) (2023-04-20)
 
 
