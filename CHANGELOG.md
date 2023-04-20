@@ -1,3 +1,14 @@
+## [4.2.29](https://github.com/ocsjs/ocsjs/compare/4.2.26...4.2.29) (2023-04-20)
+
+
+### Bug Fixes
+
+* **script:** 优化超星繁体字识别，优化http网站下复制粘贴问题 ([f98f2c4](https://github.com/ocsjs/ocsjs/commit/f98f2c4f439f02b6a0ef045c8b9a5f61625d8c8e))
+* **script:** 优化智慧树作业考试文字识别BUG ([317f136](https://github.com/ocsjs/ocsjs/commit/317f136611b4175955f0fe8c646100aac0d925cb))
+* **scripts:** 修复超星倍速提示没有显示的BUG ([ec02677](https://github.com/ocsjs/ocsjs/commit/ec02677a56181b760015e79f9446cbdd2a58b485))
+
+
+
 ## [4.2.26](https://github.com/ocsjs/ocsjs/compare/4.2.15...4.2.26) (2023-04-19)
 
 
