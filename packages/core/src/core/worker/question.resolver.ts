@@ -212,14 +212,6 @@ export function defaultQuestionResolve<E>(
 						/** 选项显示错误 */
 						const textShowIncorrect = matches(el.innerText, incorrectWords);
 
-						console.log({
-							el: el.innerText,
-							answerShowCorrect,
-							textShowCorrect,
-							answerShowIncorrect,
-							textShowIncorrect
-						});
-
 						if (answerShowCorrect && textShowCorrect) {
 							option = el;
 							await handler('judgement', answerShowCorrect, el, ctx);

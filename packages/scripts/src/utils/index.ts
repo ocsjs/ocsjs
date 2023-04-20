@@ -1,4 +1,4 @@
-import { $creator, $message, $model, AnswererWrapper, WorkUploadType, el } from '@ocsjs/core';
+import { $creator, $message, $modal, AnswererWrapper, WorkUploadType, el } from '@ocsjs/core';
 
 export interface CommonWorkOptions {
 	period: number;
@@ -19,7 +19,7 @@ export function workPreCheckMessage(
 	const { onrun, ondone, ...opts } = options;
 
 	if (opts.answererWrappers.length === 0) {
-		$model('alert', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
+		$modal('alert', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
 		ondone?.(opts);
 	} else {
 		$message('info', {
@@ -78,7 +78,7 @@ export async function playMedia(playFunction: () => Promise<void> | undefined) {
 		await tryPlayMedia();
 	} catch (err) {
 		if (String(err).includes(`failed because the user didn't interact with the document first`)) {
-			$model('alert', {
+			$modal('alert', {
 				content:
 					'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须先在设置页面静音，然后重新运行脚本。',
 				onClose: async () => {

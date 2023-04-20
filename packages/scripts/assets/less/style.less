@@ -464,7 +464,7 @@ script-panel-element + script-panel-element {
 	}
 }
 
-model-element {
+modal-element {
 	position: absolute;
 	top: 50%;
 	left: 50%;
@@ -478,25 +478,25 @@ model-element {
 	font-family: @base-font-family;
 	z-index: 99999999999;
 
-	.model-profile {
+	.modal-profile {
 		zoom: 0.9;
 		color: #969696;
 		user-select: none;
 		margin-bottom: 4px;
 	}
 
-	.model-title {
+	.modal-title {
 		font-size: 18px;
 		font-weight: bold;
 		user-select: none;
 	}
 
-	.model-body {
+	.modal-body {
 		margin: 12px 0px;
 		overflow: auto;
 	}
 
-	.model-footer {
+	.modal-footer {
 		display: flex;
 		white-space: nowrap;
 		justify-content: end;
@@ -506,49 +506,49 @@ model-element {
 		}
 	}
 
-	.model-input {
+	.modal-input {
 		.base-style-input();
 		.base-style-active-form-control();
 		width: -webkit-fill-available;
 	}
 
-	.model-cancel-button {
+	.modal-cancel-button {
 		.base-style-button();
 
 		color: gray;
 		background-color: white;
 		border: 1px solid #dcdcdc;
 	}
-	.model-confirm-button {
+	.modal-confirm-button {
 		.base-style-button();
 	}
 }
 
-model-element.alert {
-	.model-input,
-	.model-cancel-button {
+modal-element.alert {
+	.modal-input,
+	.modal-cancel-button {
 		display: none;
 	}
-	.model-confirm-button {
+	.modal-confirm-button {
 		margin: 0;
 	}
 }
 
-model-element.prompt {
-	.model-input,
-	.model-cancel-button,
-	.model-confirm-button {
+modal-element.prompt {
+	.modal-input,
+	.modal-cancel-button,
+	.modal-confirm-button {
 		display: block;
 	}
 }
 
-model-element.confirm {
-	.model-input {
+modal-element.confirm {
+	.modal-input {
 		display: none;
 	}
 }
 
-.model-wrapper {
+.modal-wrapper {
 	width: 100%;
 	height: 100%;
 	z-index: 9999;

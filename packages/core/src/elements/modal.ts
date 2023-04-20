@@ -6,22 +6,22 @@ import { IElement } from './interface';
 /**
  * 弹窗元素
  */
-export class ModelElement extends IElement {
+export class ModalElement extends IElement {
 	/** 弹窗简介 */
 	profile?: string;
 
 	/** 弹窗标题 */
-	_title: HTMLDivElement = el('div', { className: 'model-title' });
+	_title: HTMLDivElement = el('div', { className: 'modal-title' });
 	/** 弹窗主体  */
-	body: HTMLDivElement = el('div', { className: 'model-body' });
+	body: HTMLDivElement = el('div', { className: 'modal-body' });
 	/** 弹窗底部 */
-	footer: HTMLDivElement = el('div', { className: 'model-footer' });
+	footer: HTMLDivElement = el('div', { className: 'modal-footer' });
 	/** 弹窗确认按钮 */
 	confirmButton?: HTMLButtonElement | null;
 	/** 弹窗取消按钮 */
 	cancelButton?: HTMLButtonElement | null;
 	/** 弹窗底部输入框 */
-	modalInput: HTMLInputElement = el('input', { className: 'model-input' });
+	modalInput: HTMLInputElement = el('input', { className: 'modal-input' });
 	/**
 	 * 弹窗类型
 	 * prompt : 询问弹窗，并带有输入框
@@ -53,7 +53,7 @@ export class ModelElement extends IElement {
 		// 弹窗来源
 		const profile = el('div', {
 			innerText: this.profile || '弹窗来自: OCS ' + ($gm.getInfos()?.script.version || ''),
-			className: 'model-profile'
+			className: 'modal-profile'
 		});
 
 		// 标题
@@ -70,7 +70,7 @@ export class ModelElement extends IElement {
 		this.append(profile, this._title, this.body, this.footer);
 		this.style.width = (this.width || 400) + 'px';
 		if (this.cancelButton === undefined) {
-			this.cancelButton = el('button', { className: 'model-cancel-button' });
+			this.cancelButton = el('button', { className: 'modal-cancel-button' });
 			this.cancelButton.innerText = this.cancelButtonText || '取消';
 			this.cancelButton.addEventListener('click', () => {
 				this.onCancel?.();
@@ -79,7 +79,7 @@ export class ModelElement extends IElement {
 			});
 		}
 		if (this.confirmButton === undefined) {
-			this.confirmButton = el('button', { className: 'model-confirm-button' });
+			this.confirmButton = el('button', { className: 'modal-confirm-button' });
 			this.confirmButton.innerText = this.confirmButtonText || '确定';
 			this.confirmButton.addEventListener('click', async () => {
 				if ((await this.onConfirm?.(this.modalInput.value)) !== false) {

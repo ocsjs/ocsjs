@@ -9,7 +9,7 @@ import {
 	defaultAnswerWrapperHandler,
 	$message,
 	$,
-	$model
+	$modal
 } from '@ocsjs/core';
 import type { MessageElement, SimplifyWorkResult } from '@ocsjs/core';
 import { CommonProject } from './common';
@@ -161,7 +161,7 @@ export const ZHSProject = Project.create({
 								const pmd = $el('.preschool-Mustread-div');
 								if (pmd) {
 									const num = parseInt(pmd.innerText.match(/学习习惯成绩（(\d+)分）/)?.[1] || '0');
-									$model('alert', {
+									$modal('alert', {
 										content:
 											`当前课程习惯分占比为${num}分，` +
 											(num
@@ -169,14 +169,14 @@ export const ZHSProject = Project.create({
 												: '可一直观看学习，无需定时停止。')
 									});
 								} else {
-									$model('alert', { content: '检测失败，请确认在视频学习页面使用此按钮。' });
+									$modal('alert', { content: '检测失败，请确认在视频学习页面使用此按钮。' });
 								}
 							}, 100);
 						};
 					}),
 					$creator.button('📘查看学习记录', {}, (btn) => {
 						btn.onclick = () => {
-							$model('alert', {
+							$modal('alert', {
 								title: '学习记录',
 								content: $creator.notes(
 									this.cfg.studyRecord.map((r) => {
@@ -231,7 +231,7 @@ export const ZHSProject = Project.create({
 								clearInterval(stopInterval);
 								stop = true;
 								$el<HTMLVideoElement>('video')?.pause();
-								$model('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
+								$modal('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
 							}
 						}, 1000);
 						const val = [
@@ -282,7 +282,7 @@ export const ZHSProject = Project.create({
 				};
 
 				const finish = () => {
-					$model('alert', {
+					$modal('alert', {
 						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 					});
 				};
@@ -580,7 +580,7 @@ export const ZHSProject = Project.create({
 				CommonProject.scripts.render.methods.pin(this);
 
 				const finish = () => {
-					$model('alert', {
+					$modal('alert', {
 						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 					});
 				};
@@ -774,7 +774,7 @@ function checkForCaptcha(update: (hasCaptcha: boolean) => void) {
 			update(true);
 			// 如果弹窗不存在，则显示
 			if (modal === undefined) {
-				modal = $model('alert', { content: '当前检测到验证码，请输入后方可继续运行。' });
+				modal = $modal('alert', { content: '当前检测到验证码，请输入后方可继续运行。' });
 			}
 		} else {
 			if (modal) {
@@ -933,7 +933,7 @@ function gxkWorkOrExam(
 
 			// 保存题目
 			const text = el('span', '正在保存题目中，请勿操作...');
-			const modal = $model('alert', { content: text });
+			const modal = $modal('alert', { content: text });
 
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
 				await $.sleep(2000);

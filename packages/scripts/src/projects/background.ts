@@ -1,4 +1,4 @@
-import { $, $creator, $gm, $message, $model, $store, Project, RenderScript, Script, el, request } from '@ocsjs/core';
+import { $, $creator, $gm, $message, $modal, $store, Project, RenderScript, Script, el, request } from '@ocsjs/core';
 import gt from 'semver/functions/gt';
 import { CommonProject } from './common';
 import { definedProjects } from '..';
@@ -294,7 +294,7 @@ export const BackgroundProject = Project.create({
 										type: 'fetch'
 									});
 								if (gt(version['last-version'], infos.script.version)) {
-									const model = $model('confirm', {
+									const modal = $modal('confirm', {
 										content: $creator.notes([
 											`检测到新版本发布 ${version['last-version']} ：`,
 											[...(version.notes || [])]
@@ -305,14 +305,14 @@ export const BackgroundProject = Project.create({
 											(btn) => {
 												btn.onclick = () => {
 													this.cfg.notToday = new Date().getDate();
-													model?.remove();
+													modal?.remove();
 												};
 											}
 										),
 										confirmButton: el('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
 											btn.onclick = () => {
 												window.open(version.resource[infos.scriptHandler], '_blank');
-												model?.remove();
+												modal?.remove();
 											};
 										})
 									});

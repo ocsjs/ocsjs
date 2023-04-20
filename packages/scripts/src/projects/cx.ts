@@ -19,7 +19,7 @@ import {
 	domSearch,
 	domSearchAll,
 	SearchInformation,
-	$model,
+	$modal,
 	$message
 } from '@ocsjs/core';
 
@@ -433,7 +433,7 @@ export const CXProject = Project.create({
 					/** 解除输入框无法复制粘贴 */
 					hackEditorPaste() {
 						if (typeof navigator.clipboard === 'undefined') {
-							$model('confirm', {
+							$modal('confirm', {
 								content:
 									'http协议下浏览器不支持剪贴板，无法解除输入框无法复制粘贴限制，请点击确认脚本将帮助你切换到https网站。',
 								onConfirm() {
@@ -1064,7 +1064,7 @@ export async function study(opts: {
 		// 如果即将切换到下一章节
 		if (CXAnalyses.isInFinalTab()) {
 			if (CXAnalyses.isStuckInBreakingMode()) {
-				return $model('alert', {
+				return $modal('alert', {
 					content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
 				});
 			}
@@ -1072,9 +1072,9 @@ export async function study(opts: {
 
 		if (CXAnalyses.isInFinalChapter()) {
 			if (CXAnalyses.isFinishedAllChapters()) {
-				$model('alert', { content: '全部任务点已完成！' });
+				$modal('alert', { content: '全部任务点已完成！' });
 			} else {
-				$model('alert', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
+				$modal('alert', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
 			}
 		} else {
 			if (curChapterId && curCourseId && curClazzId) {

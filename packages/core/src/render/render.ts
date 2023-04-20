@@ -1,7 +1,7 @@
 import { definedCustomElements } from '../elements';
 import { DropdownElement } from '../elements/dropdown';
 import { MessageElement } from '../elements/message';
-import { ModelElement } from '../elements/model';
+import { ModalElement } from '../elements/modal';
 import { cors } from '../interfaces/cors';
 import { Script } from '../interfaces/script';
 import { $ } from '../utils/common';
@@ -14,8 +14,8 @@ import { $store } from '../utils/store';
 import { $gm } from '../utils/tampermonkey';
 import debounce from 'lodash/debounce';
 
-export type ModelAttrs = Pick<
-	ModelElement,
+export type ModalAttrs = Pick<
+	ModalElement,
 	| 'content'
 	| 'onConfirm'
 	| 'onCancel'
@@ -32,7 +32,7 @@ export type ModelAttrs = Pick<
 	/** 取消生成窗口的关闭按钮 */
 	disableWrapperCloseable?: boolean;
 	/** 弹窗标题 */
-	title?: ModelElement['title'];
+	title?: ModalElement['title'];
 	/** 伴随系统通知一起弹出 */
 	notification?: boolean;
 	notificationOptions?: {
@@ -133,7 +133,7 @@ export const RenderScript = new Script({
 		const closeBtn = el('button', { className: 'base-style-button' }, '隐藏窗口');
 		closeBtn.onclick = () => {
 			if (this.cfg.firstCloseAlert) {
-				$model('confirm', {
+				$modal('confirm', {
 					content: $creator.notes([
 						'隐藏脚本页面后，快速点击页面三下（可以在悬浮窗设置中调整次数）即可重新显示脚本。如果三下无效，可以尝试删除脚本重新安装。',
 						'请确认是否关闭。（此后不再显示此弹窗）'
@@ -347,16 +347,16 @@ export const RenderScript = new Script({
 		};
 
 		/** 初始化模态框系统 */
-		const initModelSystem = () => {
-			// 添加 models 监听队列
+		const initModalSystem = () => {
+			// 添加 modals 监听队列
 			// todo 偶尔会发生报错：caught (in promise) TypeError: undefined is not iterable (cannot read property Symbol(Symbol.iterator))
-			cors.on('model', async ([type, _attrs]) => {
+			cors.on('modal', async ([type, _attrs]) => {
 				return new Promise((resolve, reject) => {
-					const attrs = _attrs as ModelAttrs;
+					const attrs = _attrs as ModalAttrs;
 					attrs.onCancel = () => resolve('');
 					attrs.onConfirm = resolve;
 					attrs.onClose = resolve;
-					$model(type, attrs);
+					$modal(type, attrs);
 				});
 			});
 		};
@@ -394,7 +394,7 @@ export const RenderScript = new Script({
 			})();
 
 			// 初始化模态框系统
-			initModelSystem();
+			initModalSystem();
 			// 处理面板位置
 			handlePosition();
 			onFontsizeChange();
@@ -420,7 +420,7 @@ export const RenderScript = new Script({
 /**
  * 创建一个模态框代替原生的 alert, confirm, prompt
  */
-export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
+export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 	if (self === top) {
 		const {
 			disableWrapperCloseable,
@@ -439,10 +439,10 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 			);
 		}
 
-		const wrapper = el('div', { className: 'model-wrapper' }, (wrapper) => {
-			const model = el('model-element', {
+		const wrapper = el('div', { className: 'modal-wrapper' }, (wrapper) => {
+			const modal = el('modal-element', {
 				async onConfirm(val) {
-					const isClose: any = await onConfirm?.apply(model, [val]);
+					const isClose: any = await onConfirm?.apply(modal, [val]);
 					if (isClose !== false) {
 						wrapper.remove();
 					}
@@ -450,25 +450,25 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 					return isClose;
 				},
 				onCancel() {
-					onCancel?.apply(model);
+					onCancel?.apply(modal);
 					wrapper.remove();
 				},
 				onClose(val) {
-					onClose?.apply(model, [val]);
+					onClose?.apply(modal, [val]);
 					wrapper.remove();
 				},
 				type,
 				..._attrs
 			});
-			wrapper.append(model);
+			wrapper.append(modal);
 
-			model.addEventListener('click', (e) => {
+			modal.addEventListener('click', (e) => {
 				e.stopPropagation();
 			});
 			if (!disableWrapperCloseable) {
 				/** 点击遮罩层关闭模态框 */
 				wrapper.addEventListener('click', () => {
-					onClose?.apply(model);
+					onClose?.apply(modal);
 					wrapper.remove();
 				});
 			}
@@ -478,7 +478,7 @@ export function $model(type: ModelElement['type'], attrs: ModelAttrs) {
 
 		return wrapper;
 	} else {
-		cors.emit('model', [type, attrs], (args, remote) => {
+		cors.emit('modal', [type, attrs], (args, remote) => {
 			if (args) {
 				attrs.onConfirm?.(args);
 			} else {

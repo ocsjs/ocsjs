@@ -1,4 +1,4 @@
-import { $el, Project, Script, $, $$el, $creator, $model, $message } from '@ocsjs/core';
+import { $el, Project, Script, $, $$el, $creator, $modal, $message } from '@ocsjs/core';
 import { volume } from '../utils/configs';
 import { createRangeTooltip, playMedia } from '../utils';
 import { CommonProject } from './common';
@@ -148,7 +148,7 @@ export const IcveMoocProject = Project.create({
 							job.click();
 						}
 					} else {
-						$model('alert', {
+						$modal('alert', {
 							content: '全部任务已完成'
 						});
 					}

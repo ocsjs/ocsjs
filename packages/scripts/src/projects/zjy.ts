@@ -1,4 +1,4 @@
-import { $, $$el, $creator, $el, $gm, $message, $model, $store, Project, Script, domSearch } from '@ocsjs/core';
+import { $, $$el, $creator, $el, $gm, $message, $modal, $store, Project, Script, domSearch } from '@ocsjs/core';
 import { $console } from './background';
 import { playMedia } from '../utils';
 import { volume } from '../utils/configs';
@@ -104,7 +104,7 @@ export const ZJYProject = Project.create({
 				/** 获取当前的列表 */
 				const getActiveNodeList = () => getActiveNode()?.parentElement?.parentElement;
 				/** 获取当前的模块 */
-				const getActiveModel = () => getActiveNodeList()?.parentElement?.parentElement;
+				const getActiveModule = () => getActiveNodeList()?.parentElement?.parentElement;
 				/** 获取下一个节点 */
 				const getNextNode = async () => {
 					// 获取当前节点
@@ -137,7 +137,7 @@ export const ZJYProject = Project.create({
 								// 如果没有说明当前模块已经完成
 								else {
 									// 获取当前模块
-									const _module = getActiveModel();
+									const _module = getActiveModule();
 
 									if (_module) {
 										const modules = $$el('[data-moduleid]');
@@ -201,7 +201,7 @@ export const ZJYProject = Project.create({
 								await studyLoop();
 							} else {
 								console.log('检测不到下一章任务点，请检查是否已经全部完成。');
-								$model('alert', {
+								$modal('alert', {
 									content: '检测不到下一章任务点，请检查是否已经全部完成。'
 								});
 							}

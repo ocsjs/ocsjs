@@ -3,7 +3,7 @@ import { ContainerElement } from './container';
 import { DropdownElement } from './dropdown';
 import { HeaderElement } from './header';
 import { MessageElement } from './message';
-import { ModelElement } from './model';
+import { ModalElement } from './modal';
 import { ScriptPanelElement } from './script.panel';
 import { SearchInfosElement } from './search.infos';
 
@@ -11,7 +11,7 @@ export { ConfigElement } from './config';
 export { ContainerElement } from './container';
 export { HeaderElement } from './header';
 export { MessageElement } from './message';
-export { ModelElement } from './model';
+export { ModalElement } from './modal';
 export { ScriptPanelElement } from './script.panel';
 export { SearchInfosElement } from './search.infos';
 
@@ -19,7 +19,7 @@ export const definedCustomElements = [
 	ConfigElement,
 	ContainerElement,
 	HeaderElement,
-	ModelElement,
+	ModalElement,
 	MessageElement,
 	ScriptPanelElement,
 	SearchInfosElement,

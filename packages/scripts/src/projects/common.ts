@@ -2,7 +2,6 @@ import debounce from 'lodash/debounce';
 import {
 	el,
 	defaultAnswerWrapperHandler,
-	$model,
 	$message,
 	AnswerWrapperParser,
 	$gm,
@@ -14,7 +13,8 @@ import {
 	SimplifyWorkResult,
 	RenderScript,
 	$,
-	WorkUploadType
+	WorkUploadType,
+	$modal
 } from '@ocsjs/core';
 
 import type { ScriptPanelElement, HeaderElement, AnswererWrapper } from '@ocsjs/core';
@@ -114,7 +114,7 @@ export const CommonProject = Project.create({
 								...createAnswererWrapperList(aw)
 							]);
 
-							const model = $model('prompt', {
+							const modal = $modal('prompt', {
 								content: $creator.notes([
 									[
 										el('div', [
@@ -127,11 +127,11 @@ export const CommonProject = Project.create({
 								]),
 								placeholder: aw.length ? '重新输入' : '输入题库配置',
 								cancelButton: el('button', {
-									className: 'model-cancel-button',
+									className: 'modal-cancel-button',
 									innerText: '清空题库配置',
 									onclick: () => {
 										$message('success', { content: '已清空，在答题前请记得重新配置。' });
-										model?.remove();
+										modal?.remove();
 										CommonProject.scripts.settings.cfg.answererWrappers = [];
 										this.value = '点击配置';
 									}
@@ -143,22 +143,22 @@ export const CommonProject = Project.create({
 											if (aw.length) {
 												CommonProject.scripts.settings.cfg.answererWrappers = aw;
 												this.value = '当前有' + aw.length + '个可用题库';
-												$model('alert', {
+												$modal('alert', {
 													content: el('div', [
 														el('div', ['🎉 配置成功，刷新网页后重新答题即可。', '解析到的题库如下所示:']),
 														...createAnswererWrapperList(aw)
 													])
 												});
 											} else {
-												$model('alert', { content: '题库配置不能为空，请重新配置。' });
+												$modal('alert', { content: '题库配置不能为空，请重新配置。' });
 											}
 										} catch (e: any) {
-											$model('alert', {
+											$modal('alert', {
 												content: el('div', [el('div', '解析失败，原因如下 :'), el('div', e.message)])
 											});
 										}
 									} else {
-										$model('alert', {
+										$modal('alert', {
 											content: el('div', '不能为空！')
 										});
 									}
@@ -620,7 +620,7 @@ export const CommonProject = Project.create({
 								el('a', '查看提示', (btn) => {
 									btn.style.cursor = 'pointer';
 									btn.addEventListener('click', () => {
-										$model('confirm', {
+										$modal('confirm', {
 											content: tip
 										});
 									});
@@ -804,12 +804,20 @@ export const CommonProject = Project.create({
 			onstart() {
 				try {
 					$gm.unsafeWindow.alert = (msg) => {
-						$model('alert', {
+						$modal('alert', {
 							profile: '弹窗来自：' + location.origin,
 							content: msg
 						});
 					};
 				} catch (e) {}
+			}
+		}),
+		apps: new Script({
+			name: '📱 应用中心',
+			url: [['', /.*/]],
+			namespace: 'common.apps',
+			onrender({ panel }) {
+				// $modal();
 			}
 		})
 	}

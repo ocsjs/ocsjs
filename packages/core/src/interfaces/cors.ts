@@ -81,7 +81,6 @@ export class CorsEventEmitter {
 					if (originId) {
 						resolve(originId);
 					} else {
-						// 添加 models 监听队列
 						const id =
 							$store.addChangeListener(key, async (pre, curr, remote) => {
 								if (remote) {
@@ -131,7 +130,7 @@ if (typeof GM_listValues !== 'undefined') {
 				$store.delete(key);
 			}
 
-			if (/[0-9a-z]{32}.cors.events.model/.test(key)) {
+			if (/[0-9a-z]{32}.cors.events.modal/.test(key)) {
 				$store.delete(key);
 			}
 		});
