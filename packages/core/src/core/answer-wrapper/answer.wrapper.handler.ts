@@ -120,7 +120,7 @@ export async function defaultAnswerWrapperHandler(
 					results: [],
 					response: undefined,
 					data: undefined,
-					error: error as any
+					error: String(error) as any
 				});
 			}
 		})

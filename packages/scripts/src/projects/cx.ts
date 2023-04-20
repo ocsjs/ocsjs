@@ -624,28 +624,31 @@ export function workOrExam(
 
 			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = defaultQuestionResolve(ctx)[type];
-
-				return await resolver(searchInfos, elements.options, (type, answer, option) => {
-					// 如果存在已经选择的选项
-					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						if (option?.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
-							option.click();
-						}
-					} else if (type === 'completion' && answer.trim()) {
-						const text = option?.querySelector('textarea');
-						const textareaFrame = option?.querySelector('iframe');
-						if (text) {
-							text.value = answer;
-						}
-						if (textareaFrame?.contentDocument) {
-							textareaFrame.contentDocument.body.innerHTML = answer;
-						}
-						if (option?.parentElement) {
-							/** 如果存在保存按钮则点击 */
-							$el('[onclick*=saveQuestion]', option?.parentElement)?.click();
+				return await resolver(
+					searchInfos,
+					elements.options.map((option) => optimizationElementWithImage(option)),
+					(type, answer, option) => {
+						// 如果存在已经选择的选项
+						if (type === 'judgement' || type === 'single' || type === 'multiple') {
+							if (option?.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
+								option.click();
+							}
+						} else if (type === 'completion' && answer.trim()) {
+							const text = option?.querySelector('textarea');
+							const textareaFrame = option?.querySelector('iframe');
+							if (text) {
+								text.value = answer;
+							}
+							if (textareaFrame?.contentDocument) {
+								textareaFrame.contentDocument.body.innerHTML = answer;
+							}
+							if (option?.parentElement) {
+								/** 如果存在保存按钮则点击 */
+								$el('[onclick*=saveQuestion]', option?.parentElement)?.click();
+							}
 						}
 					}
-				});
+				);
 			}
 			// 连线题自定义处理
 			else if (type && type === 'line') {
@@ -1406,7 +1409,11 @@ async function chapterTestTask(
 					}
 				};
 
-				return await resolver(searchInfos, elements.options, handler);
+				return await resolver(
+					searchInfos,
+					elements.options.map((option) => optimizationElementWithImage(option)),
+					handler
+				);
 			}
 			// 连线题自定义处理
 			else if (type && type === 'line') {

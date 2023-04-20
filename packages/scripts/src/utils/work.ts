@@ -45,13 +45,14 @@ export function createWorkerControl(
  */
 export function optimizationElementWithImage(root: HTMLElement) {
 	if (root) {
-		const el = root.cloneNode(true) as HTMLElement;
-		for (const img of Array.from(el.querySelectorAll('img'))) {
-			img.after(img.src);
+		for (const img of Array.from(root.querySelectorAll('img'))) {
+			const src = document.createElement('span');
+			src.innerText = img.src;
+			// 隐藏图片，但不影响 innerText 的获取
+			src.style.fontSize = '0px';
+			img.after(src);
 		}
-		return el;
 	}
-
 	return root;
 }
 
@@ -75,7 +76,7 @@ export function simplifyWorkResult(
 			finish: wr.result?.finish,
 			searchInfos:
 				wr.ctx?.searchInfos.map((sr) => ({
-					error: sr.error?.message,
+					error: sr.error ? sr.error?.message || String(sr.error?.message) : undefined,
 					name: sr.name,
 					homepage: sr.homepage,
 					results: sr.results.map((ans) => [ans.question, ans.answer])

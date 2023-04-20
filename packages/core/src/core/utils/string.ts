@@ -38,8 +38,13 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
 
 	const similar =
 		_answers.length !== 0
-			? _options.map((option) => findBestMatch(option, _answers).bestMatch)
-			: _options.map(() => ({ rating: 0, target: '' } as Rating));
+			? _options.map((option) => {
+					if (option.trim() === '') {
+						return { rating: 0, target: '' };
+					}
+					return findBestMatch(option, _answers).bestMatch;
+			  })
+			: _options.map(() => ({ rating: 0, target: '' }));
 
 	return similar;
 }

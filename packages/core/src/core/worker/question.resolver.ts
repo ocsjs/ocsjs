@@ -17,7 +17,7 @@ export function defaultQuestionResolve<E>(
 		async single(infos, options, handler) {
 			/** 配对选项的相似度 */
 			const ratings = answerSimilar(
-				infos.map((res) => res.results.map((res) => res.answer)).flat(),
+				infos.map((res) => res.results.map((res) => splitAnswer(res.answer)).flat()).flat(),
 				options.map((el) => el.innerText)
 			);
 			/**  找出最相似的选项 */
@@ -53,7 +53,7 @@ export function defaultQuestionResolve<E>(
 				}
 			}
 
-			return { finish: false };
+			return { finish: false, ratings };
 		},
 		/**
 		 * 多选题处理器
@@ -90,7 +90,6 @@ export function defaultQuestionResolve<E>(
 				const result = results[i];
 				// 每个答案可能存在多个选项需要分割
 				const answers = splitAnswer(result.answer);
-				console.log('answers', { answer: result.answer, answers });
 
 				const matchResult: Result = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
 				// 判断选项是否完全存在于答案里面
@@ -180,7 +179,23 @@ export function defaultQuestionResolve<E>(
 		/** 判断题处理器 */
 		async judgement(infos, options, handler) {
 			for (const answers of infos.map((info) => info.results.map((res) => res.answer))) {
-				const correctWords = ['是', '对', '正确', '√', '对的', '是的', '正确的', 'true', 'yes', '1'];
+				const correctWords = [
+					'是',
+					'对',
+					'正确',
+					'确定',
+					'√',
+					'对的',
+					'是的',
+					'正确的',
+					'true',
+					'True',
+					'yes',
+					'1',
+					'✔️',
+					'☑️',
+					'✅'
+				];
 				const incorrectWords = [
 					'非',
 					'否',
@@ -195,8 +210,12 @@ export function defaultQuestionResolve<E>(
 					'不是',
 					'不是的',
 					'false',
+					'False',
 					'no',
-					'0'
+					'0',
+					'✖️',
+					'❎',
+					'❌'
 				];
 
 				/** 答案显示正确 */
