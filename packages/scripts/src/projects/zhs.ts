@@ -11,7 +11,7 @@ import {
 	$,
 	$model
 } from '@ocsjs/core';
-import type { MessageElement } from '@ocsjs/core';
+import type { MessageElement, SimplifyWorkResult } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workConfigs, definition, volume, restudy } from '../utils/configs';
 import {
@@ -416,6 +416,7 @@ export const ZHSProject = Project.create({
 			async oncomplete() {
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
+
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
 				this.onConfigChange('auto', changeMsg);
 
@@ -462,7 +463,7 @@ export const ZHSProject = Project.create({
 							CommonProject.scripts.render.methods.pin(this);
 						};
 						const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-						return $message('warn', {
+						warn = $message('warn', {
 							duration: 0,
 							content: el('div', [
 								`'自动答题已被关闭！请${isPinned ? '' : '进入作业脚本，然后'}点击开始答题，或者忽略此警告。`,
@@ -502,10 +503,10 @@ export const ZHSProject = Project.create({
 				CommonProject.scripts.render.methods.pin(this);
 
 				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-
 				this.onConfigChange('auto', changeMsg);
 
 				let worker: OCSWorker<any> | undefined;
+				let warn: MessageElement | undefined;
 
 				this.on('render', () => createWorkerControl(this, () => worker));
 				this.event.on('start', () => start());
@@ -517,6 +518,7 @@ export const ZHSProject = Project.create({
 
 				/** 开始考试 */
 				const start = () => {
+					warn?.remove();
 					/**
 					 * 识别文字，需要放在 start 下因为考试页面切换的时候并不会触发 oncomplete
 					 */
@@ -551,7 +553,7 @@ export const ZHSProject = Project.create({
 							CommonProject.scripts.render.methods.pin(this);
 						};
 						const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-						return $message('warn', {
+						warn = $message('warn', {
 							duration: 0,
 							content: el('div', [
 								`'自动答题已被关闭！请${isPinned ? '' : '进入考试脚本，然后'}点击开始答题，或者忽略此警告。`,
@@ -628,7 +630,10 @@ export const ZHSProject = Project.create({
 		}),
 		'xnk-work': new Script({
 			name: '✍️ 校内课-作业考试脚本',
-			url: [['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList']],
+			url: [
+				['校内课作业页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList'],
+				['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/examQ/examexercise']
+			],
 			namespace: 'zhs.xnk.work',
 			configs: workConfigs,
 
@@ -640,35 +645,22 @@ export const ZHSProject = Project.create({
 				this.onConfigChange('auto', changeMsg);
 
 				let worker: OCSWorker<any> | undefined;
+				let warn: MessageElement | undefined;
 
 				/** 显示答题控制按钮 */
 				createWorkerControl(this, () => worker);
 
 				this.on('render', () => createWorkerControl(this, () => worker));
 
-				this.on('start', () => start());
+				this.event.on('start', () => start());
 				this.event.on('restart', () => {
 					worker?.emit('close');
 					$message('info', { content: '3秒后重新答题。' });
 					setTimeout(start, 3000);
 				});
 
-				if (this.cfg.auto === false) {
-					const startBtn = el('button', { className: 'base-style-button' }, '进入作业脚本');
-					startBtn.onclick = () => {
-						CommonProject.scripts.render.methods.pin(this);
-					};
-					const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-					return $message('warn', {
-						duration: 0,
-						content: el('div', [
-							`'自动答题已被关闭！请${isPinned ? '' : '进入作业脚本，然后'}点击开始答题，或者忽略此警告。`,
-							isPinned ? '' : startBtn
-						])
-					});
-				}
-
 				const start = () => {
+					warn?.remove();
 					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = xnkWork(opts);
@@ -679,6 +671,23 @@ export const ZHSProject = Project.create({
 						...CommonProject.scripts.settings.cfg
 					});
 				};
+
+				if (this.cfg.auto === false) {
+					const startBtn = el('button', { className: 'base-style-button' }, '进入作业考试脚本');
+					startBtn.onclick = () => {
+						CommonProject.scripts.render.methods.pin(this);
+					};
+					const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
+					warn = $message('warn', {
+						duration: 0,
+						content: el('div', [
+							`自动答题已被关闭！请${isPinned ? '' : '进入作业考试脚本，然后'}点击开始答题，或者忽略此警告。`,
+							isPinned ? '' : startBtn
+						])
+					});
+				} else {
+					start();
+				}
 			}
 		})
 	}
@@ -997,8 +1006,13 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 			.join(',');
 	};
 
+	const workResults: SimplifyWorkResult[] = [];
+	let totalQuestionCount = 0;
+	let requestIndex = 0;
+	let resolverIndex = 0;
+
 	const worker = new OCSWorker({
-		root: '.questionBox',
+		root: '.questionBox .questionBox',
 		elements: {
 			title: '.questionContent',
 			options: '.optionUl label',
@@ -1033,11 +1047,25 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 			}
 		},
 
-		onResultsUpdate(res) {
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
+		/**
+		 * 因为校内课的考试和作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
+		 * 所以只能根据自定义的状态进行搜索结果的显示。
+		 */
+		onResultsUpdate(res, currentResult) {
+			if (currentResult.result) {
+				workResults.push(...simplifyWorkResult([currentResult], titleTransform));
+				CommonProject.scripts.workResults.methods.setResults(workResults);
+				totalQuestionCount++;
+				requestIndex++;
+				resolverIndex++;
+			}
 		},
 		onResolveUpdate(res) {
-			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+			CommonProject.scripts.workResults.methods.updateWorkState({
+				totalQuestionCount,
+				requestIndex,
+				resolverIndex
+			});
 		}
 	});
 
@@ -1052,6 +1080,8 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 			next?.click();
 			await $.sleep((period ?? 3) * 1000);
 		}
+
+		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。' });
 	})();
 
 	return worker;
