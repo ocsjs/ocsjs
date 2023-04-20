@@ -433,6 +433,10 @@ export const ZHSProject = Project.create({
 				/** 开始作业 */
 				const start = () => {
 					warn?.remove();
+					/**
+					 * 识别文字
+					 */
+					recognize();
 					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('work', opts);
@@ -448,9 +452,6 @@ export const ZHSProject = Project.create({
 
 					// 等待试卷加载
 					await waitForQuestionsLoad();
-
-					// 识别文字
-					recognize();
 
 					if (this.cfg.auto) {
 						start();
@@ -516,6 +517,11 @@ export const ZHSProject = Project.create({
 
 				/** 开始考试 */
 				const start = () => {
+					/**
+					 * 识别文字，需要放在 start 下因为考试页面切换的时候并不会触发 oncomplete
+					 */
+					recognize();
+
 					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('exam', opts);
@@ -535,9 +541,6 @@ export const ZHSProject = Project.create({
 
 					// 等待试卷加载
 					await waitForQuestionsLoad();
-
-					// 识别文字
-					recognize();
 
 					if (this.cfg.auto) {
 						start();
