@@ -30,5 +30,6 @@ jobs:
        cd packages/scripts
        pnpm install
        cd ../../
+       npm run tsc
     - name: Build ocs script
       run: npm run build:core
