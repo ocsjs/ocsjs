@@ -29,5 +29,6 @@ jobs:
        pnpm install -w
        cd packages/scripts
        pnpm install
+       cd ../../
     - name: Build ocs script
       run: npm run build:core
