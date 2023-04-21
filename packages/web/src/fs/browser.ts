@@ -8,6 +8,7 @@ import { Folder, root } from './folder';
 import { BrowserOptions, BrowserOperateHistory, Tag, BrowserType, EntityOptions } from './interface';
 import { remote } from '../utils/remote';
 import { RawPlaywrightScript } from '../components/playwright-scripts';
+import { child_process } from '../utils/node';
 
 export class Browser extends Entity implements BrowserOptions {
 	type: BrowserType;
@@ -52,6 +53,30 @@ export class Browser extends Entity implements BrowserOptions {
 		}
 
 		this.histories.unshift({ action: '运行', time: Date.now() });
+	}
+
+	/**
+	 * 仅启动浏览器，不执行其他操作
+	 * 适用于模拟更真实的浏览器环境
+	 */
+	async onlyLaunch() {
+		const extensionPaths: string[] = [];
+		// @ts-ignore
+		const paths: string[] = await remote.fs.call('readdirSync', store.paths.extensionsFolder);
+
+		for (const file of paths) {
+			extensionPaths.push(await remote.path.call('join', store.paths.extensionsFolder, file));
+		}
+		const cmd = ` "${store.render.setting.launchOptions.executablePath}" ${[
+			'--window-position=0,0',
+			'--no-first-run',
+			'--no-default-browser-check',
+			`--user-data-dir=${this.cachePath}`
+		]
+			.concat(formatExtensionArguments(extensionPaths))
+			.join(' ')} http://localhost:${store.server.port || 15319}/index.html#/bookmarks`;
+		console.log(cmd);
+		child_process.exec(cmd);
 	}
 
 	/** 重启浏览器 */
@@ -119,4 +144,9 @@ export class Browser extends Entity implements BrowserOptions {
 		this.name = name;
 		this.renaming = false;
 	}
+}
+
+function formatExtensionArguments(extensionPaths: string[]) {
+	const paths = extensionPaths.map((p) => p.replace(/\\/g, '/')).join(',');
+	return [`--disable-extensions-except=${paths}`, `--load-extension=${paths}`];
 }

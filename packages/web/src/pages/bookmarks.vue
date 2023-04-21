@@ -93,7 +93,7 @@ const bookmarks = ref<BookMark[]>([]);
 const state = reactive({
 	loading: false,
 	warn: false,
-	tips: ['浏览器初始化中...']
+	tips: ['']
 });
 
 // @ts-ignore 暴露方法给 playwright 脚本

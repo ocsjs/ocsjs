@@ -8,10 +8,13 @@
 			<slot name="split"></slot>
 		</template>
 		<template v-if="process === undefined || process.status === 'closed'">
-			<a-tooltip
-				content="启动"
-				:position="tooltipPosition"
-			>
+			<a-tooltip :position="tooltipPosition">
+				<template #content>
+					启动浏览器 <br />
+					- 并自动安装脚本 <br />
+					- 以及执行自动化脚本等一系列操作。
+				</template>
+
 				<Icon
 					type="play_circle"
 					color="#165dff"

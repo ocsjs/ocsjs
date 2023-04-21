@@ -12,6 +12,25 @@
 				<template #split>
 					<a-divider direction="vertical" />
 				</template>
+
+				<template #extra>
+					<a-tooltip position="br">
+						<template #content>
+							仅打开浏览器，不执行其他操作。<br />
+							此方法可以防止各种浏览器环境问题：<br />
+							- 无法打开特殊的超星网页<br />
+							- 弹窗自动被关闭等等问题 <br />
+							如果你并没有遇到这些问题，可以不使用此方法，可以直接使用蓝色的启动按钮。
+						</template>
+
+						<a-button
+							size="mini"
+							@click="instance.onlyLaunch()"
+						>
+							<Icon type="web" />
+						</a-button>
+					</a-tooltip>
+				</template>
 			</BrowserOperators>
 		</div>
 
