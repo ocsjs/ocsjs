@@ -437,6 +437,11 @@ export const CXProject = Project.create({
 								content:
 									'http协议下浏览器不支持剪贴板，无法解除输入框无法复制粘贴限制，请点击确认脚本将帮助你切换到https网站。',
 								onConfirm() {
+									try {
+										if (top) {
+											top.window.location.protocol = 'https:';
+										}
+									} catch {
 									window.location.protocol = 'https:';
 								}
 							});
