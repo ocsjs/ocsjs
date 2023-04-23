@@ -166,7 +166,7 @@ export const CXProject = Project.create({
 				 *
 				 */
 				enableMedia: {
-					label: '开启-音视频自动播放',
+					label: '开启-视频/音频自动播放',
 					attrs: { type: 'checkbox', title: '开启：音频和视频的自动播放' },
 					defaultValue: true
 				},
@@ -729,7 +729,10 @@ export function workOrExam(
 		.doWork()
 		.then(async (results) => {
 			if (type === 'exam') {
-				$message('success', { duration: 0, content: '考试完成，为了安全考虑，请自行检查后自行点击提交！' });
+				$message('success', {
+					duration: 0,
+					content: '考试完成，为了安全考虑，请自行检查后自行点击提交！'
+				});
 			} else {
 				await $.sleep(stopSecondWhenFinish * 1000);
 
@@ -760,6 +763,7 @@ export function workOrExam(
 			}
 		})
 		.catch((err) => {
+			console.error(err);
 			$message('error', { content: '答题程序发生错误 : ' + err.message });
 		});
 
@@ -1389,9 +1393,10 @@ async function chapterTestTask(
 			.toString()
 			.trim()
 			/** 超星旧版作业题目冗余数据 */
+			.replace(/^\d+[。、.]/, '')
+			.replace(/（\d+.\d+分）/, '')
 			.replace(/\(..题, .+?分\)/, '')
 			.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
-			.replace(/^\d+[。、.]/, '')
 			.trim();
 
 		return removeRedundantWords(transformed, redundanceWordsText.split('\n'));

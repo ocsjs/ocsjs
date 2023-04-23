@@ -960,7 +960,7 @@ function gxkWorkOrExam(
 			setTimeout(() => modal?.remove(), 1000);
 
 			if (type === 'exam') {
-				$message('info', { content: '考试完成，为了安全考虑，请自行检查后自行点击提交！' });
+				$message('info', { content: '考试完成，为了安全考虑，请自行检查后自行点击提交！', duration: 0 });
 			} else {
 				// 处理提交
 				await worker.uploadHandler({
@@ -1101,7 +1101,7 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 			await $.sleep((period ?? 3) * 1000);
 		}
 
-		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。' });
+		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 	})();
 
 	return worker;
