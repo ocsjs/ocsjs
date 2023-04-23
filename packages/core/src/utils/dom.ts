@@ -1,12 +1,20 @@
 /* eslint-disable no-undef */
 import { CustomElementTagMap } from '../elements/interface';
 
+/**
+ * 可自定义元素样式的属性
+ */
+export type CustomElementStyleAttrs<E extends Record<string, any>> = {
+	[K in keyof E]: K extends 'style' ? Partial<CSSStyleDeclaration> : E[K];
+};
+
 export type AllElementTagMaps = HTMLElementTagNameMap & CustomElementTagMap;
 export type AllElementTagKeys = keyof AllElementTagMaps;
 /** 子元素 */
 export type ElementChildren = (string | Node)[] | string;
-/** 元素数学 */
-export type ElementAttrs<K extends AllElementTagKeys> = Partial<AllElementTagMaps[K]>;
+/** 元素属性 */
+export type ElementAttrs<K extends AllElementTagKeys> = CustomElementStyleAttrs<Partial<AllElementTagMaps[K]>>;
+
 /** 元素处理回调 */
 export type ElementHandler<K extends AllElementTagKeys> = (
 	this: AllElementTagMaps[K],
@@ -20,22 +28,19 @@ export type ElementHandler<K extends AllElementTagKeys> = (
  * @param childrenOrHandler 子元素列表，或者元素生成的回调函数
  */
 export function el<K extends AllElementTagKeys>(tagName: K, children?: ElementChildren): AllElementTagMaps[K];
-export function el<K extends AllElementTagKeys>(
-	tagName: K,
-	attrs?: Partial<AllElementTagMaps[K]>
-): AllElementTagMaps[K];
+export function el<K extends AllElementTagKeys>(tagName: K, attrs?: ElementAttrs<K>): AllElementTagMaps[K];
 export function el<K extends AllElementTagKeys>(
 	tagName: K,
 	attrsOrChildren?: ElementAttrs<K> | ElementChildren
 ): AllElementTagMaps[K];
 export function el<K extends AllElementTagKeys>(
 	tagName: K,
-	attrs?: Partial<AllElementTagMaps[K]>,
+	attrs?: ElementAttrs<K>,
 	children?: (string | HTMLElement)[] | string
 ): AllElementTagMaps[K];
 export function el<K extends AllElementTagKeys>(
 	tagName: K,
-	attrs?: Partial<AllElementTagMaps[K]>,
+	attrs?: ElementAttrs<K>,
 	handler?: ElementHandler<K>
 ): AllElementTagMaps[K];
 export function el<K extends AllElementTagKeys>(
@@ -45,7 +50,7 @@ export function el<K extends AllElementTagKeys>(
 ): AllElementTagMaps[K];
 export function el<K extends AllElementTagKeys>(
 	tagName: K,
-	attrs?: Partial<AllElementTagMaps[K]>,
+	attrs?: ElementAttrs<K>,
 	childrenOrHandler?: ElementChildren | ElementHandler<K>
 ): AllElementTagMaps[K];
 export function el<K extends AllElementTagKeys>(
@@ -64,8 +69,12 @@ export function el<K extends AllElementTagKeys>(
 			/** 设置属性 */
 			for (const key in attrs) {
 				if (Object.prototype.hasOwnProperty.call(attrs, key)) {
-					const value = attrs[key];
-					Reflect.set(element, key, value);
+					if (key === 'style') {
+						Object.assign(element.style, attrs[key]);
+					} else {
+						const value = attrs[key];
+						Reflect.set(element, key, value);
+					}
 				}
 			}
 		}
