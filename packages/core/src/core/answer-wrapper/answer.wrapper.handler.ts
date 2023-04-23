@@ -120,7 +120,7 @@ export async function defaultAnswerWrapperHandler(
 					results: [],
 					response: undefined,
 					data: undefined,
-					error: String(error) as any
+					error: (error as any)?.message || '题库连接失败'
 				});
 			}
 		})
