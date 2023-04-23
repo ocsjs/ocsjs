@@ -627,7 +627,13 @@ export function workOrExam(
 				// 处理作业和考试题目
 				const title = workOrExamQuestionTitleTransform(elements.title);
 				if (title) {
-					return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
+					return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+						return defaultAnswerWrapperHandler(answererWrappers, {
+							type,
+							title,
+							options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						});
+					});
 				} else {
 					throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
 				}
@@ -710,6 +716,11 @@ export function workOrExam(
 		},
 		/** 监听答题结果 */
 		onResolveUpdate(res) {
+			if (res.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					simplifyWorkResult([res], workOrExamQuestionTitleTransform)
+				);
+			}
 			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		}
 	});
@@ -1411,7 +1422,13 @@ async function chapterTestTask(
 		answerer: (elements, type, ctx) => {
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);
 			if (title) {
-				return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
+				return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+					return defaultAnswerWrapperHandler(answererWrappers, {
+						type,
+						title,
+						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+					});
+				});
 			} else {
 				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
 			}
@@ -1529,6 +1546,11 @@ async function chapterTestTask(
 			}
 		},
 		onResolveUpdate(res) {
+			if (res.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					simplifyWorkResult([res], chapterTestTaskQuestionTitleTransform)
+				);
+			}
 			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		},
 		async onElementSearched(elements) {

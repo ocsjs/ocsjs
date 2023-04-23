@@ -94,7 +94,11 @@ export const CommonProject = Project.create({
 				answererWrappers: {
 					defaultValue: [] as AnswererWrapper[]
 				},
-
+				enableQuestionCaches: {
+					label: '题库缓存功能',
+					defaultValue: true,
+					attrs: { type: 'checkbox', title: '详情请前往 通用-其他应用-题库拓展查看。' }
+				},
 				answererWrappersButton: {
 					label: '题库配置',
 					defaultValue: '点击配置',
@@ -813,11 +817,219 @@ export const CommonProject = Project.create({
 			}
 		}),
 		apps: new Script({
-			name: '📱 应用中心',
+			name: '📱 其他应用',
 			url: [['', /.*/]],
 			namespace: 'common.apps',
+			methods() {
+				type QuestionCache = { title: string; answer: string; from: string; homepage: string };
+
+				const getQuestionCache = async (): Promise<QuestionCache[]> => {
+					return (await $store.getTab(TAB_APPS_QUESTION_CACHES_KEY)) || [];
+				};
+
+				return {
+					/**
+					 * 添加题库缓存
+					 */
+					addQuestionCache: async (...questionCacheItems: QuestionCache[]) => {
+						const questionCaches: QuestionCache[] = (await $store.getTab(TAB_APPS_QUESTION_CACHES_KEY)) || [];
+						for (const item of questionCacheItems) {
+							// 去重
+							if (questionCaches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
+								questionCaches.push(item);
+							}
+						}
+
+						// 限制数量
+						questionCaches.splice(200);
+						await $store.setTab(TAB_APPS_QUESTION_CACHES_KEY, questionCaches);
+					},
+					addQuestionCacheFromWorkResult(swr: SimplifyWorkResult[]) {
+						CommonProject.scripts.apps.methods.addQuestionCache(
+							...swr
+								.map((r) =>
+									r.searchInfos
+										.map((i) =>
+											i.results
+												.filter((res) => res[1])
+												.map((res) => ({
+													title: r.question,
+													answer: res[1],
+													from: i.name.replace(/【题库缓存】/g, ''),
+													homepage: i.homepage || ''
+												}))
+												.flat()
+										)
+										.flat()
+								)
+								.flat()
+						);
+					},
+					getQuestionCache: getQuestionCache,
+					/**
+					 * 将题库缓存作为题库并进行题目搜索
+					 * @param title 题目
+					 * @param whenSearchEmpty 当搜索结果为空，或者题库缓存功能被关闭时执行的函数
+					 */
+					searchAnswer: async (
+						title: string,
+						whenSearchEmpty: () => SearchInformation[] | Promise<SearchInformation[]>
+					): Promise<SearchInformation[]> => {
+						let results: SearchInformation[] = [];
+						const caches = await getQuestionCache();
+						for (const cache of caches) {
+							if (cache.title === title) {
+								results = [
+									{
+										name: `【题库缓存】${cache.from}`,
+										homepage: cache.homepage,
+										results: [{ answer: cache.answer, question: cache.title }]
+									}
+								];
+							}
+						}
+						if (results.length === 0) {
+							results = await whenSearchEmpty();
+						}
+						return results;
+					},
+					/**
+					 * 查看最新通知
+					 */
+					async showNotify() {
+						const notify = el('div', { className: 'markdown card', innerHTML: '加载中...' });
+
+						$modal('simple', {
+							content: el('div', [
+								el('div', { className: 'notes card' }, [
+									$creator.notes([
+										'此页面实时更新，大家遇到问题可以看看通知',
+										el('div', ['或者进入 ', gotoHome(), ' 里的交流群进行反馈。'])
+									])
+								]),
+								notify
+							])
+						});
+						const md = await request('https://cdn.ocsjs.com/articles/ocs/notify.md?t=' + Date.now(), {
+							type: 'GM_xmlhttpRequest',
+							responseType: 'text',
+							method: 'get'
+						});
+						notify.innerHTML = markdown(md);
+					},
+					/**
+					 * 查看更新日志
+					 */
+					async showChangelog() {
+						const changelog = el('div', {
+							className: 'markdown card',
+							innerHTML: '加载中...',
+							style: { maxWidth: '600px' }
+						});
+						$modal('simple', {
+							width: 600,
+							content: el('div', [
+								el('div', { className: 'notes card' }, [
+									$creator.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
+								]),
+								changelog
+							])
+						});
+						const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
+							type: 'GM_xmlhttpRequest',
+							responseType: 'text',
+							method: 'get'
+						});
+						changelog.innerHTML = markdown(md);
+					}
+				};
+			},
 			onrender({ panel }) {
-				// $modal();
+				const btnStyle: Partial<CSSStyleDeclaration> = {
+					padding: '6px 12px',
+					margin: '4px',
+					marginBottom: '8px',
+					boxShadow: '0px 0px 4px #bebebe',
+					borderRadius: '8px',
+					cursor: 'pointer'
+				};
+
+				const cachesBtn = el('div', { innerText: '💾 题库缓存', style: btnStyle }, (btn) => {
+					btn.onclick = async () => {
+						const questionCaches = await this.methods.getQuestionCache();
+
+						const list = questionCaches.map((c) =>
+							el(
+								'div',
+								{
+									className: 'question-cache',
+									style: {
+										margin: '8px',
+										border: '1px solid lightgray',
+										borderRadius: '4px',
+										padding: '8px'
+									}
+								},
+								[
+									el('div', { className: 'title' }, [
+										$creator.tooltip(
+											el(
+												'span',
+												{
+													title: `来自：${c.from || '未知题库'}\n主页：${c.homepage || '未知主页'}`,
+													style: { fontWeight: 'bold' }
+												},
+												c.title
+											)
+										)
+									]),
+									el('div', { className: 'answer', style: { marginTop: '6px' } }, c.answer)
+								]
+							)
+						);
+
+						$modal('simple', {
+							width: 800,
+							content: el('div', [
+								el('div', { className: 'notes card' }, [
+									$creator.notes([
+										'题库缓存是将题库的题目和答案保存在内存，在重复使用时可以直接从内存获取，不需要再次请求题库。',
+										'以下是当前存储的题库，默认存储200题，当前页面关闭后会自动清除。'
+									])
+								]),
+								el('div', { className: 'card' }, [
+									$creator.space([
+										el('span', ['当前缓存数量：' + questionCaches.length]),
+										$creator.button('清空题库缓存', {}, (btn) => {
+											btn.onclick = () => {
+												$store.setTab(TAB_APPS_QUESTION_CACHES_KEY, []);
+												list.forEach((el) => el.remove());
+											};
+										})
+									])
+								]),
+
+								el(
+									'div',
+									questionCaches.length === 0 ? [el('div', { style: { textAlign: 'center' } }, '暂无题库缓存')] : list
+								)
+							])
+						});
+					};
+				});
+
+				[cachesBtn].forEach((btn) => {
+					btn.onmouseover = () => {
+						btn.style.boxShadow = '0px 0px 4px #0099ff9c';
+					};
+					btn.onmouseout = () => {
+						btn.style.boxShadow = '0px 0px 4px #bebebe';
+					};
+				});
+
+				panel.body.replaceChildren(
+					el('div', [el('div', { className: 'separator', style: { padding: '4px 0px' } }, '题库拓展'), cachesBtn])
+				);
 			}
 		})
 	}

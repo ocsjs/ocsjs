@@ -888,12 +888,20 @@ function gxkWorkOrExam(
 		resolvePeriod: 1,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
-		answerer: (elements, type, ctx) =>
-			defaultAnswerWrapperHandler(answererWrappers, {
-				type,
-				title: titleTransform(elements.title),
-				root: ctx.root
-			}),
+		answerer: (elements, type, ctx) => {
+			const title = titleTransform(elements.title);
+			if (title) {
+				return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+					return defaultAnswerWrapperHandler(answererWrappers, {
+						type,
+						title,
+						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+					});
+				});
+			} else {
+				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+			}
+		},
 		work: {
 			/** 自定义处理器 */
 			handler(type, answer, option) {
@@ -914,6 +922,9 @@ function gxkWorkOrExam(
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
 		},
 		onResolveUpdate(res) {
+			if (res.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
+			}
 			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		}
 	});
@@ -1026,7 +1037,13 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 		answerer: (elements, type, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
-				return defaultAnswerWrapperHandler(answererWrappers, { type, title, root: ctx.root });
+				return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+					return defaultAnswerWrapperHandler(answererWrappers, {
+						type,
+						title,
+						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+					});
+				});
 			} else {
 				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
 			}
@@ -1061,6 +1078,9 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 			}
 		},
 		onResolveUpdate(res) {
+			if (res.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
+			}
 			CommonProject.scripts.workResults.methods.updateWorkState({
 				totalQuestionCount,
 				requestIndex,
