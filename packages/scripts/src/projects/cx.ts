@@ -145,6 +145,15 @@ export const CXProject = Project.create({
 					attrs: { type: 'checkbox' },
 					defaultValue: false
 				},
+				showTextareaWhenEdit: {
+					label: '编辑时显示自定义编辑框',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'超星默认禁止在编辑框中复制粘贴，开启此选项可以在文本框编辑时生成一个自定义编辑框进行编辑，脚本会将内容同步到编辑框中。'
+					},
+					defaultValue: true
+				},
 				/**
 				 *
 				 * 开启的任务点
@@ -439,49 +448,47 @@ export const CXProject = Project.create({
 				return {
 					/** 解除输入框无法复制粘贴 */
 					hackEditorPaste() {
-						if (typeof navigator.clipboard === 'undefined') {
-							$modal('confirm', {
-								content:
-									'http协议下浏览器不支持剪贴板，无法解除输入框无法复制粘贴限制，请点击确认脚本将帮助你切换到https网站。',
-								onConfirm() {
-									try {
-										if (top) {
-											top.window.location.protocol = 'https:';
-										}
-									} catch {
-									window.location.protocol = 'https:';
-								}
-							});
-						} else {
-							try {
-								const instants = $gm.unsafeWindow?.UE?.instants || [];
-								for (const key in instants) {
-									const ue = instants[key];
+						try {
+							const instants = $gm.unsafeWindow?.UE?.instants || [];
+							for (const key in instants) {
+								const ue = instants[key];
 
-									// eslint-disable-next-line no-proto
-									if (ue?.textarea) {
-										let clipboardText = '';
-										/**
-										 * 因为在 beforepaste 中无法使用异步函数，所以这里曲线救国，直接在点击事件中获取剪贴板内容
-										 * 然后在 beforepaste 中使用。
-										 */
-										ue.body.addEventListener('click', async () => {
-											clipboardText = await navigator.clipboard.readText();
-										});
-										if ($gm.unsafeWindow.editorPaste) {
-											ue.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
+								/**
+								 * 新建一个文本框给用户编辑，然后同步到超星编辑器，防止http下浏览器无法读取剪贴板
+								 */
+
+								// eslint-disable-next-line no-proto
+								if (ue?.textarea) {
+									ue.body.addEventListener('click', async () => {
+										// http 下无法读取剪贴板，通过弹窗让用户输入然后同步到编辑器
+										if (CXProject.scripts.study.cfg.showTextareaWhenEdit) {
+											const defaultText = el('span', { innerHTML: ue.textarea.value }).textContent;
+											$modal('prompt', {
+												content: '请在此文本框进行编辑，防止超星无法复制粘贴。',
+												width: 800,
+												inputDefaultValue: defaultText || '',
+												modalInputType: 'textarea',
+												onConfirm: (val = '') => {
+													ue.setContent(
+														val
+															.split('\n')
+															.map((line) => `<p>${line}</p>`)
+															.join('')
+													);
+												}
+											});
 										}
-										if ($gm.unsafeWindow.myEditor_paste) {
-											ue.removeListener('beforepaste', $gm.unsafeWindow.myEditor_paste);
-										}
-										ue.addListener('beforepaste', async (ue: any, html: any) => {
-											html.html = clipboardText;
-											return true;
-										});
+									});
+
+									if ($gm.unsafeWindow.editorPaste) {
+										ue.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
+									}
+									if ($gm.unsafeWindow.myEditor_paste) {
+										ue.removeListener('beforepaste', $gm.unsafeWindow.myEditor_paste);
 									}
 								}
-							} catch {}
-						}
+							}
+						} catch {}
 					}
 				};
 			},
