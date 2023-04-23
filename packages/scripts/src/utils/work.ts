@@ -76,7 +76,7 @@ export function simplifyWorkResult(
 			finish: wr.result?.finish,
 			searchInfos:
 				wr.ctx?.searchInfos.map((sr) => ({
-					error: sr.error ? sr.error?.message || String(sr.error) : undefined,
+					error: sr.error,
 					name: sr.name,
 					homepage: sr.homepage,
 					results: sr.results.map((ans) => [ans.question, ans.answer])

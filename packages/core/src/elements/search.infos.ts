@@ -1,7 +1,7 @@
 import { SimplifyWorkResult } from '../core/worker';
 import { splitAnswer } from '../core/worker/utils';
+import { $creator } from '../utils';
 import { $ } from '../utils/common';
-import { $creator } from '../utils/creator';
 import { el } from '../utils/dom';
 import { IElement } from './interface';
 
@@ -22,7 +22,7 @@ export class SearchInfosElement extends IElement {
 		const question = transformImgLink(this.question || '无');
 
 		this.append(
-			el('div', [el('span', { innerHTML: question }), $creator.copy('复制', question)], (div) => {
+			el('div', [el('span', { innerHTML: question }), $creator.createQuestionTitleExtra(this.question)], (div) => {
 				div.style.padding = '4px';
 			}),
 			el('hr')
@@ -31,7 +31,7 @@ export class SearchInfosElement extends IElement {
 		this.append(
 			...this.infos.map((info) => {
 				return el('details', { open: true }, [
-					el('summary', [el('a', { href: info.homepage, innerText: info.name })]),
+					el('summary', [el('a', { href: info.homepage, innerText: info.name, target: '_blank' })]),
 					...(info.error
 						? /** 显示错误信息 */
 						  [el('span', { className: 'error' }, [info.error || '网络错误或者未知错误'])]
@@ -43,15 +43,11 @@ export class SearchInfosElement extends IElement {
 
 									return el('div', { className: 'search-result' }, [
 										/** 题目 */
-										el('div', { className: 'question' }, [
-											el('span', { innerHTML: title }),
-											$creator.copy('复制', title)
-										]),
+										el('div', { className: 'question' }, [el('span', { innerHTML: title })]),
 										/** 答案 */
 										el('div', { className: 'answer' }, [
 											el('span', '答案：'),
-											...splitAnswer(answer).map((a) => el('code', { innerHTML: a })),
-											$creator.copy('复制', splitAnswer(answer).join(' '))
+											...splitAnswer(answer).map((a) => el('code', { innerHTML: a }))
 										])
 									]);
 								})

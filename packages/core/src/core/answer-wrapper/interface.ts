@@ -6,18 +6,18 @@ export interface Result {
 
 /** 题库查询信息 */
 export interface SearchInformation {
-	url: string;
+	results: Result[];
 	name: string;
+	url?: string;
 	/** 主页 */
 	homepage?: string;
 	/** 题目答案 */
-	results: Result[];
 	/** 请求响应内容 */
-	response: any;
+	response?: any;
 	/** 请求发起内容 */
-	data: any;
+	data?: any;
 	/** 错误数据 */
-	error?: Error;
+	error?: string;
 }
 
 /**

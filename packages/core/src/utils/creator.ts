@@ -25,6 +25,11 @@ export interface PreventTextOptions {
 	onprevent?: (span: HTMLSpanElement) => void;
 }
 
+let popupWin: Window | null;
+window.addEventListener('beforeunload', () => {
+	popupWin?.close();
+});
+
 /**
  * 元素创建器
  */
@@ -33,7 +38,14 @@ export const $creator = {
 	notes(lines: (string | HTMLElement | (string | HTMLElement)[])[], tag: 'ul' | 'ol' = 'ul') {
 		return el(
 			tag,
-			lines.map((line) => el('li', Array.isArray(line) ? line.map((node) => el('div', [node])) : [line]))
+			lines.map((line) =>
+				el(
+					'li',
+					Array.isArray(line)
+						? line.map((node) => (typeof node === 'string' ? el('div', { innerHTML: node }) : node))
+						: [typeof line === 'string' ? el('div', { innerHTML: line }) : line]
+				)
+			)
 		);
 	},
 	/**
@@ -139,7 +151,17 @@ export const $creator = {
 
 		return scriptPanel;
 	},
-	/** 创建设置区域 */
+	/** 创建独立的设置区域 */
+	configsArea(configElements: Record<string, ConfigElement<any>>) {
+		/** 创建设置板块 */
+		const configsContainer: HTMLDivElement = el('div', { className: 'configs card' });
+		/** 设置区域主体 */
+		const configsBody: HTMLDivElement = el('div', { className: 'configs-body' });
+		configsBody.append(...Object.entries(configElements).map(([key, el]) => el));
+		configsContainer.append(configsBody);
+		return configsContainer;
+	},
+	/** 创建设置元素 */
 	configs<T extends Record<string, Config<any>>>(
 		namespace: string | undefined,
 		configs: T,
@@ -210,5 +232,49 @@ export const $creator = {
 		}, delay * 1000);
 
 		return span;
+	},
+	/**
+	 * 创建关于问题题目的拓展功能按钮，包括复制和百度一下
+	 * @param question 问题
+	 */
+	createQuestionTitleExtra(question: string) {
+		const space = $creator.space(
+			[
+				$creator.copy('复制', question),
+				el('span', { className: 'question-title-extra-btn', innerText: '🌏百度一下' }, (btn) => {
+					btn.onclick = () => {
+						popupWin?.close();
+						popupWin = $.createCenteredPopupWindow(`https://www.baidu.com/s?wd=${question}`, '百度搜索', {
+							width: 800,
+							height: 600,
+							resizable: true,
+							scrollbars: true
+						});
+					};
+				})
+			],
+			{ x: 4 }
+		);
+		space.style.marginTop = '6px';
+		space.style.textAlign = 'right';
+		return space;
+	},
+	/**
+	 * 将所有子元素隔开
+	 * x: 默认 12
+	 * y: 默认 0
+	 */
+	space(children: HTMLElement[], options?: { x?: number; y?: number }) {
+		return el('div', { className: 'space' }, (div) => {
+			for (let index = 0; index < children.length; index++) {
+				const child = el('span', { className: 'space-item' }, [children[index]]);
+				child.style.display = 'inline-block';
+				if (index > 0) {
+					child.style.marginLeft = (options?.x ?? 12) + 'px';
+					child.style.marginTop = (options?.y ?? 0) + 'px';
+				}
+				div.append(child);
+			}
+		});
 	}
 };
