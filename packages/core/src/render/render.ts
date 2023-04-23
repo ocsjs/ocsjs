@@ -28,6 +28,8 @@ export type ModalAttrs = Pick<
 	| 'confirmButton'
 	| 'inputDefaultValue'
 	| 'profile'
+	| 'modalInputType'
+	| 'modalStyle'
 > & {
 	/** 取消生成窗口的关闭按钮 */
 	disableWrapperCloseable?: boolean;
@@ -484,6 +486,7 @@ export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 			} else {
 				attrs.onCancel?.();
 			}
+			attrs.onClose?.(args);
 		});
 	}
 }

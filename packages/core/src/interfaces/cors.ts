@@ -34,7 +34,7 @@ export class CorsEventEmitter {
 	 * @param args 事件参数
 	 * @param callback 事件回调，可以接收返回值
 	 */
-	emit(name: string, args: any[], callback: (returnValue: any, remote: boolean) => void): void {
+	emit(name: string, args: any[] = [], callback?: (returnValue: any, remote: boolean) => void): void {
 		$store
 			.getTab($const.TAB_UID)
 			.then((uid: string) => {
@@ -51,7 +51,7 @@ export class CorsEventEmitter {
 						// 移除此监听器
 						$store.removeChangeListener(listenerId);
 						// 执行回调
-						callback($store.get(this.keyOfReturn(id)), !!remote);
+						callback?.($store.get(this.keyOfReturn(id)), !!remote);
 						// 移除冗余的本地临时存储变量
 						$store.delete(this.keyOfState(id));
 						$store.delete(this.keyOfReturn(id));
