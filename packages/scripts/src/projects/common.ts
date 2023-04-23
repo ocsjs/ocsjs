@@ -17,57 +17,42 @@ import {
 	$modal
 } from '@ocsjs/core';
 
-import type { ScriptPanelElement, HeaderElement, AnswererWrapper } from '@ocsjs/core';
+import type { AnswererWrapper, SearchInformation } from '@ocsjs/core';
 import { definedProjects } from '../index';
 import { markdown } from '../utils/markdown';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
+const TAB_APPS_QUESTION_CACHES_KEY = 'common.apps.question-caches';
+
+const gotoHome = () => {
+	const btn = el('button', { className: 'base-style-button-secondary' }, '🏡官网教程');
+	btn.onclick = () => window.open('https://docs.ocsjs.com', '_blank');
+	return btn;
+};
 
 export const CommonProject = Project.create({
 	name: '通用',
 	domains: [],
 	scripts: {
 		guide: new Script({
-			name: '📖 使用教程',
+			name: '🏠 脚本首页',
 			url: [['所有页面', /.*/]],
 			namespace: 'common.guide',
-			onrender({ panel, header }) {
-				const guide = createGuide({ panel, header });
+			onrender({ panel }) {
+				const guide = createGuide();
 
-				const home = el('button', { className: 'base-style-button-secondary' }, '🏡官网教程');
-				home.onclick = () => window.open('https://docs.ocsjs.com', '_blank');
+				const contactUs = el('button', { className: 'base-style-button-secondary' }, '🗨️交流群');
+				contactUs.onclick = () => window.open('https://docs.ocsjs.com/docs/about#交流方式', '_blank');
 
 				const notify = el('button', { className: 'base-style-button-secondary' }, '✨查看通知提示');
-				notify.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.notify);
+				notify.onclick = () => CommonProject.scripts.apps.methods.showNotify();
 
 				const changeLog = el('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
-				changeLog.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.changelog);
+				changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
 
 				changeLog.style.marginBottom = '12px';
-				guide.style.width = '400px';
-				panel.body.replaceChildren(home, notify, changeLog, guide);
-			}
-		}),
-		notify: new Script({
-			name: '📢 通知提示',
-			url: [['', /.*/]],
-			namespace: 'common.notify',
-			configs: {
-				notes: {
-					defaultValue: $creator.notes([
-						'此页面实时更新，大家遇到问题可以看看通知',
-						'或者进入上方官网里的交流群进行反馈'
-					]).outerHTML
-				}
-			},
-			async onrender({ panel }) {
-				panel.body.replaceChildren('加载中...');
-				const md = await request('https://cdn.ocsjs.com/articles/ocs/notify.md?t=' + Date.now(), {
-					type: 'GM_xmlhttpRequest',
-					responseType: 'text',
-					method: 'get'
-				});
-				panel.body.replaceChildren(el('div', { className: 'card markdown', innerHTML: markdown(md) }));
+				guide.style.width = '480px';
+				panel.body.replaceChildren(el('div', { className: 'card' }, [gotoHome(), contactUs, notify, changeLog]), guide);
 			}
 		}),
 		settings: new Script({
@@ -107,7 +92,7 @@ export const CommonProject = Project.create({
 					},
 					onload() {
 						const aws: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
-						this.value = aws.length ? '当前有' + aws.length + '个可用题库' : '点击配置';
+						this.value = aws.length ? '当前有' + aws.length + '个可用题库，点击重新配置' : '点击配置';
 
 						this.onclick = () => {
 							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
@@ -645,14 +630,29 @@ export const CommonProject = Project.create({
 						const error = el('span', {}, (el) => (el.style.color = 'red'));
 
 						if (result.requesting && result.resolving) {
-							return el('div', [result.question, el('hr'), '当前题目还未开始搜索，请稍等。']);
+							return el('div', [
+								result.question,
+								$creator.createQuestionTitleExtra(result.question),
+								el('hr'),
+								'当前题目还未开始搜索，请稍等。'
+							]);
 						} else {
 							if (result.error) {
 								error.innerText = result.error;
-								return el('div', [result.question, el('hr'), error]);
+								return el('div', [
+									result.question,
+									$creator.createQuestionTitleExtra(result.question),
+									el('hr'),
+									error
+								]);
 							} else if (result.searchInfos.length === 0) {
 								error.innerText = '此题未搜索到答案';
-								return el('div', [result.question, el('hr'), error]);
+								return el('div', [
+									result.question,
+									$creator.createQuestionTitleExtra(result.question),
+									el('hr'),
+									error
+								]);
 							} else {
 								error.innerText = '此题未完成, 可能是没有匹配的选项。';
 								return el('div', [
@@ -766,25 +766,6 @@ export const CommonProject = Project.create({
 				});
 
 				panel.body.append(el('div', [el('hr'), content, searchContainer]));
-			}
-		}),
-		changelog: new Script({
-			name: '📦 版本更新',
-			url: [['', /.*/]],
-			namespace: 'common.changelog',
-			configs: {
-				notes: {
-					defaultValue: $creator.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。']).outerHTML
-				}
-			},
-			async onrender({ panel }) {
-				panel.body.replaceChildren('加载中...');
-				const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
-					type: 'GM_xmlhttpRequest',
-					responseType: 'text',
-					method: 'get'
-				});
-				panel.body.replaceChildren(el('div', { className: 'markdown card', innerHTML: markdown(md) }));
 			}
 		}),
 		/** 渲染脚本，窗口渲染主要脚本 */
@@ -1102,63 +1083,70 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 	);
 }
 
-const createGuide = ({ panel, header }: { panel: ScriptPanelElement; header: HeaderElement }) => {
+const createGuide = () => {
+	const showProjectDetails = (project: Project) => {
+		$modal('simple', {
+			title: project.name + ' - 的脚本列表',
+			width: 800,
+			content: el(
+				'ul',
+				Object.keys(project.scripts)
+					.sort((a, b) => (project.scripts[b].hideInPanel ? -1 : 1))
+					.map((key) => {
+						const script = project.scripts[key];
+						return el(
+							'li',
+							[
+								el('b', script.name),
+								$creator.notes([
+									el('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
+
+									[
+										'运行页面：',
+										el(
+											'ul',
+											script.url.map((i) =>
+												el('li', [
+													i[0],
+													'：',
+													i[1] instanceof RegExp ? i[1].toString().replace(/\\/g, '').slice(1, -1) : el('span', i[1])
+												])
+											)
+										)
+									]
+								])
+							],
+							(li) => {
+								li.style.marginBottom = '12px';
+							}
+						);
+					}),
+				(ul) => {
+					ul.style.paddingLeft = '42px';
+				}
+			)
+		});
+	};
+
 	return el('div', { className: 'user-guide card' }, [
+		el('div', { className: 'separator', style: { padding: '12px 0px' } }, '✨ 支持的网课平台'),
+		el('div', [
+			...definedProjects()
+				.filter((p) => p.studyProject)
+				.map((project) => {
+					const btn = el('button', { className: 'base-style-button-secondary' }, [project.name]);
+					btn.onclick = () => {
+						showProjectDetails(project);
+					};
+					return btn;
+				})
+		]),
+		el('div', { className: 'separator', style: { padding: '12px 0px' } }, '📖 使用教程'),
 		$creator.notes(
 			[
 				'打开任意网课平台，等待脚本加载，',
 				'脚本加载后查看每个网课不同的使用提示。',
 				'如果不支持当前网课，则不会有相应的提示以及设置面板。',
-				[
-					'以下是全部支持的网课以及包含的脚本（点击下列详情展开查看）:',
-					...definedProjects()
-						.filter((p) => p.studyProject)
-						.map((project) => {
-							return el('details', [
-								el('summary', project.name),
-								el(
-									'ul',
-									Object.keys(project.scripts).map((key) => {
-										const script = project.scripts[key];
-
-										return el(
-											'li',
-											[
-												el('b', script.name),
-												$creator.notes([
-													el('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
-
-													[
-														'运行页面：',
-														el(
-															'ul',
-															script.url.map((i) =>
-																el('li', [
-																	i[0],
-																	'：',
-																	i[1] instanceof RegExp
-																		? i[1].toString().replace(/\\/g, '').slice(1, -1)
-																		: el('a', { href: i[1], target: '_blank' }, i[1])
-																])
-															)
-														)
-													]
-												])
-											],
-											(li) => {
-												li.style.marginBottom = '12px';
-											}
-										);
-									}),
-									(ul) => {
-										ul.style.paddingLeft = '42px';
-									}
-								)
-							]);
-						}),
-					el('br')
-				],
-
 				[
 					'最后温馨提示: ',
 					'- 禁止与其他脚本一起使用，否则出现答案选不上或者页面卡死，无限刷新，等问题一律后果自负。',
