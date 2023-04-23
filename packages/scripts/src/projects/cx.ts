@@ -140,6 +140,11 @@ export const CXProject = Project.create({
 					attrs: { type: 'checkbox' },
 					defaultValue: true
 				},
+				reloadVideoWhenError: {
+					label: '视频加载错误时自动刷新',
+					attrs: { type: 'checkbox' },
+					defaultValue: false
+				},
 				/**
 				 *
 				 * 开启的任务点
@@ -1144,6 +1149,7 @@ function searchJob(
 		playbackRate: number;
 		volume: number;
 		workOptions: CommonWorkOptions;
+		reloadVideoWhenError: boolean;
 	},
 	searchedJobs: Job[]
 ): Job | undefined {
@@ -1257,7 +1263,11 @@ export function fixedVideoProgress() {
 /**
  * 播放视频和音频
  */
-async function mediaTask(setting: { playbackRate: number; volume: number }, media: HTMLMediaElement, doc: Document) {
+async function mediaTask(
+	setting: { playbackRate: number; volume: number; reloadVideoWhenError: boolean },
+	media: HTMLMediaElement,
+	doc: Document
+) {
 	const { playbackRate = 1, volume = 0 } = setting;
 
 	// @ts-ignore
@@ -1274,6 +1284,20 @@ async function mediaTask(setting: { playbackRate: number; volume: number }, medi
 
 	// 固定视频进度
 	fixedVideoProgress();
+
+	// eslint-disable-next-line no-undef
+	let reloadInterval: NodeJS.Timer;
+
+	if (setting.reloadVideoWhenError) {
+		reloadInterval = setInterval(() => {
+			if (doc.documentElement.innerText.includes('网络错误导致视频下载中途失败')) {
+				$console.error('视频加载失败，即将刷新页面');
+				setTimeout(() => {
+					location.reload();
+				}, 3000);
+			}
+		}, 5000);
+	}
 
 	/**
 	 * 视频播放
@@ -1292,6 +1316,7 @@ async function mediaTask(setting: { playbackRate: number; volume: number }, medi
 		media.addEventListener('ended', () => {
 			$console.log('视频播放完毕');
 			media.removeEventListener('pause', playFunction);
+			clearInterval(reloadInterval);
 			resolve();
 		});
 
