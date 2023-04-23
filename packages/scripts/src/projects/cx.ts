@@ -73,7 +73,9 @@ export const CXProject = Project.create({
 		'edu.cn',
 		'org.cn',
 		// 学银在线
-		'xueyinonline.com'
+		'xueyinonline.com',
+		/** 其他域名 */
+		'hnsyu.net'
 	],
 	studyProject: true,
 	scripts: {
