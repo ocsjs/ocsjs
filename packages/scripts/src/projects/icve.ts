@@ -286,13 +286,7 @@ export const IcveMoocProject = Project.create({
 
 function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
-
-	// 置顶搜索结果面板
-	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
-	// 刷新搜索结果状态
-	CommonProject.scripts.workResults.methods.refreshState();
-	// 清空搜索结果
-	CommonProject.scripts.workResults.methods.clearResults();
+	CommonProject.scripts.workResults.methods.init();
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles

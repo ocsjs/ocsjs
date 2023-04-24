@@ -565,12 +565,7 @@ export function workOrExam(
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
-	// 刷新搜索结果状态
-	CommonProject.scripts.workResults.methods.refreshState();
-	// 清空搜索结果
-	CommonProject.scripts.workResults.methods.clearResults();
-	// 置顶搜索结果面板
-	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
+	CommonProject.scripts.workResults.methods.init();
 
 	// 处理作业和考试题目的方法
 	const workOrExamQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
@@ -1378,12 +1373,7 @@ async function chapterTestTask(
 	const frameWindow = frame.contentWindow;
 	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
-	// 刷新搜索结果状态
-	CommonProject.scripts.workResults.methods.refreshState();
-	// 清空搜索结果
-	CommonProject.scripts.workResults.methods.clearResults();
-	// 置顶搜索结果面板
-	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
+	CommonProject.scripts.workResults.methods.init();
 
 	const chapterTestTaskQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
 		const transformed = StringUtils.of(

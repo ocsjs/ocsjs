@@ -930,13 +930,7 @@ function gxkWorkOrExam(
 	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
-
-	// 置顶搜索结果面板
-	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
-	// 刷新搜索结果状态
-	CommonProject.scripts.workResults.methods.refreshState();
-	// 清空搜索结果
-	CommonProject.scripts.workResults.methods.clearResults();
+	CommonProject.scripts.workResults.methods.init();
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return removeRedundantWords(

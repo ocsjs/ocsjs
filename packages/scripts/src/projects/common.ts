@@ -411,6 +411,17 @@ export const CommonProject = Project.create({
 					},
 					setResults(results: SimplifyWorkResult[]) {
 						return $store.setTab(TAB_WORK_RESULTS_KEY, results);
+					},
+					/**
+					 * 刷新搜索结果状态，清空搜索结果，置顶搜索结果面板
+					 */
+					init() {
+						// 刷新搜索结果状态
+						CommonProject.scripts.workResults.methods.refreshState();
+						// 清空搜索结果
+						CommonProject.scripts.workResults.methods.clearResults();
+						// 置顶搜索结果面板
+						CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
 					}
 				};
 			},

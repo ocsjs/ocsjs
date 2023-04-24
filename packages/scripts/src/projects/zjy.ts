@@ -1,8 +1,32 @@
-import { $, $$el, $creator, $el, $gm, $message, $modal, $store, Project, Script, domSearch } from '@ocsjs/core';
+import {
+	$,
+	$$el,
+	$creator,
+	$el,
+	$gm,
+	$message,
+	$modal,
+	$store,
+	DefaultWork,
+	MessageElement,
+	OCSWorker,
+	Project,
+	Script,
+	defaultAnswerWrapperHandler,
+	defaultQuestionResolve,
+	domSearch,
+	el
+} from '@ocsjs/core';
 import { $console } from './background';
-import { playMedia } from '../utils';
-import { volume } from '../utils/configs';
+import { CommonWorkOptions, playMedia, workPreCheckMessage } from '../utils';
+import { volume, workConfigs } from '../utils/configs';
 import { CommonProject } from './common';
+import {
+	createWorkerControl,
+	optimizationElementWithImage,
+	removeRedundantWords,
+	simplifyWorkResult
+} from '../utils/work';
 
 const state = {
 	loading: false,
@@ -213,48 +237,76 @@ export const ZJYProject = Project.create({
 
 				await studyLoop();
 			}
+		}),
+		work: new Script({
+			name: '✍️ 作业脚本',
+			url: [['作业页面', 'zjy2.icve.com.cn/study/homework/do.html']],
+			namespace: 'zjy.work',
+			configs: {
+				notes: {
+					defaultValue: $creator.notes([
+						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
+						'可以搭配 “通用-在线搜题” 一起使用。',
+						'请手动进入作业页面才能使用自动答题。'
+					]).outerHTML
+				},
+				auto: workConfigs.auto
+			},
+			async oncomplete() {
+				// 置顶当前脚本
+				CommonProject.scripts.render.methods.pin(this);
+
+				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
+				this.onConfigChange('auto', changeMsg);
+
+				let worker: OCSWorker<any> | undefined;
+				let warn: MessageElement | undefined;
+
+				/** 显示答题控制按钮 */
+				createWorkerControl(this, () => worker);
+
+				this.on('render', () => createWorkerControl(this, () => worker));
+
+				this.event.on('start', () => start());
+				this.event.on('restart', () => {
+					worker?.emit('close');
+					$message('info', { content: '3秒后重新答题。' });
+					setTimeout(start, 3000);
+				});
+
+				const start = () => {
+					warn?.remove();
+					workPreCheckMessage({
+						onrun: (opts) => {
+							worker = work(opts);
+						},
+						ondone: () => {
+							this.event.emit('done');
+						},
+						...CommonProject.scripts.settings.cfg
+					});
+				};
+
+				if (this.cfg.auto === false) {
+					const startBtn = el('button', { className: 'base-style-button' }, '进入作业考试脚本');
+					startBtn.onclick = () => {
+						CommonProject.scripts.render.methods.pin(this);
+					};
+					const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
+					warn = $message('warn', {
+						duration: 0,
+						content: el('div', [
+							`自动答题已被关闭！请${isPinned ? '' : '进入作业考试脚本，然后'}点击开始答题，或者忽略此警告。`,
+							isPinned ? '' : startBtn
+						])
+					});
+				} else {
+					start();
+				}
+			}
 		})
 	}
 });
-
-/**
- * 创建弹出窗口
- * @param url 地址
- * @param winName 窗口名
- * @param width 宽
- * @param height 高
- * @param scrollbars 是否有滚动条
- * @param resizable 是否可调整大小
- */
-export function createPopupWindow(
-	url: string,
-	name: string,
-	opts: {
-		width: number;
-		height: number;
-		scrollbars: boolean;
-		resizable: boolean;
-	}
-) {
-	const { width, height, scrollbars, resizable } = opts;
-	const LeftPosition = screen.width ? (screen.width - width) / 2 : 0;
-	const TopPosition = screen.height ? (screen.height - height) / 2 : 0;
-	const settings =
-		'height=' +
-		height +
-		',width=' +
-		width +
-		',top=' +
-		TopPosition +
-		',left=' +
-		LeftPosition +
-		',scrollbars=' +
-		(scrollbars ? 'yes' : 'no') +
-		',resizable=' +
-		(resizable ? 'yes' : 'no');
-
-	return window.open(url, name, settings);
-}
 
 /**
  * 永久固定显示视频进度
@@ -358,4 +410,115 @@ function start(name: string, doc: Document) {
 			}
 		})();
 	});
+}
+
+/**
+ * 章节测验
+ */
+function work({ answererWrappers, period, redundanceWordsText, thread }: CommonWorkOptions) {
+	CommonProject.scripts.workResults.methods.init();
+
+	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
+		return removeRedundantWords(
+			titles
+				.filter((t) => t?.innerText)
+				.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+				.join(','),
+			redundanceWordsText.split('\n')
+		);
+	};
+
+	/** 新建答题器 */
+	const worker = new OCSWorker({
+		root: '.e-q-body',
+		elements: {
+			title: '.e-q-q',
+			options: 'li.e-a'
+		},
+		/** 其余配置 */
+		requestPeriod: period ?? 3,
+		resolvePeriod: 0,
+		thread: thread ?? 1,
+		/** 默认搜题方法构造器 */
+		answerer: (elements, type, ctx) => {
+			const title = titleTransform(elements.title);
+			if (title) {
+				return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+					return defaultAnswerWrapperHandler(answererWrappers, {
+						type,
+						title,
+						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+					});
+				});
+			} else {
+				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+			}
+		},
+
+		work: async (ctx) => {
+			const { elements, searchInfos, root } = ctx;
+			const questionTypeNum = parseInt(root.getAttribute('data-questiontype') || '-1');
+			const type = getQuestionType(questionTypeNum);
+
+			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
+				const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
+					if (type === 'judgement' || type === 'single' || type === 'multiple') {
+						if (option.classList.contains('checked')) {
+							// 跳过
+						} else {
+							option.click();
+						}
+					} else if (type === 'completion' && answer.trim()) {
+						const text = option.querySelector('textarea');
+						if (text) {
+							text.value = answer;
+						}
+					}
+				};
+
+				return await defaultQuestionResolve(ctx)[type](
+					searchInfos,
+					elements.options.map((option) => optimizationElementWithImage(option)),
+					handler
+				);
+			}
+
+			return { finish: false };
+		},
+		/** 完成答题后 */
+		async onResultsUpdate(res, curr) {
+			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
+		},
+		onResolveUpdate(res) {
+			if (res.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
+			}
+			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+		}
+	});
+
+	worker
+		.doWork()
+		.then(() => {
+			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+		})
+		.catch((err) => {
+			$message('error', { content: `作业/考试失败: ${err}`, duration: 0 });
+		});
+
+	return worker;
+}
+
+function getQuestionType(questionTypeNum: number): 'completion' | 'multiple' | 'judgement' | 'single' | 'unknown' {
+	return questionTypeNum === 1
+		? 'single'
+		: questionTypeNum === 2
+		? 'multiple'
+		: questionTypeNum === 3
+		? 'judgement'
+		: questionTypeNum === 4
+		? 'completion'
+		: questionTypeNum === 4
+		? 'completion'
+		: 'unknown';
 }
