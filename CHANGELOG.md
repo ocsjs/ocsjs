@@ -1,3 +1,12 @@
+## [4.3.2](https://github.com/ocsjs/ocsjs/compare/4.3.1...4.3.2) (2023-04-24)
+
+
+### Bug Fixes
+
+* **script:** 修复一些显示BUG ([eb4cbc1](https://github.com/ocsjs/ocsjs/commit/eb4cbc1067a97afa4fb81424a9332d393e591982))
+
+
+
 ## [4.3.1](https://github.com/ocsjs/ocsjs/compare/4.3.0...4.3.1) (2023-04-24)
 
 
