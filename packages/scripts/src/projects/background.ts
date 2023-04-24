@@ -295,6 +295,7 @@ export const BackgroundProject = Project.create({
 									});
 								if (gt(version['last-version'], infos.script.version)) {
 									const modal = $modal('confirm', {
+										width: 600,
 										content: $creator.notes([
 											`检测到新版本发布 ${version['last-version']} ：`,
 											[...(version.notes || [])]

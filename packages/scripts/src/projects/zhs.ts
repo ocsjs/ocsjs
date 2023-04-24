@@ -177,6 +177,10 @@ export const ZHSProject = Project.create({
 						if (course) {
 							// 存在则累加时间
 							course.time = course.time + val;
+							// 历史遗留问题，之前的倍速没有转换为数字，导致可能显示为字符串
+							if (typeof course.time === 'string') {
+								course.time = parseFloat(course.time);
+							}
 						} else {
 							// 不存在则新建
 							courses.push({ name: courseName, time: 0 });
@@ -235,6 +239,10 @@ export const ZHSProject = Project.create({
 			onactive() {
 				// 重置时间
 				this.cfg.stopTime = '0';
+				if (this.cfg.playbackRate) {
+					// 转换为数字
+					this.cfg.playbackRate = parseFloat(this.cfg.playbackRate.toString());
+				}
 			},
 			async oncomplete() {
 				// 置顶当前脚本
