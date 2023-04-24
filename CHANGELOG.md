@@ -1,3 +1,13 @@
+## [4.3.5](https://github.com/ocsjs/ocsjs/compare/4.3.3...4.3.5) (2023-04-24)
+
+
+### Bug Fixes
+
+* **script:** 修复题库缓存搜索时每题只出一个结果的BUG ([222735a](https://github.com/ocsjs/ocsjs/commit/222735a98cf94f09e6b69eb313c98283e42561a9))
+* **script:** 修复智慧职教MOOC自动答题的填空题无法填空的BUG ([565f879](https://github.com/ocsjs/ocsjs/commit/565f8799518912a65c818baf55a8671576af659f))
+
+
+
 ## [4.3.3](https://github.com/ocsjs/ocsjs/compare/4.3.2...4.3.3) (2023-04-24)
 
 
