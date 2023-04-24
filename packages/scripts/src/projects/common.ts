@@ -22,13 +22,17 @@ import { definedProjects } from '../index';
 import { markdown } from '../utils/markdown';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
-const TAB_APPS_QUESTION_CACHES_KEY = 'common.apps.question-caches';
 
 const gotoHome = () => {
 	const btn = el('button', { className: 'base-style-button-secondary' }, '🏡官网教程');
 	btn.onclick = () => window.open('https://docs.ocsjs.com', '_blank');
 	return btn;
 };
+
+/**
+ * 题库缓存类型
+ */
+type QuestionCache = { title: string; answer: string; from: string; homepage: string };
 
 export const CommonProject = Project.create({
 	name: '通用',
@@ -801,19 +805,24 @@ export const CommonProject = Project.create({
 			name: '📱 其他应用',
 			url: [['', /.*/]],
 			namespace: 'common.apps',
+			configs: {
+				notes: {
+					defaultValue: '这里是一些其他的应用或者拓展功能。'
+				},
+				/**
+				 * 题库缓存
+				 */
+				localQuestionCaches: {
+					defaultValue: [] as QuestionCache[]
+				}
+			},
 			methods() {
-				type QuestionCache = { title: string; answer: string; from: string; homepage: string };
-
-				const getQuestionCache = async (): Promise<QuestionCache[]> => {
-					return (await $store.getTab(TAB_APPS_QUESTION_CACHES_KEY)) || [];
-				};
-
 				return {
 					/**
 					 * 添加题库缓存
 					 */
 					addQuestionCache: async (...questionCacheItems: QuestionCache[]) => {
-						const questionCaches: QuestionCache[] = (await $store.getTab(TAB_APPS_QUESTION_CACHES_KEY)) || [];
+						const questionCaches: QuestionCache[] = this.cfg.localQuestionCaches;
 						for (const item of questionCacheItems) {
 							// 去重
 							if (questionCaches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
@@ -823,7 +832,7 @@ export const CommonProject = Project.create({
 
 						// 限制数量
 						questionCaches.splice(200);
-						await $store.setTab(TAB_APPS_QUESTION_CACHES_KEY, questionCaches);
+						this.cfg.localQuestionCaches = questionCaches;
 					},
 					addQuestionCacheFromWorkResult(swr: SimplifyWorkResult[]) {
 						CommonProject.scripts.apps.methods.addQuestionCache(
@@ -846,7 +855,6 @@ export const CommonProject = Project.create({
 								.flat()
 						);
 					},
-					getQuestionCache: getQuestionCache,
 					/**
 					 * 将题库缓存作为题库并进行题目搜索
 					 * @param title 题目
@@ -857,7 +865,7 @@ export const CommonProject = Project.create({
 						whenSearchEmpty: () => SearchInformation[] | Promise<SearchInformation[]>
 					): Promise<SearchInformation[]> => {
 						let results: SearchInformation[] = [];
-						const caches = await getQuestionCache();
+						const caches = this.cfg.localQuestionCaches;
 						for (const cache of caches) {
 							if (cache.title === title) {
 								results = [
@@ -936,8 +944,10 @@ export const CommonProject = Project.create({
 				};
 
 				const cachesBtn = el('div', { innerText: '💾 题库缓存', style: btnStyle }, (btn) => {
-					btn.onclick = async () => {
-						const questionCaches = await this.methods.getQuestionCache();
+					btn.onclick = () => {
+						console.log(this.cfg);
+
+						const questionCaches = this.cfg.localQuestionCaches;
 
 						const list = questionCaches.map((c) =>
 							el(
@@ -983,7 +993,7 @@ export const CommonProject = Project.create({
 										el('span', ['当前缓存数量：' + questionCaches.length]),
 										$creator.button('清空题库缓存', {}, (btn) => {
 											btn.onclick = () => {
-												$store.setTab(TAB_APPS_QUESTION_CACHES_KEY, []);
+												this.cfg.localQuestionCaches = [];
 												list.forEach((el) => el.remove());
 											};
 										})
