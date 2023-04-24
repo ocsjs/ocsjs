@@ -318,7 +318,7 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		root: '.q_content',
 		elements: {
 			title: '.divQuestionTitle',
-			options: '.questionOptions .q_option'
+			options: '.questionOptions .q_option,.questionOptions.divTextarea '
 		},
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
@@ -349,8 +349,15 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 					}
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector('textarea');
+					const textIframe = option.querySelector<HTMLIFrameElement>('iframe[id*="ueditor"]');
 					if (text) {
 						text.value = answer;
+					}
+					if (textIframe) {
+						const view = textIframe.contentWindow?.document.querySelector<HTMLElement>('.view');
+						if (view) {
+							view.innerText = answer;
+						}
 					}
 				}
 			}
