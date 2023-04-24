@@ -1,3 +1,12 @@
+## [4.3.3](https://github.com/ocsjs/ocsjs/compare/4.3.2...4.3.3) (2023-04-24)
+
+
+### Bug Fixes
+
+* **script:** 撤回智慧树图片识别，否则导致作业考试无法使用。 ([fe5b197](https://github.com/ocsjs/ocsjs/commit/fe5b197f1ab4a004d69c44c3460fc94ed7a4e1d6))
+
+
+
 ## [4.3.2](https://github.com/ocsjs/ocsjs/compare/4.3.1...4.3.2) (2023-04-24)
 
 
