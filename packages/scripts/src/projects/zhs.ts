@@ -525,7 +525,7 @@ export const ZHSProject = Project.create({
 						warn = $message('warn', {
 							duration: 0,
 							content: el('div', [
-								`'自动答题已被关闭！请${isPinned ? '' : '进入作业脚本，然后'}点击开始答题，或者忽略此警告。`,
+								`自动答题已被关闭！请${isPinned ? '' : '进入作业脚本，然后'}点击开始答题，或者忽略此警告。`,
 								isPinned ? '' : startBtn
 							])
 						});
@@ -920,13 +920,6 @@ function recognize() {
 		// @ts-ignore
 		div.__vue__.$el.innerHTML = div.__vue__._data.shadowDom.textContent;
 	}
-	// 识别图片
-	document.body.querySelectorAll('img').forEach((img) => {
-		const div = document.createElement('div');
-		div.style.display = 'none';
-		div.textContent = img.src || img.getAttribute('data-src');
-		img.after(div);
-	});
 }
 
 /**
