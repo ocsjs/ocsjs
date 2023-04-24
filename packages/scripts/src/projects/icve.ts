@@ -299,7 +299,10 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 			.filter((t) => t?.innerText)
 			.map((t) => {
 				if (t) {
-					return t.childNodes[2].textContent?.replace(/^、/, '') || '';
+					const title = t.cloneNode(true) as HTMLElement;
+					title.querySelector('[name*="questionIndex"]')?.remove();
+					title.querySelector('.q_score')?.remove();
+					return title.innerText.trim().replace(/^、/, '') || '';
 				}
 				return '';
 			})
