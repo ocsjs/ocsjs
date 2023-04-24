@@ -87,7 +87,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			};
 
 			/** 执行元素搜索钩子 */
-			await this.opts.onElementSearched?.(ctx.elements);
+			await this.opts.onElementSearched?.(ctx.elements, q);
 
 			/** 排除掉 null 的元素 */
 			ctx.elements.title = ctx.elements.title?.filter(Boolean) as HTMLElement[];

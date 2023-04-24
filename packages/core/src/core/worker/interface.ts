@@ -198,7 +198,7 @@ export type WorkOptions<E extends RawElements> = {
 	/** 多线程数量（个） */
 	thread?: number;
 	/** 当元素被搜索到 */
-	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>) => void | Promise<void>;
+	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>, root: HTMLElement) => void | Promise<void>;
 	/** 监听搜题结果 */
 	onResultsUpdate?: (res: WorkResult<E>[], currentResult: WorkResult<E>) => void | Promise<void>;
 	/** 监听答题结果 */
