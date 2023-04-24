@@ -1,3 +1,12 @@
+## [4.3.1](https://github.com/ocsjs/ocsjs/compare/4.3.0...4.3.1) (2023-04-24)
+
+
+### Bug Fixes
+
+* **script:** 帮助智慧树修复图片题无法显示的BUG ([bb4c5aa](https://github.com/ocsjs/ocsjs/commit/bb4c5aa49d46f5c077a3855b392ba036db6672e6))
+
+
+
 # [4.3.0](https://github.com/ocsjs/ocsjs/compare/4.2.31...4.3.0) (2023-04-24)
 
 
