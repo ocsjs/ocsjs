@@ -868,13 +868,11 @@ export const CommonProject = Project.create({
 						const caches = this.cfg.localQuestionCaches;
 						for (const cache of caches) {
 							if (cache.title === title) {
-								results = [
-									{
-										name: `【题库缓存】${cache.from}`,
-										homepage: cache.homepage,
-										results: [{ answer: cache.answer, question: cache.title }]
-									}
-								];
+								results.push({
+									name: `【题库缓存】${cache.from}`,
+									homepage: cache.homepage,
+									results: [{ answer: cache.answer, question: cache.title }]
+								});
 							}
 						}
 						if (results.length === 0) {
