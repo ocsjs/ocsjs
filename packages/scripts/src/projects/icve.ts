@@ -345,7 +345,7 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
 					// 这里只用判断多选题是否选中，如果选中就不用再点击了，单选题是 radio，所以不用判断。
 					if (option.querySelector('.checkbox_on') === null) {
-						$el('.option_index', option)?.click();
+						$el('div', option)?.click();
 					}
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector('textarea');
