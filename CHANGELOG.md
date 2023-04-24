@@ -1,3 +1,33 @@
+# [4.3.0](https://github.com/ocsjs/ocsjs/compare/4.2.31...4.3.0) (2023-04-24)
+
+
+### Bug Fixes
+
+* **app:** 优化浏览器环境问题 ([090c7af](https://github.com/ocsjs/ocsjs/commit/090c7af154e34fa7aa0833a586cab7e709cc16c8))
+* **core:** 修复题库搜题时出现 Cannot convert object to primitive value 问题 ([9af5f3f](https://github.com/ocsjs/ocsjs/commit/9af5f3ff5ab93fcd87deefbf7af9963636f342ea))
+* **scirpt:** 优化搜索结果的显示，并且添加快捷百度一下按钮 ([e074a95](https://github.com/ocsjs/ocsjs/commit/e074a95c647e58281648a0ba83c17c069e4de015))
+* **script:** 添加超星自动答题后暂停提示 ([0635db9](https://github.com/ocsjs/ocsjs/commit/0635db94916fcace2e44ef5f7d3fa74114021aa0))
+* **script:** 新增超星匹配域名： hnsyu.net ([481445f](https://github.com/ocsjs/ocsjs/commit/481445f46903ef018f125cd17a33e431a979b267))
+* **script:** 新增超星视频加载失败检测功能 ([1b1e9b8](https://github.com/ocsjs/ocsjs/commit/1b1e9b8b7697b89f0f5c2aef28aff064d42db606))
+* **script:** 修复上个版本智慧职教MOOC学院中作业自动答题题目为空的BUG ([e095493](https://github.com/ocsjs/ocsjs/commit/e095493a3fbd767c2d0d0e90131d6ddc1ec0481f))
+* **script:** 修复手贱导致的判断题乱选的BUG ([4cfa3c8](https://github.com/ocsjs/ocsjs/commit/4cfa3c86b948115819ec3e8e9c5a7ebed0b7ebd0))
+* **script:** 优化 $modal API ，修复 onClose 执行逻辑 ([37cd819](https://github.com/ocsjs/ocsjs/commit/37cd819f27d7b750c76d0db652b35ad5d604a7aa))
+* **script:** 优化超星编辑框复制粘贴问题 ([b263146](https://github.com/ocsjs/ocsjs/commit/b26314689183338e3b4ee3db73258e4e1d538df6))
+* **script:** 优化脚本教程，优化搜索结果，删除独立的通知提示和版本日志，转移到脚本首页中。 ([12d9cef](https://github.com/ocsjs/ocsjs/commit/12d9cef9937fd11c73d2b0180f59d4f067777822))
+* **script:** 优化屏蔽复制粘贴限制 ([3c124c3](https://github.com/ocsjs/ocsjs/commit/3c124c300233592224f127df8ddcf6cbe65363ce))
+* **script:** 优化搜索结果空白的BUG ([5de62f5](https://github.com/ocsjs/ocsjs/commit/5de62f5f9f590c4afe4db2a9b91af8f125481847))
+* **script:** 优化智慧树学习逻辑，用户手动切换视频时脚本可以重新生效。 ([ad5757c](https://github.com/ocsjs/ocsjs/commit/ad5757c81fa7e5139e4097c6326996172e0e12a3))
+
+
+### Features
+
+* **core:** 优化 el API 方便自定义样式 ([e3468f7](https://github.com/ocsjs/ocsjs/commit/e3468f7762b71976338b7a7e74eb920e797e069e))
+* **script:** 将题库缓存储域切换成本地存储 ([6969b52](https://github.com/ocsjs/ocsjs/commit/6969b523cf8a6cc8436f101be7b44ae2ce2ca41d))
+* **script:** 添加题库缓存功能 ([38bde15](https://github.com/ocsjs/ocsjs/commit/38bde1561acfc5e1cf2961846d55ae5705b46514))
+* **script:** 添加智慧职教MOOC学院的作业自动答题功能，优化刷课逻辑。 ([e2954f4](https://github.com/ocsjs/ocsjs/commit/e2954f412e726af2b26f153d0cb980c2d8273608))
+
+
+
 ## [4.2.31](https://github.com/ocsjs/ocsjs/compare/4.2.29...4.2.31) (2023-04-20)
 
 

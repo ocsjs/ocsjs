@@ -202,7 +202,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 						index: i
 					});
 
-					console.error(err);
 					if (err instanceof Error) {
 						error = err.message;
 					} else {

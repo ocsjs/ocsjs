@@ -17,5 +17,5 @@ export { ZJYProject } from './projects/zjy';
 export { IcveMoocProject } from './projects/icve';
 
 export function definedProjects(): Project[] {
-	return [IcveMoocProject, ZJYProject, ZHSProject, CXProject, CommonProject, BackgroundProject];
+	return [ZHSProject, CXProject, IcveMoocProject, ZJYProject, CommonProject, BackgroundProject];
 }

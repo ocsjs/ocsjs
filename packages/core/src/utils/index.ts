@@ -5,3 +5,4 @@ export * from './elements';
 export * from './string';
 export * from './tampermonkey';
 export * from './store';
+export * from './const';

@@ -6,6 +6,7 @@
 
 ul,
 ol {
+	line-height: 26px;
 	padding-left: 16px;
 	margin: 0px;
 }
@@ -64,7 +65,7 @@ hr {
 	background-color: white;
 	border: 1px solid #2c92ff;
 	color: #409eff;
-	cursor: pointer;
+	cursor: pointer !important;
 	margin-bottom: 4px;
 
 	&:active {
@@ -119,6 +120,7 @@ container-element {
 	color: #636363;
 	box-shadow: 0 0 24px -12px #3f3f3f;
 	border-radius: 8px;
+	letter-spacing: 0.5px;
 }
 
 @base-height: 32px;
@@ -223,7 +225,8 @@ script-panel-element + script-panel-element {
 	border-left: 4px solid #0099ff65;
 	width: -webkit-fill-available;
 	margin: 0px 8px;
-	line-height: 22px;
+	line-height: 26px;
+	letter-spacing: 1px;
 }
 
 .tooltip {
@@ -286,6 +289,7 @@ script-panel-element + script-panel-element {
 		config-element {
 			width: 100%;
 			display: table-row;
+			line-height: 26px;
 
 			label {
 				white-space: nowrap;
@@ -500,6 +504,7 @@ modal-element {
 		display: flex;
 		white-space: nowrap;
 		justify-content: end;
+		align-items: end;
 
 		* + * {
 			margin-left: 12px;
@@ -686,17 +691,6 @@ search-infos-element {
 				line-height: 20px;
 			}
 		}
-
-		.copy {
-			display: none;
-		}
-	}
-
-	.search-infos:hover {
-		.copy {
-			display: inline;
-			font-size: 12px;
-		}
 	}
 
 	.error {
@@ -706,12 +700,13 @@ search-infos-element {
 	}
 }
 
-.copy {
+.copy,
+.question-title-extra-btn {
 	margin-left: 4px;
 	padding: 2px 4px;
 	border-radius: 2px;
 	box-shadow: 0 0 4px #b1b1b1;
-	cursor: pointer;
+	cursor: pointer !important;
 	font-weight: normal;
 	font-size: 12px;
 }
