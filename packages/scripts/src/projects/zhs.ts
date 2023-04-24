@@ -149,6 +149,43 @@ export const ZHSProject = Project.create({
 					}
 				}
 			},
+			methods() {
+				return {
+					/**
+					 * 增加学习时间
+					 * @param courseName 课程名
+					 * @param val 增加的时间
+					 */
+					increaseStudyTime: (courseName: string, val: number) => {
+						const records = this.cfg.studyRecord;
+						// 查找是否存在今天的记录
+						const record = records.find(
+							(r) => new Date(r.date).toLocaleDateString() === new Date().toLocaleDateString()
+						);
+						let courses: {
+							name: string;
+							time: number;
+						}[] = [];
+						if (record) {
+							courses = record.courses;
+						} else {
+							records.push({ date: Date.now(), courses: courses });
+						}
+
+						// 查找是否存在课程记录
+						const course = courses.find((c) => c.name === courseName);
+						if (course) {
+							// 存在则累加时间
+							course.time = course.time + val;
+						} else {
+							// 不存在则新建
+							courses.push({ name: courseName, time: 0 });
+						}
+
+						this.cfg.studyRecord = records;
+					}
+				};
+			},
 			onrender({ panel }) {
 				panel.body.append(
 					el('hr'),
@@ -198,22 +235,26 @@ export const ZHSProject = Project.create({
 			onactive() {
 				// 重置时间
 				this.cfg.stopTime = '0';
-				const records = this.cfg.studyRecord;
-				// 查找是否存在学习记录，不存在则新建
-				const record = records.find(
-					(record) => new Date(record.date).toLocaleDateString() === new Date().toLocaleDateString()
-				);
-				/** 初始化今日学习记录 */
-				if (!record) {
-					records.push({ date: Date.now(), courses: [] });
-					this.cfg.studyRecord = records;
-				}
 			},
-			oncomplete() {
+			async oncomplete() {
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 
-				const vue = $el('.video-study')?.__vue__;
+				const waitForVue = () => {
+					return new Promise<any>((resolve, reject) => {
+						const vue = $el('.video-study')?.__vue__;
+						if (vue?.data?.courseInfo) {
+							resolve(vue);
+						} else {
+							setTimeout(() => {
+								resolve(waitForVue());
+							}, 1000);
+						}
+					});
+				};
+				const vue = await waitForVue();
+				console.log(vue);
+
 				let stopInterval: any = 0;
 				let stopMessage: MessageElement;
 				// 监听定时停止
@@ -255,7 +296,10 @@ export const ZHSProject = Project.create({
 
 				// 监听速度
 				this.onConfigChange('playbackRate', (curr) => {
-					switchPlaybackRate(parseFloat(curr.toString()));
+					if (typeof curr === 'string') {
+						this.cfg.playbackRate = parseFloat(curr);
+					}
+					switchPlaybackRate(this.cfg.playbackRate);
 				});
 
 				// 监听清晰度
@@ -294,9 +338,16 @@ export const ZHSProject = Project.create({
 					}
 				};
 
+				// 循环记录学习时间
+				const recordStudyTimeLoop = () => {
+					this.methods.increaseStudyTime(vue.data.courseInfo.name, this.cfg.playbackRate);
+					setTimeout(recordStudyTimeLoop, 1000);
+				};
+				recordStudyTimeLoop();
+
 				let timeMessage: MessageElement;
+				// 计算课程完成所需时间
 				const calculateTime = () => {
-					// 计算视频完成所需时间
 					try {
 						const vue = $el('.video-study')?.__vue__;
 						const videos = (vue.videoList as any[])
@@ -306,23 +357,23 @@ export const ZHSProject = Project.create({
 							.flat()
 							/** 排除已经学习过的 */
 							.filter((v) => v.isStudiedLesson === 0);
-						const allTime: number = videos.map((l) => l.videoSec || 0).reduce((pre, curr) => pre + curr, 0);
-						if (timeMessage) {
-							timeMessage.remove();
-						}
 
+						const allTime: number = videos.map((l) => l.videoSec || 0).reduce((pre, curr) => pre + curr, 0) / (60 * 60);
+
+						// 获取今日学习时间
 						const record = this.cfg.studyRecord.find(
 							(r) => new Date(r.date).toLocaleDateString() === new Date().toLocaleDateString()
 						);
+						const time = optimizeSecond(record?.courses.find((c) => c.name === vue.data.courseInfo.name)?.time || 0);
+
+						timeMessage?.remove();
 						timeMessage = $message('info', {
 							duration: 0,
-							content: `还剩${videos.length - 1}个视频，总时长${(allTime / (60 * 60)).toFixed(
-								2
-							)}小时，今日已学习${optimizeSecond(
-								record?.courses.find((c) => c.name === vue.data.courseInfo.name)?.time || 0
-							)}`
+							content: `还剩${videos.length - 1}个视频，总时长${allTime.toFixed(2)}小时，今日已学习${time}`
 						});
-					} catch {}
+					} catch (err) {
+						console.error(err);
+					}
 				};
 
 				const interval = setInterval(async () => {
@@ -331,6 +382,7 @@ export const ZHSProject = Project.create({
 						clearInterval(interval);
 						hack();
 						hideDialog();
+
 						setInterval(() => {
 							closeTestDialog();
 							fixProcessBar();
@@ -338,60 +390,59 @@ export const ZHSProject = Project.create({
 							$$el('.v-modal,.mask').forEach((modal) => {
 								modal.remove();
 							});
-
-							// 记录学习时间
-							if (!stop) {
-								const records = this.cfg.studyRecord;
-								const record = records.find(
-									(r) => new Date(r.date).toLocaleDateString() === new Date().toLocaleDateString()
-								);
-								if (record) {
-									record.courses = record?.courses || [];
-									const course = record?.courses.find((c) => c.name === vue.data.courseInfo.name);
-									if (course) {
-										course.time = course.time + 3;
-									} else {
-										record.courses.push({ name: vue.data.courseInfo.name, time: 0 });
-									}
-									this.cfg.studyRecord = records;
-								}
-							}
 						}, 3000);
 
 						// 查找任务
-						let list = $$el('li.clearfix.video');
-						// 如果不是复习模式，则排除掉已经完成的任务
-						if (!this.cfg.restudy) {
-							list = list.filter((el) => el.querySelector('.time_icofinish') === null);
-						}
+						const findVideoItem = (opts: {
+							/**
+							 * 是否往下查找下一个任务
+							 */
+							next: boolean;
+						}) => {
+							let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
+							// 如果不是复习模式，则排除掉已经完成的任务
+							if (!this.cfg.restudy) {
+								videoItems = videoItems.filter((el) => el.querySelector('.time_icofinish') === null);
+							}
 
-						if (list.length === 0) {
-							finish();
-						} else {
-							$message('info', { content: '3秒后开始学习', duration: 3 });
-							const study = async () => {
-								if (stop === false) {
-									const item = list.shift();
-									if (item) {
-										await $.sleep(3000);
-										item.click();
-										await $.sleep(5000);
-										watch(
-											{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
-											study
-										);
-										calculateTime();
-									} else {
-										finish();
-									}
-								} else {
-									$message('warn', {
-										content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
-									});
+							for (let i = 0; i < videoItems.length; i++) {
+								const item = videoItems[i];
+								if (item.classList.contains('current_play')) {
+									return videoItems[i + (opts.next ? 1 : 0)];
 								}
-							};
-							study();
-						}
+							}
+
+							return videoItems[0];
+						};
+
+						$message('info', { content: '3秒后开始学习', duration: 3 });
+						const study = async (opts: { next: boolean }) => {
+							if (stop === false) {
+								const item = findVideoItem(opts);
+								console.log('item', item);
+
+								if (item) {
+									await $.sleep(3000);
+									item.click();
+									await $.sleep(5000);
+									watch(
+										{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
+										({ next }) => {
+											study({ next });
+										}
+									);
+									calculateTime();
+								} else {
+									finish();
+								}
+							} else {
+								$message('warn', {
+									content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
+								});
+							}
+						};
+						// 当页面初始化时无需切换下一个视频，直接播放当前的。
+						study({ next: false });
 					}
 				}, 1000);
 
@@ -700,8 +751,11 @@ export const ZHSProject = Project.create({
  */
 async function watch(
 	options: { volume: number; playbackRate: number; definition?: 'line1bq' | 'line1gq' },
-	onended: () => void
+	onended: (opts: { next: boolean }) => void
 ) {
+	// 部分用户视频加载很慢，这里等待一下
+	await waitForVideo();
+
 	const set = async () => {
 		// 设置清晰度
 		switchLine(options.definition);
@@ -709,20 +763,17 @@ async function watch(
 
 		// 设置播放速度
 		switchPlaybackRate(options.playbackRate);
-		await $.sleep(500);
+		await $.sleep(1000);
 
 		// 上面操作会导致元素刷新，这里重新获取视频
-		const video = $el<HTMLVideoElement>('video');
+		const video = await waitForVideo();
 		state.study.currentMedia = video;
 
 		if (video) {
 			// 如果已经播放完了，则重置视频进度
 			video.currentTime = 1;
-			await $.sleep(500);
-
 			// 音量
 			video.volume = options.volume;
-			await $.sleep(500);
 		}
 
 		return video;
@@ -730,21 +781,34 @@ async function watch(
 
 	const video = await set();
 
-	if (video) {
-		playMedia(() => video.play());
+	const videoCheckInterval = setInterval(async () => {
+		// 如果视频元素无法访问，证明已经切换了视频
+		if (video?.isConnected === false) {
+			clearInterval(videoCheckInterval);
+			$message('info', { content: '检测到视频切换中...' });
+			/**
+			 * 元素无法访问证明用户切换视频了
+			 * 所以不往下播放视频，而是重新播放用户当前选中的视频
+			 */
+			onended({ next: false });
+		}
+	}, 3000);
 
-		video.onpause = async () => {
-			if (!video.ended && stop === false) {
-				await waitForCaptcha();
-				await $.sleep(1000);
-				video.play();
-			}
-		};
+	playMedia(() => video?.play());
 
-		video.onended = onended;
-	} else {
-		$console.error('未检测到视频，请刷新重试。');
-	}
+	video.onpause = async () => {
+		if (!video?.ended && stop === false) {
+			await waitForCaptcha();
+			await $.sleep(1000);
+			video?.play();
+		}
+	};
+
+	video.onended = () => {
+		clearInterval(videoCheckInterval);
+		// 正常切换下一个视频
+		onended({ next: true });
+	};
 }
 
 /**
@@ -940,6 +1004,7 @@ function gxkWorkOrExam(
 	worker
 		.doWork()
 		.then(async (results) => {
+			$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
 			await $.sleep(stopSecondWhenFinish * 1000);
 
 			// 保存题目
@@ -1107,6 +1172,40 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 	return worker;
 }
 
+/**
+ * 将秒数转换为小时或分钟
+ * @param second 秒
+ */
 function optimizeSecond(second: number) {
-	return second / 3600 < 1 ? `${(second / 60).toFixed(2)}分钟` : `${(second / 3600).toFixed(2)}小时`;
+	if (second > 3600) {
+		return `${Math.floor(second / 3600)}小时${Math.floor((second % 3600) / 60)}分钟`;
+	} else if (second > 60) {
+		return `${Math.floor(second / 60)}分钟${second % 60}秒`;
+	} else {
+		return `${second}秒`;
+	}
+}
+
+/**
+ * 等待视频加载并获取视频
+ */
+async function waitForVideo() {
+	const res = await Promise.race([
+		new Promise<HTMLVideoElement>((resolve, reject) => {
+			const interval = setInterval(() => {
+				const video = document.querySelector('video');
+				if (video) {
+					clearInterval(interval);
+					resolve(video);
+				}
+			}, 1000);
+		}),
+		$.sleep(3 * 60 * 1000)
+	]);
+	if (res) {
+		return res;
+	} else {
+		$message('error', { content: '视频加载超时，请刷新重试' });
+		throw new Error('视频加载超时');
+	}
 }
