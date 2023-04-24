@@ -1,3 +1,22 @@
+## [4.3.7](https://github.com/ocsjs/ocsjs/compare/4.3.5...4.3.7) (2023-04-24)
+
+
+### Bug Fixes
+
+* **script:** 修复智慧职教MOOC学院自动答题无法处理判断题的BUG ([b573684](https://github.com/ocsjs/ocsjs/commit/b5736845e38ec1e80281b66fc1f8bb152ec703dd))
+
+
+### Features
+
+* **script:** 添加职教云作业自动答题 ([4db11a4](https://github.com/ocsjs/ocsjs/commit/4db11a40b7cfbac1e7eda26e50e2bde88d4ee6a5))
+
+
+### Performance Improvements
+
+* **core:** add woker.onElementSearched args[1] : root ([c0244e9](https://github.com/ocsjs/ocsjs/commit/c0244e998f7893761557d7354d232de9438e00c2))
+
+
+
 ## [4.3.5](https://github.com/ocsjs/ocsjs/compare/4.3.3...4.3.5) (2023-04-24)
 
 
