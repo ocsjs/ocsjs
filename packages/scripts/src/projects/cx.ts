@@ -734,6 +734,7 @@ export function workOrExam(
 					content: '考试完成，为了安全考虑，请自行检查后自行点击提交！'
 				});
 			} else {
+				$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
 				await $.sleep(stopSecondWhenFinish * 1000);
 
 				// 处理提交
@@ -1576,6 +1577,7 @@ async function chapterTestTask(
 
 	const results = await worker.doWork();
 
+	$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
 	await $.sleep(stopSecondWhenFinish * 1000);
 
 	// 处理提交
