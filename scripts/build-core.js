@@ -14,9 +14,9 @@ function cleanOutput() {
 
 async function buildPackages() {
 	// @ts-ignore
-	await execOut('npm run build', { cwd: '../packages/core' });
+	await execOut('vite build', { cwd: '../packages/core' });
 	// @ts-ignore
-	await execOut('npm run build', { cwd: '../packages/scripts' });
+	await execOut('vite build', { cwd: '../packages/scripts' });
 }
 
 async function createUserJs(cb) {

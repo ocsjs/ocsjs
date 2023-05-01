@@ -7,7 +7,6 @@ exports.default = series(
 		() => execOut('tsc', { cwd: '../packages/app' }),
 		() => execOut('tsc', { cwd: '../packages/web' }),
 		() => execOut('tsc', { cwd: '../packages/utils' }),
-		() => execOut('tsc', { cwd: '../packages/core' }),
-		() => execOut('tsc', { cwd: '../packages/scripts' })
+		() => execOut('tsc', { cwd: '../packages/core' })
 	)
 );
