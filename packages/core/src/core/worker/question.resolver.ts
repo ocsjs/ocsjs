@@ -15,11 +15,10 @@ export function defaultQuestionResolve<E>(
 		 * 在多个题库给出的答案中，找出最相似的答案
 		 */
 		async single(infos, options, handler) {
+			const allAnswer = infos.map((res) => res.results.map((res) => splitAnswer(res.answer)).flat()).flat();
+			const optionStrings = options.map((o) => removeRedundant(o.innerText));
 			/** 配对选项的相似度 */
-			const ratings = answerSimilar(
-				infos.map((res) => res.results.map((res) => splitAnswer(res.answer)).flat()).flat(),
-				options.map((el) => el.innerText)
-			);
+			const ratings = answerSimilar(allAnswer, optionStrings);
 			/**  找出最相似的选项 */
 			let index = -1;
 			let max = 0;
@@ -53,7 +52,7 @@ export function defaultQuestionResolve<E>(
 				}
 			}
 
-			return { finish: false, ratings };
+			return { finish: false, allAnswer, options: optionStrings, ratings };
 		},
 		/**
 		 * 多选题处理器
