@@ -1010,11 +1010,13 @@ function gxkWorkOrExam(
 			await $.sleep(stopSecondWhenFinish * 1000);
 
 			// 保存题目
-			const text = el('span', '正在保存题目中，请勿操作...');
-			const modal = $modal('alert', { content: text });
-
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
+				const modal = $modal('alert', { content: '正在保存题目中，请勿操作...', confirmButton: null });
+				await waitForCaptcha();
 				await $.sleep(2000);
+				// 跳转到该题目，防止用户在保存时切换题目
+				document.querySelectorAll<HTMLElement>('.answerCard_list ul li').item(index)?.click();
+				await $.sleep(200);
 				// 下一页
 				const next = $el('div.examPaper_box > div.switch-btn-box > button:nth-child(2)');
 				if (next) {
@@ -1022,9 +1024,8 @@ function gxkWorkOrExam(
 				} else {
 					$console.error('未找到下一页按钮。');
 				}
+				modal?.remove();
 			}
-			text.innerText = '所有题目保存成功。';
-			setTimeout(() => modal?.remove(), 1000);
 
 			if (type === 'exam') {
 				$message('info', { content: '考试完成，为了安全考虑，请自行检查后自行点击提交！', duration: 0 });
