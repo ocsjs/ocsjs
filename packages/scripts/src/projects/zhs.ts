@@ -493,10 +493,6 @@ export const ZHSProject = Project.create({
 				/** 开始作业 */
 				const start = () => {
 					warn?.remove();
-					/**
-					 * 识别文字
-					 */
-					recognize();
 					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('work', opts);
@@ -578,11 +574,6 @@ export const ZHSProject = Project.create({
 				/** 开始考试 */
 				const start = () => {
 					warn?.remove();
-					/**
-					 * 识别文字，需要放在 start 下因为考试页面切换的时候并不会触发 oncomplete
-					 */
-					recognize();
-
 					workPreCheckMessage({
 						onrun: (opts) => {
 							worker = gxkWorkOrExam('exam', opts);
@@ -935,8 +926,20 @@ function gxkWorkOrExam(
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return removeRedundantWords(
 			titles
-				.filter((t) => t?.innerText)
+				.map((title) => {
+					// 识别 shadow dom 的文本
+					const div = document.createElement('div');
+					// @ts-ignore
+					div.innerHTML = title.__vue__._data.shadowDom.innerHTML;
+
+					// 解决图片题无法解析的BUG
+					for (const img of Array.from(div.querySelectorAll('img'))) {
+						img.src = img.dataset.src || '';
+					}
+					return div;
+				})
 				.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+				.filter((t) => t.trim() !== '')
 				.join(','),
 			redundanceWordsText.split('\n')
 		);
@@ -946,8 +949,20 @@ function gxkWorkOrExam(
 	const worker = new OCSWorker({
 		root: '.examPaper_subject',
 		elements: {
-			title: '.subject_describe,.smallStem_describe',
-			options: '.subject_node .nodeLab'
+			title: '.subject_describe > div,.smallStem_describe',
+			// 选项中图片识别
+			options: (root) =>
+				$$el('.subject_node .nodeLab', root).map((t) => {
+					for (const img of Array.from(t.querySelectorAll<HTMLImageElement>('.node_detail img'))) {
+						// zhs选项中如果已显示的图片则不存在 data-src，如果未显示则存在 data-src
+						if (img.dataset.src) {
+							img.src = img.dataset.src;
+						}
+						// 不使用 optimizationElementWithImage 是因为zhs的选项按钮也是一个图片
+						createUnVisibleTextOfImage(img);
+					}
+					return t;
+				})
 		},
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
