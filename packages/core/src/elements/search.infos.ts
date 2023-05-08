@@ -5,9 +5,20 @@ import { $ } from '../utils/common';
 import { el } from '../utils/dom';
 import { IElement } from './interface';
 
-/** 判断是否有网络图片格式的文本，有则替换成 img 标签  */
-const transformImgLink = (str: string) =>
-	str.replace(/https?:\/\/.*?ananas.*?\.(png|jpg|jpeg|gif)/g, (match) => `<img src="${match}" />`);
+/**
+ * 判断是否有图片链接，如果有则使用 <img> 标签包裹，但如果已经被 <img> 包裹则不处理
+ */
+const transformImgLinkOfQuestion = (question: string) => {
+	// 防止题目中包含 img 标签元素，所以先统一吧 img 标签替换成链接
+	const dom = new DOMParser().parseFromString(question, 'text/html');
+	for (const img of Array.from(dom.querySelectorAll('img'))) {
+		img.replaceWith(img.src);
+	}
+	// 最后将所有图片链接替换成 img 标签
+	return dom.documentElement.innerText.replace(/https?:\/\/.+?\.(png|jpg|jpeg|gif)/g, (img) => {
+		return `<img src="${img}" />`;
+	});
+};
 
 /**
  * 搜索结果元素
@@ -19,7 +30,7 @@ export class SearchInfosElement extends IElement {
 	question: string = '';
 
 	connectedCallback() {
-		const question = transformImgLink(this.question || '无');
+		const question = transformImgLinkOfQuestion(this.question || '无');
 
 		this.append(
 			el('div', [el('span', { innerHTML: question }), $creator.createQuestionTitleExtra(this.question)], (div) => {
@@ -38,8 +49,8 @@ export class SearchInfosElement extends IElement {
 						: /** 显示结果列表 */
 						  [
 								...info.results.map((ans) => {
-									const title = transformImgLink(ans[0] || this.question || '无');
-									const answer = transformImgLink(ans[1] || '无');
+									const title = transformImgLinkOfQuestion(ans[0] || this.question || '无');
+									const answer = transformImgLinkOfQuestion(ans[1] || '无');
 
 									return el('div', { className: 'search-result' }, [
 										/** 题目 */
