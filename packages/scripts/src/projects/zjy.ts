@@ -239,15 +239,18 @@ export const ZJYProject = Project.create({
 			}
 		}),
 		work: new Script({
-			name: '✍️ 作业脚本',
-			url: [['作业页面', 'zjy2.icve.com.cn/study/homework/do.html']],
-			namespace: 'zjy.work',
+			name: '✍️ 作业考试脚本',
+			url: [
+				['作业页面', 'zjy2.icve.com.cn/study/homework/do.html'],
+				['考试页面', 'zjy2.icve.com.cn/study/onlineExam/preview.html']
+			],
+			namespace: 'zjy.work-and-exam',
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						'可以搭配 “通用-在线搜题” 一起使用。',
-						'请手动进入作业页面才能使用自动答题。'
+						'请手动进入作业/考试页面才能使用自动答题。'
 					]).outerHTML
 				},
 				auto: workConfigs.auto
@@ -256,7 +259,8 @@ export const ZJYProject = Project.create({
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 
-				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
+				const changeMsg = () =>
+					$message('info', { content: '检测到设置更改，请重新进入，或者刷新作业/考试页面进行答题。' });
 				this.onConfigChange('auto', changeMsg);
 
 				let worker: OCSWorker<any> | undefined;
@@ -278,7 +282,7 @@ export const ZJYProject = Project.create({
 					warn?.remove();
 					workPreCheckMessage({
 						onrun: (opts) => {
-							worker = work(opts);
+							worker = workAndExam(opts);
 						},
 						ondone: () => {
 							this.event.emit('done');
@@ -415,8 +419,10 @@ function start(name: string, doc: Document) {
 /**
  * 章节测验
  */
-function work({ answererWrappers, period, redundanceWordsText, thread }: CommonWorkOptions) {
-	CommonProject.scripts.workResults.methods.init();
+function workAndExam({ answererWrappers, period, redundanceWordsText, thread }: CommonWorkOptions) {
+	CommonProject.scripts.workResults.methods.init({
+		questionPositionSyncHandlerType: 'zjy'
+	});
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return removeRedundantWords(
@@ -443,7 +449,7 @@ function work({ answererWrappers, period, redundanceWordsText, thread }: CommonW
 		answerer: (elements, type, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type,
 						title,
