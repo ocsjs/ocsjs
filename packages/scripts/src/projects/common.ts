@@ -871,7 +871,7 @@ export const CommonProject = Project.create({
 					 * @param title 题目
 					 * @param whenSearchEmpty 当搜索结果为空，或者题库缓存功能被关闭时执行的函数
 					 */
-					searchAnswer: async (
+					searchAnswerInCaches: async (
 						title: string,
 						whenSearchEmpty: () => SearchInformation[] | Promise<SearchInformation[]>
 					): Promise<SearchInformation[]> => {

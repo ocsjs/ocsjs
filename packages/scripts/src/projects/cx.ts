@@ -622,7 +622,7 @@ export function workOrExam(
 				// 处理作业和考试题目
 				const title = workOrExamQuestionTitleTransform(elements.title);
 				if (title) {
-					return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 						return defaultAnswerWrapperHandler(answererWrappers, {
 							type,
 							title,
@@ -1418,7 +1418,7 @@ async function chapterTestTask(
 		answerer: (elements, type, ctx) => {
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type,
 						title,

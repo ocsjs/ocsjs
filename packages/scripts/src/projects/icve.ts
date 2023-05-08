@@ -322,7 +322,7 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		answerer: (elements, type, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswer(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type,
 						title,
