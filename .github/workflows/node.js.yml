@@ -38,3 +38,8 @@ jobs:
       with:
         name: ocs-scripts-release
         path: dist/**/*.js
+    - name: Upload Userscript 
+      uses: actions/upload-artifact@v3
+      with:
+        name: ocs-userscript
+        path: dist/ocs.user.js
