@@ -23,9 +23,31 @@ import { waitForMedia } from '../utils/study';
 
 const state = {
 	study: {
-		currentMedia: undefined as HTMLMediaElement | undefined
+		currentMedia: undefined as HTMLMediaElement | undefined,
+		currentStudyLockId: 0
 	}
 };
+
+/**
+ * 学习锁，用于判断是否可以学习，防止学习函数被多次调用
+ */
+class StudyLock {
+	static auto_inc: number = 0;
+	id: number;
+	constructor() {
+		StudyLock.auto_inc++;
+		this.id = StudyLock.auto_inc;
+		state.study.currentStudyLockId = this.id;
+	}
+
+	canStudy() {
+		return this.id === state.study.currentStudyLockId;
+	}
+
+	static getLock() {
+		return new StudyLock();
+	}
+}
 
 export const IcveMoocProject = Project.create({
 	name: '智慧职教(MOOC学院)',
@@ -52,29 +74,25 @@ export const IcveMoocProject = Project.create({
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
-						[
-							'如果视频进入后一直是黑屏，请手动点击播放按钮，',
-							'如果还是黑屏，则为该视频无法播放，',
-							'请联系智慧职教客服进行询问。或者跳过该视频。'
-						],
+						'如果视频无法播放，可以手动点击其他任务跳过视频。',
+						'经过测试视频倍速最多二倍，否则会判定无效。',
 						'手动进入作业页面才能使用自动答题。'
 					]).outerHTML
 				},
-
-				volume,
 				playbackRate: {
 					label: '视频倍速',
-					attrs: {
-						type: 'range',
-						step: 1,
-						min: 1,
-						max: 16
-					},
-					defaultValue: 1,
+					tag: 'select',
+					defaultValue: '1',
 					onload() {
-						createRangeTooltip(this, '1', (val) => `${val}x`);
+						this.append(
+							...$creator.selectOptions(
+								this.getAttribute('value'),
+								[1, 1.5, 2].map((rate) => [rate, rate + 'x'])
+							)
+						);
 					}
 				},
+				volume,
 				restudy,
 				showScrollBar: {
 					label: '显示右侧滚动条',
@@ -85,6 +103,16 @@ export const IcveMoocProject = Project.create({
 					label: '展开所有章节',
 					attrs: { type: 'checkbox' },
 					defaultValue: true
+				},
+				switchPeriod: {
+					label: '下一章节切换间隔（秒）',
+					defaultValue: 5,
+					attrs: {
+						type: 'number',
+						min: 0,
+						max: 999,
+						step: 1
+					}
 				}
 			},
 			async oncomplete() {
@@ -95,7 +123,7 @@ export const IcveMoocProject = Project.create({
 				this.onConfigChange('volume', (v) => state.study.currentMedia && (state.study.currentMedia.volume = v));
 				this.onConfigChange(
 					'playbackRate',
-					(r) => state.study.currentMedia && (state.study.currentMedia.playbackRate = r)
+					(r) => state.study.currentMedia && (state.study.currentMedia.playbackRate = parseFloat(r))
 				);
 
 				const mainContentWin = $el<HTMLIFrameElement>('#mainContent')?.contentWindow as Window & { [x: string]: any };
@@ -103,10 +131,16 @@ export const IcveMoocProject = Project.create({
 				if (mainContentWin) {
 					// 弹窗强制用户点击，防止视频无法自动播放
 					$modal('confirm', {
-						content: '开始学习？',
+						content: el('div', [
+							'是否开始自动学习当前章节？',
+							el('br'),
+							'你也可以选择任意的章节进行点击，脚本会自动学习，并一直往下寻找章节。'
+						]),
+						cancelButtonText: '我想手动选择章节',
+						confirmButtonText: '开始学习',
 						async onConfirm() {
-							console.log(await $store.getTab($const.TAB_UID));
-							study();
+							study(StudyLock.getLock());
+							scrollToJob();
 						}
 					});
 				}
@@ -120,38 +154,59 @@ export const IcveMoocProject = Project.create({
 					$$el('.s_sectionlist,.s_sectionwrap', mainContentWin.document).forEach((el) => (el.style.display = 'block'));
 				}
 
-				// 任务点
-				const jobs = $$el(`.item_done_icon${this.cfg.restudy ? '' : ':not(.done_icon_show)'}`, mainContentWin.document);
+				for (const job of $$el('.s_point', mainContentWin.document)) {
+					job.addEventListener('click', (e) => {
+						const lock = StudyLock.getLock();
+						// 如果是用户点击
+						if (e.isTrusted) {
+							if (job.getAttribute('itemtype') === 'exam') {
+								return $message('info', {
+									duration: 60,
+									content: '检测到您手动选择了作业/考试章节，将不会自动跳转，请完成后手动选择其他章节，脚本会自动学习。'
+								});
+							} else {
+								$message('info', { content: '检测到章节切换，即将自动学习...' });
+							}
+						}
 
-				console.log(jobs);
+						setTimeout(() => {
+							study(lock);
+						}, 3000);
+					});
+				}
+
+				const scrollToJob = () =>
+					$el('.s_pointerct', mainContentWin.document)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
 				/** 学习 */
-				const study = async () => {
+				const study = async (studyLock: StudyLock) => {
 					const iframe = $el<HTMLIFrameElement>('iframe', mainContentWin.document);
 					const win = iframe?.contentWindow;
 					if (win) {
 						const doc = win.document;
 						if (iframe.src.includes('content_video.action') || iframe.src.includes('content_audio.action')) {
 							// 视频
-							const media = $el<HTMLMediaElement>('video,audio', doc);
-							state.study.currentMedia = media;
+							$console.log('视频/音频播放中...');
+							try {
+								const media = await waitForMedia({ root: doc });
 
-							if (media) {
-								if (media.ended) {
-									media.currentTime = 0;
-								}
-
-								media.playbackRate = this.cfg.playbackRate;
+								state.study.currentMedia = media;
+								media.playbackRate = parseFloat(this.cfg.playbackRate);
 								media.volume = this.cfg.volume;
+								media.currentTime = 0;
 
 								await new Promise<void>((resolve, reject) => {
 									try {
-										media.addEventListener('ended', async () => {
+										// @ts-ignore
+										win.jwplayer().onComplete(async () => {
+											$console.log('视频/音频播放完成。');
 											await $.sleep(3000);
 											resolve();
 										});
+
 										media.addEventListener('pause', async () => {
 											if (!media.ended) {
+												await waitForPopupQuestion(doc);
 												await $.sleep(1000);
 												playMedia(() => media.play());
 											}
@@ -162,8 +217,8 @@ export const IcveMoocProject = Project.create({
 										reject(err);
 									}
 								});
-							} else {
-								$message('error', { content: '未检测到视频，请刷新页面重试。' });
+							} catch (err) {
+								$message('error', { content: String(err) });
 							}
 						} else if (iframe.src.includes('content_doc.action')) {
 							// 文档只需点击就算完成，等待5秒下一个
@@ -173,17 +228,31 @@ export const IcveMoocProject = Project.create({
 						// 如果为 null 证明跨域
 					}
 
-					const job = jobs.shift();
-					// 如果不是当前所处的任务点，则点击，否则可直接开始学习
-					if (job) {
-						job.click();
-						setTimeout(() => {
-							study();
-						}, 3000);
-					} else {
-						$modal('alert', {
-							content: '全部任务已完成'
-						});
+					await $.sleep(this.cfg.switchPeriod * 1000);
+
+					if (studyLock.canStudy()) {
+						let nextEl;
+						let isBellowCurrentPont = false;
+						const jobs = $$el('.s_point', mainContentWin.document);
+						for (let index = 0; index < jobs.length; index++) {
+							const job = jobs[index];
+							if (job.classList.contains('s_pointerct')) {
+								isBellowCurrentPont = true;
+							} else if (isBellowCurrentPont) {
+								if (job.querySelector('.done_icon_show') === null) {
+									$console.log('下一章：', $el('.s_pointti', job)?.title || '未知');
+									nextEl = job;
+									break;
+								}
+							}
+						}
+
+						if (nextEl) {
+							nextEl.click();
+							scrollToJob();
+						} else {
+							$modal('alert', { content: '全部任务已完成' });
+						}
 					}
 				};
 			}
@@ -361,9 +430,35 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		}
 
 		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+		worker.emit('done');
 		// 搜索完成后才会同步答案与题目的显示，防止题目错乱
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'icve';
 	})();
 
 	return worker;
+}
+
+/**
+ * 等待弹出的答题框，并点击确定
+ */
+function waitForPopupQuestion(dom: Document) {
+	return new Promise<void>((resolve) => {
+		const interval = setInterval(() => {
+			const el = $el('.popup-test', dom);
+			if (el) {
+				clearInterval(interval);
+				const right_answer = $el<HTMLInputElement>('#right_answer', el)?.value || 'A';
+				for (const answer of right_answer.split('')) {
+					const item = $el(`li.test-item-cell[curval="${answer}"]`, el);
+					item?.click();
+				}
+
+				$el('[name="save_btn"]', el)?.click();
+				setTimeout(() => {
+					$el('[name="continue_btn"]', el)?.click();
+					resolve();
+				}, 3000);
+			}
+		}, 1000);
+	});
 }
