@@ -31,5 +31,10 @@ jobs:
        pnpm install
        cd ../../
        npm run tsc
-    - name: Build ocs script
+    - name: Build ocs scripts
       run: npm run build:core
+    - name: Upload Artifact 
+      uses: actions/upload-artifact@v3
+      with:
+        name: ocs-scripts-release
+        path: dist/**/*.js
