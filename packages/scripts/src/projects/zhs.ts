@@ -737,16 +737,21 @@ function gxkWorkAndExam({
 		return removeRedundantWords(
 			titles
 				.map((title) => {
-					// 识别 shadow dom 的文本
-					const div = document.createElement('div');
 					// @ts-ignore
-					div.innerHTML = title.__vue__._data.shadowDom.innerHTML;
+					if (title.__vue__) {
+						// 识别 shadow dom 的文本
+						const div = document.createElement('div');
+						// @ts-ignore
+						div.innerHTML = title.__vue__._data.shadowDom.innerHTML;
 
-					// 解决图片题无法解析的BUG
-					for (const img of Array.from(div.querySelectorAll('img'))) {
-						img.src = img.dataset.src || '';
+						// 解决图片题无法解析的BUG
+						for (const img of Array.from(div.querySelectorAll('img'))) {
+							img.src = img.dataset.src || '';
+						}
+						return div;
+					} else {
+						return title;
 					}
-					return div;
 				})
 				.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
 				.filter((t) => t.trim() !== '')
@@ -759,7 +764,11 @@ function gxkWorkAndExam({
 	const worker = new OCSWorker({
 		root: '.examPaper_subject',
 		elements: {
-			title: '.subject_describe > div,.smallStem_describe',
+			/**
+			 * .subject_describe > div: 选择题题目
+			 * .smallStem_describe > div:nth-child(2): 阅读理解小题题目
+			 */
+			title: '.subject_describe > div,.smallStem_describe > div:nth-child(2)',
 			// 选项中图片识别
 			options: (root) =>
 				$$el('.subject_node .nodeLab', root).map((t) => {
