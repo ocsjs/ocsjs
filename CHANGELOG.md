@@ -1,3 +1,12 @@
+## [4.4.1](https://github.com/ocsjs/ocsjs/compare/4.4.0...4.4.1) (2023-05-09)
+
+
+### Bug Fixes
+
+* **script:** 优化没有题库配置的提示 ([dc55244](https://github.com/ocsjs/ocsjs/commit/dc552440b5a15a1ff2639b64af851da6582056a0))
+
+
+
 # [4.4.0](https://github.com/ocsjs/ocsjs/compare/4.3.7...4.4.0) (2023-05-09)
 
 
