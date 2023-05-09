@@ -1106,7 +1106,7 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 	let resolverIndex = 0;
 
 	const worker = new OCSWorker({
-		root: '.questionBox .questionBox',
+		root: '.questionBox',
 		elements: {
 			title: '.questionContent',
 			options: '.optionUl label',
