@@ -20,6 +20,7 @@ import { CommonProject } from './common';
 import { commonWork, simplifyWorkResult } from '../utils/work';
 import { $console } from './background';
 import { waitForMedia } from '../utils/study';
+import { createRangeTooltip } from '../utils/index';
 
 const state = {
 	study: {
@@ -81,14 +82,18 @@ export const IcveMoocProject = Project.create({
 				},
 				playbackRate: {
 					label: '视频倍速',
-					tag: 'select',
-					defaultValue: '1',
+					attrs: {
+						type: 'range',
+						step: 0.5,
+						min: 1,
+						max: 16
+					},
+					defaultValue: 1,
 					onload() {
-						this.append(
-							...$creator.selectOptions(
-								this.getAttribute('value'),
-								[1, 1.5, 2].map((rate) => [rate, rate + 'x'])
-							)
+						createRangeTooltip(
+							this,
+							'1',
+							(val) => (parseFloat(val) > 2 ? `${val}x - 高倍速警告！` : `${val}x`) + '高倍速可能导致视频无法完成。'
 						);
 					}
 				},
@@ -123,7 +128,7 @@ export const IcveMoocProject = Project.create({
 				this.onConfigChange('volume', (v) => state.study.currentMedia && (state.study.currentMedia.volume = v));
 				this.onConfigChange(
 					'playbackRate',
-					(r) => state.study.currentMedia && (state.study.currentMedia.playbackRate = parseFloat(r))
+					(r) => state.study.currentMedia && (state.study.currentMedia.playbackRate = parseFloat(r.toString()))
 				);
 
 				const mainContentWin = $el<HTMLIFrameElement>('#mainContent')?.contentWindow as Window & { [x: string]: any };
@@ -191,7 +196,7 @@ export const IcveMoocProject = Project.create({
 								const media = await waitForMedia({ root: doc });
 
 								state.study.currentMedia = media;
-								media.playbackRate = parseFloat(this.cfg.playbackRate);
+								media.playbackRate = parseFloat(this.cfg.playbackRate.toString());
 								media.volume = this.cfg.volume;
 								media.currentTime = 0;
 
