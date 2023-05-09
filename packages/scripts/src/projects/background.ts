@@ -41,38 +41,40 @@ export const BackgroundProject = Project.create({
 						? '调试'
 						: '日志';
 
+				const createLog = (log: { type: LogType; content: string; time: number; stack: string }) => {
+					const date = new Date(log.time);
+					const item = el(
+						'div',
+						{
+							title: '双击复制日志信息',
+							className: 'item'
+						},
+						[
+							el(
+								'span',
+								{ className: 'time' },
+								`${date.getHours().toFixed(0).padStart(2, '0')}:${date.getMinutes().toFixed(0).padStart(2, '0')} `
+							),
+							el('span', { className: log.type }, `[${getTypeDesc(log.type)}]`),
+							el('span', ':' + log.content)
+						]
+					);
+
+					item.addEventListener('dblclick', () => {
+						navigator.clipboard.writeText(
+							Object.keys(log)
+								.map((k) => `${k}: ${(log as any)[k]}`)
+								.join('\n')
+						);
+					});
+
+					return item;
+				};
+
 				const showLogs = () => {
 					const div = el('div', { className: 'card console' });
 
-					const logs = this.cfg.logs.map((log) => {
-						const date = new Date(log.time);
-						const item = el(
-							'div',
-							{
-								title: '双击复制日志信息',
-								className: 'item'
-							},
-							[
-								el(
-									'span',
-									{ className: 'time' },
-									`${date.getHours().toFixed(0).padStart(2, '0')}:${date.getMinutes().toFixed(0).padStart(2, '0')} `
-								),
-								el('span', { className: log.type }, `[${getTypeDesc(log.type)}]`),
-								el('span', ':' + log.content)
-							]
-						);
-
-						item.addEventListener('dblclick', () => {
-							navigator.clipboard.writeText(
-								Object.keys(log)
-									.map((k) => `${k}: ${(log as any)[k]}`)
-									.join('\n')
-							);
-						});
-
-						return item;
-					});
+					const logs = this.cfg.logs.map((log) => createLog(log));
 					if (logs.length) {
 						div.replaceChildren(...logs);
 					} else {
@@ -86,19 +88,37 @@ export const BackgroundProject = Project.create({
 					return { div, logs };
 				};
 
-				state.console.listener.logs =
-					this.onConfigChange('logs', () => {
-						const { div, logs } = showLogs();
-						panel.body.replaceChildren(div);
-						logs[logs.length - 1]?.scrollIntoView();
-					}) || 0;
+				/**
+				 * 判断滚动条是否滚到底部
+				 */
+				const isScrollBottom = (div: HTMLElement) => {
+					const { scrollHeight, scrollTop, clientHeight } = div;
+					console.log(scrollHeight, scrollTop + clientHeight);
+
+					return scrollTop + clientHeight + 50 > scrollHeight;
+				};
 
 				const { div, logs } = showLogs();
 
-				panel.body.replaceChildren(div);
-				setTimeout(() => {
-					logs[logs.length - 1]?.scrollIntoView();
-				}, 100);
+				state.console.listener.logs =
+					this.onConfigChange('logs', (logs) => {
+						const log = createLog(logs[logs.length - 1]);
+						div.append(log);
+						setTimeout(() => {
+							if (isScrollBottom(div)) {
+								log.scrollIntoView();
+							}
+						}, 10);
+					}) || 0;
+
+				const show = () => {
+					panel.body.replaceChildren(div);
+					setTimeout(() => {
+						logs[logs.length - 1]?.scrollIntoView();
+					}, 10);
+				};
+
+				show();
 			}
 		}),
 		app: new Script({
