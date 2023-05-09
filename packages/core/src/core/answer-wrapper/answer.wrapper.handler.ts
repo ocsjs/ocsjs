@@ -42,6 +42,9 @@ export async function defaultAnswerWrapperHandler(
 ): Promise<SearchInformation[]> {
 	const searchInfos: SearchInformation[] = [];
 	const temp: AnswererWrapper[] = JSON.parse(JSON.stringify(answererWrappers));
+	if (temp.length === 0) {
+		throw new Error('题库配置不能为空，请配置后重新开始自动答题。');
+	}
 	// 多线程请求
 	await Promise.all(
 		temp.map(async (wrapper) => {

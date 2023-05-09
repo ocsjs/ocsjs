@@ -13,12 +13,20 @@ export interface CommonWorkOptions {
 export function workPreCheckMessage(
 	options: CommonWorkOptions & {
 		onrun: (opts: CommonWorkOptions) => void;
+		/**
+		 * 当没有题库配置时的回调
+		 */
+		onNoAnswererWrappers?: (opts: CommonWorkOptions) => void;
+		/**
+		 * 手动关闭时的回调
+		 */
 		onclose?: (opts: CommonWorkOptions, closedMessage: MessageElement) => void;
 	}
 ) {
-	const { onrun, onclose, ...opts } = options;
+	const { onrun, onNoAnswererWrappers, onclose, ...opts } = options;
 
 	if (opts.answererWrappers.length === 0) {
+		onNoAnswererWrappers?.(opts);
 		return $message('warn', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
 	} else {
 		return $message('info', {

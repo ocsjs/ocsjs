@@ -17,7 +17,14 @@ export function commonWork(
 	CommonProject.scripts.render.methods.pin(script);
 
 	let worker: OCSWorker<any> | undefined;
+	/**
+	 * 是否已经按下了开始按钮
+	 */
 	let startBtnPressed = false;
+	/**
+	 * 是否检查失败
+	 */
+	let checkFailed = false;
 
 	/** 显示答题控制按钮 */
 	const createControls = () => {
@@ -53,12 +60,35 @@ export function commonWork(
 	const workResultPanel = () => CommonProject.scripts.workResults.methods.createWorkResultsPanel();
 
 	script.on('render', () => {
-		script.panel?.body?.replaceChildren(createControls().container, workResultPanel());
+		let gotoSettingsBtnContainer: string | HTMLElement = '';
+		if (checkFailed) {
+			const gotoSettingsBtn = $creator.button('👉 前往设置题库配置', {
+				className: 'base-style-button',
+				style: { flex: '1', padding: '4px' }
+			});
+			gotoSettingsBtn.style.flex = '1';
+			gotoSettingsBtn.style.padding = '4px';
+			gotoSettingsBtn.onclick = () => {
+				CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
+			};
+			gotoSettingsBtnContainer = el('div', { style: { display: 'flex' } }, [gotoSettingsBtn]);
+		}
+
+		script.panel?.body?.replaceChildren(
+			el('div', { style: { marginTop: '12px' } }, [
+				gotoSettingsBtnContainer,
+				createControls().container,
+				workResultPanel()
+			])
+		);
 	});
 
 	let checkMessage = workPreCheckMessage({
 		onrun: () => startBtnPressed === false && start(),
 		onclose: (_, closedMsg) => (checkMessage = closedMsg),
+		onNoAnswererWrappers: () => {
+			checkFailed = true;
+		},
 		...CommonProject.scripts.settings.cfg
 	});
 

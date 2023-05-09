@@ -2,7 +2,7 @@ import { ConfigElement } from '../elements/config';
 import { Script } from '../interfaces';
 import { Config } from '../interfaces/config';
 import { $ } from './common';
-import { ElementChildren, ElementHandler, el } from './dom';
+import { CustomElementStyleAttrs, ElementChildren, ElementHandler, el } from './dom';
 import { $elements } from './elements';
 import { $gm } from './tampermonkey';
 
@@ -117,7 +117,7 @@ export const $creator = {
 	},
 	button(
 		text?: string,
-		attrs?: Omit<Partial<HTMLInputElement>, 'type'> | undefined,
+		attrs?: CustomElementStyleAttrs<Omit<Partial<HTMLInputElement>, 'type'>> | undefined,
 		handler?: ElementHandler<'input'> | undefined
 	) {
 		return el('input', { type: 'button', ...attrs }, function (btn) {
