@@ -1,3 +1,12 @@
+## [4.4.2](https://github.com/ocsjs/ocsjs/compare/4.4.1...4.4.2) (2023-05-09)
+
+
+### Bug Fixes
+
+* **script:** 修复智慧树作业考试阅读理解小题读取失败的BUG ([37e42f1](https://github.com/ocsjs/ocsjs/commit/37e42f10adfb3198dbb4738dbfd232d0bd736421))
+
+
+
 ## [4.4.1](https://github.com/ocsjs/ocsjs/compare/4.4.0...4.4.1) (2023-05-09)
 
 
