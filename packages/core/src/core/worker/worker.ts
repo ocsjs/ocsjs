@@ -53,6 +53,9 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		this.resolverIndex = 0;
 		this.totalQuestionCount = 0;
 
+		this.emit('start');
+		this.isRunning = true;
+
 		this.once('close', () => {
 			this.isClose = true;
 		});
@@ -64,9 +67,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		this.on('continuate', () => {
 			this.isStop = false;
 		});
-
-		this.emit('start');
-		this.isRunning = true;
 
 		/** 寻找题目父节点 */
 		const questionRoot: HTMLElement[] | null =
@@ -113,8 +113,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				/** 强行关闭 */
 				if (this.isClose === true) {
 					this.isRunning = false;
-					this.emit('close');
-					this.emit('done');
 					return results;
 				}
 
@@ -122,6 +120,11 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				let error: string | undefined;
 
 				try {
+					/** 检查是否暂停中 */
+					if (this.isStop) {
+						await waitForContinuate(() => this.isStop);
+					}
+
 					/** 获取题目类型 */
 					if (typeof this.opts.work === 'object') {
 						type =
@@ -132,18 +135,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 								typeof this.opts.work.type === 'string'
 								? this.opts.work.type
 								: this.opts.work.type(ctx);
-					}
-
-					/** 检查是否暂停中 */
-					if (this.isStop) {
-						await new Promise<void>((resolve, reject) => {
-							const interval = setInterval(() => {
-								if (this.isStop === false) {
-									clearInterval(interval);
-									resolve();
-								}
-							}, 200);
-						});
 					}
 
 					/** 查找答案 */
@@ -229,6 +220,16 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		/** 答题选择器线程， */
 		const resolverThread = new Promise<void>((resolve) => {
 			const start = async () => {
+				/** 强行关闭 */
+				if (this.isClose === true) {
+					this.isRunning = false;
+					return;
+				}
+				/** 检查是否暂停中 */
+				if (this.isStop) {
+					await waitForContinuate(() => this.isStop);
+				}
+
 				if (this.resolverIndex < this.totalQuestionCount) {
 					const resolver = resolvers.shift();
 
@@ -279,7 +280,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		]);
 
 		this.isRunning = false;
-		this.emit('done');
 		return results;
 	}
 
@@ -312,5 +312,18 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				await callback(rate, type === 'save' ? false : rate >= parseFloat(type.toString()));
 			}
 		}
+	}
+}
+
+async function waitForContinuate(isStopping: () => boolean) {
+	if (isStopping()) {
+		await new Promise<void>((resolve, reject) => {
+			const interval = setInterval(() => {
+				if (isStopping() === false) {
+					clearInterval(interval);
+					resolve();
+				}
+			}, 200);
+		});
 	}
 }

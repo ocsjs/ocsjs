@@ -13,7 +13,7 @@ export class MessageElement extends IElement {
 	type: 'info' | 'success' | 'warn' | 'error' = 'info';
 	/** 内容 */
 	content: string | HTMLElement = '';
-	/** 持续时间，如果为0的话则一直存在 */
+	/** 持续时间(秒)，如果为0的话则一直存在，默认为: 5 */
 	duration?: number;
 	/** 是否允许关闭 */
 	closeable?: boolean = true;
@@ -28,7 +28,7 @@ export class MessageElement extends IElement {
 			this.contentContainer.append(this.content);
 		}
 
-		this.duration = Math.max(this.duration === 0 ? 0 : this.duration || 5, 0);
+		this.duration = Math.max(this.duration ?? 5, 0);
 		this.append(this.contentContainer);
 
 		if (this.closeable) {

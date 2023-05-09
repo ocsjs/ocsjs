@@ -44,17 +44,10 @@ export const auto: Config = {
 	defaultValue: false
 };
 
-/** 多个答题配置 */
-export const workConfigs = {
-	notes: {
-		defaultValue: $creator.notes([
-			'自动答题前请在 “通用-全局设置” 中设置题库配置。',
-			'可以搭配 “通用-在线搜题” 一起使用。'
-		]).outerHTML
-	} as Config<any, string>,
-	auto: {
-		label: '开启自动答题',
-		attrs: { type: 'checkbox' },
-		defaultValue: true
-	} as Config<any, boolean>
-};
+/** 答题提示 */
+export const workNotes = {
+	defaultValue: $creator.notes([
+		'自动答题前请在 “通用-全局设置” 中设置题库配置。',
+		'可以搭配 “通用-在线搜题” 一起使用。'
+	]).outerHTML
+} as Config<any, string>;

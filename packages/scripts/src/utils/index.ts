@@ -1,4 +1,4 @@
-import { $creator, $message, $modal, AnswererWrapper, WorkUploadType, el } from '@ocsjs/core';
+import { $creator, $message, $modal, AnswererWrapper, MessageElement, WorkUploadType, el } from '@ocsjs/core';
 
 export interface CommonWorkOptions {
 	period: number;
@@ -13,28 +13,30 @@ export interface CommonWorkOptions {
 export function workPreCheckMessage(
 	options: CommonWorkOptions & {
 		onrun: (opts: CommonWorkOptions) => void;
-		ondone?: (opts: CommonWorkOptions) => void;
+		onclose?: (opts: CommonWorkOptions, closedMessage: MessageElement) => void;
 	}
 ) {
-	const { onrun, ondone, ...opts } = options;
+	const { onrun, onclose, ...opts } = options;
 
 	if (opts.answererWrappers.length === 0) {
-		$modal('alert', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
-		ondone?.(opts);
+		return $message('warn', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
 	} else {
-		$message('info', {
+		return $message('info', {
 			duration: 5,
 			content: el('span', [
-				'5秒后自动答题。并切换到“通用-搜索结果”。',
+				'5秒后自动答题，',
 				$creator.preventText({
-					name: '点击取消此次答题',
+					name: '点击取消',
 					delay: 5,
 					ondefault: (span) => {
 						onrun(opts);
 					},
 					onprevent(span) {
-						$message('warn', { content: '已关闭此次的自动答题。' });
-						ondone?.(opts);
+						const closedMessage = $message('warn', {
+							content: '已关闭此次的自动答题，请手动开启或者忽略此警告。',
+							duration: 0
+						});
+						onclose?.(opts, closedMessage);
 					}
 				})
 			])

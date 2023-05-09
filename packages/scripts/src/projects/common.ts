@@ -458,287 +458,295 @@ export const CommonProject = Project.create({
 						CommonProject.scripts.workResults.methods.refreshState();
 						// 清空搜索结果
 						CommonProject.scripts.workResults.methods.clearResults();
-						// 置顶搜索结果面板
-						CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
-					}
-				};
-			},
-			onrender({ panel }) {
-				/** 记录滚动高度 */
-				let scrollPercent = 0;
+					},
+					/**
+					 * 创建搜索结果面板
+					 * @param mount 挂载点
+					 */
+					createWorkResultsPanel: (mount?: HTMLElement) => {
+						const container = mount || el('div');
+						/** 记录滚动高度 */
+						let scrollPercent = 0;
 
-				/** 列表 */
-				const list = el('div');
+						/** 列表 */
+						const list = el('div');
 
-				/** 是否悬浮在题目上 */
-				let mouseoverIndex = -1;
+						/** 是否悬浮在题目上 */
+						let mouseoverIndex = -1;
 
-				list.onscroll = () => {
-					scrollPercent = list.scrollTop / list.scrollHeight;
-				};
+						list.onscroll = () => {
+							scrollPercent = list.scrollTop / list.scrollHeight;
+						};
 
-				/** 给序号设置样式 */
-				const setNumStyle = (result: SimplifyWorkResult, num: HTMLElement, index: number) => {
-					if (result.requesting) {
-						num.classList.add('requesting');
-					} else if (result.resolving) {
-						num.classList.add('resolving');
-					} else if (result.error || result.searchInfos.length === 0 || result.finish === false) {
-						num.classList.add('error');
-					} else if (index === this.cfg.currentResultIndex) {
-						num.classList.add('active');
-					}
-				};
+						/** 给序号设置样式 */
+						const setNumStyle = (result: SimplifyWorkResult, num: HTMLElement, index: number) => {
+							if (result.requesting) {
+								num.classList.add('requesting');
+							} else if (result.resolving) {
+								num.classList.add('resolving');
+							} else if (result.error || result.searchInfos.length === 0 || result.finish === false) {
+								num.classList.add('error');
+							} else if (index === this.cfg.currentResultIndex) {
+								num.classList.add('active');
+							}
+						};
 
-				/** 渲染结果面板 */
-				const render = debounce(async () => {
-					const results: SimplifyWorkResult[] | undefined = await this.methods.getResults();
+						/** 渲染结果面板 */
+						const render = debounce(async () => {
+							const results: SimplifyWorkResult[] | undefined = await this.methods.getResults();
 
-					if (results?.length) {
-						// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
-						if (results[this.cfg.currentResultIndex] === undefined) {
-							this.cfg.currentResultIndex = 0;
-						}
+							if (results?.length) {
+								// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
+								if (results[this.cfg.currentResultIndex] === undefined) {
+									this.cfg.currentResultIndex = 0;
+								}
 
-						// 渲染序号或者题目列表
-						if (this.cfg.type === 'numbers') {
-							const resultContainer = el('div', {}, (res) => {
-								res.style.width = '400px';
-							});
+								// 渲染序号或者题目列表
+								if (this.cfg.type === 'numbers') {
+									const resultContainer = el('div', {}, (res) => {
+										res.style.width = '400px';
+									});
 
-							list.style.width = '400px';
-							list.style.marginBottom = '12px';
-							list.style.maxHeight = window.innerHeight / 2 + 'px';
+									list.style.width = '400px';
+									list.style.marginBottom = '12px';
+									list.style.maxHeight = window.innerHeight / 2 + 'px';
 
-							/** 渲染序号 */
-							const nums = results.map((result, index) => {
-								return el('span', { className: 'search-infos-num', innerText: (index + 1).toString() }, (num) => {
-									setNumStyle(result, num, index);
+									/** 渲染序号 */
+									const nums = results.map((result, index) => {
+										return el('span', { className: 'search-infos-num', innerText: (index + 1).toString() }, (num) => {
+											setNumStyle(result, num, index);
 
-									num.onclick = () => {
-										for (const n of nums) {
-											n.classList.remove('active');
-										}
-										num.classList.add('active');
-										// 更新显示序号
-										this.cfg.currentResultIndex = index;
-										// 重新渲染结果列表
-										resultContainer.replaceChildren(createResult(result));
+											num.onclick = () => {
+												for (const n of nums) {
+													n.classList.remove('active');
+												}
+												num.classList.add('active');
+												// 更新显示序号
+												this.cfg.currentResultIndex = index;
+												// 重新渲染结果列表
+												resultContainer.replaceChildren(createResult(result));
 												// 触发页面题目元素同步器
 												if (this.cfg.questionPositionSyncHandlerType) {
 													state.workResult.questionPositionSyncHandler[this.cfg.questionPositionSyncHandlerType]?.(
 														index
 													);
 												}
-									};
-								});
-							});
+											};
+										});
+									});
 
-							list.replaceChildren(...nums);
-							// 初始显示指定序号的结果
-							resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
+									list.replaceChildren(...nums);
+									// 初始显示指定序号的结果
+									resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
 
-							panel.body.replaceChildren(list, resultContainer);
-						} else {
-							/** 左侧题目列表 */
+									container.replaceChildren(list, resultContainer);
+								} else {
+									/** 左侧题目列表 */
 
-							list.style.width = '400px';
-							list.style.overflow = 'auto';
-							list.style.maxHeight = window.innerHeight / 2 + 'px';
+									list.style.width = '400px';
+									list.style.overflow = 'auto';
+									list.style.maxHeight = window.innerHeight / 2 + 'px';
 
-							/** 右侧结果 */
-							const resultContainer = el('div', { className: 'work-result-question-container' });
-							const nums: HTMLSpanElement[] = [];
-							/** 左侧渲染题目列表 */
-							const questions = results.map((result, index) => {
-								/** 左侧序号 */
-								const num = el(
-									'span',
-									{
-										className: 'search-infos-num',
-										innerHTML: (index + 1).toString()
-									},
-									(num) => {
-										num.style.marginRight = '12px';
-										num.style.display = 'inline-block';
-										setNumStyle(result, num, index);
-									}
-								);
-
-								nums.push(num);
-
-								return el(
-									'div',
-
-									[num, result.question],
-									(question) => {
-										question.className = 'search-infos-question';
-
-										if (
-											result.requesting === false &&
-											result.resolving === false &&
-											(result.error || result.searchInfos.length === 0 || result.finish === false)
-										) {
-											question.classList.add('error');
-										} else if (index === this.cfg.currentResultIndex) {
-											question.classList.add('active');
-										}
-
-										question.onmouseover = () => {
-											mouseoverIndex = index;
-											question.classList.add('hover');
-											// 重新渲染结果列表
-											resultContainer.replaceChildren(createResult(result));
-										};
-
-										question.onmouseleave = () => {
-											mouseoverIndex = -1;
-											question.classList.remove('hover');
-											// 重新显示指定序号的结果
-											resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
-										};
-
-										question.onclick = () => {
-											for (const n of nums) {
-												n.classList.remove('active');
+									/** 右侧结果 */
+									const resultContainer = el('div', { className: 'work-result-question-container' });
+									const nums: HTMLSpanElement[] = [];
+									/** 左侧渲染题目列表 */
+									const questions = results.map((result, index) => {
+										/** 左侧序号 */
+										const num = el(
+											'span',
+											{
+												className: 'search-infos-num',
+												innerHTML: (index + 1).toString()
+											},
+											(num) => {
+												num.style.marginRight = '12px';
+												num.style.display = 'inline-block';
+												setNumStyle(result, num, index);
 											}
-											for (const q of questions) {
-												q.classList.remove('active');
-											}
-											nums[index].classList.add('active');
-											question.classList.add('active');
-											// 更新显示序号
-											this.cfg.currentResultIndex = index;
-											// 重新渲染结果列表
-											resultContainer.replaceChildren(createResult(result));
+										);
+
+										nums.push(num);
+
+										return el(
+											'div',
+
+											[num, result.question],
+											(question) => {
+												question.className = 'search-infos-question';
+
+												if (
+													result.requesting === false &&
+													result.resolving === false &&
+													(result.error || result.searchInfos.length === 0 || result.finish === false)
+												) {
+													question.classList.add('error');
+												} else if (index === this.cfg.currentResultIndex) {
+													question.classList.add('active');
+												}
+
+												question.onmouseover = () => {
+													mouseoverIndex = index;
+													question.classList.add('hover');
+													// 重新渲染结果列表
+													resultContainer.replaceChildren(createResult(result));
+												};
+
+												question.onmouseleave = () => {
+													mouseoverIndex = -1;
+													question.classList.remove('hover');
+													// 重新显示指定序号的结果
+													resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
+												};
+
+												question.onclick = () => {
+													for (const n of nums) {
+														n.classList.remove('active');
+													}
+													for (const q of questions) {
+														q.classList.remove('active');
+													}
+													nums[index].classList.add('active');
+													question.classList.add('active');
+													// 更新显示序号
+													this.cfg.currentResultIndex = index;
+													// 重新渲染结果列表
+													resultContainer.replaceChildren(createResult(result));
 													// 触发页面题目元素同步器
 													if (this.cfg.questionPositionSyncHandlerType) {
 														state.workResult.questionPositionSyncHandler[this.cfg.questionPositionSyncHandlerType]?.(
 															index
 														);
 													}
-										};
+												};
+											}
+										);
+									});
+
+									list.replaceChildren(...questions);
+									// 初始显示指定序号的结果
+									if (mouseoverIndex === -1) {
+										resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
+									} else {
+										resultContainer.replaceChildren(createResult(results[mouseoverIndex]));
 									}
+
+									container.replaceChildren(
+										el('div', [list, el('div', {}, [resultContainer])], (div) => {
+											div.style.display = 'flex';
+										})
+									);
+								}
+							} else {
+								container.replaceChildren(
+									el('div', '⚠️暂无任何搜索结果', (div) => {
+										div.style.textAlign = 'center';
+									})
 								);
+							}
+
+							/** 恢复高度 */
+							list.scrollTo({
+								top: scrollPercent * list.scrollHeight,
+								behavior: 'auto'
 							});
 
-							list.replaceChildren(...questions);
-							// 初始显示指定序号的结果
-							if (mouseoverIndex === -1) {
-								resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
-							} else {
-								resultContainer.replaceChildren(createResult(results[mouseoverIndex]));
-							}
-
-							panel.body.replaceChildren(
-								el('div', [list, el('div', {}, [resultContainer])], (div) => {
-									div.style.display = 'flex';
-								})
-							);
-						}
-					} else {
-						panel.body.replaceChildren(
-							el('div', '⚠️暂无任何搜索结果', (div) => {
-								div.style.textAlign = 'center';
-							})
-						);
-					}
-
-					/** 恢复高度 */
-					list.scrollTo({
-						top: scrollPercent * list.scrollHeight,
-						behavior: 'auto'
-					});
-
-					const tip = el('div', [
-						el('div', { className: 'search-infos-num requesting' }, 'n'),
-						'表示搜索中 ',
-						el('br'),
-						el('div', { className: 'search-infos-num resolving' }, 'n'),
-						'表示已搜索但未开始答题 ',
-						el('br'),
-						el('div', { className: 'search-infos-num' }, 'n'),
-						'表示已搜索已答题 '
-					]);
-
-					/** 添加信息 */
-					panel.body.prepend(
-						el('hr'),
-						el(
-							'div',
-							[
-								`当前搜题: ${this.cfg.requestIndex}/${this.cfg.totalQuestionCount}`,
-								' , ',
-								`当前答题: ${this.cfg.resolverIndex}/${this.cfg.totalQuestionCount}`,
-								' , ',
-								el('a', '查看提示', (btn) => {
-									btn.style.cursor = 'pointer';
-									btn.addEventListener('click', () => {
-										$modal('confirm', {
-											content: tip
-										});
-									});
-								})
-							],
-							(div) => {
-								div.style.marginBottom = '12px';
-							}
-						),
-
-						el('hr')
-					);
-				}, 100);
-
-				/** 渲染结果列表 */
-				const createResult = (result: SimplifyWorkResult | undefined) => {
-					if (result) {
-						const error = el('span', {}, (el) => (el.style.color = 'red'));
-
-						if (result.requesting && result.resolving) {
-							return el('div', [
-								result.question,
-								$creator.createQuestionTitleExtra(result.question),
-								el('hr'),
-								'当前题目还未开始搜索，请稍等。'
+							const tip = el('div', [
+								el('div', { className: 'search-infos-num requesting' }, 'n'),
+								'表示搜索中 ',
+								el('br'),
+								el('div', { className: 'search-infos-num resolving' }, 'n'),
+								'表示已搜索但未开始答题 ',
+								el('br'),
+								el('div', { className: 'search-infos-num' }, 'n'),
+								'表示已搜索已答题 '
 							]);
-						} else {
-							if (result.error) {
-								error.innerText = result.error;
-								return el('div', [
-									result.question,
-									$creator.createQuestionTitleExtra(result.question),
-									el('hr'),
-									error
-								]);
-							} else if (result.searchInfos.length === 0) {
-								error.innerText = '此题未搜索到答案';
-								return el('div', [
-									result.question,
-									$creator.createQuestionTitleExtra(result.question),
-									el('hr'),
-									error
-								]);
+
+							/** 添加信息 */
+							container.prepend(
+								el('hr'),
+								el(
+									'div',
+									[
+										`当前搜题: ${this.cfg.requestIndex}/${this.cfg.totalQuestionCount}`,
+										' , ',
+										`当前答题: ${this.cfg.resolverIndex}/${this.cfg.totalQuestionCount}`,
+										' , ',
+										el('a', '查看提示', (btn) => {
+											btn.style.cursor = 'pointer';
+											btn.addEventListener('click', () => {
+												$modal('confirm', {
+													content: tip
+												});
+											});
+										})
+									],
+									(div) => {
+										div.style.marginBottom = '12px';
+									}
+								),
+
+								el('hr')
+							);
+						}, 100);
+
+						/** 渲染结果列表 */
+						const createResult = (result: SimplifyWorkResult | undefined) => {
+							if (result) {
+								const error = el('span', {}, (el) => (el.style.color = 'red'));
+
+								if (result.requesting && result.resolving) {
+									return el('div', [
+										result.question,
+										$creator.createQuestionTitleExtra(result.question),
+										el('hr'),
+										'当前题目还未开始搜索，请稍等。'
+									]);
+								} else {
+									if (result.error) {
+										error.innerText = result.error;
+										return el('div', [
+											result.question,
+											$creator.createQuestionTitleExtra(result.question),
+											el('hr'),
+											error
+										]);
+									} else if (result.searchInfos.length === 0) {
+										error.innerText = '此题未搜索到答案';
+										return el('div', [
+											result.question,
+											$creator.createQuestionTitleExtra(result.question),
+											el('hr'),
+											error
+										]);
+									} else {
+										error.innerText = '此题未完成, 可能是没有匹配的选项。';
+										return el('div', [
+											...(result.finish ? [] : [result.resolving ? '正在等待答题中，请稍等。' : error]),
+											el('search-infos-element', {
+												infos: result.searchInfos,
+												question: result.question
+											})
+										]);
+									}
+								}
 							} else {
-								error.innerText = '此题未完成, 可能是没有匹配的选项。';
-								return el('div', [
-									...(result.finish ? [] : [result.resolving ? '正在等待答题中，请稍等。' : error]),
-									el('search-infos-element', {
-										infos: result.searchInfos,
-										question: result.question
-									})
-								]);
+								return el('div', 'undefined');
 							}
-						}
-					} else {
-						return el('div', 'undefined');
+						};
+
+						render();
+						this.onConfigChange('type', render);
+						this.onConfigChange('requestIndex', render);
+						this.onConfigChange('resolverIndex', render);
+						$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
+
+						return container;
 					}
 				};
-
-				render();
-				this.onConfigChange('type', render);
-				this.onConfigChange('requestIndex', render);
-				this.onConfigChange('resolverIndex', render);
-				$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
+			},
+			onrender({ panel }) {
+				panel.body.replaceChildren(this.methods.createWorkResultsPanel());
 			}
 		}),
 		onlineSearch: new Script({

@@ -1,43 +1,117 @@
-import { $creator, $message, OCSWorker, Script, SimplifyWorkResult, WorkResult, el } from '@ocsjs/core';
-import { workConfigs } from './configs';
+import { $creator, $message, MessageElement, OCSWorker, Script, SimplifyWorkResult, WorkResult, el } from '@ocsjs/core';
+import { CommonProject } from '../projects/common';
+import { CommonWorkOptions, workPreCheckMessage } from '.';
+
+/**
+ * 通用作业考试工具方法
+ */
+export function commonWork(
+	script: Script,
+	options: {
+		workerProvider: (opts: CommonWorkOptions) => OCSWorker<any> | undefined;
+		beforeRunning?: () => void | Promise<void>;
+		onRestart?: () => void | Promise<void>;
+	}
+) {
+	// 置顶当前脚本
+	CommonProject.scripts.render.methods.pin(script);
+
+	let worker: OCSWorker<any> | undefined;
+	let startBtnPressed = false;
+
+	/** 显示答题控制按钮 */
+	const createControls = () => {
+		const { controlBtn, restartBtn, startBtn } = createWorkerControl({
+			workerProvider: () => worker,
+			onStart: async () => {
+				startBtnPressed = true;
+				checkMessage?.remove();
+				start();
+			},
+			onRestart: async () => {
+				worker?.emit('close');
+				await options.onRestart?.();
+				start();
+			}
+		});
+
+		startBtn.style.flex = '1';
+		startBtn.style.padding = '4px';
+		restartBtn.style.flex = '1';
+		restartBtn.style.padding = '4px';
+		controlBtn.style.flex = '1';
+		controlBtn.style.padding = '4px';
+
+		const container = el(
+			'div',
+			{ style: { marginTop: '12px', display: 'flex' } },
+			worker?.isRunning ? [controlBtn, restartBtn] : [startBtn]
+		);
+
+		return { container, startBtn, restartBtn, controlBtn };
+	};
+	const workResultPanel = () => CommonProject.scripts.workResults.methods.createWorkResultsPanel();
+
+	script.on('render', () => {
+		script.panel?.body?.replaceChildren(createControls().container, workResultPanel());
+	});
+
+	let checkMessage = workPreCheckMessage({
+		onrun: () => startBtnPressed === false && start(),
+		onclose: (_, closedMsg) => (checkMessage = closedMsg),
+		...CommonProject.scripts.settings.cfg
+	});
+
+	const start = async () => {
+		await options.beforeRunning?.();
+		worker = options.workerProvider(CommonProject.scripts.settings.cfg);
+
+		const { container, controlBtn } = createControls();
+		// 更新状态
+		script.panel?.body?.replaceChildren(container, workResultPanel());
+
+		worker?.once('done', () => {
+			controlBtn.disabled = true;
+		});
+	};
+}
 
 /**
  * 答题控制
  */
-export function createWorkerControl(
-	script: Script<Omit<typeof workConfigs, 'upload'>>,
-	getWorker: () => OCSWorker<any> | undefined
-) {
-	const worker = getWorker();
-	let stop = true;
+export function createWorkerControl(options: {
+	workerProvider: () => OCSWorker<any> | undefined;
+	onStart: () => void;
+	onRestart: () => void;
+}) {
+	let stop = false;
+	let stopMessage: MessageElement | undefined;
 	const startBtn = $creator.button('▶️开始答题');
-	const restartBtn = $creator.button('↩️重新答题');
-	const controlBtn = $creator.button('⏸️暂停答题');
-
-	const stopMessage = $message('warn', { duration: 10, content: '暂停中...' });
-	stopMessage.style.display = 'none';
+	const restartBtn = $creator.button('🔃重新答题');
+	const controlBtn = $creator.button('⏸暂停');
 
 	startBtn.onclick = () => {
 		startBtn.remove();
-		script.panel?.body.replaceChildren(el('hr'), restartBtn, controlBtn);
-		script.event.emit('start');
+		options.onStart();
 	};
-	restartBtn.onclick = () => script.event.emit('restart');
+	restartBtn.onclick = () => {
+		// 重新答题时，清除暂停提示
+		stopMessage?.remove();
+		options.onRestart();
+	};
 	controlBtn.onclick = () => {
 		stop = !stop;
-		const worker = getWorker();
-		worker?.emit?.(stop ? 'continuate' : 'stop');
-		controlBtn.value = stop ? '⏸️暂停答题' : '▶️继续答题';
-		stopMessage.style.display = stop ? 'none' : 'display';
+		const worker = options.workerProvider();
+		worker?.emit?.(stop ? 'stop' : 'continuate');
+		controlBtn.value = stop ? '▶️继续' : '⏸️暂停';
+		if (stop) {
+			stopMessage = $message('warn', { duration: 0, content: '暂停中...' });
+		} else {
+			stopMessage?.remove();
+		}
 	};
 
-	script.event.on('done', () => (controlBtn.disabled = true));
-
-	if (script.panel) {
-		script.panel.body.style.textAlign = 'right';
-	}
-
-	script.panel?.body.replaceChildren(el('hr'), ...(worker?.isRunning ? [restartBtn, controlBtn] : [startBtn]));
+	return { startBtn, restartBtn, controlBtn };
 }
 
 /**
@@ -54,6 +128,17 @@ export function optimizationElementWithImage(root: HTMLElement) {
 		}
 	}
 	return root;
+}
+
+/**
+ * 创建一个不可见的文本节点，追加到图片后面，便于文本获取
+ */
+export function createUnVisibleTextOfImage(img: HTMLImageElement) {
+	const src = document.createElement('span');
+	src.innerText = img.src;
+	// 隐藏图片，但不影响 innerText 的获取
+	src.style.fontSize = '0px';
+	img.after(src);
 }
 
 /** 将 {@link WorkResult} 转换成 {@link SimplifyWorkResult} */

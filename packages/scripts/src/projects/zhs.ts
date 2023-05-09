@@ -13,14 +13,15 @@ import {
 } from '@ocsjs/core';
 import type { MessageElement, SimplifyWorkResult } from '@ocsjs/core';
 import { CommonProject } from './common';
-import { workConfigs, definition, volume, restudy } from '../utils/configs';
+import { workNotes, definition, volume, restudy } from '../utils/configs';
 import {
-	createWorkerControl,
+	commonWork,
+	createUnVisibleTextOfImage,
 	optimizationElementWithImage,
 	removeRedundantWords,
 	simplifyWorkResult
 } from '../utils/work';
-import { CommonWorkOptions, playMedia, workPreCheckMessage } from '../utils';
+import { CommonWorkOptions, playMedia } from '../utils';
 import { $console } from './background';
 
 // 学习是否暂停
@@ -67,18 +68,10 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.work.gxk-guide',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(
-						[
-							[
-								el('b', '在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置'),
-								el('b', '并在作业和考试脚本中开启自动答题选项，否则将无法正常答题。')
-							],
-							'考试自动答题在设置中开启，并点击进入即可使用',
-							'进入考试页面后需要刷新一下。',
-							'考试功能因为被频繁针对所以不稳定, 大家预留好其他搜题方式。'
-						],
-						'ol'
-					).outerHTML
+					defaultValue: $creator.notes([
+						'在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置',
+						'请点击任意的作业/考试进入'
+					]).outerHTML
 				}
 			},
 			oncomplete() {
@@ -464,154 +457,22 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		'gxk-work': new Script({
-			name: '✍️ 共享课-作业脚本',
+			name: '✍️ 共享课-作业考试脚本',
 			url: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
-				/** 在列表中也提供设置页面 */
-				['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
+				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination']
 			],
 			namespace: 'zhs.gxk.work',
-			configs: workConfigs,
+			configs: { notes: workNotes },
 			async oncomplete() {
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
+				// 等待试卷加载
+				await waitForQuestionsLoad();
 
-				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('auto', changeMsg);
-
-				let worker: OCSWorker<any> | undefined;
-				let warn: MessageElement | undefined;
-
-				this.on('render', () => createWorkerControl(this, () => worker));
-				this.event.on('start', () => start());
-				this.event.on('restart', () => {
-					worker?.emit('close');
-					$message('info', { content: '3秒后重新答题。' });
-					setTimeout(start, 3000);
+				const isExam = location.href.includes('doexamination');
+				$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
+				commonWork(this, {
+					workerProvider: (opts) => gxkWorkAndExam(opts)
 				});
-
-				/** 开始作业 */
-				const start = () => {
-					warn?.remove();
-					workPreCheckMessage({
-						onrun: (opts) => {
-							worker = gxkWorkOrExam('work', opts);
-						},
-						ondone: () => this.event.emit('done'),
-						...CommonProject.scripts.settings.cfg
-					});
-				};
-
-				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/dohomework/.test(location.href)) {
-					/** 显示答题控制按钮 */
-					createWorkerControl(this, () => worker);
-
-					// 等待试卷加载
-					await waitForQuestionsLoad();
-
-					if (this.cfg.auto) {
-						start();
-					} else {
-						this.event.emit('done');
-						const startBtn = el('button', { className: 'base-style-button' }, '进入考试脚本');
-						startBtn.onclick = () => {
-							CommonProject.scripts.render.methods.pin(this);
-						};
-						const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-						warn = $message('warn', {
-							duration: 0,
-							content: el('div', [
-								`自动答题已被关闭！请${isPinned ? '' : '进入作业脚本，然后'}点击开始答题，或者忽略此警告。`,
-								isPinned ? '' : startBtn
-							])
-						});
-					}
-				}
-			}
-		}),
-		'gxk-exam': new Script({
-			name: '✍️ 共享课-考试脚本',
-			url: [
-				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
-				/** 在列表中也提供设置页面 */
-				['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
-			],
-			namespace: 'zhs.gxk.exam',
-			configs: {
-				notes: {
-					defaultValue: $creator.notes([
-						'答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。',
-						'可以搭配 “通用-在线搜题” 一起使用。',
-						'考试请在脚本自动答题完成后自行检查，自己点击提交，脚本不会自动提交。',
-						'如果开启后脚本仍然没有反应，请刷新页面重试。'
-					]).outerHTML
-				},
-				auto: {
-					label: '开启自动答题',
-					attrs: { type: 'checkbox' },
-					defaultValue: false
-				}
-			},
-
-			async oncomplete() {
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
-
-				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('auto', changeMsg);
-
-				let worker: OCSWorker<any> | undefined;
-				let warn: MessageElement | undefined;
-
-				this.on('render', () => createWorkerControl(this, () => worker));
-				this.event.on('start', () => start());
-				this.event.on('restart', () => {
-					worker?.emit('close');
-					$message('info', { content: '3秒后重新答题。' });
-					setTimeout(start, 3000);
-				});
-
-				/** 开始考试 */
-				const start = () => {
-					warn?.remove();
-					workPreCheckMessage({
-						onrun: (opts) => {
-							worker = gxkWorkOrExam('exam', opts);
-						},
-						ondone: () => {
-							this.event.emit('done');
-						},
-
-						...CommonProject.scripts.settings.cfg,
-						upload: 'nomove'
-					});
-				};
-
-				if (/zhihuishu.com\/stuExamWeb.html#\/webExamList\/doexamination/.test(location.href)) {
-					/** 显示答题控制按钮 */
-					createWorkerControl(this, () => worker);
-
-					// 等待试卷加载
-					await waitForQuestionsLoad();
-
-					if (this.cfg.auto) {
-						start();
-					} else {
-						this.event.emit('done');
-						const startBtn = el('button', { className: 'base-style-button' }, '进入考试脚本');
-						startBtn.onclick = () => {
-							CommonProject.scripts.render.methods.pin(this);
-						};
-						const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-						warn = $message('warn', {
-							duration: 0,
-							content: el('div', [
-								`'自动答题已被关闭！请${isPinned ? '' : '进入考试脚本，然后'}点击开始答题，或者忽略此警告。`,
-								isPinned ? '' : startBtn
-							])
-						});
-					}
-				}
 			}
 		}),
 		'xnk-study': new Script({
@@ -685,59 +546,11 @@ export const ZHSProject = Project.create({
 				['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/examQ/examexercise']
 			],
 			namespace: 'zhs.xnk.work',
-			configs: workConfigs,
-
+			configs: { notes: workNotes },
 			async oncomplete() {
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
-
-				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('auto', changeMsg);
-
-				let worker: OCSWorker<any> | undefined;
-				let warn: MessageElement | undefined;
-
-				/** 显示答题控制按钮 */
-				createWorkerControl(this, () => worker);
-
-				this.on('render', () => createWorkerControl(this, () => worker));
-
-				this.event.on('start', () => start());
-				this.event.on('restart', () => {
-					worker?.emit('close');
-					$message('info', { content: '3秒后重新答题。' });
-					setTimeout(start, 3000);
+				commonWork(this, {
+					workerProvider: xnkWork
 				});
-
-				const start = () => {
-					warn?.remove();
-					workPreCheckMessage({
-						onrun: (opts) => {
-							worker = xnkWork(opts);
-						},
-						ondone: () => {
-							this.event.emit('done');
-						},
-						...CommonProject.scripts.settings.cfg
-					});
-				};
-
-				if (this.cfg.auto === false) {
-					const startBtn = el('button', { className: 'base-style-button' }, '进入作业考试脚本');
-					startBtn.onclick = () => {
-						CommonProject.scripts.render.methods.pin(this);
-					};
-					const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-					warn = $message('warn', {
-						duration: 0,
-						content: el('div', [
-							`自动答题已被关闭！请${isPinned ? '' : '进入作业考试脚本，然后'}点击开始答题，或者忽略此警告。`,
-							isPinned ? '' : startBtn
-						])
-					});
-				} else {
-					start();
-				}
 			}
 		})
 	}
@@ -905,22 +718,16 @@ function hack() {
 	};
 }
 
-/** 识别试卷文字 */
-function recognize() {
-	for (const div of $$el('.subject_describe > div')) {
-		// @ts-ignore
-		div.__vue__.$el.innerHTML = div.__vue__._data.shadowDom.textContent;
-	}
-}
-
 /**
  * 共享课的作业和考试
  */
-function gxkWorkOrExam(
-	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
-) {
-	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
+function gxkWorkAndExam({
+	answererWrappers,
+	period,
+	thread,
+	stopSecondWhenFinish,
+	redundanceWordsText
+}: CommonWorkOptions) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zhs-gxk'
 	});
@@ -1022,11 +829,13 @@ function gxkWorkOrExam(
 
 	worker
 		.doWork()
-		.then(async (results) => {
+		.then(async () => {
 			$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
 			await $.sleep(stopSecondWhenFinish * 1000);
 
-			// 保存题目
+			/**
+			 * 保存题目，不在选择答案后保存的原因是，如果答题线程大于3会导致题目错乱，因为 resolverIndex 并不是顺序递增的
+			 */
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
 				const modal = $modal('alert', { content: '正在保存题目中，请勿操作...', confirmButton: null });
 				await waitForCaptcha();
@@ -1043,37 +852,8 @@ function gxkWorkOrExam(
 				}
 				modal?.remove();
 			}
-
-			if (type === 'exam') {
-				$message('info', { content: '考试完成，为了安全考虑，请自行检查后自行点击提交！', duration: 0 });
-			} else {
-				// 处理提交
-				await worker.uploadHandler({
-					type: upload,
-					results,
-					async callback(finishedRate, uploadable) {
-						$message('info', {
-							content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
-						});
-
-						await $.sleep(5000);
-
-						// 保存按钮， 提交按钮
-						const saveBtn = $el('.btnStyleX:not(.btnStyleXSumit)');
-						const uploadBtn = $el('.btnStyleXSumit');
-
-						if (uploadable) {
-							uploadBtn?.click();
-						} else {
-							saveBtn?.click();
-						}
-
-						await $.sleep(2000);
-						/** 确定按钮 */
-						$el("[role='dialog'] .el-button--primary")?.click();
-					}
-				});
-			}
+			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			worker.emit('done');
 		})
 		.catch((err) => {
 			$message('error', { content: '答题程序发生错误 : ' + err.message });
@@ -1088,12 +868,7 @@ function gxkWorkOrExam(
 function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 
-	// 置顶搜索结果面板
-	CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
-	// 刷新搜索结果状态
-	CommonProject.scripts.workResults.methods.refreshState();
-	// 清空搜索结果
-	CommonProject.scripts.workResults.methods.clearResults();
+	CommonProject.scripts.workResults.methods.init();
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
@@ -1187,7 +962,7 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 		}
 
 		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
-
+		worker.emit('done');
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-xnk';
 	})();
 

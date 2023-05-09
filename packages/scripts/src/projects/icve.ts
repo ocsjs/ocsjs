@@ -8,19 +8,18 @@ import {
 	$modal,
 	SimplifyWorkResult,
 	defaultAnswerWrapperHandler,
-	MessageElement,
 	el,
 	OCSWorker,
 	$gm,
 	cors,
-	$message,
-	$store,
-	$const
+	$message
 } from '@ocsjs/core';
-import { restudy, volume, workConfigs } from '../utils/configs';
-import { CommonWorkOptions, createRangeTooltip, playMedia, workPreCheckMessage } from '../utils';
+import { restudy, volume } from '../utils/configs';
+import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
-import { createWorkerControl, simplifyWorkResult } from '../utils/work';
+import { commonWork, simplifyWorkResult } from '../utils/work';
+import { $console } from './background';
+import { waitForMedia } from '../utils/study';
 
 const state = {
 	study: {
@@ -191,71 +190,34 @@ export const IcveMoocProject = Project.create({
 		}),
 
 		work: new Script({
-			name: '✍️ 作业脚本',
-			url: [['作业页面', 'spoc-exam.icve.com.cn/exam']],
+			name: '✍️ 作业考试脚本',
+			url: [['作业考试页面', 'spoc-exam.icve.com.cn/exam']],
 			namespace: 'icve.work',
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						'可以搭配 “通用-在线搜题” 一起使用。',
-						'请手动进入作业页面才能使用自动答题。'
+						'请手动进入作业考试页面才能使用自动答题。'
 					]).outerHTML
-				},
-				auto: workConfigs.auto
+				}
 			},
 			async oncomplete() {
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
+				$message('info', { content: '自动答题时请勿切换题目，否则可能导致重复搜题或者脚本卡主。' });
 
-				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('auto', changeMsg);
-
-				let worker: OCSWorker<any> | undefined;
-				let warn: MessageElement | undefined;
-
-				/** 显示答题控制按钮 */
-				createWorkerControl(this, () => worker);
-
-				this.on('render', () => createWorkerControl(this, () => worker));
-
-				this.event.on('start', () => start());
-				this.event.on('restart', () => {
-					worker?.emit('close');
-					$message('info', { content: '3秒后重新答题。' });
-					setTimeout(start, 3000);
-				});
-
-				const start = () => {
-					warn?.remove();
-					workPreCheckMessage({
-						onrun: (opts) => {
-							$message('info', { content: '自动答题时请勿切换题目，否则可能导致重复搜题或者脚本卡主。' });
-							worker = work(opts);
-						},
-						ondone: () => {
-							this.event.emit('done');
-						},
-						...CommonProject.scripts.settings.cfg
-					});
+				// 回到第一题
+				const resetToBegin = () => {
+					document.querySelectorAll<HTMLElement>(`.sheet_nums [id*="sheetSeq"]`).item(0)?.click();
 				};
 
-				if (this.cfg.auto === false) {
-					const startBtn = el('button', { className: 'base-style-button' }, '进入作业考试脚本');
-					startBtn.onclick = () => {
-						CommonProject.scripts.render.methods.pin(this);
-					};
-					const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-					warn = $message('warn', {
-						duration: 0,
-						content: el('div', [
-							`自动答题已被关闭！请${isPinned ? '' : '进入作业考试脚本，然后'}点击开始答题，或者忽略此警告。`,
-							isPinned ? '' : startBtn
-						])
-					});
-				} else {
-					start();
-				}
+				commonWork(this, {
+					workerProvider: work,
+					beforeRunning: async () => {
+						resetToBegin();
+						await $.sleep(1000);
+					},
+					onRestart: () => resetToBegin()
+				});
 			}
 		}),
 		workDispatcher: new Script({

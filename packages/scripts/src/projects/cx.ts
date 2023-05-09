@@ -24,19 +24,14 @@ import {
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
-import { auto, workConfigs, volume, restudy } from '../utils/configs';
-import {
-	createWorkerControl,
-	optimizationElementWithImage,
-	removeRedundantWords,
-	simplifyWorkResult
-} from '../utils/work';
+import { workNotes, volume, restudy } from '../utils/configs';
+import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
 import { $console } from './background';
 import { el } from '../../../core/src/utils/dom';
-import { CommonWorkOptions, createRangeTooltip, playMedia, workPreCheckMessage } from '../utils';
+import { CommonWorkOptions, createRangeTooltip, playMedia } from '../utils';
 
 try {
 	/**
@@ -230,118 +225,18 @@ export const CXProject = Project.create({
 			}
 		}),
 		work: new Script({
-			name: '✍️ 作业脚本',
-			url: [['作业页面', '/mooc2/work/dowork']],
+			name: '✍️ 作业考试脚本',
+			url: [
+				['作业页面', '/mooc2/work/dowork'],
+				['考试整卷预览页面', '/mooc2/exam/preview']
+			],
 			namespace: 'cx.new.work',
-			configs: {
-				auto: workConfigs.auto,
-				notes: workConfigs.notes
-			},
+			configs: { notes: workNotes },
 			async oncomplete() {
-				CommonProject.scripts.render.methods.pin(this);
-
-				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-				this.onConfigChange('auto', changeMsg);
-
-				let worker: OCSWorker<any> | undefined;
-				let warn: MessageElement | undefined;
-
-				this.on('render', () => createWorkerControl(this, () => worker));
-				this.event.on('start', () => start());
-				this.event.on('restart', () => {
-					worker?.emit('close');
-					$message('info', { content: '3秒后重新答题。' });
-					setTimeout(start, 3000);
+				const isExam = /\/exam\/preview/.test(location.href);
+				commonWork(this, {
+					workerProvider: (opts) => workOrExam(isExam ? 'exam' : 'work', opts)
 				});
-
-				/** 开始答题 */
-				const start = async () => {
-					warn?.remove();
-					worker = workOrExam('work', CommonProject.scripts.settings.cfg);
-				};
-
-				if (this.cfg.auto) {
-					// 自动开始
-					workPreCheckMessage({
-						onrun: start,
-						ondone: () => {
-							this.event.emit('done');
-						},
-						...CommonProject.scripts.settings.cfg
-					});
-				} else {
-					this.event.emit('done');
-					warn = $message('warn', {
-						duration: 0,
-						content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
-					});
-				}
-			}
-		}),
-		exam: new Script({
-			name: '✍️ 考试脚本',
-			url: [['整卷预览页面', '/mooc2/exam/preview']],
-			namespace: 'cx.new.exam',
-			configs: {
-				notes: {
-					defaultValue: $creator.notes([
-						'答题前请在 “通用-全局设置” 中设置题库配置，才能开始自动答题。',
-						'可以搭配 “通用-在线搜题” 一起使用。',
-						'考试请在脚本自动答题完成后自行检查，自己点击提交，脚本不会自动提交。',
-						'如果开启后脚本仍然没有反应，请刷新页面重试。'
-					]).outerHTML
-				},
-				auto: auto
-			},
-			async oncomplete() {
-				CommonProject.scripts.render.methods.pin(this);
-				// 删除水印
-				$$el('body > .mask_div').forEach((el) => el.remove());
-
-				const changeMsg = () => $message('info', { content: '检测到设置更改，请重新进入，或者刷新作业页面进行答题。' });
-
-				this.onConfigChange('auto', changeMsg);
-
-				let worker: OCSWorker<any> | undefined;
-				let warn: MessageElement | undefined;
-
-				this.event.on('start', () => start());
-				this.event.on('restart', () => {
-					worker?.emit('close');
-					$message('info', { content: '3秒后重新答题。' });
-					setTimeout(start, 3000);
-				});
-
-				/** 开始考试 */
-				const start = async () => {
-					warn?.remove();
-					if (CommonProject.scripts.settings.cfg.answererWrappers.length === 0) {
-						return $message('error', { content: '题库配置为空！请前往全局设置进行题库配置后再刷新此页面进行答题。' });
-					}
-					worker = workOrExam('exam', { ...CommonProject.scripts.settings.cfg, upload: 'nomove' });
-				};
-
-				/** 显示答题控制按钮 */
-				createWorkerControl(this, () => worker);
-
-				this.on('render', () => createWorkerControl(this, () => worker));
-
-				if (this.cfg.auto) {
-					workPreCheckMessage({
-						onrun: start,
-						ondone: () => {
-							this.event.emit('done');
-						},
-						...CommonProject.scripts.settings.cfg,
-						upload: 'nomove'
-					});
-				} else {
-					this.event.emit('done');
-					warn = $message('warn', {
-						duration: 0,
-						content: '自动答题已被关闭！请手动点击开始答题，或者忽略此警告'
-					});
-				}
 			}
 		}),
 		autoRead: new Script({
@@ -561,7 +456,7 @@ export const CXProject = Project.create({
 
 export function workOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
+	{ answererWrappers, period, thread, redundanceWordsText }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
@@ -724,41 +619,9 @@ export function workOrExam(
 
 	worker
 		.doWork()
-		.then(async (results) => {
-			if (type === 'exam') {
-				$message('success', {
-					duration: 0,
-					content: '考试完成，为了安全考虑，请自行检查后自行点击提交！'
-				});
-			} else {
-				$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
-				await $.sleep(stopSecondWhenFinish * 1000);
-
-				// 处理提交
-				worker.uploadHandler({
-					type: upload,
-					results,
-					async callback(finishedRate, uploadable) {
-						$message('info', {
-							content: `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `
-						});
-
-						await $.sleep(5000);
-						if (uploadable) {
-							//  提交
-							$el('.completeBtn')?.click();
-							await $.sleep(2000);
-							// @ts-ignore 确定
-							// eslint-disable-next-line no-undef
-							$gm.unsafeWindow.submitWork();
-						} else {
-							// @ts-ignore 暂时保存
-							// eslint-disable-next-line no-undef
-							$gm.unsafeWindow.saveWork();
-						}
-					}
-				});
-			}
+		.then(() => {
+			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			worker.emit('done');
 		})
 		.catch((err) => {
 			console.error(err);
@@ -1597,6 +1460,8 @@ async function chapterTestTask(
 			}
 		}
 	});
+
+	worker.emit('done');
 }
 
 /**

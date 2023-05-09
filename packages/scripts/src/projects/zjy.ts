@@ -8,25 +8,18 @@ import {
 	$modal,
 	$store,
 	DefaultWork,
-	MessageElement,
 	OCSWorker,
 	Project,
 	Script,
 	defaultAnswerWrapperHandler,
 	defaultQuestionResolve,
-	domSearch,
-	el
+	domSearch
 } from '@ocsjs/core';
 import { $console } from './background';
-import { CommonWorkOptions, playMedia, workPreCheckMessage } from '../utils';
-import { volume, workConfigs } from '../utils/configs';
+import { CommonWorkOptions, playMedia } from '../utils';
+import { volume } from '../utils/configs';
 import { CommonProject } from './common';
-import {
-	createWorkerControl,
-	optimizationElementWithImage,
-	removeRedundantWords,
-	simplifyWorkResult
-} from '../utils/work';
+import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 
 const state = {
 	loading: false,
@@ -252,61 +245,12 @@ export const ZJYProject = Project.create({
 						'可以搭配 “通用-在线搜题” 一起使用。',
 						'请手动进入作业/考试页面才能使用自动答题。'
 					]).outerHTML
-				},
-				auto: workConfigs.auto
+				}
 			},
 			async oncomplete() {
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
-
-				const changeMsg = () =>
-					$message('info', { content: '检测到设置更改，请重新进入，或者刷新作业/考试页面进行答题。' });
-				this.onConfigChange('auto', changeMsg);
-
-				let worker: OCSWorker<any> | undefined;
-				let warn: MessageElement | undefined;
-
-				/** 显示答题控制按钮 */
-				createWorkerControl(this, () => worker);
-
-				this.on('render', () => createWorkerControl(this, () => worker));
-
-				this.event.on('start', () => start());
-				this.event.on('restart', () => {
-					worker?.emit('close');
-					$message('info', { content: '3秒后重新答题。' });
-					setTimeout(start, 3000);
+				commonWork(this, {
+					workerProvider: workAndExam
 				});
-
-				const start = () => {
-					warn?.remove();
-					workPreCheckMessage({
-						onrun: (opts) => {
-							worker = workAndExam(opts);
-						},
-						ondone: () => {
-							this.event.emit('done');
-						},
-						...CommonProject.scripts.settings.cfg
-					});
-				};
-
-				if (this.cfg.auto === false) {
-					const startBtn = el('button', { className: 'base-style-button' }, '进入作业考试脚本');
-					startBtn.onclick = () => {
-						CommonProject.scripts.render.methods.pin(this);
-					};
-					const isPinned = await CommonProject.scripts.render.methods.isPinned(this);
-					warn = $message('warn', {
-						duration: 0,
-						content: el('div', [
-							`自动答题已被关闭！请${isPinned ? '' : '进入作业考试脚本，然后'}点击开始答题，或者忽略此警告。`,
-							isPinned ? '' : startBtn
-						])
-					});
-				} else {
-					start();
-				}
 			}
 		})
 	}
@@ -507,6 +451,7 @@ function workAndExam({ answererWrappers, period, redundanceWordsText, thread }: 
 		.doWork()
 		.then(() => {
 			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			worker.emit('done');
 		})
 		.catch((err) => {
 			$message('error', { content: `作业/考试失败: ${err}`, duration: 0 });
