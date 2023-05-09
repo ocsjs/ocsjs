@@ -7,9 +7,6 @@
 	"files": [
 		"lib"
 	],
-	"scripts": {
-		"build": "tsc && vite build"
-	},
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/ocsjs/ocsjs.git"

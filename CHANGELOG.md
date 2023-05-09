@@ -1,3 +1,27 @@
+# [4.4.0](https://github.com/ocsjs/ocsjs/compare/4.3.7...4.4.0) (2023-05-09)
+
+
+### Bug Fixes
+
+* **core:** 修复搜索结果图片显示问题 ([0ebc3f9](https://github.com/ocsjs/ocsjs/commit/0ebc3f9c057438611a4791818fd2f5030c16eb65))
+* **core:** 优化单选题选项ABCD冗余并没有去掉的BUG ([f88fd86](https://github.com/ocsjs/ocsjs/commit/f88fd8698fc9a265df5ab3c9a3205fe9a81b4be4))
+* **script:** 全面优化自动答题逻辑，并将搜索结果直接显示在各自的脚本面板下，无需反复跳转查看。 ([8712b24](https://github.com/ocsjs/ocsjs/commit/8712b24ee47bda38598e057e44188acd6f5a46fa))
+* **script:** 修复智慧树图片题的BUG ([5adda0b](https://github.com/ocsjs/ocsjs/commit/5adda0be86a1530697539ac412a714d112d6962e))
+* **script:** 优化日志显示 ([bc7521a](https://github.com/ocsjs/ocsjs/commit/bc7521a2313fc64d8be56be4b34956e06736dd4c))
+* **script:** 优化智慧树视频加载缓慢时无法自动播放的BUG ([640bc72](https://github.com/ocsjs/ocsjs/commit/640bc72f70d9cebd9d9b2f110f11b99515a4fe33))
+* **script:** 优化智慧树校内课作业 ([c877ed6](https://github.com/ocsjs/ocsjs/commit/c877ed6551569883afff330c37255982c3511424))
+* **script:** 优化智慧职教MOOC的自动学习逻辑 ([9694773](https://github.com/ocsjs/ocsjs/commit/96947732d8da48018fb4ce9c8979941a859cb55b))
+* **script:** 智慧树考试强制添加保存弹窗，并从头开始每题保存，防止用户切换题目导致保存失败 ([f6c0e22](https://github.com/ocsjs/ocsjs/commit/f6c0e22ebb610c6b59079e8cedd07ba8cd3e8438))
+* **script:** update build script ([4aa68f1](https://github.com/ocsjs/ocsjs/commit/4aa68f16c4cf68487db298ca91e66d3b9ba90c51))
+
+
+### Features
+
+* **script:** 增加搜索结果与题目同步显示功能 ([f793d43](https://github.com/ocsjs/ocsjs/commit/f793d431cd51ca54dd984ff36d1ef1884833b8c2))
+* **script:** 增加职教云考试功能 ([c9bc7ad](https://github.com/ocsjs/ocsjs/commit/c9bc7ad5cdf07c292b380cedc273fc407329e02e))
+
+
+
 ## [4.3.7](https://github.com/ocsjs/ocsjs/compare/4.3.5...4.3.7) (2023-04-24)
 
 
