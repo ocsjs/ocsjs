@@ -399,6 +399,8 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		}
 
 		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+		// 搜索完成后才会同步答案与题目的显示，防止题目错乱
+		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'icve';
 	})();
 
 	return worker;

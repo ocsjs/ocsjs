@@ -921,7 +921,9 @@ function gxkWorkOrExam(
 	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
-	CommonProject.scripts.workResults.methods.init();
+	CommonProject.scripts.workResults.methods.init({
+		questionPositionSyncHandlerType: 'zhs-gxk'
+	});
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return removeRedundantWords(
@@ -1185,6 +1187,8 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 		}
 
 		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+
+		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-xnk';
 	})();
 
 	return worker;

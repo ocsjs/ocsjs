@@ -565,7 +565,9 @@ export function workOrExam(
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
-	CommonProject.scripts.workResults.methods.init();
+	CommonProject.scripts.workResults.methods.init({
+		questionPositionSyncHandlerType: 'cx'
+	});
 
 	// 处理作业和考试题目的方法
 	const workOrExamQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {

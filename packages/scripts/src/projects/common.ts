@@ -29,6 +29,39 @@ const gotoHome = () => {
 	return btn;
 };
 
+const state = {
+	workResult: {
+		/**
+		 * 题目位置同步处理器
+		 */
+		questionPositionSyncHandler: {
+			cx: (index: number) => {
+				const el = document.querySelectorAll<HTMLElement>('[id*="sigleQuestionDiv"], .questionLi')?.item(index);
+				if (el) {
+					window.scrollTo({
+						top: el.getBoundingClientRect().top + window.pageYOffset - 50,
+						behavior: 'smooth'
+					});
+				}
+			},
+			'zhs-gxk': (index: number) => {
+				document.querySelectorAll<HTMLElement>('.answerCard_list ul li').item(index)?.click();
+			},
+			'zhs-xnk': (index: number) => {
+				document.querySelectorAll<HTMLElement>('.jobclassallnumber-div li[questionid]').item(index)?.click();
+			},
+			icve: (index: number) => {
+				document.querySelectorAll<HTMLElement>(`.sheet_nums [id*="sheetSeq"]`).item(index)?.click();
+			},
+			zjy: (index: number) => {
+				document
+					.querySelector<HTMLElement>(`.e-q-body[data-num="${index + 1}"]`)
+					?.scrollIntoView({ behavior: 'smooth' });
+			}
+		}
+	}
+};
+
 /**
  * 题库缓存类型
  */
@@ -380,6 +413,9 @@ export const CommonProject = Project.create({
 				},
 				currentResultIndex: {
 					defaultValue: 0
+				},
+				questionPositionSyncHandlerType: {
+					defaultValue: undefined as keyof typeof state.workResult.questionPositionSyncHandler | undefined
 				}
 			},
 			methods() {
@@ -415,7 +451,9 @@ export const CommonProject = Project.create({
 					/**
 					 * 刷新搜索结果状态，清空搜索结果，置顶搜索结果面板
 					 */
-					init() {
+					init(opts?: { questionPositionSyncHandlerType?: keyof typeof state.workResult.questionPositionSyncHandler }) {
+						CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType =
+							opts?.questionPositionSyncHandlerType;
 						// 刷新搜索结果状态
 						CommonProject.scripts.workResults.methods.refreshState();
 						// 清空搜索结果
@@ -486,6 +524,12 @@ export const CommonProject = Project.create({
 										this.cfg.currentResultIndex = index;
 										// 重新渲染结果列表
 										resultContainer.replaceChildren(createResult(result));
+												// 触发页面题目元素同步器
+												if (this.cfg.questionPositionSyncHandlerType) {
+													state.workResult.questionPositionSyncHandler[this.cfg.questionPositionSyncHandlerType]?.(
+														index
+													);
+												}
 									};
 								});
 							});
@@ -567,6 +611,12 @@ export const CommonProject = Project.create({
 											this.cfg.currentResultIndex = index;
 											// 重新渲染结果列表
 											resultContainer.replaceChildren(createResult(result));
+													// 触发页面题目元素同步器
+													if (this.cfg.questionPositionSyncHandlerType) {
+														state.workResult.questionPositionSyncHandler[this.cfg.questionPositionSyncHandlerType]?.(
+															index
+														);
+													}
 										};
 									}
 								);
