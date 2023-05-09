@@ -23,6 +23,7 @@ import {
 } from '../utils/work';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { $console } from './background';
+import { waitForMedia } from '../utils/study';
 
 // 学习是否暂停
 let stop = false;
@@ -566,7 +567,7 @@ async function watch(
 	onended: (opts: { next: boolean }) => void
 ) {
 	// 部分用户视频加载很慢，这里等待一下
-	await waitForVideo();
+	await waitForMedia();
 
 	const set = async () => {
 		// 设置清晰度
@@ -578,7 +579,7 @@ async function watch(
 		await $.sleep(1000);
 
 		// 上面操作会导致元素刷新，这里重新获取视频
-		const video = await waitForVideo();
+		const video = await waitForMedia();
 		state.study.currentMedia = video;
 
 		if (video) {
@@ -980,29 +981,5 @@ function optimizeSecond(second: number) {
 		return `${Math.floor(second / 60)}分钟${second % 60}秒`;
 	} else {
 		return `${second}秒`;
-	}
-}
-
-/**
- * 等待视频加载并获取视频
- */
-async function waitForVideo() {
-	const res = await Promise.race([
-		new Promise<HTMLVideoElement>((resolve, reject) => {
-			const interval = setInterval(() => {
-				const video = document.querySelector('video');
-				if (video) {
-					clearInterval(interval);
-					resolve(video);
-				}
-			}, 1000);
-		}),
-		$.sleep(3 * 60 * 1000)
-	]);
-	if (res) {
-		return res;
-	} else {
-		$message('error', { content: '视频加载超时，请刷新重试' });
-		throw new Error('视频加载超时');
 	}
 }
