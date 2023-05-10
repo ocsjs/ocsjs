@@ -111,7 +111,7 @@ export const IcveMoocProject = Project.create({
 				},
 				switchPeriod: {
 					label: '下一章节切换间隔（秒）',
-					defaultValue: 5,
+					defaultValue: 10,
 					attrs: {
 						type: 'number',
 						min: 0,
