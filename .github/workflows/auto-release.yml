@@ -37,6 +37,6 @@ jobs:
     - name: Create release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "dist/*.js"
+        artifacts: "dist/index.js,dist/core.js,dist/ocs.user.js"
         body: "Userscript Auto Releases"
  
