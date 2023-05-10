@@ -1,19 +1,20 @@
 # This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
 # For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
 
-name: Node.js CI
+name: Userscript Auto Releases
 
 on:
   push:
     branches: [ "4.0" ]
-  pull_request:
-    branches: [ "4.0" ]
+    tags:
+    - '*'
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write
     strategy:
       matrix:
         node-version: [18.x]
@@ -33,13 +34,10 @@ jobs:
        npm run tsc
     - name: Build ocs scripts
       run: npm run build:core
-    - name: Upload Artifact 
-      uses: actions/upload-artifact@v3
+    - uses: actions/checkout@v3
+    - name: Create release
+      uses: ncipollo/release-action@v1
       with:
-        name: ocs-scripts-release
-        path: dist/**/*.js
-    - name: Upload Userscript 
-      uses: actions/upload-artifact@v3
-      with:
-        name: ocs-userscript
-        path: dist/ocs.user.js
+        artifacts: "dist/*.js"
+        body: "Userscript Auto Releases"
+ 
