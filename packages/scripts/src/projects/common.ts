@@ -196,8 +196,11 @@ export const CommonProject = Project.create({
 				upload: {
 					label: '答题完成后',
 					tag: 'select',
-					defaultValue: 'save' as WorkUploadType,
-					attrs: { title: '答题完成后的设置, 鼠标悬浮在选项上可以查看每个选项的具体解释。' },
+					defaultValue: 80 as WorkUploadType,
+					attrs: {
+						title:
+							'自动答题完成后的设置，目前仅在 超星学习通的章节测试 中生效, 鼠标悬浮在选项上可以查看每个选项的具体解释。'
+					},
 					onload() {
 						this.append(
 							...$creator.selectOptions(this.getAttribute('value'), [
