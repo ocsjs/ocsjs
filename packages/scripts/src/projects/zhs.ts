@@ -53,25 +53,7 @@ export const ZHSProject = Project.create({
 				notes: {
 					defaultValue: $creator.notes([
 						'请手动进入视频、作业、考试页面，脚本会自动运行。',
-						'兴趣课会自动下一个，所以不提供脚本。',
-						'校内学分课的考试脚本还未提供，请手动(划词)搜题。'
-					]).outerHTML
-				}
-			},
-			oncomplete() {
-				// 置顶
-				CommonProject.scripts.render.methods.pin(this);
-			}
-		}),
-		'gxk-work-and-exam-guide': new Script({
-			name: '💡 共享课-作业考试提示',
-			url: [['共享课作业考试列表页面', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']],
-			namespace: 'zhs.work.gxk-guide',
-			configs: {
-				notes: {
-					defaultValue: $creator.notes([
-						'在进行作业或者考试之前，请在”通用-全局设置“中设置好题库配置',
-						'请点击任意的作业/考试进入'
+						'兴趣课会自动下一个，所以不提供脚本。'
 					]).outerHTML
 				}
 			},
@@ -461,18 +443,45 @@ export const ZHSProject = Project.create({
 			name: '✍️ 共享课-作业考试脚本',
 			url: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
-				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination']
+				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
+				['作业考试列表', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
 			],
 			namespace: 'zhs.gxk.work',
-			configs: { notes: workNotes },
-			async oncomplete() {
-				// 等待试卷加载
-				await waitForQuestionsLoad();
+			configs: {
+				notes: {
+					defaultValue: $creator.notes([
+						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
+						'可以搭配 “通用-在线搜题” 一起使用。',
+						'📢 手动进入作业/考试，如果未开始答题，请尝试刷新页面。'
+					]).outerHTML
+				}
+			},
+			methods() {
+				return {
+					work: async () => {
+						// 等待试卷加载
+						const isExam = location.href.includes('doexamination');
+						const isWork = location.href.includes('dohomework');
+						if (isExam || isWork) {
+							await waitForQuestionsLoad();
+							$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
+							commonWork(this, {
+								workerProvider: (opts) => gxkWorkAndExam(opts)
+							});
+						} else {
+							CommonProject.scripts.render.methods.pin(this);
+						}
+					}
+				};
+			},
 
-				const isExam = location.href.includes('doexamination');
-				$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
-				commonWork(this, {
-					workerProvider: (opts) => gxkWorkAndExam(opts)
+			async oncomplete() {
+				this.methods.work();
+				/**
+				 * 当页面从作业考试列表跳转到作业考试页面时，触发的是onhistorychange事件，而不是oncomplete事件。
+				 */
+				this.on('historychange', () => {
+					this.methods.work();
 				});
 			}
 		}),
