@@ -8,10 +8,6 @@ on:
     branches: [ "4.0" ]
     tags:
     - '*'
-  pull_request:
-    branches: [ "4.0" ]
-    tags:
-    - '*'
 
 jobs:
   build:
