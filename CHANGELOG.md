@@ -1,3 +1,12 @@
+## [4.4.4](https://github.com/ocsjs/ocsjs/compare/4.4.3...4.4.4) (2023-05-10)
+
+
+### Bug Fixes
+
+* **script:** 修复智慧树考试作业进入后不自动开始，而是需要刷新才能开始的BUG ([8f197ec](https://github.com/ocsjs/ocsjs/commit/8f197ec3d3418663698e9495de4909c1b2123ee5))
+
+
+
 ## [4.4.3](https://github.com/ocsjs/ocsjs/compare/4.4.2...4.4.3) (2023-05-09)
 
 
