@@ -5,7 +5,6 @@ name: Userscript Auto Releases
 
 on:
   push:
-    branches: [ "4.0" ]
     tags:
     - '*'
 
