@@ -6,11 +6,10 @@ name: Userscript Auto Releases
 on:
   push:
     tags:
-    - '*'
+      - '*'
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -18,30 +17,29 @@ jobs:
       matrix:
         node-version: [18.x]
     steps:
-    - uses: actions/checkout@v3
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v3
-      with:
-        node-version: ${{ matrix.node-version }}
-    - name: Install Dependencies
-      run: |
-       npm install pnpm -g
-       pnpm install -w
-       cd packages/scripts
-       pnpm install
-       cd ../../
-       npm run tsc
-    - name: Setup env
-      run: |
-        echo 'BUILD_PATH="../build"' > scripts/.env 
-        echo 'VITE_BUILD_PATH="../../build"' > packages/core/.env
-        echo 'VITE_BUILD_PATH="../../build"' > packages/scripts/.env
-    - name: Build ocs scripts
-      run: npm run build:core
-    - uses: actions/checkout@v3
-    - name: Create release
-      uses: ncipollo/release-action@v1
-      with:
-        artifacts: "build/index.js,build/core.js,build/ocs.user.js"
-        body: "Userscript Auto Releases"
- 
+      - uses: actions/checkout@v3
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Setup env
+        run: |
+          echo 'BUILD_PATH="../release"' > ./scripts/.env 
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/core/.env
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/scripts/.env
+      - name: Install Dependencies
+        run: |
+          npm install pnpm -g
+          pnpm install -w
+          cd packages/scripts
+          pnpm install
+          cd ../../
+          npm run tsc
+      - name: Build ocs scripts
+        run: npm run build:core
+      - uses: actions/checkout@v3
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          artifacts: './release/index.js,./release/core.js,./release/ocs.user.js'
+          body: 'Userscript Auto Releases'
