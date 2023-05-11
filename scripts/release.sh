@@ -20,8 +20,6 @@ if [ "$isRelease" = "y" ]; then
     npm run lint &&
     # 更新版本
     npm version "$version" --no-git-tag-version &&
-    # 构建
-    npm run build:core &&
     # 更新日志
     npm run changelog &&
     # 保存

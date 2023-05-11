@@ -2,6 +2,7 @@ import { visualizer } from 'rollup-plugin-visualizer';
 import { defineConfig } from 'vite';
 import banner from 'vite-plugin-banner';
 import { author, description, homepage, license, name } from '../../package.json';
+import dotenv from 'dotenv';
 
 const bannerContent = `
 /*!
@@ -12,13 +13,15 @@ const bannerContent = `
  */
 `;
 
+dotenv.config();
+
 // https://vitejs.dev/config/
 export default defineConfig({
 	build: {
 		/** 取消css代码分离 */
 		cssCodeSplit: false,
 		/** 输出路径 */
-		outDir: '../../dist',
+		outDir: process.env.VITE_BUILD_PATH,
 		/** 清空输出路径 */
 		emptyOutDir: false,
 		/** 是否压缩代码 */

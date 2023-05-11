@@ -16,8 +16,6 @@ type WorkerEvent<E extends RawElements = RawElements> = {
 	stop: () => void;
 	/** 继续答题 */
 	continuate: () => void;
-
-	error: (e: Error, ctx?: WorkContext<E>) => void;
 };
 
 /**
@@ -69,25 +67,29 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		});
 
 		/** 寻找题目父节点 */
-		const questionRoot: HTMLElement[] | null =
+		const questionRoots: HTMLElement[] | null =
 			typeof this.opts.root === 'string' ? Array.from(document.querySelectorAll(this.opts.root)) : this.opts.root;
 
-		this.totalQuestionCount = questionRoot.length;
+		this.totalQuestionCount = questionRoots.length;
 		/** 线程锁 */
 		this.locks = Array(this.totalQuestionCount).fill(1);
 
 		/** 答题结果 */
 		const results: WorkResult<E>[] = [];
 
-		for (const q of questionRoot) {
+		if (questionRoots.length === 0) {
+			throw new Error('未找到任何题目，答题结束。');
+		}
+
+		for (const questionRoot of questionRoots) {
 			const ctx: WorkContext<E> = {
 				searchInfos: [],
-				root: q,
-				elements: domSearchAll<E>(this.opts.elements, q)
+				root: questionRoot,
+				elements: domSearchAll<E>(this.opts.elements, questionRoot)
 			};
 
 			/** 执行元素搜索钩子 */
-			await this.opts.onElementSearched?.(ctx.elements, q);
+			await this.opts.onElementSearched?.(ctx.elements, questionRoot);
 
 			/** 排除掉 null 的元素 */
 			ctx.elements.title = ctx.elements.title?.filter(Boolean) as HTMLElement[];
