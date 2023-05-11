@@ -116,6 +116,12 @@ export const CommonProject = Project.create({
 				answererWrappers: {
 					defaultValue: [] as AnswererWrapper[]
 				},
+				/**
+				 * 禁用的题库
+				 */
+				disabledAnswererWrapperNames: {
+					defaultValue: [] as string[]
+				},
 				enableQuestionCaches: {
 					label: '题库缓存功能',
 					defaultValue: true,
@@ -133,7 +139,7 @@ export const CommonProject = Project.create({
 
 						this.onclick = () => {
 							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
-							const copy = $creator.copy('复制题库配置', JSON.stringify(aw));
+							const copy = $creator.copy('复制题库配置', JSON.stringify(aw, null, 4));
 
 							const list = el('div', [
 								el('div', aw.length ? ['以下是已经解析过的题库配置：', copy] : ''),
@@ -141,6 +147,9 @@ export const CommonProject = Project.create({
 							]);
 
 							const modal = $modal('prompt', {
+								width: 600,
+								modalInputType: 'textarea',
+								inputDefaultValue: JSON.stringify(aw, null, 4),
 								content: $creator.notes([
 									[
 										el('div', [
@@ -170,6 +179,7 @@ export const CommonProject = Project.create({
 												CommonProject.scripts.settings.cfg.answererWrappers = aw;
 												this.value = '当前有' + aw.length + '个可用题库';
 												$modal('alert', {
+													width: 600,
 													content: el('div', [
 														el('div', ['🎉 配置成功，刷新网页后重新答题即可。', '解析到的题库如下所示:']),
 														...createAnswererWrapperList(aw)
@@ -1145,7 +1155,38 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 		el(
 			'details',
 			[
-				el('summary', [item.name]),
+				el('summary', [
+					$creator.space([
+						el('span', item.name),
+						(() => {
+							let isDisabled = CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.includes(item.name);
+							const btn = $creator.button(
+								isDisabled ? '启用此题库' : '停用此题库',
+								{ className: isDisabled ? 'base-style-button' : 'base-style-button-secondary' },
+								(controlsBtn) => {
+									controlsBtn.onclick = () => {
+										isDisabled = !isDisabled;
+										controlsBtn.value = isDisabled ? '启用此题库' : '停用此题库';
+										controlsBtn.className = isDisabled ? 'base-style-button' : 'base-style-button-secondary';
+										if (isDisabled) {
+											CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames = [
+												...CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames,
+												item.name
+											];
+										} else {
+											CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames =
+												CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.filter(
+													(name) => name !== item.name
+												);
+										}
+									};
+								}
+							);
+
+							return btn;
+						})()
+					])
+				]),
 				el('ul', [
 					el('li', ['名字\t', item.name]),
 					el('li', { innerHTML: `官网\t<a target="_blank" href=${item.homepage}>${item.homepage || '无'}</a>` }),

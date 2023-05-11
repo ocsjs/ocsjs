@@ -83,18 +83,32 @@ export function commonWork(
 		);
 	});
 
+	// 使用 json 深拷贝，防止修改原始配置
+	const workOptions: typeof CommonProject.scripts.settings.cfg = JSON.parse(
+		JSON.stringify(CommonProject.scripts.settings.cfg)
+	);
+	/**
+	 * 过滤掉被禁用的题库
+	 */
+	workOptions.answererWrappers = workOptions.answererWrappers.filter(
+		(aw) => CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.find((daw) => daw === aw.name) === undefined
+	);
+
+	/**
+	 * 检查题库是否配置，并询问是否开始答题
+	 */
 	let checkMessage = workPreCheckMessage({
 		onrun: () => startBtnPressed === false && start(),
 		onclose: (_, closedMsg) => (checkMessage = closedMsg),
 		onNoAnswererWrappers: () => {
 			checkFailed = true;
 		},
-		...CommonProject.scripts.settings.cfg
+		...workOptions
 	});
 
 	const start = async () => {
 		await options.beforeRunning?.();
-		worker = options.workerProvider(CommonProject.scripts.settings.cfg);
+		worker = options.workerProvider(workOptions);
 
 		const { container, controlBtn } = createControls();
 		// 更新状态
