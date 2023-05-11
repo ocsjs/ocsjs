@@ -311,7 +311,7 @@ export const BackgroundProject = Project.create({
 								const version: { 'last-version': string; resource: Record<string, string>; notes: string[] } =
 									await request('https://cdn.ocsjs.com/ocs-version.json?t=' + Date.now(), {
 										method: 'get',
-										type: 'fetch'
+										type: 'GM_xmlhttpRequest'
 									});
 								if (gt(version['last-version'], infos.script.version)) {
 									const modal = $modal('confirm', {
@@ -338,7 +338,7 @@ export const BackgroundProject = Project.create({
 										})
 									});
 								}
-							}, 10 * 1000);
+							}, 5 * 1000);
 						}
 					}
 				}
