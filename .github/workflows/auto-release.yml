@@ -33,15 +33,15 @@ jobs:
        npm run tsc
     - name: Setup env
       run: |
-        echo 'BUILD_PATH="../dist"' > scripts/.env 
-        echo 'VITE_BUILD_PATH="../../dist"' > packages/core/.env
-        echo 'VITE_BUILD_PATH="../../dist"' > packages/scripts/.env
+        echo 'BUILD_PATH="../build"' > scripts/.env 
+        echo 'VITE_BUILD_PATH="../../build"' > packages/core/.env
+        echo 'VITE_BUILD_PATH="../../build"' > packages/scripts/.env
     - name: Build ocs scripts
       run: npm run build:core
     - uses: actions/checkout@v3
     - name: Create release
       uses: ncipollo/release-action@v1
       with:
-        artifacts: "dist/index.js,dist/core.js,dist/ocs.user.js"
+        artifacts: "build/index.js,build/core.js,build/ocs.user.js"
         body: "Userscript Auto Releases"
  
