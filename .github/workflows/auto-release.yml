@@ -37,7 +37,6 @@ jobs:
           npm run tsc
       - name: Build ocs scripts
         run: npm run build:core
-      - uses: actions/checkout@v3
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
