@@ -1,3 +1,18 @@
+## [4.4.7](https://github.com/ocsjs/ocsjs/compare/4.4.5...4.4.7) (2023-05-11)
+
+
+### Bug Fixes
+
+* **script:** 将更新通知的请求方法改成油猴跨域请求，防止有些页面的 safe 策略阻止请求。 ([6613973](https://github.com/ocsjs/ocsjs/commit/6613973f00fbbda9b5d5f3591475fecd7e6a47c4))
+* **script:** 优化智慧树考试作业提示 ([3703e97](https://github.com/ocsjs/ocsjs/commit/3703e976a19ba835aa1d6f7d7c5f860134802950))
+
+
+### Features
+
+* **script:** 新增题库开关功能 ([07f3cfc](https://github.com/ocsjs/ocsjs/commit/07f3cfcba517edd86cd38f4c0fcabd99ef3ed4fa))
+
+
+
 ## [4.4.5](https://github.com/ocsjs/ocsjs/compare/4.4.4...4.4.5) (2023-05-10)
 
 

@@ -5,7 +5,7 @@ import { RawElements, ResolverResult, WorkContext, WorkOptions, WorkResult, Work
 import { defaultQuestionResolve } from './question.resolver';
 import { defaultWorkTypeResolver } from './utils';
 
-type WorkerEvent<E extends RawElements = RawElements> = {
+type WorkerEvent = {
 	/** 答题开始 */
 	start: () => void;
 	/** 答题结果 */
@@ -25,7 +25,7 @@ type WorkerEvent<E extends RawElements = RawElements> = {
  * @param answerer  查题器, : 默认是 {@link defaultAnswerWrapperHandler}
  *
  */
-export class OCSWorker<E extends RawElements = RawElements> extends CommonEventEmitter<WorkerEvent<E>> {
+export class OCSWorker<E extends RawElements = RawElements> extends CommonEventEmitter<WorkerEvent> {
 	opts: WorkOptions<E>;
 	isRunning = false;
 	isClose = false;
