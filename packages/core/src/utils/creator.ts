@@ -263,17 +263,29 @@ export const $creator = {
 	 * 将所有子元素隔开
 	 * x: 默认 12
 	 * y: 默认 0
+	 * separator: 默认 ' '
 	 */
-	space(children: HTMLElement[], options?: { x?: number; y?: number }) {
+	space(children: HTMLElement[], options?: { x?: number; y?: number; separator?: string }) {
 		return el('div', { className: 'space' }, (div) => {
 			for (let index = 0; index < children.length; index++) {
 				const child = el('span', { className: 'space-item' }, [children[index]]);
 				child.style.display = 'inline-block';
+				const x = options?.x ?? 12;
+				const y = options?.y ?? 0;
 				if (index > 0) {
-					child.style.marginLeft = (options?.x ?? 12) + 'px';
-					child.style.marginTop = (options?.y ?? 0) + 'px';
+					child.style.marginLeft = x / 2 + 'px';
+					child.style.marginRight = x / 2 + 'px';
+					child.style.marginTop = y / 2 + 'px';
+					child.style.marginBottom = y / 2 + 'px';
+				} else {
+					child.style.marginRight = x / 2 + 'px';
+					child.style.marginBottom = y / 2 + 'px';
 				}
+
 				div.append(child);
+				if (index !== children.length - 1) {
+					div.append(el('span', [options?.separator ?? ' ']));
+				}
 			}
 		});
 	}

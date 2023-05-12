@@ -506,7 +506,8 @@ export const CommonProject = Project.create({
 
 						/** 渲染结果面板 */
 						const render = debounce(async () => {
-							const results: SimplifyWorkResult[] | undefined = await this.methods.getResults();
+							const results: SimplifyWorkResult[] | undefined =
+								await CommonProject.scripts.workResults.methods.getResults();
 
 							if (results?.length) {
 								// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
@@ -681,18 +682,19 @@ export const CommonProject = Project.create({
 								el(
 									'div',
 									[
-										`当前搜题: ${this.cfg.requestIndex}/${this.cfg.totalQuestionCount}`,
-										' , ',
-										`当前答题: ${this.cfg.resolverIndex}/${this.cfg.totalQuestionCount}`,
-										' , ',
-										el('a', '查看提示', (btn) => {
-											btn.style.cursor = 'pointer';
-											btn.addEventListener('click', () => {
-												$modal('confirm', {
-													content: tip
-												});
-											});
-										})
+										$creator.space(
+											[
+												el('span', `当前搜题: ${this.cfg.requestIndex}/${this.cfg.totalQuestionCount}`),
+												el('span', `当前答题: ${this.cfg.resolverIndex}/${this.cfg.totalQuestionCount}`),
+												el('a', '提示', (btn) => {
+													btn.style.cursor = 'pointer';
+													btn.onclick = () => {
+														$modal('confirm', { content: tip });
+													};
+												})
+											],
+											{ separator: '|' }
+										)
 									],
 									(div) => {
 										div.style.marginBottom = '12px';
@@ -1025,8 +1027,6 @@ export const CommonProject = Project.create({
 
 				const cachesBtn = el('div', { innerText: '💾 题库缓存', style: btnStyle }, (btn) => {
 					btn.onclick = () => {
-						console.log(this.cfg);
-
 						const questionCaches = this.cfg.localQuestionCaches;
 
 						const list = questionCaches.map((c) =>
@@ -1069,15 +1069,18 @@ export const CommonProject = Project.create({
 									])
 								]),
 								el('div', { className: 'card' }, [
-									$creator.space([
-										el('span', ['当前缓存数量：' + questionCaches.length]),
-										$creator.button('清空题库缓存', {}, (btn) => {
-											btn.onclick = () => {
-												this.cfg.localQuestionCaches = [];
-												list.forEach((el) => el.remove());
-											};
-										})
-									])
+									$creator.space(
+										[
+											el('span', ['当前缓存数量：' + questionCaches.length]),
+											$creator.button('清空题库缓存', {}, (btn) => {
+												btn.onclick = () => {
+													this.cfg.localQuestionCaches = [];
+													list.forEach((el) => el.remove());
+												};
+											})
+										],
+										{ separator: '|' }
+									)
 								]),
 
 								el(
