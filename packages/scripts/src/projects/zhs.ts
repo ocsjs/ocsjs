@@ -464,21 +464,10 @@ export const ZHSProject = Project.create({
 						const isWork = location.href.includes('dohomework');
 
 						if (isExam || isWork) {
-							const res = await Promise.race([
-								waitForQuestionsLoad(),
-								(async () => {
-									console.log('res');
-									await $.sleep(10 * 1000);
-									$message('warn', { content: '作业/试卷加载超时，请刷新重试。', duration: 0 });
-									return false;
-								})()
-							]);
-							if (res === false) {
-								$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
-								commonWork(this, {
-									workerProvider: (opts) => gxkWorkAndExam(opts)
-								});
-							}
+							await waitForQuestionsLoad(), $message('info', { content: `开始${isExam ? '考试' : '作业'}` });
+							commonWork(this, {
+								workerProvider: (opts) => gxkWorkAndExam(opts)
+							});
 						} else {
 							$message('info', { content: '📢 请手动进入作业/考试，如果未开始答题，请尝试刷新页面。', duration: 0 });
 							CommonProject.scripts.render.methods.pin(this);
