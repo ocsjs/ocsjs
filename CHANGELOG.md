@@ -1,3 +1,12 @@
+## [4.4.13](https://github.com/ocsjs/ocsjs/compare/4.4.12...4.4.13) (2023-05-12)
+
+
+### Bug Fixes
+
+* **script:** 修复题库缓存不是最新的BUG ([a7a89b9](https://github.com/ocsjs/ocsjs/commit/a7a89b98d7ee672b47dc63fb36ba6eaa9e37c87d))
+
+
+
 ## [4.4.12](https://github.com/ocsjs/ocsjs/compare/4.4.11...4.4.12) (2023-05-12)
 
 

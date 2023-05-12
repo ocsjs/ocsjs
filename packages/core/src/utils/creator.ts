@@ -245,8 +245,8 @@ export const $creator = {
 					btn.onclick = () => {
 						popupWin?.close();
 						popupWin = $.createCenteredPopupWindow(`https://www.baidu.com/s?wd=${question}`, '百度搜索', {
-							width: 800,
-							height: 600,
+							width: 1000,
+							height: 800,
 							resizable: true,
 							scrollbars: true
 						});
@@ -257,7 +257,7 @@ export const $creator = {
 		);
 		space.style.marginTop = '6px';
 		space.style.textAlign = 'right';
-		return space;
+		return el('div', { style: { textAlign: 'right' } }, [space]);
 	},
 	/**
 	 * 将所有子元素隔开

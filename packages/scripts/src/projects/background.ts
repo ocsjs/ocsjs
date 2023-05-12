@@ -93,8 +93,6 @@ export const BackgroundProject = Project.create({
 				 */
 				const isScrollBottom = (div: HTMLElement) => {
 					const { scrollHeight, scrollTop, clientHeight } = div;
-					console.log(scrollHeight, scrollTop + clientHeight);
-
 					return scrollTop + clientHeight + 50 > scrollHeight;
 				};
 
