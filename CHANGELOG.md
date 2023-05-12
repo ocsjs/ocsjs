@@ -1,3 +1,12 @@
+## [4.4.12](https://github.com/ocsjs/ocsjs/compare/4.4.11...4.4.12) (2023-05-12)
+
+
+### Bug Fixes
+
+* **script:** 修复题库配置清空后会留下两个小括号的bug ([0993a52](https://github.com/ocsjs/ocsjs/commit/0993a52d52dca43951279076783ca047a10dc234))
+
+
+
 ## [4.4.11](https://github.com/ocsjs/ocsjs/compare/4.4.10...4.4.11) (2023-05-12)
 
 
