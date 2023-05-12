@@ -1,3 +1,12 @@
+## [4.4.11](https://github.com/ocsjs/ocsjs/compare/4.4.10...4.4.11) (2023-05-12)
+
+
+### Bug Fixes
+
+* **script:** 继续优化智慧树作业考试检测 ([2a337bb](https://github.com/ocsjs/ocsjs/commit/2a337bb56c3a5f5a157ff80c213c14521d8f0c4c))
+
+
+
 ## [4.4.10](https://github.com/ocsjs/ocsjs/compare/4.4.9...4.4.10) (2023-05-11)
 
 

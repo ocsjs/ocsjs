@@ -464,7 +464,8 @@ export const ZHSProject = Project.create({
 						const isWork = location.href.includes('dohomework');
 
 						if (isExam || isWork) {
-							await waitForQuestionsLoad(), $message('info', { content: `开始${isExam ? '考试' : '作业'}` });
+							await waitForQuestionsLoad();
+							$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
 							commonWork(this, {
 								workerProvider: (opts) => gxkWorkAndExam(opts)
 							});
