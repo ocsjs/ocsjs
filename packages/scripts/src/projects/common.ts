@@ -149,7 +149,7 @@ export const CommonProject = Project.create({
 							const modal = $modal('prompt', {
 								width: 600,
 								modalInputType: 'textarea',
-								inputDefaultValue: JSON.stringify(aw, null, 4),
+								inputDefaultValue: aw.length === 0 ? '' : JSON.stringify(aw, null, 4),
 								content: $creator.notes([
 									[
 										el('div', [
