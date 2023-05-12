@@ -910,7 +910,7 @@ export const CommonProject = Project.create({
 						for (const item of questionCacheItems) {
 							// 去重
 							if (questionCaches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
-								questionCaches.push(item);
+								questionCaches.unshift(item);
 							}
 						}
 
