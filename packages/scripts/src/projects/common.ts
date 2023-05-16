@@ -318,27 +318,31 @@ export const CommonProject = Project.create({
 								const t = Date.now();
 								let success = false;
 								let error;
-								const res = await Promise.race([
-									(async () => {
-										try {
-											return await request(new URL(item.url).origin + '/?t=' + t, {
-												type: 'GM_xmlhttpRequest',
-												method: 'get',
-												responseType: 'text',
-												headers: {
-													'Content-Type': 'text/html'
+								const isDisabled = this.cfg.disabledAnswererWrapperNames.find((name) => name === item.name);
+
+								const res = isDisabled
+									? false
+									: await Promise.race([
+											(async () => {
+												try {
+													return await request(new URL(item.url).origin + '/?t=' + t, {
+														type: 'GM_xmlhttpRequest',
+														method: 'get',
+														responseType: 'text',
+														headers: {
+															'Content-Type': 'text/html'
+														}
+													});
+												} catch (err) {
+													error = err;
+													return false;
 												}
-											});
-										} catch (err) {
-											error = err;
-											return false;
-										}
-									})(),
-									(async () => {
-										await $.sleep(10 * 1000);
-										return false;
-									})()
-								]);
+											})(),
+											(async () => {
+												await $.sleep(10 * 1000);
+												return false;
+											})()
+									  ]);
 								if (res) {
 									success = true;
 								} else {
@@ -347,7 +351,9 @@ export const CommonProject = Project.create({
 
 								const body = el('tbody');
 								body.append(el('td', item.name));
-								body.append(el('td', success ? '连接成功🟢' : error ? '连接失败🔴' : '连接超时🟡'));
+								body.append(
+									el('td', success ? '连接成功🟢' : isDisabled ? '已停用⚪' : error ? '连接失败🔴' : '连接超时🟡')
+								);
 								body.append(el('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
 								table.append(body);
 								loadedCount++;
