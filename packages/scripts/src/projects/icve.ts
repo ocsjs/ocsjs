@@ -159,7 +159,7 @@ export const IcveMoocProject = Project.create({
 					$$el('.s_sectionlist,.s_sectionwrap', mainContentWin.document).forEach((el) => (el.style.display = 'block'));
 				}
 
-				for (const job of $$el('.s_point', mainContentWin.document)) {
+				for (const job of $$el('.s_point[itemtype]', mainContentWin.document)) {
 					job.addEventListener('click', (e) => {
 						const lock = StudyLock.getLock();
 						// 如果是用户点击
@@ -237,15 +237,16 @@ export const IcveMoocProject = Project.create({
 
 					if (studyLock.canStudy()) {
 						let nextEl;
-						let isBellowCurrentPont = false;
-						const jobs = $$el('.s_point', mainContentWin.document);
+						// 是否处于当前章节之后
+						let isBellowCurrentJob = false;
+						const jobs = $$el('.s_point[itemtype]', mainContentWin.document);
 						for (let index = 0; index < jobs.length; index++) {
 							const job = jobs[index];
 							if (job.classList.contains('s_pointerct')) {
-								isBellowCurrentPont = true;
-							} else if (isBellowCurrentPont) {
-								if (job.querySelector('.done_icon_show') === null) {
-									$console.log('下一章：', $el('.s_pointti', job)?.title || '未知');
+								isBellowCurrentJob = true;
+							} else if (isBellowCurrentJob) {
+								if (job.querySelector('.done_icon_show') === null || this.cfg.restudy) {
+									$console.log('下一章：', job.title || $el('.s_pointti', job)?.title || '未知');
 									nextEl = job;
 									break;
 								}
