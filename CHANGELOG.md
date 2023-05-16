@@ -1,3 +1,22 @@
+## [4.4.15](https://github.com/ocsjs/ocsjs/compare/4.4.14...4.4.15) (2023-05-16)
+
+
+### Bug Fixes
+
+* **core:** 规范搜题请求处理，修复在url中存在变量时多加一个问号的BUG ([c0f561d](https://github.com/ocsjs/ocsjs/commit/c0f561d8c2ec6577f6594f0920bde9c686c23a22)), closes [#97](https://github.com/ocsjs/ocsjs/issues/97)
+
+
+
+## [4.4.14](https://github.com/ocsjs/ocsjs/compare/4.4.13...4.4.14) (2023-05-16)
+
+
+### Bug Fixes
+
+* **script:** 修复智慧职教多层级任务检测 ([64aaf13](https://github.com/ocsjs/ocsjs/commit/64aaf138762d21c3916c7dc7003a4ae3040b3655))
+* **script:** 优化题库状态停用显示 ([a012a56](https://github.com/ocsjs/ocsjs/commit/a012a569a5817f2af8ec655755d78b23447b48e8))
+
+
+
 ## [4.4.13](https://github.com/ocsjs/ocsjs/compare/4.4.12...4.4.13) (2023-05-12)
 
 
