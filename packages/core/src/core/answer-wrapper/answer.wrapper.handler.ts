@@ -62,30 +62,53 @@ export async function defaultAnswerWrapperHandler(
 			try {
 				// 答案列表
 				let results: Result[] = [];
-				// 构造请求数据
-				const data: Record<string, string> = Object.create({});
-				/** 构造一个请求数据 */
-				Reflect.ownKeys(wrapperData).forEach((key) => {
-					// 解析data数据
-					Reflect.set(data, key, resolvePlaceHolder(wrapperData[key.toString()]));
-				});
-				/** 解析 url 数据 */
-				let url = resolvePlaceHolder(wrapper.url);
+				// 请求数据
+				let requestData;
+				// 请求地址
+				let url: URL;
+				if (method === 'get') {
+					url = new URL(resolvePlaceHolder(wrapper.url, { encodeURI: true }));
+					/**
+					 * 如果 data 存在数据并且 method 为 get，则将 data 数据拼接到 url 上，覆盖原有的  url 同名参数
+					 * data 参数的优先级高于 url 参数
+					 */
+					Object.keys(wrapperData).forEach((key) => {
+						// searchParams.set 方法会自动编码，所以不需要 encodeURI: true
+						url.searchParams.set(key, resolvePlaceHolder(wrapperData[key.toString()]));
+					});
+					// get 的请求数据为空
+					requestData = {};
+				} else if (method === 'post') {
+					url = new URL(wrapper.url);
+					// 构造请求数据
+					const data: Record<string, string> = Object.create({});
+					/** 构造一个请求数据 */
+					Object.keys(wrapperData).forEach((key) => {
+						// 解析data数据
+						Reflect.set(data, key, resolvePlaceHolder(wrapperData[key]));
+					});
 
-				/** 请求參數 */
-				url = method === 'post' ? url : url + '?' + new URLSearchParams(data).toString();
-				const requestData = {
-					method,
-					contentType,
-					data,
-					type,
-					headers: JSON.parse(JSON.stringify(headers || {}))
-				};
+					requestData = data;
+				} else {
+					throw new Error('不支持的请求方式');
+				}
+
 				// 发送请求
-				const responseData = await Promise.race([request(url, requestData), $.sleep(30 * 1000)]);
+				const responseData = await Promise.race([
+					request(url.toString(), {
+						method,
+						// 历史遗留的命名问题
+						responseType: contentType,
+						data: requestData,
+						type,
+						headers: JSON.parse(JSON.stringify(headers || {}))
+					}),
+					$.sleep(30 * 1000)
+				]);
 				if (responseData === undefined) {
 					throw new Error('题库连接超时，请检查网络或者重试。');
 				}
+
 				/** 从 handler 获取搜索到的题目和回答 */
 
 				// eslint-disable-next-line no-new-func
@@ -130,13 +153,13 @@ export async function defaultAnswerWrapperHandler(
 	);
 
 	// 替换占位符
-	function resolvePlaceHolder(str: string) {
+	function resolvePlaceHolder(str: string, options?: { encodeURI?: boolean }) {
 		if (typeof str === 'string') {
 			const matches = str.match(/\${(.*?)}/g) || [];
 			matches.forEach((placeHolder) => {
 				/** 获取占位符的值 */
 				const value: any = env[placeHolder.replace(/\${(.*)}/, '$1')];
-				str = str.replace(placeHolder, value);
+				str = str.replace(placeHolder, options?.encodeURI ? encodeURIComponent(value) : value);
 			});
 		}
 
