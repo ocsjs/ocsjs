@@ -3,7 +3,7 @@
 # 自动发布npm包
 
 # 从控制台获取需要发布的版本
-read -p "请输入需要发布的版本: " version
+read -p "请输入需要发布的版本(例如: 0.0.1): " version
 # 判断是否为空
 if [ -z "$version" ]; then
     echo "版本号不能为空!"
@@ -25,7 +25,6 @@ if [ "$isRelease" = "y" ]; then
     # 更新日志
     npm run changelog &&
     # 保存
-    git add --all &&
     git commit -m "version release $version" &&
     git tag "$version" &&
     # 发布
