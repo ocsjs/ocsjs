@@ -138,16 +138,31 @@ export const $creator = {
 		script.panel = scriptPanel;
 
 		scriptPanel.notesContainer.innerHTML = script.configs?.notes?.defaultValue || '';
-		const els = $creator.configs(script.namespace, script.configs || {}, opts.onload);
+
+		let configs = Object.create({});
 		const elList = [];
-		for (const key in els) {
-			if (Object.prototype.hasOwnProperty.call(els, key)) {
-				elList.push(els[key]);
+		for (const key in script.configs) {
+			if (Object.prototype.hasOwnProperty.call(script.configs, key)) {
+				const cfg = script.configs[key];
+				// 如果存在分隔符
+				if (cfg.separator) {
+					// 将之前的配置项生成配置区域，并添加到列表中
+					elList.push($creator.configsArea($creator.configs(script.namespace, configs || {}, opts.onload)));
+					// 添加分隔符
+					elList.push(el('div', { className: 'separator', style: { margin: '0px 8px' } }, cfg.separator));
+					// 清空配置项
+					configs = Object.create({});
+				}
+
+				configs[key] = cfg;
 			}
 		}
+		// 如果还有剩余的配置项，生成配置区域，并添加到列表中
+		if (Object.keys(configs).length > 0) {
+			elList.push($creator.configsArea($creator.configs(script.namespace, configs || {}, opts.onload)));
+		}
 
-		scriptPanel.configsBody.append(...elList);
-		scriptPanel.configsContainer.append(scriptPanel.configsBody);
+		scriptPanel.configsContainer.replaceChildren(...elList);
 
 		return scriptPanel;
 	},

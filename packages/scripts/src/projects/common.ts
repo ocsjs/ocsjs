@@ -113,7 +113,13 @@ export const CommonProject = Project.create({
 						type: 'checkbox'
 					}
 				},
+				enableQuestionCaches: {
+					label: '题库缓存功能',
+					defaultValue: true,
+					attrs: { type: 'checkbox', title: '详情请前往 通用-其他应用-题库拓展查看。' }
+				},
 				answererWrappers: {
+					separator: '自动答题设置',
 					defaultValue: [] as AnswererWrapper[]
 				},
 				/**
@@ -121,11 +127,6 @@ export const CommonProject = Project.create({
 				 */
 				disabledAnswererWrapperNames: {
 					defaultValue: [] as string[]
-				},
-				enableQuestionCaches: {
-					label: '题库缓存功能',
-					defaultValue: true,
-					attrs: { type: 'checkbox', title: '详情请前往 通用-其他应用-题库拓展查看。' }
 				},
 				answererWrappersButton: {
 					label: '题库配置',

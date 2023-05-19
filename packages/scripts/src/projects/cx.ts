@@ -161,6 +161,7 @@ export const CXProject = Project.create({
 				 *
 				 */
 				enableMedia: {
+					separator: '任务点开关',
 					label: '开启-视频/音频自动播放',
 					attrs: { type: 'checkbox', title: '开启：音频和视频的自动播放' },
 					defaultValue: true
