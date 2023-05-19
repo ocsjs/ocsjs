@@ -360,7 +360,8 @@ export const CXProject = Project.create({
 										if (CXProject.scripts.study.cfg.showTextareaWhenEdit) {
 											const defaultText = el('span', { innerHTML: ue.textarea.value }).textContent;
 											$modal('prompt', {
-												content: '请在此文本框进行编辑，防止超星无法复制粘贴。',
+												content:
+													'请在此文本框进行编辑，防止超星无法复制粘贴。(如需关闭请前往设置: 课程学习-编辑时显示自定义编辑框)',
 												width: 800,
 												inputDefaultValue: defaultText || '',
 												modalInputType: 'textarea',
