@@ -30,7 +30,10 @@
 	"devDependencies": {
 		"@types/marked": "^4.0.8",
 		"@types/md5": "^2.3.2",
+		"@types/semver": "^7.5.0",
 		"@types/tampermonkey": "^4.0.5",
+		"dotenv": "^16.0.3",
+		"rollup-plugin-visualizer": "^5.9.0",
 		"vite": "^2.9.15",
 		"vite-plugin-banner": "^0.6.1"
 	},

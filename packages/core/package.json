@@ -30,8 +30,11 @@
 	"homepage": "https://github.com/ocsjs/ocsjs#readme",
 	"devDependencies": {
 		"@types/event-emitter": "^0.3.3",
+		"@types/lodash": "^4.14.194",
 		"@types/string-similarity": "^4.0.0",
 		"@types/tampermonkey": "^4.0.5",
+		"dotenv": "^16.0.3",
+		"rollup-plugin-visualizer": "^5.9.0",
 		"typedoc": "^0.23.23",
 		"vite": "^2.9.15",
 		"vite-plugin-banner": "^0.6.1"
@@ -39,6 +42,7 @@
 	"dependencies": {
 		"events": "^3.3.0",
 		"lodash": "^4.17.21",
+		"semver": "^7.3.5",
 		"string-similarity": "^4.0.4"
 	}
 }
