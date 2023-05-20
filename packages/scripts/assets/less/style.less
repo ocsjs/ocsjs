@@ -198,7 +198,6 @@ script-panel-element {
 	background-color: white;
 	border-radius: 0px 0px 8px 8px;
 	padding: 0px 8px 12px 8px;
-	resize: vertical;
 	overflow: auto;
 
 	.script-panel-body {
@@ -244,12 +243,8 @@ script-panel-element + script-panel-element {
 	line-height: 18px;
 }
 
-.configs {
-	display: table;
-	background: #e1e1e107;
-	width: -webkit-fill-available;
-
-	.lock {
+.configs-container {
+	&.lock {
 		filter: blur(1px);
 		user-select: none;
 		-webkit-user-select: none;
@@ -260,7 +255,7 @@ script-panel-element + script-panel-element {
 		cursor: not-allowed !important;
 		border-radius: 4px;
 		position: absolute;
-		left: 16px;
+		left: 0px;
 		z-index: 1;
 		display: inline-flex;
 		align-items: center;
@@ -273,16 +268,22 @@ script-panel-element + script-panel-element {
 		box-shadow: 0px 0px 12px #6a6a6a98;
 		padding: 2px;
 	}
+}
+
+.configs {
+	display: table;
+	background: #e1e1e107;
+	width: -webkit-fill-available;
 
 	.configs-body {
 		display: table-row-group;
 
 		config-element + config-element {
 			label {
-				padding-top: 3px;
+				padding-top: 4px;
 			}
 			.config-wrapper {
-				padding-top: 3px;
+				padding-top: 4px;
 			}
 		}
 

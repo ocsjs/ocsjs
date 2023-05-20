@@ -157,7 +157,7 @@ export const BackgroundProject = Project.create({
 			onrender({ panel }) {
 				// 同步面板不会被锁定
 				panel.lockWrapper.remove();
-				panel.configsBody.classList.remove('lock');
+				panel.configsContainer.classList.remove('lock');
 
 				const update = () => {
 					if (this.cfg.sync) {
@@ -228,10 +228,12 @@ export const BackgroundProject = Project.create({
 										// 重新定义渲染函数。在渲染后添加锁定面板的代码
 										script.onrender = ({ panel, header }) => {
 											originalRender?.({ panel, header });
-											if (panel.configsBody.children.length) {
-												panel.configsBody.classList.add('lock');
-												panel.lockWrapper.style.width = (panel.configsBody.clientWidth || panel.clientWidth) + 'px';
-												panel.lockWrapper.style.height = (panel.configsBody.clientHeight || panel.clientHeight) + 'px';
+											if (panel.configsContainer.children.length) {
+												panel.configsContainer.classList.add('lock');
+												panel.lockWrapper.style.width =
+													(panel.configsContainer.clientWidth || panel.clientWidth) + 'px';
+												panel.lockWrapper.style.height =
+													(panel.configsContainer.clientHeight || panel.clientHeight) + 'px';
 												panel.configsContainer.prepend(panel.lockWrapper);
 
 												panel.lockWrapper.title =

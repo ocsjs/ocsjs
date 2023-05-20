@@ -17,7 +17,7 @@ export class ScriptPanelElement extends IElement {
 	/** 创建提示板块 */
 	notesContainer: HTMLDivElement = el('div', { className: 'notes card' });
 	/** 创建设置板块 */
-	configsContainer: HTMLDivElement = el('div', { className: 'card' });
+	configsContainer: HTMLDivElement = el('div', { className: 'configs-container card' });
 	/** 主体 */
 	body: HTMLDivElement = el('div', { className: 'script-panel-body' });
 	/** 锁定配置板块 */

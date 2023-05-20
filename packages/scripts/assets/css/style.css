@@ -185,7 +185,6 @@ script-panel-element {
   background-color: white;
   border-radius: 0px 0px 8px 8px;
   padding: 0px 8px 12px 8px;
-  resize: vertical;
   overflow: auto;
 }
 script-panel-element .script-panel-body {
@@ -224,42 +223,42 @@ script-panel-element + script-panel-element {
   border-radius: 2px;
   line-height: 18px;
 }
-.configs {
-  display: table;
-  background: #e1e1e107;
-  width: -webkit-fill-available;
-}
-.configs .lock {
+.configs-container.lock {
   filter: blur(1px);
   user-select: none;
   -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
 }
-.configs .lock-wrapper {
+.configs-container .lock-wrapper {
   cursor: not-allowed !important;
   border-radius: 4px;
   position: absolute;
-  left: 16px;
+  left: 0px;
   z-index: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
-.configs .lock-message {
+.configs-container .lock-message {
   background-color: #ffffff7d;
   border-radius: 4px;
   box-shadow: 0px 0px 12px #6a6a6a98;
   padding: 2px;
 }
+.configs {
+  display: table;
+  background: #e1e1e107;
+  width: -webkit-fill-available;
+}
 .configs .configs-body {
   display: table-row-group;
 }
 .configs .configs-body config-element + config-element label {
-  padding-top: 3px;
+  padding-top: 4px;
 }
 .configs .configs-body config-element + config-element .config-wrapper {
-  padding-top: 3px;
+  padding-top: 4px;
 }
 .configs .configs-body config-element {
   width: 100%;
