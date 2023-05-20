@@ -21,6 +21,8 @@ if [ "$isRelease" = "y" ]; then
     # 更新版本
     npm version "$version" --no-git-tag-version &&
     # 本地构建
+    tsc -p ./packages/core/tsconfig.json &&
+    tsc -p ./packages/scripts/tsconfig.json &&
     npm run build:core &&
     # 更新日志
     npm run changelog &&
