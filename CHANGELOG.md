@@ -1,3 +1,12 @@
+## [4.4.22](https://github.com/ocsjs/ocsjs/compare/4.4.21...4.4.22) (2023-05-20)
+
+
+### Bug Fixes
+
+* **build:** update build file ([c5d50b1](https://github.com/ocsjs/ocsjs/commit/c5d50b14bc4d834a3d5b8c82931abae8b15fca70))
+
+
+
 ## [4.4.21](https://github.com/ocsjs/ocsjs/compare/4.4.20...4.4.21) (2023-05-20)
 
 
