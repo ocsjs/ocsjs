@@ -1,3 +1,18 @@
+## [4.4.19](https://github.com/ocsjs/ocsjs/compare/4.4.15...4.4.19) (2023-05-20)
+
+
+### Bug Fixes
+
+* **all:** 修复添加配置分隔线后，OCS配置同步锁的样式显示出错 ([a257084](https://github.com/ocsjs/ocsjs/commit/a25708419505672e40617ccc2a9088a6038ce971))
+* **script:** 添加软件自动登录辅助页面 ([a2bfa20](https://github.com/ocsjs/ocsjs/commit/a2bfa20014c84d8ee7d59032eca01bac225d5d0e))
+
+
+### Features
+
+* **all:** 添加配置分割线，便于设置区域分组 ([980d591](https://github.com/ocsjs/ocsjs/commit/980d591c92466c79d2a35f40c8dacd6b633ed7a7))
+
+
+
 ## [4.4.15](https://github.com/ocsjs/ocsjs/compare/4.4.14...4.4.15) (2023-05-16)
 
 

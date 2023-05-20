@@ -1,6 +1,6 @@
 {
 	"name": "ocsjs",
-	"version": "4.4.15",
+	"version": "4.4.19",
 	"description": "ocs - online course script 在线网络课程辅助工具",
 	"types": "./lib/src/core/index.d.ts",
 	"main": "./lib/src/core/index.js",
@@ -13,8 +13,8 @@
 		"build:core": "gulp -f ./scripts/build-core.js",
 		"build:app": "gulp -f ./scripts/build-app.js",
 		"tsc": "pnpm lint && gulp -f ./scripts/tsc.js",
-		"lint": "pnpm format && eslint  ./packages --ext .ts,.tsx,.js,.jsx,.vue --fix",
-		"format": "prettier -c ./.prettierrc.json  **/*.ts  **/*.js **/*.vue **/*.css  --write",
+		"lint": "pnpm format && eslint  ./packages --ext .ts,.tsx,.js,.jsx --fix",
+		"format": "prettier -c ./.prettierrc.json  **/*.ts  **/*.js  **/*.css  --write",
 		"release": "sh ./scripts/release.sh",
 		"pub:minor": "npm version minor && pnpm build:core && npm publish",
 		"pub:major": "npm version major && pnpm build:core && npm publish",
