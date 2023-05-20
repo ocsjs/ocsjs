@@ -277,7 +277,9 @@ export const BackgroundProject = Project.create({
 			name: '软件登录辅助',
 			url: [
 				['超星登录', 'passport2.chaoxing.com/login'],
-				['智慧树登录', 'passport.zhihuishu.com/login']
+				['智慧树登录', 'passport.zhihuishu.com/login'],
+				['职教云登录', 'zjy2.icve.com.cn/portal/login.html'],
+				['智慧职教登录', 'sso.icve.com.cn/sso/auth']
 			],
 			hideInPanel: true,
 			oncomplete() {
