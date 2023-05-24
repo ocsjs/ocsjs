@@ -57,11 +57,14 @@ export const IcveMoocProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',
-			url: [['首页', 'user.icve.com.cn']],
+			url: [
+				['个人首页', 'user.icve.com.cn'],
+				['首页', 'mooc.icve.com.cn']
+			],
 			namespace: 'icve.guide',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['点击任意课程进入。']).outerHTML
+					defaultValue: $creator.notes(['请点击任意课程进入。']).outerHTML
 				}
 			},
 			oncomplete() {
