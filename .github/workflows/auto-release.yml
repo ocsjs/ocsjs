@@ -40,5 +40,5 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: './release/index.js,./release/core.js,./release/ocs.user.js'
+          artifacts: './release/index.js,./release/core.js,./release/ocs.user.js,./release/style.css'
           body: 'Userscript Auto Releases'
