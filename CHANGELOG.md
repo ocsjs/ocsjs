@@ -1,3 +1,13 @@
+## [4.4.24](https://github.com/ocsjs/ocsjs/compare/4.4.23...4.4.24) (2023-05-25)
+
+
+### Bug Fixes
+
+* **script and core:** 修复题库状态检测无限执行的BUG，优化 onrender 中的监听器执行逻辑 ([cbe7f0b](https://github.com/ocsjs/ocsjs/commit/cbe7f0b9a1a2bdb47f0dff09739b41270b556c70))
+* **script:** 优化智慧职教使用提示 ([ca5d4b3](https://github.com/ocsjs/ocsjs/commit/ca5d4b3ea4f29a265497ae0b401f3e28a575b081))
+
+
+
 ## [4.4.23](https://github.com/ocsjs/ocsjs/compare/4.4.22...4.4.23) (2023-05-20)
 
 
