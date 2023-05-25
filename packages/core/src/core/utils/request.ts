@@ -41,7 +41,7 @@ export function request<T extends 'json' | 'text'>(
 										reject(error);
 									}
 								} else {
-									resolve(response.responseText as any);
+									resolve(response.responseText || '');
 								}
 							} else {
 								reject(response.responseText);

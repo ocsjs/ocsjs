@@ -348,7 +348,6 @@ export const CommonProject = Project.create({
 												return false;
 											})()
 									  ]);
-
 								if (typeof res === 'string') {
 									success = true;
 								} else {
