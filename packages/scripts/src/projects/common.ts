@@ -17,7 +17,7 @@ import {
 	$modal
 } from '@ocsjs/core';
 
-import type { AnswererWrapper, SearchInformation } from '@ocsjs/core';
+import type { AnswererWrapper, SearchInformation, StoreListenerType } from '@ocsjs/core';
 import { definedProjects } from '../index';
 import { markdown } from '../utils/markdown';
 
@@ -58,6 +58,11 @@ const state = {
 					.querySelector<HTMLElement>(`.e-q-body[data-num="${index + 1}"]`)
 					?.scrollIntoView({ behavior: 'smooth' });
 			}
+		}
+	},
+	setting: {
+		listenerIds: {
+			aw: 0 as StoreListenerType
 		}
 	}
 };
@@ -288,7 +293,8 @@ export const CommonProject = Project.create({
 			onrender({ panel }) {
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
 				if ($gm.getInfos() !== undefined) {
-					panel.body.replaceChildren(el('hr'));
+					panel.body.replaceChildren(...(this.cfg.answererWrappers.length ? [el('hr')] : []));
+
 					const refresh = el(
 						'button',
 						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
@@ -311,8 +317,9 @@ export const CommonProject = Project.create({
 						if (this.cfg.answererWrappers.length) {
 							refresh.style.display = 'block';
 							tableContainer.style.display = 'block';
-							refresh.textContent = '🚫正在加载...';
+							refresh.textContent = '🚫正在加载题库状态...';
 							refresh.setAttribute('disabled', 'true');
+
 							const table = el('table');
 							table.style.width = '100%';
 							this.cfg.answererWrappers.forEach(async (item) => {
@@ -328,11 +335,8 @@ export const CommonProject = Project.create({
 												try {
 													return await request(new URL(item.url).origin + '/?t=' + t, {
 														type: 'GM_xmlhttpRequest',
-														method: 'get',
-														responseType: 'text',
-														headers: {
-															'Content-Type': 'text/html'
-														}
+														method: 'head',
+														responseType: 'text'
 													});
 												} catch (err) {
 													error = err;
@@ -344,7 +348,8 @@ export const CommonProject = Project.create({
 												return false;
 											})()
 									  ]);
-								if (res) {
+
+								if (typeof res === 'string') {
 									success = true;
 								} else {
 									success = false;
@@ -363,7 +368,7 @@ export const CommonProject = Project.create({
 									setTimeout(() => {
 										refresh.textContent = '🔄️刷新题库状态';
 										refresh.removeAttribute('disabled');
-									}, 3000);
+									}, 2000);
 								}
 							});
 							tableContainer.append(table);
@@ -374,8 +379,12 @@ export const CommonProject = Project.create({
 					};
 
 					updateState();
-					this.onConfigChange('answererWrappers', () => {
-						updateState();
+
+					this.offConfigChange(state.setting.listenerIds.aw);
+					state.setting.listenerIds.aw = this.onConfigChange('answererWrappers', (_, __, remote) => {
+						if (remote === false) {
+							updateState();
+						}
 					});
 				}
 			},

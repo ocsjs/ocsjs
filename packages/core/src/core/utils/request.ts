@@ -9,7 +9,7 @@ export function request<T extends 'json' | 'text'>(
 	url: string,
 	opts: {
 		type: 'fetch' | 'GM_xmlhttpRequest';
-		method?: 'get' | 'post';
+		method?: 'get' | 'post' | 'head';
 		responseType?: T;
 		headers?: Record<string, string>;
 		data?: Record<string, string>;
@@ -28,7 +28,7 @@ export function request<T extends 'json' | 'text'>(
 					// eslint-disable-next-line no-undef
 					GM_xmlhttpRequest({
 						url,
-						method: method === 'get' ? 'GET' : 'POST',
+						method: method.toUpperCase() as 'GET' | 'HEAD' | 'POST',
 						data: Object.keys(data).length ? new URLSearchParams(data).toString() : undefined,
 						headers: Object.keys(headers).length ? headers : undefined,
 						responseType: responseType === 'json' ? 'json' : undefined,

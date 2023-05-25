@@ -173,7 +173,7 @@ export class Script<
 		});
 	}
 
-	offConfigChange(listener: number | EventListener) {
+	offConfigChange(listener: number | void | EventListener) {
 		$store.removeChangeListener(listener);
 	}
 

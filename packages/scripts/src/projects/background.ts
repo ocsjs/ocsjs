@@ -1,12 +1,32 @@
-import { $, $creator, $gm, $message, $modal, $store, Project, RenderScript, Script, el, request } from '@ocsjs/core';
+import {
+	$,
+	$creator,
+	$gm,
+	$message,
+	$modal,
+	$store,
+	Project,
+	RenderScript,
+	Script,
+	StoreListenerType,
+	el,
+	request
+} from '@ocsjs/core';
 import gt from 'semver/functions/gt';
 import { CommonProject } from './common';
 import { definedProjects } from '..';
 
 const state = {
 	console: {
-		listener: {
-			logs: 0
+		listenerIds: {
+			logs: 0 as StoreListenerType
+		}
+	},
+	app: {
+		listenerIds: {
+			sync: 0 as StoreListenerType,
+			connected: 0 as StoreListenerType,
+			closeSync: 0 as StoreListenerType
 		}
 	}
 };
@@ -28,8 +48,6 @@ export const BackgroundProject = Project.create({
 				}
 			},
 			onrender({ panel }) {
-				this.offConfigChange(state.console.listener.logs);
-
 				const getTypeDesc = (type: LogType) =>
 					type === 'info'
 						? '信息'
@@ -98,16 +116,16 @@ export const BackgroundProject = Project.create({
 
 				const { div, logs } = showLogs();
 
-				state.console.listener.logs =
-					this.onConfigChange('logs', (logs) => {
-						const log = createLog(logs[logs.length - 1]);
-						div.append(log);
-						setTimeout(() => {
-							if (isScrollBottom(div)) {
-								log.scrollIntoView();
-							}
-						}, 10);
-					}) || 0;
+				this.offConfigChange(state.console.listenerIds.logs);
+				state.console.listenerIds.logs = this.onConfigChange('logs', (logs) => {
+					const log = createLog(logs[logs.length - 1]);
+					div.append(log);
+					setTimeout(() => {
+						if (isScrollBottom(div)) {
+							log.scrollIntoView();
+						}
+					}, 10);
+				});
 
 				const show = () => {
 					panel.body.replaceChildren(div);
@@ -170,9 +188,12 @@ export const BackgroundProject = Project.create({
 				};
 				update();
 
-				this.onConfigChange('sync', update);
-				this.onConfigChange('connected', update);
-				this.onConfigChange('closeSync', (closeSync) => {
+				this.offConfigChange(state.app.listenerIds.sync);
+				this.offConfigChange(state.app.listenerIds.connected);
+				this.offConfigChange(state.app.listenerIds.closeSync);
+				state.app.listenerIds.sync = this.onConfigChange('sync', update);
+				state.app.listenerIds.connected = this.onConfigChange('connected', update);
+				state.app.listenerIds.closeSync = this.onConfigChange('closeSync', (closeSync) => {
 					if (closeSync) {
 						this.cfg.sync = false;
 						this.cfg.connected = false;

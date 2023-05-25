@@ -16,10 +16,12 @@ export interface StoreProvider {
 	getTab(key: string): Promise<any>;
 	setTab(key: string, value: any): Promise<any>;
 	addChangeListener(key: string, listener: (curr: any, pre: any, remote?: boolean) => void): number | void;
-	removeChangeListener(listener: number | EventListener): void;
+	removeChangeListener(listener: number | void | EventListener): void;
 	addTabChangeListener(key: string, listener: (curr: any, pre: any) => void): void | Promise<number>;
 	removeTabChangeListener(key: string, listener: number | EventListener): void;
 }
+
+export type StoreListenerType = number | void | EventListener;
 
 export class LocalStoreChangeEvent extends Event {
 	key: string = '';
@@ -153,9 +155,11 @@ export class GMStoreProvider implements StoreProvider {
 		});
 	}
 
-	removeChangeListener(listenerId: number): void {
-		// eslint-disable-next-line no-undef
-		GM_removeValueChangeListener(listenerId);
+	removeChangeListener(listenerId: number | void): void {
+		if (typeof listenerId === 'number') {
+			// eslint-disable-next-line no-undef
+			GM_removeValueChangeListener(listenerId);
+		}
 	}
 
 	async addTabChangeListener(key: string, listener: (curr: any, pre: any) => void) {
