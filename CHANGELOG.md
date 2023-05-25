@@ -1,3 +1,12 @@
+## [4.4.25](https://github.com/ocsjs/ocsjs/compare/4.4.24...4.4.25) (2023-05-25)
+
+
+### Bug Fixes
+
+* **core:** 修复上个版本题库连接超时问题 ([1c045ef](https://github.com/ocsjs/ocsjs/commit/1c045ef549a75717981bd99e97b4ecbee9d6f20d))
+
+
+
 ## [4.4.24](https://github.com/ocsjs/ocsjs/compare/4.4.23...4.4.24) (2023-05-25)
 
 
