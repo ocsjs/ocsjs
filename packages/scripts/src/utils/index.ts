@@ -27,7 +27,10 @@ export function workPreCheckMessage(
 
 	if (opts.answererWrappers.length === 0) {
 		onNoAnswererWrappers?.(opts);
-		return $message('warn', { content: '检测到题库配置为空，无法自动答题，请前往全局设置页面进行配置。' });
+		return $message('warn', {
+			content: '检测到题库配置为空，无法自动答题，请前往 通用-全局设置 页面进行配置。',
+			duration: 0
+		});
 	} else {
 		return $message('info', {
 			duration: 5,
