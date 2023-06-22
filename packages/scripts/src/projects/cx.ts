@@ -1484,6 +1484,7 @@ export function getValidNumber(...nums: number[]) {
  * 5 名词解释
  * 6 论述题
  * 7 计算题
+ * 10 资料题
  * 11 连线题
  * 14 完形填空
  * 15 阅读理解
@@ -1497,7 +1498,7 @@ function getQuestionType(
 		? 'multiple'
 		: val === 3
 		? 'judgement'
-		: [2, 4, 5, 6, 7].some((t) => t === val)
+		: [2, 4, 5, 6, 7, 10].some((t) => t === val)
 		? 'completion'
 		: val === 11
 		? 'line'
