@@ -1,3 +1,15 @@
+## [4.4.29](https://github.com/ocsjs/ocsjs/compare/4.4.25...4.4.29) (2023-06-22)
+
+
+### Bug Fixes
+
+* **build:** 对脚本打包的 match 元数据进行去重 ([9de7d2c](https://github.com/ocsjs/ocsjs/commit/9de7d2c99a97c0786a3aa3dc9981643eedfe407d))
+* **script:** 将题库配置为空提醒设置为一直显示 ([d07bdbf](https://github.com/ocsjs/ocsjs/commit/d07bdbfd0735b4ccd4bb9fabef6a6f5f15a73707))
+* **script:** 新增超星题目类型支持：资料题 ([b6d3a00](https://github.com/ocsjs/ocsjs/commit/b6d3a006fb64b1f5aa58f806a68cfc56980ea340))
+* **script:** 修复超星作业考试文本框无法自动保存BUG ([ec58efe](https://github.com/ocsjs/ocsjs/commit/ec58efedc5d047ddb1c66b32023df0e24709f315))
+
+
+
 ## [4.4.25](https://github.com/ocsjs/ocsjs/compare/4.4.24...4.4.25) (2023-05-25)
 
 
