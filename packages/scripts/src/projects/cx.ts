@@ -561,9 +561,9 @@ export function workOrExam(
 							if (textareaFrame?.contentDocument) {
 								textareaFrame.contentDocument.body.innerHTML = answer;
 							}
-							if (option?.parentElement) {
+							if (option?.parentElement?.parentElement) {
 								/** 如果存在保存按钮则点击 */
-								$el('[onclick*=saveQuestion]', option?.parentElement)?.click();
+								$el('[onclick*=saveQuestion]', option?.parentElement?.parentElement)?.click();
 							}
 						}
 					}
