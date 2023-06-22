@@ -1,3 +1,12 @@
+## [4.4.30](https://github.com/ocsjs/ocsjs/compare/4.4.29...4.4.30) (2023-06-22)
+
+
+### Bug Fixes
+
+* **script:** 新增超星分录题支持 ([68c007b](https://github.com/ocsjs/ocsjs/commit/68c007bb7ad890e57cec8cd5c39ff30b00ee599f))
+
+
+
 ## [4.4.29](https://github.com/ocsjs/ocsjs/compare/4.4.25...4.4.29) (2023-06-22)
 
 
