@@ -1321,9 +1321,9 @@ async function chapterTestTask(
 						if (textareaFrame?.contentDocument) {
 							textareaFrame.contentDocument.body.innerHTML = answer;
 						}
-						if (option?.parentElement) {
+						if (option?.parentElement?.parentElement) {
 							/** 如果存在保存按钮则点击 */
-							$el('[onclick*=saveQuestion]', option.parentElement)?.click();
+							$el('[onclick*=saveQuestion]', option.parentElement.parentElement)?.click();
 						}
 					}
 				};
@@ -1423,10 +1423,14 @@ async function chapterTestTask(
 			/** 判断题转换成文字，以便于答题程序判断 */
 			if (type === 'judgement') {
 				elements.options.forEach((option) => {
-					const ri = option.querySelector('.ri');
-					const span = document.createElement('span');
-					span.innerText = ri ? '√' : '×';
-					option.appendChild(span);
+					if (option.innerText.includes('对') || option.innerText.includes('错')) {
+						// 2023/8/5日后超星已修复判断题，将图片修改成文字，如果已经有对错的文本，则不需要再转换
+					} else {
+						const ri = option.querySelector('.ri');
+						const span = document.createElement('span');
+						span.innerText = ri ? '√' : '×';
+						option.appendChild(span);
+					}
 				});
 			}
 		}
