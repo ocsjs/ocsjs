@@ -1,3 +1,12 @@
+## [4.4.31](https://github.com/ocsjs/ocsjs/compare/4.4.30...4.4.31) (2023-08-05)
+
+
+### Bug Fixes
+
+* **script:** 修复超星判断题更新后，文字优化不兼容的问题 ([f7beff9](https://github.com/ocsjs/ocsjs/commit/f7beff9e109c5c07a2f27df567c7cff319a4caff))
+
+
+
 ## [4.4.30](https://github.com/ocsjs/ocsjs/compare/4.4.29...4.4.30) (2023-06-22)
 
 
