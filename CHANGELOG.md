@@ -1,3 +1,12 @@
+## [4.4.33](https://github.com/ocsjs/ocsjs/compare/4.4.32...4.4.33) (2023-08-25)
+
+
+### Bug Fixes
+
+* 优化github actions ([9f6608c](https://github.com/ocsjs/ocsjs/commit/9f6608cd775ac121ce5fcb070ba0b1b699a54cc6))
+
+
+
 ## [4.4.32](https://github.com/ocsjs/ocsjs/compare/4.4.31...4.4.32) (2023-08-25)
 
 
