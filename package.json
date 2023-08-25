@@ -18,7 +18,7 @@
 		"pub:minor": "npm version minor && pnpm build:core && npm publish",
 		"pub:major": "npm version major && pnpm build:core && npm publish",
 		"changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file -r 0",
-		"changelog:current": "conventional-changelog -p angular -i CHANGELOG_CURRENT.md --same-file -r 1",
+		"changelog:current": "conventional-changelog -p angular -o CHANGELOG_CURRENT.md -r 1",
 		"init-commitizen": "commitizen init cz-conventional-changelog --save --save-exact"
 	},
 	"devDependencies": {
