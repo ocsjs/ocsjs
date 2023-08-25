@@ -6,7 +6,7 @@ name: Userscript Auto Releases
 on:
   push:
     tags:
-      - '*'
+      - "*"
 
 jobs:
   build:
@@ -36,9 +36,10 @@ jobs:
           cd ../../
           npm run tsc
       - name: Build ocs scripts
-        run: npm run build:core
+        run: npm run build
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: './release/index.js,./release/core.js,./release/ocs.user.js,./release/style.css'
-          body: 'Userscript Auto Releases'
+          artifactContentType: "html/text"
+          artifacts: "./release/core.js,./release/ocs.user.js"
+          bodyFile: "./RELEASE_README.md"
