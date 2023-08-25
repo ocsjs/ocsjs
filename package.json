@@ -9,9 +9,8 @@
 		"dist"
 	],
 	"scripts": {
-		"dev:core": "gulp -f ./scripts/dev-core.js",
-		"build:core": "gulp -f ./scripts/build-core.js",
-		"build:app": "gulp -f ./scripts/build-app.js",
+		"dev": "gulp -f ./scripts/dev-core.js",
+		"build": "gulp -f ./scripts/build-core.js",
 		"tsc": "pnpm lint && gulp -f ./scripts/tsc.js",
 		"lint": "pnpm format && eslint  ./packages --ext .ts,.tsx,.js,.jsx --fix",
 		"format": "prettier -c ./.prettierrc.json  **/*.ts  **/*.js  **/*.css  --write",

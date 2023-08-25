@@ -23,7 +23,7 @@ if [ "$isRelease" = "y" ]; then
     # 本地构建
     tsc -p ./packages/core/tsconfig.json &&
     tsc -p ./packages/scripts/tsconfig.json &&
-    npm run build:core &&
+    npm run build &&
     # 更新日志
     npm run changelog &&
     # 保存
