@@ -640,7 +640,10 @@ async function watch(
  * @param definition 清晰度的类名
  */
 function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
-	$el(`.definiLines .${definition}`)?.click();
+	const target = $el(`.definiLines .${definition}`);
+	if (target) {
+		stopPropagationClick(target);
+	}
 }
 
 /**
@@ -648,7 +651,19 @@ function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
  * @param playbackRate 播放速度
  */
 function switchPlaybackRate(playbackRate: number) {
-	$el(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`)?.click();
+	const target = $el(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
+	if (target) {
+		stopPropagationClick(target);
+	}
+}
+
+function stopPropagationClick(el: HTMLElement) {
+	const func = function (e: MouseEvent) {
+		e.stopPropagation();
+		el.removeEventListener('click', func);
+	};
+	el.addEventListener('click', func);
+	el.click();
 }
 
 /**
