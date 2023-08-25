@@ -42,4 +42,4 @@ jobs:
         with:
           artifactContentType: "html/text"
           artifacts: "./release/core.js,./release/ocs.user.js"
-          bodyFile: "./RELEASE_README.md"
+          bodyFile: "./CHANGELOG_CURRENT.md"
