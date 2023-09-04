@@ -1307,7 +1307,12 @@ async function chapterTestTask(
 
 				const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
 					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						if (option?.parentElement?.querySelector('label input')?.getAttribute('checked') === 'checked') {
+						// 检查是否已经选择
+						const checked =
+							option?.parentElement?.querySelector('label input')?.getAttribute('checked') === 'checked' ||
+							// 适配2023/9月最新版本
+							option?.parentElement?.getAttribute('aria-checked') === 'true';
+						if (checked) {
 							// 跳过
 						} else {
 							option?.click();
