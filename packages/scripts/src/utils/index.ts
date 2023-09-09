@@ -1,4 +1,5 @@
 import { $creator, $message, $modal, AnswererWrapper, MessageElement, WorkUploadType, el } from '@ocsjs/core';
+import { $console } from '../projects/background';
 
 export interface CommonWorkOptions {
 	period: number;
@@ -70,7 +71,7 @@ export function createRangeTooltip(
 }
 
 // 有些网课会改变 media.play 方法，所以可能不是一个 promise
-export async function playMedia(playFunction: () => Promise<void> | undefined) {
+export async function playMedia(playFunction: () => Promise<void> | undefined): Promise<boolean> {
 	//  尝试播放
 	const tryPlayMedia = () => {
 		return new Promise<void>((resolve, reject) => {
@@ -89,7 +90,9 @@ export async function playMedia(playFunction: () => Promise<void> | undefined) {
 
 	try {
 		await tryPlayMedia();
+		return true;
 	} catch (err) {
+		console.error(err);
 		if (String(err).includes(`failed because the user didn't interact with the document first`)) {
 			$modal('alert', {
 				content:
@@ -98,6 +101,12 @@ export async function playMedia(playFunction: () => Promise<void> | undefined) {
 					await tryPlayMedia();
 				}
 			});
+			return true;
+		} else if (String(err).includes('The element has no supported sources')) {
+			$console.error('当前视频无法播放。');
+		} else {
+			$console.error('播放视频时发生未知错误：' + String(err));
 		}
+		return false;
 	}
 }
