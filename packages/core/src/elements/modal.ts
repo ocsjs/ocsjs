@@ -15,7 +15,8 @@ export class ModalElement extends IElement {
 	/** 弹窗主体  */
 	body: HTMLDivElement = el('div', { className: 'modal-body' });
 	/** 弹窗底部 */
-	footer: HTMLDivElement = el('div', { className: 'modal-footer' });
+	footerContainer: HTMLDivElement = el('div', { className: 'modal-footer' });
+	footer: HTMLDivElement = el('div');
 	/** 弹窗确认按钮 */
 	confirmButton?: HTMLButtonElement | null;
 	/** 弹窗取消按钮 */
@@ -85,39 +86,45 @@ export class ModalElement extends IElement {
 		this.modalInput.placeholder = this.placeholder || '';
 		this.modalInput.value = this.inputDefaultValue || '';
 
-		// 底部
-		this.footer.append(this.modalInput);
 		// 添加到模态框
-		this.append(profile, this._title, this.body, this.footer);
-
+		this.append(profile, this._title, this.body, this.footerContainer);
+		// 设置模态框宽度
 		this.style.width = (this.width || 400) + 'px';
-		if (this.cancelButton === undefined) {
-			this.cancelButton = el('button', { className: 'modal-cancel-button' });
-			this.cancelButton.innerText = this.cancelButtonText || '取消';
-			this.cancelButton.addEventListener('click', () => {
-				this.onCancel?.();
-				this.onClose?.();
-				this.remove();
-			});
-		}
-		if (this.confirmButton === undefined) {
-			this.confirmButton = el('button', { className: 'modal-confirm-button' });
-			this.confirmButton.innerText = this.confirmButtonText || '确定';
-			this.confirmButton.addEventListener('click', async () => {
-				if ((await this.onConfirm?.(this.modalInput.value)) !== false) {
+		// 底部
+
+		// 如果没有自定义底部，则按照类型来添加
+		if (this.footer === undefined) {
+			this.footerContainer.append(this.modalInput);
+			if (this.footer === undefined && this.cancelButton === undefined) {
+				this.cancelButton = el('button', { className: 'modal-cancel-button' });
+				this.cancelButton.innerText = this.cancelButtonText || '取消';
+				this.cancelButton.addEventListener('click', () => {
+					this.onCancel?.();
+					this.onClose?.();
 					this.remove();
-					this.onClose?.(this.modalInput.value);
-				}
-			});
-		}
+				});
+			}
+			if (this.footer === undefined && this.confirmButton === undefined) {
+				this.confirmButton = el('button', { className: 'modal-confirm-button' });
+				this.confirmButton.innerText = this.confirmButtonText || '确定';
+				this.confirmButton.addEventListener('click', async () => {
+					if ((await this.onConfirm?.(this.modalInput.value)) !== false) {
+						this.remove();
+						this.onClose?.(this.modalInput.value);
+					}
+				});
+			}
 
-		this.cancelButton !== null && this.footer.append(this.cancelButton);
-		this.confirmButton !== null && this.footer.append(this.confirmButton);
+			this.cancelButton && this.footerContainer.append(this.cancelButton);
+			this.confirmButton && this.footerContainer.append(this.confirmButton);
 
-		if (this.type === 'simple') {
-			this.footer.remove();
-		} else if (this.type === 'prompt') {
-			this.modalInput.focus();
+			if (this.type === 'simple') {
+				this.footerContainer.remove();
+			} else if (this.type === 'prompt') {
+				this.modalInput.focus();
+			}
+		} else {
+			this.footerContainer.append(this.footer);
 		}
 
 		$.onresize(this.body, (modal) => {

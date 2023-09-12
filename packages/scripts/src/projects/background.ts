@@ -322,6 +322,9 @@ export const BackgroundProject = Project.create({
 			configs: {
 				notToday: {
 					defaultValue: -1
+				},
+				ignoreVersions: {
+					defaultValue: [] as string[]
 				}
 			},
 			oncomplete() {
@@ -336,29 +339,39 @@ export const BackgroundProject = Project.create({
 										method: 'get',
 										type: 'GM_xmlhttpRequest'
 									});
-								if (gt(version['last-version'], infos.script.version)) {
+
+								if (
+									// 跳过主动忽略的版本
+									this.cfg.ignoreVersions.includes(version['last-version']) === false &&
+									// 版本比较
+									gt(version['last-version'], infos.script.version)
+								) {
 									const modal = $modal('confirm', {
 										width: 600,
 										content: $creator.notes([
 											`检测到新版本发布 ${version['last-version']} ：`,
 											[...(version.notes || [])]
 										]),
-										cancelButton: el(
-											'button',
-											{ className: 'base-style-button-secondary', innerText: '今日不再提示' },
-											(btn) => {
+										footer: el('div', [
+											el('button', { className: 'base-style-button-secondary', innerText: '跳过此版本' }, (btn) => {
+												btn.onclick = () => {
+													this.cfg.ignoreVersions = [...this.cfg.ignoreVersions, version['last-version']];
+													modal?.remove();
+												};
+											}),
+											el('button', { className: 'base-style-button-secondary', innerText: '今日不再提示' }, (btn) => {
 												btn.onclick = () => {
 													this.cfg.notToday = new Date().getDate();
 													modal?.remove();
 												};
-											}
-										),
-										confirmButton: el('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
-											btn.onclick = () => {
-												window.open(version.resource[infos.scriptHandler], '_blank');
-												modal?.remove();
-											};
-										})
+											}),
+											el('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
+												btn.onclick = () => {
+													window.open(version.resource[infos.scriptHandler], '_blank');
+													modal?.remove();
+												};
+											})
+										])
 									});
 								}
 							}, 5 * 1000);

@@ -43,6 +43,7 @@ export type ModalAttrs = Pick<
 		/** 消息显示时间（秒） */
 		duration?: number;
 	};
+	footer?: HTMLDivElement;
 };
 
 const minimizeSvg =
