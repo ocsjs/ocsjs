@@ -86,15 +86,12 @@ export const CommonProject = Project.create({
 				const contactUs = el('button', { className: 'base-style-button-secondary' }, '🗨️交流群');
 				contactUs.onclick = () => window.open('https://docs.ocsjs.com/docs/about#交流方式', '_blank');
 
-				const notify = el('button', { className: 'base-style-button-secondary' }, '✨查看通知提示');
-				notify.onclick = () => CommonProject.scripts.apps.methods.showNotify();
-
 				const changeLog = el('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
 				changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
 
 				changeLog.style.marginBottom = '12px';
 				guide.style.width = '480px';
-				panel.body.replaceChildren(el('div', { className: 'card' }, [gotoHome(), contactUs, notify, changeLog]), guide);
+				panel.body.replaceChildren(el('div', { className: 'card' }, [gotoHome(), contactUs, changeLog]), guide);
 			}
 		}),
 		settings: new Script({
@@ -975,30 +972,6 @@ export const CommonProject = Project.create({
 							results = await whenSearchEmpty();
 						}
 						return results;
-					},
-					/**
-					 * 查看最新通知
-					 */
-					async showNotify() {
-						const notify = el('div', { className: 'markdown card', innerHTML: '加载中...' });
-
-						$modal('simple', {
-							content: el('div', [
-								el('div', { className: 'notes card' }, [
-									$creator.notes([
-										'此页面实时更新，大家遇到问题可以看看通知',
-										el('div', ['或者进入 ', gotoHome(), ' 里的交流群进行反馈。'])
-									])
-								]),
-								notify
-							])
-						});
-						const md = await request('https://cdn.ocsjs.com/articles/ocs/notify.md?t=' + Date.now(), {
-							type: 'GM_xmlhttpRequest',
-							responseType: 'text',
-							method: 'get'
-						});
-						notify.innerHTML = markdown(md);
 					},
 					/**
 					 * 查看更新日志

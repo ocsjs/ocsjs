@@ -352,12 +352,15 @@ export const BackgroundProject = Project.create({
 					return;
 				}
 
+				const changeLog = el('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
+				changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
+
 				panel.body.replaceChildren(
 					el('div', { className: 'card' }, [
 						el('hr'),
-						el('div', '最新版本：' + version['last-version']),
-						el('div', '当前版本：' + $gm.getInfos()?.script.version),
+						el('div', ['最新版本：' + version['last-version'] + ' - ', changeLog]),
 						el('hr'),
+						el('div', '当前版本：' + $gm.getInfos()?.script.version),
 						el('div', '脚本管理器：' + infos?.scriptHandler),
 						el('div', [
 							'脚本更新链接：',
