@@ -5,7 +5,7 @@ import { playMedia } from '../utils';
 import { $console } from './background';
 
 type CourseType = {
-	fileType: 'ppt' | 'video';
+	fileType: string;
 	id: string;
 	name: string;
 };
@@ -88,7 +88,7 @@ export const ZJYProject = Project.create({
 						if (!courseInfo) return;
 						$message('success', { content: '开始学习：' + courseInfo.name });
 						$console.info('开始学习：' + courseInfo.name);
-						if (courseInfo.fileType === 'ppt') {
+						if (courseInfo.fileType === 'ppt' || courseInfo.fileType === 'doc') {
 							await watchFile();
 						} else if (courseInfo.fileType === 'video') {
 							if ($el('.guide')?.innerHTML.includes('很抱歉，您的浏览器不支持播放此类文件')) {
