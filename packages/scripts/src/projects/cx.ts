@@ -1443,7 +1443,8 @@ async function chapterTestTask(
 
 	const results = await worker.doWork();
 
-	$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
+	$console.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
+
 	await $.sleep(stopSecondWhenFinish * 1000);
 
 	// 处理提交

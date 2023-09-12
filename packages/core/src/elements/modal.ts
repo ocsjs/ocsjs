@@ -16,7 +16,7 @@ export class ModalElement extends IElement {
 	body: HTMLDivElement = el('div', { className: 'modal-body' });
 	/** 弹窗底部 */
 	footerContainer: HTMLDivElement = el('div', { className: 'modal-footer' });
-	footer: HTMLDivElement = el('div');
+	footer?: HTMLDivElement;
 	/** 弹窗确认按钮 */
 	confirmButton?: HTMLButtonElement | null;
 	/** 弹窗取消按钮 */
