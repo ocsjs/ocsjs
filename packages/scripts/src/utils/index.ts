@@ -96,7 +96,7 @@ export async function playMedia(playFunction: () => Promise<void> | undefined): 
 		if (String(err).includes(`failed because the user didn't interact with the document first`)) {
 			$modal('alert', {
 				content:
-					'由于浏览器保护限制，如果要播放带有音量的视频，您必须先点击页面上的任意位置才能进行视频的播放，如果想自动播放，必须先在设置页面静音，然后重新运行脚本。',
+					'播放音视频失败，由于浏览器的用户隐私保护措施，如果要播放带有音量的视频，或者某些无法自动播放音视频的网站，您必须先点击一次页面上的任意位置脚本才能进行音视频的播放，后续无需重新点击。',
 				onClose: async () => {
 					await tryPlayMedia();
 				}

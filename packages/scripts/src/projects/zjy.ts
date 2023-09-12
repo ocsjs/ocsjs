@@ -90,11 +90,11 @@ export const ZJYProject = Project.create({
 						$console.info('开始学习：' + courseInfo.name);
 						if (courseInfo.fileType === 'ppt' || courseInfo.fileType === 'doc') {
 							await watchFile();
-						} else if (courseInfo.fileType === 'video') {
+						} else if (courseInfo.fileType === 'video' || courseInfo.fileType === 'audio') {
 							if ($el('.guide')?.innerHTML.includes('很抱歉，您的浏览器不支持播放此类文件')) {
 								$console.error(`任务点 ${courseInfo.name}，不支持播放。`);
 							} else {
-								await watchVideo(this.cfg.volume);
+								await watchMedia(this.cfg.volume);
 							}
 						} else {
 							$console.error(`未知的任务点 ${courseInfo.name}，请跟作者进行反馈。`);
@@ -121,21 +121,21 @@ export const ZJYProject = Project.create({
 	}
 });
 
-async function watchVideo(volume: number) {
-	const video = await waitForMedia();
-	video.volume = volume;
-	const success = await playMedia(() => video.play());
+async function watchMedia(volume: number) {
+	const media = await waitForMedia();
+	media.volume = volume;
+	const success = await playMedia(() => media.play());
 	if (!success) {
 		return;
 	}
 
 	return new Promise<void>((resolve, reject) => {
 		const interval = setInterval(() => {
-			if (video.ended) {
+			if (media.ended) {
 				clearInterval(interval);
 				resolve();
-			} else if (video.paused) {
-				video.play();
+			} else if (media.paused) {
+				media.play();
 			}
 		}, 1000);
 	});
