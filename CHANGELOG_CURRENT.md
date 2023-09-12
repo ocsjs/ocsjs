@@ -1,9 +1,9 @@
-## [4.5.4](https://github.com/ocsjs/ocsjs/compare/4.5.3...4.5.4) (2023-09-12)
+## [4.5.5](https://github.com/ocsjs/ocsjs/compare/4.5.4...4.5.5) (2023-09-12)
 
 
-### Bug Fixes
+### Features
 
-* **core and script:** 修复上个版本出现的弹窗底部消失的问题，优化超星自动答题后台日志 ([37e6749](https://github.com/ocsjs/ocsjs/commit/37e6749a5bbef7788b2bd3b6efd2aba98581ceba))
+* **script:** 使更新模块可视化 ([0e27628](https://github.com/ocsjs/ocsjs/commit/0e27628d319db704f9849926a9602d1406f43e63))
 
 
 
