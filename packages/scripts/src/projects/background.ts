@@ -315,11 +315,18 @@ export const BackgroundProject = Project.create({
 			}
 		}),
 		update: new Script({
-			name: '脚本更新检测',
+			name: '📥 更新模块',
 			url: [['所有页面', /.*/]],
-			hideInPanel: true,
 			namespace: 'background.update',
 			configs: {
+				notes: {
+					defaultValue: '脚本自动更新模块，如果有新的版本会自动通知。'
+				},
+				autoNotify: {
+					defaultValue: true,
+					label: '开启更新通知',
+					attrs: { type: 'checkbox', title: '当有最新的版本时自动弹窗通知，默认开启' }
+				},
 				notToday: {
 					defaultValue: -1
 				},
@@ -327,35 +334,69 @@ export const BackgroundProject = Project.create({
 					defaultValue: [] as string[]
 				}
 			},
+			methods() {
+				return {
+					getLastVersion: async () => {
+						return (await request('https://cdn.ocsjs.com/ocs-version.json?t=' + Date.now(), {
+							method: 'get',
+							type: 'GM_xmlhttpRequest'
+						})) as { 'last-version': string; resource: Record<string, string>; notes: string[] };
+					}
+				};
+			},
+			async onrender({ panel }) {
+				const version = await this.methods.getLastVersion();
+				const infos = $gm.getInfos();
+
+				if (!infos) {
+					return;
+				}
+
+				panel.body.replaceChildren(
+					el('div', { className: 'card' }, [
+						el('hr'),
+						el('div', '最新版本：' + version['last-version']),
+						el('div', '当前版本：' + $gm.getInfos()?.script.version),
+						el('hr'),
+						el('div', '脚本管理器：' + infos?.scriptHandler),
+						el('div', [
+							'脚本更新链接：',
+							el('a', { target: '_blank', href: version.resource[infos.scriptHandler] }, [
+								version.resource[infos.scriptHandler]
+							])
+						])
+					])
+				);
+
+				console.log('versions', {
+					notToday: this.cfg.notToday,
+					ignoreVersions: this.cfg.ignoreVersions,
+					version: version
+				});
+			},
 			oncomplete() {
-				if ($.isInTopWindow()) {
+				if (this.cfg.autoNotify && $.isInTopWindow()) {
 					if (this.cfg.notToday === -1 || this.cfg.notToday !== new Date().getDate()) {
 						const infos = $gm.getInfos();
 						if (infos) {
 							// 避免阻挡用户操作，这里等页面运行一段时间后再进行更新提示
 							setTimeout(async () => {
-								const version: { 'last-version': string; resource: Record<string, string>; notes: string[] } =
-									await request('https://cdn.ocsjs.com/ocs-version.json?t=' + Date.now(), {
-										method: 'get',
-										type: 'GM_xmlhttpRequest'
-									});
+								const version = await this.methods.getLastVersion();
+								const last = version['last-version'];
 
 								if (
 									// 跳过主动忽略的版本
-									this.cfg.ignoreVersions.includes(version['last-version']) === false &&
+									this.cfg.ignoreVersions.includes(last) === false &&
 									// 版本比较
-									gt(version['last-version'], infos.script.version)
+									gt(last, infos.script.version)
 								) {
 									const modal = $modal('confirm', {
 										width: 600,
-										content: $creator.notes([
-											`检测到新版本发布 ${version['last-version']} ：`,
-											[...(version.notes || [])]
-										]),
+										content: $creator.notes([`检测到新版本发布 ${last} ：`, [...(version.notes || [])]]),
 										footer: el('div', [
 											el('button', { className: 'base-style-button-secondary', innerText: '跳过此版本' }, (btn) => {
 												btn.onclick = () => {
-													this.cfg.ignoreVersions = [...this.cfg.ignoreVersions, version['last-version']];
+													this.cfg.ignoreVersions = [...this.cfg.ignoreVersions, last];
 													modal?.remove();
 												};
 											}),
