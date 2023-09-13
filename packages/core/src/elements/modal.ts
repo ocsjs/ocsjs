@@ -95,24 +95,24 @@ export class ModalElement extends IElement {
 		// 如果没有自定义底部，则按照类型来添加
 		if (this.footer === undefined) {
 			this.footerContainer.append(this.modalInput);
-			if (this.footer === undefined && this.cancelButton === undefined) {
+			if (this.cancelButton === undefined) {
 				this.cancelButton = el('button', { className: 'modal-cancel-button' });
 				this.cancelButton.innerText = this.cancelButtonText || '取消';
-				this.cancelButton.addEventListener('click', () => {
+				this.cancelButton.onclick = () => {
 					this.onCancel?.();
 					this.onClose?.();
 					this.remove();
-				});
+				};
 			}
-			if (this.footer === undefined && this.confirmButton === undefined) {
+			if (this.confirmButton === undefined) {
 				this.confirmButton = el('button', { className: 'modal-confirm-button' });
 				this.confirmButton.innerText = this.confirmButtonText || '确定';
-				this.confirmButton.addEventListener('click', async () => {
+				this.confirmButton.onclick = async () => {
 					if ((await this.onConfirm?.(this.modalInput.value)) !== false) {
 						this.remove();
 						this.onClose?.(this.modalInput.value);
 					}
-				});
+				};
 			}
 
 			this.cancelButton && this.footerContainer.append(this.cancelButton);
