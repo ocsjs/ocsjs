@@ -244,7 +244,8 @@ export const CXProject = Project.create({
 			name: '🖥️ 自动阅读',
 			url: [
 				['阅读页面', '/ztnodedetailcontroller/visitnodedetail'],
-				['课程首页', /chaoxing.com\/course\/\d+\.html/]
+				['课程目录', /chaoxing.com\/course\/\d+\.html/],
+				['课程目录', /chaoxing.com\/mooc-ans\/course\/\d+\.html/]
 			],
 			configs: {
 				notes: {
