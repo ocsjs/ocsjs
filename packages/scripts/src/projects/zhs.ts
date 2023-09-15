@@ -642,7 +642,7 @@ async function watch(
 function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
 	const target = $el(`.definiLines .${definition}`);
 	if (target) {
-		stopPropagationClick(target);
+		jQueryClick(target);
 	}
 }
 
@@ -653,17 +653,17 @@ function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
 function switchPlaybackRate(playbackRate: number) {
 	const target = $el(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
 	if (target) {
-		stopPropagationClick(target);
+		jQueryClick(target);
 	}
 }
 
-function stopPropagationClick(el: HTMLElement) {
-	const func = function (e: MouseEvent) {
-		e.stopPropagation();
-		el.removeEventListener('click', func);
-	};
-	el.addEventListener('click', func);
-	el.click();
+function jQueryClick(target: HTMLElement): void {
+	for (const key in target) {
+		if (key.includes('jQuery')) {
+			// @ts-ignore
+			return target[key].events.click[0].handler();
+		}
+	}
 }
 
 /**
