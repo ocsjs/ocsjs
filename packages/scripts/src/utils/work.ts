@@ -192,16 +192,16 @@ export function simplifyWorkResult(
 	 * 标题处理方法
 	 * 在答题时使用相同的处理方法，可以使答题结果显示的题目与搜题的题目保持一致
 	 */
-	titleTransform?: (title: (HTMLElement | undefined)[]) => string
+	titleTransform?: (title: (HTMLElement | undefined)[], index: number) => string
 ): SimplifyWorkResult[] {
 	const res: SimplifyWorkResult[] = [];
-
+	let i = 0;
 	for (const wr of results) {
 		res.push({
 			requesting: wr.requesting,
 			resolving: wr.resolving,
 			error: wr.error,
-			question: titleTransform?.(wr.ctx?.elements.title || []) || wr.ctx?.elements.title?.join(',') || '',
+			question: titleTransform?.(wr.ctx?.elements.title || [], i) || wr.ctx?.elements.title?.join(',') || '',
 			finish: wr.result?.finish,
 			searchInfos:
 				wr.ctx?.searchInfos.map((sr) => ({
@@ -211,6 +211,7 @@ export function simplifyWorkResult(
 					results: sr.results.map((ans) => [ans.question, ans.answer])
 				})) || []
 		});
+		i++;
 	}
 
 	return res;

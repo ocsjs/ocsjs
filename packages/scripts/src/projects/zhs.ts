@@ -24,6 +24,7 @@ import {
 import { CommonWorkOptions, playMedia } from '../utils';
 import { $console } from './background';
 import { waitForMedia } from '../utils/study';
+import { $app_actions } from '../utils/app';
 
 // 学习是否暂停
 let stop = false;
@@ -33,6 +34,9 @@ const hasCapture = false;
 const state = {
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined
+	},
+	work: {
+		workInfo: undefined as any
 	}
 };
 
@@ -224,20 +228,25 @@ export const ZHSProject = Project.create({
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 
-				const waitForVue = () => {
-					return new Promise<any>((resolve, reject) => {
-						const vue = $el('.video-study')?.__vue__;
-						if (vue?.data?.courseInfo) {
-							resolve(vue);
+				// 10秒后还没加载出来，则结束
+				setTimeout(() => {
+					if ($$el('.clearfix.video').length === 0) {
+						finish();
+					}
+				}, 10 * 1000);
+
+				const waitForVideoList = () => {
+					return new Promise<void>((resolve, reject) => {
+						if ($$el('.clearfix.video').length > 1) {
+							resolve();
 						} else {
 							setTimeout(() => {
-								resolve(waitForVue());
+								resolve(waitForVideoList());
 							}, 1000);
 						}
 					});
 				};
-				const vue = await waitForVue();
-				console.log(vue);
+				await waitForVideoList();
 
 				let stopInterval: any = 0;
 				let stopMessage: MessageElement;
@@ -299,13 +308,15 @@ export const ZHSProject = Project.create({
 				};
 				/** 关闭测验弹窗 */
 				const closeTestDialog = async () => {
-					const items = $$el('.topic-item');
-					if (items.length !== 0) {
-						// 选择A
-						items[0].click();
+					const options = $$el('#playTopic-dialog ul .topic-item');
+					if (options.length !== 0) {
+						await waitForCaptcha();
+						// 随机选
+						const option = options[Math.floor(Math.random() * options.length)];
+						await $app_actions.mouseClick(option);
 						await $.sleep(1000);
 						// 关闭弹窗
-						vue.testDialog = false;
+						await $app_actions.mouseClick('#playTopic-dialog .dialog-footer .btn');
 					}
 				};
 
@@ -324,119 +335,74 @@ export const ZHSProject = Project.create({
 
 				// 循环记录学习时间
 				const recordStudyTimeLoop = () => {
-					this.methods.increaseStudyTime(vue.data.courseInfo.name, this.cfg.playbackRate);
+					this.methods.increaseStudyTime($el('.source-name')?.innerText || '无名称', this.cfg.playbackRate);
 					setTimeout(recordStudyTimeLoop, 1000);
 				};
+
 				recordStudyTimeLoop();
 
-				let timeMessage: MessageElement;
-				// 计算课程完成所需时间
-				const calculateTime = () => {
-					try {
-						const vue = $el('.video-study')?.__vue__;
-						const videos = (vue.videoList as any[])
-							.map((v: any) => v.videoLessons)
-							.flat()
-							.map((l: any) => /** 章节或者章节中的小节 */ l?.videoSmallLessons || l)
-							.flat()
-							/** 排除已经学习过的 */
-							.filter((v) => v.isStudiedLesson === 0);
+				hideDialog();
 
-						const allTime: number = videos.map((l) => l.videoSec || 0).reduce((pre, curr) => pre + curr, 0) / (60 * 60);
+				setInterval(() => {
+					closeTestDialog();
+					fixProcessBar();
+					// 删除遮罩层
+					$$el('.v-modal,.mask').forEach((modal) => {
+						modal.remove();
+					});
+				}, 3000);
 
-						// 获取今日学习时间
-						const record = this.cfg.studyRecord.find(
-							(r) => new Date(r.date).toLocaleDateString() === new Date().toLocaleDateString()
-						);
-						const time = optimizeSecond(record?.courses.find((c) => c.name === vue.data.courseInfo.name)?.time || 0);
-
-						timeMessage?.remove();
-						timeMessage = $message('info', {
-							duration: 0,
-							content: `还剩${videos.length - 1}个视频，总时长${allTime.toFixed(2)}小时，今日已学习${time}`
-						});
-					} catch (err) {
-						console.error(err);
+				// 查找任务
+				const findVideoItem = (opts: {
+					/**
+					 * 是否往下查找下一个任务
+					 */
+					next: boolean;
+				}) => {
+					let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
+					// 如果不是复习模式，则排除掉已经完成的任务
+					if (!this.cfg.restudy) {
+						videoItems = videoItems.filter((el) => el.querySelector('.time_icofinish') === null);
 					}
+
+					for (let i = 0; i < videoItems.length; i++) {
+						const item = videoItems[i];
+						if (item.classList.contains('current_play')) {
+							return videoItems[i + (opts.next ? 1 : 0)];
+						}
+					}
+
+					return videoItems[0];
 				};
 
-				const interval = setInterval(async () => {
-					// 等待视频加载完成
-					if (vue.videoList.length) {
-						clearInterval(interval);
-						hack();
-						hideDialog();
+				$message('info', { content: '3秒后开始学习', duration: 3 });
 
-						setInterval(() => {
-							closeTestDialog();
-							fixProcessBar();
-							// 删除遮罩层
-							$$el('.v-modal,.mask').forEach((modal) => {
-								modal.remove();
-							});
-						}, 3000);
+				const study = async (opts: { next: boolean }) => {
+					if (stop === false) {
+						const item = findVideoItem(opts);
+						console.log('item', item);
 
-						// 查找任务
-						const findVideoItem = (opts: {
-							/**
-							 * 是否往下查找下一个任务
-							 */
-							next: boolean;
-						}) => {
-							let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
-							// 如果不是复习模式，则排除掉已经完成的任务
-							if (!this.cfg.restudy) {
-								videoItems = videoItems.filter((el) => el.querySelector('.time_icofinish') === null);
-							}
-
-							for (let i = 0; i < videoItems.length; i++) {
-								const item = videoItems[i];
-								if (item.classList.contains('current_play')) {
-									return videoItems[i + (opts.next ? 1 : 0)];
+						if (item) {
+							await $.sleep(3000);
+							$app_actions.mouseClick(item);
+							await $.sleep(5000);
+							watch(
+								{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
+								({ next }) => {
+									study({ next });
 								}
-							}
-
-							return videoItems[0];
-						};
-
-						$message('info', { content: '3秒后开始学习', duration: 3 });
-						const study = async (opts: { next: boolean }) => {
-							if (stop === false) {
-								const item = findVideoItem(opts);
-								console.log('item', item);
-
-								if (item) {
-									await $.sleep(3000);
-									item.click();
-									await $.sleep(5000);
-									watch(
-										{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
-										({ next }) => {
-											study({ next });
-										}
-									);
-									calculateTime();
-								} else {
-									finish();
-								}
-							} else {
-								$message('warn', {
-									content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
-								});
-							}
-						};
-						// 当页面初始化时无需切换下一个视频，直接播放当前的。
-						study({ next: false });
+							);
+						} else {
+							finish();
+						}
+					} else {
+						$message('warn', {
+							content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
+						});
 					}
-				}, 1000);
-
-				// 10秒后还没加载出来，则结束
-				setTimeout(() => {
-					if (vue.videoList.length === 0) {
-						finish();
-						clearInterval(interval);
-					}
-				}, 10 * 1000);
+				};
+				// 当页面初始化时无需切换下一个视频，直接播放当前的。
+				study({ next: false });
 			}
 		}),
 		'gxk-work': new Script({
@@ -464,7 +430,7 @@ export const ZHSProject = Project.create({
 						const isWork = location.href.includes('dohomework');
 
 						if (isExam || isWork) {
-							await waitForQuestionsLoad();
+							await waitForWorkInfo();
 							$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
 							commonWork(this, {
 								workerProvider: (opts) => gxkWorkAndExam(opts)
@@ -476,7 +442,11 @@ export const ZHSProject = Project.create({
 					}
 				};
 			},
-
+			async onstart() {
+				state.work.workInfo = await $app_actions.waitForResponse('/studentExam/gateway/t/v1/student/doHomework', {
+					responseType: 'json'
+				});
+			},
 			async oncomplete() {
 				this.methods.work();
 				/**
@@ -513,38 +483,58 @@ export const ZHSProject = Project.create({
 					state.study.currentMedia && (state.study.currentMedia.volume = curr);
 				});
 
-				let list: HTMLElement[] = [];
+				const nextElement = () => {
+					const list = document.querySelectorAll<HTMLElement>('.file-item');
+
+					let passActive = false;
+					for (let index = 0; index < list.length; index++) {
+						const item = list[index];
+						const finish = !!item.querySelector('.icon-finish');
+						// 判断是否需要学习
+						const needsStudy = !finish || (finish && this.cfg.restudy);
+
+						if (item.classList.contains('active')) {
+							if (needsStudy) {
+								return item;
+							} else {
+								passActive = true;
+							}
+						}
+
+						if (passActive && needsStudy) {
+							return item;
+						}
+					}
+				};
 
 				const interval = setInterval(async () => {
 					/** 查找任务 */
-					list = $$el('.icon-video').map((icon) => icon.parentElement as HTMLElement);
+					const next = nextElement();
 
-					// 等待视频加载完成
-					if (list.length) {
+					if (next) {
 						clearInterval(interval);
 
-						/** 如果不是复习模式，则排除掉已经完成的任务 */
-						if (!this.cfg.restudy) {
-							list = list.filter((el) => el.querySelector('.icon-finish') === null);
-						}
-
-						const item = list[0];
-						if (item) {
-							if (item.classList.contains('active')) {
-								watch({ volume: this.cfg.volume, playbackRate: 1 }, () => {
+						if (document.querySelector('#mediaPlayer')) {
+							watchXnk({ volume: this.cfg.volume }, () => {
+								setTimeout(() => {
 									/** 下一章 */
-									if (list[1]) list[1].click();
-								});
-							} else {
-								// 为什么不播放，因为点击后会刷新整个页面，加载后就会运行上面的那个 if 语句
-								item.click();
-							}
+									const next = nextElement();
+									if (next) next.click();
+								}, 3000);
+							});
+						} else {
+							setTimeout(() => {
+								$console.log('不是视频任务，即将切换下一章。');
+								/** 下一章 */
+								const next = nextElement();
+								if (next) next.click();
+							}, 3000);
 						}
 					}
 				}, 1000);
 
 				setTimeout(() => {
-					if (list.length === 0) {
+					if (!nextElement()) {
 						finish();
 						clearInterval(interval);
 					}
@@ -582,11 +572,11 @@ async function watch(
 
 	const set = async () => {
 		// 设置清晰度
-		switchLine(options.definition);
+		await switchLine(options.definition);
 		await $.sleep(1000);
 
 		// 设置播放速度
-		switchPlaybackRate(options.playbackRate);
+		await switchPlaybackRate(options.playbackRate);
 		await $.sleep(1000);
 
 		// 上面操作会导致元素刷新，这里重新获取视频
@@ -636,34 +626,52 @@ async function watch(
 }
 
 /**
+ * 观看校内课
+ */
+async function watchXnk(options: { volume: number }, onended: () => void) {
+	// 部分用户视频加载很慢，这里等待一下
+	const media = await waitForMedia();
+	media.volume = options.volume;
+	media.currentTime = 1;
+	state.study.currentMedia = media;
+
+	playMedia(() => media?.play());
+
+	media.onpause = async () => {
+		if (!media?.ended) {
+			await $.sleep(1000);
+			media?.play();
+		}
+	};
+
+	media.onended = () => {
+		// 正常切换下一个视频
+		onended();
+	};
+}
+
+/**
  * 切换视频清晰度
  * @param definition 清晰度的类名
  */
-function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
-	const target = $el(`.definiLines .${definition}`);
-	if (target) {
-		jQueryClick(target);
-	}
+async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
+	const controls = $el('.controlsBar');
+	controls && (controls.style.display = 'block');
+	await $app_actions.mouseClick('.definiBox > span');
+	await $.sleep(1000);
+	await $app_actions.mouseClick(`.definiLines .${definition}`);
 }
 
 /**
  * 切换视频清晰度
  * @param playbackRate 播放速度
  */
-function switchPlaybackRate(playbackRate: number) {
-	const target = $el(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
-	if (target) {
-		jQueryClick(target);
-	}
-}
-
-function jQueryClick(target: HTMLElement): void {
-	for (const key in target) {
-		if (key.includes('jQuery')) {
-			// @ts-ignore
-			return target[key].events.click[0].handler();
-		}
-	}
+async function switchPlaybackRate(playbackRate: number) {
+	const controls = $el('.controlsBar');
+	controls && (controls.style.display = 'block');
+	await $app_actions.mouseClick('.speedBox > span');
+	await $.sleep(1000);
+	await $app_actions.mouseClick(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
 }
 
 /**
@@ -706,43 +714,15 @@ export function waitForCaptcha(): void | Promise<void> {
 	}
 }
 
-/**
- * 等待题目加载完毕
- */
-function waitForQuestionsLoad() {
-	return new Promise<void>((resolve) => {
+function waitForWorkInfo() {
+	return new Promise<any>((resolve, reject) => {
 		const interval = setInterval(() => {
-			const vue = $el('#app > div')?.__vue__;
-			// 等待题目加载
-			if (vue?.alllQuestionTest) {
+			if (state.work.workInfo) {
 				clearInterval(interval);
-				resolve();
+				resolve(state.work.workInfo);
 			}
 		}, 1000);
 	});
-}
-
-/**
- * 函数劫持
- */
-function hack() {
-	const vue = $el('.video-study')?.__vue__;
-	const empty = () => {};
-	vue.checkout = empty;
-	vue.notTrustScript = empty;
-	vue.checkoutNotTrustScript = empty;
-	const _videoClick = vue.videoClick;
-	vue.videoClick = function (...args: any[]) {
-		const e = new PointerEvent('click');
-		const event = Object.create({ isTrusted: true });
-		Object.setPrototypeOf(event, e);
-		args[args.length - 1] = event;
-		return _videoClick.apply(vue, args);
-	};
-	vue.videoClick = function (...args: any[]) {
-		args[args.length - 1] = { isTrusted: true };
-		return _videoClick.apply(vue, args);
-	};
 }
 
 /**
@@ -759,32 +739,13 @@ function gxkWorkAndExam({
 		questionPositionSyncHandlerType: 'zhs-gxk'
 	});
 
-	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return removeRedundantWords(
-			titles
-				.map((title) => {
-					// @ts-ignore
-					if (title.__vue__) {
-						// 识别 shadow dom 的文本
-						const div = document.createElement('div');
-						// @ts-ignore
-						div.innerHTML = title.__vue__._data.shadowDom.innerHTML;
-
-						// 解决图片题无法解析的BUG
-						for (const img of Array.from(div.querySelectorAll('img'))) {
-							img.src = img.dataset.src || '';
-						}
-						return div;
-					} else {
-						return title;
-					}
-				})
-				.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
-				.filter((t) => t.trim() !== '')
-				.join(','),
-			redundanceWordsText.split('\n')
-		);
+	const titleTransform = (_: any, index: number) => {
+		const div = el('div');
+		div.innerHTML = state.work.workInfo.rt.examBase.workExamParts[0].questionDtos[index].name;
+		return removeRedundantWords(optimizationElementWithImage(div).innerText || '', redundanceWordsText.split('\n'));
 	};
+
+	let index = 0;
 
 	/** 新建答题器 */
 	const worker = new OCSWorker({
@@ -815,7 +776,7 @@ function gxkWorkAndExam({
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, type, ctx) => {
-			const title = titleTransform(elements.title);
+			const title = titleTransform(undefined, index++);
 			if (title) {
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {

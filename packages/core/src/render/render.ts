@@ -31,8 +31,8 @@ export type ModalAttrs = Pick<
 	| 'modalInputType'
 	| 'modalStyle'
 > & {
-	/** 取消生成窗口的关闭按钮 */
-	disableWrapperCloseable?: boolean;
+	/** 点击遮罩层是否可以关闭弹窗，默认 true */
+	maskCloseable?: boolean;
 	/** 弹窗标题 */
 	title?: ModalElement['title'];
 	/** 伴随系统通知一起弹出 */
@@ -426,7 +426,7 @@ export const RenderScript = new Script({
 export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 	if (self === top) {
 		const {
-			disableWrapperCloseable,
+			maskCloseable = true,
 			onConfirm,
 			onCancel,
 			onClose,
@@ -468,7 +468,7 @@ export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 			modal.addEventListener('click', (e) => {
 				e.stopPropagation();
 			});
-			if (!disableWrapperCloseable) {
+			if (maskCloseable) {
 				/** 点击遮罩层关闭模态框 */
 				wrapper.addEventListener('click', () => {
 					onClose?.apply(modal);

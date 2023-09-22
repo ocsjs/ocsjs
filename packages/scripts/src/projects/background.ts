@@ -172,6 +172,7 @@ export const BackgroundProject = Project.create({
 					}
 				}
 			},
+
 			onrender({ panel }) {
 				// 同步面板不会被锁定
 				panel.lockWrapper.remove();
@@ -394,6 +395,7 @@ export const BackgroundProject = Project.create({
 									gt(last, infos.script.version)
 								) {
 									const modal = $modal('confirm', {
+										maskCloseable: false,
 										width: 600,
 										content: $creator.notes([`检测到新版本发布 ${last} ：`, [...(version.notes || [])]]),
 										footer: el('div', [
