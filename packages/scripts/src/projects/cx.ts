@@ -322,7 +322,11 @@ export const CXProject = Project.create({
 		}),
 		examRedirect: new Script({
 			name: '考试整卷预览脚本',
-			url: [['新版考试页面', 'exam-ans/exam/test/reVersionTestStartNew']],
+			url: [
+				['新版考试页面', 'exam-ans/exam/test/reVersionTestStartNew'],
+				// 2023/9月 新增
+				['新版考试页面2', 'mooc-ans/exam/test/reVersionTestStartNew']
+			],
 			hideInPanel: true,
 			oncomplete() {
 				$message('info', { content: '即将跳转到整卷预览页面进行考试。' });
