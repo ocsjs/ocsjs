@@ -116,7 +116,7 @@ async function appActionRequest(
 		baseUrl?: string;
 		responseType?: 'text' | 'json';
 	}
-): Promise<string> {
+): Promise<any> {
 	await $app_actions.init();
 	if (!actions_key) {
 		return '';
@@ -136,7 +136,7 @@ async function appActionRequest(
 			}
 		);
 
-		return String(res);
+		return res;
 	} catch (e) {
 		$console.error('软件辅助错误', String(e));
 		return '';
