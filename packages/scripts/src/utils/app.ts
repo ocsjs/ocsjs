@@ -4,6 +4,19 @@ import { $console } from '../projects/background';
 let actions_key = '';
 
 export const $app_actions = {
+	showError: () => {
+		$message('error', {
+			duration: 60,
+			content: el('div', [
+				'软件辅助启动失败，请检查网络，或者使用OCS桌面软件运行浏览器，教程/疑问：',
+				$creator.button('软件辅助开启教程', {
+					onclick: () => {
+						window.open('https://docs.ocsjs.com/docs/script-helper');
+					}
+				})
+			])
+		});
+	},
 	init: async () => {
 		/**
 		 * OCS桌面端后端无法拦截 GM_xmlhttpRequest ，所以这里使用 fetch 请求动作执行，然后后端根据key判断是否允许执行
@@ -15,20 +28,13 @@ export const $app_actions = {
 					method: 'get',
 					responseType: 'text'
 				});
+				return true;
 			} catch (e) {
 				console.log(e);
-				$message('error', {
-					duration: 0,
-					content: el('div', [
-						'软件辅助启动失败，请检查网络，或者使用OCS桌面软件运行浏览器，教程/疑问：',
-						$creator.button('软件辅助开启教程', {
-							onclick: () => {
-								window.open('https://docs.ocsjs.com/docs/script-helper');
-							}
-						})
-					])
-				});
+				return false;
 			}
+		} else {
+			return true;
 		}
 	},
 	waitForResponse: async (
@@ -39,7 +45,7 @@ export const $app_actions = {
 			responseType?: 'text' | 'json';
 		}
 	) => {
-		await await appActionRequest(
+		await appActionRequest(
 			{
 				url,
 				action: 'listen-request'
@@ -52,7 +58,7 @@ export const $app_actions = {
 		return new Promise((resolve, reject) => {
 			const interval = setInterval(async () => {
 				try {
-					const res = await await appActionRequest(
+					const res = await appActionRequest(
 						{
 							url,
 							action: 'get-listened-request'
@@ -74,7 +80,7 @@ export const $app_actions = {
 		});
 	},
 	mouseMove: async (x: number, y: number) => {
-		await appActionRequest({
+		return await appActionRequest({
 			x: x.toString(),
 			y: y.toString(),
 			action: 'mouse-move'
@@ -89,14 +95,14 @@ export const $app_actions = {
 			elementOrSelector.scrollIntoView();
 			await $.sleep(1000);
 			const rect = elementOrSelector.getBoundingClientRect();
-			await appActionRequest({
+			return await appActionRequest({
 				x: rect.x.toString(),
 				y: rect.y.toString(),
 				count: count.toString(),
 				action: 'mouse-click'
 			});
 		} else {
-			await appActionRequest({
+			return await appActionRequest({
 				selector: elementOrSelector,
 				action: 'mouse-click'
 			});
@@ -110,15 +116,15 @@ async function appActionRequest(
 		baseUrl?: string;
 		responseType?: 'text' | 'json';
 	}
-) {
+): Promise<string> {
 	await $app_actions.init();
 	if (!actions_key) {
-		return;
+		return '';
 	}
 	data = Object.assign({ page: window.location.href }, data);
 
 	try {
-		return await request(
+		const res = await request(
 			(options?.baseUrl || 'http://localhost:15319') + '/ocs-script-actions?' + new URLSearchParams(data).toString(),
 			{
 				type: 'fetch',
@@ -129,8 +135,10 @@ async function appActionRequest(
 				}
 			}
 		);
+
+		return String(res);
 	} catch (e) {
 		$console.error('软件辅助错误', String(e));
-		return undefined;
+		return '';
 	}
 }

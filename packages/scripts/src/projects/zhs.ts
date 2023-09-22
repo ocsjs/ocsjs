@@ -343,8 +343,8 @@ export const ZHSProject = Project.create({
 
 				hideDialog();
 
-				setInterval(() => {
-					closeTestDialog();
+				setInterval(async () => {
+					await closeTestDialog();
 					fixProcessBar();
 					// 删除遮罩层
 					$$el('.v-modal,.mask').forEach((modal) => {
@@ -377,15 +377,20 @@ export const ZHSProject = Project.create({
 
 				$message('info', { content: '3秒后开始学习', duration: 3 });
 
+				const init = await $app_actions.init();
+				if (!init) {
+					$app_actions.showError();
+					return;
+				}
+
 				const study = async (opts: { next: boolean }) => {
 					if (stop === false) {
 						const item = findVideoItem(opts);
-						console.log('item', item);
 
 						if (item) {
 							await $.sleep(3000);
-							$app_actions.mouseClick(item);
-							await $.sleep(5000);
+							await $app_actions.mouseClick(item);
+
 							watch(
 								{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
 								({ next }) => {
@@ -574,10 +579,8 @@ async function watch(
 		// 设置清晰度
 		await switchLine(options.definition);
 		await $.sleep(1000);
-
 		// 设置播放速度
 		await switchPlaybackRate(options.playbackRate);
-		await $.sleep(1000);
 
 		// 上面操作会导致元素刷新，这里重新获取视频
 		const video = await waitForMedia();
@@ -658,7 +661,6 @@ async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
 	const controls = $el('.controlsBar');
 	controls && (controls.style.display = 'block');
 	await $app_actions.mouseClick('.definiBox > span');
-	await $.sleep(1000);
 	await $app_actions.mouseClick(`.definiLines .${definition}`);
 }
 
@@ -670,7 +672,6 @@ async function switchPlaybackRate(playbackRate: number) {
 	const controls = $el('.controlsBar');
 	controls && (controls.style.display = 'block');
 	await $app_actions.mouseClick('.speedBox > span');
-	await $.sleep(1000);
 	await $app_actions.mouseClick(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
 }
 
