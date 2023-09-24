@@ -80,7 +80,8 @@ export const ZHSProject = Project.create({
 							'每天定时半小时可获得一分习惯分。',
 							'如果不想要习惯分可忽略。'
 						],
-						'不要最小化浏览器，可能导致脚本暂停。'
+						'不要最小化浏览器，可能导致脚本暂停。',
+						'运行过程中请最小化脚本窗口，避免窗口遮挡，无法点击元素'
 					]).outerHTML
 				},
 				/** 学习记录 []  */
@@ -225,6 +226,8 @@ export const ZHSProject = Project.create({
 				}
 			},
 			async oncomplete() {
+				if (!checkWindowSize()) return;
+
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 
@@ -430,6 +433,12 @@ export const ZHSProject = Project.create({
 			methods() {
 				return {
 					work: async () => {
+						const init = await $app_actions.init();
+						if (!init) {
+							$app_actions.showError();
+							return;
+						}
+
 						// 等待试卷加载
 						const isExam = location.href.includes('doexamination');
 						const isWork = location.href.includes('dohomework');
@@ -742,7 +751,7 @@ function gxkWorkAndExam({
 
 	const titleTransform = (_: any, index: number) => {
 		const div = el('div');
-		div.innerHTML = state.work.workInfo.rt.examBase.workExamParts[0].questionDtos[index].name;
+		div.innerHTML = state?.work?.workInfo?.rt?.examBase?.workExamParts[0]?.questionDtos[index]?.name || '题目读取失败';
 		return removeRedundantWords(optimizationElementWithImage(div).innerText || '', redundanceWordsText.split('\n'));
 	};
 
@@ -978,5 +987,27 @@ function optimizeSecond(second: number) {
 		return `${Math.floor(second / 60)}分钟${second % 60}秒`;
 	} else {
 		return `${second}秒`;
+	}
+}
+
+function checkWindowSize() {
+	if (window.innerHeight < 1200 || window.innerWidth < 2000) {
+		$modal('alert', {
+			title: '警告',
+			maskCloseable: false,
+			content: el('div', [
+				el(
+					'div',
+					'当前窗口太小，可能造成元素遮挡，脚本无法点击而卡死，请按住ctrl键+往下滚动鼠标中键滚轮，调整窗口后刷新页面，让脚本重新运行。'
+				),
+				el('hr'),
+				el('div', '至少大于：宽2000像素，高1200像素'),
+				el('div', `当前大小：宽${innerWidth}像素，高${window.innerHeight}像素`),
+				el('div', `注意：运行过程中请最小化脚本窗口，避免窗口也造成遮挡。`)
+			])
+		});
+		return false;
+	} else {
+		return true;
 	}
 }

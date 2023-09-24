@@ -8,7 +8,7 @@ export const $app_actions = {
 		$message('error', {
 			duration: 60,
 			content: el('div', [
-				'软件辅助启动失败，请检查网络，或者使用OCS桌面软件运行浏览器，教程/疑问：',
+				'软件辅助启动失败，无法执行脚本操作，请开启软件辅助，开启教程=>',
 				$creator.button('软件辅助开启教程', {
 					onclick: () => {
 						window.open('https://docs.ocsjs.com/docs/script-helper');
