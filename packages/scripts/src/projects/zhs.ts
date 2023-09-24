@@ -114,6 +114,11 @@ export const ZHSProject = Project.create({
 					}
 				},
 				restudy: restudy,
+				autoSetViewPort: {
+					label: '自动调整窗口大小',
+					attrs: { title: '软件将自动调整窗口大小，避免遮挡元素，导致脚本无法点击。', type: 'checkbox' },
+					defaultValue: false
+				},
 				volume: volume,
 				definition: definition,
 				playbackRate: {
@@ -363,12 +368,18 @@ export const ZHSProject = Project.create({
 					return videoItems[0];
 				};
 
+				// 检查是否为软件环境
 				const init = await $app_actions.init();
 				if (!init) {
 					$app_actions.showError();
 					return;
 				}
-				await $app_actions.setViewPort(2500, 1400);
+				// 自动调整窗口大小
+				if (this.cfg.autoSetViewPort) {
+					await $app_actions.setViewPort(2500, 1400);
+				}
+
+				// 检测窗口大小
 				await $.sleep(1000);
 				if (!checkWindowSize()) return;
 
@@ -999,7 +1010,7 @@ function checkWindowSize() {
 			content: el('div', [
 				el(
 					'div',
-					'当前窗口太小，可能造成元素遮挡，脚本无法点击而卡死，请按住ctrl键+往下滚动鼠标中键滚轮，调整窗口后刷新页面，让脚本重新运行。'
+					'当前窗口太小，可能造成元素遮挡，脚本无法点击而卡死，请按住ctrl键+往下滚动鼠标中键滚轮，调整窗口后刷新页面，让脚本重新运行。如果不想手动调整可以开启：自动调整窗口大小功能'
 				),
 				el('hr'),
 				el('div', '至少大于：宽2000像素，高1200像素'),
