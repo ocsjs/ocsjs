@@ -107,6 +107,13 @@ export const $app_actions = {
 				action: 'mouse-click'
 			});
 		}
+	},
+	setViewPort: async (width: number, height: number) => {
+		return await appActionRequest({
+			width: width.toString(),
+			height: height.toString(),
+			action: 'set-viewport'
+		});
 	}
 };
 

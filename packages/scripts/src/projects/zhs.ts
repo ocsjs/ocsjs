@@ -226,8 +226,6 @@ export const ZHSProject = Project.create({
 				}
 			},
 			async oncomplete() {
-				if (!checkWindowSize()) return;
-
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 
@@ -342,19 +340,6 @@ export const ZHSProject = Project.create({
 					setTimeout(recordStudyTimeLoop, 1000);
 				};
 
-				recordStudyTimeLoop();
-
-				hideDialog();
-
-				setInterval(async () => {
-					await closeTestDialog();
-					fixProcessBar();
-					// 删除遮罩层
-					$$el('.v-modal,.mask').forEach((modal) => {
-						modal.remove();
-					});
-				}, 3000);
-
 				// 查找任务
 				const findVideoItem = (opts: {
 					/**
@@ -378,13 +363,29 @@ export const ZHSProject = Project.create({
 					return videoItems[0];
 				};
 
-				$message('info', { content: '3秒后开始学习', duration: 3 });
-
 				const init = await $app_actions.init();
 				if (!init) {
 					$app_actions.showError();
 					return;
 				}
+				await $app_actions.setViewPort(2500, 1400);
+				await $.sleep(1000);
+				if (!checkWindowSize()) return;
+
+				recordStudyTimeLoop();
+
+				hideDialog();
+
+				setInterval(async () => {
+					await closeTestDialog();
+					fixProcessBar();
+					// 删除遮罩层
+					$$el('.v-modal,.mask').forEach((modal) => {
+						modal.remove();
+					});
+				}, 3000);
+
+				$message('info', { content: '3秒后开始学习', duration: 3 });
 
 				const study = async (opts: { next: boolean }) => {
 					if (stop === false) {
@@ -991,7 +992,7 @@ function optimizeSecond(second: number) {
 }
 
 function checkWindowSize() {
-	if (window.innerHeight < 1200 || window.innerWidth < 2000) {
+	if (window.innerHeight < 1400 || window.innerWidth < 2500) {
 		$modal('alert', {
 			title: '警告',
 			maskCloseable: false,
