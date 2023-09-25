@@ -1,9 +1,9 @@
-## [4.6.4](https://github.com/ocsjs/ocsjs/compare/4.6.3...4.6.4) (2023-09-24)
+## [4.6.5](https://github.com/ocsjs/ocsjs/compare/4.6.4...4.6.5) (2023-09-25)
 
 
-### Features
+### Bug Fixes
 
-* **script:** 添加智慧树窗口自动调节功能的选项按钮 ([0543ca1](https://github.com/ocsjs/ocsjs/commit/0543ca1e6a8acd92bdc2b1889beb7a4d8c0a2caf))
+* **script:** 修复智慧树调成窗口大于最小值后依然说不对的BUG ([be94200](https://github.com/ocsjs/ocsjs/commit/be9420097c81574b9b6b4a910808f27f19cbdf23))
 
 
 
