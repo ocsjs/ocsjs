@@ -32,6 +32,10 @@ let stop = false;
 const hasCapture = false;
 
 const state = {
+	window: {
+		minHeight: 1400,
+		minWidth: 2500
+	},
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined
 	},
@@ -376,7 +380,7 @@ export const ZHSProject = Project.create({
 				}
 				// 自动调整窗口大小
 				if (this.cfg.autoSetViewPort) {
-					await $app_actions.setViewPort(2500, 1400);
+					await $app_actions.setViewPort(state.window.minWidth, state.window.minHeight);
 				}
 
 				// 检测窗口大小
@@ -1003,7 +1007,7 @@ function optimizeSecond(second: number) {
 }
 
 function checkWindowSize() {
-	if (window.innerHeight < 1400 || window.innerWidth < 2500) {
+	if (window.innerHeight < state.window.minHeight || window.innerWidth < state.window.minWidth) {
 		$modal('alert', {
 			title: '警告',
 			maskCloseable: false,
@@ -1013,7 +1017,7 @@ function checkWindowSize() {
 					'当前窗口太小，可能造成元素遮挡，脚本无法点击而卡死，请按住ctrl键+往下滚动鼠标中键滚轮，调整窗口后刷新页面，让脚本重新运行。如果不想手动调整可以开启：自动调整窗口大小功能'
 				),
 				el('hr'),
-				el('div', '至少大于：宽2000像素，高1200像素'),
+				el('div', `至少大于：宽${state.window.minWidth}像素，高${state.window.minHeight}像素`),
 				el('div', `当前大小：宽${innerWidth}像素，高${window.innerHeight}像素`),
 				el('div', `注意：运行过程中请最小化脚本窗口，避免窗口也造成遮挡。`)
 			])
