@@ -264,6 +264,15 @@ export const CommonProject = Project.create({
 					},
 					defaultValue: 3
 				},
+				'work-when-no-job': {
+					defaultValue: false,
+					label: '(仅超星)强制答题',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'当章节测试左上角并没有黄色任务点的时候依然进行答题（没有任务点说明此作业可能不计入总成绩，如果老师要求则可以开启）'
+					}
+				},
 				'randomWork-choice': {
 					defaultValue: false,
 					label: '(仅超星)随机选择',

@@ -20,7 +20,8 @@ import {
 	domSearchAll,
 	SearchInformation,
 	$modal,
-	$message
+	$message,
+	el
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
@@ -30,7 +31,6 @@ import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
 import { $console } from './background';
-import { el } from '../../../core/src/utils/dom';
 import { CommonWorkOptions, createRangeTooltip, playMedia } from '../utils';
 
 try {
@@ -1090,10 +1090,9 @@ function searchJob(
 					if (!CXProject.scripts.study.cfg.enableChapterTest) {
 						$console.warn(`章节测试自动答题功能已关闭。${jobName} 即将跳过`);
 					} else {
-						if (attachment.job) {
+						if (attachment.job || CommonProject.scripts.settings.cfg['work-when-no-job']) {
 							func = () => {
 								$console.log('开始答题 : ', jobName);
-
 								return chapterTestTask(root, opts.workOptions);
 							};
 						}
