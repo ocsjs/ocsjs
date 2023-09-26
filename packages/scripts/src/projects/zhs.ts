@@ -33,8 +33,8 @@ const hasCapture = false;
 
 const state = {
 	window: {
-		minHeight: 1400,
-		minWidth: 2500
+		minHeight: 1200,
+		minWidth: 2200
 	},
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined
@@ -380,7 +380,7 @@ export const ZHSProject = Project.create({
 				}
 				// 自动调整窗口大小
 				if (this.cfg.autoSetViewPort) {
-					await $app_actions.setViewPort(state.window.minWidth, state.window.minHeight);
+					await $app_actions.setViewPort(state.window.minWidth + 10, state.window.minHeight + 10);
 				}
 
 				// 检测窗口大小
