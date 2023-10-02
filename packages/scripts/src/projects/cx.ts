@@ -249,20 +249,18 @@ export const CXProject = Project.create({
 			],
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
-						'请手动点击进入阅读任务点',
-						'阅读任务点通常需要挂机一小时',
-						'等待完成后次日才会统计阅读时长'
-					]).outerHTML
+					defaultValue: $creator.notes(['阅读任务次日才会统计阅读时长']).outerHTML
+				},
+				restartAfterFinish: {
+					label: '无限阅读',
+					attrs: { type: 'checkbox', title: '阅读完成最后一章后从头第一章继续阅读' },
+					defaultValue: false
 				}
 			},
 			oncomplete() {
-				if (/chaoxing.com\/course\/\d+\.html/.test(location.href)) {
-					const texts = $$el('.course_section .chapterText');
-					if (texts.length) {
-						// 自动进入章节
-						texts[0].click();
-					}
+				// 自动进入章节功能，如果不是阅读页面则自动进入
+				if (location.href.includes('/ztnodedetailcontroller/visitnodedetail') === false) {
+					startAtFirst();
 					return;
 				}
 
@@ -282,9 +280,24 @@ export const CXProject = Project.create({
 					if (next) {
 						next.click();
 					} else {
-						$console.log('未检测到下一页');
+						if (this.cfg.restartAfterFinish) {
+							setTimeout(() => startAtFirst(), 3000);
+							$message('info', { content: '即将重新从头开始阅读', duration: 10 });
+							$console.log('即将重新从头开始阅读');
+						} else {
+							$message('success', { content: '阅读任务已完成', duration: 0 });
+							$console.log('未检测到下一页');
+						}
 					}
-				}, 63 * 1000);
+				}, (60 + 3) * 1000);
+
+				// 点击第一个章节
+				function startAtFirst() {
+					const texts = $$el('.course_section .chapterText');
+					if (texts.length) {
+						texts[0].click();
+					}
+				}
 			}
 		}),
 		versionRedirect: new Script({
