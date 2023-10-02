@@ -45,16 +45,22 @@ export const $app_actions = {
 			responseType?: 'text' | 'json';
 		}
 	) => {
-		await appActionRequest(
-			{
-				url,
-				action: 'listen-request'
-			},
-			{
-				/** 智慧树考试页面会有 content-security-policy ，会被浏览器拦截， 所以用他的域名请求，然后让软件拦截即可 */
-				baseUrl: 'https://onlineexamh5new.zhihuishu.com/'
-			}
-		);
+		try {
+			await appActionRequest(
+				{
+					url,
+					action: 'listen-request'
+				},
+				{
+					/** 智慧树考试页面会有 content-security-policy ，会被浏览器拦截， 所以用他的域名请求，然后让软件拦截即可 */
+					baseUrl: 'https://onlineexamh5new.zhihuishu.com/',
+					responseType: 'text'
+				}
+			);
+		} catch (e) {
+			console.error('listen request', e);
+			$console.error('listen request', String(e));
+		}
 		return new Promise((resolve, reject) => {
 			const interval = setInterval(async () => {
 				try {
@@ -70,7 +76,8 @@ export const $app_actions = {
 						resolve(res);
 					}
 				} catch (e) {
-					$console.error('waitForResponse', String(e));
+					console.error('get-listened-request', e);
+					$console.error('get-listened-request', String(e));
 				}
 			}, options?.period || 3000);
 
@@ -145,6 +152,7 @@ async function appActionRequest(
 
 		return res;
 	} catch (e) {
+		console.error(e);
 		$console.error('软件辅助错误', String(e));
 		return '';
 	}

@@ -473,7 +473,15 @@ export const ZHSProject = Project.create({
 				};
 			},
 			async onstart() {
-				state.work.workInfo = await $app_actions.waitForResponse('/studentExam/gateway/t/v1/student/doHomework', {
+				const isExam = location.href.includes('doexamination');
+				let url = '';
+				if (isExam) {
+					url = '/taurusExam/gateway/t/v1/student/doExam';
+				} else {
+					url = '/studentExam/gateway/t/v1/student/doHomework';
+				}
+
+				state.work.workInfo = await $app_actions.waitForResponse(url, {
 					responseType: 'json'
 				});
 			},
@@ -765,9 +773,18 @@ function gxkWorkAndExam({
 		questionPositionSyncHandlerType: 'zhs-gxk'
 	});
 
+	/**
+	 * workExamParts 是个列表
+	 * 里面包括一个题目类型的列表，第一个是单选，第二个是多选，第三个是判断
+	 * 所以这里直接扁平化数组方便处理
+	 */
+	const allExamParts =
+		((state?.work?.workInfo?.rt?.examBase?.workExamParts as any[]) || [])?.map((p) => p.questionDtos).flat() || [];
+
 	const titleTransform = (_: any, index: number) => {
 		const div = el('div');
-		div.innerHTML = state?.work?.workInfo?.rt?.examBase?.workExamParts[0]?.questionDtos[index]?.name || '题目读取失败';
+
+		div.innerHTML = allExamParts[index]?.name || '题目读取失败';
 		return removeRedundantWords(optimizationElementWithImage(div).innerText || '', redundanceWordsText.split('\n'));
 	};
 
