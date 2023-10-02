@@ -247,6 +247,7 @@ export const CXProject = Project.create({
 				['课程目录', /chaoxing.com\/course\/\d+\.html/],
 				['课程目录', /chaoxing.com\/mooc-ans\/course\/\d+\.html/]
 			],
+			namespace: 'cx.new.auto-read',
 			configs: {
 				notes: {
 					defaultValue: $creator.notes(['阅读任务次日才会统计阅读时长']).outerHTML
