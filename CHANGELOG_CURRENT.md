@@ -1,14 +1,14 @@
-## [4.6.7](https://github.com/ocsjs/ocsjs/compare/4.6.5...4.6.7) (2023-09-26)
+## [4.6.9](https://github.com/ocsjs/ocsjs/compare/4.6.7...4.6.9) (2023-10-02)
 
 
 ### Bug Fixes
 
-* **script:** 微调智慧树窗口大小要求，宽2200，高1200 ([f438b79](https://github.com/ocsjs/ocsjs/commit/f438b79512463396cba1ca59aa93422b06ead276))
+* **script:** 修复智慧树考试脚本无法使用的BUG ([5f3f972](https://github.com/ocsjs/ocsjs/commit/5f3f9729687f93a5d2e36161883b822d14075518))
 
 
 ### Features
 
-* **script:** 新增功能：超星强制答题功能，没有黄色任务点的章节测试也可以运行自动答题。 ([453d254](https://github.com/ocsjs/ocsjs/commit/453d254aa575b23ad7571b811dc618a467ae1826))
+* **script:** 新增超星阅读任务无限阅读功能 ([137f739](https://github.com/ocsjs/ocsjs/commit/137f7397cef6554260db10f0d2a7535ca3db8073))
 
 
 
