@@ -28,7 +28,7 @@ const state = {
  */
 export const ZJYProject = Project.create({
 	name: '职教云',
-	domains: ['icve.com.cn', 'zjy2.icve.com.cn'],
+	domains: ['icve.com.cn', 'zjy2.icve.com.cn', 'zyk.icve.com.cn'],
 	studyProject: true,
 	scripts: {
 		guide: new Script({
@@ -44,7 +44,10 @@ export const ZJYProject = Project.create({
 
 		study: new Script({
 			name: '✍️ 课程学习',
-			url: [['学习页面', 'zjy2.icve.com.cn/study']],
+			url: [
+				['学习页面', 'zjy2.icve.com.cn/study'],
+				['资源库', 'zyk.icve.com.cn/icve-study/']
+			],
 			namespace: 'zjy.study.main',
 			configs: {
 				notes: {
@@ -58,7 +61,12 @@ export const ZJYProject = Project.create({
 			methods() {
 				return {
 					main: async () => {
-						if (!window.location.href.includes('zjy2.icve.com.cn/study/coursePreview/spoccourseIndex/courseware')) {
+						if (
+							![
+								'zjy2.icve.com.cn/study/coursePreview/spoccourseIndex/courseware',
+								'zyk.icve.com.cn/icve-study/coursePreview/courseware'
+							].some((i) => window.location.href.includes(i))
+						) {
 							return;
 						}
 
@@ -88,16 +96,16 @@ export const ZJYProject = Project.create({
 						if (!courseInfo) return;
 						$message('success', { content: '开始学习：' + courseInfo.name });
 						$console.info('开始学习：' + courseInfo.name);
-						if (courseInfo.fileType === 'ppt' || courseInfo.fileType === 'doc') {
+						if (['ppt', 'doc', 'pptx', 'docx'].some((i) => courseInfo.fileType === i)) {
 							await watchFile();
-						} else if (courseInfo.fileType === 'video' || courseInfo.fileType === 'audio') {
+						} else if (['video', 'audio', 'mp4'].some((i) => courseInfo.fileType === i)) {
 							if ($el('.guide')?.innerHTML.includes('很抱歉，您的浏览器不支持播放此类文件')) {
 								$console.error(`任务点 ${courseInfo.name}，不支持播放。`);
 							} else {
 								await watchMedia(this.cfg.volume);
 							}
 						} else {
-							$console.error(`未知的任务点 ${courseInfo.name}，请跟作者进行反馈。`);
+							$console.error(`未知的任务点 ${courseInfo.name}，类型 ${courseInfo.fileType}，请跟作者进行反馈。`);
 						}
 						$console.info('任务点结束，三秒后下一章');
 						await $.sleep(3000);
