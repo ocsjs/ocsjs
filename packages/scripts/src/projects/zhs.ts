@@ -383,6 +383,11 @@ export const ZHSProject = Project.create({
 					await $app_actions.setViewPort(state.window.minWidth + 10, state.window.minHeight + 10);
 				}
 
+				// 监听自动调整选项
+				this.onConfigChange('autoSetViewPort', () => {
+					$modal('confirm', { title: '警告', content: '检测到自动调整窗口已经更改，重启浏览器后才能生效。' });
+				});
+
 				// 检测窗口大小
 				await $.sleep(1000);
 				if (!checkWindowSize()) return;
