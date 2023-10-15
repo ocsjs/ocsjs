@@ -290,7 +290,15 @@ export const CommonProject = Project.create({
 					attrs: { title: '每行一个，随机填入' }
 				},
 				redundanceWordsText: {
-					defaultValue: ['单选题(必考)', '填空题(必考)', '多选题(必考)'].join('\n'),
+					defaultValue: [
+						'单选题(必考)',
+						'填空题(必考)',
+						'多选题(必考)',
+						'【单选题】',
+						'【多选题】',
+						'【single choice】',
+						'【multiple choice】'
+					].join('\n'),
 					label: '题目冗余字段自动删除',
 					tag: 'textarea',
 					attrs: { title: '在搜题的时候自动删除多余的文字，以便提高搜题的准确度，每行一个。' }
