@@ -26,18 +26,19 @@ import { $console } from './background';
 import { waitForMedia } from '../utils/study';
 import { $app_actions } from '../utils/app';
 
-// 学习是否暂停
-let stop = false;
-// 是否存在验证码
-const hasCapture = false;
-
 const state = {
 	window: {
 		minHeight: 800,
 		minWidth: 1400
 	},
 	study: {
-		currentMedia: undefined as HTMLMediaElement | undefined
+		/**
+		 * 学习是否暂停
+		 */
+		stop: false,
+		currentMedia: undefined as HTMLMediaElement | undefined,
+		stopInterval: 0 as any,
+		stopMessage: undefined as MessageElement | undefined
 	},
 	work: {
 		workInfo: undefined as any
@@ -181,7 +182,7 @@ export const ZHSProject = Project.create({
 				};
 			},
 			onrender({ panel }) {
-				panel.body.append(
+				panel.body.replaceChildren(
 					el('hr'),
 					$creator.button('⏰检测是否需要规律学习', {}, (btn) => {
 						btn.style.marginRight = '12px';
@@ -258,37 +259,12 @@ export const ZHSProject = Project.create({
 				};
 				await waitForVideoList();
 
-				let stopInterval: any = 0;
-				let stopMessage: MessageElement;
 				// 监听定时停止
-				this.onConfigChange('stopTime', () => {
-					clearInterval(stopInterval);
-					stopMessage?.remove();
-					if (this.cfg.stopTime === '0') {
+				this.onConfigChange('stopTime', (stopTime) => {
+					if (stopTime === '0') {
 						$message('info', { content: '定时停止已关闭' });
 					} else {
-						let stopCount = parseFloat(this.cfg.stopTime) * 60 * 60;
-						stopInterval = setInterval(() => {
-							if (stopCount > 0 && hasCapture === false) {
-								stopCount--;
-							} else {
-								clearInterval(stopInterval);
-								stop = true;
-								$el<HTMLVideoElement>('video')?.pause();
-								$modal('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
-							}
-						}, 1000);
-						const val = [
-							[0.5, '半小时后'],
-							[1, '一小时后'],
-							[2, '两小时后']
-						].find((t) => t[0].toString() === this.cfg.stopTime)?.[0] as number;
-						const date = new Date();
-						date.setMinutes(date.getMinutes() + val * 60);
-						stopMessage = $message('info', {
-							duration: 0,
-							content: `在 ${date.toLocaleTimeString()} 脚本将自动暂停`
-						});
+						autoStop(stopTime);
 					}
 				});
 
@@ -402,9 +378,12 @@ export const ZHSProject = Project.create({
 				await $.sleep(1000);
 				await waitForValidWindowSize();
 
+				// 循环记录学习时间
 				recordStudyTimeLoop();
-
+				// 自动隐藏弹窗
 				hideDialog();
+				// 自动暂停
+				autoStop(this.cfg.stopTime);
 
 				setInterval(async () => {
 					await closeTestDialog();
@@ -418,7 +397,7 @@ export const ZHSProject = Project.create({
 				$message('info', { content: '3秒后开始学习', duration: 3 });
 
 				const study = async (opts: { next: boolean }) => {
-					if (stop === false) {
+					if (state.study.stop === false) {
 						const item = findVideoItem(opts);
 
 						if (item) {
@@ -663,7 +642,7 @@ async function watch(
 	playMedia(() => video?.play());
 
 	video.onpause = async () => {
-		if (!video?.ended && stop === false) {
+		if (!video?.ended && state.study.stop === false) {
 			await waitForCaptcha();
 			await $.sleep(1000);
 			video?.play();
@@ -748,13 +727,13 @@ function checkForCaptcha(update: (hasCaptcha: boolean) => void) {
 	}, 1000);
 }
 
-export function waitForCaptcha(): void | Promise<void> {
-	const popup = document.querySelector('.yidun_popup');
+function waitForCaptcha(): void | Promise<void> {
+	const popup = getPopupCaptcha();
 	if (popup) {
 		$message('warn', { content: '当前检测到验证码，请输入后方可继续运行。' });
 		return new Promise<void>((resolve, reject) => {
 			const interval = setInterval(() => {
-				const popup = document.querySelector('.yidun_popup');
+				const popup = getPopupCaptcha();
 				if (popup === null) {
 					clearInterval(interval);
 					resolve();
@@ -762,6 +741,10 @@ export function waitForCaptcha(): void | Promise<void> {
 			}, 1000);
 		});
 	}
+}
+
+function getPopupCaptcha() {
+	return document.querySelector('.yidun_popup');
 }
 
 function waitForWorkInfo() {
@@ -1084,6 +1067,38 @@ function waitForValidWindowSize() {
 					resolve();
 				}
 			}, 1000);
+		});
+	}
+}
+
+function autoStop(stopTime: string) {
+	clearInterval(state.study.stopInterval);
+	state.study.stopMessage?.remove();
+	if (stopTime !== '0') {
+		let stopCount = parseFloat(stopTime) * 60 * 60;
+		state.study.stopInterval = setInterval(() => {
+			if (stopCount > 0) {
+				// 如果有弹窗验证码则暂停自动停止的计时
+				if (getPopupCaptcha() === null) {
+					stopCount--;
+				}
+			} else {
+				clearInterval(state.study.stopInterval);
+				state.study.stop = true;
+				$el<HTMLVideoElement>('video')?.pause();
+				$modal('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
+			}
+		}, 1000);
+		const val = [
+			[0.5, '半小时后'],
+			[1, '一小时后'],
+			[2, '两小时后']
+		].find((t) => t[0].toString() === stopTime)?.[0] as number;
+		const date = new Date();
+		date.setMinutes(date.getMinutes() + val * 60);
+		state.study.stopMessage = $message('info', {
+			duration: 0,
+			content: `在 ${date.toLocaleTimeString()} 脚本将自动暂停`
 		});
 	}
 }
