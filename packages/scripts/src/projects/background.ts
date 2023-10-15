@@ -253,9 +253,9 @@ export const BackgroundProject = Project.create({
 											if (panel.configsContainer.children.length) {
 												panel.configsContainer.classList.add('lock');
 												panel.lockWrapper.style.width =
-													(panel.configsContainer.clientWidth || panel.clientWidth) + 'px';
+													(panel.configsContainer.clientWidth ?? panel.clientWidth) + 'px';
 												panel.lockWrapper.style.height =
-													(panel.configsContainer.clientHeight || panel.clientHeight) + 'px';
+													(panel.configsContainer.clientHeight ?? panel.clientHeight) + 'px';
 												panel.configsContainer.prepend(panel.lockWrapper);
 
 												panel.lockWrapper.title =
