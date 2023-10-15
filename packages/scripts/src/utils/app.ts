@@ -1,12 +1,13 @@
-import { $, $creator, $message, el, request } from '@ocsjs/core';
+import { $, $creator, $modal, el, request } from '@ocsjs/core';
 import { $console } from '../projects/background';
 
 let actions_key = '';
 
 export const $app_actions = {
 	showError: () => {
-		$message('error', {
-			duration: 60,
+		$modal('alert', {
+			maskCloseable: false,
+			title: '⚠️警告',
 			content: el('div', [
 				'软件辅助启动失败，无法执行脚本操作，请开启软件辅助，开启教程=>',
 				$creator.button('软件辅助开启教程', {
@@ -115,17 +116,20 @@ export const $app_actions = {
 			});
 		}
 	},
-	setViewPort: async (width: number, height: number) => {
+	setViewPort: async (width: number | null, height: number | null) => {
 		return await appActionRequest({
-			width: width.toString(),
-			height: height.toString(),
+			width: width ? width.toString() : 'null',
+			height: height ? height.toString() : 'null',
 			action: 'set-viewport'
 		});
 	}
 };
 
 async function appActionRequest(
-	data: Record<string, string>,
+	data: {
+		[x: string]: any;
+		action: string;
+	},
 	options?: {
 		baseUrl?: string;
 		responseType?: 'text' | 'json';
@@ -149,11 +153,10 @@ async function appActionRequest(
 				}
 			}
 		);
-
 		return res;
 	} catch (e) {
 		console.error(e);
-		$console.error('软件辅助错误', String(e));
+		$console.error('软件辅助错误', data.action, String(e));
 		return '';
 	}
 }
