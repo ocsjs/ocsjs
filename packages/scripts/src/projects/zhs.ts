@@ -33,8 +33,8 @@ const hasCapture = false;
 
 const state = {
 	window: {
-		minHeight: 1200,
-		minWidth: 2200
+		minHeight: 800,
+		minWidth: 1400
 	},
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined
@@ -321,6 +321,8 @@ export const ZHSProject = Project.create({
 					const options = $$el('#playTopic-dialog ul .topic-item');
 					if (options.length !== 0) {
 						await waitForCaptcha();
+						// 最小化脚本窗口
+						CommonProject.scripts.render.methods.moveToEdge();
 						// 随机选
 						const option = options[Math.floor(Math.random() * options.length)];
 						await $app_actions.mouseClick(option);
@@ -373,24 +375,32 @@ export const ZHSProject = Project.create({
 				};
 
 				// 检查是否为软件环境
-				const init = await $app_actions.init();
-				if (!init) {
-					$app_actions.showError();
-					return;
+				if (!(await $app_actions.init())) {
+					return $app_actions.showError();
 				}
 				// 自动调整窗口大小
 				if (this.cfg.autoSetViewPort) {
-					await $app_actions.setViewPort(state.window.minWidth + 10, state.window.minHeight + 10);
+					await $app_actions.setViewPort(state.window.minWidth, state.window.minHeight);
 				}
 
 				// 监听自动调整选项
-				this.onConfigChange('autoSetViewPort', () => {
-					$modal('confirm', { title: '警告', content: '检测到自动调整窗口已经更改，重启浏览器后才能生效。' });
+				this.onConfigChange('autoSetViewPort', (auto) => {
+					if (auto) {
+						$app_actions.setViewPort(state.window.minWidth, state.window.minHeight);
+					} else {
+						$modal('alert', {
+							title: '提示',
+							content: el('div', [el('div', '关闭自动调整窗口选项后将重新打开此页面！'), el('div', '3秒后关闭...')])
+						});
+						setTimeout(() => {
+							$app_actions.setViewPort(null, null);
+						}, 3000);
+					}
 				});
 
 				// 检测窗口大小
 				await $.sleep(1000);
-				if (!checkWindowSize()) return;
+				await waitForValidWindowSize();
 
 				recordStudyTimeLoop();
 
@@ -413,6 +423,9 @@ export const ZHSProject = Project.create({
 
 						if (item) {
 							await $.sleep(3000);
+							// 最小化脚本窗口
+							CommonProject.scripts.render.methods.moveToEdge();
+							// 点击侧边栏任务
 							await $app_actions.mouseClick(item);
 
 							watch(
@@ -454,10 +467,8 @@ export const ZHSProject = Project.create({
 			methods() {
 				return {
 					work: async () => {
-						const init = await $app_actions.init();
-						if (!init) {
-							$app_actions.showError();
-							return;
+						if (!(await $app_actions.init())) {
+							return $app_actions.showError();
 						}
 
 						// 等待试卷加载
@@ -1028,24 +1039,51 @@ function optimizeSecond(second: number) {
 	}
 }
 
-function checkWindowSize() {
+function waitForValidWindowSize() {
+	const current = el('div', {
+		innerHTML: `当前大小：宽 <b>${window.innerWidth}</b> 像素，高 <b>${window.innerHeight}</b> 像素`
+	});
 	if (window.innerHeight < state.window.minHeight || window.innerWidth < state.window.minWidth) {
-		$modal('alert', {
-			title: '警告',
+		// TODO 实时显示当前 窗口大小
+		const modal = $modal('alert', {
+			title: '⚠️警告',
 			maskCloseable: false,
+			confirmButton: null,
 			content: el('div', [
+				el('div', '当前窗口太小，可能造成元素遮挡，脚本无法点击而卡死。'),
 				el(
-					'div',
-					'当前窗口太小，可能造成元素遮挡，脚本无法点击而卡死，请按住ctrl键+往下滚动鼠标中键滚轮，调整窗口后刷新页面，让脚本重新运行。如果不想手动调整可以开启：自动调整窗口大小功能'
+					'b',
+					'请按住ctrl键+鼠标下滚轮，放大窗口，直到警告关闭为止。如果不想手动调整可以在脚本面板开启：(知到智慧树-共享课学习脚本-自动调整窗口大小)功能'
 				),
 				el('hr'),
-				el('div', `至少大于：宽${state.window.minWidth}像素，高${state.window.minHeight}像素`),
-				el('div', `当前大小：宽${innerWidth}像素，高${window.innerHeight}像素`),
-				el('div', `注意：运行过程中请最小化脚本窗口，避免窗口也造成遮挡。`)
+				el('div', `注意：运行过程中请最小化脚本窗口，避免窗口也造成遮挡。`),
+				el('hr'),
+				el('div', `至少 宽 大于 ${state.window.minWidth} 像素，高 大于 ${state.window.minHeight} 像素`),
+				current,
+				el('hr'),
+				el('div', [
+					el(
+						'a',
+						{
+							href: 'https://docs.ocsjs.com/docs/other/FQA#关于软件辅助开启前为什么需要调整窗口大小',
+							target: '_blank'
+						},
+						'为什么要调整窗口？点击查看更多详情'
+					)
+				])
 			])
 		});
-		return false;
-	} else {
-		return true;
+
+		return new Promise<void>((resolve, reject) => {
+			const interval = setInterval(() => {
+				if (window.innerHeight < state.window.minHeight || window.innerWidth < state.window.minWidth) {
+					current.innerHTML = `当前大小：宽 <b>${window.innerWidth}</b> 像素，高 <b>${window.innerHeight}</b> 像素`;
+				} else {
+					modal?.remove();
+					clearInterval(interval);
+					resolve();
+				}
+			}, 1000);
+		});
 	}
 }

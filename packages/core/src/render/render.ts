@@ -129,6 +129,23 @@ export const RenderScript = new Script({
 				} else {
 					console.warn('[OCS]', `${script.name} 无法置顶， projectName 与 namespace 都为 undefined`);
 				}
+			},
+			/**
+			 * 最小化窗口
+			 */
+			minimize: () => {
+				this.cfg.visual = 'minimize';
+			},
+			/**
+			 * 将窗口最小化，并移动至窗口边缘
+			 */
+			moveToEdge: () => {
+				this.cfg.x = 80;
+				this.cfg.y = 60;
+				this.cfg.visual = 'minimize';
+			},
+			normal: () => {
+				this.cfg.visual = 'normal';
 			}
 		};
 	},

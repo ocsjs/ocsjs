@@ -309,9 +309,7 @@ export const BackgroundProject = Project.create({
 			oncomplete() {
 				// 将面板移动至左侧顶部，防止挡住软件登录
 				if ($.isInTopWindow()) {
-					CommonProject.scripts.render.cfg.x = 80;
-					CommonProject.scripts.render.cfg.y = 60;
-					CommonProject.scripts.render.cfg.visual = 'minimize';
+					CommonProject.scripts.render.methods.moveToEdge();
 				}
 			}
 		}),
