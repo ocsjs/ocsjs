@@ -27,10 +27,6 @@ import { waitForMedia } from '../utils/study';
 import { $app_actions } from '../utils/app';
 
 const state = {
-	window: {
-		minHeight: 800,
-		minWidth: 1400
-	},
 	study: {
 		/**
 		 * 学习是否暂停
@@ -119,11 +115,6 @@ export const ZHSProject = Project.create({
 					}
 				},
 				restudy: restudy,
-				autoSetViewPort: {
-					label: '自动调整窗口大小',
-					attrs: { title: '软件将自动调整窗口大小，避免遮挡元素，导致脚本无法点击。', type: 'checkbox' },
-					defaultValue: false
-				},
 				volume: volume,
 				definition: definition,
 				playbackRate: {
@@ -313,13 +304,6 @@ export const ZHSProject = Project.create({
 						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 					});
 				};
-				/** 固定视频进度 */
-				const fixProcessBar = () => {
-					const bar = $el('.controlsBar');
-					if (bar) {
-						bar.style.display = 'block';
-					}
-				};
 
 				// 循环记录学习时间
 				const recordStudyTimeLoop = () => {
@@ -354,30 +338,9 @@ export const ZHSProject = Project.create({
 				if (!(await $app_actions.init())) {
 					return $app_actions.showError();
 				}
-				// 自动调整窗口大小
-				if (this.cfg.autoSetViewPort) {
-					await $app_actions.setViewPort(state.window.minWidth, state.window.minHeight);
-				}
 
-				// 监听自动调整选项
-				this.onConfigChange('autoSetViewPort', (auto) => {
-					if (auto) {
-						$app_actions.setViewPort(state.window.minWidth, state.window.minHeight);
-					} else {
-						$modal('alert', {
-							title: '提示',
-							content: el('div', [el('div', '关闭自动调整窗口选项后将重新打开此页面！'), el('div', '3秒后关闭...')])
-						});
-						setTimeout(() => {
-							$app_actions.setViewPort(null, null);
-						}, 3000);
-					}
-				});
-
-				// 检测窗口大小
-				await $.sleep(1000);
-				await waitForValidWindowSize();
-
+				// 检测是否需要学前必读
+				closeDialogRead();
 				// 循环记录学习时间
 				recordStudyTimeLoop();
 				// 自动隐藏弹窗
@@ -387,6 +350,7 @@ export const ZHSProject = Project.create({
 
 				setInterval(async () => {
 					await closeTestDialog();
+					// 定时显示进度条，防止消失
 					fixProcessBar();
 					// 删除遮罩层
 					$$el('.v-modal,.mask').forEach((modal) => {
@@ -606,7 +570,6 @@ async function watch(
 	const set = async () => {
 		// 设置清晰度
 		await switchLine(options.definition);
-		await $.sleep(1000);
 		// 设置播放速度
 		await switchPlaybackRate(options.playbackRate);
 
@@ -686,10 +649,9 @@ async function watchXnk(options: { volume: number }, onended: () => void) {
  * @param definition 清晰度的类名
  */
 async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
-	const controls = $el('.controlsBar');
-	controls && (controls.style.display = 'block');
-	await $app_actions.mouseClick('.definiBox > span');
-	await $app_actions.mouseClick(`.definiLines .${definition}`);
+	await waitForControlsBar();
+	await $app_actions.mouseClick(document.querySelector('.definiBox > span'));
+	await $app_actions.mouseClick(document.querySelector(`.definiLines .${definition}`));
 }
 
 /**
@@ -697,10 +659,11 @@ async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
  * @param playbackRate 播放速度
  */
 async function switchPlaybackRate(playbackRate: number) {
-	const controls = $el('.controlsBar');
-	controls && (controls.style.display = 'block');
-	await $app_actions.mouseClick('.speedBox > span');
-	await $app_actions.mouseClick(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
+	await waitForControlsBar();
+	await $app_actions.mouseClick(document.querySelector('.speedBox > span'));
+	await $app_actions.mouseClick(
+		document.querySelector(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`)
+	);
 }
 
 /**
@@ -1022,55 +985,6 @@ function optimizeSecond(second: number) {
 	}
 }
 
-function waitForValidWindowSize() {
-	const current = el('div', {
-		innerHTML: `当前大小：宽 <b>${window.innerWidth}</b> 像素，高 <b>${window.innerHeight}</b> 像素`
-	});
-	if (window.innerHeight < state.window.minHeight || window.innerWidth < state.window.minWidth) {
-		// TODO 实时显示当前 窗口大小
-		const modal = $modal('alert', {
-			title: '⚠️警告',
-			maskCloseable: false,
-			confirmButton: null,
-			content: el('div', [
-				el('div', '当前窗口太小，可能造成元素遮挡，脚本无法点击而卡死。'),
-				el(
-					'b',
-					'请按住ctrl键+鼠标下滚轮，放大窗口，直到警告关闭为止。如果不想手动调整可以在脚本面板开启：(知到智慧树-共享课学习脚本-自动调整窗口大小)功能'
-				),
-				el('hr'),
-				el('div', `注意：运行过程中请最小化脚本窗口，避免窗口也造成遮挡。`),
-				el('hr'),
-				el('div', `至少 宽 大于 ${state.window.minWidth} 像素，高 大于 ${state.window.minHeight} 像素`),
-				current,
-				el('hr'),
-				el('div', [
-					el(
-						'a',
-						{
-							href: 'https://docs.ocsjs.com/docs/other/FQA#关于软件辅助开启前为什么需要调整窗口大小',
-							target: '_blank'
-						},
-						'为什么要调整窗口？点击查看更多详情'
-					)
-				])
-			])
-		});
-
-		return new Promise<void>((resolve, reject) => {
-			const interval = setInterval(() => {
-				if (window.innerHeight < state.window.minHeight || window.innerWidth < state.window.minWidth) {
-					current.innerHTML = `当前大小：宽 <b>${window.innerWidth}</b> 像素，高 <b>${window.innerHeight}</b> 像素`;
-				} else {
-					modal?.remove();
-					clearInterval(interval);
-					resolve();
-				}
-			}, 1000);
-		});
-	}
-}
-
 function autoStop(stopTime: string) {
 	clearInterval(state.study.stopInterval);
 	state.study.stopMessage?.remove();
@@ -1101,4 +1015,35 @@ function autoStop(stopTime: string) {
 			content: `在 ${date.toLocaleTimeString()} 脚本将自动暂停`
 		});
 	}
+}
+/** 固定视频进度 */
+function fixProcessBar() {
+	const bar = document.querySelector<HTMLElement>('.controlsBar');
+	if (bar) {
+		bar.style.display = 'block';
+	}
+}
+
+/**
+ * 等待视频控制栏
+ */
+function waitForControlsBar() {
+	return new Promise<void>((resolve, reject) => {
+		const interval = setInterval(() => {
+			const bar = document.querySelector<HTMLElement>('.controlsBar');
+			if (bar) {
+				if (bar.style.display !== 'none') {
+					clearInterval(interval);
+					resolve();
+				} else {
+					bar.style.display = 'block';
+				}
+			}
+		}, 1000);
+	});
+}
+
+function closeDialogRead() {
+	const div = document.querySelector('.dialog-read');
+	div?.remove();
 }
