@@ -52,7 +52,12 @@ class StudyLock {
 
 export const IcveMoocProject = Project.create({
 	name: '智慧职教(MOOC学院)',
-	domains: ['icve.com.cn', 'course.icve.com.cn'],
+	domains: [
+		'icve.com.cn',
+		'course.icve.com.cn',
+		// 智慧职教套壳
+		'courshare.cn'
+	],
 	studyProject: true,
 	scripts: {
 		guide: new Script({
@@ -74,7 +79,7 @@ export const IcveMoocProject = Project.create({
 		study: new Script({
 			name: '🖥️ 课程学习',
 			namespace: 'icve.study.main',
-			url: [['课程学习页面', 'course.icve.com.cn/learnspace/learn/learn/templateeight/index.action']],
+			url: [['课程学习页面', '/learnspace/learn/learn/templateeight/index.action']],
 			configs: {
 				notes: {
 					defaultValue: $creator.notes([
@@ -235,7 +240,7 @@ export const IcveMoocProject = Project.create({
 					} else {
 						// 如果为 null 证明跨域
 					}
-
+					$console.log(this.cfg.switchPeriod + ' 秒后切换下一章节。');
 					await $.sleep(this.cfg.switchPeriod * 1000);
 
 					if (studyLock.canStudy()) {
@@ -269,7 +274,7 @@ export const IcveMoocProject = Project.create({
 
 		work: new Script({
 			name: '✍️ 作业考试脚本',
-			url: [['作业考试页面', 'spoc-exam.icve.com.cn/exam']],
+			url: [['作业考试页面', '/exam']],
 			namespace: 'icve.work',
 			configs: {
 				notes: {
@@ -301,19 +306,19 @@ export const IcveMoocProject = Project.create({
 		workDispatcher: new Script({
 			name: '作业调度脚本',
 			url: [
-				['作业进入页面', 'spoc-exam.icve.com.cn/platformwebapi/student/exam/'],
-				['确认作业页面', 'spoc-exam.icve.com.cn/student/exam/studentExam_studentInfo.action']
+				['作业进入页面', '/platformwebapi/student/exam/'],
+				['确认作业页面', '/student/exam/studentExam_studentInfo.action']
 			],
 			hideInPanel: true,
 			oncomplete() {
-				if (/spoc-exam.icve.com.cn\/platformwebapi\/student\/exam/.test(window.location.href)) {
+				if (/\/platformwebapi\/student\/exam/.test(window.location.href)) {
 					cors.on('icve-work-start', () => {
 						setTimeout(() => {
 							$gm.unsafeWindow.openExamInfo();
 						}, 3000);
 					});
 				}
-				if (/spoc-exam.icve.com.cn\/student\/exam\/studentExam_studentInfo.action/.test(window.location.href)) {
+				if (/\/student\/exam\/studentExam_studentInfo.action/.test(window.location.href)) {
 					setTimeout(() => {
 						// 确认答题后，OCS会自动执行 ICVE.scripts.work 的 oncomplete 然后开始答题
 						$gm.unsafeWindow.enterExamPage();
