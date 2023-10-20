@@ -651,8 +651,8 @@ async function watchXnk(options: { volume: number }, onended: () => void) {
  */
 async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
 	await waitForControlsBar();
-	await $app_actions.mouseClick(document.querySelector('.definiBox > span'));
-	await $app_actions.mouseClick(document.querySelector(`.definiLines .${definition}`));
+	await $app_actions.mouseClick('.definiBox > span');
+	await $app_actions.mouseClick(`.definiLines .${definition}`);
 }
 
 /**
@@ -661,10 +661,8 @@ async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
  */
 async function switchPlaybackRate(playbackRate: number) {
 	await waitForControlsBar();
-	await $app_actions.mouseClick(document.querySelector('.speedBox > span'));
-	await $app_actions.mouseClick(
-		document.querySelector(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`)
-	);
+	await $app_actions.mouseClick('.speedBox > span');
+	await $app_actions.mouseClick(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
 }
 
 /**
