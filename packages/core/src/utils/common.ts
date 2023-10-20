@@ -74,13 +74,19 @@ export const $ = {
 			for (const key in project.scripts) {
 				if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
 					const script = project.scripts[key];
-					// 被排除的网页
-					if (script.excludes?.some((u) => urls.some((url) => RegExp(u[1]).test(url)))) {
-						continue;
-					}
+					// 平台域名是否匹配
+					if (
+						project.domains.length === 0 ||
+						project.domains.some((d) => urls.some((url) => new URL(url).origin.includes(d)))
+					) {
+						// 被排除的网页
+						if (script.excludes?.some((u) => urls.some((url) => RegExp(u[1]).test(url)))) {
+							continue;
+						}
 
-					if (script.url.some((u) => urls.some((url) => RegExp(u[1]).test(url)))) {
-						scripts.push(script);
+						if (script.url.some((u) => urls.some((url) => RegExp(u[1]).test(url)))) {
+							scripts.push(script);
+						}
 					}
 				}
 			}
