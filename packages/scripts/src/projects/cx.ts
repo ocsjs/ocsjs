@@ -82,7 +82,8 @@ export const CXProject = Project.create({
 				['首页', 'https://www.chaoxing.com'],
 				['旧版个人首页', 'chaoxing.com/space/index'],
 				['新版个人首页', 'chaoxing.com/base'],
-				['课程首页', 'chaoxing.com/mycourse']
+				['课程首页', 'chaoxing.com/mycourse'],
+				['新版课程首页', 'chaoxing.com/mooc2-ans/mycourse']
 			],
 			namespace: 'cx.guide',
 			configs: {
