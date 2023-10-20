@@ -291,8 +291,9 @@ export const ZHSProject = Project.create({
 						// 最小化脚本窗口
 						CommonProject.scripts.render.methods.moveToEdge();
 						// 随机选
-						const option = options[Math.floor(Math.random() * options.length)];
-						await $app_actions.mouseClick(option);
+						const random = Math.floor(Math.random() * options.length);
+						// nth-child 从1开始
+						await $app_actions.mouseClick(`#playTopic-dialog .topic .radio ul > li:nth-child(${random + 1})`);
 						await $.sleep(1000);
 						// 关闭弹窗
 						await $app_actions.mouseClick('#playTopic-dialog .dialog-footer .btn');
