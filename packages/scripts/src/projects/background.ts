@@ -202,7 +202,7 @@ export const BackgroundProject = Project.create({
 					}
 				});
 			},
-			async oncomplete() {
+			async onactive() {
 				if ($.isInTopWindow() && this.cfg.closeSync === false) {
 					this.cfg.sync = false;
 					try {
