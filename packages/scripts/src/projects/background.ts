@@ -137,7 +137,7 @@ export const BackgroundProject = Project.create({
 				show();
 			}
 		}),
-		app: new Script({
+		appConfigSync: new Script({
 			name: '🔄️ 软件配置同步',
 			namespace: 'background.app',
 			url: [['所有页面', /./]],
@@ -234,6 +234,22 @@ export const BackgroundProject = Project.create({
 								}
 							}
 
+							// 排除那些不用同步的配置
+							for (const project of definedProjects()) {
+								for (const key in project.scripts) {
+									if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
+										const script = project.scripts[key];
+										for (const ck in script.configs) {
+											if (Object.prototype.hasOwnProperty.call(script.configs, ck)) {
+												if (script.configs[ck].extra.appConfigSync === false) {
+													Reflect.deleteProperty(res, $.namespaceKey(script.namespace, ck));
+												}
+											}
+										}
+									}
+								}
+							}
+
 							// 同步所有的配置
 							for (const key in res) {
 								if (Object.prototype.hasOwnProperty.call(res, key)) {
@@ -242,10 +258,14 @@ export const BackgroundProject = Project.create({
 							}
 
 							// 锁定面板
-							for (const projects of definedProjects()) {
-								for (const key in projects.scripts) {
-									if (Object.prototype.hasOwnProperty.call(projects.scripts, key)) {
-										const script = projects.scripts[key];
+							for (const project of definedProjects()) {
+								// 排除后台脚本的锁定
+								if (project === BackgroundProject) {
+									continue;
+								}
+								for (const key in project.scripts) {
+									if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
+										const script = project.scripts[key];
 										const originalRender = script.onrender;
 										// 重新定义渲染函数。在渲染后添加锁定面板的代码
 										script.onrender = ({ panel, header }) => {

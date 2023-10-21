@@ -96,7 +96,10 @@ export const ZHSProject = Project.create({
 							/** 学习时间 */
 							time: number;
 						}[];
-					}[]
+					}[],
+					extra: {
+						appConfigSync: false
+					}
 				},
 				stopTime: {
 					label: '定时停止',

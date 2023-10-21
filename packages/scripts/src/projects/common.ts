@@ -912,7 +912,7 @@ export const CommonProject = Project.create({
 			}
 		}),
 		apps: new Script({
-			name: '📱 其他应用',
+			name: '📱 拓展应用',
 			url: [['', /.*/]],
 			namespace: 'common.apps',
 			configs: {
@@ -923,7 +923,10 @@ export const CommonProject = Project.create({
 				 * 题库缓存
 				 */
 				localQuestionCaches: {
-					defaultValue: [] as QuestionCache[]
+					defaultValue: [] as QuestionCache[],
+					extra: {
+						appConfigSync: false
+					}
 				}
 			},
 			methods() {
