@@ -288,19 +288,46 @@ export const ZHSProject = Project.create({
 				};
 				/** 关闭测验弹窗 */
 				const closeTestDialog = async () => {
-					const options = $$el('#playTopic-dialog ul .topic-item');
-					if (options.length !== 0) {
-						await waitForCaptcha();
-						// 最小化脚本窗口
-						CommonProject.scripts.render.methods.moveToEdge();
-						// 随机选
-						const random = Math.floor(Math.random() * options.length);
-						// nth-child 从1开始
-						await $app_actions.mouseClick(`#playTopic-dialog .topic .radio ul > li:nth-child(${random + 1})`);
+					const tip = $el('[role="dialog"][aria-label="提示"]');
+					if (tip?.querySelector('.el-message-box__message')?.textContent?.includes('未做答的弹题不能关闭')) {
+						const close = tip.querySelector('[aria-label="Close"]');
+						if (close) {
+							await $app_actions.mouseClick('[role="dialog"][aria-label="提示"] [aria-label="Close"]');
+							await $.sleep(1000);
+						}
+					}
+
+					const items = $$el('#playTopic-dialog .topic .el-pager .number');
+					if (items.length) {
+						for (const item of items) {
+							if (item.classList.contains('active') === false) {
+								item.click();
+								await $.sleep(500);
+							}
+
+							const options = $$el('#playTopic-dialog ul .topic-item');
+							if (options.length !== 0) {
+								await waitForCaptcha();
+								// 最小化脚本窗口
+								CommonProject.scripts.render.methods.moveToEdge();
+								// 随机选
+								const random = Math.floor(Math.random() * options.length);
+								await $.sleep(1000);
+								// nth-child 从1开始
+								await $app_actions.mouseClick(`#playTopic-dialog .topic .radio ul > li:nth-child(${random + 1})`);
+								await $.sleep(1000);
+							}
+						}
 						await $.sleep(1000);
 						// 关闭弹窗
 						await $app_actions.mouseClick('#playTopic-dialog .dialog-footer .btn');
 					}
+
+					/**
+					 * 每过三秒递归检测是否有弹窗
+					 */
+					await $.sleep(3000);
+					await closeTestDialog();
 				};
 
 				const finish = () => {
@@ -351,15 +378,16 @@ export const ZHSProject = Project.create({
 				hideDialog();
 				// 自动暂停
 				autoStop(this.cfg.stopTime);
+				// 自动过弹窗测验
+				closeTestDialog();
 
 				setInterval(async () => {
-					await closeTestDialog();
-					// 定时显示进度条，防止消失
-					fixProcessBar();
 					// 删除遮罩层
 					$$el('.v-modal,.mask').forEach((modal) => {
 						modal.remove();
 					});
+					// 定时显示进度条，防止消失
+					fixProcessBar();
 				}, 3000);
 
 				$message('info', { content: '3秒后开始学习', duration: 3 });
@@ -377,9 +405,7 @@ export const ZHSProject = Project.create({
 
 							watch(
 								{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
-								({ next }) => {
-									study({ next });
-								}
+								({ next }) => study({ next })
 							);
 						} else {
 							finish();
@@ -574,6 +600,7 @@ async function watch(
 	const set = async () => {
 		// 设置清晰度
 		await switchLine(options.definition);
+		await $.sleep(1000);
 		// 设置播放速度
 		await switchPlaybackRate(options.playbackRate);
 
@@ -653,9 +680,14 @@ async function watchXnk(options: { volume: number }, onended: () => void) {
  * @param definition 清晰度的类名
  */
 async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
-	await waitForControlsBar();
-	await $app_actions.mouseClick('.definiBox > span');
-	await $app_actions.mouseClick(`.definiLines .${definition}`);
+	const controlsBar = $el('.controlsBar');
+	const dl = $el('.definiLines');
+
+	if (controlsBar && dl) {
+		controlsBar.style.display = 'block';
+		dl.style.display = 'block';
+		await $app_actions.mouseClick(`.definiLines .${definition}`);
+	}
 }
 
 /**
@@ -663,9 +695,13 @@ async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
  * @param playbackRate 播放速度
  */
 async function switchPlaybackRate(playbackRate: number) {
-	await waitForControlsBar();
-	await $app_actions.mouseClick('.speedBox > span');
-	await $app_actions.mouseClick(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
+	const controlsBar = $el('.controlsBar');
+	const sl = $el('.speedList');
+	if (controlsBar && sl) {
+		controlsBar.style.display = 'block';
+		sl.style.display = 'block';
+		await $app_actions.mouseClick(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
+	}
 }
 
 /**
@@ -1024,25 +1060,6 @@ function fixProcessBar() {
 	if (bar) {
 		bar.style.display = 'block';
 	}
-}
-
-/**
- * 等待视频控制栏
- */
-function waitForControlsBar() {
-	return new Promise<void>((resolve, reject) => {
-		const interval = setInterval(() => {
-			const bar = document.querySelector<HTMLElement>('.controlsBar');
-			if (bar) {
-				if (bar.style.display !== 'none') {
-					clearInterval(interval);
-					resolve();
-				} else {
-					bar.style.display = 'block';
-				}
-			}
-		}, 1000);
-	});
 }
 
 function closeDialogRead() {
