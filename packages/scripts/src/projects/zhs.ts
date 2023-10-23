@@ -186,6 +186,10 @@ export const ZHSProject = Project.create({
 							setTimeout(() => {
 								const pmd = $el('.preschool-Mustread-div');
 								if (pmd) {
+									const div = document.querySelector<HTMLElement>('.dialog-read');
+									if (div) {
+										div.style.display = 'block';
+									}
 									const num = parseInt(pmd.innerText.match(/学习习惯成绩（(\d+)分）/)?.[1] || '0');
 									$modal('alert', {
 										content:
@@ -1063,6 +1067,8 @@ function fixProcessBar() {
 }
 
 function closeDialogRead() {
-	const div = document.querySelector('.dialog-read');
-	div?.remove();
+	const div = document.querySelector<HTMLElement>('.dialog-read');
+	if (div) {
+		div.style.display = 'none';
+	}
 }
