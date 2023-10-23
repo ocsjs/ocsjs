@@ -223,7 +223,7 @@ export const CXProject = Project.create({
 					await study({
 						...this.cfg,
 						playbackRate: parseFloat(this.cfg.playbackRate.toString()),
-						workOptions: { ...CommonProject.scripts.settings.cfg }
+						workOptions: CommonProject.scripts.settings.methods.getWorkOptions()
 					});
 				}
 			}

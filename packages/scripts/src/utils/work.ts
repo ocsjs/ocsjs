@@ -83,16 +83,7 @@ export function commonWork(
 		);
 	});
 
-	// 使用 json 深拷贝，防止修改原始配置
-	const workOptions: typeof CommonProject.scripts.settings.cfg = JSON.parse(
-		JSON.stringify(CommonProject.scripts.settings.cfg)
-	);
-	/**
-	 * 过滤掉被禁用的题库
-	 */
-	workOptions.answererWrappers = workOptions.answererWrappers.filter(
-		(aw) => CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.find((daw) => daw === aw.name) === undefined
-	);
+	const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
 
 	/**
 	 * 检查题库是否配置，并询问是否开始答题
