@@ -304,6 +304,26 @@ export const CommonProject = Project.create({
 					attrs: { title: '在搜题的时候自动删除多余的文字，以便提高搜题的准确度，每行一个。' }
 				}
 			},
+			methods() {
+				return {
+					/**
+					 * 获取自动答题配置，包括题库配置
+					 */
+					getWorkOptions: () => {
+						// 使用 json 深拷贝，防止修改原始配置
+						const workOptions: typeof this.cfg = JSON.parse(JSON.stringify(this.cfg));
+
+						/**
+						 * 过滤掉被禁用的题库
+						 */
+						workOptions.answererWrappers = workOptions.answererWrappers.filter(
+							(aw) => this.cfg.disabledAnswererWrapperNames.find((daw) => daw === aw.name) === undefined
+						);
+
+						return workOptions;
+					}
+				};
+			},
 			onrender({ panel }) {
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
 				if ($gm.getInfos() !== undefined) {
