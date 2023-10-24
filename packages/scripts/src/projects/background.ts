@@ -241,7 +241,7 @@ export const BackgroundProject = Project.create({
 										const script = project.scripts[key];
 										for (const ck in script.configs) {
 											if (Object.prototype.hasOwnProperty.call(script.configs, ck)) {
-												if (script.configs[ck].extra.appConfigSync === false) {
+												if (script.configs[ck].extra?.appConfigSync === false) {
 													Reflect.deleteProperty(res, $.namespaceKey(script.namespace, ck));
 												}
 											}
@@ -260,7 +260,7 @@ export const BackgroundProject = Project.create({
 							// 锁定面板
 							for (const project of definedProjects()) {
 								// 排除后台脚本的锁定
-								if (project === BackgroundProject) {
+								if (project.name === BackgroundProject.name) {
 									continue;
 								}
 								for (const key in project.scripts) {
@@ -293,7 +293,8 @@ export const BackgroundProject = Project.create({
 
 							this.cfg.sync = true;
 						}
-					} catch {
+					} catch (e) {
+						console.error(e);
 						this.cfg.sync = false;
 						this.cfg.connected = false;
 					}
