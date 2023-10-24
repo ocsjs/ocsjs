@@ -1,14 +1,10 @@
-## [4.6.25](https://github.com/ocsjs/ocsjs/compare/4.6.23...4.6.25) (2023-10-22)
+## [4.6.27](https://github.com/ocsjs/ocsjs/compare/4.6.25...4.6.27) (2023-10-24)
 
 
 ### Bug Fixes
 
-* **script:** 深度优化智慧树弹窗BUG，以及倍速清晰度不选择BUG ([f61498c](https://github.com/ocsjs/ocsjs/commit/f61498c4640cbe8583b33d6d46a922341c3a57ae))
-
-
-### Features
-
-* **script:** 新增可以设置不被软件配置同步覆盖的设置，修复智慧树学习记录刷新后清空的BUG ([b35f87f](https://github.com/ocsjs/ocsjs/commit/b35f87fc5fd01a9de37fdc2855da2f6dfd8fc9df))
+* **script:** 修复超星章节测试题库被禁用的时候依然使用的BUG ([fff8cc4](https://github.com/ocsjs/ocsjs/commit/fff8cc4d41e49cf8c4f0d8f13f9cde3143505434))
+* **script:** 修复智慧树检测习惯分出错 ([436eedd](https://github.com/ocsjs/ocsjs/commit/436eedd449c15d74be8b4b07fdd33d7c01e3db0e))
 
 
 
