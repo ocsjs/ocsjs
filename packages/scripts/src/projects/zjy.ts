@@ -1,8 +1,10 @@
-import { $, $creator, $el, $message, Project, Script } from '@ocsjs/core';
+import { $, $creator, $el, $message, OCSWorker, Project, Script, defaultAnswerWrapperHandler } from '@ocsjs/core';
 import { volume } from '../utils/configs';
 import { waitForMedia } from '../utils/study';
-import { playMedia } from '../utils';
+import { CommonWorkOptions, playMedia } from '../utils';
 import { $console } from './background';
+import { CommonProject } from './common';
+import { commonWork, simplifyWorkResult } from '../utils/work';
 
 type CourseType = {
 	fileType: string;
@@ -33,7 +35,10 @@ export const ZJYProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '🖥️ 使用提示',
-			url: [['课程页面', 'zjy2.icve.com.cn/study']],
+			url: [
+				['学习页面', 'zjy2.icve.com.cn/study'],
+				['资源库', 'zyk.icve.com.cn/icve-study/']
+			],
 			namespace: 'zjy.study.guide',
 			configs: {
 				notes: {
@@ -41,13 +46,48 @@ export const ZJYProject = Project.create({
 				}
 			}
 		}),
-
-		study: new Script({
-			name: '✍️ 课程学习',
+		dispatcher: new Script({
+			name: '调度器',
 			url: [
 				['学习页面', 'zjy2.icve.com.cn/study'],
 				['资源库', 'zyk.icve.com.cn/icve-study/']
 			],
+			hideInPanel: true,
+			methods() {
+				return {
+					dispatch: () => {
+						if (
+							[
+								'zjy2.icve.com.cn/study/coursePreview/spoccourseIndex/courseware',
+								'zyk.icve.com.cn/icve-study/coursePreview/courseware'
+							].some((i) => window.location.href.includes(i))
+						) {
+							ZJYProject.scripts.study.methods.main();
+						} else if (['icve-study/coursePreview/jobTes'].some((i) => window.location.href.includes(i))) {
+							ZJYProject.scripts.work.methods.main();
+						}
+					}
+				};
+			},
+			/**
+			 *
+			 * 新版职教云采用VUE技术路由，所以这里需要使用 onhistorychange 监听路由变化，然后脚本中自行判断相应的路由执行情况
+			 */
+			onhistorychange(type) {
+				if (type === 'push') {
+					this.methods.dispatch();
+				}
+			},
+			oncomplete() {
+				this.methods.dispatch();
+			}
+		}),
+		study: new Script({
+			url: [
+				['学习页面', 'zjy2.icve.com.cn/study/coursePreview/spoccourseIndex/courseware'],
+				['资源库学习页面', 'zyk.icve.com.cn/icve-study/coursePreview/courseware']
+			],
+			name: '✍️ 课程学习',
 			namespace: 'zjy.study.main',
 			configs: {
 				notes: {
@@ -61,15 +101,6 @@ export const ZJYProject = Project.create({
 			methods() {
 				return {
 					main: async () => {
-						if (
-							![
-								'zjy2.icve.com.cn/study/coursePreview/spoccourseIndex/courseware',
-								'zyk.icve.com.cn/icve-study/coursePreview/courseware'
-							].some((i) => window.location.href.includes(i))
-						) {
-							return;
-						}
-
 						const id = new URL(window.location.href).searchParams.get('id');
 						if (!id) {
 							return;
@@ -96,7 +127,7 @@ export const ZJYProject = Project.create({
 						if (!courseInfo) return;
 						$message('success', { content: '开始学习：' + courseInfo.name });
 						$console.info('开始学习：' + courseInfo.name);
-						if (['ppt', 'doc', 'pptx', 'docx'].some((i) => courseInfo.fileType === i)) {
+						if (['ppt', 'doc', 'pptx', 'docx', 'pdf'].some((i) => courseInfo.fileType === i)) {
 							await watchFile();
 						} else if (['video', 'audio', 'mp4'].some((i) => courseInfo.fileType === i)) {
 							if ($el('.guide')?.innerHTML.includes('很抱歉，您的浏览器不支持播放此类文件')) {
@@ -112,18 +143,35 @@ export const ZJYProject = Project.create({
 						await next();
 					}
 				};
-			},
-			/**
-			 *
-			 * 新版职教云采用VUE技术路由，所以这里需要使用 onhistorychange 监听路由变化，然后脚本中自行判断相应的路由执行情况
-			 */
-			onhistorychange(type) {
-				if (type === 'push') {
-					this.methods.main();
+			}
+		}),
+		work: new Script({
+			url: [['作业页面', 'icve-study/coursePreview/jobTes']],
+			name: '✍️ 作业脚本',
+			namespace: 'zjy.work.main',
+			configs: {
+				notes: {
+					defaultValue: $creator.notes([
+						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
+						'可以搭配 “通用-在线搜题” 一起使用。',
+						'请手动进入作业考试页面才能使用自动答题。'
+					]).outerHTML
 				}
 			},
-			oncomplete() {
-				this.methods.main();
+			methods() {
+				return {
+					main: async () => {
+						if (!['icve-study/coursePreview/jobTes'].some((i) => window.location.href.includes(i))) {
+							return;
+						}
+
+						await waitForQuestions();
+
+						commonWork(this, {
+							workerProvider: work
+						});
+					}
+				};
 			}
 		})
 	}
@@ -192,4 +240,98 @@ async function waitForLoad() {
 			}
 		}, 1000);
 	});
+}
+
+/**
+ * 等待试卷作业加载
+ */
+async function waitForQuestions() {
+	return new Promise<void>((resolve, reject) => {
+		const interval = setInterval(() => {
+			if ($el('.subjectList') !== undefined) {
+				clearInterval(interval);
+				resolve();
+			}
+		}, 1000);
+	});
+}
+
+function work({ answererWrappers, period, thread }: CommonWorkOptions) {
+	$message('info', { content: '开始作业' });
+	CommonProject.scripts.workResults.methods.init({
+		questionPositionSyncHandlerType: 'zjy'
+	});
+
+	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
+		return titles
+			.filter((t) => t?.innerText)
+			.map((t) => t?.innerText)
+			.join(',');
+	};
+
+	const worker = new OCSWorker({
+		root: '.subjectDet',
+		elements: {
+			title: 'h2,h3,h4,h5,h6',
+			options: '.optionList > div'
+		},
+		/** 其余配置 */
+		requestPeriod: period ?? 3,
+		resolvePeriod: 1,
+		thread: thread ?? 1,
+		/** 默认搜题方法构造器 */
+		answerer: (elements, type, ctx) => {
+			const title = titleTransform(elements.title);
+			if (title) {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+					return defaultAnswerWrapperHandler(answererWrappers, {
+						type,
+						title,
+						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+					});
+				});
+			} else {
+				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+			}
+		},
+		work: {
+			/** 自定义处理器 */
+			handler(type, answer, option, ctx) {
+				if (type === 'judgement' || type === 'single' || type === 'multiple') {
+					// 这里只用判断多选题是否选中，如果选中就不用再点击了，单选题是 radio，所以不用判断。
+					if (option.querySelector('input')?.checked !== true) {
+						option.querySelector('label')?.click();
+					}
+				} else if (type === 'completion' && answer.trim()) {
+					const text = option.querySelector('textarea');
+					if (text) {
+						text.value = answer;
+					}
+				}
+			}
+		},
+
+		/** 完成答题后 */
+		onResultsUpdate(res) {
+			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
+		},
+		onResolveUpdate(res) {
+			if (res.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
+			}
+			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+		}
+	});
+
+	worker
+		.doWork()
+		.then(() => {
+			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			worker.emit('done');
+		})
+		.catch((err) => {
+			$message('error', { content: `作业/考试失败: ${err}`, duration: 0 });
+		});
+
+	return worker;
 }
