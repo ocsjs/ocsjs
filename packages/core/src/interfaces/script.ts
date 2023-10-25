@@ -24,6 +24,8 @@ export interface ScriptOptions<C extends Record<string, Config>> {
 	configs?: ScriptConfigsProvider<C>;
 	/** 不显示脚本页 */
 	hideInPanel?: boolean;
+	/** 运行优先级 */
+	priority?: number;
 }
 
 export type ScriptConfigs = {
@@ -103,6 +105,8 @@ export class Script<
 	methods: M = Object.create({});
 	/** 自定义事件触发器，避免使用 script.emit , script.on 导致与原有的事件冲突，使用 script.event.emit 和 script.event.on */
 	event: EventEmitter = new EventEmitter();
+	/** 运行优先级，默认0 */
+	priority: number;
 
 	get configs() {
 		if (!this._resolvedConfigs) {
@@ -128,7 +132,8 @@ export class Script<
 		onbeforeunload,
 		onrender,
 		onhistorychange,
-		methods
+		methods,
+		priority
 	}: ScriptOptions<C> & {
 		onstart?: (this: Script<C, M>, ...args: any) => any;
 		onactive?: (this: Script<C, M>, ...args: any) => any;
@@ -152,6 +157,7 @@ export class Script<
 		this.onrender = this.errorHandler(onrender);
 		this.onhistorychange = this.errorHandler(onhistorychange);
 		this.methods = methods?.bind(this)() || Object.create({});
+		this.priority = priority ?? 0;
 
 		if (this.methods) {
 			for (const key in methods) {

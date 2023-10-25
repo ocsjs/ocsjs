@@ -920,15 +920,21 @@ export const CommonProject = Project.create({
 			name: '禁止弹窗',
 			url: [['所有页面', /.*/]],
 			hideInPanel: true,
+			priority: 1,
 			onstart() {
+				function disableDialog(msg: string) {
+					$modal('alert', {
+						profile: '弹窗来自：' + location.origin,
+						content: msg
+					});
+				}
+
 				try {
-					$gm.unsafeWindow.alert = (msg) => {
-						$modal('alert', {
-							profile: '弹窗来自：' + location.origin,
-							content: msg
-						});
-					};
-				} catch (e) {}
+					$gm.unsafeWindow.alert = disableDialog;
+					window.alert = disableDialog;
+				} catch (e) {
+					console.error(e);
+				}
 			}
 		}),
 		apps: new Script({

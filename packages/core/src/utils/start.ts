@@ -65,7 +65,7 @@ export async function start(startConfig: StartConfig) {
 		return p;
 	});
 
-	const scripts = $.getMatchedScripts(startConfig.projects, [location.href]);
+	const scripts = $.getMatchedScripts(startConfig.projects, [location.href]).sort((a, b) => b.priority - a.priority);
 
 	/** 执行脚本 */
 	scripts.forEach((script) => {
