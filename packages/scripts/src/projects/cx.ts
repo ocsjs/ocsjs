@@ -1536,6 +1536,7 @@ export function getValidNumber(...nums: number[]) {
  * 5 名词解释
  * 6 论述题
  * 7 计算题
+ * 8 其他题(大概率是填空题)
  * 9 分录题
  * 10 资料题
  * 11 连线题
@@ -1551,7 +1552,7 @@ function getQuestionType(
 		? 'multiple'
 		: val === 3
 		? 'judgement'
-		: [2, 4, 5, 6, 7, 9, 10].some((t) => t === val)
+		: [2, 4, 5, 6, 7, 8, 9, 10].some((t) => t === val)
 		? 'completion'
 		: val === 11
 		? 'line'
