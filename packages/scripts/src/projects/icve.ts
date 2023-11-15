@@ -393,7 +393,7 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 						text.value = answer;
 					}
 					if (textIframe) {
-						const view = textIframe.contentWindow?.document.querySelector<HTMLElement>('.view');
+						const view = textIframe.contentWindow?.document.querySelector<HTMLElement>('body.view > p');
 						if (view) {
 							view.innerText = answer;
 						}
