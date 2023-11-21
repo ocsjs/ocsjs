@@ -57,9 +57,9 @@ async function createUserJs(cb) {
 				`OCS(online-course-script) 网课助手，官网 https://docs.ocsjs.com ，专注于帮助大学生从网课中释放出来。
 				让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 
 				${ocs.definedProjects()
-					.filter((p) => p.studyProject)
-					.map((s) => `【${s.name}】`)
-					.join(' ')}，等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。`,
+						.filter((p) => p.studyProject)
+						.map((s) => `【${s.name}】`)
+						.join(' ')}，等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。`.replace(/\n+/g, ' ').replace(/\t+/g, ' '),
 			author: 'enncy',
 			license: 'MIT',
 			namespace: 'https://enncy.cn',
