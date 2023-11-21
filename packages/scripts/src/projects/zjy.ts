@@ -217,10 +217,24 @@ async function start(): Promise<CourseType | undefined> {
 	}
 }
 
+function getNextObject() {
+	return $el('.guide')?.__vue__?.nextObj;
+}
+
 async function next() {
-	const nextObj = $el('.guide')?.__vue__?.nextObj;
-	if (nextObj?.id !== undefined) {
-		$el('.preOrNext .next .el-link')?.click();
+	const nextObject = getNextObject();
+	const id = new URL(window.location.href).searchParams.get('id');
+
+	if (id && nextObject?.id !== undefined) {
+		// 跳过讨论
+		if (nextObject.fileType === '讨论') {
+			const res = await getCourseInfo(nextObject.id);
+			$console.info('下个任务点为讨论，即将跳过');
+			await $.sleep(3000);
+			window.location.href = window.location.href.replace(id, res.data.next.id);
+		} else {
+			$el('.preOrNext .next .el-link')?.click();
+		}
 	} else {
 		$message('success', {
 			duration: 0,
@@ -334,4 +348,14 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		});
 
 	return worker;
+}
+
+function getCourseInfo(id: string) {
+	return fetch('https://zyk.icve.com.cn/prod-api/teacher/courseContent/' + id, {
+		headers: {
+			accept: 'application/json, text/plain, */*',
+			authorization: 'Bearer ' + document.cookie.match(/Token=([^;]+)/)?.[1] ?? ''
+		},
+		method: 'GET'
+	}).then((res) => res.json());
 }
