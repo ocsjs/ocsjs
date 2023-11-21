@@ -12,7 +12,7 @@ export class MessageElement extends IElement {
 	/**  消息类型 */
 	type: 'info' | 'success' | 'warn' | 'error' = 'info';
 	/** 内容 */
-	content: string | HTMLElement = '';
+	content: string | HTMLElement | Node = '';
 	/** 持续时间(秒)，如果为0的话则一直存在，默认为: 5 */
 	duration?: number;
 	/** 是否允许关闭 */

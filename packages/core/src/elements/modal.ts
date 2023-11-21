@@ -32,7 +32,7 @@ export class ModalElement extends IElement {
 	 */
 	type: 'prompt' | 'alert' | 'confirm' | 'simple' = 'alert';
 	/** 弹窗内容 */
-	content: string | HTMLElement = '';
+	content: string | HTMLElement | Node = '';
 	/** 输入框默认内容 */
 	inputDefaultValue?: string = '';
 	/** 输入框提示 */

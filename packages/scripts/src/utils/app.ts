@@ -1,22 +1,22 @@
-import { $, $creator, $modal, el, request } from '@ocsjs/core';
+import { $, $message, $modal, el, request } from '@ocsjs/core';
 import { $console } from '../projects/background';
 
 let actions_key = '';
 
 export const $app_actions = {
 	showError: () => {
+		const href = 'https://docs.ocsjs.com/docs/script-helper';
+		const errorEl = el('div', [
+			'软件辅助启动失败，无法执行脚本操作，请开启软件辅助，点击链接查看开启教程 => ',
+			el('a', { href: href, target: '_blank' }, href)
+		]);
 		$modal('alert', {
 			maskCloseable: false,
-			title: '⚠️警告',
-			content: el('div', [
-				'软件辅助启动失败，无法执行脚本操作，请开启软件辅助，开启教程=>',
-				$creator.button('软件辅助开启教程', {
-					onclick: () => {
-						window.open('https://docs.ocsjs.com/docs/script-helper');
-					}
-				})
-			])
+			title: '⛔ 错误',
+			confirmButtonText: '我已知晓',
+			content: errorEl.cloneNode(true)
 		});
+		$message('error', { content: errorEl.cloneNode(true), duration: 0 });
 	},
 	init: async () => {
 		/**

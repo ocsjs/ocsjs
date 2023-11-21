@@ -454,7 +454,7 @@ export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 
 		if (notify) {
 			$gm.notification(
-				typeof _attrs.content === 'string' ? _attrs.content : _attrs.content.innerText,
+				typeof _attrs.content === 'string' ? _attrs.content : _attrs.content.textContent || '',
 				notificationOptions
 			);
 		}
