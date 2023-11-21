@@ -96,13 +96,17 @@ export const $creator = {
 	 * @returns
 	 */
 	selectOptions(selectedValue: string | null = '', options: ([any, string] | [any, string, string])[]) {
-		return options.map((opt) =>
-			el('option', { value: String(opt[0]), innerText: opt[1], title: opt[2] }, (opt) => {
+		return options.map((opt) => {
+			const optEl = el('option', { value: String(opt[0]), innerText: opt[1] }, (opt) => {
 				if (opt.value === selectedValue) {
 					opt.toggleAttribute('selected');
 				}
-			})
-		);
+			});
+			if (opt[2]) {
+				optEl.title = opt[2];
+			}
+			return optEl;
+		});
 	},
 	input(
 		attrs?: Partial<HTMLInputElement> | undefined,
