@@ -25,13 +25,13 @@ import {
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
-import { workNotes, volume, restudy } from '../utils/configs';
+import { workNotes, volume, restudy, playbackRate } from '../utils/configs';
 import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
 import { $console } from './background';
-import { CommonWorkOptions, createRangeTooltip, playMedia } from '../utils';
+import { CommonWorkOptions, playMedia } from '../utils';
 
 try {
 	/**
@@ -57,7 +57,8 @@ const state = {
 	study: {
 		videojs: Object.create({}),
 		hacked: false,
-		answererWrapperUnsetMessage: undefined as MessageElement | undefined
+		answererWrapperUnsetMessage: undefined as MessageElement | undefined,
+		playbackRateWarningListenerId: 0
 	}
 };
 
@@ -112,27 +113,9 @@ export const CXProject = Project.create({
 						'不要最小化浏览器，可能导致脚本暂停。'
 					]).outerHTML
 				},
-				playbackRate: {
-					label: '视频倍速',
-					attrs: {
-						type: 'range',
-						step: 0.5,
-						min: 1,
-						max: 16
-					},
-					defaultValue: 1,
-					onload() {
-						createRangeTooltip(
-							this,
-							'1',
-							(val) =>
-								(parseFloat(val) > 2 ? `${val}x - 高倍速警告！` : `${val}x`) +
-								'\n\n高倍速(大于1倍)可能导致: \n- 学习记录清空\n- 频繁验证码\n超星后台可以看到学习时长，请谨慎设置❗\n如果设置后无效则是超星不允许使用倍速。'
-						);
-					}
-				},
-				volume,
-				restudy,
+				playbackRate: playbackRate,
+				volume: volume,
+				restudy: restudy,
 				autoNextPage: {
 					label: '自动下一章',
 					attrs: { type: 'checkbox' },
@@ -191,6 +174,18 @@ export const CXProject = Project.create({
 						});
 					}
 				}
+
+				// 高倍速警告
+				this.offConfigChange(state.study.playbackRateWarningListenerId);
+				state.study.playbackRateWarningListenerId =
+					this.onConfigChange('playbackRate', (playbackRate) => {
+						if (playbackRate > 3) {
+							$modal('alert', {
+								title: '⚠️高倍速警告',
+								content: $creator.notes(['高倍速可能导致学习记录清空', '超星后台可以看到学习时长，请谨慎设置❗'])
+							});
+						}
+					}) || 0;
 			},
 			async oncomplete() {
 				/** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */

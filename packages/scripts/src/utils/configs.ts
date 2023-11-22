@@ -5,6 +5,23 @@ import { createRangeTooltip } from '.';
  * 可复用的配置参数
  */
 
+/**
+ * 倍速设置
+ */
+export const playbackRate: Config = {
+	label: '视频倍速',
+	tag: 'select',
+	defaultValue: 1,
+	onload() {
+		this.append(
+			...$creator.selectOptions(
+				this.getAttribute('value'),
+				[1, 1.25, 1.5, 1.75, 2, 3, 4, 8, 12, 16].map((rate) => [rate, rate + ' x'])
+			)
+		);
+	}
+};
+
 /** 音量调节配置  */
 export const volume: Config = {
 	label: '音量调节',
