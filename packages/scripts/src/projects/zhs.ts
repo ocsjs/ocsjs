@@ -106,16 +106,12 @@ export const ZHSProject = Project.create({
 					tag: 'select',
 					attrs: { title: '到时间后自动暂停脚本' },
 					defaultValue: '0',
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value'), [
-								[0, '关闭'],
-								[0.5, '半小时后'],
-								[1, '一小时后'],
-								[2, '两小时后']
-							])
-						);
-					}
+					options: [
+						['0', '关闭'],
+						['0.5', '半小时后'],
+						['1', '一小时后'],
+						['2', '两小时后']
+					]
 				},
 				restudy: restudy,
 				volume: volume,
@@ -124,14 +120,11 @@ export const ZHSProject = Project.create({
 					label: '视频倍速',
 					tag: 'select',
 					defaultValue: 1,
-					onload() {
-						this.append(
-							...$creator.selectOptions(
-								this.getAttribute('value'),
-								[1, 1.25, 1.5].map((rate) => [rate, rate + 'x'])
-							)
-						);
-					}
+					options: [
+						['1', '1 x'],
+						['1.25', '1.25 x'],
+						['1.5', '1.5 x']
+					]
 				}
 			},
 			methods() {
@@ -1045,13 +1038,9 @@ function autoStop(stopTime: string) {
 				$modal('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
 			}
 		}, 1000);
-		const val = [
-			[0.5, '半小时后'],
-			[1, '一小时后'],
-			[2, '两小时后']
-		].find((t) => t[0].toString() === stopTime)?.[0] as number;
+		const val = ZHSProject.scripts['gxk-study'].configs!.stopTime.options.find((t) => t[0] === stopTime)?.[0] || '0';
 		const date = new Date();
-		date.setMinutes(date.getMinutes() + val * 60);
+		date.setMinutes(date.getMinutes() + parseFloat(val) * 60);
 		state.study.stopMessage = $message('info', {
 			duration: 0,
 			content: `在 ${date.toLocaleTimeString()} 脚本将自动暂停`

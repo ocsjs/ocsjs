@@ -104,16 +104,12 @@ export const ICourseProject = Project.create({
 					label: '讨论自动回复方式',
 					tag: 'select',
 					defaultValue: 'not-reply' as 'not-reply' | 'max-show-up' | 'max-fav' | 'use-newest',
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value'), [
-								['not-reply', '不讨论回复'],
-								['max-show-up', '获取出现最多的评论进行回复'],
-								['max-fav', '获取最多点赞的评论进行回复'],
-								['use-newest', '获取最新的评论进行回复']
-							])
-						);
-					}
+					options: [
+						['not-reply', '不讨论回复'],
+						['max-show-up', '获取出现最多的评论进行回复'],
+						['max-fav', '获取最多点赞的评论进行回复'],
+						['use-newest', '获取最新的评论进行回复']
+					]
 				}
 			},
 			oncomplete() {

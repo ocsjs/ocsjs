@@ -108,13 +108,19 @@ export const CommonProject = Project.create({
 					]).outerHTML
 				},
 				notification: {
-					label: '开启系统通知',
-					defaultValue: true,
+					label: '系统通知',
 					attrs: {
 						title:
-							'允许脚本发送系统通知，只有重要事情发生时会发送系统通知，尽量避免用户受到骚扰（在电脑屏幕右侧显示通知弹窗，例如脚本执行完毕，版本更新等通知）。',
-						type: 'checkbox'
-					}
+							'允许脚本发送系统通知，只有重要事情发生时会发送系统通知，尽量避免用户受到骚扰（在电脑屏幕右侧显示通知弹窗，例如脚本执行完毕，图形验证码，版本更新等通知）。'
+					},
+					tag: 'select',
+					defaultValue: 'only-notify' as 'only-notify' | 'notify-and-voice' | 'all' | 'no-notify',
+					options: [
+						['only-notify', '只显示右下角通知'],
+						['notify-and-voice', '通知以及提示音（叮的一声）'],
+						['all', '通知，提示音，以及任务栏闪烁提示'],
+						['no-notify', '关闭系统通知']
+					]
 				},
 				enableQuestionCaches: {
 					label: '题库缓存功能',
@@ -211,24 +217,20 @@ export const CommonProject = Project.create({
 					label: '答题完成后',
 					tag: 'select',
 					defaultValue: 80 as WorkUploadType,
+					options: [
+						['save', '自动保存', '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'],
+						['nomove', '不保存也不提交', '等待时间过后将会自动下一节, 适合在测试脚本时使用。'],
+						...([10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => [
+							rate.toString(),
+							`搜到${rate}%的题目则自动提交`,
+							`例如: 100题中查询到 ${rate} 题的答案,（答案不一定正确）, 则会自动提交。`
+						]) as [any, string, string][]),
+						['100', '每个题目都查到答案才自动提交', '答案不一定正确'],
+						['force', '强制自动提交', '不管答案是否正确直接强制自动提交，如需开启，请配合随机作答谨慎使用。']
+					],
 					attrs: {
 						title:
 							'自动答题完成后的设置，目前仅在 超星学习通的章节测试 中生效, 鼠标悬浮在选项上可以查看每个选项的具体解释。'
-					},
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value'), [
-								['save', '自动保存', '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'],
-								['nomove', '不保存也不提交', '等待时间过后将会自动下一节, 适合在测试脚本时使用。'],
-								...([10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => [
-									rate.toString(),
-									`搜到${rate}%的题目则自动提交`,
-									`例如: 100题中查询到 ${rate} 题的答案,（答案不一定正确）, 则会自动提交。`
-								]) as [any, string, string][]),
-								['100', '每个题目都查到答案才自动提交', '答案不一定正确'],
-								['force', '强制自动提交', '不管答案是否正确直接强制自动提交，如需开启，请配合随机作答谨慎使用。']
-							])
-						);
 					}
 				},
 				stopSecondWhenFinish: {
@@ -451,16 +453,14 @@ export const CommonProject = Project.create({
 				type: {
 					label: '显示类型',
 					tag: 'select',
-					attrs: { title: '使用题目列表可能会造成页面卡顿。' },
-					defaultValue: 'numbers' as 'questions' | 'numbers',
-					onload() {
-						this.append(
-							...$creator.selectOptions(this.getAttribute('value'), [
-								['numbers', '序号列表'],
-								['questions', '题目列表']
-							])
-						);
-					}
+					options: [
+						['numbers', '序号列表'],
+						['questions', '题目列表']
+					],
+					attrs: {
+						title: '使用题目列表可能会造成页面卡顿。'
+					},
+					defaultValue: 'numbers' as 'questions' | 'numbers'
 				},
 				totalQuestionCount: {
 					defaultValue: 0

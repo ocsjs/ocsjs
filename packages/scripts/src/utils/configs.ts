@@ -11,15 +11,8 @@ import { createRangeTooltip } from '.';
 export const playbackRate: Config = {
 	label: '视频倍速',
 	tag: 'select',
-	defaultValue: 1,
-	onload() {
-		this.append(
-			...$creator.selectOptions(
-				this.getAttribute('value'),
-				[1, 1.25, 1.5, 1.75, 2, 3, 4, 8, 12, 16].map((rate) => [rate, rate + ' x'])
-			)
-		);
-	}
+	options: [1, 1.25, 1.5, 1.75, 2, 3, 4, 8, 12, 16].map((rate) => [rate.toString(), rate + ' x']),
+	defaultValue: 1
 };
 
 /** 音量调节配置  */
@@ -44,14 +37,10 @@ export const definition: Config = {
 	label: '清晰度',
 	tag: 'select',
 	defaultValue: 'line1bq',
-	onload() {
-		this.append(
-			...$creator.selectOptions(this.getAttribute('value'), [
-				['line1bq', '流畅'],
-				['line1gq', '高清']
-			])
-		);
-	}
+	options: [
+		['line1bq', '流畅'],
+		['line1gq', '高清']
+	]
 };
 
 /** 开启自动答题 */

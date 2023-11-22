@@ -88,26 +88,6 @@ export const $creator = {
 
 		return target;
 	},
-
-	/**
-	 * 创建 select 元素的子选项
-	 * @param selectedValue
-	 * @param options [value,text,title]
-	 * @returns
-	 */
-	selectOptions(selectedValue: string | null = '', options: ([any, string] | [any, string, string])[]) {
-		return options.map((opt) => {
-			const optEl = el('option', { value: String(opt[0]), innerText: opt[1] }, (opt) => {
-				if (opt.value === selectedValue) {
-					opt.toggleAttribute('selected');
-				}
-			});
-			if (opt[2]) {
-				optEl.title = opt[2];
-			}
-			return optEl;
-		});
-	},
 	input(
 		attrs?: Partial<HTMLInputElement> | undefined,
 		children?: ElementChildren,
@@ -196,10 +176,13 @@ export const $creator = {
 						tag: config.tag,
 						sync: config.sync,
 						attrs: config.attrs,
-						_onload: config.onload,
-						defaultValue: config.defaultValue
+						_onload: function (el) {
+							config.onload?.call(this, el);
+							onload?.(el);
+						},
+						defaultValue: config.defaultValue,
+						options: config.options
 					});
-					onload?.(element);
 					element.label.textContent = config.label;
 					elements[key] = element;
 				}
