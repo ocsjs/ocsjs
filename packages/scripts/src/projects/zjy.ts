@@ -241,6 +241,10 @@ async function next() {
 			content: '全部任务已完成。'
 		});
 		$console.info('全部任务已完成。');
+		CommonProject.scripts.settings.methods.notificationBySetting('全部任务点已完成！', {
+			duration: 0,
+			extraTitle: '职教云学习脚本'
+		});
 		state.studying = false;
 	}
 }

@@ -33,27 +33,30 @@ export const $gm = {
 	notification(
 		content: string,
 		options?: {
+			extraTitle?: string;
 			/** 通知点击时 */
 			onclick?: () => void;
 			/** 通知关闭时 */
 			ondone?: () => void;
-			/** 通知是否重要 */
+			/** 通知是否重要，会在屏幕下方菜单栏显示动态闪烁 */
 			important?: boolean;
-			/** 显示时间，单位为秒，默认为0 */
+			/** 显示时间，单位为秒，默认为 30 秒， 0 则表示一直存在 */
 			duration?: number;
+			// 是否静音
+			silent?: boolean;
 		}
 	) {
-		const { onclick, ondone, important, duration = 0 } = options || {};
+		const { onclick, ondone, important, duration = 30, silent = true, extraTitle = '' } = options || {};
 		const { icon, name } = $gm.getInfos()?.script || {};
 		// eslint-disable-next-line no-undef
 		GM_notification({
-			title: name,
+			title: name + (extraTitle ? '-' + extraTitle : ''),
 			text: content,
 			image: icon || '',
 			highlight: important,
 			onclick,
 			ondone,
-			silent: true,
+			silent: silent,
 			timeout: duration * 1000
 		});
 	}

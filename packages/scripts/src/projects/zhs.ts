@@ -411,6 +411,10 @@ export const ZHSProject = Project.create({
 						$message('warn', {
 							content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 						});
+						CommonProject.scripts.settings.methods.notificationBySetting(
+							'检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。',
+							{ duration: 0, extraTitle: '知道智慧树学习脚本' }
+						);
 					}
 				};
 				// 当页面初始化时无需切换下一个视频，直接播放当前的。
@@ -500,6 +504,10 @@ export const ZHSProject = Project.create({
 					$modal('alert', {
 						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 					});
+					CommonProject.scripts.settings.methods.notificationBySetting(
+						'检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。',
+						{ duration: 0, extraTitle: '知道智慧树学习脚本' }
+					);
 				};
 
 				// 监听音量
@@ -707,12 +715,21 @@ async function switchPlaybackRate(playbackRate: number) {
 
 function checkForCaptcha(update: (hasCaptcha: boolean) => void) {
 	let modal: HTMLDivElement | undefined;
+	let notified = false;
 	return setInterval(() => {
 		if ($el('.yidun_popup')) {
 			update(true);
 			// 如果弹窗不存在，则显示
 			if (modal === undefined) {
 				modal = $modal('alert', { content: '当前检测到验证码，请输入后方可继续运行。' });
+			}
+			// 如果没有通知过，则通知
+			if (!notified) {
+				notified = true;
+				CommonProject.scripts.settings.methods.notificationBySetting(
+					'智慧树脚本：当前检测到验证码，请输入后方可继续运行。',
+					{ duration: 0 }
+				);
 			}
 		} else {
 			if (modal) {
@@ -729,6 +746,11 @@ function waitForCaptcha(): void | Promise<void> {
 	const popup = getPopupCaptcha();
 	if (popup) {
 		$message('warn', { content: '当前检测到验证码，请输入后方可继续运行。' });
+		CommonProject.scripts.settings.methods.notificationBySetting(
+			'智慧树脚本：当前检测到验证码，请输入后方可继续运行。',
+			{ duration: 0 }
+		);
+
 		return new Promise<void>((resolve, reject) => {
 			const interval = setInterval(() => {
 				const popup = getPopupCaptcha();

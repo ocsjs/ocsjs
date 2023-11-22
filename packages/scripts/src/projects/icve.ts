@@ -266,6 +266,10 @@ export const IcveMoocProject = Project.create({
 							scrollToJob();
 						} else {
 							$modal('alert', { content: '全部任务已完成' });
+							CommonProject.scripts.settings.methods.notificationBySetting('全部任务点已完成！', {
+								duration: 0,
+								extraTitle: '智慧职教学习脚本'
+							});
 						}
 					}
 				};

@@ -324,6 +324,34 @@ export const CommonProject = Project.create({
 						);
 
 						return workOptions;
+					},
+					/**
+					 * 根据全局设置的配置，发起通知
+					 * @param content
+					 * @param opts
+					 */
+					notificationBySetting: (
+						content: string,
+						opts?: {
+							extraTitle?: string;
+							/** 显示时间，单位为秒，默认为 30 秒， 0 则表示一直存在 */
+							duration?: number;
+							/** 通知点击时 */
+							onclick?: () => void;
+							/** 通知关闭时 */
+							ondone?: () => void;
+						}
+					) => {
+						console.log(this.cfg.notification);
+
+						if (this.cfg.notification !== 'no-notify') {
+							$gm.notification(content, {
+								extraTitle: opts?.extraTitle,
+								duration: opts?.duration || 30,
+								important: this.cfg.notification === 'all',
+								silent: this.cfg.notification === 'only-notify'
+							});
+						}
 					}
 				};
 			},
@@ -331,7 +359,14 @@ export const CommonProject = Project.create({
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
 				if ($gm.getInfos() !== undefined) {
 					panel.body.replaceChildren(...(this.cfg.answererWrappers.length ? [el('hr')] : []));
-
+					const testNotification = el(
+						'button',
+						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
+						'📢测试系统通知'
+					);
+					testNotification.onclick = () => {
+						this.methods.notificationBySetting('这是一条测试通知');
+					};
 					const refresh = el(
 						'button',
 						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
@@ -343,7 +378,7 @@ export const CommonProject = Project.create({
 					const tableContainer = el('div');
 					refresh.style.display = 'none';
 					tableContainer.style.display = 'none';
-					panel.body.append(refresh, tableContainer);
+					panel.body.append(el('div', { style: { display: 'flex' } }, [testNotification, refresh]), tableContainer);
 
 					// 更新题库状态
 					const updateState = async () => {
@@ -420,17 +455,6 @@ export const CommonProject = Project.create({
 					state.setting.listenerIds.aw = this.onConfigChange('answererWrappers', (_, __, remote) => {
 						if (remote === false) {
 							updateState();
-						}
-					});
-				}
-			},
-			oncomplete() {
-				if ($.isInTopWindow()) {
-					this.onConfigChange('notification', (open) => {
-						if (open) {
-							$gm.notification('您已开启系统通知，如果脚本有重要情况需要处理，则会发起通知提示您。', {
-								duration: 5
-							});
 						}
 					});
 				}

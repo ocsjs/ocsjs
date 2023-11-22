@@ -203,6 +203,10 @@ export const ICourseProject = Project.create({
 							if (list.length === 0) {
 								$message('success', { content: '所有章节学习完成！', duration: 0 });
 								$console.info('所有章节学习完成！');
+								CommonProject.scripts.settings.methods.notificationBySetting('所有章节学习完成！', {
+									duration: 0,
+									extraTitle: '中国大学MOOC学习脚本'
+								});
 							}
 						}
 

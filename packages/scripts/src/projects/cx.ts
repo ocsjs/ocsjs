@@ -985,11 +985,17 @@ export async function study(opts: {
 		}
 
 		if (CXAnalyses.isInFinalChapter()) {
+			let content = '';
 			if (CXAnalyses.isFinishedAllChapters()) {
-				$modal('alert', { content: '全部任务点已完成！' });
+				content = '全部任务点已完成！';
 			} else {
-				$modal('alert', { content: '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。' });
+				content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
 			}
+			$modal('alert', { content: content });
+			CommonProject.scripts.settings.methods.notificationBySetting(content, {
+				duration: 0,
+				extraTitle: '超星学习通学习脚本'
+			});
 		} else {
 			if (curChapterId && curCourseId && curClazzId) {
 				// @ts-ignore
