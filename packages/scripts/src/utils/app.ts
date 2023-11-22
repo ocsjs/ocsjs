@@ -104,8 +104,9 @@ export const $app_actions = {
 			await $.sleep(1000);
 			const rect = elementOrSelector.getBoundingClientRect();
 			return await appActionRequest({
-				x: rect.x.toString(),
-				y: rect.y.toString(),
+				// 计算元素中心点
+				x: (rect.left + rect.width / 2).toString(),
+				y: (rect.top + rect.height / 2).toString(),
 				count: count.toString(),
 				action: 'mouse-click'
 			});
