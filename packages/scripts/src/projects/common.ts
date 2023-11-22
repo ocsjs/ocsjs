@@ -54,9 +54,10 @@ const state = {
 				document.querySelectorAll<HTMLElement>(`.sheet_nums [id*="sheetSeq"]`).item(index)?.click();
 			},
 			zjy: (index: number) => {
-				document
-					.querySelector<HTMLElement>(`.e-q-body[data-num="${index + 1}"]`)
-					?.scrollIntoView({ behavior: 'smooth' });
+				document.querySelectorAll<HTMLElement>('.subjectDet').item(index)?.scrollIntoView({ behavior: 'smooth' });
+			},
+			icourse: (index: number) => {
+				document.querySelectorAll<HTMLElement>('.u-questionItem').item(index)?.scrollIntoView({ behavior: 'smooth' });
 			}
 		}
 	},
@@ -1006,7 +1007,7 @@ export const CommonProject = Project.create({
 						let results: SearchInformation[] = [];
 						const caches = this.cfg.localQuestionCaches;
 						for (const cache of caches) {
-							if (cache.title === title) {
+							if (cache.title.trim() === title.trim()) {
 								results.push({
 									name: `【题库缓存】${cache.from}`,
 									homepage: cache.homepage,

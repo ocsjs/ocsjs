@@ -119,6 +119,16 @@ export async function start(startConfig: StartConfig) {
 	});
 
 	/**
+	 * 监听路由更改
+	 */
+	window.addEventListener('hashchange', () => {
+		scripts.forEach((script) => {
+			script.emit('hashchange', startConfig);
+			script.onhashchange?.(startConfig);
+		});
+	});
+
+	/**
 	 * 监听 history 更改
 	 */
 	history.pushState = addFunctionEventListener(history, 'pushState');
@@ -139,7 +149,7 @@ export async function start(startConfig: StartConfig) {
 	/**
 	 * 监听页面离开
 	 */
-	window.onbeforeunload = (e) => {
+	window.addEventListener('beforeunload', (e) => {
 		let prevent;
 		for (const script of scripts) {
 			script.emit('beforeunload');
@@ -153,7 +163,7 @@ export async function start(startConfig: StartConfig) {
 			e.returnValue = true;
 			return true;
 		}
-	};
+	});
 }
 
 /**

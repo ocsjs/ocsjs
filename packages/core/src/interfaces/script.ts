@@ -44,6 +44,8 @@ type ScriptEvent = {
 	active: (...args: any[]) => any;
 	/** 在页面完全加载时运行的事件 */
 	complete: (...args: any[]) => any;
+	/** 当路由修改时运行的事件 */
+	hashchange: (...args: any[]) => any;
 	/** 当 history 被 push 或者 replace 修改时运行的事件 */
 	historychange: (type: 'push' | 'replace', ...args: any[]) => any;
 	/** 在渲染的时候执行的事件，（面板之间切换时会重复渲染） */
@@ -61,6 +63,8 @@ export class BaseScript<E extends ScriptEvent = ScriptEvent> extends CommonEvent
 	onactive?: (...args: any[]) => any;
 	/** 在页面完全加载时运行的钩子 */
 	oncomplete?: (...args: any[]) => any;
+	/** 当路由修改时运行的钩子 */
+	onhashchange?: (...args: any[]) => any;
 	/** 当 history 被 push 或者 replace 修改时运行的钩子 */
 	onhistorychange?: (type: 'push' | 'replace', ...args: any[]) => any;
 	/** 在渲染的时候执行的钩子，（面板之间切换时会重复渲染） */
@@ -138,6 +142,7 @@ export class Script<
 		onstart?: (this: Script<C, M>, ...args: any) => any;
 		onactive?: (this: Script<C, M>, ...args: any) => any;
 		oncomplete?: (this: Script<C, M>, ...args: any) => any;
+		onhashchange?: (this: Script<C, M>, ...args: any) => any;
 		onbeforeunload?: (this: Script<C, M>, ...args: any) => any;
 		onrender?: (this: Script<C, M>, elements: { panel: ScriptPanelElement; header: HeaderElement }) => any;
 		onhistorychange?: (this: Script<C, M>, type: 'push' | 'replace', ...args: any[]) => any;
