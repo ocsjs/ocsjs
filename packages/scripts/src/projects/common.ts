@@ -1241,45 +1241,58 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 const createGuide = () => {
 	const showProjectDetails = (project: Project) => {
 		$modal('simple', {
-			title: project.name + ' - 的脚本列表',
+			title: project.name,
 			width: 800,
-			content: el(
-				'ul',
-				Object.keys(project.scripts)
-					.sort((a, b) => (project.scripts[b].hideInPanel ? -1 : 1))
-					.map((key) => {
-						const script = project.scripts[key];
-						return el(
-							'li',
-							[
-								el('b', script.name),
-								$creator.notes([
-									el('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
+			content: el('div', [
+				el('div', [
+					'运行域名：',
+					...project.domains.map((d) =>
+						el(
+							'a',
+							{ href: d.startsWith('http') ? d : 'https://' + d, target: '_blank', style: { margin: '0px 4px' } },
+							d
+						)
+					)
+				]),
+				el('div', '脚本列表：'),
+				el(
+					'ul',
+					Object.keys(project.scripts)
+						.sort((a, b) => (project.scripts[b].hideInPanel ? -1 : 1))
+						.map((key) => {
+							const script = project.scripts[key];
+							return el(
+								'li',
+								[
+									el('b', script.name),
+									$creator.notes([
+										el('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
 
-									[
-										'运行页面：',
-										el(
-											'ul',
-											script.url.map((i) =>
-												el('li', [
-													i[0],
-													'：',
-													i[1] instanceof RegExp ? i[1].toString().replace(/\\/g, '').slice(1, -1) : el('span', i[1])
-												])
+										[
+											'运行页面：',
+											el(
+												'ul',
+												script.url.map((i) =>
+													el('li', [
+														i[0],
+														'：',
+														i[1] instanceof RegExp ? i[1].toString().replace(/\\/g, '').slice(1, -1) : el('span', i[1])
+													])
+												)
 											)
-										)
-									]
-								])
-							],
-							(li) => {
-								li.style.marginBottom = '12px';
-							}
-						);
-					}),
-				(ul) => {
-					ul.style.paddingLeft = '42px';
-				}
-			)
+										]
+									])
+								],
+								(li) => {
+									li.style.marginBottom = '12px';
+								}
+							);
+						}),
+					(ul) => {
+						ul.style.paddingLeft = '42px';
+					}
+				)
+			])
 		});
 	};
 
@@ -1289,7 +1302,9 @@ const createGuide = () => {
 			...definedProjects()
 				.filter((p) => p.studyProject)
 				.map((project) => {
-					const btn = el('button', { className: 'base-style-button-secondary' }, [project.name]);
+					const btn = el('button', { className: 'base-style-button-secondary', style: { margin: '4px' } }, [
+						project.name
+					]);
 					btn.onclick = () => {
 						showProjectDetails(project);
 					};
