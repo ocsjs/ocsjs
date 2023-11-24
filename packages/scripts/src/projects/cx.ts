@@ -62,6 +62,8 @@ const state = {
 	}
 };
 
+type VideoQuizStrategy = 'random' | 'ignore';
+
 export const CXProject = Project.create({
 	name: '超星学习通',
 	domains: [
@@ -115,6 +117,19 @@ export const CXProject = Project.create({
 				},
 				playbackRate: playbackRate,
 				volume: volume,
+				videoQuizStrategy: {
+					label: '视频内题目',
+					tag: 'select',
+					options: [
+						['random', '随机答题'],
+						['ignore', '忽略']
+					],
+					attrs: {
+						title:
+							'视频有时在学习过程中会弹出题目，这个好像并不计算在分数内，所以可以忽略，视频可以正常观看，这里提供几个方法处理题目'
+					},
+					defaultValue: 'random' as VideoQuizStrategy
+				},
 				restudy: restudy,
 				autoNextPage: {
 					label: '自动下一章',
@@ -916,6 +931,8 @@ export async function study(opts: {
 	restudy: boolean;
 	playbackRate: number;
 	volume: number;
+	videoQuizStrategy: VideoQuizStrategy;
+	reloadVideoWhenError: boolean;
 	workOptions: CommonWorkOptions;
 }) {
 	await $.sleep(3000);
@@ -936,7 +953,6 @@ export async function study(opts: {
 	 * 如果10秒内既没有任务点，也暂停了搜索，则当前则没有任务点
 	 */
 	const runJobs = async () => {
-		// @ts-ignore
 		const job = searchJob(opts, searchedJobs);
 		// 如果存在任务点
 		if (job && job.func) {
@@ -1058,6 +1074,7 @@ function searchJob(
 		volume: number;
 		workOptions: CommonWorkOptions;
 		reloadVideoWhenError: boolean;
+		videoQuizStrategy: VideoQuizStrategy;
 	},
 	searchedJobs: Job[]
 ): Job | undefined {
@@ -1192,7 +1209,12 @@ export function fixedVideoProgress() {
  * 播放视频和音频
  */
 async function mediaTask(
-	setting: { playbackRate: number; volume: number; reloadVideoWhenError: boolean },
+	setting: {
+		playbackRate: number;
+		volume: number;
+		reloadVideoWhenError: boolean;
+		videoQuizStrategy: VideoQuizStrategy;
+	},
 	media: HTMLMediaElement,
 	doc: Document
 ) {
@@ -1225,6 +1247,34 @@ async function mediaTask(
 				}, 3000);
 			}
 		}, 5000);
+	}
+
+	// 随机作答视频内题目
+	if (setting.videoQuizStrategy === 'random') {
+		const loop = async () => {
+			const submitBtn = () => doc.querySelector<HTMLElement>('#videoquiz-submit');
+			if (submitBtn()) {
+				const list = Array.from(doc.querySelectorAll<HTMLElement>('.ans-videoquiz-opt label'));
+				const answer = list[Math.floor(Math.random() * list.length)];
+				answer?.click();
+				submitBtn()?.click();
+				await $.sleep(3000);
+				// 隐藏视频内题目元素
+				const container = doc.querySelector<HTMLElement>('#video .ans-videoquiz');
+				const components = Array.from(doc.querySelectorAll<HTMLElement>('.x-component-default'));
+				if (container) {
+					container.remove();
+				}
+				if (components.length) {
+					for (const com of components) {
+						com.style.display = 'none';
+					}
+				}
+			}
+			await $.sleep(3000);
+			await loop();
+		};
+		loop();
 	}
 
 	/**
