@@ -314,6 +314,27 @@ export const CXProject = Project.create({
 				}
 			}
 		}),
+		/**
+		 * 有时候进入课程会默认在，任务页面，会出现任务为空，部分用户会以为没有章节任务，所以添加此脚本
+		 */
+		pageRedirect: new Script({
+			name: '章节页面自动切换脚本',
+			url: [['课程任务页面', 'pageHeader=0']],
+			hideInPanel: true,
+			async oncomplete() {
+				if (top === window) {
+					const a = document.querySelector<HTMLElement>('a[title="章节"]');
+					if (a) {
+						await $.sleep(1000);
+						// 跳转到最新版本的超星
+						a.click();
+						$message('info', {
+							content: '已经为您自动切换到章节列表页面，手动进入任意章节即可开始自动学习！'
+						});
+					}
+				}
+			}
+		}),
 		versionRedirect: new Script({
 			name: '版本切换脚本',
 			url: [
@@ -332,7 +353,7 @@ export const CXProject = Project.create({
 							'OCS网课助手不支持旧版超星, 即将切换到超星新版, 如有其他第三方插件请关闭, 可能有兼容问题频繁频繁切换。'
 					});
 					// 跳转到最新版本的超星
-					await $.sleep(1000);
+					await $.sleep(2000);
 					const experience = document.querySelector('.experience') as HTMLElement;
 					if (experience) {
 						experience.click();
