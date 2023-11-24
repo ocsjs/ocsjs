@@ -4,7 +4,7 @@ import { CommonProject } from './common';
 import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 import { $console } from './background';
 import { $app_actions } from '../utils/app';
-import { waitForMedia } from '../utils/study';
+import { waitForElement, waitForMedia } from '../utils/study';
 import { playbackRate, volume, workNotes } from '../utils/configs';
 
 const state = {
@@ -114,15 +114,9 @@ export const ICourseProject = Project.create({
 			},
 			oncomplete() {
 				this.onConfigChange('playbackRate', (playbackRate) => {
-					if (state.currentMedia) {
-						state.currentMedia.playbackRate = playbackRate;
-					}
+					state.currentMedia && (state.currentMedia.playbackRate = parseFloat(playbackRate.toString()));
 				});
-				this.onConfigChange('volume', (volume) => {
-					if (state.currentMedia) {
-						state.currentMedia.volume = volume;
-					}
-				});
+				this.onConfigChange('volume', (v) => state.currentMedia && (state.currentMedia.volume = v));
 			},
 			methods() {
 				return {
@@ -143,29 +137,14 @@ export const ICourseProject = Project.create({
 
 							$console.log(`正在学习：${lessonName || ''} - ${unitName || ''}`);
 
-							const findJob = (selector: string) => {
-								return new Promise<HTMLElement | undefined>((resolve, reject) => {
-									const interval = setInterval(() => {
-										const el = document.querySelector<HTMLElement>(selector);
-										if (el) {
-											clearInterval(interval);
-											clearTimeout(timeout);
-											resolve(el);
-										}
-									}, 1000);
-
-									// 超时跳过
-									const timeout = setTimeout(() => {
-										clearInterval(interval);
-										resolve(undefined);
-									}, 10 * 1000);
-								});
-							};
-
-							const res = await Promise.race([findJob('video'), findJob('.ux-pdf-reader'), findJob('.j-reply-all')]);
+							const res = await Promise.race([
+								waitForElement('video, audio'),
+								waitForElement('.ux-pdf-reader'),
+								waitForElement('.j-reply-all')
+							]);
 
 							if (res) {
-								if (document.querySelector('video')) {
+								if (document.querySelector('video, audio')) {
 									await watchMedia(this.cfg.playbackRate, this.cfg.volume);
 									$console.log('视频学习完成');
 								} else if (document.querySelector('.ux-pdf-reader')) {
@@ -557,20 +536,3 @@ async function discussion(discussionStrategy: typeof ICourseProject.scripts.stud
 		$console.error('获取评论输入框失败！');
 	}
 }
-
-// async function switchPlaybackRate(playbackRate: number) {
-// 	const list = Array.from(document.querySelectorAll('.ratebtn .m-popover-rate ul li'));
-
-// 	for (const item of list) {
-// 		if (parseFloat(item.textContent?.replace('倍速', '')?.trim() || '1') === playbackRate) {
-// 			// z-sel 代表是当前的倍速值
-// 			if (item.classList.contains('z-sel') === false) {
-// 				// 显示视频下的控制栏
-// 				document.querySelector('.u-edu-h5player-controlwrap')?.classList.add('z-show');
-// 				await $.sleep(1000);
-// 				await $app_actions.mouseClick(item);
-// 				document.querySelector('.u-edu-h5player-controlwrap')?.classList.remove('z-show');
-// 			}
-// 		}
-// 	}
-// }

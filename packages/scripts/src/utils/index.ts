@@ -71,7 +71,7 @@ export function createRangeTooltip(
 }
 
 // 有些网课会改变 media.play 方法，所以可能不是一个 promise
-export async function playMedia(playFunction: () => Promise<void> | undefined): Promise<boolean> {
+export async function playMedia(playFunction: () => Promise<void> | undefined | void): Promise<boolean> {
 	//  尝试播放
 	const tryPlayMedia = () => {
 		return new Promise<void>((resolve, reject) => {

@@ -37,3 +37,22 @@ export async function waitForMedia(options?: {
 		throw new Error('视频/音频未找到，或者加载超时。');
 	}
 }
+
+export function waitForElement(selector: string) {
+	return new Promise<HTMLElement | undefined>((resolve, reject) => {
+		const interval = setInterval(() => {
+			const el = document.querySelector<HTMLElement>(selector);
+			if (el) {
+				clearInterval(interval);
+				clearTimeout(timeout);
+				resolve(el);
+			}
+		}, 1000);
+
+		// 超时跳过
+		const timeout = setTimeout(() => {
+			clearInterval(interval);
+			resolve(undefined);
+		}, 10 * 1000);
+	});
+}
