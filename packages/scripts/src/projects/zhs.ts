@@ -852,6 +852,22 @@ function gxkWorkAndExam({
 			}
 		},
 		work: {
+			type(ctx) {
+				const type = ctx.elements.title[0].parentElement?.parentElement
+					?.querySelector('.subject_type')
+					?.textContent?.trim();
+				if (type?.includes('单选题')) {
+					return 'single';
+				} else if (type?.includes('多选题')) {
+					return 'multiple';
+				} else if (type?.includes('判断题')) {
+					return 'judgement';
+				} else if (type?.includes('填空题')) {
+					return 'completion';
+				} else {
+					return undefined;
+				}
+			},
 			/** 自定义处理器 */
 			handler(type, answer, option) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
