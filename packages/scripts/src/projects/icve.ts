@@ -14,18 +14,19 @@ import {
 	cors,
 	$message
 } from '@ocsjs/core';
-import { restudy, volume } from '../utils/configs';
+import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
 import { commonWork, simplifyWorkResult } from '../utils/work';
 import { $console } from './background';
-import { waitForMedia } from '../utils/study';
-import { createRangeTooltip } from '../utils/index';
+import { waitForElement, waitForMedia } from '../utils/study';
 
 const state = {
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined,
-		currentStudyLockId: 0
+		currentStudyLockId: 0,
+		playbackRateWarningListenerId: 0,
+		courseLengthListenerId: 0
 	}
 };
 
@@ -51,7 +52,7 @@ class StudyLock {
 }
 
 export const IcveMoocProject = Project.create({
-	name: '智慧职教(MOOC学院)',
+	name: '智慧职教',
 	domains: [
 		'icve.com.cn',
 		'course.icve.com.cn',
@@ -63,21 +64,148 @@ export const IcveMoocProject = Project.create({
 		guide: new Script({
 			name: '💡 使用提示',
 			url: [
-				['个人首页', 'user.icve.com.cn'],
-				['首页', 'mooc.icve.com.cn']
+				['个人首页', 'icve.com.cn/studycenter'],
+				['学习页面', 'icve.com.cn/study/directory'],
+				['MOOC学院-个人首页', 'user.icve.com.cn'],
+				['MOOC学院-首页', 'mooc.icve.com.cn']
 			],
 			namespace: 'icve.guide',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['请点击任意课程进入。']).outerHTML
+					defaultValue: $creator.notes(['请点击任意课程进入', '进入课程后点击任意章节进入，即可自动学习']).outerHTML
 				}
 			},
 			oncomplete() {
 				CommonProject.scripts.render.methods.pin(this);
 			}
 		}),
+		/** 智慧职教学习中心 */
+		studyCenter: new Script({
+			name: '🖥️ 智慧职教-学习中心',
+			namespace: 'icve.study.center',
+			url: [
+				['学习中心页面', '/study/directory/dir_course.html'],
+				['课程列表', 'icve.com.cn/study/directory/directory_list.html']
+			],
+			configs: {
+				playbackRate: playbackRate,
+				volume,
+				/** 章节列表 */
+				currentCourseUrlList: {
+					defaultValue: [] as string[]
+				}
+			},
+			async oncomplete() {
+				if (location.href.includes('icve.com.cn/study/directory/directory_list.html')) {
+					await waitForElement('.h_cells a');
+					this.cfg.currentCourseUrlList = Array.from(document.querySelectorAll<HTMLAnchorElement>('.h_cells a')).map(
+						(a) => a.href
+					);
+					return;
+				}
+
+				if (this.cfg.currentCourseUrlList.length === 0) {
+					try {
+						const url =
+							'https://www.icve.com.cn/study/directory/directory_list.html?courseId=' +
+							new URL(location.href).searchParams.get('courseId');
+						const res = await fetch(url).then((res) => res.text());
+						const doc = new DOMParser().parseFromString(res, 'text/html');
+						this.cfg.currentCourseUrlList = Array.from(doc.querySelectorAll<HTMLAnchorElement>('.h_cells a')).map(
+							(a) => a.href
+						);
+					} catch (e) {
+						console.error(e);
+						$message('error', { content: '课程列表获取失败，请刷新页面重试。' });
+						return;
+					}
+				}
+
+				CommonProject.scripts.render.methods.pin(this);
+
+				this.onConfigChange('playbackRate', (playbackRate) => {
+					state.study.currentMedia && (state.study.currentMedia.playbackRate = parseFloat(playbackRate.toString()));
+				});
+				this.onConfigChange('volume', (v) => state.study.currentMedia && (state.study.currentMedia.volume = v));
+
+				const study = async () => {
+					const res = await Promise.race([waitForElement('video, audio'), waitForElement('.docBox')]);
+					if (res) {
+						const jobName = document.querySelector('.tabsel.seled')?.getAttribute('title') || '-';
+						$message('info', { content: '开始任务：' + jobName });
+						$console.log(`任务 ${jobName} 开始。`);
+						if (document.querySelector('video, audio')) {
+							const media = await waitForMedia();
+
+							state.study.currentMedia = media;
+							media.volume = this.cfg.volume;
+
+							await new Promise<void>((resolve, reject) => {
+								try {
+									console.log(document.hasFocus());
+									window.focus();
+									// @ts-ignore
+									$gm.unsafeWindow.jwplayer().onComplete(async () => {
+										$console.log('视频/音频播放完成。');
+										await $.sleep(3000);
+										resolve();
+									});
+
+									const play = () => {
+										$gm.unsafeWindow.jwplayer().play();
+										$gm.unsafeWindow.jwplayer().play();
+										media.playbackRate = parseFloat(this.cfg.playbackRate.toString());
+									};
+
+									media.addEventListener('pause', async () => {
+										if (!media.ended) {
+											await $.sleep(1000);
+											playMedia(play);
+										}
+									});
+									// 开始播放
+									playMedia(play);
+								} catch (err) {
+									reject(err);
+								}
+							});
+						}
+						$message('success', { content: `任务 ${jobName} 完成，三秒后下一章` });
+						$console.log(`任务 ${jobName} 完成，三秒后下一章`);
+					} else {
+						$console.error(`不支持的任务页面，请跟作者进行反馈。三秒后下一章`);
+					}
+
+					await $.sleep(3000);
+
+					next();
+				};
+
+				const next = () => {
+					for (let index = 0; index < this.cfg.currentCourseUrlList.length; index++) {
+						const url = this.cfg.currentCourseUrlList[index];
+						const nextUrl = this.cfg.currentCourseUrlList[index + 1];
+						if (new URL(url).hash === new URL(location.href).hash) {
+							if (!nextUrl) {
+								$modal('alert', { content: '全部任务已完成' });
+								CommonProject.scripts.settings.methods.notificationBySetting('全部任务点已完成！', {
+									duration: 0,
+									extraTitle: '智慧职教学习脚本'
+								});
+								return;
+							} else {
+								window.location.href = this.cfg.currentCourseUrlList[index + 1];
+							}
+						}
+					}
+				};
+
+				study();
+			}
+		}),
+		/** MOOC 学院 */
 		study: new Script({
-			name: '🖥️ 课程学习',
+			name: '🖥️ MOOC学院-课程学习',
 			namespace: 'icve.study.main',
 			url: [['课程学习页面', '/learnspace/learn/learn/templateeight/index.action']],
 			configs: {
@@ -88,23 +216,7 @@ export const IcveMoocProject = Project.create({
 						'手动进入作业页面才能使用自动答题。'
 					]).outerHTML
 				},
-				playbackRate: {
-					label: '视频倍速',
-					attrs: {
-						type: 'range',
-						step: 0.5,
-						min: 1,
-						max: 16
-					},
-					defaultValue: 1,
-					onload() {
-						createRangeTooltip(
-							this,
-							'1',
-							(val) => (parseFloat(val) > 2 ? `${val}x - 高倍速警告！` : `${val}x`) + '高倍速可能导致视频无法完成。'
-						);
-					}
-				},
+				playbackRate: playbackRate,
 				volume,
 				restudy,
 				showScrollBar: {
@@ -127,6 +239,19 @@ export const IcveMoocProject = Project.create({
 						step: 1
 					}
 				}
+			},
+			onrender() {
+				// 高倍速警告
+				this.offConfigChange(state.study.playbackRateWarningListenerId);
+				state.study.playbackRateWarningListenerId =
+					this.onConfigChange('playbackRate', (playbackRate) => {
+						if (playbackRate > 4) {
+							$modal('alert', {
+								title: '⚠️高倍速警告',
+								content: $creator.notes(['高倍速可能导致视频无法完成！'])
+							});
+						}
+					}) || 0;
 			},
 			async oncomplete() {
 				CommonProject.scripts.render.methods.pin(this);
