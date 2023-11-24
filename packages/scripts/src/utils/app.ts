@@ -157,7 +157,11 @@ async function appActionRequest(
 		return res;
 	} catch (e) {
 		console.error(e);
-		$console.error('软件辅助错误', data.action, String(e));
+		$console.error(
+			'软件辅助错误，请检查此浏览器是否由桌面软件启动的，或者尝试在软件内重启浏览器。',
+			data.action,
+			String(e)
+		);
 		return '';
 	}
 }
