@@ -124,7 +124,10 @@ export const ZJYProject = Project.create({
 
 						const courseInfo = await start();
 
-						if (!courseInfo) return;
+						if (!courseInfo) {
+							$console.error('获取课程信息失败，请跟作者反馈。');
+							return;
+						}
 						$message('success', { content: '开始学习：' + courseInfo.name });
 						$console.info('开始学习：' + courseInfo.name);
 						if (['ppt', 'doc', 'pptx', 'docx', 'pdf'].some((i) => courseInfo.fileType === i)) {
@@ -209,7 +212,8 @@ async function watchFile() {
 }
 
 async function start(): Promise<CourseType | undefined> {
-	const info = $el('.guide')?.__vue__?.courseList;
+	const vue = $el('.guide')?.__vue__;
+	const info = vue?.courseList || vue?.designData;
 	if (info?.id !== undefined) {
 		return info;
 	} else {
