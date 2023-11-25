@@ -213,7 +213,7 @@ async function watchFile() {
 
 async function start(): Promise<CourseType | undefined> {
 	const vue = $el('.guide')?.__vue__;
-	const info = vue?.courseList || vue?.designData;
+	const info = vue?.courseList?.id ? vue?.courseList : vue?.designData;
 	if (info?.id !== undefined) {
 		return info;
 	} else {
