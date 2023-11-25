@@ -66,7 +66,7 @@ export async function defaultAnswerWrapperHandler(
 				let requestData;
 				// 请求地址
 				let url: URL;
-				if (method === 'get') {
+				if (method.toLocaleLowerCase() === 'get') {
 					url = new URL(resolvePlaceHolder(wrapper.url, { encodeURI: true }));
 					/**
 					 * 如果 data 存在数据并且 method 为 get，则将 data 数据拼接到 url 上，覆盖原有的  url 同名参数
@@ -78,7 +78,7 @@ export async function defaultAnswerWrapperHandler(
 					});
 					// get 的请求数据为空
 					requestData = {};
-				} else if (method === 'post') {
+				} else if (method.toLocaleLowerCase() === 'post') {
 					url = new URL(wrapper.url);
 					// 构造请求数据
 					const data: Record<string, string> = Object.create({});
