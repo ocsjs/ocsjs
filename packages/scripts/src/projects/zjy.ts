@@ -128,11 +128,11 @@ export const ZJYProject = Project.create({
 							$console.error('获取课程信息失败，请跟作者反馈。');
 							return;
 						}
-						$message('success', { content: '开始学习：' + courseInfo.name });
-						$console.info('开始学习：' + courseInfo.name);
+						$message('success', { content: '开始学习：' + courseInfo.fileType + '-' + courseInfo.name });
+						$console.info('开始学习：' + +courseInfo.fileType + '-' + courseInfo.name);
 						if (['ppt', 'doc', 'pptx', 'docx', 'pdf'].some((i) => courseInfo.fileType === i)) {
 							await watchFile();
-						} else if (['video', 'audio', 'mp4'].some((i) => courseInfo.fileType === i)) {
+						} else if (['video', 'audio', 'mp4', 'mp3'].some((i) => courseInfo.fileType === i)) {
 							if ($el('.guide')?.innerHTML.includes('很抱歉，您的浏览器不支持播放此类文件')) {
 								$console.error(`任务点 ${courseInfo.name}，不支持播放。`);
 							} else {
@@ -228,12 +228,13 @@ function getNextObject() {
 async function next() {
 	const nextObject = getNextObject();
 	const id = new URL(window.location.href).searchParams.get('id');
+	console.log(nextObject);
 
 	if (id && nextObject?.id !== undefined) {
 		// 跳过讨论
-		if (nextObject.fileType === '讨论') {
+		if (['测验', '讨论'].some((i) => nextObject.fileType === i)) {
 			const res = await getCourseInfo(nextObject.id);
-			$console.info('下个任务点为讨论，即将跳过');
+			$console.info(`下个任务点为${nextObject.fileType}，即将跳过`);
 			await $.sleep(3000);
 			window.location.href = window.location.href.replace(id, res.data.next.id);
 		} else {
