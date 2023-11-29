@@ -1566,9 +1566,9 @@ async function chapterTestTask(
 		type: upload,
 		results,
 		async callback(finishedRate, uploadable) {
-			$console.info(`完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '5秒后将自动提交' : '5秒后将自动保存'} `);
+			$console.info(`完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '3秒后将自动提交' : '5秒后将自动保存'} `);
 
-			await $.sleep(5000);
+			await $.sleep(3000);
 
 			if (uploadable) {
 				// @ts-ignore 提交
