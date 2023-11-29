@@ -11,6 +11,7 @@ export function commonWork(
 		workerProvider: (opts: CommonWorkOptions) => OCSWorker<any> | undefined;
 		beforeRunning?: () => void | Promise<void>;
 		onRestart?: () => void | Promise<void>;
+		onWorkerCreated?: (worker: OCSWorker<any>) => void | Promise<void>;
 	}
 ) {
 	// 置顶当前脚本
@@ -100,6 +101,10 @@ export function commonWork(
 	const start = async () => {
 		await options.beforeRunning?.();
 		worker = options.workerProvider(workOptions);
+
+		if (worker) {
+			options.onWorkerCreated?.(worker);
+		}
 
 		const { container, controlBtn } = createControls();
 		// 更新状态

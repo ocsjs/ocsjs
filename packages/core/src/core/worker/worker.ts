@@ -286,7 +286,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 	}
 
 	/** 答题结果处理器 */
-	async uploadHandler(options: {
+	uploadHandler(options: {
 		// doWork 的返回值结果
 		results: WorkResult<E>[];
 		// 提交类型
@@ -309,9 +309,9 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		const rate = results.length === 0 ? 0 : (finished / results.length) * 100;
 		if (type !== 'nomove') {
 			if (type === 'force') {
-				await callback(rate, true);
+				return callback(rate, true);
 			} else {
-				await callback(rate, type === 'save' ? false : rate >= parseFloat(type.toString()));
+				return callback(rate, type === 'save' ? false : rate >= parseFloat(type.toString()));
 			}
 		}
 	}
