@@ -299,6 +299,8 @@ export const CommonProject = Project.create({
 						'多选题(必考)',
 						'【单选题】',
 						'【多选题】',
+						'【Single Choice】',
+						'【Multiple Choice】',
 						'【single choice】',
 						'【multiple choice】'
 					].join('\n'),
