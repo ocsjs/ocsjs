@@ -1132,7 +1132,7 @@ function searchJob(
 				let func: { (): Promise<any> } | undefined;
 				if (media) {
 					if (!CXProject.scripts.study.cfg.enableMedia) {
-						$console.warn(`音视频自动学习功能已关闭。${jobName} 即将跳过`);
+						$console.warn(`音视频自动学习功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`);
 					} else {
 						// 重复学习，或者未完成
 						if (opts.restudy || attachment.job) {
@@ -1144,7 +1144,7 @@ function searchJob(
 					}
 				} else if (chapterTest) {
 					if (!CXProject.scripts.study.cfg.enableChapterTest) {
-						$console.warn(`章节测试自动答题功能已关闭。${jobName} 即将跳过`);
+						$console.warn(`章节测试自动答题功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`);
 					} else {
 						const status = win.document.querySelector<HTMLElement>('.testTit_status');
 
@@ -1176,7 +1176,7 @@ function searchJob(
 					}
 				} else if (read) {
 					if (!CXProject.scripts.study.cfg.enablePPT) {
-						$console.warn(`PPT/书籍阅读功能已关闭。${jobName} 即将跳过`);
+						$console.warn(`PPT/书籍阅读功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`);
 					} else {
 						if (attachment.job) {
 							func = () => {
