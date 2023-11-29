@@ -110,6 +110,14 @@ export const ICourseProject = Project.create({
 						['max-fav', '获取最多点赞的评论进行回复'],
 						['use-newest', '获取最新的评论进行回复']
 					]
+				},
+				enableChapterTest: {
+					label: '随堂测验自动答题',
+					attrs: {
+						type: 'checkbox',
+						title: '是否开启随堂测验自动答题，默认关闭，测试时只需点击即可完成测验，但这里保留选项防止需要开启。'
+					},
+					defaultValue: false
 				}
 			},
 			oncomplete() {
@@ -133,34 +141,59 @@ export const ICourseProject = Project.create({
 
 						const study = async () => {
 							const lessonName = document.querySelector('.j-lesson .j-up')?.textContent;
-							const unitName = document.querySelector('.j-unitslist  li.current .unit-name')?.textContent;
+							const currentUnitItem = document.querySelector('.j-unitslist  li.current');
+							const unitName = currentUnitItem?.querySelector('.unit-name')?.textContent;
 
 							$console.log(`正在学习：${lessonName || ''} - ${unitName || ''}`);
 
-							const res = await Promise.race([
-								waitForElement('video, audio'),
-								waitForElement('.ux-pdf-reader'),
-								waitForElement('.j-reply-all')
-							]);
+							const isJob = (iconName: string) => currentUnitItem?.querySelector(`[class*=${iconName}]`);
 
-							if (res) {
-								if (document.querySelector('video, audio')) {
-									await watchMedia(this.cfg.playbackRate, this.cfg.volume);
-									$console.log('视频学习完成');
-								} else if (document.querySelector('.ux-pdf-reader')) {
-									await readPPT(this.cfg.readSpeed);
-									$console.log('PPT完成');
-								} else if (document.querySelector('.j-reply-all')) {
-									await discussion(this.cfg.discussionStrategy);
-									$console.log('讨论完成');
+							let hasJob = true;
+
+							if (isJob('u-icon-video')) {
+								await waitForElement('video, audio');
+								await watchMedia(this.cfg.playbackRate, this.cfg.volume);
+								$console.log('视频学习完成');
+							} else if (isJob('u-icon-doc')) {
+								await waitForElement('.ux-pdf-reader');
+								await readPPT(this.cfg.readSpeed);
+								$console.log('PPT完成');
+							} else if (isJob('u-icon-discuss')) {
+								await waitForElement('.j-reply-all');
+								await discussion(this.cfg.discussionStrategy);
+								$console.log('讨论完成');
+							} else if (isJob('u-icon-test')) {
+								const replay = await waitForElement('.j-replay');
+								if (replay?.style.display === 'none') {
+									if (this.cfg.enableChapterTest) {
+										await new Promise<void>((resolve) => {
+											ICourseProject.scripts.work.methods.start('chapter-test', canRun, (worker) => {
+												console.log('worker', worker);
+
+												worker.once('done', resolve);
+												worker.once('close', resolve);
+											});
+										});
+
+										$console.log('测验完成');
+									} else {
+										$console.warn('随堂测验自动答题功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启），即将跳过。');
+									}
+								} else {
+									$console.log('随堂测验已完成，即将跳过。');
 								}
+							} else if (isJob('u-icon-text')) {
+								// 文档无需处理
+								$console.log('文档无需处理，即将跳过。');
+							} else {
+								hasJob = false;
 							}
 
 							await $.sleep(3000);
 
 							// 跳转下一章，然后通过URL变化，调度器会重新执行此 main 函数
 							if (canRun()) {
-								if (res) {
+								if (hasJob) {
 									$console.log('准备跳转下一章');
 								} else {
 									$console.warn('未找到学习内容，或者此章节不支持自动学习！即将跳过本章节');
@@ -276,45 +309,53 @@ export const ICourseProject = Project.create({
 				}
 			},
 			methods() {
+				const start = async (
+					type: 'chapter-test' | 'work-or-exam',
+					canRun: () => boolean,
+					onWorkerCreated?: (worker: OCSWorker) => void
+				) => {
+					CommonProject.scripts.render.methods.pin(this);
+
+					// 移动窗口到边缘
+					CommonProject.scripts.render.methods.moveToEdge();
+
+					// 检查是否为软件环境
+					if (!(await $app_actions.init())) {
+						return $app_actions.showError();
+					}
+
+					// 等待加载题目
+					await waitForQuestion();
+
+					$console.log('开始答题');
+					CommonProject.scripts.render.methods.pin(this);
+					commonWork(this, {
+						workerProvider: (opts) => {
+							const worker = workAndExam(type, opts);
+							worker.once('close', () => {
+								clearInterval(interval);
+							});
+							const interval = setInterval(() => {
+								if (canRun() === false) {
+									$message('info', { content: '检测到页面切换，无法继续答题，将关闭自动答题。' });
+									clearInterval(interval);
+									worker.emit('close');
+								}
+							}, 1000);
+							return worker;
+						},
+						onWorkerCreated: onWorkerCreated
+					});
+				};
 				return {
 					main: async (canRun: () => boolean) => {
 						if (location.hash.includes('learn/quizscore')) {
 							$message('success', { content: '当前作业已完成，自动答题关闭。' });
 							return;
 						}
-
-						CommonProject.scripts.render.methods.pin(this);
-
-						// 移动窗口到边缘
-						CommonProject.scripts.render.methods.moveToEdge();
-
-						// 检查是否为软件环境
-						if (!(await $app_actions.init())) {
-							return $app_actions.showError();
-						}
-
-						// 等待加载题目
-						await waitForQuestion();
-
-						$console.log('开始答题');
-						CommonProject.scripts.render.methods.pin(this);
-						commonWork(this, {
-							workerProvider: (opts) => {
-								const worker = workAndExam(opts);
-								worker.once('close', () => {
-									clearInterval(interval);
-								});
-								const interval = setInterval(() => {
-									if (canRun() === false) {
-										$message('info', { content: '检测到页面切换，无法继续答题，将关闭自动答题。' });
-										clearInterval(interval);
-										worker.emit('close');
-									}
-								}, 1000);
-								return worker;
-							}
-						});
-					}
+						return start('work-or-exam', canRun);
+					},
+					start: start
 				};
 			}
 		})
@@ -332,10 +373,10 @@ function waitForQuestion() {
 	});
 }
 
-/**
- * 共享课的作业和考试
- */
-function workAndExam({ answererWrappers, period, thread, redundanceWordsText }: CommonWorkOptions) {
+function workAndExam(
+	type: 'chapter-test' | 'work-or-exam',
+	{ answererWrappers, period, thread, redundanceWordsText, upload }: CommonWorkOptions
+) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'icourse'
 	});
@@ -424,15 +465,35 @@ function workAndExam({ answererWrappers, period, thread, redundanceWordsText }: 
 
 	worker
 		.doWork()
-		.then(() => {
-			$message('success', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+		.then(async (results) => {
+			if (type === 'chapter-test') {
+				// 处理提交
+				await worker.uploadHandler({
+					type: upload,
+					results,
+					async callback(finishedRate, uploadable) {
+						const content = `完成率 ${finishedRate.toFixed(2)} :  ${
+							uploadable ? '3秒后将自动提交' : '3秒后将自动跳过（没保存按钮）'
+						} `;
+						$console.info(content);
+						$message('success', { content: content, duration: 0 });
+
+						await $.sleep(3000);
+
+						if (uploadable) {
+							await $app_actions.mouseClick(document.querySelector('.j-submit'));
+						}
+					}
+				});
+			} else {
+				$message('success', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			}
+
 			worker.emit('done');
 		})
 		.catch((err) => {
 			$message('error', { content: '答题程序发生错误 : ' + err.message, duration: 0 });
 		});
-
-	$console.info('答题完成');
 
 	return worker;
 }
@@ -484,7 +545,7 @@ async function readPPT(readSpeed: number) {
 
 async function discussion(discussionStrategy: typeof ICourseProject.scripts.study.cfg.discussionStrategy) {
 	if (discussionStrategy === 'not-reply') {
-		return $console.warn('讨论自动回复功能已关闭。');
+		return $console.warn('讨论自动回复功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启）。');
 	}
 
 	let res = '';
