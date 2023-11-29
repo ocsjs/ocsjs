@@ -16,6 +16,7 @@ export { ZHSProject } from './projects/zhs';
 export { CXProject } from './projects/cx';
 export { ZJYProject } from './projects/zjy';
 export { IcveMoocProject } from './projects/icve';
+export { ICourseProject } from './projects/icourse';
 
 export function definedProjects(): Project[] {
 	return [ZHSProject, CXProject, IcveMoocProject, ZJYProject, ICourseProject, CommonProject, BackgroundProject];
