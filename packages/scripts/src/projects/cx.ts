@@ -1150,26 +1150,17 @@ function searchJob(
 					} else {
 						const status = win.document.querySelector<HTMLElement>('.testTit_status');
 
-						const needWorkButNoJob =
-							// 没有任务点
-							attachment.job === undefined &&
-							// 并且状态为待完成
-							status?.classList.contains('.testTit_status_complete') === false;
-
-						if (
-							// 如果是任务点
-							attachment.job ||
-							// 或者待完成
-							needWorkButNoJob
-						) {
-							if (attachment.job || (needWorkButNoJob && CommonProject.scripts.settings.cfg['work-when-no-job'])) {
+						// 已完成
+						if (status?.classList.contains('testTit_status_complete')) {
+							$console.log('章节测试已完成 : ', jobName, '，即将跳过');
+						} else {
+							if (attachment.job || CommonProject.scripts.settings.cfg['work-when-no-job']) {
 								func = () => {
 									$console.log('开始答题 : ', jobName);
 									return chapterTestTask(root, opts.workOptions);
 								};
 							}
-
-							if (needWorkButNoJob && CommonProject.scripts.settings.cfg['work-when-no-job'] === false) {
+							if (attachment.job === undefined && CommonProject.scripts.settings.cfg['work-when-no-job'] === false) {
 								$console.warn(
 									`当前作业 ${jobName} 不是任务点，但待完成，如需开启自动答题请前往：通用-全局设置，开启强制答题。`
 								);
@@ -1402,6 +1393,7 @@ async function chapterTestTask(
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);
 			if (title) {
 				const typeInput = elements.type[0] as HTMLInputElement;
+				$console.log('type', type, 'type2', typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined);
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined,
