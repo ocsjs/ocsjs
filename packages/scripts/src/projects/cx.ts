@@ -574,9 +574,11 @@ export function workOrExam(
 				// 处理作业和考试题目
 				const title = workOrExamQuestionTitleTransform(elements.title);
 				if (title) {
+					const typeInput = elements.type[0] as HTMLInputElement;
+
 					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 						return defaultAnswerWrapperHandler(answererWrappers, {
-							type,
+							type: typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined,
 							title,
 							options: ctx.elements.options.map((o) => o.innerText).join('\n')
 						});
@@ -1399,9 +1401,10 @@ async function chapterTestTask(
 		answerer: (elements, type, ctx) => {
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);
 			if (title) {
+				const typeInput = elements.type[0] as HTMLInputElement;
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
-						type,
+						type: typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined,
 						title,
 						options: ctx.elements.options.map((o) => o.innerText).join('\n')
 					});
