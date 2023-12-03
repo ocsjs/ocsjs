@@ -75,7 +75,9 @@ export const CXProject = Project.create({
 		/** 其他域名 */
 		'hnsyu.net',
 		'qutjxjy.cn',
-		'ynny.cn'
+		'ynny.cn',
+		'hnvist.cn',
+		'fjlecb.cn'
 	],
 	studyProject: true,
 	scripts: {
