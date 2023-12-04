@@ -1395,7 +1395,7 @@ async function chapterTestTask(
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);
 			if (title) {
 				const typeInput = elements.type[0] as HTMLInputElement;
-				$console.log('type', type, 'type2', typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined);
+
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined,
