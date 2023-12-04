@@ -84,8 +84,21 @@ export async function defaultAnswerWrapperHandler(
 					const data: Record<string, string> = Object.create({});
 					/** 构造一个请求数据 */
 					Object.keys(wrapperData).forEach((key) => {
-						// 解析data数据
-						Reflect.set(data, key, resolvePlaceHolder(wrapperData[key]));
+						// 如果存在字段解析器
+						if (typeof (wrapperData as any)[key] === 'object' && Reflect.has((wrapperData as any)[key], 'handler')) {
+							// eslint-disable-next-line no-new-func
+							const handler = Function(Reflect.get((wrapperData as any)[key], 'handler'))();
+							if (typeof handler !== 'function') {
+								throw new Error('data 字段解析器必须返回一个函数');
+							}
+							const result = handler(env);
+							if (result) {
+								Reflect.set(data, key, handler(env));
+							}
+						} else {
+							// 解析data数据
+							Reflect.set(data, key, resolvePlaceHolder(wrapperData[key]));
+						}
 					});
 
 					requestData = data;
@@ -112,7 +125,11 @@ export async function defaultAnswerWrapperHandler(
 				/** 从 handler 获取搜索到的题目和回答 */
 
 				// eslint-disable-next-line no-new-func
-				const info = Function(handler)()(responseData);
+				const responseHandler = Function(handler)();
+				if (typeof responseHandler !== 'function') {
+					throw new Error('handler 响应处理器必须返回一个函数');
+				}
+				const info = responseHandler(responseData);
 				if (info && Array.isArray(info)) {
 					/** 如果返回一个二维数组 */
 					if (info.every((item: any) => Array.isArray(item))) {
@@ -139,6 +156,7 @@ export async function defaultAnswerWrapperHandler(
 					data: requestData
 				});
 			} catch (error) {
+				console.error(error);
 				searchInfos.push({
 					url: wrapper.url,
 					name,
