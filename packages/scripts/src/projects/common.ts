@@ -290,7 +290,7 @@ export const CommonProject = Project.create({
 					defaultValue: ['不会', '不知道', '不清楚', '不懂', '不会写'].join('\n'),
 					label: '(仅超星)随机填空文案',
 					tag: 'textarea',
-					attrs: { title: '每行一个，随机填入' }
+					attrs: { title: '每行一个，随机填入', style: { minWidth: '200px', minHeight: '50px' } }
 				},
 				redundanceWordsText: {
 					defaultValue: [
@@ -306,7 +306,10 @@ export const CommonProject = Project.create({
 					].join('\n'),
 					label: '题目冗余字段自动删除',
 					tag: 'textarea',
-					attrs: { title: '在搜题的时候自动删除多余的文字，以便提高搜题的准确度，每行一个。' }
+					attrs: {
+						title: '在搜题的时候自动删除多余的文字，以便提高搜题的准确度，每行一个。',
+						style: { minWidth: '200px', minHeight: '50px' }
+					}
 				}
 			},
 			methods() {

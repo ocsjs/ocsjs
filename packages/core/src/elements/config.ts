@@ -1,5 +1,5 @@
 import { $creator } from '../utils/creator';
-import { el } from '../utils/dom';
+import { CustomElementStyleAttrs, el } from '../utils/dom';
 import { $store } from '../utils/store';
 
 import { ConfigTagMap } from './configs/interface';
@@ -21,7 +21,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 	/** 将本地修改后的值同步到元素中 */
 	sync?: boolean;
 	/** 元素属性 */
-	attrs?: Partial<ConfigTagMap[T]>;
+	attrs?: CustomElementStyleAttrs<Partial<ConfigTagMap[T]>>;
 	/** tag 为 select 时的选项 */
 	options?: string[][] | { label: string; value: string; title?: string }[];
 	_onload?: (this: ConfigTagMap[T], el: this) => void;
@@ -117,6 +117,10 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 
 		// 合并元素属性
 		for (const key in this.attrs) {
+			if (key === 'style') {
+				Object.assign(this.provider.style, this.attrs[key]);
+				continue;
+			}
 			if (Object.prototype.hasOwnProperty.call(this.attrs, key)) {
 				Reflect.set(this.provider, key, Reflect.get(this.attrs, key));
 			}
