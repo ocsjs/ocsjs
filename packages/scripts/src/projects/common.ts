@@ -596,7 +596,8 @@ export const CommonProject = Project.create({
 
 									list.style.width = '400px';
 									list.style.marginBottom = '12px';
-									list.style.maxHeight = window.innerHeight / 2 + 'px';
+									list.style.overflow = 'auto';
+									list.style.maxHeight = '200px';
 
 									/** 渲染序号 */
 									const nums = results.map((result, index) => {
