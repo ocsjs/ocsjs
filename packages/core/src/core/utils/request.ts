@@ -29,7 +29,7 @@ export function request<T extends 'json' | 'text'>(
 					GM_xmlhttpRequest({
 						url,
 						method: method.toUpperCase() as 'GET' | 'HEAD' | 'POST',
-						data: Object.keys(data).length ? new URLSearchParams(data).toString() : undefined,
+						data: Object.keys(data).length ? JSON.stringify(data) : undefined,
 						headers: Object.keys(headers).length ? headers : undefined,
 						responseType: responseType === 'json' ? 'json' : undefined,
 						onload: (response) => {
