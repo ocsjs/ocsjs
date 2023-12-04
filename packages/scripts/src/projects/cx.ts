@@ -345,7 +345,8 @@ export const CXProject = Project.create({
 				['', 'work/getAllWork'],
 				['', 'work/doHomeWorkNew'],
 				['', 'exam/test\\?'],
-				['', 'exam/test/reVersionTestStartNew.*examsystem.*']
+				['', 'exam/test/reVersionTestStartNew.*examsystem.*'],
+				['', 'mooc-ans/mycourse/studentstudy']
 			],
 			hideInPanel: true,
 			async oncomplete() {
@@ -360,12 +361,16 @@ export const CXProject = Project.create({
 					if (experience) {
 						experience.click();
 					} else {
-						const params = new URLSearchParams(window.location.href);
+						const newUrl = new URL(window.location.href);
+						if (window.location.href.includes('mooc-ans/mycourse/studentstudy')) {
+							newUrl.pathname = '/mycourse/studentstudy';
+						}
+						const params = newUrl.searchParams;
 						params.set('mooc2', '1');
 						// 兼容考试切换
 						params.set('newMooc', 'true');
 						params.delete('examsystem');
-						window.location.replace(decodeURIComponent(params.toString()));
+						window.location.replace(newUrl);
 					}
 				}
 			}
