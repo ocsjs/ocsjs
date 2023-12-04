@@ -849,32 +849,42 @@ export const CommonProject = Project.create({
 				notes: {
 					defaultValue: '查题前请在 “通用-全局设置” 中设置题库配置，才能进行在线搜题。'
 				},
+
 				selectSearch: {
 					label: '划词搜索',
 					defaultValue: true,
 					attrs: { type: 'checkbox', title: '使用鼠标滑动选择页面中的题目进行搜索。' }
 				},
-				selection: {
+				searchValue: {
+					sync: true,
+					label: '搜索题目',
+					tag: 'textarea',
+					attrs: {
+						placeholder: '输入题目，请尽量保证题目完整，不要漏字',
+						style: {
+							minWidth: '300px',
+							minHeight: '64px'
+						}
+					},
 					defaultValue: ''
 				}
 			},
 			oncomplete() {
-				if (this.cfg.selectSearch) {
-					document.addEventListener(
-						'selectionchange',
-						debounce(() => {
-							this.cfg.selection = document.getSelection()?.toString() || '';
-						}, 500)
-					);
-				}
+				document.addEventListener(
+					'selectionchange',
+					debounce(() => {
+						if (this.cfg.selectSearch) {
+							const val = document.getSelection()?.toString() || '';
+							if (val) {
+								this.cfg.searchValue = val;
+							}
+						}
+					}, 500)
+				);
 			},
 			onrender({ panel }) {
-				const content = el('div', '请输入题目进行搜索：', (content) => {
+				const content = el('div', '', (content) => {
 					content.style.marginBottom = '12px';
-				});
-				const input = el('input', { placeholder: '请尽量保证题目完整，不要漏字哦。' }, (input) => {
-					input.className = 'base-style-input';
-					input.style.flex = '1';
 				});
 
 				const search = async (value: string) => {
@@ -903,7 +913,7 @@ export const CommonProject = Project.create({
 									})
 								],
 								(div) => {
-									div.style.width = '400px';
+									div.style.width = '480px';
 								}
 							)
 						);
@@ -914,23 +924,14 @@ export const CommonProject = Project.create({
 
 				const button = el('button', '搜索', (button) => {
 					button.className = 'base-style-button';
+					button.style.width = '120px';
 					button.onclick = () => {
-						search(input.value);
+						search(this.cfg.searchValue);
 					};
 				});
-				const searchContainer = el('div', [input, button], (div) => {
-					div.style.display = 'flex';
-				});
+				const searchContainer = el('div', { style: { textAlign: 'end' } }, [button]);
 
-				// 监听划词变化
-				this.onConfigChange('selection', (curr) => {
-					// 判断是否处于搜索页面，搜索框可见
-					if (input.parentElement) {
-						input.value = curr;
-					}
-				});
-
-				panel.body.append(el('div', [el('hr'), content, searchContainer]));
+				panel.body.append(el('div', [content, searchContainer]));
 			}
 		}),
 		/** 渲染脚本，窗口渲染主要脚本 */
