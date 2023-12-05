@@ -301,39 +301,6 @@ export const BackgroundProject = Project.create({
 				}
 			}
 		}),
-		dev: new Script({
-			name: '🛠️ 开发者调试',
-			namespace: 'background.dev',
-			url: [['所有页面', /./]],
-			configs: {
-				notes: {
-					defaultValue: '开发人员调试用。<br>注入OCS_CONTEXT全局变量。用户可忽略此页面。'
-				}
-			},
-			onrender({ panel }) {
-				const injectBtn = el('button', { className: 'base-style-button' }, '点击注入全局变量');
-				injectBtn.addEventListener('click', () => {
-					$gm.unsafeWindow.OCS_CONTEXT = self;
-				});
-				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn]));
-			}
-		}),
-		appLoginHelper: new Script({
-			name: '软件登录辅助',
-			url: [
-				['超星登录', 'passport2.chaoxing.com/login'],
-				['智慧树登录', 'passport.zhihuishu.com/login'],
-				['职教云登录', 'zjy2.icve.com.cn/portal/login.html'],
-				['智慧职教登录', 'sso.icve.com.cn/sso/auth']
-			],
-			hideInPanel: true,
-			oncomplete() {
-				// 将面板移动至左侧顶部，防止挡住软件登录
-				if ($.isInTopWindow()) {
-					CommonProject.scripts.render.methods.moveToEdge();
-				}
-			}
-		}),
 		update: new Script({
 			name: '📥 更新模块',
 			url: [['所有页面', /.*/]],
@@ -445,6 +412,40 @@ export const BackgroundProject = Project.create({
 				}
 			}
 		}),
+		dev: new Script({
+			name: '🛠️ 开发者调试',
+			namespace: 'background.dev',
+			url: [['所有页面', /./]],
+			configs: {
+				notes: {
+					defaultValue: '开发人员调试用。<br>注入OCS_CONTEXT全局变量。用户可忽略此页面。'
+				}
+			},
+			onrender({ panel }) {
+				const injectBtn = el('button', { className: 'base-style-button' }, '点击注入全局变量');
+				injectBtn.addEventListener('click', () => {
+					$gm.unsafeWindow.OCS_CONTEXT = self;
+				});
+				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn]));
+			}
+		}),
+		appLoginHelper: new Script({
+			name: '软件登录辅助',
+			url: [
+				['超星登录', 'passport2.chaoxing.com/login'],
+				['智慧树登录', 'passport.zhihuishu.com/login'],
+				['职教云登录', 'zjy2.icve.com.cn/portal/login.html'],
+				['智慧职教登录', 'sso.icve.com.cn/sso/auth']
+			],
+			hideInPanel: true,
+			oncomplete() {
+				// 将面板移动至左侧顶部，防止挡住软件登录
+				if ($.isInTopWindow()) {
+					CommonProject.scripts.render.methods.moveToEdge();
+				}
+			}
+		}),
+
 		errorHandle: new Script({
 			name: '全局错误捕获',
 			url: [['', /.*/]],
@@ -463,6 +464,294 @@ export const BackgroundProject = Project.create({
 						}
 					}
 				}
+			}
+		}),
+		requestList: new Script({
+			name: '📄 请求记录',
+			url: [['', /.*/]],
+			priority: 99,
+			configs: {
+				notes: {
+					defaultValue: $creator.notes([
+						'开发人员请求调试记录页面，小白勿入，最多只记录最近的100个请求数据',
+						'可打开F12控制台查看请求日志，或者下方的请求列表'
+					]).outerHTML
+				},
+				enable: {
+					label: '开启请求记录',
+					attrs: { type: 'checkbox' },
+					defaultValue: false
+				},
+				methodFilter: {
+					label: '方法过滤',
+					tag: 'select',
+					attrs: { placeholder: '选择选项' },
+					options: [['none', '无'], ['GET'], ['POST'], ['OPTIONS']],
+					defaultValue: 'none'
+				},
+				typeFilter: {
+					label: '类型过滤',
+					tag: 'select',
+					attrs: { placeholder: '选择选项' },
+					options: [
+						['none', '无'],
+						['gmxhr', '油猴API请求（gmxhr）'],
+						['fetch', '普通请求（fetch）']
+					],
+					defaultValue: 'none'
+				},
+				searchValue: {
+					label: '内容搜索',
+					attrs: { placeholder: '搜索 URL/请求体/响应' },
+					defaultValue: ''
+				},
+				list: {
+					defaultValue: [] as {
+						id: string;
+						url: string;
+						method: string;
+						type: string;
+						data: any;
+						headers: any;
+						response?: string;
+						error?: string;
+						time: number;
+					}[]
+				}
+			},
+			methods() {
+				const render = (list: typeof this.cfg.list) => {
+					this.panel?.body.replaceChildren();
+					this.panel?.body.append(
+						el('div', { className: 'card' }, [
+							el('div', { style: { padding: '8px 0px', textAlign: 'end' } }, [
+								el(
+									'button',
+									{
+										className: 'base-style-button-secondary',
+										style: { marginRight: '12px' },
+										innerText: '🗑️清空记录'
+									},
+									(btn) => {
+										btn.onclick = () => {
+											this.cfg.list = [];
+											render(this.cfg.list);
+										};
+									}
+								),
+								el('button', { className: 'base-style-button', innerText: '🔍执行搜索' }, (btn) => {
+									btn.onclick = () => {
+										if (
+											this.cfg.methodFilter === 'none' &&
+											this.cfg.typeFilter === 'none' &&
+											this.cfg.searchValue === ''
+										) {
+											render(this.cfg.list);
+										} else {
+											const list = this.cfg.list
+												.filter((item) => {
+													if (
+														this.cfg.methodFilter !== 'none' &&
+														item.method.toLowerCase() !== this.cfg.methodFilter.toLowerCase()
+													) {
+														return false;
+													}
+													return true;
+												})
+												.filter((item) => {
+													if (this.cfg.typeFilter !== 'none' && item.type !== this.cfg.typeFilter) {
+														return false;
+													}
+													return true;
+												})
+												.filter((item) => {
+													if (
+														(this.cfg.searchValue && item.url.includes(this.cfg.searchValue)) ||
+														item.data?.includes(this.cfg.searchValue) ||
+														item.response?.includes(this.cfg.searchValue)
+													) {
+														return true;
+													}
+
+													return false;
+												});
+											render(list);
+										}
+									};
+								})
+							]),
+							el(
+								'div',
+								{ style: { backgroundColor: '#292929', overflow: 'auto', maxHeight: window.innerHeight / 2 + 'px' } },
+								[
+									...(list.length === 0
+										? [el('div', { style: { color: 'white', textAlign: 'center' } }, '暂无数据')]
+										: []),
+									...list.map((item) =>
+										el(
+											'div',
+											{
+												title: Object.entries(item)
+													.map(([key, val]) =>
+														key === 'time'
+															? `${key} : ${new Date(val).toLocaleString().replace(/\//g, '-')}`
+															: `${key} : ${val}`
+													)
+													.join('\n'),
+												style: {
+													maxWidth: '800px',
+													padding: '4px 0px',
+													margin: '4px 0px',
+													// @ts-ignore
+													textWrap: 'nowrap'
+												}
+											},
+											[
+												el('div', [
+													el('span', { style: { marginRight: '8px' } }, new Date(item.time).toLocaleTimeString()),
+													el(
+														'span',
+														{
+															style: {
+																backgroundColor: '#2196f3a3',
+																color: '#ececec',
+																marginRight: '8px',
+																padding: '0px 2px'
+															}
+														},
+														item.method
+													),
+													el(
+														'span',
+														{ style: { color: item.response ? '#4eb74e' : '#eb6262', marginRight: '8px' } },
+														'●'
+													),
+													el(
+														'div',
+														{ style: { display: 'inline-block', color: '#ececec' } },
+														item.url ? (item.url.length > 100 ? item.url.slice(0, 100) + '...' : item.url) : '-'
+													)
+												]),
+												el(
+													'div',
+													{ style: { overflow: 'hidden', fontSize: '12px', color: '#8f8f8f' } },
+													item.data ? 'data: ' + item.data : ''
+												),
+												el(
+													'div',
+													{ style: { overflow: 'hidden', fontSize: '12px', color: '#8f8f8f' } },
+													item.response ? 'resp: ' + item.response : item.error ? 'err : ' + item.error : ''
+												)
+											]
+										)
+									)
+								]
+							)
+						])
+					);
+				};
+				return {
+					render: render
+				};
+			},
+			onrender() {
+				this.methods.render(this.cfg.list);
+			},
+			onstart() {
+				/* global GM_xmlhttpRequest  RequestInfo RequestInit */
+				/* eslint-disable no-global-assign */
+				const gmRequest = GM_xmlhttpRequest;
+				const originalFetch = fetch;
+
+				const getId = () => Math.random().toString(16).slice(2);
+
+				const addRecord = (item: typeof this.cfg.list[number]) => {
+					this.cfg.list = [item, ...this.cfg.list];
+					if (this.cfg.list.length > 100) {
+						this.cfg.list = this.cfg.list.slice(0, 100);
+					}
+				};
+
+				const setItem = (id: string, response: string | undefined, error: string | undefined) => {
+					const list: typeof this.cfg.list = JSON.parse(JSON.stringify(this.cfg.list));
+					const index = list.findIndex((item) => item.id === id);
+					if (index !== -1) {
+						list[index].response = response;
+						list[index].error = error;
+					}
+					this.cfg.list = list;
+				};
+
+				// @ts-ignore
+				GM_xmlhttpRequest = (details: any) => {
+					if (this.cfg.enable) {
+						const id = getId();
+						const data = {
+							id: id,
+							url: details.url,
+							method: details.method || 'unknown',
+							type: 'gmxhr',
+							data: details.data,
+							headers: details.headers,
+							response: '',
+							error: '',
+							time: Date.now()
+						};
+						addRecord(data);
+						const onload = details.onload;
+						const onerror = details.onerror;
+
+						details.onload = function (response: any) {
+							setItem(id, response.responseText, '');
+							data.response = details.responseType === 'json' ? response.response : response.responseText;
+							console.log('%c [请求成功]', 'color: green; font-weight: bold', data.url, data);
+							onload?.apply(this, [response]);
+						};
+						details.onerror = function (response: any) {
+							setItem(id, '', response.error);
+							data.error = response.error;
+							console.log('%c [请求失败]', 'color: red; font-weight: bold', data.url, data);
+							onerror?.apply(this, [response]);
+						};
+					}
+
+					return gmRequest.apply(this, [details as any]);
+				};
+				// @ts-ignore
+				fetch = (input: URL | RequestInfo, init?: RequestInit | undefined) => {
+					if (this.cfg.enable) {
+						const id = getId();
+						const data = {
+							id: id,
+							url: typeof input === 'string' ? input : input instanceof URL ? input.href : input.url,
+							method: init?.method || 'unknown',
+							type: 'fetch',
+							data: init?.body,
+							headers: init?.headers,
+							response: '',
+							error: '',
+							time: Date.now()
+						};
+						addRecord(data);
+						const res = originalFetch.apply(this, [input, init]);
+						res
+							.then((result) => result.text())
+							.then((result) => {
+								setItem(id, result, '');
+								data.response = result;
+								console.log('%c [请求成功]', 'color: green; font-weight: bold', data.url, data);
+							});
+
+						res.catch((err) => {
+							setItem(id, '', String(err));
+							data.error = String(err);
+							console.log('%c [请求失败]', 'color: red; font-weight: bold', data.url, data);
+						});
+						return res;
+					} else {
+						return originalFetch.apply(this, [input, init]);
+					}
+				};
 			}
 		})
 	}
