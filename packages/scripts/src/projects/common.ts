@@ -902,7 +902,12 @@ export const CommonProject = Project.create({
 							el(
 								'div',
 								[
-									el('div', `搜索到 ${infos.map((i) => i.results).flat().length} 个结果，共耗时 ${resume} 秒`),
+									el('hr'),
+									el(
+										'div',
+										{ style: { color: '#a1a1a1' } },
+										`搜索到 ${infos.map((i) => i.results).flat().length} 个结果，共耗时 ${resume} 秒`
+									),
 									el('search-infos-element', {
 										infos: infos.map((info) => ({
 											results: info.results.map((res) => [res.question, res.answer] as [string, string]),
@@ -913,6 +918,7 @@ export const CommonProject = Project.create({
 									})
 								],
 								(div) => {
+									div.classList.add('card');
 									div.style.width = '480px';
 								}
 							)
