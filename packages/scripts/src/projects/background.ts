@@ -486,7 +486,7 @@ export const BackgroundProject = Project.create({
 					label: '方法过滤',
 					tag: 'select',
 					attrs: { placeholder: '选择选项' },
-					options: [['none', '无'], ['GET'], ['POST'], ['OPTIONS']],
+					options: [['none', '无'], ['GET'], ['POST'], ['OPTIONS'], ['HEAD']],
 					defaultValue: 'none'
 				},
 				typeFilter: {
