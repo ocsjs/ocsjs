@@ -56,10 +56,13 @@ async function createUserJs(cb) {
 			description:
 				`OCS(online-course-script) 网课助手，官网 https://docs.ocsjs.com ，专注于帮助大学生从网课中释放出来。
 				让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 
-				${ocs.definedProjects()
+				${ocs
+						.definedProjects()
 						.filter((p) => p.studyProject)
 						.map((s) => `【${s.name}】`)
-						.join(' ')}，等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。`.replace(/\n+/g, ' ').replace(/\t+/g, ' '),
+						.join(' ')}，等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。`
+					.replace(/\n+/g, ' ')
+					.replace(/\t+/g, ' '),
 			author: 'enncy',
 			license: 'MIT',
 			namespace: 'https://enncy.cn',
@@ -99,9 +102,10 @@ async function createUserJs(cb) {
 		dist: path.join(__dirname, distPath, 'ocs.user.js')
 	});
 
-	await createUserScript(createOptions());
-	const opts = createOptions();
+	const opts = createOptions()
+
 	/** 创建调试脚本 */
+	const devOpts = createOptions();
 	opts.parseRequire = false;
 	opts.parseResource = false;
 	opts.metadata.name = opts.metadata.name + '(dev)';
@@ -115,7 +119,15 @@ async function createUserJs(cb) {
 		path.join(distResolvedPath, 'style.css')
 	);
 
-	await createUserScript(opts);
+	/** 创建全Connect域名通用脚本 */
+	const commonOpts = createOptions();
+	commonOpts.metadata.name = commonOpts.metadata.name + ' - 全域名通用版';
+	commonOpts.metadata.connect = ['*'];
+	commonOpts.metadata.antifeature = undefined
+	commonOpts.dist = path.join(distResolvedPath, 'ocs.common.user.js');
+
+
+	await Promise.all([createUserScript(opts), createUserScript(devOpts), createUserScript(commonOpts)]);
 }
 
 exports.default = series(cleanOutput, buildPackages, createUserJs);

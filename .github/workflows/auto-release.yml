@@ -6,7 +6,7 @@ name: Userscript Auto Releases
 on:
   push:
     tags:
-      - "*"
+      - '*'
 
 jobs:
   build:
@@ -40,6 +40,6 @@ jobs:
       - name: Create release
         uses: ncipollo/release-action@v1
         with:
-          artifactContentType: "html/text"
-          artifacts: "./release/core.js,./release/ocs.user.js"
-          bodyFile: "./CHANGELOG_CURRENT.md"
+          artifactContentType: 'html/text'
+          artifacts: './release/core.js,./release/ocs.user.js./release/ocs.common.user.js'
+          bodyFile: './CHANGELOG_CURRENT.md'
