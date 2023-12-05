@@ -888,6 +888,11 @@ export const CommonProject = Project.create({
 				});
 
 				const search = async (value: string) => {
+					if (CommonProject.scripts.settings.cfg.answererWrappers.length === 0) {
+						$modal('alert', { content: '请先在 通用-全局设置 配置题库，才能进行在线搜题。' });
+						return;
+					}
+
 					content.replaceChildren(el('span', '搜索中...'));
 
 					if (value) {
