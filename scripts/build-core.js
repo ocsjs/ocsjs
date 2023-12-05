@@ -55,7 +55,6 @@ async function createUserJs(cb) {
 			)
 		);
 
-
 		return {
 			parseRequire: true,
 			parseResource: true,
@@ -110,7 +109,8 @@ async function createUserJs(cb) {
 	};
 
 	const officialOpts = createOptions();
-	await createUserScript(officialOpts)
+	console.log('CreateUserScript: ', officialOpts.metadata.name, officialOpts.dist);
+	await createUserScript(officialOpts);
 
 	/** 创建调试脚本 */
 	const devOpts = createOptions();
@@ -126,7 +126,8 @@ async function createUserJs(cb) {
 		path.join(__dirname, '../packages/scripts/assets/css/style.css'),
 		path.join(distResolvedPath, 'style.css')
 	);
-	await createUserScript(devOpts)
+	console.log('createUserScript: ', devOpts.metadata.name, devOpts.dist);
+	await createUserScript(devOpts);
 
 	/** 创建全Connect域名通用脚本 */
 	const commonOpts = createOptions();
@@ -135,7 +136,8 @@ async function createUserJs(cb) {
 	Reflect.deleteProperty(commonOpts.metadata, 'antifeature');
 	commonOpts.dist = path.join(distResolvedPath, 'ocs.common.user.js');
 
-	await createUserScript(commonOpts)
+	console.log('createUserScript: ', commonOpts.metadata.name, commonOpts.dist);
+	await createUserScript(commonOpts);
 }
 
 exports.default = series(cleanOutput, buildPackages, createUserJs);
