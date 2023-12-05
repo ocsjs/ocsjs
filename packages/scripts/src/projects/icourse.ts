@@ -375,7 +375,7 @@ function waitForQuestion() {
 
 function workAndExam(
 	type: 'chapter-test' | 'work-or-exam',
-	{ answererWrappers, period, thread, redundanceWordsText, upload }: CommonWorkOptions
+	{ answererWrappers, period, thread, redundanceWordsText, upload, stopSecondWhenFinish }: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'icourse'
@@ -467,6 +467,10 @@ function workAndExam(
 		.doWork()
 		.then(async (results) => {
 			if (type === 'chapter-test') {
+				$message('info', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
+				$console.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
+				await $.sleep(stopSecondWhenFinish * 1000);
+
 				// 处理提交
 				await worker.uploadHandler({
 					type: upload,
