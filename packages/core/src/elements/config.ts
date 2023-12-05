@@ -42,7 +42,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 					const option = el('option');
 					if (Array.isArray(item)) {
 						option.value = item[0];
-						option.textContent = item[1];
+						option.textContent = item[1] ?? item[0];
 						if (item[2]) {
 							option.title = item[2];
 						}
@@ -53,7 +53,7 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 						this.provider.add(option);
 					} else {
 						option.value = item.value;
-						option.textContent = item.label;
+						option.textContent = item.label ?? item.value;
 						if (item.title) {
 							option.title = item.title;
 						}
