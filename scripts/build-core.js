@@ -37,82 +37,87 @@ async function createUserJs(cb) {
 	// @ts-ignore
 	const ocs = require(path.join(distPath, 'index.js'));
 
-	const createOptions = () =>
-	/** @type {import('../packages/utils').CreateOptions} */
-	({
-		parseRequire: true,
-		parseResource: true,
-		resourceBuilder: (key, value) => `const ${key} = \`${value}\`;`,
-		metaDataFormatter: {
-			header: '==UserScript==',
-			footer: '==/UserScript==',
-			prefix: '// ',
-			symbol: '@',
-			gap: '\t'.repeat(4)
-		},
-		metadata: {
-			name: 'OCS 网课助手',
-			version: version,
-			description:
-				`OCS(online-course-script) 网课助手，官网 https://docs.ocsjs.com ，专注于帮助大学生从网课中释放出来。
-				让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 
-				${ocs
-						.definedProjects()
-						.filter((p) => p.studyProject)
-						.map((s) => `【${s.name}】`)
-						.join(' ')}，等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。`
-					.replace(/\n+/g, ' ')
-					.replace(/\t+/g, ' '),
-			author: 'enncy',
-			license: 'MIT',
-			namespace: 'https://enncy.cn',
-			homepage: 'https://docs.ocsjs.com',
-			source: 'https://github.com/ocsjs/ocsjs',
-			icon: 'https://cdn.ocsjs.com/logo.png',
-			connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'localhost'],
-			match: Array.from(
-				new Set(
-					ocs
-						.definedProjects()
-						.map((p) => p.domains.map((d) => `*://*.${d}/*`))
-						.flat()
-				)
-			),
-			grant: [
-				'GM_info',
-				'GM_getTab',
-				'GM_saveTab',
-				'GM_setValue',
-				'GM_getValue',
-				'unsafeWindow',
-				'GM_listValues',
-				'GM_deleteValue',
-				'GM_notification',
-				'GM_xmlhttpRequest',
-				'GM_getResourceText',
-				'GM_addValueChangeListener',
-				'GM_removeValueChangeListener'
-			],
-			require: [path.join(__dirname, distPath, 'index.js')],
-			resource: [`STYLE ${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`],
-			'run-at': 'document-start',
-			antifeature: 'payment'
-		},
-		entry: path.join(__dirname, '../packages/scripts/entry.js'),
-		dist: path.join(__dirname, distPath, 'ocs.user.js')
-	});
+	const createOptions = () => {
+		const projectList = ocs
+			.definedProjects()
+			.filter((p) => p.studyProject)
+			.map((s) => `【${s.name}】`)
+			.join(' ')
 
-	const opts = createOptions()
+		const matchMetadata = Array.from(
+			new Set(
+				ocs
+					.definedProjects()
+					.map((p) => p.domains.map((d) => `*://*.${d}/*`))
+					.flat()
+			))
+
+		/** @type {import('../packages/utils').CreateOptions} */
+		return {
+			parseRequire: true,
+			parseResource: true,
+			resourceBuilder: (key, value) => `const ${key} = \`${value}\`;`,
+			metaDataFormatter: {
+				header: '==UserScript==',
+				footer: '==/UserScript==',
+				prefix: '// ',
+				symbol: '@',
+				gap: '\t'.repeat(4)
+			},
+			metadata: {
+				name: 'OCS 网课助手',
+				version: version,
+				description:
+					[
+						'OCS(online-course-script) 网课助手，官网 https://docs.ocsjs.com ，专注于帮助大学生从网课中释放出来',
+						'让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 ',
+						projectList,
+						'等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。'
+					].join(' '),
+				author: 'enncy',
+				license: 'MIT',
+				namespace: 'https://enncy.cn',
+				homepage: 'https://docs.ocsjs.com',
+				source: 'https://github.com/ocsjs/ocsjs',
+				icon: 'https://cdn.ocsjs.com/logo.png',
+				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'localhost'],
+				match: matchMetadata,
+				grant: [
+					'GM_info',
+					'GM_getTab',
+					'GM_saveTab',
+					'GM_setValue',
+					'GM_getValue',
+					'unsafeWindow',
+					'GM_listValues',
+					'GM_deleteValue',
+					'GM_notification',
+					'GM_xmlhttpRequest',
+					'GM_getResourceText',
+					'GM_addValueChangeListener',
+					'GM_removeValueChangeListener'
+				],
+				require: [path.join(__dirname, distPath, 'index.js')],
+				resource: [`STYLE ${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`],
+				'run-at': 'document-start',
+				antifeature: 'payment'
+			},
+			entry: path.join(__dirname, '../packages/scripts/entry.js'),
+			dist: path.join(__dirname, distPath, 'ocs.user.js')
+		}
+	}
+
+	const officialOpts = createOptions();
 
 	/** 创建调试脚本 */
 	const devOpts = createOptions();
-	opts.parseRequire = false;
-	opts.parseResource = false;
-	opts.metadata.name = opts.metadata.name + '(dev)';
-	opts.metadata.require = ['file://' + path.join(distResolvedPath, 'index.js')];
-	opts.metadata.resource = [`STYLE file://${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`];
-	opts.entry = path.join(__dirname, '../packages/scripts/entry.dev.js');
-	opts.dist = path.join(distResolvedPath, 'ocs.dev.user.js');
+	devOpts.parseRequire = false;
+	devOpts.parseResource = false;
+	devOpts.metadata.name = devOpts.metadata.name + '(dev)';
+	devOpts.metadata.require = ['file://' + path.join(distResolvedPath, 'index.js')];
+	devOpts.metadata.resource = [`STYLE file://${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`];
+	devOpts.entry = path.join(__dirname, '../packages/scripts/entry.dev.js');
+	devOpts.dist = path.join(distResolvedPath, 'ocs.dev.user.js');
 	/** 导出样式文件 */
 	fs.copyFileSync(
 		path.join(__dirname, '../packages/scripts/assets/css/style.css'),
@@ -123,11 +128,10 @@ async function createUserJs(cb) {
 	const commonOpts = createOptions();
 	commonOpts.metadata.name = commonOpts.metadata.name + ' - 全域名通用版';
 	commonOpts.metadata.connect = ['*'];
-	commonOpts.metadata.antifeature = undefined
+	Reflect.deleteProperty(commonOpts.metadata, 'antifeature');
 	commonOpts.dist = path.join(distResolvedPath, 'ocs.common.user.js');
 
-
-	await Promise.all([createUserScript(opts), createUserScript(devOpts), createUserScript(commonOpts)]);
+	await Promise.all([createUserScript(officialOpts), createUserScript(devOpts), createUserScript(commonOpts)]);
 }
 
 exports.default = series(cleanOutput, buildPackages, createUserJs);
