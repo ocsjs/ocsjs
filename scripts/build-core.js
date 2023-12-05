@@ -13,6 +13,7 @@ const fs = require('fs');
 dotenv.config();
 
 const distPath = process.env.BUILD_PATH || '../dist';
+console.log('BUILD_PATH: ', distPath);
 const distResolvedPath = path.resolve(__dirname, distPath);
 
 function cleanOutput() {
@@ -37,12 +38,13 @@ async function createUserJs(cb) {
 	// @ts-ignore
 	const ocs = require(path.join(distPath, 'index.js'));
 
+	/** @return {import('../packages/utils').CreateOptions} */
 	const createOptions = () => {
 		const projectList = ocs
 			.definedProjects()
 			.filter((p) => p.studyProject)
 			.map((s) => `【${s.name}】`)
-			.join(' ')
+			.join(' ');
 
 		const matchMetadata = Array.from(
 			new Set(
@@ -50,9 +52,10 @@ async function createUserJs(cb) {
 					.definedProjects()
 					.map((p) => p.domains.map((d) => `*://*.${d}/*`))
 					.flat()
-			))
+			)
+		);
 
-		/** @type {import('../packages/utils').CreateOptions} */
+
 		return {
 			parseRequire: true,
 			parseResource: true,
@@ -67,13 +70,12 @@ async function createUserJs(cb) {
 			metadata: {
 				name: 'OCS 网课助手',
 				version: version,
-				description:
-					[
-						'OCS(online-course-script) 网课助手，官网 https://docs.ocsjs.com ，专注于帮助大学生从网课中释放出来',
-						'让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 ',
-						projectList,
-						'等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。'
-					].join(' '),
+				description: [
+					'OCS(online-course-script) 网课助手，官网 https://docs.ocsjs.com ，专注于帮助大学生从网课中释放出来',
+					'让自己的时间把握在自己的手中，拥有人性化的操作页面，流畅的步骤提示，支持 ',
+					projectList,
+					'等网课的学习，作业。具体的功能请查看脚本悬浮窗中的教程页面。'
+				].join(' '),
 				author: 'enncy',
 				license: 'MIT',
 				namespace: 'https://enncy.cn',
@@ -104,10 +106,11 @@ async function createUserJs(cb) {
 			},
 			entry: path.join(__dirname, '../packages/scripts/entry.js'),
 			dist: path.join(__dirname, distPath, 'ocs.user.js')
-		}
-	}
+		};
+	};
 
 	const officialOpts = createOptions();
+	await createUserScript(officialOpts)
 
 	/** 创建调试脚本 */
 	const devOpts = createOptions();
@@ -123,6 +126,7 @@ async function createUserJs(cb) {
 		path.join(__dirname, '../packages/scripts/assets/css/style.css'),
 		path.join(distResolvedPath, 'style.css')
 	);
+	await createUserScript(devOpts)
 
 	/** 创建全Connect域名通用脚本 */
 	const commonOpts = createOptions();
@@ -131,7 +135,7 @@ async function createUserJs(cb) {
 	Reflect.deleteProperty(commonOpts.metadata, 'antifeature');
 	commonOpts.dist = path.join(distResolvedPath, 'ocs.common.user.js');
 
-	await Promise.all([createUserScript(officialOpts), createUserScript(devOpts), createUserScript(commonOpts)]);
+	await createUserScript(commonOpts)
 }
 
 exports.default = series(cleanOutput, buildPackages, createUserJs);
