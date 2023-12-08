@@ -408,9 +408,9 @@ export const RenderScript = new Script({
 
 			// 监听快捷键
 			window.addEventListener('keydown', (e) => {
-				e.stopPropagation();
-				e.preventDefault();
 				if (e.ctrlKey && e.key === 'o') {
+					e.stopPropagation();
+					e.preventDefault();
 					this.cfg.visual = this.cfg.visual === 'close' ? 'normal' : 'close';
 				}
 			});
