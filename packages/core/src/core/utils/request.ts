@@ -25,11 +25,18 @@ export function request<T extends 'json' | 'text'>(
 			/** 如果是跨域模式并且是浏览器环境 */
 			if (type === 'GM_xmlhttpRequest' && env === 'browser') {
 				if (typeof GM_xmlhttpRequest !== 'undefined') {
+					const contentType = headers['Content-Type'] || headers['content-type'];
+					const requestData =
+						contentType === 'application/x-www-form-urlencoded'
+							? new URLSearchParams(data).toString()
+							: Object.keys(headers).length
+							? JSON.stringify(data)
+							: undefined;
 					// eslint-disable-next-line no-undef
 					GM_xmlhttpRequest({
 						url,
 						method: method.toUpperCase() as 'GET' | 'HEAD' | 'POST',
-						data: Object.keys(data).length ? JSON.stringify(data) : undefined,
+						data: requestData,
 						headers: Object.keys(headers).length ? headers : undefined,
 						responseType: responseType === 'json' ? 'json' : undefined,
 						onload: (response) => {
