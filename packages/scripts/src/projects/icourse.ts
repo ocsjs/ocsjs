@@ -337,7 +337,7 @@ export const ICourseProject = Project.create({
 							});
 							const interval = setInterval(() => {
 								if (canRun() === false) {
-									$message('info', { content: '检测到页面切换，无法继续答题，将关闭自动答题。' });
+									$message('warn', { content: '检测到页面切换，无法继续答题，将关闭自动答题。' });
 									clearInterval(interval);
 									worker.emit('close');
 								}
