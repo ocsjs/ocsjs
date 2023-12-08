@@ -63,8 +63,13 @@ export const RenderScript = new Script({
 	configs: {
 		notes: {
 			defaultValue: $creator.notes([
-				['如果需要隐藏整个窗口，可以点击下方隐藏按钮，', '隐藏后可以快速三击屏幕中的任意地方', '来重新显示窗口。'],
-				'窗口连续点击显示的次数可以自定义，默认为三次'
+				[
+					'如果需要隐藏整个窗口，可以点击下方隐藏按钮，',
+					'隐藏后可以快速三击屏幕中的任意地方',
+					'来重新在鼠标位置显示窗口。'
+				],
+				'窗口连续点击显示的次数可以自定义，默认为三次',
+				['窗口快捷键列表：', 'ctrl + o : 隐藏/打开 面板']
 			]).outerHTML
 		},
 		x: { defaultValue: window.innerWidth * 0.1 },
@@ -400,6 +405,15 @@ export const RenderScript = new Script({
 			$elements.root.append(container);
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);
+
+			// 监听快捷键
+			window.addEventListener('keydown', (e) => {
+				e.stopPropagation();
+				e.preventDefault();
+				if (e.ctrlKey && e.key === 'o') {
+					this.cfg.visual = this.cfg.visual === 'close' ? 'normal' : 'close';
+				}
+			});
 
 			// 首先处理窗口状态，防止下方的IO速度过慢可能导致窗口闪烁
 			handleVisible();
