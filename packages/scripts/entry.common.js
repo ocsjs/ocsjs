@@ -11,6 +11,9 @@ const { start, definedProjects, CommonProject } = OCS;
 		style: STYLE,
 		projects: definedProjects(),
 		defaultPanelName: CommonProject.scripts.guide.namespace,
-		updatePage: GM_info.scriptHandler === 'Tampermonkey' ? 'https://greasyfork.org/zh-CN/scripts/481438' : 'https://scriptcat.org/zh-CN/script-show-page/1398'
+		updatePage:
+			GM_info.scriptHandler === 'Tampermonkey'
+				? 'https://greasyfork.org/zh-CN/scripts/481438'
+				: 'https://scriptcat.org/zh-CN/script-show-page/1398'
 	});
 })();
