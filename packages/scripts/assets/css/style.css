@@ -517,7 +517,7 @@ modal-element .modal-footer {
   justify-content: end;
   align-items: end;
 }
-modal-element .modal-footer * + * {
+modal-element .modal-footer > * + * {
   margin-left: 12px;
 }
 modal-element .modal-input {

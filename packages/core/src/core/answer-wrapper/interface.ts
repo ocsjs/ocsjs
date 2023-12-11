@@ -31,7 +31,7 @@ export interface AnswererWrapper {
 	/** 题库网址 */
 	homepage?: string;
 	/** 请求数据 */
-	data?: Record<string, string>;
+	data?: Record<string, any>;
 	/** 请求方法 */
 	method: 'post' | 'get';
 	/** 定义 handler 中的参数类型 */

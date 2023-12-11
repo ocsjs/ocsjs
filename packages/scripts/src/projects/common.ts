@@ -155,60 +155,136 @@ export const CommonProject = Project.create({
 								el('div', aw.length ? ['以下是已经解析过的题库配置：', copy] : ''),
 								...createAnswererWrapperList(aw)
 							]);
+							const textarea = el(
+								'textarea',
+								{
+									className: 'modal-input',
+									style: { minHeight: '250px', width: 'calc(100% - 20px)', maxWidth: '100%' },
+									placeholder: aw.length ? '重新输入题库配置' : '输入你的题库配置...'
+								},
+								aw.length === 0 ? '' : JSON.stringify(aw, null, 4)
+							);
+
+							const select = $creator.tooltip(
+								el(
+									'select',
+									{
+										className: 'base-style-active-form-control',
+										style: { backgroundColor: '#eef2f7', borderRadius: '2px', padding: '2px 8px' }
+									},
+									['默认', 'TikuAdapter'].map((i) => el('option', i))
+								)
+							);
 
 							const modal = $modal('prompt', {
 								width: 600,
-								modalInputType: 'textarea',
-								inputDefaultValue: aw.length === 0 ? '' : JSON.stringify(aw, null, 4),
+								maskCloseable: false,
 								content: $creator.notes([
 									[
 										el('div', [
-											'具体配置教程，请查看官网：',
-											el('a', { href: 'https://docs.ocsjs.com/docs/work' }, '自动答题教程')
+											'题库配置填写教程：',
+											el('a', { href: 'https://docs.ocsjs.com/docs/work' }, 'https://docs.ocsjs.com/docs/work')
 										])
 									],
-									'如果题库配置无法粘贴，则说明此页面禁止粘贴，请尝试前往其他页面(网课主页或者学习页面)再尝试进行粘贴。',
+									'【注意】如果题库配置无法粘贴，则说明此页面禁止粘贴，请尝试前往其他页面(网课主页或者学习页面)再尝试进行粘贴。',
 									...(aw.length ? [list] : [])
 								]),
-								placeholder: aw.length ? '重新输入' : '输入题库配置',
-								cancelButton: el('button', {
-									className: 'modal-cancel-button',
-									innerText: '清空题库配置',
-									onclick: () => {
-										$message('success', { content: '已清空，在答题前请记得重新配置。' });
-										modal?.remove();
-										CommonProject.scripts.settings.cfg.answererWrappers = [];
-										this.value = '点击配置';
-									}
-								}),
-								onConfirm: async (value) => {
-									if (value) {
-										try {
-											const aw = await AnswerWrapperParser.from(value);
-											if (aw.length) {
-												CommonProject.scripts.settings.cfg.answererWrappers = aw;
-												this.value = '当前有' + aw.length + '个可用题库';
-												$modal('alert', {
-													width: 600,
-													content: el('div', [
-														el('div', ['🎉 配置成功，刷新网页后重新答题即可。', '解析到的题库如下所示:']),
-														...createAnswererWrapperList(aw)
-													])
-												});
-											} else {
-												$modal('alert', { content: '题库配置不能为空，请重新配置。' });
-											}
-										} catch (e: any) {
-											$modal('alert', {
-												content: el('div', [el('div', '解析失败，原因如下 :'), el('div', e.message)])
-											});
-										}
-									} else {
-										$modal('alert', {
-											content: el('div', '不能为空！')
-										});
-									}
-								}
+								footer: el('div', { style: { width: '100%' } }, [
+									textarea,
+									el('div', { style: { display: 'flex', flexWrap: 'wrap', marginTop: '12px', fontSize: '12px' } }, [
+										el('div', ['解析器：', select], (div) => {
+											div.style.marginRight = '12px';
+											div.style.flex = '1';
+										}),
+										el('div', { style: { flex: '1', display: 'flex', flexWrap: 'wrap', justifyContent: 'end' } }, [
+											el('button', '清空题库配置', (btn) => {
+												btn.className = 'modal-cancel-button';
+												btn.style.marginRight = '48px';
+												btn.onclick = () => {
+													$modal('confirm', {
+														content: '确定要清空题库配置吗？',
+														onConfirm: () => {
+															$message('success', { content: '已清空，在答题前请记得重新配置。' });
+															modal?.remove();
+															CommonProject.scripts.settings.cfg.answererWrappers = [];
+															this.value = '点击配置';
+														}
+													});
+												};
+											}),
+											el('button', '关闭', (btn) => {
+												btn.className = 'modal-cancel-button';
+												btn.style.marginRight = '12px';
+												btn.onclick = () => modal?.remove();
+											}),
+											el('button', '确定', (btn) => {
+												btn.className = 'modal-confirm-button';
+												btn.onclick = async () => {
+													const value = textarea.value;
+
+													if (value) {
+														try {
+															const awsResult: AnswererWrapper[] = [];
+															if (select.value === 'TikuAdapter') {
+																select.value = '默认';
+																awsResult.push({
+																	name: 'TikuAdapter题库',
+																	url: value,
+																	homepage: 'https://github.com/DokiDoki1103/tikuAdapter',
+																	method: 'post',
+																	type: 'GM_xmlhttpRequest',
+																	contentType: 'json',
+																	headers: {},
+																	data: {
+																		// eslint-disable-next-line no-template-curly-in-string
+																		question: '${title}',
+																		options: {
+																			handler: "return (env)=>env.options?.split('\\n')"
+																		},
+																		type: {
+																			handler:
+																				" return (env)=> env.type === 'single' ? 1 : env.type === 'multiple' ? 2 : env.type === 'judgement' ? 3 : env.type === 'completion' ? 4 : undefined"
+																		}
+																	},
+																	handler: "return (res)=>res.answer.allAnswer.map(i=>([res.question,i.join('#')]))"
+																});
+															} else {
+																awsResult.push(...(await AnswerWrapperParser.from(value)));
+															}
+
+															if (awsResult.length) {
+																CommonProject.scripts.settings.cfg.answererWrappers = awsResult;
+																this.value = '当前有' + awsResult.length + '个可用题库';
+																$modal('alert', {
+																	width: 600,
+																	content: el('div', [
+																		el('div', [
+																			'🎉 配置成功，刷新网页后重新进入答题页面即可。',
+																			'解析到的题库如下所示:'
+																		]),
+																		...createAnswererWrapperList(awsResult)
+																	])
+																});
+
+																textarea.value = JSON.stringify(awsResult, null, 4);
+															} else {
+																$modal('alert', { content: '题库配置不能为空，请重新配置。' });
+															}
+														} catch (e: any) {
+															$modal('alert', {
+																content: el('div', [el('div', '解析失败，原因如下 :'), el('div', e.message)])
+															});
+														}
+													} else {
+														$modal('alert', {
+															content: el('div', '不能为空！')
+														});
+													}
+												};
+											})
+										])
+									])
+								])
 							});
 						};
 					}
