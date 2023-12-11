@@ -253,7 +253,7 @@ export const CommonProject = Project.create({
 																		},
 																		type: {
 																			handler:
-																				" return (env)=> env.type === 'single' ? 1 : env.type === 'multiple' ? 2 : env.type === 'judgement' ? 3 : env.type === 'completion' ? 4 : undefined"
+																				" return (env)=> env.type === 'single' ? 0 : env.type === 'multiple' ? 1 : env.type === 'completion' ? 3 : env.type === 'judgement' ? 4 : undefined"
 																		}
 																	},
 																	handler: "return (res)=>res.answer.allAnswer.map(i=>([res.question,i.join('#')]))"
