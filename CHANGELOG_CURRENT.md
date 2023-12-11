@@ -1,14 +1,14 @@
-## [4.7.27](https://github.com/ocsjs/ocsjs/compare/4.7.25...4.7.27) (2023-12-11)
+## [4.7.29](https://github.com/ocsjs/ocsjs/compare/4.7.27...4.7.29) (2023-12-11)
 
 
 ### Bug Fixes
 
-* **script:** 修复请求模块的重大BUG ([4b121bb](https://github.com/ocsjs/ocsjs/commit/4b121bb20c66e704bf32e09906a42bb7cf8566be))
+* **script:** 添加多版本脚本的更新模块适配 ([4a7aa19](https://github.com/ocsjs/ocsjs/commit/4a7aa19889c7d5f1a412de7e91491d6f52ace0c0))
 
 
-### Features
+### Performance Improvements
 
-* **script:** 新增 TikuAdapter 题库配置解析器，优化题库配置解析 ([1fc0d59](https://github.com/ocsjs/ocsjs/commit/1fc0d59313c2b2fe7f296b51340f3ff5d741e32e))
+* **script:** 添加 TikuAdapter 解析器说明 ([d200b22](https://github.com/ocsjs/ocsjs/commit/d200b22212300cb5b055471a4767b13a428660f4))
 
 
 
