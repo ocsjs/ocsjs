@@ -29,7 +29,7 @@ export function request<T extends 'json' | 'text'>(
 					const requestData =
 						contentType === 'application/x-www-form-urlencoded'
 							? new URLSearchParams(data).toString()
-							: Object.keys(headers).length
+							: Object.keys(data).length
 							? JSON.stringify(data)
 							: undefined;
 					// eslint-disable-next-line no-undef
