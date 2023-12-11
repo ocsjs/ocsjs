@@ -172,7 +172,17 @@ export const CommonProject = Project.create({
 										className: 'base-style-active-form-control',
 										style: { backgroundColor: '#eef2f7', borderRadius: '2px', padding: '2px 8px' }
 									},
-									['默认', 'TikuAdapter'].map((i) => el('option', i))
+									[
+										el('option', '默认'),
+										el(
+											'option',
+											{
+												title:
+													'大学生网课题库接口适配器: 将不同的题库整合为一个API接口。详细查看 https://github.com/DokiDoki1103/tikuAdapter'
+											},
+											'TikuAdapter'
+										)
+									]
 								)
 							);
 
