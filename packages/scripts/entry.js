@@ -10,6 +10,7 @@ const { start, definedProjects, CommonProject } = OCS;
 	start({
 		style: STYLE,
 		projects: definedProjects(),
-		defaultPanelName: CommonProject.scripts.guide.namespace
+		defaultPanelName: CommonProject.scripts.guide.namespace,
+		updatePage: GM_info.scriptHandler === 'Tampermonkey' ? 'https://greasyfork.org/zh-CN/scripts/457151' : 'https://scriptcat.org/script-show-page/367'
 	});
 })();

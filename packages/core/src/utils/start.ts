@@ -14,6 +14,8 @@ export interface StartConfig {
 	projects: Project[];
 	/** 默认面板名称 */
 	defaultPanelName: string;
+
+	[x: string]: any;
 }
 
 /**
@@ -69,6 +71,7 @@ export async function start(startConfig: StartConfig) {
 
 	/** 执行脚本 */
 	scripts.forEach((script) => {
+		script.startConfig = startConfig;
 		script.emit('start', startConfig);
 		script.onstart?.(startConfig);
 	});

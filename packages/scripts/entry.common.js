@@ -8,9 +8,9 @@ const { start, definedProjects, CommonProject } = OCS;
 
 	// 运行脚本
 	start({
-		style: GM_getResourceText('STYLE'),
+		style: STYLE,
 		projects: definedProjects(),
 		defaultPanelName: CommonProject.scripts.guide.namespace,
-		updatePage: ''
+		updatePage: GM_info.scriptHandler === 'Tampermonkey' ? 'https://greasyfork.org/zh-CN/scripts/481438' : 'https://scriptcat.org/zh-CN/script-show-page/1398'
 	});
 })();

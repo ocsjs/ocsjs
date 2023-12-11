@@ -3,6 +3,7 @@
 import { HeaderElement } from '../elements/header';
 import { ScriptPanelElement } from '../elements/script.panel';
 import { $ } from '../utils/common';
+import { StartConfig } from '../utils/start';
 import { $store } from '../utils/store';
 import { CommonEventEmitter } from './common';
 import { Config } from './config';
@@ -86,6 +87,9 @@ export class Script<
 	private _configs?: ScriptConfigsProvider<C>;
 	/** 存储已经处理过的 configs 对象，避免重复调用方法 */
 	private _resolvedConfigs?: C;
+
+	/** 启动参数，由外部方法统一赋值 */
+	startConfig?: StartConfig;
 
 	/** 名字 */
 	name: string;

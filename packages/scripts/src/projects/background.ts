@@ -341,23 +341,17 @@ export const BackgroundProject = Project.create({
 
 				const changeLog = el('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
 				changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
-
+				const updatePage = this.startConfig?.updatePage || '';
 				panel.body.replaceChildren(
 					el('div', { className: 'card' }, [
 						el('hr'),
 						el('div', ['最新版本：' + version['last-version'] + ' - ', changeLog]),
 						el('hr'),
-						el('div', '当前版本：' + $gm.getInfos()?.script.version),
-						el('div', '脚本管理器：' + infos?.scriptHandler),
-						el('div', [
-							'脚本更新链接：',
-							el('a', { target: '_blank', href: version.resource[infos.scriptHandler] }, [
-								version.resource[infos.scriptHandler]
-							])
-						])
+						el('div', '当前版本：' + infos.script.version),
+						el('div', '脚本管理器：' + infos.scriptHandler),
+						el('div', ['脚本更新链接：', el('a', { target: '_blank', href: updatePage }, [updatePage || '无'])])
 					])
 				);
-
 				console.log('versions', {
 					notToday: this.cfg.notToday,
 					ignoreVersions: this.cfg.ignoreVersions,
@@ -380,6 +374,7 @@ export const BackgroundProject = Project.create({
 									// 版本比较
 									gt(last, infos.script.version)
 								) {
+									const updatePage = this.startConfig?.updatePage || '';
 									const modal = $modal('confirm', {
 										maskCloseable: false,
 										width: 600,
@@ -399,8 +394,12 @@ export const BackgroundProject = Project.create({
 											}),
 											el('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
 												btn.onclick = () => {
-													window.open(version.resource[infos.scriptHandler], '_blank');
-													modal?.remove();
+													if (updatePage) {
+														window.open(updatePage, '_blank');
+														modal?.remove();
+													} else {
+														$message('error', { content: '无法前往更新页面，更新链接为空' });
+													}
 												};
 											})
 										])

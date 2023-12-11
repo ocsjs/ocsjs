@@ -133,7 +133,7 @@ async function createUserJs(cb) {
 	const commonOpts = createOptions();
 	commonOpts.metadata.name = commonOpts.metadata.name + ' - 全域名通用版';
 	commonOpts.metadata.connect = ['*'];
-	Reflect.deleteProperty(commonOpts.metadata, 'antifeature');
+	commonOpts.entry = path.join(__dirname, '../packages/scripts/entry.common.js');
 	commonOpts.dist = path.join(distResolvedPath, 'ocs.common.user.js');
 
 	console.log('createUserScript: ', commonOpts.metadata.name, commonOpts.dist);
