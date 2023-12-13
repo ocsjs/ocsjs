@@ -230,12 +230,22 @@ export const CommonProject = Project.create({
 											el('button', '确定', (btn) => {
 												btn.className = 'modal-confirm-button';
 												btn.onclick = async () => {
+													// @ts-ignore
+													const connects: string[] = $gm.getInfos()?.script.connects;
+
 													const value = textarea.value;
 
 													if (value) {
 														try {
 															const awsResult: AnswererWrapper[] = [];
 															if (select.value === 'TikuAdapter') {
+																if (value.startsWith('http') === false) {
+																	$modal('alert', {
+																		content:
+																			'格式错误，TikuAdapter解析器只能解析 url 链接，请重新输入！或者查看 https://github.com/DokiDoki1103/tikuAdapter 文档说明'
+																	});
+																	return;
+																}
 																select.value = '默认';
 																awsResult.push({
 																	name: 'TikuAdapter题库',
@@ -275,6 +285,42 @@ export const CommonProject = Project.create({
 																		...createAnswererWrapperList(awsResult)
 																	])
 																});
+
+																// 检测是否有域名白名单
+																const notAllowed: string[] = [];
+																console.log(connects);
+
+																for (const aw of awsResult) {
+																	if (
+																		connects.some((connect) => new URL(aw.url).hostname.includes(connect)) === false
+																	) {
+																		notAllowed.push(aw.url);
+																	}
+																}
+																if (notAllowed.length) {
+																	$modal('alert', {
+																		width: 600,
+																		maskCloseable: false,
+																		title: '⚠️警告',
+																		content: el('div', [
+																			el('div', [
+																				'配置成功，但检测到以下 域名/ip 不在脚本的白名单中，请安装 : ',
+																				el(
+																					'a',
+																					{
+																						href: 'https://docs.ocsjs.com/docs/other/api#全域名通用版本'
+																					},
+																					'OCS全域名通用版本'
+																				),
+																				'，或者手动添加 @connect ，否则无法进行请求。',
+																				el(
+																					'ul',
+																					notAllowed.map((url) => el('li', new URL(url).hostname))
+																				)
+																			])
+																		])
+																	});
+																}
 
 																textarea.value = JSON.stringify(awsResult, null, 4);
 															} else {
