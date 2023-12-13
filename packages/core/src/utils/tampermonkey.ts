@@ -59,5 +59,23 @@ export const $gm = {
 			silent: silent,
 			timeout: duration * 1000
 		});
+	},
+	getMetadataFromScriptHead(key: string) {
+		const metadataString = this.getInfos()?.scriptMetaStr;
+
+		if (!metadataString) {
+			return [];
+		} else {
+			const metadata = metadataString.match(/\/\/\s+==UserScript==([\s\S]+)\/\/\s+==\/UserScript==/)?.[1] || '';
+			const metadataList = (metadata.match(/\/\/\s+@(.+?)\s+(.*?)(?:\n|$)/g) || []).map((line) => {
+				const words = line.match(/[\S]+/g) || [];
+				return {
+					key: (words[1] || '').replace('@', ''),
+					value: words.slice(2).join(' ')
+				};
+			});
+
+			return metadataList.filter((l) => l.key === key).map((l) => l.value);
+		}
 	}
 };

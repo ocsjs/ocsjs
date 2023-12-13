@@ -21,7 +21,7 @@ export const ICourseProject = Project.create({
 		dispatcher: new Script({
 			name: '调度器',
 			hideInPanel: true,
-			url: [['所有页面', 'icourse163.org']],
+			url: [['所有页面', 'icourse163.org']], 
 			oncomplete() {
 				setInterval(() => {
 					const hash = new URL(window.location.href).hash;

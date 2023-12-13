@@ -230,8 +230,7 @@ export const CommonProject = Project.create({
 											el('button', '确定', (btn) => {
 												btn.className = 'modal-confirm-button';
 												btn.onclick = async () => {
-													// @ts-ignore
-													const connects: string[] = $gm.getInfos()?.script.connects;
+													const connects: string[] = $gm.getMetadataFromScriptHead('connect');
 
 													const value = textarea.value;
 
@@ -286,9 +285,16 @@ export const CommonProject = Project.create({
 																	])
 																});
 
+																// 格式化文本
+																textarea.value = JSON.stringify(awsResult, null, 4);
+
 																// 检测是否有域名白名单
 																const notAllowed: string[] = [];
-																console.log(connects);
+
+																// 如果是通用版本，则不检测
+																if (connects.includes('*')) {
+																	return;
+																}
 
 																for (const aw of awsResult) {
 																	if (
@@ -321,8 +327,6 @@ export const CommonProject = Project.create({
 																		])
 																	});
 																}
-
-																textarea.value = JSON.stringify(awsResult, null, 4);
 															} else {
 																$modal('alert', { content: '题库配置不能为空，请重新配置。' });
 															}
