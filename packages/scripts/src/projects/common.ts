@@ -240,8 +240,14 @@ export const CommonProject = Project.create({
 															if (select.value === 'TikuAdapter') {
 																if (value.startsWith('http') === false) {
 																	$modal('alert', {
-																		content:
-																			'格式错误，TikuAdapter解析器只能解析 url 链接，请重新输入！或者查看 https://github.com/DokiDoki1103/tikuAdapter 文档说明'
+																		content: el('div', [
+																			'格式错误，TikuAdapter解析器只能解析 url 链接，请重新输入！或者查看：',
+																			el(
+																				'a',
+																				{ href: 'https://github.com/DokiDoki1103/tikuAdapter#readme' },
+																				'https://github.com/DokiDoki1103/tikuAdapter#readme'
+																			)
+																		])
 																	});
 																	return;
 																}
