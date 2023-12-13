@@ -132,7 +132,9 @@ async function createUserJs(cb) {
 	/** 创建全Connect域名通用脚本 */
 	const commonOpts = createOptions();
 	commonOpts.metadata.name = commonOpts.metadata.name + ' - 全域名通用版';
-	commonOpts.metadata.connect = ['*'];
+	const connect = Array.isArray(commonOpts.metadata.connect) ? commonOpts.metadata.connect : [];
+	connect.push('*');
+	commonOpts.metadata.connect = connect
 	commonOpts.entry = path.join(__dirname, '../packages/scripts/entry.common.js');
 	commonOpts.dist = path.join(distResolvedPath, 'ocs.common.user.js');
 
