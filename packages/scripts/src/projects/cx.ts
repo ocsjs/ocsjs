@@ -152,6 +152,13 @@ export const CXProject = Project.create({
 					},
 					defaultValue: true
 				},
+				notifyWhenHasFaceRecognition: {
+					label: '当有人脸验证时通知我',
+					attrs: {
+						type: 'checkbox'
+					},
+					defaultValue: true
+				},
 				/**
 				 *
 				 * 开启的任务点
@@ -1303,6 +1310,7 @@ async function mediaTask(
 	 */
 	await new Promise<void>((resolve, reject) => {
 		const playFunction = async () => {
+			await waitForFaceRecognition();
 			if (!media.ended) {
 				await $.sleep(1000);
 				media.play();
@@ -1661,4 +1669,29 @@ async function readerAndFillHandle(searchInfos: SearchInformation[], list: HTMLE
 	}
 
 	return { finish: false };
+}
+
+function waitForFaceRecognition() {
+	let notified = false;
+
+	return new Promise<void>((resolve) => {
+		const interval = setInterval(() => {
+			const face = $el('#fcqrimg', top?.document);
+			if (face) {
+				if (!notified) {
+					notified = true;
+					if (CXProject.scripts.study.cfg.notifyWhenHasFaceRecognition) {
+						CommonProject.scripts.settings.methods.notificationBySetting(
+							'检测到人脸识别，请手动进行识别后脚本才会继续运行。',
+							{ duration: 0 }
+						);
+					}
+					$console.warn('检测到人脸识别，请手动进行识别后脚本才会继续运行。');
+				}
+			} else {
+				clearInterval(interval);
+				resolve();
+			}
+		}, 3000);
+	});
 }
