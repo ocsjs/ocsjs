@@ -576,7 +576,15 @@ export const CommonProject = Project.create({
 								const body = el('tbody');
 								body.append(el('td', item.name));
 								body.append(
-									el('td', success ? '连接成功🟢' : isDisabled ? '已停用⚪' : error ? '连接失败🔴' : '连接超时🟡')
+									el('td', [
+										$creator.tooltip(
+											el(
+												'span',
+												{ title: isDisabled ? '题目已经被停用，请在上方题库配置中点击开启。' : '' },
+												success ? '连接成功🟢' : isDisabled ? '已停用⚪' : error ? '连接失败🔴' : '连接超时🟡'
+											)
+										)
+									])
 								);
 								body.append(el('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
 								table.append(body);
