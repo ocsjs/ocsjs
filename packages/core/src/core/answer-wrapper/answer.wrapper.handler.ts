@@ -38,7 +38,12 @@ import { $ } from '../../utils';
 export async function defaultAnswerWrapperHandler(
 	answererWrappers: AnswererWrapper[],
 	// 上下文解析环境
-	env: any
+	env: {
+		title?: string;
+		options?: string;
+		type?: string;
+		[x: string]: any;
+	}
 ): Promise<SearchInformation[]> {
 	const searchInfos: SearchInformation[] = [];
 	const temp: AnswererWrapper[] = JSON.parse(JSON.stringify(answererWrappers));

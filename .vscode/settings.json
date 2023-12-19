@@ -27,7 +27,7 @@
 	"eslint.validate": ["javascript", "javascriptreact", "vue"],
 	"editor.formatOnSave": true,
 	"editor.codeActionsOnSave": {
-		"source.fixAll.eslint": true
+		"source.fixAll.eslint": "explicit"
 	},
 	"editor.defaultFormatter": "esbenp.prettier-vscode",
 	/** 样式自动生成 */
