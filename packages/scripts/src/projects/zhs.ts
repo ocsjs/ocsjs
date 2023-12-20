@@ -9,9 +9,10 @@ import {
 	defaultAnswerWrapperHandler,
 	$message,
 	$,
-	$modal
+	$modal,
+	RemotePlaywright
 } from '@ocsjs/core';
-import type { MessageElement, SimplifyWorkResult } from '@ocsjs/core';
+import type { MessageElement, RemotePage, SimplifyWorkResult } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workNotes, definition, volume, restudy } from '../utils/configs';
 import {
@@ -24,7 +25,7 @@ import {
 import { CommonWorkOptions, playMedia } from '../utils';
 import { $console } from './background';
 import { waitForMedia } from '../utils/study';
-import { $app_actions } from '../utils/app';
+import { $playwright } from '../utils/app';
 
 const state = {
 	study: {
@@ -35,9 +36,6 @@ const state = {
 		currentMedia: undefined as HTMLMediaElement | undefined,
 		stopInterval: 0 as any,
 		stopMessage: undefined as MessageElement | undefined
-	},
-	work: {
-		workInfo: undefined as any
 	}
 };
 
@@ -250,6 +248,13 @@ export const ZHSProject = Project.create({
 				};
 				await waitForVideoList();
 
+				// 检查是否为软件环境
+				const remotePage = await RemotePlaywright.getCurrentPage();
+				// 检查是否为软件环境
+				if (!remotePage) {
+					return $playwright.showError();
+				}
+
 				// 监听定时停止
 				this.onConfigChange('stopTime', (stopTime) => {
 					if (stopTime === '0') {
@@ -269,12 +274,12 @@ export const ZHSProject = Project.create({
 					if (typeof curr === 'string') {
 						this.cfg.playbackRate = parseFloat(curr);
 					}
-					switchPlaybackRate(this.cfg.playbackRate);
+					switchPlaybackRate(remotePage, this.cfg.playbackRate);
 				});
 
 				// 监听清晰度
 				this.onConfigChange('definition', (curr) => {
-					switchLine(curr);
+					switchLine(remotePage, curr);
 				});
 
 				const hideDialog = () => {
@@ -289,7 +294,7 @@ export const ZHSProject = Project.create({
 					if (tip?.querySelector('.el-message-box__message')?.textContent?.includes('未做答的弹题不能关闭')) {
 						const close = tip.querySelector('[aria-label="Close"]');
 						if (close) {
-							await $app_actions.mouseClick('[role="dialog"][aria-label="提示"] [aria-label="Close"]');
+							await remotePage.click('[role="dialog"][aria-label="提示"] [aria-label="Close"]');
 							await $.sleep(1000);
 						}
 					}
@@ -311,13 +316,13 @@ export const ZHSProject = Project.create({
 								const random = Math.floor(Math.random() * options.length);
 								await $.sleep(1000);
 								// nth-child 从1开始
-								await $app_actions.mouseClick(`#playTopic-dialog .topic .radio ul > li:nth-child(${random + 1})`);
+								await remotePage.click(`#playTopic-dialog .topic .radio ul > li:nth-child(${random + 1})`);
 								await $.sleep(1000);
 							}
 						}
 						await $.sleep(1000);
 						// 关闭弹窗
-						await $app_actions.mouseClick('#playTopic-dialog .dialog-footer .btn');
+						await remotePage.click('#playTopic-dialog .dialog-footer .btn');
 					}
 
 					/**
@@ -362,11 +367,6 @@ export const ZHSProject = Project.create({
 					return videoItems[0];
 				};
 
-				// 检查是否为软件环境
-				if (!(await $app_actions.init())) {
-					return $app_actions.showError();
-				}
-
 				// 检测是否需要学前必读
 				closeDialogRead();
 				// 循环记录学习时间
@@ -398,9 +398,10 @@ export const ZHSProject = Project.create({
 							// 最小化脚本窗口
 							CommonProject.scripts.render.methods.moveToEdge();
 							// 点击侧边栏任务
-							await $app_actions.mouseClick(item);
+							await remotePage.click(item);
 
 							watch(
+								remotePage,
 								{ volume: this.cfg.volume, playbackRate: this.cfg.playbackRate, definition: this.cfg.definition },
 								({ next }) => study({ next })
 							);
@@ -439,10 +440,24 @@ export const ZHSProject = Project.create({
 				}
 			},
 			methods() {
+				async function getWorkInfo(remotePage: RemotePage) {
+					const isExam = location.href.includes('doexamination');
+					let url = '';
+					if (isExam) {
+						url = '/taurusExam/gateway/t/v1/student/doExam';
+					} else {
+						url = '/studentExam/gateway/t/v1/student/doHomework';
+					}
+					return JSON.parse(await remotePage.waitForResponse(url));
+				}
+
 				return {
 					work: async () => {
-						if (!(await $app_actions.init())) {
-							return $app_actions.showError();
+						// 检查是否为软件环境
+						const remotePage = await RemotePlaywright.getCurrentPage();
+						// 检查是否为软件环境
+						if (!remotePage) {
+							return $playwright.showError();
 						}
 
 						// 等待试卷加载
@@ -450,10 +465,10 @@ export const ZHSProject = Project.create({
 						const isWork = location.href.includes('dohomework');
 
 						if (isExam || isWork) {
-							await waitForWorkInfo();
+							const workInfo = await getWorkInfo(remotePage);
 							$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
 							commonWork(this, {
-								workerProvider: (opts) => gxkWorkAndExam(opts)
+								workerProvider: (opts) => gxkWorkAndExam(workInfo, opts)
 							});
 						} else {
 							$message('info', { content: '📢 请手动进入作业/考试，如果未开始答题，请尝试刷新页面。', duration: 0 });
@@ -461,19 +476,6 @@ export const ZHSProject = Project.create({
 						}
 					}
 				};
-			},
-			async onstart() {
-				const isExam = location.href.includes('doexamination');
-				let url = '';
-				if (isExam) {
-					url = '/taurusExam/gateway/t/v1/student/doExam';
-				} else {
-					url = '/studentExam/gateway/t/v1/student/doHomework';
-				}
-
-				state.work.workInfo = await $app_actions.waitForResponse(url, {
-					responseType: 'json'
-				});
 			},
 			async oncomplete() {
 				this.methods.work();
@@ -596,6 +598,7 @@ export const ZHSProject = Project.create({
  * @returns
  */
 async function watch(
+	remotePage: RemotePage,
 	options: { volume: number; playbackRate: number; definition?: 'line1bq' | 'line1gq' },
 	onended: (opts: { next: boolean }) => void
 ) {
@@ -604,10 +607,10 @@ async function watch(
 
 	const set = async () => {
 		// 设置清晰度
-		await switchLine(options.definition);
+		await switchLine(remotePage, options.definition);
 		await $.sleep(1000);
 		// 设置播放速度
-		await switchPlaybackRate(options.playbackRate);
+		await switchPlaybackRate(remotePage, options.playbackRate);
 
 		// 上面操作会导致元素刷新，这里重新获取视频
 		const video = await waitForMedia();
@@ -684,14 +687,14 @@ async function watchXnk(options: { volume: number }, onended: () => void) {
  * 切换视频清晰度
  * @param definition 清晰度的类名
  */
-async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
+async function switchLine(remotePage: RemotePage, definition: 'line1bq' | 'line1gq' = 'line1bq') {
 	const controlsBar = $el('.controlsBar');
 	const dl = $el('.definiLines');
 
 	if (controlsBar && dl) {
 		controlsBar.style.display = 'block';
 		dl.style.display = 'block';
-		await $app_actions.mouseClick(`.definiLines .${definition}`);
+		await remotePage.click(`.definiLines .${definition}`);
 	}
 }
 
@@ -699,13 +702,13 @@ async function switchLine(definition: 'line1bq' | 'line1gq' = 'line1bq') {
  * 切换视频清晰度
  * @param playbackRate 播放速度
  */
-async function switchPlaybackRate(playbackRate: number) {
+async function switchPlaybackRate(remotePage: RemotePage, playbackRate: number) {
 	const controlsBar = $el('.controlsBar');
 	const sl = $el('.speedList');
 	if (controlsBar && sl) {
 		controlsBar.style.display = 'block';
 		sl.style.display = 'block';
-		await $app_actions.mouseClick(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
+		await remotePage.click(`.speedList [rate="${playbackRate === 1 ? '1.0' : playbackRate}"]`);
 	}
 }
 
@@ -767,27 +770,13 @@ function getPopupCaptcha() {
 	return document.querySelector('.yidun_popup');
 }
 
-function waitForWorkInfo() {
-	return new Promise<any>((resolve, reject) => {
-		const interval = setInterval(() => {
-			if (state.work.workInfo) {
-				clearInterval(interval);
-				resolve(state.work.workInfo);
-			}
-		}, 1000);
-	});
-}
-
 /**
  * 共享课的作业和考试
  */
-function gxkWorkAndExam({
-	answererWrappers,
-	period,
-	thread,
-	stopSecondWhenFinish,
-	redundanceWordsText
-}: CommonWorkOptions) {
+function gxkWorkAndExam(
+	workInfo: any,
+	{ answererWrappers, period, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
+) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zhs-gxk'
 	});
@@ -798,7 +787,7 @@ function gxkWorkAndExam({
 	 * 所以这里直接扁平化数组方便处理
 	 */
 	const allExamParts =
-		((state?.work?.workInfo?.rt?.examBase?.workExamParts as any[]) || [])?.map((p) => p.questionDtos).flat() || [];
+		((workInfo?.rt?.examBase?.workExamParts as any[]) || [])?.map((p) => p.questionDtos).flat() || [];
 
 	const titleTransform = (_: any, index: number) => {
 		const div = el('div');

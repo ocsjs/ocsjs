@@ -12,7 +12,7 @@ export function request<T extends 'json' | 'text'>(
 		method?: 'get' | 'post' | 'head';
 		responseType?: T;
 		headers?: Record<string, string>;
-		data?: Record<string, string>;
+		data?: Record<string, any>;
 	}
 ): Promise<T extends 'json' ? any : string> {
 	return new Promise((resolve, reject) => {

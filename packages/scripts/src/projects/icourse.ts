@@ -1,9 +1,19 @@
-import { $, $creator, $message, OCSWorker, Project, Script, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import {
+	$,
+	$creator,
+	$message,
+	OCSWorker,
+	Project,
+	RemotePage,
+	RemotePlaywright,
+	Script,
+	defaultAnswerWrapperHandler
+} from '@ocsjs/core';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
 import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 import { $console } from './background';
-import { $app_actions } from '../utils/app';
+import { $playwright } from '../utils/app';
 import { waitForElement, waitForMedia } from '../utils/study';
 import { playbackRate, volume, workNotes } from '../utils/configs';
 
@@ -131,9 +141,10 @@ export const ICourseProject = Project.create({
 					main: async (canRun: () => boolean) => {
 						CommonProject.scripts.render.methods.pin(this);
 
+						const remotePage = await RemotePlaywright.getCurrentPage();
 						// 检查是否为软件环境
-						if (!(await $app_actions.init())) {
-							return $app_actions.showError();
+						if (!remotePage) {
+							return $playwright.showError();
 						}
 
 						// 移动窗口到边缘
@@ -156,11 +167,11 @@ export const ICourseProject = Project.create({
 								$console.log('视频学习完成');
 							} else if (isJob('u-icon-doc')) {
 								await waitForElement('.ux-pdf-reader');
-								await readPPT(this.cfg.readSpeed);
+								await readPPT(remotePage, this.cfg.readSpeed);
 								$console.log('PPT完成');
 							} else if (isJob('u-icon-discuss')) {
 								await waitForElement('.j-reply-all');
-								await discussion(this.cfg.discussionStrategy);
+								await discussion(remotePage, this.cfg.discussionStrategy);
 								$console.log('讨论完成');
 							} else if (isJob('u-icon-test')) {
 								const replay = await waitForElement('.j-replay');
@@ -209,7 +220,7 @@ export const ICourseProject = Project.create({
 							for (const item of list) {
 								const el = typeof item === 'function' ? item() : item;
 								if (el) {
-									await $app_actions.mouseClick(el);
+									await remotePage?.click(el);
 								}
 							}
 							if (list.length === 0) {
@@ -320,8 +331,10 @@ export const ICourseProject = Project.create({
 					CommonProject.scripts.render.methods.moveToEdge();
 
 					// 检查是否为软件环境
-					if (!(await $app_actions.init())) {
-						return $app_actions.showError();
+					const remotePage = await RemotePlaywright.getCurrentPage();
+					// 检查是否为软件环境
+					if (!remotePage) {
+						return $playwright.showError();
 					}
 
 					// 等待加载题目
@@ -331,7 +344,7 @@ export const ICourseProject = Project.create({
 					CommonProject.scripts.render.methods.pin(this);
 					commonWork(this, {
 						workerProvider: (opts) => {
-							const worker = workAndExam(type, opts);
+							const worker = workAndExam(remotePage, type, opts);
 							worker.once('close', () => {
 								clearInterval(interval);
 							});
@@ -374,6 +387,7 @@ function waitForQuestion() {
 }
 
 function workAndExam(
+	remotePage: RemotePage,
 	type: 'chapter-test' | 'work-or-exam',
 	{ answererWrappers, period, thread, redundanceWordsText, upload, stopSecondWhenFinish }: CommonWorkOptions
 ) {
@@ -426,15 +440,15 @@ function workAndExam(
 					const text = option.querySelector('.f-richEditorText');
 
 					const input = option.querySelector('input');
-					if (input && !input?.checked) {
-						await $app_actions.mouseClick(text);
+					if (input && !input?.checked && text) {
+						await remotePage.click(text);
 					}
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector('textarea');
 
 					if (text) {
 						text.value = answer.trim();
-						await $app_actions.mouseClick(text);
+						await remotePage.click(text);
 					}
 				}
 			}
@@ -485,7 +499,12 @@ function workAndExam(
 						await $.sleep(3000);
 
 						if (uploadable) {
-							await $app_actions.mouseClick(document.querySelector('.j-submit'));
+							const sumbit = document.querySelector('.j-submit');
+							if (sumbit) {
+								await remotePage.click(sumbit);
+							} else {
+								$console.warn('没有找到提交按钮，将跳过提交。');
+							}
 						}
 					}
 				});
@@ -528,7 +547,7 @@ async function watchMedia(playbackRate: number, volume: number) {
 	});
 }
 
-async function readPPT(readSpeed: number) {
+async function readPPT(remotePage: RemotePage, readSpeed: number) {
 	const reader = document.querySelector('.ux-pdf-reader');
 	if (reader) {
 		const total = parseInt(
@@ -541,13 +560,20 @@ async function readPPT(readSpeed: number) {
 		);
 		for (let index = start; index < total + 1; index++) {
 			const next = document.querySelector<HTMLElement>('.ux-h5pdfreader_container_footer_pages_next');
-			await $app_actions.mouseClick(next);
+			if (next) {
+				await remotePage.click(next);
+			} else {
+				$console.error('未找到PPT的下一页按钮！');
+			}
 			await $.sleep(readSpeed * 1000);
 		}
 	}
 }
 
-async function discussion(discussionStrategy: typeof ICourseProject.scripts.study.cfg.discussionStrategy) {
+async function discussion(
+	remotePage: RemotePage,
+	discussionStrategy: typeof ICourseProject.scripts.study.cfg.discussionStrategy
+) {
 	if (discussionStrategy === 'not-reply') {
 		return $console.warn('讨论自动回复功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启）。');
 	}
@@ -595,7 +621,12 @@ async function discussion(discussionStrategy: typeof ICourseProject.scripts.stud
 	if (p) {
 		p.innerText = res;
 		await $.sleep(1000);
-		await $app_actions.mouseClick(document.querySelector('.ui-richEditor .u-btn-sm'));
+		const submit = document.querySelector('.ui-richEditor .u-btn-sm');
+		if (submit) {
+			await remotePage.click(submit);
+		} else {
+			$console.error('提交按钮获取失败！');
+		}
 		await $.sleep(2000);
 	} else {
 		$console.error('获取评论输入框失败！');

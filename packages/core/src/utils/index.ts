@@ -6,3 +6,4 @@ export * from './string';
 export * from './tampermonkey';
 export * from './store';
 export * from './const';
+export * from './playwright';
