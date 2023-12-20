@@ -294,44 +294,47 @@ export const CommonProject = Project.create({
 																// 格式化文本
 																textarea.value = JSON.stringify(awsResult, null, 4);
 
-																// 检测是否有域名白名单
-																const notAllowed: string[] = [];
+																// 检测 connects.length 是因为 如果在软件的软件设置全局配置中，上下文的 GM_info 会变成空
+																if (connects.length) {
+																	// 检测是否有域名白名单
+																	const notAllowed: string[] = [];
 
-																// 如果是通用版本，则不检测
-																if (connects.includes('*')) {
-																	return;
-																}
-
-																for (const aw of awsResult) {
-																	if (
-																		connects.some((connect) => new URL(aw.url).hostname.includes(connect)) === false
-																	) {
-																		notAllowed.push(aw.url);
+																	// 如果是通用版本，则不检测
+																	if (connects.includes('*')) {
+																		return;
 																	}
-																}
-																if (notAllowed.length) {
-																	$modal('alert', {
-																		width: 600,
-																		maskCloseable: false,
-																		title: '⚠️警告',
-																		content: el('div', [
-																			el('div', [
-																				'配置成功，但检测到以下 域名/ip 不在脚本的白名单中，请安装 : ',
-																				el(
-																					'a',
-																					{
-																						href: 'https://docs.ocsjs.com/docs/other/api#全域名通用版本'
-																					},
-																					'OCS全域名通用版本'
-																				),
-																				'，或者手动添加 @connect ，否则无法进行请求。',
-																				el(
-																					'ul',
-																					notAllowed.map((url) => el('li', new URL(url).hostname))
-																				)
+
+																	for (const aw of awsResult) {
+																		if (
+																			connects.some((connect) => new URL(aw.url).hostname.includes(connect)) === false
+																		) {
+																			notAllowed.push(aw.url);
+																		}
+																	}
+																	if (notAllowed.length) {
+																		$modal('alert', {
+																			width: 600,
+																			maskCloseable: false,
+																			title: '⚠️警告',
+																			content: el('div', [
+																				el('div', [
+																					'配置成功，但检测到以下 域名/ip 不在脚本的白名单中，请安装 : ',
+																					el(
+																						'a',
+																						{
+																							href: 'https://docs.ocsjs.com/docs/other/api#全域名通用版本'
+																						},
+																						'OCS全域名通用版本'
+																					),
+																					'，或者手动添加 @connect ，否则无法进行请求。',
+																					el(
+																						'ul',
+																						notAllowed.map((url) => el('li', new URL(url).hostname))
+																					)
+																				])
 																			])
-																		])
-																	});
+																		});
+																	}
 																}
 															} else {
 																$modal('alert', { content: '题库配置不能为空，请重新配置。' });
