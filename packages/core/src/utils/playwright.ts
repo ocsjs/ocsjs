@@ -166,7 +166,7 @@ export class RemotePlaywright {
 					data = { page: window.location.href, property: property, args: args };
 				}
 
-				logger?.('remote-playwright', JSON.stringify(data));
+				logger?.('[RP]: ', JSON.stringify(data));
 
 				try {
 					const res = await request('http://localhost:15319/ocs-script-actions', {
@@ -180,7 +180,7 @@ export class RemotePlaywright {
 					});
 					return res;
 				} catch (e) {
-					console.error(e);
+					logger?.('[RP-ERROR]: ', JSON.stringify(data));
 					return undefined;
 				}
 			});
