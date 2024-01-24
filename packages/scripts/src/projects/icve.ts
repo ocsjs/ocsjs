@@ -12,7 +12,9 @@ import {
 	OCSWorker,
 	$gm,
 	cors,
-	$message
+	$message,
+	defaultQuestionResolve,
+	splitAnswer
 } from '@ocsjs/core';
 import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
@@ -462,6 +464,8 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init();
 
+	console.log({ answererWrappers, period, thread });
+
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
 			.filter((t) => t?.innerText)
@@ -479,26 +483,32 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
-	let requestIndex = 0;
+	let requestFinished = 0;
 	let resolverIndex = 0;
 
 	const worker = new OCSWorker({
 		root: '.q_content',
 		elements: {
-			title: '.divQuestionTitle',
-			options: '.questionOptions .q_option,.questionOptions.divTextarea '
+			title:
+				'.divQuestionTitle, ' +
+				// 单行填空题
+				'[name="fillblankTitle"]',
+			options:
+				'.questionOptions .q_option, .questionOptions.divTextarea, ' +
+				// 单行填空题
+				'.answerOption'
 		},
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
-		answerer: (elements, type, ctx) => {
+		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
-						type,
+						type: ctx.type || 'unknown',
 						title,
 						options: ctx.elements.options.map((o) => o.innerText).join('\n')
 					});
@@ -507,52 +517,90 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
 			}
 		},
-		work: {
-			/** 自定义处理器 */
-			handler(type, answer, option, ctx) {
-				if (type === 'judgement' || type === 'single' || type === 'multiple') {
-					// 这里只用判断多选题是否选中，如果选中就不用再点击了，单选题是 radio，所以不用判断。
-					if (option.querySelector('.checkbox_on') === null) {
-						$el('div', option)?.click();
-					}
-				} else if (type === 'completion' && answer.trim()) {
-					const text = option.querySelector('textarea');
-					const textIframe = option.querySelector<HTMLIFrameElement>('iframe[id*="ueditor"]');
-					if (text) {
-						text.value = answer;
-					}
-					if (textIframe) {
-						const view = textIframe.contentWindow?.document.querySelector<HTMLElement>('body.view > p');
-						if (view) {
-							view.innerText = answer;
+		async work(ctx) {
+			const options = ctx.elements.options;
+
+			const type = options.some((o) => o.querySelector('[type="radio"]'))
+				? 'single'
+				: options.some((o) => o.querySelector('[type="checkbox"]'))
+				? 'multiple'
+				: options.some((o) => o.querySelector('textarea'))
+				? 'completion'
+				: options.some((o) => o.querySelector('.fillblank_input input'))
+				? 'fill-blank'
+				: 'judgement';
+
+			if (type === 'fill-blank') {
+				const inputs = options
+					.map((o) => Array.from(o.querySelectorAll<HTMLInputElement>('.fillblank_input input')))
+					.flat();
+
+				for (const searchInfo of ctx.searchInfos) {
+					for (const result of searchInfo.results) {
+						const answers = splitAnswer(result.answer);
+						if (answers.length === inputs.length) {
+							for (let index = 0; index < inputs.length; index++) {
+								inputs[index].value = answers[index];
+							}
+							return { finish: true };
 						}
 					}
 				}
+			} else {
+				const resolver = defaultQuestionResolve(ctx)[type];
+				const res = await resolver(ctx.searchInfos, ctx.elements.options, (type, answer, option) => {
+					if (type === 'judgement' || type === 'single' || type === 'multiple') {
+						// 这里只用判断多选题是否选中，如果选中就不用再点击了，单选题是 radio，所以不用判断。
+						if (option.querySelector('.checkbox_on') === null) {
+							$el('div', option)?.click();
+						}
+					} else if (type === 'completion' && answer.trim()) {
+						const text = option.querySelector('textarea');
+						const textIframe = option.querySelector<HTMLIFrameElement>('iframe[id*="ueditor"]');
+						if (text) {
+							text.value = answer;
+						}
+						if (textIframe) {
+							const view = textIframe.contentWindow?.document.querySelector<HTMLElement>('body.view > p');
+							if (view) {
+								view.innerText = answer;
+							}
+						}
+					}
+				});
+
+				return res;
 			}
+
+			return { finish: false };
+		},
+		onElementSearched(elements, root) {
+			console.log('elements', elements);
 		},
 
 		/**
 		 * 因为校内课的考试和作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
-		onResultsUpdate(res, currentResult) {
-			if (currentResult.result) {
+		onResultsUpdate(currentResult) {
+			if (currentResult.resolved) {
 				workResults.push(...simplifyWorkResult([currentResult], titleTransform));
 				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
-				requestIndex++;
+				requestFinished++;
 				resolverIndex++;
+
+				if (currentResult.result?.finish) {
+					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+						simplifyWorkResult([currentResult], titleTransform)
+					);
+				}
+				CommonProject.scripts.workResults.methods.updateWorkState({
+					totalQuestionCount,
+					requestFinished,
+					resolverIndex
+				});
 			}
-		},
-		onResolveUpdate(res) {
-			if (res.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
-			}
-			CommonProject.scripts.workResults.methods.updateWorkState({
-				totalQuestionCount,
-				requestIndex,
-				resolverIndex
-			});
 		}
 	});
 
@@ -561,7 +609,7 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 
 	(async () => {
 		while (next && worker.isClose === false) {
-			await worker.doWork();
+			await worker.doWork({ enable_debug: true });
 			await $.sleep((period ?? 3) * 1000);
 			next = getNextBtn();
 			if (next.style.display === 'none') {
