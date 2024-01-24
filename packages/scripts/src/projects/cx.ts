@@ -583,7 +583,7 @@ export function workOrExam(
 		resolvePeriod: 0,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
-		answerer: (elements, type, ctx) => {
+		answerer: (elements, ctx) => {
 			if (elements.title) {
 				// 处理作业和考试题目
 				const title = workOrExamQuestionTitleTransform(elements.title);
@@ -592,7 +592,7 @@ export function workOrExam(
 
 					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 						return defaultAnswerWrapperHandler(answererWrappers, {
-							type: typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined,
+							type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
 							title,
 							options: ctx.elements.options.map((o) => o.innerText).join('\n')
 						});
@@ -674,17 +674,14 @@ export function workOrExam(
 		},
 
 		/** 完成答题后 */
-		onResultsUpdate(res) {
+		onResultsUpdate(current, _, res) {
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleTransform));
-		},
-		/** 监听答题结果 */
-		onResolveUpdate(res) {
-			if (res.result?.finish) {
+			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+			if (current.result?.finish) {
 				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([res], workOrExamQuestionTitleTransform)
+					simplifyWorkResult([current], workOrExamQuestionTitleTransform)
 				);
 			}
-			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		}
 	});
 
@@ -1404,14 +1401,14 @@ async function chapterTestTask(
 		resolvePeriod: 0,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
-		answerer: (elements, type, ctx) => {
+		answerer: (elements, ctx) => {
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);
 			if (title) {
 				const typeInput = elements.type[0] as HTMLInputElement;
 
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined,
+						type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
 						title,
 						options: ctx.elements.options.map((o) => o.innerText).join('\n')
 					});
@@ -1491,13 +1488,20 @@ async function chapterTestTask(
 		},
 
 		/** 完成答题后 */
-		async onResultsUpdate(res, curr) {
+		async onResultsUpdate(curr, _, res) {
 			CommonProject.scripts.workResults.methods.setResults(
 				simplifyWorkResult(res, chapterTestTaskQuestionTitleTransform)
 			);
 
+			if (curr.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					simplifyWorkResult([curr], chapterTestTaskQuestionTitleTransform)
+				);
+			}
+			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+
 			// 没有完成时随机作答
-			if (!curr.result?.finish && curr.resolving === false) {
+			if (curr.result?.finish === false && curr.resolved === true) {
 				const options = curr.ctx?.elements?.options || [];
 
 				const typeInput = curr.ctx?.elements?.type[0] as HTMLInputElement | undefined;
@@ -1536,14 +1540,6 @@ async function chapterTestTask(
 					}
 				}
 			}
-		},
-		onResolveUpdate(res) {
-			if (res.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([res], chapterTestTaskQuestionTitleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		},
 		async onElementSearched(elements) {
 			const typeInput = elements.type[0] as HTMLInputElement;

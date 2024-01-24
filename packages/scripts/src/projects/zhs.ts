@@ -826,12 +826,12 @@ function gxkWorkAndExam(
 		resolvePeriod: 1,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
-		answerer: (elements, type, ctx) => {
+		answerer: (elements, ctx) => {
 			const title = titleTransform(undefined, index++);
 			if (title) {
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
-						type,
+						type: ctx.type || 'unknown',
 						title,
 						options: ctx.elements.options.map((o) => o.innerText).join('\n')
 					});
@@ -872,12 +872,11 @@ function gxkWorkAndExam(
 			}
 		},
 		/** 完成答题后 */
-		onResultsUpdate(res) {
+		onResultsUpdate(curr, _, res) {
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
-		},
-		onResolveUpdate(res) {
-			if (res.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
+
+			if (curr.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
 			}
 			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		}
@@ -943,7 +942,7 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
-	let requestIndex = 0;
+	let requestFinished = 0;
 	let resolverIndex = 0;
 
 	const worker = new OCSWorker({
@@ -958,12 +957,12 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 		resolvePeriod: 1,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
-		answerer: (elements, type, ctx) => {
+		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
-						type,
+						type: ctx.type || 'unknown',
 						title,
 						options: ctx.elements.options.map((o) => o.innerText).join('\n')
 					});
@@ -992,22 +991,23 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 		 * 因为校内课的考试和作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
-		onResultsUpdate(res, currentResult) {
-			if (currentResult.result) {
-				workResults.push(...simplifyWorkResult([currentResult], titleTransform));
+		onResultsUpdate(current, _, res) {
+			if (current.result) {
+				workResults.push(...simplifyWorkResult([current], titleTransform));
 				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
-				requestIndex++;
+				requestFinished++;
 				resolverIndex++;
 			}
-		},
-		onResolveUpdate(res) {
-			if (res.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
+
+			if (current.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					simplifyWorkResult([current], titleTransform)
+				);
 			}
 			CommonProject.scripts.workResults.methods.updateWorkState({
 				totalQuestionCount,
-				requestIndex,
+				requestFinished,
 				resolverIndex
 			});
 		}

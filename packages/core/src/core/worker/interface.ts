@@ -18,15 +18,16 @@ export type SearchedElements<E, T> = Record<keyof E, T> & {
 	options?: T extends Array<infer ArrayType> ? (undefined | ArrayType)[] : T;
 };
 
+/** 题目类型 */
+export type QuestionTypes = 'single' | 'multiple' | 'completion' | 'judgement' | undefined;
+
 /** 答题器上下文 */
 export interface WorkContext<E> {
 	root: HTMLElement;
 	elements: SearchedElements<E, HTMLElement[]>;
 	searchInfos: SearchInformation[];
+	type: QuestionTypes;
 }
-
-/** 题目类型 */
-export type QuestionTypes = 'single' | 'multiple' | 'completion' | 'judgement' | undefined;
 
 /** 答案题目处理器结果 */
 export interface ResolverResult {
@@ -36,14 +37,13 @@ export interface ResolverResult {
 
 /** 答题结果 */
 export interface WorkResult<E extends RawElements> {
-	/** 正在等待 查题 线程处理 */
-	requesting: boolean;
-	/** 正在等待 答题 线程处理 */
-	resolving: boolean;
+	/** 查题完毕 */
+	requested: boolean;
+	/** 答题完毕 */
+	resolved: boolean;
 	result?: ResolverResult;
 	error?: string;
 	ctx?: WorkContext<E>;
-	type: 'single' | 'multiple' | 'completion' | 'judgement' | undefined;
 }
 
 /**
@@ -175,7 +175,6 @@ export type CustomWork<E extends RawElements> = (ctx: WorkContext<E>) => Promise
 
 export type AnswererType<E> = (
 	elements: SearchedElements<E, HTMLElement[]>,
-	type: string | undefined,
 	ctx: WorkContext<SearchedElements<E, HTMLElement[]>>
 ) => SearchInformation[] | Promise<SearchInformation[]>;
 
@@ -200,9 +199,13 @@ export type WorkOptions<E extends RawElements> = {
 	/** 当元素被搜索到 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>, root: HTMLElement) => void | Promise<void>;
 	/** 监听搜题结果 */
-	onResultsUpdate?: (res: WorkResult<E>[], currentResult: WorkResult<E>) => void | Promise<void>;
+	onAnswerSearched?: (
+		searchInfo: SearchInformation,
+		currentResult: WorkResult<E>,
+		currentIndex: number
+	) => void | Promise<void>;
 	/** 监听答题结果 */
-	onResolveUpdate?: (res: WorkResult<E>) => void | Promise<void>;
+	onResultsUpdate?: (currentResult: WorkResult<E>, currentIndex: number, res: WorkResult<E>[]) => void | Promise<void>;
 };
 
 export type WorkUploadType = 'save' | 'nomove' | 'force' | number;

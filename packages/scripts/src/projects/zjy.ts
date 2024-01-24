@@ -303,12 +303,12 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		resolvePeriod: 1,
 		thread: thread ?? 1,
 		/** 默认搜题方法构造器 */
-		answerer: (elements, type, ctx) => {
+		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
-						type,
+						type: ctx.type || 'unknown',
 						title,
 						options: ctx.elements.options.map((o) => o.innerText).join('\n')
 					});
@@ -335,12 +335,11 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		},
 
 		/** 完成答题后 */
-		onResultsUpdate(res) {
+		onResultsUpdate(curr, _, res) {
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
-		},
-		onResolveUpdate(res) {
-			if (res.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([res], titleTransform));
+
+			if (curr.result?.finish) {
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
 			}
 			CommonProject.scripts.workResults.methods.updateWorkState(worker);
 		}

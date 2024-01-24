@@ -647,7 +647,7 @@ export const CommonProject = Project.create({
 				totalQuestionCount: {
 					defaultValue: 0
 				},
-				requestIndex: {
+				requestFinished: {
 					defaultValue: 0
 				},
 				resolverIndex: {
@@ -665,9 +665,9 @@ export const CommonProject = Project.create({
 					/**
 					 * 更新状态
 					 */
-					updateWorkState: (state: { totalQuestionCount: number; requestIndex: number; resolverIndex: number }) => {
+					updateWorkState: (state: { totalQuestionCount: number; requestFinished: number; resolverIndex: number }) => {
 						this.cfg.totalQuestionCount = state.totalQuestionCount;
-						this.cfg.requestIndex = state.requestIndex;
+						this.cfg.requestFinished = state.requestFinished;
 						this.cfg.resolverIndex = state.resolverIndex;
 					},
 					/**
@@ -675,7 +675,7 @@ export const CommonProject = Project.create({
 					 */
 					refreshState: () => {
 						this.cfg.totalQuestionCount = 0;
-						this.cfg.requestIndex = 0;
+						this.cfg.requestFinished = 0;
 						this.cfg.resolverIndex = 0;
 					},
 					/**
@@ -914,7 +914,7 @@ export const CommonProject = Project.create({
 									[
 										$creator.space(
 											[
-												el('span', `当前搜题: ${this.cfg.requestIndex}/${this.cfg.totalQuestionCount}`),
+												el('span', `当前搜题: ${this.cfg.requestFinished}/${this.cfg.totalQuestionCount}`),
 												el('span', `当前答题: ${this.cfg.resolverIndex}/${this.cfg.totalQuestionCount}`),
 												el('a', '提示', (btn) => {
 													btn.style.cursor = 'pointer';
@@ -982,7 +982,7 @@ export const CommonProject = Project.create({
 
 						render();
 						this.onConfigChange('type', render);
-						this.onConfigChange('requestIndex', render);
+						this.onConfigChange('requestFinished', render);
 						this.onConfigChange('resolverIndex', render);
 						$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
 
