@@ -1206,6 +1206,10 @@ export const CommonProject = Project.create({
 						title: string,
 						whenSearchEmpty: () => SearchInformation[] | Promise<SearchInformation[]>
 					): Promise<SearchInformation[]> => {
+						if (CommonProject.scripts.settings.cfg.enableQuestionCaches === false) {
+							return await whenSearchEmpty();
+						}
+
 						let results: SearchInformation[] = [];
 						const caches = this.cfg.localQuestionCaches;
 						for (const cache of caches) {
