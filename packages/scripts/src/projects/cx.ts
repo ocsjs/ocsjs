@@ -525,7 +525,7 @@ export const CXProject = Project.create({
 
 export function workOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, thread, redundanceWordsText }: CommonWorkOptions
+	{ answererWrappers, period, thread, redundanceWordsText, answer_separators }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
@@ -582,6 +582,7 @@ export function workOrExam(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 0,
 		thread: thread ?? 1,
+		separators: answer_separators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			if (elements.title) {
@@ -1348,7 +1349,15 @@ async function readTask(win: Window & { finishJob?: Function }) {
  */
 async function chapterTestTask(
 	frame: HTMLIFrameElement,
-	{ answererWrappers, period, upload, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
+	{
+		answererWrappers,
+		period,
+		upload,
+		thread,
+		stopSecondWhenFinish,
+		redundanceWordsText,
+		answer_separators
+	}: CommonWorkOptions
 ) {
 	if (answererWrappers === undefined || answererWrappers.length === 0) {
 		return $console.warn('检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。');
@@ -1400,6 +1409,7 @@ async function chapterTestTask(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 0,
 		thread: thread ?? 1,
+		separators: answer_separators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);

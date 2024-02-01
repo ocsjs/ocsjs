@@ -460,7 +460,7 @@ export const IcveMoocProject = Project.create({
 	}
 });
 
-function work({ answererWrappers, period, thread }: CommonWorkOptions) {
+function work({ answererWrappers, period, thread, answer_separators }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init();
 
@@ -486,6 +486,26 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 	let requestFinished = 0;
 	let resolverIndex = 0;
 
+	function getType(options: HTMLElement[]) {
+		const radio_len = options
+			.map((o) => o.querySelector('[type="radio"]'))
+			.reduce((a, b) => {
+				return a + (b ? 1 : 0);
+			}, 0);
+
+		return radio_len > 0
+			? radio_len === 2
+				? 'judgement'
+				: 'single'
+			: options.some((o) => o.querySelector('[type="checkbox"]'))
+			? 'multiple'
+			: options.some((o) => o.querySelector('textarea'))
+			? 'completion'
+			: options.some((o) => o.querySelector('.fillblank_input input'))
+			? 'fill-blank'
+			: undefined;
+	}
+
 	const worker = new OCSWorker({
 		root: '.q_content',
 		elements: {
@@ -502,13 +522,14 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
+		separators: answer_separators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
 					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
+						type: getType(ctx.elements.options) || 'unknown',
 						title,
 						options: ctx.elements.options.map((o) => o.innerText).join('\n')
 					});
@@ -520,15 +541,10 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		async work(ctx) {
 			const options = ctx.elements.options;
 
-			const type = options.some((o) => o.querySelector('[type="radio"]'))
-				? 'single'
-				: options.some((o) => o.querySelector('[type="checkbox"]'))
-				? 'multiple'
-				: options.some((o) => o.querySelector('textarea'))
-				? 'completion'
-				: options.some((o) => o.querySelector('.fillblank_input input'))
-				? 'fill-blank'
-				: 'judgement';
+			const type = getType(options);
+			if (!type) {
+				throw new Error('无法获取题目类型！');
+			}
 
 			if (type === 'fill-blank') {
 				const inputs = options

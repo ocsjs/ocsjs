@@ -15,7 +15,9 @@ export function defaultQuestionResolve<E>(
 		 * 在多个题库给出的答案中，找出最相似的答案
 		 */
 		async single(infos, options, handler) {
-			const allAnswer = infos.map((res) => res.results.map((res) => splitAnswer(res.answer)).flat()).flat();
+			const allAnswer = infos
+				.map((res) => res.results.map((res) => splitAnswer(res.answer, ctx.separators)).flat())
+				.flat();
 			const optionStrings = options.map((o) => removeRedundant(o.innerText));
 			/** 配对选项的相似度 */
 			const ratings = answerSimilar(allAnswer, optionStrings);
@@ -88,7 +90,7 @@ export function defaultQuestionResolve<E>(
 			for (let i = 0; i < results.length; i++) {
 				const result = results[i];
 				// 每个答案可能存在多个选项需要分割
-				const answers = splitAnswer(result.answer);
+				const answers = splitAnswer(result.answer, ctx.separators);
 
 				const matchResult: Result = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
 				// 判断选项是否完全存在于答案里面
@@ -241,7 +243,7 @@ export function defaultQuestionResolve<E>(
 				// 排除空答案
 				let ans = answers.filter((ans) => ans);
 				if (ans.length === 1) {
-					ans = splitAnswer(ans[0]);
+					ans = splitAnswer(ans[0], ctx.separators);
 				}
 
 				if (

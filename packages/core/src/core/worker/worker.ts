@@ -85,7 +85,8 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				searchInfos: [],
 				root: questionRoot,
 				elements: domSearchAll<E>(this.opts.elements, questionRoot),
-				type: undefined
+				type: undefined,
+				separators: this.opts.separators
 			};
 
 			/** 执行元素搜索钩子 */

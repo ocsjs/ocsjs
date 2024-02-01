@@ -389,7 +389,15 @@ function waitForQuestion() {
 function workAndExam(
 	remotePage: RemotePage,
 	type: 'chapter-test' | 'work-or-exam',
-	{ answererWrappers, period, thread, redundanceWordsText, upload, stopSecondWhenFinish }: CommonWorkOptions
+	{
+		answererWrappers,
+		period,
+		thread,
+		redundanceWordsText,
+		upload,
+		stopSecondWhenFinish,
+		answer_separators
+	}: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'icourse'
@@ -418,6 +426,7 @@ function workAndExam(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
+		separators: answer_separators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);

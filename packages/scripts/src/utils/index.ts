@@ -8,6 +8,7 @@ export interface CommonWorkOptions {
 	answererWrappers: AnswererWrapper[];
 	stopSecondWhenFinish: number;
 	redundanceWordsText: string;
+	answer_separators: string;
 }
 
 /** 创建答题预处理信息 */

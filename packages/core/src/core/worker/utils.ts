@@ -48,7 +48,7 @@ export function isPlainAnswer(answer: string) {
 }
 
 /** 分割答案 */
-export function splitAnswer(answer: string) {
+export function splitAnswer(answer: string, separators = ['===', '#', '---', '###', '|', ';', '；']) {
 	try {
 		// 如果是 json 格式的多选答案
 		const json = JSON.parse(answer);
@@ -56,8 +56,7 @@ export function splitAnswer(answer: string) {
 			return json.map(String).filter((el) => el.trim().length > 0);
 		}
 	} catch {
-		const seprators = ['===', '#', '---', '###', '|', ';'];
-		for (const sep of seprators) {
+		for (const sep of separators) {
 			if (answer.split(sep).length > 1) {
 				return answer.split(sep).filter((el) => el.trim().length > 0);
 			}

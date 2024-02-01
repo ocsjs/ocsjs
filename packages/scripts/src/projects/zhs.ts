@@ -775,7 +775,7 @@ function getPopupCaptcha() {
  */
 function gxkWorkAndExam(
 	workInfo: any,
-	{ answererWrappers, period, thread, stopSecondWhenFinish, redundanceWordsText }: CommonWorkOptions
+	{ answererWrappers, period, thread, stopSecondWhenFinish, redundanceWordsText, answer_separators }: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zhs-gxk'
@@ -825,6 +825,7 @@ function gxkWorkAndExam(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
+		separators: answer_separators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(undefined, index++);
@@ -928,7 +929,7 @@ function gxkWorkAndExam(
 /**
  * 校内学分课的作业
  */
-function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
+function xnkWork({ answererWrappers, period, thread, answer_separators }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 
 	CommonProject.scripts.workResults.methods.init();
@@ -956,6 +957,7 @@ function xnkWork({ answererWrappers, period, thread }: CommonWorkOptions) {
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
+		separators: answer_separators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);

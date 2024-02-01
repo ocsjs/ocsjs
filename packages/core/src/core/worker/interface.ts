@@ -27,6 +27,7 @@ export interface WorkContext<E> {
 	elements: SearchedElements<E, HTMLElement[]>;
 	searchInfos: SearchInformation[];
 	type: QuestionTypes;
+	separators?: string[];
 }
 
 /** 答案题目处理器结果 */
@@ -59,9 +60,9 @@ export interface SimplifyWorkResult {
 	/** 是否完成 */
 	finish?: boolean;
 	/** 正在等待 查题 线程处理 */
-	requesting: boolean;
+	requested: boolean;
 	/** 正在等待 答题 线程处理 */
-	resolving: boolean;
+	resolved: boolean;
 	/** 查题信息 */
 	searchInfos: {
 		/** 题目名 */
@@ -196,6 +197,8 @@ export type WorkOptions<E extends RawElements> = {
 	resolvePeriod?: number;
 	/** 多线程数量（个） */
 	thread?: number;
+	/** 分隔符 */
+	separators?: string[];
 	/** 当元素被搜索到 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>, root: HTMLElement) => void | Promise<void>;
 	/** 监听搜题结果 */

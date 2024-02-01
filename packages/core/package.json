@@ -42,6 +42,7 @@
 	"dependencies": {
 		"events": "^3.3.0",
 		"lodash": "^4.17.21",
+		"playwright-core": "^1.40.1",
 		"semver": "^7.3.5",
 		"string-similarity": "^4.0.4"
 	}

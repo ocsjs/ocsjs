@@ -437,6 +437,13 @@ export const CommonProject = Project.create({
 					tag: 'textarea',
 					attrs: { title: '每行一个，随机填入', style: { minWidth: '200px', minHeight: '50px' } }
 				},
+				answer_separators: {
+					label: '答案分隔符',
+					attrs: {
+						title: "分隔答案的符号，例如：答案1#答案2#答案3，分隔符为 #， 使用英文逗号进行隔开 : ',' "
+					},
+					defaultValue: ['===', '#', '---', '###', '|', ';', '；'].join(',')
+				},
 				redundanceWordsText: {
 					defaultValue: [
 						'单选题(必考)',
