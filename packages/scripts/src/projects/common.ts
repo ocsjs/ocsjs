@@ -729,10 +729,10 @@ export const CommonProject = Project.create({
 
 						/** 给序号设置样式 */
 						const setNumStyle = (result: SimplifyWorkResult, num: HTMLElement, index: number) => {
-							if (result.requesting) {
-								num.classList.add('requesting');
-							} else if (result.resolving) {
-								num.classList.add('resolving');
+							if (result.requested) {
+								num.classList.add('requested');
+							} else if (result.resolved) {
+								num.classList.add('resolved');
 							} else if (result.error || result.searchInfos.length === 0 || result.finish === false) {
 								num.classList.add('error');
 							} else if (index === this.cfg.currentResultIndex) {
@@ -827,8 +827,8 @@ export const CommonProject = Project.create({
 												question.className = 'search-infos-question';
 
 												if (
-													result.requesting === false &&
-													result.resolving === false &&
+													result.requested === true &&
+													result.resolved === true &&
 													(result.error || result.searchInfos.length === 0 || result.finish === false)
 												) {
 													question.classList.add('error');
@@ -947,7 +947,7 @@ export const CommonProject = Project.create({
 							if (result) {
 								const error = el('span', {}, (el) => (el.style.color = 'red'));
 
-								if (result.requesting && result.resolving) {
+								if (result.requested === false && result.resolved === false) {
 									return el('div', [
 										result.question,
 										$creator.createQuestionTitleExtra(result.question),
@@ -974,7 +974,7 @@ export const CommonProject = Project.create({
 									} else {
 										error.innerText = '此题未完成, 可能是没有匹配的选项。';
 										return el('div', [
-											...(result.finish ? [] : [result.resolving ? '正在等待答题中，请稍等。' : error]),
+											...(result.finish ? [] : [result.requested === false ? '正在等待答题中，请稍等。' : error]),
 											el('search-infos-element', {
 												infos: result.searchInfos,
 												question: result.question
