@@ -43,26 +43,28 @@ export class SearchInfosElement extends IElement {
 			...this.infos.map((info) => {
 				return el('details', { open: true }, [
 					el('summary', [el('a', { href: info.homepage, innerText: info.name, target: '_blank' })]),
+
 					...(info.error
 						? /** 显示错误信息 */
 						  [el('span', { className: 'error' }, [info.error || '网络错误或者未知错误'])]
 						: /** 显示结果列表 */
-						  [
-								...info.results.map((ans) => {
-									const title = transformImgLinkOfQuestion(ans[0] || this.question || '无');
-									const answer = transformImgLinkOfQuestion(ans[1] || '无');
+						  []
+					).concat([
+						...info.results.map((ans) => {
+							const title = transformImgLinkOfQuestion(ans[0] || this.question || '无');
+							const answer = transformImgLinkOfQuestion(ans[1] || '无');
 
-									return el('div', { className: 'search-result' }, [
-										/** 题目 */
-										el('div', { className: 'question' }, [el('span', { innerHTML: title })]),
-										/** 答案 */
-										el('div', { className: 'answer' }, [
-											el('span', '答案：'),
-											...splitAnswer(answer).map((a) => el('code', { innerHTML: a }))
-										])
-									]);
-								})
-						  ])
+							return el('div', { className: 'search-result' }, [
+								/** 题目 */
+								el('div', { className: 'question' }, [el('span', { innerHTML: title })]),
+								/** 答案 */
+								el('div', { className: 'answer' }, [
+									el('span', '答案：'),
+									...splitAnswer(answer).map((a) => el('code', { innerHTML: a }))
+								])
+							]);
+						})
+					])
 				]);
 			})
 		);
