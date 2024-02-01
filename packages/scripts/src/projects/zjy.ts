@@ -279,7 +279,7 @@ async function waitForQuestions() {
 	});
 }
 
-function work({ answererWrappers, period, thread }: CommonWorkOptions) {
+function work({ answererWrappers, period, thread, answer_separators }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zjy'
@@ -296,12 +296,13 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 		root: '.subjectDet',
 		elements: {
 			title: 'h2,h3,h4,h5,h6',
-			options: '.optionList > div'
+			options: '.optionList div , .tkInput .el-input'
 		},
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
+		separators: answer_separators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
@@ -318,6 +319,25 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 			}
 		},
 		work: {
+			type(ctx) {
+				const options = ctx.elements.options;
+
+				const radio_len = options
+					.map((o) => o.querySelector('[type="radio"]'))
+					.reduce((a, b) => {
+						return a + (b ? 1 : 0);
+					}, 0);
+
+				return radio_len > 0
+					? radio_len === 2
+						? 'judgement'
+						: 'single'
+					: options.some((o) => o.querySelector('[type="checkbox"]'))
+					? 'multiple'
+					: options.some((o) => o.querySelector('[type="text"]'))
+					? 'completion'
+					: undefined;
+			},
 			/** 自定义处理器 */
 			handler(type, answer, option, ctx) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
@@ -326,7 +346,7 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 						option.querySelector('label')?.click();
 					}
 				} else if (type === 'completion' && answer.trim()) {
-					const text = option.querySelector('textarea');
+					const text = option.querySelector<HTMLInputElement>('input[type="text"]');
 					if (text) {
 						text.value = answer;
 					}
@@ -346,7 +366,7 @@ function work({ answererWrappers, period, thread }: CommonWorkOptions) {
 	});
 
 	worker
-		.doWork()
+		.doWork({ enable_debug: true })
 		.then(() => {
 			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 			worker.emit('done');
