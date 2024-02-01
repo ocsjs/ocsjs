@@ -66,7 +66,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		this.totalQuestionCount += questionRoots.length;
 
 		if (options?.enable_debug) {
-			console.debug('开始答题');
+			console.debug('开始答题', this);
 			console.debug('题目数量: ', questionRoots.length);
 			console.debug('父节点列表: ', questionRoots);
 		}
@@ -136,6 +136,10 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 
 			/** 查找答案 */
 			ctx.searchInfos = [];
+
+			if (options?.enable_debug) {
+				console.debug('开始搜题: ', result.ctx);
+			}
 
 			try {
 				ctx.searchInfos = (await this.opts.answerer(ctx.elements, ctx)) || [];
@@ -276,7 +280,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			}
 
 			for (let index = 0; index < (this.opts.thread || 1); index++) {
-				locks.push(index);
+				locks.push(1);
 			}
 
 			while (this.requestFinished < results.length) {
