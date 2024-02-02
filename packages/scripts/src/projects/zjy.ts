@@ -17,6 +17,14 @@ const state = {
 	studyingId: ''
 };
 
+const work_pages: [string, string][] = [
+	['作业页面', 'icve-study/coursePreview/jobTes'],
+	['考试页面', 'icve-study/coursePreview/test']
+];
+
+const isWork = window.location.href.includes('icve-study/coursePreview/jobTes');
+const isExam = window.location.href.includes('icve-study/coursePreview/test');
+
 /**
  * 职教云网课
  *
@@ -63,7 +71,7 @@ export const ZJYProject = Project.create({
 							].some((i) => window.location.href.includes(i))
 						) {
 							ZJYProject.scripts.study.methods.main();
-						} else if (['icve-study/coursePreview/jobTes'].some((i) => window.location.href.includes(i))) {
+						} else if (work_pages.map(([_, p]) => p).some((i) => window.location.href.includes(i))) {
 							ZJYProject.scripts.work.methods.main();
 						}
 					}
@@ -130,7 +138,7 @@ export const ZJYProject = Project.create({
 						}
 						$message('success', { content: '开始学习：' + courseInfo.fileType + '-' + courseInfo.name });
 						$console.info('开始学习：' + +courseInfo.fileType + '-' + courseInfo.name);
-						if (['ppt', 'doc', 'pptx', 'docx', 'pdf'].some((i) => courseInfo.fileType === i)) {
+						if (['ppt', 'doc', 'pptx', 'docx', 'pdf', 'txt'].some((i) => courseInfo.fileType === i)) {
 							await watchFile();
 						} else if (['video', 'audio', 'mp4', 'mp3'].some((i) => courseInfo.fileType === i)) {
 							if ($el('.guide')?.innerHTML.includes('很抱歉，您的浏览器不支持播放此类文件')) {
@@ -138,6 +146,8 @@ export const ZJYProject = Project.create({
 							} else {
 								await watchMedia(this.cfg.volume);
 							}
+						} else if (['png', 'jpg'].some((i) => courseInfo.fileType === i)) {
+							$console.info(`已查看图片任务点 ${courseInfo.name}，即将跳过。`);
 						} else {
 							$console.error(`未知的任务点 ${courseInfo.name}，类型 ${courseInfo.fileType}，请跟作者进行反馈。`);
 						}
@@ -149,8 +159,8 @@ export const ZJYProject = Project.create({
 			}
 		}),
 		work: new Script({
-			url: [['作业页面', 'icve-study/coursePreview/jobTes']],
-			name: '✍️ 作业脚本',
+			url: work_pages,
+			name: '✍️ 作业考试脚本',
 			namespace: 'zjy.work.main',
 			configs: {
 				notes: {
@@ -164,15 +174,13 @@ export const ZJYProject = Project.create({
 			methods() {
 				return {
 					main: async () => {
-						if (!['icve-study/coursePreview/jobTes'].some((i) => window.location.href.includes(i))) {
-							return;
+						if (isWork || isExam) {
+							await waitForQuestions();
+
+							commonWork(this, {
+								workerProvider: (opt) => workOrExam(isWork ? 'work' : 'exam', opt)
+							});
 						}
-
-						await waitForQuestions();
-
-						commonWork(this, {
-							workerProvider: work
-						});
 					}
 				};
 			}
@@ -279,7 +287,7 @@ async function waitForQuestions() {
 	});
 }
 
-function work({ answererWrappers, period, thread, answer_separators }: CommonWorkOptions) {
+function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, answer_separators }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zjy'
@@ -295,7 +303,7 @@ function work({ answererWrappers, period, thread, answer_separators }: CommonWor
 	const worker = new OCSWorker({
 		root: '.subjectDet',
 		elements: {
-			title: 'h2,h3,h4,h5,h6',
+			title: type === 'work' ? 'h2,h3,h4,h5,h6' : '.titleTest span:not(.xvhao)',
 			options: '.optionList div , .tkInput .el-input'
 		},
 		/** 其余配置 */
