@@ -304,7 +304,7 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 		root: '.subjectDet',
 		elements: {
 			title: type === 'work' ? 'h2,h3,h4,h5,h6' : '.titleTest span:not(.xvhao)',
-			options: '.optionList div , .tkInput .el-input'
+			options: '.optionList div , .tkInput .el-input, .tkInput .el-textarea'
 		},
 		/** 其余配置 */
 		requestPeriod: period ?? 3,
@@ -342,7 +342,7 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 						: 'single'
 					: options.some((o) => o.querySelector('[type="checkbox"]'))
 					? 'multiple'
-					: options.some((o) => o.querySelector('[type="text"]'))
+					: options.some((o) => o.querySelector('[type="text"]')) || options.some((o) => o.querySelector('textarea'))
 					? 'completion'
 					: undefined;
 			},
@@ -355,8 +355,13 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 					}
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector<HTMLInputElement>('input[type="text"]');
+					const textarea = option.querySelector<HTMLTextAreaElement>('textarea');
 					if (text) {
 						text.value = answer;
+						text.dispatchEvent(new Event('input', { bubbles: true }));
+					} else if (textarea) {
+						textarea.value = answer;
+						textarea.dispatchEvent(new Event('input', { bubbles: true }));
 					}
 				}
 			}
