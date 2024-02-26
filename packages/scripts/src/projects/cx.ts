@@ -134,6 +134,15 @@ export const CXProject = Project.create({
 					defaultValue: 'random' as VideoQuizStrategy
 				},
 				restudy: restudy,
+
+				backToFirstWhenFinish: {
+					label: '完成全部后重新学习',
+					attrs: {
+						type: 'checkbox',
+						title: '当章节已经学习完成至最后一章时，跳转到第一个章节重新开始学习。'
+					},
+					defaultValue: false
+				},
 				autoNextPage: {
 					label: '自动下一章',
 					attrs: { type: 'checkbox' },
@@ -489,8 +498,9 @@ export const CXProject = Project.create({
 						return;
 					}
 
-					let chapters = CXAnalyses.getChapterInfos();
+					let chapters = await CXAnalyses.waitForChapterInfos();
 
+					// 过滤掉已完成的章节
 					chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
 
 					if (chapters.length === 0) {
@@ -838,6 +848,28 @@ const CXAnalyses = {
 			unFinishCount: parseInt(el.parentElement.querySelector('.jobUnfinishCount')?.value || '0')
 		}));
 	},
+	/**
+	 * 等待并获取章节信息，直到获取到章节信息为止
+	 * - 可设置超时时间（单位秒），默认10秒
+	 * - 超时后返回空数组
+	 */
+	waitForChapterInfos(timeout = 10) {
+		return new Promise<any[]>((resolve, reject) => {
+			const interval = setInterval(() => {
+				const res = this.getChapterInfos();
+				if (res.length > 0) {
+					clearInterval(interval);
+					clearInterval(to);
+					resolve(res);
+				}
+			}, 1000);
+
+			const to = setTimeout(() => {
+				clearInterval(interval);
+				resolve([]);
+			}, timeout * 1000);
+		});
+	},
 	/** 检测页面是否使用字体加密 */
 	getSecretFont(doc: Document = document) {
 		return Array.from(doc.querySelectorAll('.font-cxsecret')).map((font) => {
@@ -969,6 +1001,7 @@ export async function study(opts: {
 	volume: number;
 	videoQuizStrategy: VideoQuizStrategy;
 	reloadVideoWhenError: boolean;
+	backToFirstWhenFinish: boolean;
 	workOptions: CommonWorkOptions;
 }) {
 	await $.sleep(3000);
@@ -1038,12 +1071,24 @@ export async function study(opts: {
 
 		if (CXAnalyses.isInFinalChapter()) {
 			let content = '';
-			if (CXAnalyses.isFinishedAllChapters()) {
-				content = '全部任务点已完成！';
+
+			if (opts.backToFirstWhenFinish) {
+				content = '已经抵达最后一个章节，10秒后返回第一个章节重新开始。';
+				setTimeout(() => {
+					top?.document.querySelector<HTMLElement>('.posCatalog_name')?.click();
+				}, 10 * 1000);
+
+				$message('info', { content, duration: 30 });
 			} else {
-				content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
+				if (CXAnalyses.isFinishedAllChapters()) {
+					content = '全部任务点已完成！';
+				} else {
+					content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
+				}
+
+				$modal('alert', { content: content });
 			}
-			$modal('alert', { content: content });
+
 			CommonProject.scripts.settings.methods.notificationBySetting(content, {
 				duration: 0,
 				extraTitle: '超星学习通学习脚本'
