@@ -140,7 +140,7 @@ export const ZJYProject = Project.create({
 						$console.info('开始学习：' + +courseInfo.fileType + '-' + courseInfo.name);
 						if (['ppt', 'doc', 'pptx', 'docx', 'pdf', 'txt'].some((i) => courseInfo.fileType === i)) {
 							await watchFile();
-						} else if (['video', 'audio', 'mp4', 'mp3'].some((i) => courseInfo.fileType === i)) {
+						} else if (['video', 'audio', 'mp4', 'mp3', 'flv'].some((i) => courseInfo.fileType === i)) {
 							if ($el('.guide')?.innerHTML.includes('很抱歉，您的浏览器不支持播放此类文件')) {
 								$console.error(`任务点 ${courseInfo.name}，不支持播放。`);
 							} else {
