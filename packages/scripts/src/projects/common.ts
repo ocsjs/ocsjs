@@ -228,7 +228,7 @@ export const CommonProject = Project.create({
 												btn.style.marginRight = '12px';
 												btn.onclick = () => modal?.remove();
 											}),
-											el('button', '确定', (btn) => {
+											el('button', '保存配置', (btn) => {
 												btn.className = 'modal-confirm-button';
 												btn.onclick = async () => {
 													const connects: string[] = $gm.getMetadataFromScriptHead('connect');
@@ -281,15 +281,22 @@ export const CommonProject = Project.create({
 															if (awsResult.length) {
 																CommonProject.scripts.settings.cfg.answererWrappers = awsResult;
 																this.value = '当前有' + awsResult.length + '个可用题库';
-																$modal('alert', {
+																$modal('confirm', {
 																	width: 600,
 																	content: el('div', [
 																		el('div', [
-																			'🎉 配置成功，刷新网页后重新进入答题页面即可。',
+																			'🎉 配置成功，',
+																			el('b', ' 刷新网页后 '),
+																			'重新进入',
+																			el('b', ' 答题页面 '),
+																			'即可。',
 																			'解析到的题库如下所示:'
 																		]),
 																		...createAnswererWrapperList(awsResult)
-																	])
+																	]),
+																	onConfirm: () => top?.document.location.reload(),
+																	confirmButtonText: '立即刷新',
+																	cancelButtonText: '稍后刷新'
 																});
 
 																// 格式化文本
@@ -920,8 +927,8 @@ export const CommonProject = Project.create({
 									[
 										$creator.space(
 											[
-												el('span', `当前搜题: ${this.cfg.requestFinished}/${this.cfg.totalQuestionCount}`),
-												el('span', `当前答题: ${this.cfg.resolverIndex}/${this.cfg.totalQuestionCount}`),
+												el('span', `当前搜题: ${this.cfg.requestFinished + 1}/${this.cfg.totalQuestionCount}`),
+												el('span', `当前答题: ${this.cfg.resolverIndex + 1}/${this.cfg.totalQuestionCount}`),
 												el('a', '提示', (btn) => {
 													btn.style.cursor = 'pointer';
 													btn.onclick = () => {
@@ -1380,18 +1387,26 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 								(controlsBtn) => {
 									controlsBtn.onclick = () => {
 										isDisabled = !isDisabled;
-										controlsBtn.value = isDisabled ? '启用此题库' : '停用此题库';
+										controlsBtn.value = isDisabled ? '点击启用此题库' : '点击停用此题库';
 										controlsBtn.className = isDisabled ? 'base-style-button' : 'base-style-button-secondary';
 										if (isDisabled) {
 											CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames = [
 												...CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames,
 												item.name
 											];
+											$message('warn', {
+												content: '题库：' + item.name + ' 已被停用，如需开启请在：通用-全局设置-题库配置中开启。',
+												duration: 30
+											});
 										} else {
 											CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames =
 												CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.filter(
 													(name) => name !== item.name
 												);
+											$message('success', {
+												content: '题库：' + item.name + ' 已启用。',
+												duration: 3
+											});
 										}
 									};
 								}

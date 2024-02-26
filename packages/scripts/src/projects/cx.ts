@@ -21,7 +21,8 @@ import {
 	SearchInformation,
 	$modal,
 	$message,
-	el
+	el,
+	$store
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
@@ -63,6 +64,30 @@ const state = {
 };
 
 type VideoQuizStrategy = 'random' | 'ignore';
+
+type Attachment = {
+	/** 只有当 module 为 音视频时才会有这个属性 */
+	isPassed: boolean | undefined;
+	/** 是否为任务点 */
+	job: boolean | undefined;
+	/** 这里注意，如果当前章节测试不是任务点，则没有 jobid */
+	jobid?: string;
+	property: {
+		mid: string;
+		module: 'insertbook' | 'insertdoc' | 'insertflash' | 'work' | 'insertaudio' | 'insertvideo';
+		name?: string;
+		author?: string;
+		bookname?: string;
+		publisher?: string;
+		title?: string;
+	};
+};
+
+type Job = {
+	mid: string;
+	attachment: Attachment;
+	func: { (): Promise<void> } | undefined;
+};
 
 export const CXProject = Project.create({
 	name: '超星学习通',
@@ -115,7 +140,8 @@ export const CXProject = Project.create({
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						['任务点不是顺序执行，如果某一个任务没有动', '请查看是否有其他任务正在学习，耐心等待即可。'],
 						'闯关模式请注意题库如果没完成，需要自己完成才能解锁章节。',
-						'不要最小化浏览器，可能导致脚本暂停。'
+						'不要最小化浏览器，可能导致脚本暂停。',
+						'脚本详情运行日志请前往：后台-日志 查看'
 					]).outerHTML
 				},
 				playbackRate: playbackRate,
@@ -534,7 +560,7 @@ export const CXProject = Project.create({
 	}
 });
 
-export function workOrExam(
+function workOrExam(
 	type: 'work' | 'exam' = 'work',
 	{ answererWrappers, period, thread, redundanceWordsText, answer_separators }: CommonWorkOptions
 ) {
@@ -976,30 +1002,6 @@ function rateHack() {
 	}
 }
 
-type Attachment = {
-	/** 只有当 module 为 音视频时才会有这个属性 */
-	isPassed: boolean | undefined;
-	/** 是否为任务点 */
-	job: boolean | undefined;
-	/** 这里注意，如果当前章节测试不是任务点，则没有 jobid */
-	jobid?: string;
-	property: {
-		mid: string;
-		module: 'insertbook' | 'insertdoc' | 'insertflash' | 'work' | 'insertaudio' | 'insertvideo';
-		name?: string;
-		author?: string;
-		bookname?: string;
-		publisher?: string;
-		title?: string;
-	};
-};
-
-type Job = {
-	mid: string;
-	attachment: Attachment;
-	func: { (): Promise<void> } | undefined;
-};
-
 /**
  * cx 任务学习
  */
@@ -1062,15 +1064,14 @@ export async function study(opts: {
 	top._preChapterId = '';
 
 	// 下一章
-	const next = () => {
+	const next = async () => {
 		const curCourseId = $el<HTMLInputElement>('#curCourseId', top?.document);
 		const curChapterId = $el<HTMLInputElement>('#curChapterId', top?.document);
 		const curClazzId = $el<HTMLInputElement>('#curClazzId', top?.document);
 		const count = $$el('#prev_tab .prev_ul li', top?.document);
 
-		// 如果即将切换到下一章节
 		if (CXAnalyses.isInFinalTab()) {
-			if (CXAnalyses.isStuckInBreakingMode()) {
+			if (await CXAnalyses.isStuckInBreakingMode()) {
 				return $modal('alert', {
 					content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
 				});
@@ -1125,11 +1126,15 @@ export async function study(opts: {
 	};
 
 	if (CXProject.scripts.study.cfg.autoNextPage) {
-		$console.info('页面任务点已完成，即将切换下一章。');
+		const msg = '页面任务点已完成，即将切换下一章。';
+		$message('success', { content: msg });
+		$console.info(msg);
 		await $.sleep(5000);
 		next();
 	} else {
-		$console.warn('页面任务点已完成，自动下一章已关闭，请手动切换。');
+		const msg = '页面任务点已完成，自动下一章已关闭，请手动切换。';
+		$message('warn', { content: msg });
+		$console.warn(msg);
 	}
 }
 
@@ -1200,46 +1205,60 @@ function searchJob(
 				let func: { (): Promise<any> } | undefined;
 				if (media) {
 					if (!CXProject.scripts.study.cfg.enableMedia) {
-						$console.warn(`音视频自动学习功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`);
+						const msg = `音视频自动学习功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message('warn', { content: msg });
+						$console.warn(msg);
 					} else {
 						// 重复学习，或者未完成
 						if (opts.restudy || attachment.job) {
 							func = () => {
-								$console.log(`即将${opts.restudy ? '重新' : ''}播放 : `, jobName);
+								const msg = `即将${opts.restudy ? '重新' : ''}播放 : ` + jobName;
+								$message('info', { content: msg });
+								$console.log(msg);
 								return mediaTask(opts, media as HTMLMediaElement, doc);
 							};
 						}
 					}
 				} else if (chapterTest) {
 					if (!CXProject.scripts.study.cfg.enableChapterTest) {
-						$console.warn(`章节测试自动答题功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`);
+						const msg = `章节测试自动答题功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message('warn', { content: msg });
+						$console.warn(msg);
 					} else {
 						const status = win.document.querySelector<HTMLElement>('.testTit_status');
 
 						// 已完成
 						if (status?.classList.contains('testTit_status_complete')) {
-							$console.log('章节测试已完成 : ', jobName, '，即将跳过');
+							const msg = `章节测试已完成 : ` + jobName;
+							$message('success', { content: msg });
+							$console.log(msg);
 						} else {
 							if (attachment.job || CommonProject.scripts.settings.cfg['work-when-no-job']) {
 								func = () => {
-									$console.log('开始答题 : ', jobName);
+									const msg = `开始答题 : ` + jobName;
+									$message('info', { content: msg });
+									$console.log(msg);
 									return chapterTestTask(root, opts.workOptions);
 								};
 							}
 							if (attachment.job === undefined && CommonProject.scripts.settings.cfg['work-when-no-job'] === false) {
-								$console.warn(
-									`当前作业 ${jobName} 不是任务点，但待完成，如需开启自动答题请前往：通用-全局设置，开启强制答题。`
-								);
+								const msg = `当前作业 ${jobName} 不是任务点，但待完成，如需开启自动答题请前往：通用-全局设置，开启强制答题。`;
+								$message('warn', { content: msg });
+								$console.warn(msg);
 							}
 						}
 					}
 				} else if (read) {
 					if (!CXProject.scripts.study.cfg.enablePPT) {
-						$console.warn(`PPT/书籍阅读功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`);
+						const msg = `PPT/书籍阅读功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message('warn', { content: msg });
+						$console.warn(msg);
 					} else {
 						if (attachment.job) {
 							func = () => {
-								$console.log('正在学习 ：', jobName);
+								const msg = `正在学习 : ` + jobName;
+								$message('warn', { content: msg });
+								$console.log(msg);
 								return readTask(win);
 							};
 						}
@@ -1414,8 +1433,15 @@ async function chapterTestTask(
 	}: CommonWorkOptions
 ) {
 	if (answererWrappers === undefined || answererWrappers.length === 0) {
-		return $console.warn('检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。');
+		const msg = '检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。';
+		$message('error', { content: msg });
+		return $console.warn(msg);
 	}
+
+	$message('info', {
+		content: el('div', ['正在答题中，答题结果请前往：通用-搜索结果 进行查看']),
+		duration: 10
+	});
 
 	$console.info('开始章节测试');
 
@@ -1625,10 +1651,11 @@ async function chapterTestTask(
 		}
 	});
 
-	const results = await worker.doWork();
+	const results = await worker.doWork({ enable_debug: true });
 
-	$console.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
-
+	const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;
+	$console.info(msg);
+	$message('info', { content: msg, duration: stopSecondWhenFinish });
 	await $.sleep(stopSecondWhenFinish * 1000);
 
 	// 处理提交
@@ -1636,7 +1663,9 @@ async function chapterTestTask(
 		type: upload,
 		results,
 		async callback(finishedRate, uploadable) {
-			$console.info(`完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '3秒后将自动提交' : '5秒后将自动保存'} `);
+			const msg = `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '3秒后将自动提交' : '3秒后将自动保存'} `;
+			$console.info(msg);
+			$message('success', { content: msg, duration: 3 });
 
 			await $.sleep(3000);
 
