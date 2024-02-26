@@ -1341,7 +1341,65 @@ export const CommonProject = Project.create({
 					};
 				});
 
-				[cachesBtn].forEach((btn) => {
+				const exportSetting = $creator.tooltip(
+					el(
+						'div',
+						{
+							innerText: '📤 导出全部设置',
+							style: btnStyle,
+							title: '导出全部页面的设置，包括全局设置，题库配置，学习设置等等。（文件后缀名为：.ocssetting）'
+						},
+						(btn) => {
+							btn.onclick = () => {
+								const setting = Object.create({});
+								for (const key of $store.list()) {
+									const val = $store.get(key);
+									if (val) {
+										Reflect.set(setting, key, val);
+									}
+								}
+								const blob = new Blob([JSON.stringify(setting, null, 2)], { type: 'text/plain' });
+								const url = URL.createObjectURL(blob);
+								const a = el('a', { href: url, download: 'ocs-setting-export.ocssetting' });
+								a.click();
+								URL.revokeObjectURL(url);
+							};
+						}
+					)
+				);
+
+				const importSetting = $creator.tooltip(
+					el(
+						'div',
+						{
+							innerText: '📥 导入全部设置',
+							style: btnStyle,
+							title: '导入并且覆盖当前的全部设置。（文件后缀名为：.ocssetting）'
+						},
+						(btn) => {
+							btn.onclick = () => {
+								const input = el('input', { type: 'file', accept: '.ocssetting' });
+								input.onchange = async () => {
+									const file = input.files?.[0];
+									if (file) {
+										const setting = await file.text();
+										const obj = JSON.parse(setting);
+										for (const key of Object.keys(obj)) {
+											$store.set(key, obj[key]);
+										}
+										$message('success', { content: '设置导入成功，页面即将刷新。', duration: 3 });
+										setTimeout(() => {
+											location.reload();
+										}, 3000);
+									}
+								};
+								input.click();
+							};
+						}
+					)
+				);
+
+				[cachesBtn, exportSetting, importSetting].forEach((btn) => {
 					btn.onmouseover = () => {
 						btn.style.boxShadow = '0px 0px 4px #0099ff9c';
 					};
@@ -1350,8 +1408,10 @@ export const CommonProject = Project.create({
 					};
 				});
 
+				const sep = (text: string) => el('div', { className: 'separator', style: { padding: '4px 0px' } }, text);
+
 				panel.body.replaceChildren(
-					el('div', [el('div', { className: 'separator', style: { padding: '4px 0px' } }, '题库拓展'), cachesBtn])
+					el('div', [sep('题库拓展'), cachesBtn, sep('其他功能'), exportSetting, importSetting])
 				);
 			}
 		})
