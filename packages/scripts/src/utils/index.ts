@@ -111,3 +111,48 @@ export async function playMedia(playFunction: () => Promise<void> | undefined | 
 		return false;
 	}
 }
+
+/**
+ * 	解除复制限制功能
+ * @param elements 要开启复制功能的元素
+ */
+export function enableCopy(elements: (HTMLElement | Document)[]) {
+	// 将页面上的所有选择方法劫持，并强制返回 true
+	function hackSelect(target: HTMLElement | Document) {
+		if (target) {
+			const _original_select = target.onselectstart;
+			const _original_oncopy = target.oncopy;
+			const _original_onpaste = target.onpaste;
+			const _original_onkeydown = target.onkeydown;
+
+			target.onselectstart = (e: any) => {
+				_original_select?.apply(target, [e]);
+				e.stopPropagation();
+				e.returnValue = true;
+				return true;
+			};
+			target.oncopy = (e: any) => {
+				_original_oncopy?.apply(target, [e]);
+				e.stopPropagation();
+				e.returnValue = true;
+				return true;
+			};
+			target.onpaste = (e: any) => {
+				_original_onpaste?.apply(target, [e]);
+				e.stopPropagation();
+				e.returnValue = true;
+				return true;
+			};
+			target.onkeydown = (e: any) => {
+				_original_onkeydown?.apply(target, [e]);
+				e.stopPropagation();
+				e.returnValue = true;
+				return true;
+			};
+		}
+	}
+
+	for (const el of elements) {
+		hackSelect(el);
+	}
+}

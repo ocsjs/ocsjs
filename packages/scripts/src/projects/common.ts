@@ -20,6 +20,7 @@ import {
 import type { AnswererWrapper, SearchInformation, StoreListenerType } from '@ocsjs/core';
 import { definedProjects } from '../index';
 import { markdown } from '../utils/markdown';
+import { enableCopy } from '../utils';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
@@ -1110,11 +1111,15 @@ export const CommonProject = Project.create({
 			url: [['所有页面', /.*/]],
 			hideInPanel: true,
 			onactive() {
-				enableCopy();
+				enableCopy([document, document.body]);
 			},
 			oncomplete() {
-				enableCopy();
-				setTimeout(() => enableCopy(), 3000);
+				enableCopy([document, document.body]);
+				insertCopyableStyle();
+				setTimeout(() => {
+					enableCopy([document, document.body]);
+					insertCopyableStyle();
+				}, 3000);
 			}
 		}),
 		disableDialog: new Script({
@@ -1345,37 +1350,7 @@ export const CommonProject = Project.create({
 	}
 });
 
-function enableCopy() {
-	// 将页面上的所有选择方法劫持，并强制返回 true
-	function hackSelect(target: HTMLElement | Document) {
-		if (target) {
-			const _original_select = target.onselectstart;
-			const _original_oncopy = target.oncopy;
-			const _original_onpaste = target.onpaste;
-			const _original_onkeydown = target.onkeydown;
-
-			target.onselectstart = (e: any) => {
-				_original_select?.apply(target, [e]);
-				return true;
-			};
-			target.oncopy = (e: any) => {
-				_original_oncopy?.apply(target, [e]);
-				return true;
-			};
-			target.onpaste = (e: any) => {
-				_original_onpaste?.apply(target, [e]);
-				return true;
-			};
-			target.onkeydown = (e: any) => {
-				_original_onkeydown?.apply(target, [e]);
-				return true;
-			};
-		}
-	}
-
-	hackSelect(document);
-	hackSelect(document.body);
-
+function insertCopyableStyle() {
 	const style = document.createElement('style');
 	style.innerHTML = `
 		html * {
