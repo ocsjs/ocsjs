@@ -44,5 +44,6 @@
 	"typescript.suggest.jsdoc.generateReturns": false,
 	"[typescript]": {
 		"editor.defaultFormatter": "esbenp.prettier-vscode"
-	}
+	},
+	"editor.wordBasedSuggestions": "off"
 }
