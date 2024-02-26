@@ -502,7 +502,7 @@ export const CommonProject = Project.create({
 						if (this.cfg.notification !== 'no-notify') {
 							$gm.notification(content, {
 								extraTitle: opts?.extraTitle,
-								duration: opts?.duration || 30,
+								duration: opts?.duration ?? 30,
 								important: this.cfg.notification === 'all',
 								silent: this.cfg.notification === 'only-notify'
 							});

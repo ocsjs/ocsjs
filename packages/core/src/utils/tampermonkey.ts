@@ -1,4 +1,4 @@
-/* global Tampermonkey GM_getTab */
+/* global Tampermonkey GM_getTab GM_notification */
 
 /**
  * 油猴封装库
@@ -48,7 +48,7 @@ export const $gm = {
 	) {
 		const { onclick, ondone, important, duration = 30, silent = true, extraTitle = '' } = options || {};
 		const { icon, name } = $gm.getInfos()?.script || {};
-		// eslint-disable-next-line no-undef
+
 		GM_notification({
 			title: name + (extraTitle ? '-' + extraTitle : ''),
 			text: content,
