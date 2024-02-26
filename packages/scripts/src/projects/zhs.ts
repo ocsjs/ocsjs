@@ -901,7 +901,10 @@ function gxkWorkAndExam(
 			 * 保存题目，不在选择答案后保存的原因是，如果答题线程大于3会导致题目错乱，因为 resolverIndex 并不是顺序递增的
 			 */
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
-				const modal = $modal('alert', { content: '正在保存题目中，请勿操作...', confirmButton: null });
+				const modal = $modal('alert', {
+					content: '正在保存题目中（必须保存，否则填写的答案无效），请勿操作...',
+					confirmButton: null
+				});
 				await waitForCaptcha();
 				await $.sleep(2000);
 				// 跳转到该题目，防止用户在保存时切换题目
