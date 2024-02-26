@@ -499,8 +499,6 @@ export const CommonProject = Project.create({
 							ondone?: () => void;
 						}
 					) => {
-						console.log(this.cfg.notification);
-
 						if (this.cfg.notification !== 'no-notify') {
 							$gm.notification(content, {
 								extraTitle: opts?.extraTitle,

@@ -44,6 +44,8 @@ export type ModalAttrs = Pick<
 		duration?: number;
 	};
 	footer?: HTMLDivElement;
+	/** 持续时间，单位秒 */
+	duration?: number;
 };
 
 const minimizeSvg =
@@ -371,11 +373,12 @@ export const RenderScript = new Script({
 			}
 		};
 
-		/** 初始化模态框系统 */
-		const initModalSystem = () => {
+		/** 初始化跨域模态框系统 */
+		const initCorsModalSystem = () => {
 			// 添加 modals 监听队列
-			// todo 偶尔会发生报错：caught (in promise) TypeError: undefined is not iterable (cannot read property Symbol(Symbol.iterator))
-			cors.on('modal', async ([type, _attrs]) => {
+			cors.on('modal', async (args) => {
+				const [type, _attrs] = args || [];
+
 				return new Promise((resolve, reject) => {
 					const attrs = _attrs as ModalAttrs;
 					attrs.onCancel = () => resolve('');
@@ -383,6 +386,14 @@ export const RenderScript = new Script({
 					attrs.onClose = resolve;
 					$modal(type, attrs);
 				});
+			});
+		};
+		/** 初始化跨域消息框系统 */
+		const initCorsMessageSystem = () => {
+			// 添加 modals 监听队列
+			cors.on('message', async (args) => {
+				const [type, attrs] = args || [];
+				$message(type, attrs);
 			});
 		};
 
@@ -427,8 +438,10 @@ export const RenderScript = new Script({
 				await rerender(defaults.urls(urls), defaults.panelName(currentPanelName));
 			})();
 
-			// 初始化模态框系统
-			initModalSystem();
+			// 初始化跨域模态框系统
+			initCorsModalSystem();
+			// 初始化跨域消息框系统
+			initCorsMessageSystem();
 			// 处理面板位置
 			handlePosition();
 			onFontsizeChange();
@@ -463,6 +476,7 @@ export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 			onClose,
 			notification: notify,
 			notificationOptions,
+			duration,
 			..._attrs
 		} = attrs;
 
@@ -508,6 +522,12 @@ export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 			}
 		});
 
+		if (duration) {
+			setTimeout(() => {
+				wrapper.remove();
+			}, duration * 1000);
+		}
+
 		$elements.root.append(wrapper);
 
 		return wrapper;
@@ -530,9 +550,13 @@ export function $message(
 	type: MessageElement['type'],
 	attrs: Pick<MessageElement, 'duration' | 'onClose' | 'content' | 'closeable'>
 ) {
-	const message = el('message-element', { type, ...attrs });
-	$elements.messageContainer.append(message);
-	return message;
+	if (self === top) {
+		const message = el('message-element', { type, ...attrs });
+		$elements.messageContainer.append(message);
+		return message;
+	} else {
+		cors.emit('message', [type, attrs]);
+	}
 }
 
 /** 判断这个脚本是否为当前显示页面 */

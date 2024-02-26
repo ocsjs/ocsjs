@@ -84,6 +84,11 @@ export class CorsEventEmitter {
 						const id =
 							$store.addChangeListener(key, async (pre, curr, remote) => {
 								if (remote) {
+									// 删除当前 key 也会导致触发监听。
+									if (curr === undefined) {
+										return;
+									}
+
 									const list = String(curr).split(',');
 									// 处理队列
 									const id = list.pop();
@@ -130,7 +135,7 @@ if (typeof GM_listValues !== 'undefined') {
 				$store.delete(key);
 			}
 
-			if (/[0-9a-z]{32}.cors.events.modal/.test(key)) {
+			if (/[0-9a-z]{32}.cors.events/.test(key)) {
 				$store.delete(key);
 			}
 		});
