@@ -808,17 +808,25 @@ const CXAnalyses = {
 		return Array.from(top?.document.querySelectorAll('.catalog_points_sa,.catalog_points_er') || []).length !== 0;
 	},
 	/** 是否为闯关模式，并且当前章节卡在最后一个待完成的任务点 */
-	isStuckInBreakingMode() {
+	async isStuckInBreakingMode() {
 		if (this.isInSpecialMode()) {
-			const chapter = top?.document.querySelector('.posCatalog_active');
+			const chapter = top?.document.querySelector<HTMLElement>('.posCatalog_active');
 			if (chapter) {
-				// @ts-ignore
-				chapter.finish_count = chapter.finish_count ? chapter.finish_count + 1 : 1;
-				// @ts-ignore
-				if (chapter.finish_count >= 2) {
-					// @ts-ignore
-					chapter.finish_count = 1;
-					return true;
+				const id = chapter.getAttribute('id');
+				if (id) {
+					// 超星好像会重绘组件，导致无法绑定属性到元素中，所以这里使用页面全局变量存储
+					const counter = (await $store.getTab('chapter_counter')) || Object.create({});
+					let count = Reflect.get(counter, id);
+					count = count ? count + 1 : 1;
+					Reflect.set(counter, id, count);
+
+					let res = false;
+					if (count >= 3) {
+						Reflect.set(counter, id, 1);
+						res = true;
+					}
+					await $store.setTab('chapter_counter', counter);
+					return res;
 				}
 			}
 		}
