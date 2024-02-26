@@ -8,15 +8,43 @@ import { $const } from '../utils/const';
  * 在油猴环境下 getTab 指的是获取当前标签页的唯一全局对象，如果在普通浏览器环境中， getTab 则为 localStorage 里的一个对象
  */
 export interface StoreProvider {
+	/**
+	 * 获取存储的值
+	 * @param key 			键
+	 * @param defaultValue	默认值
+	 */
 	get(key: string, defaultValue?: any): any;
+	/**
+	 * 设置存储的值
+	 * @param key 	键
+	 * @param value	值
+	 */
 	set(key: string, value: any): void;
+	/**
+	 * 删除存储的值
+	 * @param key 键
+	 */
 	delete(key: string): any;
+	/**
+	 * 获取所有存储的键
+	 */
 	list(): string[];
-	/** 在使用 OCS.start 后，每个页面会自动分配一个 uid */
+	/**
+	 * 获取当前标签页的存储数据
+	 * @param key 键
+	 */
 	getTab(key: string): Promise<any>;
+	/**
+	 * 设置当前标签页的存储数据
+	 * @param key	键
+	 * @param value	值
+	 */
 	setTab(key: string, value: any): Promise<any>;
 	addChangeListener(key: string, listener: (curr: any, pre: any, remote?: boolean) => void): number | void;
 	removeChangeListener(listener: number | void | EventListener): void;
+	/**
+	 * 原理：在使用 OCS.start 后，每个页面会自动分配一个 uid，存储监听器的Key到油猴的本地存储中，通过改变这个的值，可以触发监听
+	 */
 	addTabChangeListener(key: string, listener: (curr: any, pre: any) => void): void | Promise<number>;
 	removeTabChangeListener(key: string, listener: number | EventListener): void;
 }

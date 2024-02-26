@@ -48,6 +48,8 @@ export type ModalAttrs = Pick<
 	duration?: number;
 };
 
+export type MessageAttrs = Pick<MessageElement, 'duration' | 'onClose' | 'content' | 'closeable'>;
+
 const minimizeSvg =
 	'<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 13H5v-2h14v2z"/></svg>';
 const expandSvg =
@@ -546,15 +548,16 @@ export function $modal(type: ModalElement['type'], attrs: ModalAttrs) {
 /**
  * 消息推送
  */
-export function $message(
-	type: MessageElement['type'],
-	attrs: Pick<MessageElement, 'duration' | 'onClose' | 'content' | 'closeable'>
-) {
+export function $message(type: MessageElement['type'], attrs: MessageAttrs) {
 	if (self === top) {
 		const message = el('message-element', { type, ...attrs });
 		$elements.messageContainer.append(message);
 		return message;
 	} else {
+		// 跨域无法传递 HTMLElement，所以这里需要将 HTMLElement 转换为字符串
+		if (typeof attrs.content !== 'string') {
+			attrs.content = (attrs.content as HTMLElement).innerHTML;
+		}
 		cors.emit('message', [type, attrs]);
 	}
 }

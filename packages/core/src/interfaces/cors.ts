@@ -126,7 +126,7 @@ export class CorsEventEmitter {
 	}
 }
 
-if (typeof GM_listValues !== 'undefined') {
+if (typeof GM_listValues !== 'undefined' && self === top) {
 	// 加载页面后
 	window.onload = () => {
 		// 删除全部未处理的模态框临时变量，以及监听队列

@@ -49,7 +49,9 @@ export function workPreCheckMessage(
 							content: '已关闭此次的自动答题，请手动开启或者忽略此警告。',
 							duration: 0
 						});
-						onclose?.(opts, closedMessage);
+						if (closedMessage) {
+							onclose?.(opts, closedMessage);
+						}
 					}
 				})
 			])
