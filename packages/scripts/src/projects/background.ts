@@ -783,11 +783,23 @@ export const $console: Console = new Proxy({} as Console, {
 			if (logs.length > 50) {
 				logs = logs.slice(-50);
 			}
+
+			const stack_str = Error().stack || '';
+
+			// 简化堆栈信息
+			const stacks = stack_str
+				.replace('Error', '')
+				.match(/at (.*) \(.+:\/\/.+:(.+):(.+)\)/g)
+				?.map((s) => {
+					const match = s.match(/at (.*) \(.+:\/\/.+:(.+):(.+)\)/) || [];
+					return [match[1], match[2], match[3]];
+				});
+
 			logs = logs.concat({
 				type: key.toString() as LogType,
 				content: msg.join(' '),
 				time: Date.now(),
-				stack: (Error().stack || '').replace('Error', '')
+				stack: JSON.stringify([stack_str.split('\n')[0], ...(stacks || [])])
 			});
 
 			BackgroundProject.scripts.console.cfg.logs = logs;
