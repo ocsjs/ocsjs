@@ -77,7 +77,8 @@ export const CXProject = Project.create({
 		'qutjxjy.cn',
 		'ynny.cn',
 		'hnvist.cn',
-		'fjlecb.cn'
+		'fjlecb.cn',
+		'gdhkmooc.com'
 	],
 	studyProject: true,
 	scripts: {
