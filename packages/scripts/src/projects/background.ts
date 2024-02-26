@@ -425,7 +425,24 @@ export const BackgroundProject = Project.create({
 				injectBtn.addEventListener('click', () => {
 					$gm.unsafeWindow.OCS_CONTEXT = self;
 				});
-				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn]));
+
+				const showTabDataBtn = el('button', { className: 'base-style-button' }, '显示Tab存储');
+				$gm.getTab((tab) => {
+					const els: HTMLElement[] = [];
+					for (const key in tab) {
+						if (Object.prototype.hasOwnProperty.call(tab, key)) {
+							els.push(el('div', [el('b', key + ' : '), el('code', JSON.stringify(tab[key]))]));
+						}
+					}
+					showTabDataBtn.addEventListener('click', () => {
+						$modal('simple', {
+							content: el('div', els),
+							width: window.document.documentElement.clientWidth / 2
+						});
+					});
+				});
+
+				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn, showTabDataBtn]));
 			}
 		}),
 		appLoginHelper: new Script({
