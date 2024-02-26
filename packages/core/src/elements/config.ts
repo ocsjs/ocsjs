@@ -93,6 +93,12 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 						const { min, max, type } = (this.attrs || {}) as Partial<ConfigTagMap['input']>;
 						/** 计算属性，不能超过 min 和 max */
 						if (type === 'number') {
+							if (this.provider.value.trim() === '') {
+								this.provider.value = this.defaultValue;
+								$store.set(this.key, this.defaultValue);
+								return;
+							}
+
 							const val = parseFloat(this.provider.value);
 							const _min = min ? parseFloat(min) : undefined;
 							const _max = max ? parseFloat(max) : undefined;
