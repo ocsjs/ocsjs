@@ -92,7 +92,7 @@ export interface RemotePage {
 		postData: string;
 	}>;
 	waitForResponse(...args: Parameters<Page['waitForResponse']>): Promise<{
-		text: string;
+		body: string;
 		headers: Record<string, string>;
 		status: number;
 		url: string;

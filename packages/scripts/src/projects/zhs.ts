@@ -448,7 +448,7 @@ export const ZHSProject = Project.create({
 					} else {
 						url = '/studentExam/gateway/t/v1/student/doHomework';
 					}
-					return JSON.parse((await remotePage.waitForResponse(url)).text);
+					return JSON.parse((await remotePage.waitForResponse(url)).body);
 				}
 
 				return {
