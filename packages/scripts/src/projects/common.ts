@@ -17,7 +17,7 @@ import {
 	$modal
 } from '@ocsjs/core';
 
-import type { AnswererWrapper, SearchInformation, StoreListenerType } from '@ocsjs/core';
+import type { AnswerMatchMode, AnswererWrapper, SearchInformation, StoreListenerType } from '@ocsjs/core';
 import { definedProjects } from '../index';
 import { markdown } from '../utils/markdown';
 import { enableCopy } from '../utils';
@@ -197,7 +197,20 @@ export const CommonProject = Project.create({
 											el('a', { href: 'https://docs.ocsjs.com/docs/work' }, 'https://docs.ocsjs.com/docs/work')
 										])
 									],
-									'【注意】如果题库配置无法粘贴，则说明此页面禁止粘贴，请尝试前往其他页面(网课主页或者学习页面)再尝试进行粘贴。',
+									[
+										el('div', [
+											'【注意】如果无法粘贴，请点击此按钮：',
+											el('button', '读取剪贴板', (btn) => {
+												btn.classList.add('base-style-button');
+												btn.onclick = () => {
+													navigator.clipboard.readText().then((result) => {
+														textarea.value = result;
+													});
+												};
+											}),
+											'，并同意浏览器上方的剪贴板读取申请。'
+										])
+									],
 									...(aw.length ? [list] : [])
 								]),
 								footer: el('div', { style: { width: '100%' } }, [
