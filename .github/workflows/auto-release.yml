@@ -41,5 +41,5 @@ jobs:
         uses: ncipollo/release-action@v1
         with:
           artifactContentType: 'html/text'
-          artifacts: './release/core.js,./release/ocs.user.js,./release/ocs.common.user.js'
+          artifacts: './release/ocs.user.js,./release/ocs.common.user.js,./release/core.js,./release/index.js'
           bodyFile: './CHANGELOG_CURRENT.md'
