@@ -60,8 +60,10 @@ export const $creator = {
 		}
 
 		const onMouseMove = (e: MouseEvent) => {
-			$elements.tooltip.style.top = e.y + 'px';
-			$elements.tooltip.style.left = e.x + 'px';
+			if ($elements.tooltip.style.display !== 'none') {
+				$elements.tooltip.style.top = e.y + 'px';
+				$elements.tooltip.style.left = e.x + 'px';
+			}
 		};
 		const showTitle = (e: MouseEvent) => {
 			const dataTitle = target.getAttribute('data-title');
@@ -84,6 +86,7 @@ export const $creator = {
 		target.addEventListener('mouseenter', showTitle as any);
 		target.addEventListener('click', showTitle as any);
 		target.addEventListener('mouseout', hideTitle);
+		target.addEventListener('mouseleave', hideTitle);
 		target.addEventListener('blur', hideTitle);
 
 		return target;
