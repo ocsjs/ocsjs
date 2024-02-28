@@ -396,7 +396,8 @@ function workAndExam(
 		redundanceWordsText,
 		upload,
 		stopSecondWhenFinish,
-		answer_separators
+		answerSeparators,
+		answerMatchMode
 	}: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
@@ -426,7 +427,8 @@ function workAndExam(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
-		separators: answer_separators.split(',').map((s) => s.trim()),
+		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);

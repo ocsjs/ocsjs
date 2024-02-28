@@ -1,6 +1,6 @@
 import { QuestionResolver, WorkContext } from './interface';
 import { isPlainAnswer, splitAnswer } from './utils';
-import { answerSimilar, removeRedundant, clearString } from '../utils/string';
+import { answerSimilar, removeRedundant, clearString, answerExactMatch } from '../utils/string';
 import { $ } from '../../utils/common';
 import { StringUtils } from '../../utils/string';
 
@@ -16,29 +16,44 @@ export function defaultQuestionResolve<E>(
 		 */
 		async single(infos, options, handler) {
 			const allAnswer = infos
-				.map((res) => res.results.map((res) => splitAnswer(res.answer, ctx.separators)).flat())
+				.map((res) => res.results.map((res) => splitAnswer(res.answer, ctx.answerSeparators)).flat())
 				.flat();
 			const optionStrings = options.map((o) => removeRedundant(o.innerText));
-			/** 配对选项的相似度 */
-			const ratings = answerSimilar(allAnswer, optionStrings);
-			/**  找出最相似的选项 */
-			let index = -1;
-			let max = 0;
-			ratings.forEach((rating, i) => {
-				if (rating.rating > max) {
-					max = rating.rating;
-					index = i;
+
+			if (ctx.answerMatchMode === 'similar') {
+				/** 配对选项的相似度 */
+				const ratings = answerSimilar(allAnswer, optionStrings);
+				/**  找出最相似的选项 */
+				let index = -1;
+				let max = 0;
+				ratings.forEach((rating, i) => {
+					if (rating.rating > max) {
+						max = rating.rating;
+						index = i;
+					}
+				});
+				// 存在选项，并且相似度超过 60 %
+				if (index !== -1 && max > 0.6) {
+					/** 经自定义的处理器进行处理 */
+					await handler('single', options[index].innerText, options[index], ctx);
+					await $.sleep(500);
+					return {
+						finish: true,
+						ratings: ratings.map((r) => r.rating)
+					};
 				}
-			});
-			// 存在选项，并且相似度超过 60 %
-			if (index !== -1 && max > 0.6) {
-				/** 经自定义的处理器进行处理 */
-				await handler('single', options[index].innerText, options[index], ctx);
-				await $.sleep(500);
-				return {
-					finish: true,
-					ratings: ratings.map((r) => r.rating)
-				};
+
+				return { finish: false, allAnswer, options: optionStrings, ratings };
+			} else if (ctx.answerMatchMode === 'exact') {
+				const result = answerExactMatch(allAnswer, optionStrings);
+				const index = optionStrings.findIndex((option) => result.includes(option));
+				if (result.length) {
+					await handler('single', options[index].innerText, options[index], ctx);
+					await $.sleep(500);
+					return {
+						finish: true
+					};
+				}
 			}
 
 			// 是否为纯ABCD答案
@@ -54,7 +69,7 @@ export function defaultQuestionResolve<E>(
 				}
 			}
 
-			return { finish: false, allAnswer, options: optionStrings, ratings };
+			return { finish: false, allAnswer, options: optionStrings };
 		},
 		/**
 		 * 多选题处理器
@@ -67,7 +82,7 @@ export function defaultQuestionResolve<E>(
 			/** 最终的选项 */
 			const targetOptions: HTMLElement[][] = [];
 
-			type Result = {
+			type SimilarResult = {
 				/** 匹配的选项 */
 				options: HTMLElement[];
 				/** 匹配的答案 */
@@ -79,7 +94,9 @@ export function defaultQuestionResolve<E>(
 				similarCount: number;
 			};
 
-			const list: Result[] = [];
+			const similar_list: SimilarResult[] = [];
+
+			const exact_list: HTMLElement[][] = [];
 
 			const results = infos.map((info) => info.results).flat();
 
@@ -90,91 +107,120 @@ export function defaultQuestionResolve<E>(
 			for (let i = 0; i < results.length; i++) {
 				const result = results[i];
 				// 每个答案可能存在多个选项需要分割
-				const answers = splitAnswer(result.answer, ctx.separators);
+				const answers = splitAnswer(result.answer, ctx.answerSeparators);
 
-				const matchResult: Result = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
-				// 判断选项是否完全存在于答案里面
-				for (const option of options) {
-					const ans = answers.find((answer) =>
-						answer.includes(removeRedundant(option.textContent || option.innerText))
+				if (ctx.answerMatchMode === 'similar') {
+					const matchResult: SimilarResult = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
+					// 判断选项是否完全存在于答案里面
+					for (const option of options) {
+						const ans = answers.find((answer) =>
+							answer.includes(removeRedundant(option.textContent || option.innerText))
+						);
+						if (ans) {
+							matchResult.options.push(option);
+							matchResult.answers.push(ans);
+							matchResult.ratings.push(1);
+							matchResult.similarSum += 1;
+							matchResult.similarCount += 1;
+						}
+					}
+
+					const ratingResult: SimilarResult = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
+					// 相似度匹配
+					const ratings = answerSimilar(
+						answers,
+						options.map((o) => removeRedundant(o.innerText))
 					);
-					if (ans) {
-						matchResult.options.push(option);
-						matchResult.answers.push(ans);
-						matchResult.ratings.push(1);
-						matchResult.similarSum += 1;
-						matchResult.similarCount += 1;
+					for (let j = 0; j < ratings.length; j++) {
+						const rating = ratings[j];
+						if (rating.rating > 0.6) {
+							ratingResult.options.push(options[j]);
+							ratingResult.answers.push(ratings[j].target);
+							ratingResult.ratings.push(ratings[j].rating);
+							ratingResult.similarSum += rating.rating;
+							ratingResult.similarCount += 1;
+						}
 					}
-				}
 
-				const ratingResult: Result = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
-				// 相似度匹配
-				const ratings = answerSimilar(
-					answers,
-					options.map((o) => removeRedundant(o.innerText))
-				);
-				for (let j = 0; j < ratings.length; j++) {
-					const rating = ratings[j];
-					if (rating.rating > 0.6) {
-						ratingResult.options.push(options[j]);
-						ratingResult.answers.push(ratings[j].target);
-						ratingResult.ratings.push(ratings[j].rating);
-						ratingResult.similarSum += rating.rating;
-						ratingResult.similarCount += 1;
+					// 如果全匹配大于 相似度匹配
+					if (matchResult.similarSum > ratingResult.similarSum) {
+						similar_list[i] = matchResult;
+					} else {
+						similar_list[i] = ratingResult;
 					}
-				}
-
-				// 如果全匹配大于 相似度匹配
-				if (matchResult.similarSum > ratingResult.similarSum) {
-					list[i] = matchResult;
-				} else {
-					list[i] = ratingResult;
+				} else if (ctx.answerMatchMode === 'exact') {
+					exact_list[i] = answerExactMatch(
+						answers,
+						options.map((o) => removeRedundant(o.innerText))
+					)
+						.map((option) => options.find((o) => removeRedundant(o.innerText) === option))
+						.filter(Boolean) as HTMLElement[];
 				}
 			}
 
-			const match = list
-				.filter((i) => i.similarCount !== 0)
-				.sort((a, b) => {
-					const bsc = b.similarCount * 100;
-					const asc = a.similarCount * 100;
-					const bss = b.similarSum;
-					const ass = a.similarSum;
+			if (ctx.answerMatchMode === 'similar') {
+				const sorted_similar_list = similar_list
+					.filter((i) => i.similarCount !== 0)
+					.sort((a, b) => {
+						const bsc = b.similarCount * 100;
+						const asc = a.similarCount * 100;
+						const bss = b.similarSum;
+						const ass = a.similarSum;
 
-					// similarCount 由于是匹配的数量，其结果决定排序，
-					// similarSum 是匹配精度，其结果决定同样数量的情况下，哪一个的精度更高
+						// similarCount 由于是匹配的数量，其结果决定排序，
+						// similarSum 是匹配精度，其结果决定同样数量的情况下，哪一个的精度更高
 
-					// 高到低排序
-					return bsc + bss - asc + ass;
-				});
+						// 高到低排序
+						return bsc + bss - asc + ass;
+					});
 
-			if (match[0]) {
-				for (let i = 0; i < match[0].options.length; i++) {
-					await handler('multiple', match[0].answers[i], match[0].options[i], ctx);
-					// 暂停一会防止点击过快
-					await $.sleep(500);
+				if (sorted_similar_list[0]) {
+					for (let i = 0; i < sorted_similar_list[0].options.length; i++) {
+						await handler('multiple', sorted_similar_list[0].answers[i], sorted_similar_list[0].options[i], ctx);
+						// 暂停一会防止点击过快
+						await $.sleep(500);
+					}
+
+					return { finish: true, sorted_similar_list, targetOptions, targetAnswers };
 				}
+			} else if (ctx.answerMatchMode === 'exact') {
+				const sorted_exact_list = exact_list.sort((a, b) => b.length - a.length);
+				if (sorted_exact_list[0]) {
+					for (let i = 0; i < sorted_exact_list[0].length; i++) {
+						await handler('multiple', sorted_exact_list[0][i].innerText, sorted_exact_list[0][i], ctx);
+						// 暂停一会防止点击过快
+						await $.sleep(500);
+					}
 
-				return { finish: true, match, targetOptions, targetAnswers };
-			} else {
-				const plainOptions = [];
-				// 纯ABCD答案
-				for (const result of results) {
-					const ans = StringUtils.nowrap(result.answer).trim();
-					if (isPlainAnswer(ans)) {
-						for (const char of ans) {
-							const index = char.charCodeAt(0) - 65;
-							await handler('single', options[index].innerText, options[index], ctx);
-							await $.sleep(500);
-							plainOptions.push(options[index]);
-						}
+					return {
+						finish: true,
+						sorted_exact_list: sorted_exact_list.map((i) => i.map((e) => e.innerText)),
+						targetOptions,
+						targetAnswers
+					};
+				}
+			}
+
+			// 如果都没找到答案
+
+			const plainOptions = [];
+			// 纯ABCD答案
+			for (const result of results) {
+				const ans = StringUtils.nowrap(result.answer).trim();
+				if (isPlainAnswer(ans)) {
+					for (const char of ans) {
+						const index = char.charCodeAt(0) - 65;
+						await handler('single', options[index].innerText, options[index], ctx);
+						await $.sleep(500);
+						plainOptions.push(options[index]);
 					}
 				}
+			}
 
-				if (plainOptions.length) {
-					return { finish: true, plainOptions };
-				} else {
-					return { finish: false };
-				}
+			if (plainOptions.length) {
+				return { finish: true, plainOptions };
+			} else {
+				return { finish: false };
 			}
 		},
 		/** 判断题处理器 */
@@ -243,7 +289,7 @@ export function defaultQuestionResolve<E>(
 				// 排除空答案
 				let ans = answers.filter((ans) => ans);
 				if (ans.length === 1) {
-					ans = splitAnswer(ans[0], ctx.separators);
+					ans = splitAnswer(ans[0], ctx.answerSeparators);
 				}
 
 				if (

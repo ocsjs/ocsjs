@@ -562,7 +562,7 @@ export const CXProject = Project.create({
 
 function workOrExam(
 	type: 'work' | 'exam' = 'work',
-	{ answererWrappers, period, thread, redundanceWordsText, answer_separators }: CommonWorkOptions
+	{ answererWrappers, period, thread, redundanceWordsText, answerSeparators, answerMatchMode }: CommonWorkOptions
 ) {
 	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
 
@@ -619,7 +619,8 @@ function workOrExam(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 0,
 		thread: thread ?? 1,
-		separators: answer_separators.split(',').map((s) => s.trim()),
+		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			if (elements.title) {
@@ -1429,7 +1430,8 @@ async function chapterTestTask(
 		thread,
 		stopSecondWhenFinish,
 		redundanceWordsText,
-		answer_separators
+		answerSeparators,
+		answerMatchMode
 	}: CommonWorkOptions
 ) {
 	if (answererWrappers === undefined || answererWrappers.length === 0) {
@@ -1489,7 +1491,8 @@ async function chapterTestTask(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 0,
 		thread: thread ?? 1,
-		separators: answer_separators.split(',').map((s) => s.trim()),
+		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = chapterTestTaskQuestionTitleTransform(elements.title);

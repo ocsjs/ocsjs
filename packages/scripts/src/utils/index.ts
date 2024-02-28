@@ -1,4 +1,13 @@
-import { $creator, $message, $modal, AnswererWrapper, MessageElement, WorkUploadType, el } from '@ocsjs/core';
+import {
+	$creator,
+	$message,
+	$modal,
+	AnswerMatchMode,
+	AnswererWrapper,
+	MessageElement,
+	WorkUploadType,
+	el
+} from '@ocsjs/core';
 import { $console } from '../projects/background';
 
 export interface CommonWorkOptions {
@@ -8,7 +17,8 @@ export interface CommonWorkOptions {
 	answererWrappers: AnswererWrapper[];
 	stopSecondWhenFinish: number;
 	redundanceWordsText: string;
-	answer_separators: string;
+	answerSeparators: string;
+	answerMatchMode: AnswerMatchMode;
 }
 
 /** 创建答题预处理信息 */

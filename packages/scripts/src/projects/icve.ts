@@ -460,7 +460,7 @@ export const IcveMoocProject = Project.create({
 	}
 });
 
-function work({ answererWrappers, period, thread, answer_separators }: CommonWorkOptions) {
+function work({ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init();
 
@@ -522,7 +522,8 @@ function work({ answererWrappers, period, thread, answer_separators }: CommonWor
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
-		separators: answer_separators.split(',').map((s) => s.trim()),
+		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);

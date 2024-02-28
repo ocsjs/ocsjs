@@ -445,7 +445,7 @@ export const CommonProject = Project.create({
 					tag: 'textarea',
 					attrs: { title: '每行一个，随机填入', style: { minWidth: '200px', minHeight: '50px' } }
 				},
-				answer_separators: {
+				answerSeparators: {
 					label: '答案分隔符',
 					attrs: {
 						title: "分隔答案的符号，例如：答案1#答案2#答案3，分隔符为 #， 使用英文逗号进行隔开 : ',' "
@@ -471,6 +471,15 @@ export const CommonProject = Project.create({
 						title: '在搜题的时候自动删除多余的文字，以便提高搜题的准确度，每行一个。',
 						style: { minWidth: '200px', minHeight: '50px' }
 					}
+				},
+				answerMatchMode: {
+					label: '答案匹配模式',
+					tag: 'select',
+					defaultValue: 'similar' as AnswerMatchMode,
+					options: [
+						['similar', '相似匹配', '答案相似度达到60%以上就匹配'],
+						['exact', '精确匹配', '答案必须完全一致才匹配']
+					]
 				}
 			},
 			methods() {

@@ -21,13 +21,22 @@ export type SearchedElements<E, T> = Record<keyof E, T> & {
 /** 题目类型 */
 export type QuestionTypes = 'single' | 'multiple' | 'completion' | 'judgement' | undefined;
 
+export type AnswerMatchMode = 'exact' | 'similar';
+
 /** 答题器上下文 */
 export interface WorkContext<E> {
 	root: HTMLElement;
 	elements: SearchedElements<E, HTMLElement[]>;
 	searchInfos: SearchInformation[];
 	type: QuestionTypes;
-	separators?: string[];
+	/** 答案分隔符 */
+	answerSeparators?: string[];
+	/**
+	 * 答案匹配模式
+	 * exact : 精准匹配模式, 只有答案相同才匹配
+	 * similar : 相似匹配, 只要答案相似就匹配
+	 */
+	answerMatchMode: AnswerMatchMode;
 }
 
 /** 答案题目处理器结果 */
@@ -198,7 +207,9 @@ export type WorkOptions<E extends RawElements> = {
 	/** 多线程数量（个） */
 	thread?: number;
 	/** 分隔符 */
-	separators?: string[];
+	answerSeparators?: string[];
+	/** 答案匹配模式 */
+	answerMatchMode?: AnswerMatchMode;
 	/** 当元素被搜索到 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>, root: HTMLElement) => void | Promise<void>;
 	/** 监听搜题结果 */

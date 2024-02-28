@@ -50,6 +50,25 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
 }
 
 /**
+ * 	精准匹配模式，返回符合的选项字符串列表
+ * @param answers	答案列表
+ * @param options	选项列表
+ */
+export function answerExactMatch(answers: string[], options: string[]): string[] {
+	const _answers = answers.map(removeRedundant);
+	const _options = options.map(removeRedundant);
+
+	const result =
+		_answers.length !== 0
+			? _options.filter((option) => {
+					return _answers.find((answer) => answer.trim() === option.trim());
+			  })
+			: [];
+
+	return result;
+}
+
+/**
  * 删除题目选项中开头的冗余字符串
  */
 export function removeRedundant(str: string) {
