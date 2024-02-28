@@ -2,6 +2,8 @@ import type { Page } from 'playwright-core';
 import { request } from '../core/utils';
 import { $ } from './common';
 
+export type Base64 = string;
+
 export interface RemotePage {
 	click: (
 		selectorOrElement: string | Element,
@@ -82,9 +84,19 @@ export interface RemotePage {
 	setInputFiles: Page['setInputFiles'];
 	tap: Page['tap'];
 	press: Page['press'];
-	reload: Page['reload'];
-	waitForRequest(...args: Parameters<Page['waitForRequest']>): Promise<string>;
-	waitForResponse(...args: Parameters<Page['waitForResponse']>): Promise<string>;
+	reload: (...args: Parameters<Page['reload']>) => Promise<Base64>;
+	waitForRequest(...args: Parameters<Page['waitForRequest']>): Promise<{
+		url: string;
+		method: string;
+		headers: Record<string, string>;
+		postData: string;
+	}>;
+	waitForResponse(...args: Parameters<Page['waitForResponse']>): Promise<{
+		text: string;
+		headers: Record<string, string>;
+		status: number;
+		url: string;
+	}>;
 	waitForSelector(...args: Parameters<Page['waitForSelector']>): Promise<void>;
 }
 
@@ -169,10 +181,11 @@ export class RemotePlaywright {
 				logger?.('[RP]: ', JSON.stringify(data));
 
 				try {
-					const res = await request('http://localhost:15319/ocs-script-actions', {
+					// 这里为什么不写前缀 http://localhost:15319，因为有 Content-Security-Policy ， 这里我们借用后台的URL代理去进行处理，只要包含 ocs-script-actions 即可轻松绕过 Content-Security-Policy 限制
+					const res = await request('/ocs-script-actions', {
 						type: 'fetch',
 						method: 'post',
-						responseType: 'text',
+						responseType: ['waitForRequest', 'waitForResponse', 'reload'].includes(property) ? 'json' : 'text',
 						headers: {
 							'auth-token': authToken
 						},

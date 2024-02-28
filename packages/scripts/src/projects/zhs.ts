@@ -448,10 +448,11 @@ export const ZHSProject = Project.create({
 					} else {
 						url = '/studentExam/gateway/t/v1/student/doHomework';
 					}
-					return JSON.parse(await remotePage.waitForResponse(url));
+					return JSON.parse((await remotePage.waitForResponse(url)).text);
 				}
 
 				return {
+					getWorkInfo: getWorkInfo,
 					work: async () => {
 						// 检查是否为软件环境
 						const remotePage = await RemotePlaywright.getCurrentPage();
@@ -466,18 +467,21 @@ export const ZHSProject = Project.create({
 
 						if (isExam || isWork) {
 							const workInfo = await getWorkInfo(remotePage);
-							$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
-							commonWork(this, {
-								workerProvider: (opts) => gxkWorkAndExam(workInfo, opts)
-							});
+							setTimeout(() => {
+								$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
+								commonWork(this, {
+									workerProvider: (opts) => gxkWorkAndExam(workInfo, opts)
+								});
+							}, 1000);
 						} else {
 							$message('info', { content: '📢 请手动进入作业/考试，如果未开始答题，请尝试刷新页面。', duration: 0 });
+
 							CommonProject.scripts.render.methods.pin(this);
 						}
 					}
 				};
 			},
-			async oncomplete() {
+			async onactive() {
 				this.methods.work();
 				/**
 				 * 当页面从作业考试列表跳转到作业考试页面时，触发的是onhistorychange事件，而不是oncomplete事件。
@@ -775,7 +779,15 @@ function getPopupCaptcha() {
  */
 function gxkWorkAndExam(
 	workInfo: any,
-	{ answererWrappers, period, thread, stopSecondWhenFinish, redundanceWordsText, answer_separators }: CommonWorkOptions
+	{
+		answererWrappers,
+		period,
+		thread,
+		stopSecondWhenFinish,
+		redundanceWordsText,
+		answerSeparators,
+		answerMatchMode
+	}: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zhs-gxk'
@@ -825,7 +837,8 @@ function gxkWorkAndExam(
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
-		separators: answer_separators.split(',').map((s) => s.trim()),
+		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(undefined, index++);
@@ -902,7 +915,7 @@ function gxkWorkAndExam(
 			 */
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
 				const modal = $modal('alert', {
-					content: '正在保存题目中（必须保存，否则填写的答案无效），请勿操作...',
+					content: '正在保存题目中（必须保存，否则填写的答案无效），<br>请勿操作...',
 					confirmButton: null
 				});
 				await waitForCaptcha();
@@ -932,7 +945,7 @@ function gxkWorkAndExam(
 /**
  * 校内学分课的作业
  */
-function xnkWork({ answererWrappers, period, thread, answer_separators }: CommonWorkOptions) {
+function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions) {
 	$message('info', { content: '开始作业' });
 
 	CommonProject.scripts.workResults.methods.init();
@@ -960,7 +973,8 @@ function xnkWork({ answererWrappers, period, thread, answer_separators }: Common
 		requestPeriod: period ?? 3,
 		resolvePeriod: 1,
 		thread: thread ?? 1,
-		separators: answer_separators.split(',').map((s) => s.trim()),
+		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
