@@ -747,12 +747,22 @@ export const CommonProject = Project.create({
 						const setNumStyle = (result: SimplifyWorkResult, num: HTMLElement, index: number) => {
 							if (result.requested) {
 								num.classList.add('requested');
-							} else if (result.resolved) {
-								num.classList.add('resolved');
-							} else if (result.error || result.searchInfos.length === 0 || result.finish === false) {
-								num.classList.add('error');
-							} else if (index === this.cfg.currentResultIndex) {
+							}
+
+							if (index === this.cfg.currentResultIndex) {
 								num.classList.add('active');
+							}
+
+							if (result.finish) {
+								num.classList.add('finish');
+							} else {
+								if (
+									result.requested &&
+									result.resolved &&
+									(result.error?.trim().length !== 0 || result.searchInfos.length === 0 || result.finish === false)
+								) {
+									num.classList.add('error');
+								}
 							}
 						};
 
@@ -840,28 +850,14 @@ export const CommonProject = Project.create({
 
 											[num, result.question],
 											(question) => {
-												question.className = 'search-infos-question';
-
-												if (
-													result.requested === true &&
-													result.resolved === true &&
-													(result.error || result.searchInfos.length === 0 || result.finish === false)
-												) {
-													question.classList.add('error');
-												} else if (index === this.cfg.currentResultIndex) {
-													question.classList.add('active');
-												}
-
 												question.onmouseover = () => {
 													mouseoverIndex = index;
-													question.classList.add('hover');
 													// 重新渲染结果列表
 													resultContainer.replaceChildren(createResult(result));
 												};
 
 												question.onmouseleave = () => {
 													mouseoverIndex = -1;
-													question.classList.remove('hover');
 													// 重新显示指定序号的结果
 													resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
 												};

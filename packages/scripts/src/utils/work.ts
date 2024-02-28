@@ -195,7 +195,7 @@ export function simplifyWorkResult(
 	for (const wr of results) {
 		res.push({
 			requested: wr.requested,
-			resolved: wr.requested,
+			resolved: wr.resolved,
 			error: wr.error,
 			question: titleTransform?.(wr.ctx?.elements.title || [], i) || wr.ctx?.elements.title?.join(',') || '',
 			finish: wr.result?.finish,
