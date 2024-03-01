@@ -11,7 +11,7 @@ import { createRangeTooltip } from '.';
 export const playbackRate: Config = {
 	label: '视频倍速',
 	tag: 'select',
-	options: [1, 1.25, 1.5, 1.75, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 12, 16].map((rate) => [
+	options: [1, 1.25, 1.5, 1.75, 2, 2.25, 2.5, 2.75, 3, 3.5, 4, 4.5, 5, 6, 7, 8, 12, 16].map((rate) => [
 		rate.toString(),
 		rate + ' x'
 	]),
