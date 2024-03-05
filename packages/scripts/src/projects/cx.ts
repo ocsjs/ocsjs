@@ -1401,6 +1401,10 @@ async function mediaTask(
 
 		$console.log('视频开始播放');
 		media.volume = volume;
+
+		// 重置视频进度
+		media.currentTime = 0;
+
 		playMedia(() => media.play())
 			.then(() => {
 				media.playbackRate = playbackRate;
