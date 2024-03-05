@@ -396,7 +396,7 @@ export const CXProject = Project.create({
 				if (top === window) {
 					$message('warn', {
 						content:
-							'OCS网课助手不支持旧版超星, 即将切换到超星新版, 如有其他第三方插件请关闭, 可能有兼容问题频繁频繁切换。'
+							'OCS网课助手不支持旧版超星, 即将切换到超星新版, 如有其他第三方插件请关闭, 可能有兼容问题导致频繁切换。'
 					});
 					// 跳转到最新版本的超星
 					await $.sleep(2000);
