@@ -1,9 +1,9 @@
-## [4.8.7](https://github.com/ocsjs/ocsjs/compare/4.8.6...4.8.7) (2024-03-01)
+## [4.8.8](https://github.com/ocsjs/ocsjs/compare/4.8.7...4.8.8) (2024-03-05)
 
 
 ### Bug Fixes
 
-* **script:** 修复2倍速被删除的BUG ([a861685](https://github.com/ocsjs/ocsjs/commit/a861685bea01f3bedad32c2828f2e2d3f38f94dd))
+* **script:** 优化超星视频重复播放时没有重置视频进度的问题 ([c167ff0](https://github.com/ocsjs/ocsjs/commit/c167ff094ffe4287002cd3e1f0b08b92a0a82ceb))
 
 
 
