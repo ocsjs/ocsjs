@@ -26,7 +26,7 @@ import {
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
-import { workNotes, volume, restudy, playbackRate } from '../utils/configs';
+import { workNotes, volume, playbackRate } from '../utils/configs';
 import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 import md5 from 'md5';
 // @ts-ignore
@@ -159,8 +159,11 @@ export const CXProject = Project.create({
 					},
 					defaultValue: 'random' as VideoQuizStrategy
 				},
-				restudy: restudy,
-
+				restudy: {
+					label: '复习模式',
+					attrs: { title: '已经完成的视频继续学习，并从当前的章节往下开始学习', type: 'checkbox' },
+					defaultValue: false
+				},
 				backToFirstWhenFinish: {
 					label: '完成全部后重新学习',
 					attrs: {
