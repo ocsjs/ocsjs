@@ -751,7 +751,9 @@ export const BackgroundProject = Project.create({
 						addRecord(data);
 						const res = originalFetch.apply(this, [input, init]);
 						res
-							.then((result) => result.text())
+							.then((result) => {
+								return result.clone().text();
+							})
 							.then((result) => {
 								setItem(id, result, '');
 								data.response = result;
