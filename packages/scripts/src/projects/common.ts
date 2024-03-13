@@ -249,6 +249,31 @@ export const CommonProject = Project.create({
 													const value = textarea.value;
 
 													if (value) {
+														if (
+															value.includes('adapter-service/search') &&
+															(select.value === 'TikuAdapter') === false
+														) {
+															$modal('alert', {
+																content: el('div', [
+																	'检测到您可能正在使用 ',
+																	el(
+																		'a',
+																		{ href: 'https://github.com/DokiDoki1103/tikuAdapter#readme' },
+																		'TikuAdapter 题库'
+																	),
+																	'，但是您选择的解析器不是 TikuAdapter，请选择 TikuAdapter 解析器，并填写接口地址即可，例如：http://localhost:8060/adapter-service/search，或者忽略此警告。'
+																]),
+																confirmButtonText: '切换至 TikuAdapter 解析器，并识别接口地址',
+																onConfirm() {
+																	const origin =
+																		textarea.value.match(/http:\/\/(.+)\/adapter-service\/search/)?.[1] || '';
+																	textarea.value = `http://${origin}/adapter-service/search`;
+																	select.value = 'TikuAdapter';
+																}
+															});
+															return;
+														}
+
 														try {
 															const awsResult: AnswererWrapper[] = [];
 															if (select.value === 'TikuAdapter') {

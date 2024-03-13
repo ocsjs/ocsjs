@@ -81,7 +81,7 @@ async function createUserJs(cb) {
 				homepage: 'https://docs.ocsjs.com',
 				source: 'https://github.com/ocsjs/ocsjs',
 				icon: 'https://cdn.ocsjs.com/logo.png',
-				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'localhost'],
+				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'localhost', '127.0.0.1'],
 				match: matchMetadata,
 				grant: [
 					'GM_info',
