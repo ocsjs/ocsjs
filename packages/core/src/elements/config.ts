@@ -18,7 +18,9 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 	tag?: T;
 	defaultValue: any;
 	provider!: ConfigTagMap[keyof ConfigTagMap];
-	/** 将本地修改后的值同步到元素中 */
+	/**
+	 * 将本地修改后的值同步到元素中
+	 */
 	sync?: boolean;
 	/** 元素属性 */
 	attrs?: CustomElementStyleAttrs<Partial<ConfigTagMap[T]>>;
@@ -26,8 +28,16 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 	options?: string[][] | { label: string; value: string; title?: string }[];
 	_onload?: (this: ConfigTagMap[T], el: this) => void;
 
+	/**
+	 * 注意这里的 value 和 provider.value 是不同的，provider 是真正的输入元素，而 ConfigElement 只是外层元素。
+	 */
 	get value() {
 		return $store.get(this.key, this.defaultValue);
+	}
+
+	set value(value) {
+		this.provider.value = value;
+		$store.set(this.key, value);
 	}
 
 	connectedCallback() {

@@ -1670,7 +1670,7 @@ async function chapterTestTask(
 		}
 	});
 
-	const results = await worker.doWork({ enable_debug: true });
+	const results = await worker.doWork();
 
 	const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;
 	$console.info(msg);
