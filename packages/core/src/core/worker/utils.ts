@@ -47,8 +47,29 @@ export function isPlainAnswer(answer: string) {
 	return true;
 }
 
+/**
+ * 判断是否为纯ABCD多选答案，但是中间存在分隔符
+ * @param answer  答案
+ */
+export function resolvePlainAnswer(answer: string) {
+	const resolve = answer
+		.trim()
+		.replace(/[,，、 ]/g, '')
+		.trim();
+	if (isPlainAnswer(resolve)) {
+		return resolve;
+	}
+}
+
 /** 分割答案 */
 export function splitAnswer(answer: string, separators = ['===', '#', '---', '###', '|', ';', '；']) {
+	answer = answer.trim();
+	if (answer.length === 0) {
+		return [];
+	}
+	separators = separators.length === 0 ? ['===', '#', '---', '###', '|', ';', '；'] : separators;
+	separators = separators.filter((el) => el.trim().length > 0);
+
 	try {
 		// 如果是 json 格式的多选答案
 		const json = JSON.parse(answer);

@@ -1,5 +1,5 @@
 import { QuestionResolver, WorkContext } from './interface';
-import { isPlainAnswer, splitAnswer } from './utils';
+import { resolvePlainAnswer, splitAnswer } from './utils';
 import { answerSimilar, removeRedundant, clearString, answerExactMatch } from '../utils/string';
 import { $ } from '../../utils/common';
 import { StringUtils } from '../../utils/string';
@@ -42,8 +42,6 @@ export function defaultQuestionResolve<E>(
 						ratings: ratings.map((r) => r.rating)
 					};
 				}
-
-				return { finish: false, allAnswer, options: optionStrings, ratings };
 			} else if (ctx.answerMatchMode === 'exact') {
 				const result = answerExactMatch(allAnswer, optionStrings);
 				const index = optionStrings.findIndex((option) => result.includes(option));
@@ -60,8 +58,11 @@ export function defaultQuestionResolve<E>(
 			for (const info of infos) {
 				for (const res of info.results) {
 					const ans = StringUtils.nowrap(res.answer).trim();
-					if (ans.length === 1 && isPlainAnswer(ans)) {
+					if (ans.length === 1 && /[A-Z]/.test(ans)) {
 						const index = ans.charCodeAt(0) - 65;
+						if (options[index] === undefined) {
+							continue;
+						}
 						await handler('single', options[index].innerText, options[index], ctx);
 						await $.sleep(500);
 						return { finish: true, option: options[index] };
@@ -107,7 +108,7 @@ export function defaultQuestionResolve<E>(
 			for (let i = 0; i < results.length; i++) {
 				const result = results[i];
 				// 每个答案可能存在多个选项需要分割
-				const answers = splitAnswer(result.answer, ctx.answerSeparators);
+				const answers = splitAnswer(result.answer.trim(), ctx.answerSeparators);
 
 				if (ctx.answerMatchMode === 'similar') {
 					const matchResult: SimilarResult = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
@@ -207,9 +208,13 @@ export function defaultQuestionResolve<E>(
 			// 纯ABCD答案
 			for (const result of results) {
 				const ans = StringUtils.nowrap(result.answer).trim();
-				if (isPlainAnswer(ans)) {
+				const plainAnswer = resolvePlainAnswer(ans);
+				if (plainAnswer) {
 					for (const char of ans) {
 						const index = char.charCodeAt(0) - 65;
+						if (options[index] === undefined) {
+							continue;
+						}
 						await handler('single', options[index].innerText, options[index], ctx);
 						await $.sleep(500);
 						plainOptions.push(options[index]);
@@ -226,7 +231,21 @@ export function defaultQuestionResolve<E>(
 		/** 判断题处理器 */
 		async judgement(infos, options, handler) {
 			for (const answers of infos.map((info) => info.results.map((res) => res.answer))) {
-				const correctWords = ['是', '对', '正确', '确定', '√', '对的', '是的', '正确的', 'true', 'True', 'yes', '1'];
+				const correctWords = [
+					'是',
+					'对',
+					'正确',
+					'确定',
+					'√',
+					'对的',
+					'是的',
+					'正确的',
+					'true',
+					'True',
+					'T',
+					'yes',
+					'1'
+				];
 				const incorrectWords = [
 					'非',
 					'否',
@@ -242,6 +261,7 @@ export function defaultQuestionResolve<E>(
 					'不是的',
 					'false',
 					'False',
+					'F',
 					'no',
 					'0'
 				];
