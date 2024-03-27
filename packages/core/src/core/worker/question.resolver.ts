@@ -26,16 +26,18 @@ export function defaultQuestionResolve<E>(
 				/**  找出最相似的选项 */
 				let index = -1;
 				let max = 0;
+				let ans = '';
 				ratings.forEach((rating, i) => {
 					if (rating.rating > max) {
 						max = rating.rating;
 						index = i;
+						ans = rating.target;
 					}
 				});
 				// 存在选项，并且相似度超过 60 %
 				if (index !== -1 && max > 0.6) {
 					/** 经自定义的处理器进行处理 */
-					await handler('single', options[index].innerText, options[index], ctx);
+					await handler('single', ans, options[index], ctx);
 					await $.sleep(500);
 					return {
 						finish: true,
