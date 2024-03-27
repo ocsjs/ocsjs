@@ -1,5 +1,4 @@
 import { CommonEventEmitter } from '../../interfaces/common';
-import { $ } from '../../utils/common';
 import { domSearchAll } from '../utils/dom';
 import { RawElements, ResolverResult, WorkContext, WorkOptions, WorkResult, WorkUploadType } from './interface';
 import { defaultQuestionResolve } from './question.resolver';
@@ -159,13 +158,8 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			if (options?.enable_debug) {
 				console.debug('搜题完成: ', index, result.ctx);
 			}
-
+			/** 回调 */
 			await this.opts.onResultsUpdate?.(results[index], index, results);
-
-			/** 间隔 */
-			await $.sleep((this.opts.requestPeriod ?? 3) * 1000);
-
-			this.requestFinished++;
 		};
 
 		/** 答题线程， */
@@ -178,7 +172,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 							clearTimeout(timeout);
 							resolve();
 						}
-					}, 1000);
+					}, 200);
 
 					const timeout = setTimeout(() => {
 						clearInterval(interval);
@@ -190,12 +184,15 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			for (let index = 0; index < results.length; index++) {
 				const result = results[index];
 
-				this.resolverIndex = index;
-
 				let error: string | undefined;
 				let res: ResolverResult | undefined;
 
 				try {
+					/** 强行关闭 */
+					if (this.isClose === true) {
+						this.isRunning = false;
+						return;
+					}
 					/** 检查是否暂停中 */
 					if (this.isStop) {
 						await waitForContinuate(() => this.isStop);
@@ -251,7 +248,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		 * 搜题和答题分为两个线程
 		 */
 		/** 多线程搜题 */
-		(async () => {
+		const requestThreadHandler = async () => {
 			/** 线程锁 */
 			const locks: number[] = [];
 
@@ -275,27 +272,40 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				});
 			};
 
-			const requestThreads = [];
+			const requestThreads: Function[] = [];
 			for (let index = 0; index < results.length; index++) {
 				requestThreads.push(() => requestThread(index));
 			}
 
 			for (let index = 0; index < (this.opts.thread || 1); index++) {
-				locks.push(1);
+				locks.push(index + 1);
+			}
+			let requestFinished = 0;
+
+			const promises: Function[] = [];
+			for (let index = 0; index < (this.opts.thread || 1); index++) {
+				promises.push(async () => {
+					try {
+						while (requestFinished < results.length && requestThreads.length > 0 && this.isClose === false) {
+							const thread = requestThreads.shift();
+							if (thread) {
+								const lock = await waitForLock();
+								await thread();
+								requestFinished++;
+								locks.push(lock);
+							}
+						}
+					} catch (err) {
+						console.error(err);
+					}
+				});
 			}
 
-			while (this.requestFinished < results.length) {
-				const thread = requestThreads.shift();
-				if (thread) {
-					const lock = await waitForLock();
-					await thread();
-					locks.push(lock);
-				}
-			}
-		})();
+			await Promise.all(promises.map((f) => f()));
+		};
 
 		/** 答题线程 */
-		await resolverThread();
+		await Promise.all([resolverThread(), requestThreadHandler()]);
 
 		this.isRunning = false;
 		return results;
