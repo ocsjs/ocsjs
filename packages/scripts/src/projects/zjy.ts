@@ -18,11 +18,14 @@ const state = {
 };
 
 const work_pages: [string, string][] = [
+	['资源库作业页面', 'study/spockeepTest'],
 	['作业页面', 'icve-study/coursePreview/jobTes'],
 	['考试页面', 'icve-study/coursePreview/test']
 ];
 
-const isWork = window.location.href.includes('icve-study/coursePreview/jobTes');
+const isWork =
+	window.location.href.includes('icve-study/coursePreview/jobTes') ||
+	window.location.href.includes('study/spockeepTest');
 const isExam = window.location.href.includes('icve-study/coursePreview/test');
 
 /**
