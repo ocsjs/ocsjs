@@ -483,8 +483,8 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
-	let requestFinished = 0;
-	let resolverIndex = 0;
+	let requestedCount = 0;
+	let resolvedCount = 0;
 
 	function getType(options: HTMLElement[]) {
 		const radio_len = options
@@ -604,8 +604,8 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 				workResults.push(...simplifyWorkResult([currentResult], titleTransform));
 				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
-				requestFinished++;
-				resolverIndex++;
+				requestedCount++;
+				resolvedCount++;
 
 				if (currentResult.result?.finish) {
 					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
@@ -614,8 +614,8 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 				}
 				CommonProject.scripts.workResults.methods.updateWorkState({
 					totalQuestionCount,
-					requestFinished,
-					resolverIndex
+					requestedCount,
+					resolvedCount
 				});
 			}
 		}

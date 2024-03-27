@@ -31,8 +31,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 	isClose = false;
 	isStop = false;
 	totalQuestionCount = 0;
-	requestFinished = 0;
-	resolverIndex = 0;
 
 	constructor(opts: WorkOptions<E>) {
 		super();
@@ -41,9 +39,6 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 
 	/** 启动答题器  */
 	async doWork(options?: { enable_debug?: boolean }) {
-		this.requestFinished = 0;
-		this.resolverIndex = 0;
-
 		this.emit('start');
 		this.isRunning = true;
 

@@ -729,10 +729,10 @@ export const CommonProject = Project.create({
 				totalQuestionCount: {
 					defaultValue: 0
 				},
-				requestFinished: {
+				requestedCount: {
 					defaultValue: 0
 				},
-				resolverIndex: {
+				resolvedCount: {
 					defaultValue: 0
 				},
 				currentResultIndex: {
@@ -745,20 +745,28 @@ export const CommonProject = Project.create({
 			methods() {
 				return {
 					/**
+					 * 从搜索结果中计算状态，并更新
+					 */
+					updateWorkStateByResults: (results: { requested: boolean; resolved: boolean }[]) => {
+						this.cfg.totalQuestionCount = results.length;
+						this.cfg.requestedCount = results.filter((result) => result.requested).length;
+						this.cfg.resolvedCount = results.filter((result) => result.resolved).length;
+					},
+					/**
 					 * 更新状态
 					 */
-					updateWorkState: (state: { totalQuestionCount: number; requestFinished: number; resolverIndex: number }) => {
+					updateWorkState: (state: { totalQuestionCount: number; requestedCount: number; resolvedCount: number }) => {
 						this.cfg.totalQuestionCount = state.totalQuestionCount;
-						this.cfg.requestFinished = state.requestFinished;
-						this.cfg.resolverIndex = state.resolverIndex;
+						this.cfg.requestedCount = state.requestedCount;
+						this.cfg.resolvedCount = state.resolvedCount;
 					},
 					/**
 					 * 刷新状态
 					 */
 					refreshState: () => {
 						this.cfg.totalQuestionCount = 0;
-						this.cfg.requestFinished = 0;
-						this.cfg.resolverIndex = 0;
+						this.cfg.requestedCount = 0;
+						this.cfg.resolvedCount = 0;
 					},
 					/**
 					 * 清空搜索结果
@@ -974,13 +982,13 @@ export const CommonProject = Project.create({
 							});
 
 							const tip = el('div', [
-								el('div', { className: 'search-infos-num requesting' }, 'n'),
-								'表示搜索中 ',
+								el('div', { className: 'search-infos-num' }, '1'),
+								'表示等待处理中',
 								el('br'),
-								el('div', { className: 'search-infos-num resolving' }, 'n'),
-								'表示已搜索但未开始答题 ',
+								el('div', { className: 'search-infos-num requested' }, '1'),
+								'表示已完成搜索 ',
 								el('br'),
-								el('div', { className: 'search-infos-num' }, 'n'),
+								el('div', { className: 'search-infos-num finish' }, '1'),
 								'表示已搜索已答题 '
 							]);
 
@@ -992,12 +1000,12 @@ export const CommonProject = Project.create({
 									[
 										$creator.space(
 											[
-												el('span', `当前搜题: ${this.cfg.requestFinished + 1}/${this.cfg.totalQuestionCount}`),
-												el('span', `当前答题: ${this.cfg.resolverIndex + 1}/${this.cfg.totalQuestionCount}`),
+												el('span', `已搜题: ${this.cfg.requestedCount}/${this.cfg.totalQuestionCount}`),
+												el('span', `已答题: ${this.cfg.resolvedCount}/${this.cfg.totalQuestionCount}`),
 												el('a', '提示', (btn) => {
 													btn.style.cursor = 'pointer';
 													btn.onclick = () => {
-														$modal('confirm', { content: tip });
+														$modal('confirm', { content: tip, footer: undefined });
 													};
 												})
 											],
@@ -1045,7 +1053,7 @@ export const CommonProject = Project.create({
 									} else {
 										error.innerText = '此题未完成, 可能是没有匹配的选项。';
 										return el('div', [
-											...(result.finish ? [] : [result.requested === false ? '正在等待答题中，请稍等。' : error]),
+											...(result.finish ? [] : [result.resolved === false ? '正在等待答题中，请稍等。' : error]),
 											el('search-infos-element', {
 												infos: result.searchInfos,
 												question: result.question
@@ -1060,8 +1068,8 @@ export const CommonProject = Project.create({
 
 						render();
 						this.onConfigChange('type', render);
-						this.onConfigChange('requestFinished', render);
-						this.onConfigChange('resolverIndex', render);
+						this.onConfigChange('requestedCount', render);
+						this.onConfigChange('resolvedCount', render);
 						$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
 
 						return container;

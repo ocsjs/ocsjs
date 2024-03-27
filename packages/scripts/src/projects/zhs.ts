@@ -892,7 +892,7 @@ function gxkWorkAndExam(
 			if (curr.result?.finish) {
 				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
 			}
-			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}
 	});
 
@@ -959,8 +959,8 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
-	let requestFinished = 0;
-	let resolverIndex = 0;
+	let requestedCount = 0;
+	let resolvedCount = 0;
 
 	const worker = new OCSWorker({
 		root: '.questionBox',
@@ -1015,8 +1015,8 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 				workResults.push(...simplifyWorkResult([current], titleTransform));
 				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
-				requestFinished++;
-				resolverIndex++;
+				requestedCount++;
+				resolvedCount++;
 			}
 
 			if (current.result?.finish) {
@@ -1026,8 +1026,8 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 			}
 			CommonProject.scripts.workResults.methods.updateWorkState({
 				totalQuestionCount,
-				requestFinished,
-				resolverIndex
+				requestedCount,
+				resolvedCount
 			});
 		}
 	});

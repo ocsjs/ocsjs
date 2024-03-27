@@ -718,7 +718,7 @@ function workOrExam(
 		/** 完成答题后 */
 		onResultsUpdate(current, _, res) {
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleTransform));
-			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 			if (current.result?.finish) {
 				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], workOrExamQuestionTitleTransform)
@@ -1598,7 +1598,7 @@ async function chapterTestTask(
 					simplifyWorkResult([curr], chapterTestTaskQuestionTitleTransform)
 				);
 			}
-			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 
 			// 没有完成时随机作答
 			if (curr.result?.finish === false && curr.resolved === true) {

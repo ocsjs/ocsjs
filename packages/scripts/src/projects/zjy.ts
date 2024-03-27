@@ -381,7 +381,7 @@ function workOrExam(
 			if (curr.result?.finish) {
 				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
 			}
-			CommonProject.scripts.workResults.methods.updateWorkState(worker);
+			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}
 	});
 
