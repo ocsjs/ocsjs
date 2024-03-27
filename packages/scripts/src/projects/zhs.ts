@@ -886,11 +886,16 @@ function gxkWorkAndExam(
 			}
 		},
 		/** 完成答题后 */
-		onResultsUpdate(curr, _, res) {
+		onResultsUpdate(curr, index, res) {
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
 
 			if (curr.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
+				const title = allExamParts[index]?.name;
+				if (title) {
+					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+						simplifyWorkResult([curr], (_: any, __: number) => title)
+					);
+				}
 			}
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}
