@@ -114,8 +114,10 @@ export class ConfigElement<T extends keyof ConfigTagMap = 'input'> extends IElem
 							const _max = max ? parseFloat(max) : undefined;
 							if (_min && val < _min) {
 								this.provider.value = _min.toString();
+								$store.set(this.key, parseFloat(this.provider.value));
 							} else if (_max && val > _max) {
 								this.provider.value = _max.toString();
+								$store.set(this.key, parseFloat(this.provider.value));
 							} else {
 								$store.set(this.key, val);
 							}
