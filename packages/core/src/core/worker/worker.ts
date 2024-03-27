@@ -201,6 +201,10 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				let res: ResolverResult | undefined;
 
 				try {
+					/** 检查是否暂停中 */
+					if (this.isStop) {
+						await waitForContinuate(() => this.isStop);
+					}
 					/** 等待搜题完毕 */
 					await waitForRequested(result);
 
