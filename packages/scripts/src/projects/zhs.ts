@@ -912,13 +912,24 @@ function gxkWorkAndExam(
 	worker
 		.doWork()
 		.then(async () => {
+			// 如果被强制关闭，则不进行保存操作
+			if (worker.isClose === true) {
+				return;
+			}
 			$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
 			await $.sleep(stopSecondWhenFinish * 1000);
-
+			// @ts-ignore
+			if (worker.isClose === true) {
+				return;
+			}
 			/**
 			 * 保存题目，不在选择答案后保存的原因是，如果答题线程大于3会导致题目错乱，因为 resolverIndex 并不是顺序递增的
 			 */
 			for (let index = 0; index < worker.totalQuestionCount; index++) {
+				// @ts-ignore
+				if (worker.isClose === true) {
+					return;
+				}
 				const modal = $modal('alert', {
 					content: '正在保存题目中（必须保存，否则填写的答案无效），<br>请勿操作...',
 					confirmButton: null

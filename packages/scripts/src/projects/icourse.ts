@@ -490,11 +490,16 @@ function workAndExam(
 	worker
 		.doWork()
 		.then(async (results) => {
+			if (worker.isClose) {
+				return;
+			}
 			if (type === 'chapter-test') {
 				$message('info', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
 				$console.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
 				await $.sleep(stopSecondWhenFinish * 1000);
-
+				if (worker.isClose) {
+					return;
+				}
 				// 处理提交
 				await worker.uploadHandler({
 					type: upload,
@@ -507,7 +512,9 @@ function workAndExam(
 						$message('success', { content: content, duration: 0 });
 
 						await $.sleep(3000);
-
+						if (worker.isClose) {
+							return;
+						}
 						if (uploadable) {
 							const sumbit = document.querySelector('.j-submit');
 							if (sumbit) {
