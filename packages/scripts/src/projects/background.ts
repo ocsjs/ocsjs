@@ -681,7 +681,7 @@ export const BackgroundProject = Project.create({
 
 				const getId = () => Math.random().toString(16).slice(2);
 
-				const addRecord = (item: typeof this.cfg.list[number]) => {
+				const addRecord = (item: (typeof this.cfg.list)[number]) => {
 					this.cfg.list = [item, ...this.cfg.list];
 					if (this.cfg.list.length > 100) {
 						this.cfg.list = this.cfg.list.slice(0, 100);

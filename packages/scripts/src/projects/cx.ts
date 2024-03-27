@@ -618,9 +618,6 @@ function workOrExam(
 			/** 完形填空 */
 			filling: '.filling_answer'
 		},
-		/** 其余配置 */
-		requestPeriod: period ?? 3,
-		resolvePeriod: 0,
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		answerMatchMode: answerMatchMode,
@@ -631,8 +628,8 @@ function workOrExam(
 				const title = workOrExamQuestionTitleTransform(elements.title);
 				if (title) {
 					const typeInput = elements.type[0] as HTMLInputElement;
-
-					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+						await $.sleep((period ?? 3) * 1000);
 						return defaultAnswerWrapperHandler(answererWrappers, {
 							type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
 							title,
@@ -657,11 +654,12 @@ function workOrExam(
 				return await resolver(
 					searchInfos,
 					elements.options.map((option) => optimizationElementWithImage(option)),
-					(type, answer, option) => {
+					async (type, answer, option) => {
 						// 如果存在已经选择的选项
 						if (type === 'judgement' || type === 'single' || type === 'multiple') {
 							if (option?.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
 								option.click();
+								await $.sleep(500);
 							}
 						} else if (type === 'completion' && answer.trim()) {
 							const text = option?.querySelector('textarea');
@@ -675,6 +673,7 @@ function workOrExam(
 							if (option?.parentElement?.parentElement) {
 								/** 如果存在保存按钮则点击 */
 								$el('[onclick*=saveQuestion]', option?.parentElement?.parentElement)?.click();
+								await $.sleep(500);
 							}
 						}
 					}
@@ -1494,9 +1493,6 @@ async function chapterTestTask(
 			lineAnswerInput: '.line_answer input[name^=answer]',
 			lineSelectBox: '.line_answer_ct .selectBox '
 		},
-		/** 其余配置 */
-		requestPeriod: period ?? 3,
-		resolvePeriod: 0,
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		answerMatchMode: answerMatchMode,
@@ -1506,7 +1502,8 @@ async function chapterTestTask(
 			if (title) {
 				const typeInput = elements.type[0] as HTMLInputElement;
 
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+					await $.sleep((period ?? 3) * 1000);
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
 						title,

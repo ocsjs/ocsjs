@@ -423,9 +423,6 @@ function workAndExam(
 			title: '.j-title .j-richTxt',
 			options: '.choices li,.inputArea'
 		},
-		/** 其余配置 */
-		requestPeriod: period ?? 3,
-		resolvePeriod: 1,
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		answerMatchMode: answerMatchMode,
@@ -433,7 +430,8 @@ function workAndExam(
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+					await $.sleep((period ?? 3) * 1000);
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,

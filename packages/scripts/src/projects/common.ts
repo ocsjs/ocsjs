@@ -448,13 +448,13 @@ export const CommonProject = Project.create({
 					defaultValue: 1
 				},
 				period: {
-					label: '答题间隔（秒）',
+					label: '搜题间隔（秒）',
 					attrs: {
 						type: 'number',
-						min: 0,
+						min: 1,
 						step: 1,
 						max: 60,
-						title: '每道题的间隔时间，不建议太低，避免增加服务器压力。'
+						title: '每道题的搜题间隔时间，不建议太低，避免增加服务器压力。'
 					},
 					defaultValue: 3
 				},

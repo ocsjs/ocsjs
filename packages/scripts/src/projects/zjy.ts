@@ -312,9 +312,6 @@ function workOrExam(
 			title: type === 'work' ? 'h2,h3,h4,h5,h6' : '.titleTest span:not(.xvhao)',
 			options: '.optionList div , .tkInput .el-input, .tkInput .el-textarea'
 		},
-		/** 其余配置 */
-		requestPeriod: period ?? 3,
-		resolvePeriod: 1,
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		answerMatchMode: answerMatchMode,
@@ -322,7 +319,8 @@ function workOrExam(
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+					await $.sleep((period ?? 3) * 1000);
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,

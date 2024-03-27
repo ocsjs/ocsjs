@@ -1,7 +1,6 @@
 import { QuestionResolver, WorkContext } from './interface';
 import { resolvePlainAnswer, splitAnswer } from './utils';
 import { answerSimilar, removeRedundant, clearString, answerExactMatch } from '../utils/string';
-import { $ } from '../../utils/common';
 import { StringUtils } from '../../utils/string';
 
 /** 默认答案题目处理器 */
@@ -38,7 +37,6 @@ export function defaultQuestionResolve<E>(
 				if (index !== -1 && max > 0.6) {
 					/** 经自定义的处理器进行处理 */
 					await handler('single', ans, options[index], ctx);
-					await $.sleep(500);
 					return {
 						finish: true,
 						ratings: ratings.map((r) => r.rating)
@@ -49,7 +47,6 @@ export function defaultQuestionResolve<E>(
 				const index = optionStrings.findIndex((option) => result.includes(option));
 				if (result.length) {
 					await handler('single', options[index].innerText, options[index], ctx);
-					await $.sleep(500);
 					return {
 						finish: true
 					};
@@ -66,7 +63,6 @@ export function defaultQuestionResolve<E>(
 							continue;
 						}
 						await handler('single', options[index].innerText, options[index], ctx);
-						await $.sleep(500);
 						return { finish: true, option: options[index] };
 					}
 				}
@@ -180,8 +176,6 @@ export function defaultQuestionResolve<E>(
 				if (sorted_similar_list[0]) {
 					for (let i = 0; i < sorted_similar_list[0].options.length; i++) {
 						await handler('multiple', sorted_similar_list[0].answers[i], sorted_similar_list[0].options[i], ctx);
-						// 暂停一会防止点击过快
-						await $.sleep(500);
 					}
 
 					return { finish: true, sorted_similar_list, targetOptions, targetAnswers };
@@ -191,8 +185,6 @@ export function defaultQuestionResolve<E>(
 				if (sorted_exact_list[0]) {
 					for (let i = 0; i < sorted_exact_list[0].length; i++) {
 						await handler('multiple', sorted_exact_list[0][i].innerText, sorted_exact_list[0][i], ctx);
-						// 暂停一会防止点击过快
-						await $.sleep(500);
 					}
 
 					return {
@@ -218,7 +210,6 @@ export function defaultQuestionResolve<E>(
 							continue;
 						}
 						await handler('single', options[index].innerText, options[index], ctx);
-						await $.sleep(500);
 						plainOptions.push(options[index]);
 					}
 				}
@@ -284,13 +275,11 @@ export function defaultQuestionResolve<E>(
 						if (answerShowCorrect && textShowCorrect) {
 							option = el;
 							await handler('judgement', answerShowCorrect, el, ctx);
-							await $.sleep(500);
 							break;
 						}
 						if (answerShowIncorrect && textShowIncorrect) {
 							option = el;
 							await handler('judgement', answerShowIncorrect, el, ctx);
-							await $.sleep(500);
 							break;
 						}
 					}
@@ -299,7 +288,10 @@ export function defaultQuestionResolve<E>(
 				}
 
 				function matches(target: string, options: string[]) {
-					return options.some((option) => RegExp(clearString(option, '√', '×')).test(clearString(target, '√', '×')));
+					return options.some(
+						(option) =>
+							clearString(removeRedundant(option), '√', '×') === clearString(removeRedundant(target), '√', '×')
+					);
 				}
 			}
 
@@ -323,12 +315,10 @@ export function defaultQuestionResolve<E>(
 						for (let index = 0; index < options.length; index++) {
 							const element = options[index];
 							await handler('completion', ans[index], element, ctx);
-							await $.sleep(500);
 						}
 						return { finish: true };
 					} else if (options.length === 1) {
 						await handler('completion', ans.join(' '), options[0], ctx);
-						await $.sleep(500);
 						return { finish: true };
 					}
 

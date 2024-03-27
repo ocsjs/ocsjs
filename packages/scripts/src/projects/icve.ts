@@ -518,9 +518,6 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 				// 单行填空题
 				'.answerOption'
 		},
-		/** 其余配置 */
-		requestPeriod: period ?? 3,
-		resolvePeriod: 1,
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		answerMatchMode: answerMatchMode,
@@ -528,7 +525,8 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+					await $.sleep((period ?? 3) * 1000);
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: getType(ctx.elements.options) || 'unknown',
 						title,
@@ -627,13 +625,13 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 	(async () => {
 		while (next && worker.isClose === false) {
 			await worker.doWork({ enable_debug: true });
-			await $.sleep((period ?? 3) * 1000);
+			await $.sleep(1000);
 			next = getNextBtn();
 			if (next.style.display === 'none') {
 				break;
 			} else {
 				next?.click();
-				await $.sleep((period ?? 3) * 1000);
+				await $.sleep(1000);
 			}
 		}
 

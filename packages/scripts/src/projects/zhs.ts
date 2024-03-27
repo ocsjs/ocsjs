@@ -807,9 +807,7 @@ function gxkWorkAndExam(
 		div.innerHTML = allExamParts[index]?.name || '题目读取失败';
 		return removeRedundantWords(optimizationElementWithImage(div).innerText || '', redundanceWordsText.split('\n'));
 	};
-
-	let index = 0;
-
+	let request_index = 0;
 	/** 新建答题器 */
 	const worker = new OCSWorker({
 		root: '.examPaper_subject',
@@ -833,17 +831,15 @@ function gxkWorkAndExam(
 					return t;
 				})
 		},
-		/** 其余配置 */
-		requestPeriod: period ?? 3,
-		resolvePeriod: 1,
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
-			const title = titleTransform(undefined, index++);
+			const title = titleTransform(undefined, request_index++);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+					await $.sleep((period ?? 3) * 1000);
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
@@ -872,15 +868,17 @@ function gxkWorkAndExam(
 				}
 			},
 			/** 自定义处理器 */
-			handler(type, answer, option) {
+			async handler(type, answer, option) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
 					if (!option.querySelector('input')?.checked) {
 						option.click();
+						await $.sleep(200);
 					}
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector('textarea');
 					if (text) {
 						text.value = answer;
+						await $.sleep(200);
 					}
 				}
 			}
@@ -911,7 +909,7 @@ function gxkWorkAndExam(
 
 	worker
 		.doWork()
-		.then(async () => {
+		.then(async (res) => {
 			// 如果被强制关闭，则不进行保存操作
 			if (worker.isClose === true) {
 				return;
@@ -985,9 +983,6 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 			options: '.optionUl label',
 			questionTit: '.questionTit'
 		},
-		/** 其余配置 */
-		requestPeriod: period ?? 3,
-		resolvePeriod: 1,
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		answerMatchMode: answerMatchMode,
@@ -995,7 +990,8 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, () => {
+				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+					await $.sleep((period ?? 3) * 1000);
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
@@ -1008,15 +1004,17 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 		},
 		work: {
 			/** 自定义处理器 */
-			handler(type, answer, option, ctx) {
+			async handler(type, answer, option, ctx) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
 					if (option.querySelector('input')?.checked === false) {
 						option.click();
+						await $.sleep(200);
 					}
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector('textarea');
 					if (text) {
 						text.value = answer;
+						await $.sleep(200);
 					}
 				}
 			}
@@ -1054,10 +1052,10 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 	(async () => {
 		while (next && worker.isClose === false) {
 			await worker.doWork();
-			await $.sleep((period ?? 3) * 1000);
+			await $.sleep(1000);
 			next = getBtn();
 			next?.click();
-			await $.sleep((period ?? 3) * 1000);
+			await $.sleep(1000);
 		}
 
 		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });

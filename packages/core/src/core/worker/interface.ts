@@ -200,10 +200,6 @@ export type WorkOptions<E extends RawElements> = {
 	answerer: AnswererType<E>;
 	/** 工作器 */
 	work: DefaultWork<E> | CustomWork<E>;
-	/** 查题间隔（秒） */
-	requestPeriod?: number;
-	/** 答题间隔（秒）, 如果过快可能导致保存答案失败啊，或者被检测到 */
-	resolvePeriod?: number;
 	/** 多线程数量（个） */
 	thread?: number;
 	/** 分隔符 */
