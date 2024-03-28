@@ -418,15 +418,18 @@ export const RenderScript = new Script({
 			$elements.root.append(container);
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);
-
 			// 监听快捷键
-			window.addEventListener('keydown', (e) => {
-				if (e.ctrlKey && e.key === 'o') {
-					e.stopPropagation();
-					e.preventDefault();
-					this.cfg.visual = this.cfg.visual === 'close' ? 'normal' : 'close';
-				}
-			});
+			window.addEventListener(
+				'keydown',
+				(e) => {
+					if (e.ctrlKey && e.key === 'o') {
+						e.stopPropagation();
+						e.preventDefault();
+						this.cfg.visual = this.cfg.visual === 'close' ? 'normal' : 'close';
+					}
+				},
+				{ capture: true }
+			);
 
 			// 首先处理窗口状态，防止下方的IO速度过慢可能导致窗口闪烁
 			handleVisible();
