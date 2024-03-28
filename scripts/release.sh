@@ -32,10 +32,10 @@ if [ "$isRelease" = "y" ]; then
     git add package.json CHANGELOG.md CHANGELOG_CURRENT.md &&
     git commit -m "version release $version" &&
     git tag "$version" &&
-    # 发布
+    # 发布到Github
+    git push origin 4.0 --tags &&
+    # 发布到npm
     npm publish &&
-    # 提交
-    git push origin 4.0 --tags
     echo "$version 发布成功"
     elif [ "$isRelease" = "n" ]; then
     echo "取消发布"
