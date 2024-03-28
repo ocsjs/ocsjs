@@ -591,7 +591,14 @@ export function $menu(label: string, config: { scriptPanelLink?: ScriptIdentify 
 	const btn = el('button', label);
 	btn.addEventListener('click', () => {
 		if (config.scriptPanelLink) {
-			RenderScript.methods.pin(config.scriptPanelLink);
+			// 置顶脚本页面
+			RenderScript.methods
+				.pin(config.scriptPanelLink)
+				.then(() => {
+					// 最大化窗口
+					RenderScript.methods.normal();
+				})
+				.catch(console.error);
 		}
 	});
 	if (config.scriptPanelLink) {

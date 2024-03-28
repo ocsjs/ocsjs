@@ -700,11 +700,11 @@ modal-element.confirm .modal-input {
   margin-left: 0.25em;
 }
 .minimize .body,
-.minimize .header .dropdown,
+.minimize header-element .dropdown,
 .minimize .footer {
   display: none;
 }
-.minimize .header {
+.minimize header-element {
   padding: 8px;
   border-radius: 8px;
   box-shadow: 0px 0px 24px -12px black;
