@@ -17,6 +17,12 @@ export class Project<T extends Record<string, Script> = Record<string, Script>> 
 	constructor({ name, domains, scripts, studyProject }: ProjectOptions<T>) {
 		this.name = name;
 		this.domains = domains;
+		for (const key in scripts) {
+			if (Object.prototype.hasOwnProperty.call(scripts, key)) {
+				const element = scripts[key];
+				element.projectName = name;
+			}
+		}
 		this.scripts = scripts;
 		this.studyProject = studyProject;
 	}

@@ -13,8 +13,8 @@ export const $elements = {
 	root,
 	/** 消息内容元素 */
 	messageContainer: el('div', { className: 'message-container' }),
+	/** 额外的菜单栏 */
+	extraMenuBar: el('div', { className: 'extra-menu-bar' }),
 	/** 悬浮提示 */
 	tooltip: el('div', { className: 'tooltip' })
 };
-
-root.append($elements.messageContainer, $elements.tooltip);

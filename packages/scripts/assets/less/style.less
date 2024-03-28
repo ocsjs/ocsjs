@@ -127,13 +127,35 @@ container-element {
 @base-height: 32px;
 @size: 18px;
 
-.header {
+header-element {
 	display: flex;
 	align-items: center;
 	background-color: white;
 	border-radius: 8px 8px 0px 0px;
 	user-select: none;
 	padding: 4px;
+	padding-bottom: 0px;
+
+	.extra-menu-bar {
+		width: 100%;
+		padding: 4px;
+		padding-bottom: 0px;
+		margin-top: 4px;
+		border-top: 1px solid #e8e8e8;
+		/** 默认隐藏，一直到需要激活的时候再更改 */
+		display: none;
+
+		.script-panel-link {
+			.base-style-button-secondary();
+
+			padding-bottom: 2px;
+			margin-bottom: 0px;
+		}
+
+		.script-panel-link + .script-panel-link {
+			margin-left: 4px;
+		}
+	}
 
 	.profile {
 		flex: 1;

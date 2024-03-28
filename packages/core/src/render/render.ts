@@ -50,6 +50,11 @@ export type ModalAttrs = Pick<
 
 export type MessageAttrs = Pick<MessageElement, 'duration' | 'onClose' | 'content' | 'closeable'>;
 
+/**
+ * Script唯一识别码，通过 namespace 或者 projectName-name 来进行判断
+ */
+export type ScriptIdentify = { namespace?: string; projectName?: string; name?: string } | Script;
+
 const minimizeSvg =
 	'<svg xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 0 24 24" width="24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M19 13H5v-2h14v2z"/></svg>';
 const expandSvg =
@@ -122,7 +127,7 @@ export const RenderScript = new Script({
 			 * 因为在 4.2.x 版本之后，所有面板都会进行显示，某些脚本可以根据这个方法是否已显示在页面中
 			 * @param script 脚本
 			 */
-			isPinned: async (script: Script) => {
+			isPinned: async (script: ScriptIdentify) => {
 				const currentPanelName = await $store.getTab($const.TAB_CURRENT_PANEL_NAME);
 				return isCurrentPanel(script.projectName, script, currentPanelName);
 			},
@@ -130,7 +135,7 @@ export const RenderScript = new Script({
 			 * 将当前的脚本置顶
 			 * @param script 脚本
 			 */
-			pin: async (script: Script) => {
+			pin: async (script: ScriptIdentify) => {
 				if (script.projectName) {
 					await $store.setTab($const.TAB_CURRENT_PANEL_NAME, `${script.projectName}-${script.name}`);
 				} else if (script.namespace) {
@@ -282,7 +287,16 @@ export const RenderScript = new Script({
 			container.header.visualSwitcher = visualSwitcher;
 
 			container.header.replaceChildren();
-			container.header.append(profile, ...scriptDropdowns, container.header.visualSwitcher || '');
+			container.header.append(
+				el('div', { style: { width: '100%' } }, [
+					el('div', { style: { display: 'flex', width: '100%' } }, [
+						profile,
+						...scriptDropdowns,
+						container.header.visualSwitcher || ''
+					]),
+					el('div', { style: { display: 'flex', width: '100%' } }, [$elements.extraMenuBar])
+				])
+			);
 		};
 
 		/** 处理面板位置 */
@@ -357,9 +371,7 @@ export const RenderScript = new Script({
 
 						if (isCurrentPanel(project.name, script, currentPanelName)) {
 							// 生成脚本面板
-							const panel = $creator.scriptPanel(script, {
-								projectName: project.name
-							});
+							const panel = $creator.scriptPanel(script);
 							script.projectName = project.name;
 							script.panel = panel;
 							script.header = container.header;
@@ -414,7 +426,7 @@ export const RenderScript = new Script({
 			$store.setTab($const.TAB_URLS, []);
 
 			// 创建样式元素
-			container.append(el('style', {}, style || ''), $elements.messageContainer);
+			container.append(el('style', {}, style || ''), $elements.messageContainer, $elements.tooltip);
 			$elements.root.append(container);
 			// 随机位置插入操作面板到页面
 			document.body.children[$.random(0, document.body.children.length - 1)].after($elements.panel);
@@ -565,8 +577,36 @@ export function $message(type: MessageElement['type'], attrs: MessageAttrs) {
 	}
 }
 
+/**
+ * 注册额外菜单栏
+ * @param label	名称
+ * @param config 设置
+ */
+export function $menu(label: string, config: { scriptPanelLink?: ScriptIdentify }) {
+	if (self !== top) {
+		return;
+	}
+	$elements.extraMenuBar.style.display = 'flex';
+
+	const btn = el('button', label);
+	btn.addEventListener('click', () => {
+		if (config.scriptPanelLink) {
+			RenderScript.methods.pin(config.scriptPanelLink);
+		}
+	});
+	if (config.scriptPanelLink) {
+		const full_name =
+			(config.scriptPanelLink.projectName ? config.scriptPanelLink.projectName + ' -> ' : '') +
+			config.scriptPanelLink.name;
+		btn.title = '快捷跳转：' + full_name;
+		btn.classList.add('script-panel-link');
+	}
+	$elements.extraMenuBar.append(btn);
+	return btn;
+}
+
 /** 判断这个脚本是否为当前显示页面 */
-function isCurrentPanel(projectName: string | undefined, script: Script, currentPanelName: string) {
+function isCurrentPanel(projectName: string | undefined, script: ScriptIdentify, currentPanelName: string) {
 	return projectName + '-' + script.name === currentPanelName || script.namespace === currentPanelName;
 }
 

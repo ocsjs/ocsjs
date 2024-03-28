@@ -22,7 +22,8 @@ import {
 	$modal,
 	$message,
 	el,
-	$store
+	$store,
+	$menu
 } from '@ocsjs/core';
 
 import { CommonProject } from './common';
@@ -31,7 +32,7 @@ import { commonWork, optimizationElementWithImage, removeRedundantWords, simplif
 import md5 from 'md5';
 // @ts-ignore
 import Typr from 'typr.js';
-import { $console } from './background';
+import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 
 try {
@@ -511,6 +512,12 @@ export const CXProject = Project.create({
 			namespace: 'cx.new.study-dispatcher',
 			hideInPanel: true,
 			async oncomplete() {
+				$menu('🖥️', { scriptPanelLink: CXProject.scripts.study });
+				$menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
+				$menu('🌏', { scriptPanelLink: CommonProject.scripts.workResults });
+				$menu('📄', { scriptPanelLink: BackgroundProject.scripts.console });
+				$menu('📥', { scriptPanelLink: BackgroundProject.scripts.update });
+
 				// 开始任务切换
 				const restudy = CXProject.scripts.study.cfg.restudy;
 

@@ -114,7 +114,7 @@ export const $creator = {
 		});
 	},
 	// 创建脚本面板
-	scriptPanel(script: Script, opts: { projectName: string; onload?: (el: ConfigElement) => void }) {
+	scriptPanel(script: Script, opts?: { onload?: (el: ConfigElement) => void }) {
 		const scriptPanel = el('script-panel-element', { name: script.name });
 
 		// 监听提示内容改变
@@ -134,7 +134,7 @@ export const $creator = {
 				// 如果存在分隔符
 				if (cfg.separator) {
 					// 将之前的配置项生成配置区域，并添加到列表中
-					elList.push($creator.configsArea($creator.configs(script.namespace, configs || {}, opts.onload)));
+					elList.push($creator.configsArea($creator.configs(script.namespace, configs || {}, opts?.onload)));
 					// 添加分隔符
 					elList.push(el('div', { className: 'separator', style: { margin: '0px 8px' } }, cfg.separator));
 					// 清空配置项
@@ -146,7 +146,7 @@ export const $creator = {
 		}
 		// 如果还有剩余的配置项，生成配置区域，并添加到列表中
 		if (Object.keys(configs).length > 0) {
-			elList.push($creator.configsArea($creator.configs(script.namespace, configs || {}, opts.onload)));
+			elList.push($creator.configsArea($creator.configs(script.namespace, configs || {}, opts?.onload)));
 		}
 
 		scriptPanel.configsContainer.replaceChildren(...elList);

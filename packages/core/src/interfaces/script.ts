@@ -192,6 +192,13 @@ export class Script<
 		$store.removeChangeListener(listener);
 	}
 
+	/**
+	 * 获取全路径名
+	 */
+	public fullName() {
+		return this.projectName ? `${this.projectName}-${this.name}` : this.name;
+	}
+
 	private errorHandler(func?: Function) {
 		return (...args: any[]) => {
 			try {
