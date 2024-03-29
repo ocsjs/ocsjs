@@ -89,7 +89,6 @@ type Job = {
 	attachment: Attachment;
 	func: { (): Promise<void> } | undefined;
 };
-
 export const CXProject = Project.create({
 	name: '超星学习通',
 	domains: [
@@ -104,7 +103,8 @@ export const CXProject = Project.create({
 		'ynny.cn',
 		'hnvist.cn',
 		'fjlecb.cn',
-		'gdhkmooc.com'
+		'gdhkmooc.com',
+		'cugbonline.cn'
 	],
 	studyProject: true,
 	scripts: {
