@@ -279,7 +279,7 @@ export const BackgroundProject = Project.create({
 												panel.configsContainer.prepend(panel.lockWrapper);
 
 												panel.lockWrapper.title =
-													'🚫已同步OCS软件配置，如需修改请在软件设置中修改。或者前往 后台-软件配置同步 关闭配置同步。';
+													'🚫已同步OCS桌面版软件配置，如需修改请在桌面版软件的左侧栏设置-通用设置-OCS配置，中进行修改。或者前往脚本悬浮窗:后台-软件配置同步 关闭配置同步功能。';
 												panel.lockWrapper = $creator.tooltip(panel.lockWrapper);
 											}
 										};
