@@ -43,7 +43,6 @@ const state = {
 export const ZHSProject = Project.create({
 	name: '知到智慧树',
 	domains: ['zhihuishu.com'],
-	studyProject: true,
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',

@@ -61,7 +61,6 @@ export const IcveMoocProject = Project.create({
 		// 智慧职教套壳
 		'courshare.cn'
 	],
-	studyProject: true,
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',

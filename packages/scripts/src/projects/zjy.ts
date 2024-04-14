@@ -42,7 +42,6 @@ const isExam = window.location.href.includes('icve-study/coursePreview/test');
 export const ZJYProject = Project.create({
 	name: '职教云',
 	domains: ['icve.com.cn', 'zjy2.icve.com.cn', 'zyk.icve.com.cn'],
-	studyProject: true,
 	scripts: {
 		guide: new Script({
 			name: '🖥️ 使用提示',

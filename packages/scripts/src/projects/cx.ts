@@ -106,7 +106,6 @@ export const CXProject = Project.create({
 		'gdhkmooc.com',
 		'cugbonline.cn'
 	],
-	studyProject: true,
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',
@@ -1700,6 +1699,8 @@ async function chapterTestTask(
 				/** 确定按钮 */
 				// @ts-ignore 确定
 				frameWindow.submitCheckTimes();
+				// @ts-ignore 2024/4 更新后上方函数无法关闭弹窗，需要手动关闭确定弹窗
+				top.$('#workpop').hide();
 			} else {
 				// @ts-ignore 禁止弹窗
 				frameWindow.alert = () => {};

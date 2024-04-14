@@ -18,7 +18,7 @@ import {
 } from '@ocsjs/core';
 
 import type { AnswerMatchMode, AnswererWrapper, SearchInformation, StoreListenerType } from '@ocsjs/core';
-import { definedProjects } from '../index';
+import { CXProject, ICourseProject, IcveMoocProject, ZHSProject, ZJYProject } from '../index';
 import { markdown } from '../utils/markdown';
 import { enableCopy } from '../utils';
 
@@ -1627,17 +1627,15 @@ const createGuide = () => {
 	return el('div', { className: 'user-guide card' }, [
 		el('div', { className: 'separator', style: { padding: '12px 0px' } }, '✨ 支持的网课平台'),
 		el('div', [
-			...definedProjects()
-				.filter((p) => p.studyProject)
-				.map((project) => {
-					const btn = el('button', { className: 'base-style-button-secondary', style: { margin: '4px' } }, [
-						project.name
-					]);
-					btn.onclick = () => {
-						showProjectDetails(project);
-					};
-					return btn;
-				})
+			...[CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject].map((project) => {
+				const btn = el('button', { className: 'base-style-button-secondary', style: { margin: '4px' } }, [
+					project.name
+				]);
+				btn.onclick = () => {
+					showProjectDetails(project);
+				};
+				return btn;
+			})
 		]),
 		el('div', { className: 'separator', style: { padding: '12px 0px' } }, '📖 使用教程'),
 		$creator.notes(

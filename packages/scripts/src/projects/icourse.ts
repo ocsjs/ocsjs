@@ -26,7 +26,6 @@ const state = {
 export const ICourseProject = Project.create({
 	name: '中国大学MOOC',
 	domains: ['icourse163.org'],
-	studyProject: true,
 	scripts: {
 		dispatcher: new Script({
 			name: '调度器',
