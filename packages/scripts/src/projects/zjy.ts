@@ -18,14 +18,17 @@ const state = {
 };
 
 const work_pages: [string, string][] = [
-	['资源库作业页面', 'study/spockeepTest'],
+	// 暂时不知道为什么资源库作业有两个不一样的链接
+	['资源库keep作业页面', 'study/spockeepTest'],
+	['资源库job作业页面', '/study/spocjobTest'],
 	['作业页面', 'icve-study/coursePreview/jobTes'],
 	['考试页面', 'icve-study/coursePreview/test']
 ];
 
 const isWork =
 	window.location.href.includes('icve-study/coursePreview/jobTes') ||
-	window.location.href.includes('study/spockeepTest');
+	window.location.href.includes('study/spockeepTest') ||
+	window.location.href.includes('study/spocjobTest');
 const isExam = window.location.href.includes('icve-study/coursePreview/test');
 
 /**
@@ -45,7 +48,7 @@ export const ZJYProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '🖥️ 使用提示',
-			url: [
+			matches: [
 				['学习页面', 'zjy2.icve.com.cn/study'],
 				['资源库', 'zyk.icve.com.cn/icve-study/']
 			],
@@ -58,7 +61,7 @@ export const ZJYProject = Project.create({
 		}),
 		dispatcher: new Script({
 			name: '调度器',
-			url: [
+			matches: [
 				['学习页面', 'zjy2.icve.com.cn/study'],
 				['资源库', 'zyk.icve.com.cn/icve-study/']
 			],
@@ -93,7 +96,7 @@ export const ZJYProject = Project.create({
 			}
 		}),
 		study: new Script({
-			url: [
+			matches: [
 				['学习页面', 'zjy2.icve.com.cn/study/coursePreview/spoccourseIndex/courseware'],
 				['资源库学习页面', 'zyk.icve.com.cn/icve-study/coursePreview/courseware']
 			],
@@ -161,7 +164,7 @@ export const ZJYProject = Project.create({
 			}
 		}),
 		work: new Script({
-			url: work_pages,
+			matches: work_pages,
 			name: '✍️ 作业考试脚本',
 			namespace: 'zjy.work.main',
 			configs: {
