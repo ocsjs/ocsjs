@@ -1413,11 +1413,14 @@ async function mediaTask(
 		// 重置视频进度
 		media.currentTime = 0;
 
-		playMedia(() => media.play())
-			.then(() => {
-				media.playbackRate = playbackRate;
-			})
-			.catch(reject);
+		// 使用 setTimeout 解决 The play() request was interrupted by a call to pause() 问题
+		setTimeout(() => {
+			playMedia(() => media.play())
+				.then(() => {
+					media.playbackRate = playbackRate;
+				})
+				.catch(reject);
+		}, 200);
 	});
 }
 
