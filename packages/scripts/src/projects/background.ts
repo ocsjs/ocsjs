@@ -605,6 +605,7 @@ export const BackgroundProject = Project.create({
 										? [h('div', { style: { color: 'white', textAlign: 'center' } }, '暂无数据')]
 										: []),
 									...list.map((item) =>
+										// @ts-ignore
 										h(
 											'div',
 											{

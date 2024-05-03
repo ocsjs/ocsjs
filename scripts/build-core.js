@@ -22,7 +22,11 @@ function cleanOutput() {
 
 async function buildPackages() {
 	// @ts-ignore
+	await execOut('tsc', { cwd: '../packages/core' });
+	// @ts-ignore
 	await execOut('vite build', { cwd: '../packages/core' });
+	// @ts-ignore
+	await execOut('tsc', { cwd: '../packages/scripts' });
 	// @ts-ignore
 	await execOut('vite build', { cwd: '../packages/scripts' });
 }
