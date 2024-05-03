@@ -1,31 +1,25 @@
 import debounce from 'lodash/debounce';
 import {
-	el,
 	defaultAnswerWrapperHandler,
-	$message,
 	AnswerWrapperParser,
-	$gm,
-	$store,
-	Project,
-	Script,
 	request,
-	$creator,
 	SimplifyWorkResult,
-	RenderScript,
 	$,
 	WorkUploadType,
-	$modal
+	createQuestionTitleExtra
 } from '@ocsjs/core';
-
-import type { AnswerMatchMode, AnswererWrapper, SearchInformation, StoreListenerType } from '@ocsjs/core';
+import { $message, h, $gm, $store, Project, Script, $modal, StoreListenerType, $ui } from 'easy-us';
+import type { AnswerMatchMode, AnswererWrapper, SearchInformation } from '@ocsjs/core';
 import { CXProject, ICourseProject, IcveMoocProject, ZHSProject, ZJYProject } from '../index';
 import { markdown } from '../utils/markdown';
 import { enableCopy } from '../utils';
+import { SearchInfosElement } from '../elements/search.infos';
+import { RenderScript } from '../render';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
 const gotoHome = () => {
-	const btn = el('button', { className: 'base-style-button-secondary' }, '🏡官网教程');
+	const btn = h('button', { className: 'base-style-button-secondary' }, '🏡官网教程');
 	btn.onclick = () => window.open('https://docs.ocsjs.com', '_blank');
 	return btn;
 };
@@ -80,29 +74,29 @@ export const CommonProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '🏠 脚本首页',
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			namespace: 'common.guide',
 			onrender({ panel }) {
 				const guide = createGuide();
 
-				const contactUs = el('button', { className: 'base-style-button-secondary' }, '🗨️交流群');
+				const contactUs = h('button', { className: 'base-style-button-secondary' }, '🗨️交流群');
 				contactUs.onclick = () => window.open('https://docs.ocsjs.com/docs/about#交流方式', '_blank');
 
-				const changeLog = el('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
+				const changeLog = h('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
 				changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
 
 				changeLog.style.marginBottom = '12px';
 				guide.style.width = '480px';
-				panel.body.replaceChildren(el('div', { className: 'card' }, [gotoHome(), contactUs, changeLog]), guide);
+				panel.body.replaceChildren(h('div', { className: 'card' }, [gotoHome(), contactUs, changeLog]), guide);
 			}
 		}),
 		settings: new Script({
 			name: '⚙️ 全局设置',
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			namespace: 'common.settings',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'✨鼠标移动到按钮或者输入框，可以看到提示！',
 						'想要自动答题必须设置 “题库配置” ',
 						'设置后进入章节测试，作业，考试页面即可自动答题。'
@@ -150,13 +144,13 @@ export const CommonProject = Project.create({
 
 						this.onclick = () => {
 							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
-							const copy = $creator.copy('复制题库配置', JSON.stringify(aw, null, 4));
+							const copy = $ui.copy('复制题库配置', JSON.stringify(aw, null, 4));
 
-							const list = el('div', [
-								el('div', aw.length ? ['以下是已经解析过的题库配置：', copy] : ''),
+							const list = h('div', [
+								h('div', aw.length ? ['以下是已经解析过的题库配置：', copy] : ''),
 								...createAnswererWrapperList(aw)
 							]);
-							const textarea = el(
+							const textarea = h(
 								'textarea',
 								{
 									className: 'modal-input',
@@ -166,16 +160,16 @@ export const CommonProject = Project.create({
 								aw.length === 0 ? '' : JSON.stringify(aw, null, 4)
 							);
 
-							const select = $creator.tooltip(
-								el(
+							const select = $ui.tooltip(
+								h(
 									'select',
 									{
 										className: 'base-style-active-form-control',
 										style: { backgroundColor: '#eef2f7', borderRadius: '2px', padding: '2px 8px' }
 									},
 									[
-										el('option', '默认'),
-										el(
+										h('option', '默认'),
+										h(
 											'option',
 											{
 												title:
@@ -187,20 +181,20 @@ export const CommonProject = Project.create({
 								)
 							);
 
-							const modal = $modal('prompt', {
+							const modal = $modal.prompt({
 								width: 600,
 								maskCloseable: false,
-								content: $creator.notes([
+								content: $ui.notes([
 									[
-										el('div', [
+										h('div', [
 											'题库配置填写教程：',
-											el('a', { href: 'https://docs.ocsjs.com/docs/work' }, 'https://docs.ocsjs.com/docs/work')
+											h('a', { href: 'https://docs.ocsjs.com/docs/work' }, 'https://docs.ocsjs.com/docs/work')
 										])
 									],
 									[
-										el('div', [
+										h('div', [
 											'【注意】如果无法粘贴，请点击此按钮：',
-											el('button', '读取剪贴板', (btn) => {
+											h('button', '读取剪贴板', (btn) => {
 												btn.classList.add('base-style-button');
 												btn.onclick = () => {
 													navigator.clipboard.readText().then((result) => {
@@ -213,22 +207,22 @@ export const CommonProject = Project.create({
 									],
 									...(aw.length ? [list] : [])
 								]),
-								footer: el('div', { style: { width: '100%' } }, [
+								footer: h('div', { style: { width: '100%' } }, [
 									textarea,
-									el('div', { style: { display: 'flex', flexWrap: 'wrap', marginTop: '12px', fontSize: '12px' } }, [
-										el('div', ['解析器：', select], (div) => {
+									h('div', { style: { display: 'flex', flexWrap: 'wrap', marginTop: '12px', fontSize: '12px' } }, [
+										h('div', ['解析器：', select], (div) => {
 											div.style.marginRight = '12px';
 											div.style.flex = '1';
 										}),
-										el('div', { style: { flex: '1', display: 'flex', flexWrap: 'wrap', justifyContent: 'end' } }, [
-											el('button', '清空题库配置', (btn) => {
+										h('div', { style: { flex: '1', display: 'flex', flexWrap: 'wrap', justifyContent: 'end' } }, [
+											h('button', '清空题库配置', (btn) => {
 												btn.className = 'modal-cancel-button';
 												btn.style.marginRight = '48px';
 												btn.onclick = () => {
-													$modal('confirm', {
+													$modal.confirm({
 														content: '确定要清空题库配置吗？',
 														onConfirm: () => {
-															$message('success', { content: '已清空，在答题前请记得重新配置。' });
+															$message.success({ content: '已清空，在答题前请记得重新配置。' });
 															modal?.remove();
 															CommonProject.scripts.settings.cfg.answererWrappers = [];
 															this.value = '点击配置';
@@ -236,12 +230,12 @@ export const CommonProject = Project.create({
 													});
 												};
 											}),
-											el('button', '关闭', (btn) => {
+											h('button', '关闭', (btn) => {
 												btn.className = 'modal-cancel-button';
 												btn.style.marginRight = '12px';
 												btn.onclick = () => modal?.remove();
 											}),
-											el('button', '保存配置', (btn) => {
+											h('button', '保存配置', (btn) => {
 												btn.className = 'modal-confirm-button';
 												btn.onclick = async () => {
 													const connects: string[] = $gm.getMetadataFromScriptHead('connect');
@@ -253,10 +247,10 @@ export const CommonProject = Project.create({
 															value.includes('adapter-service/search') &&
 															(select.value === 'TikuAdapter') === false
 														) {
-															$modal('alert', {
-																content: el('div', [
+															$modal.alert({
+																content: h('div', [
 																	'检测到您可能正在使用 ',
-																	el(
+																	h(
 																		'a',
 																		{ href: 'https://github.com/DokiDoki1103/tikuAdapter#readme' },
 																		'TikuAdapter 题库'
@@ -278,10 +272,10 @@ export const CommonProject = Project.create({
 															const awsResult: AnswererWrapper[] = [];
 															if (select.value === 'TikuAdapter') {
 																if (value.startsWith('http') === false) {
-																	$modal('alert', {
-																		content: el('div', [
+																	$modal.alert({
+																		content: h('div', [
 																			'格式错误，TikuAdapter解析器只能解析 url 链接，请重新输入！或者查看：',
-																			el(
+																			h(
 																				'a',
 																				{ href: 'https://github.com/DokiDoki1103/tikuAdapter#readme' },
 																				'https://github.com/DokiDoki1103/tikuAdapter#readme'
@@ -319,22 +313,26 @@ export const CommonProject = Project.create({
 															if (awsResult.length) {
 																CommonProject.scripts.settings.cfg.answererWrappers = awsResult;
 																this.value = '当前有' + awsResult.length + '个可用题库';
-																$modal('confirm', {
+																$modal.confirm({
 																	width: 600,
-																	content: el('div', [
-																		el('div', [
+																	content: h('div', [
+																		h('div', [
 																			'🎉 配置成功，',
-																			el('b', ' 刷新网页后 '),
+																			h('b', ' 刷新网页后 '),
 																			'重新进入',
-																			el('b', ' 答题页面 '),
+																			h('b', ' 答题页面 '),
 																			'即可。',
 																			'解析到的题库如下所示:'
 																		]),
 																		...createAnswererWrapperList(awsResult)
 																	]),
 																	onConfirm: () => top?.document.location.reload(),
-																	confirmButtonText: '立即刷新',
-																	cancelButtonText: '稍后刷新'
+																	...($gm.isInGMContext()
+																		? {
+																				confirmButtonText: '立即刷新',
+																				cancelButtonText: '稍后刷新'
+																		  }
+																		: {})
 																});
 
 																// 格式化文本
@@ -358,14 +356,14 @@ export const CommonProject = Project.create({
 																		}
 																	}
 																	if (notAllowed.length) {
-																		$modal('alert', {
+																		$modal.alert({
 																			width: 600,
 																			maskCloseable: false,
 																			title: '⚠️警告',
-																			content: el('div', [
-																				el('div', [
+																			content: h('div', [
+																				h('div', [
 																					'配置成功，但检测到以下 域名/ip 不在脚本的白名单中，请安装 : ',
-																					el(
+																					h(
 																						'a',
 																						{
 																							href: 'https://docs.ocsjs.com/docs/other/api#全域名通用版本'
@@ -373,9 +371,9 @@ export const CommonProject = Project.create({
 																						'OCS全域名通用版本'
 																					),
 																					'，或者手动添加 @connect ，否则无法进行请求。',
-																					el(
+																					h(
 																						'ul',
-																						notAllowed.map((url) => el('li', new URL(url).hostname))
+																						notAllowed.map((url) => h('li', new URL(url).hostname))
 																					)
 																				])
 																			])
@@ -383,16 +381,16 @@ export const CommonProject = Project.create({
 																	}
 																}
 															} else {
-																$modal('alert', { content: '题库配置不能为空，请重新配置。' });
+																$modal.alert({ content: '题库配置不能为空，请重新配置。' });
 															}
 														} catch (e: any) {
-															$modal('alert', {
-																content: el('div', [el('div', '解析失败，原因如下 :'), el('div', e.message)])
+															$modal.alert({
+																content: h('div', [h('div', '解析失败，原因如下 :'), h('div', e.message)])
 															});
 														}
 													} else {
-														$modal('alert', {
-															content: el('div', '不能为空！')
+														$modal.alert({
+															content: h('div', '不能为空！')
 														});
 													}
 												};
@@ -589,9 +587,9 @@ export const CommonProject = Project.create({
 			},
 			onrender({ panel }) {
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
-				if ($gm.getInfos() !== undefined) {
-					panel.body.replaceChildren(...(this.cfg.answererWrappers.length ? [el('hr')] : []));
-					const testNotification = el(
+				if ($gm.isInGMContext()) {
+					panel.body.replaceChildren(...(this.cfg.answererWrappers.length ? [h('hr')] : []));
+					const testNotification = h(
 						'button',
 						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
 						'📢测试系统通知'
@@ -599,7 +597,7 @@ export const CommonProject = Project.create({
 					testNotification.onclick = () => {
 						this.methods.notificationBySetting('这是一条测试通知');
 					};
-					const refresh = el(
+					const refresh = h(
 						'button',
 						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
 						'🔄️刷新题库状态'
@@ -607,10 +605,10 @@ export const CommonProject = Project.create({
 					refresh.onclick = () => {
 						updateState();
 					};
-					const tableContainer = el('div');
+					const tableContainer = h('div');
 					refresh.style.display = 'none';
 					tableContainer.style.display = 'none';
-					panel.body.append(el('div', { style: { display: 'flex' } }, [testNotification, refresh]), tableContainer);
+					panel.body.append(h('div', { style: { display: 'flex' } }, [testNotification, refresh]), tableContainer);
 
 					// 更新题库状态
 					const updateState = async () => {
@@ -624,7 +622,7 @@ export const CommonProject = Project.create({
 							refresh.textContent = '🚫正在加载题库状态...';
 							refresh.setAttribute('disabled', 'true');
 
-							const table = el('table');
+							const table = h('table');
 							table.style.width = '100%';
 							this.cfg.answererWrappers.forEach(async (item) => {
 								const t = Date.now();
@@ -658,12 +656,12 @@ export const CommonProject = Project.create({
 									success = false;
 								}
 
-								const body = el('tbody');
-								body.append(el('td', item.name));
+								const body = h('tbody');
+								body.append(h('td', item.name));
 								body.append(
-									el('td', [
-										$creator.tooltip(
-											el(
+									h('td', [
+										$ui.tooltip(
+											h(
 												'span',
 												{ title: isDisabled ? '题目已经被停用，请在上方题库配置中点击开启。' : '' },
 												success ? '连接成功🟢' : isDisabled ? '已停用⚪' : error ? '连接失败🔴' : '连接超时🟡'
@@ -671,7 +669,7 @@ export const CommonProject = Project.create({
 										)
 									])
 								);
-								body.append(el('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
+								body.append(h('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
 								table.append(body);
 								loadedCount++;
 
@@ -702,11 +700,11 @@ export const CommonProject = Project.create({
 		}),
 		workResults: new Script({
 			name: '🌏 搜索结果',
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			namespace: 'common.work-results',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['点击题目序号，查看搜索结果', '每次自动答题开始前，都会清空上一次的搜索结果。'])
+					defaultValue: $ui.notes(['点击题目序号，查看搜索结果', '每次自动答题开始前，都会清空上一次的搜索结果。'])
 						.outerHTML
 				},
 				/**
@@ -796,12 +794,12 @@ export const CommonProject = Project.create({
 					 * @param mount 挂载点
 					 */
 					createWorkResultsPanel: (mount?: HTMLElement) => {
-						const container = mount || el('div');
+						const container = mount || h('div');
 						/** 记录滚动高度 */
 						let scrollPercent = 0;
 
 						/** 列表 */
-						const list = el('div');
+						const list = h('div');
 
 						/** 是否悬浮在题目上 */
 						let mouseoverIndex = -1;
@@ -846,7 +844,7 @@ export const CommonProject = Project.create({
 
 								// 渲染序号或者题目列表
 								if (this.cfg.type === 'numbers') {
-									const resultContainer = el('div', {}, (res) => {
+									const resultContainer = h('div', {}, (res) => {
 										res.style.width = '400px';
 									});
 
@@ -857,7 +855,7 @@ export const CommonProject = Project.create({
 
 									/** 渲染序号 */
 									const nums = results.map((result, index) => {
-										return el('span', { className: 'search-infos-num', innerText: (index + 1).toString() }, (num) => {
+										return h('span', { className: 'search-infos-num', innerText: (index + 1).toString() }, (num) => {
 											setNumStyle(result, num, index);
 
 											num.onclick = () => {
@@ -892,12 +890,12 @@ export const CommonProject = Project.create({
 									list.style.maxHeight = window.innerHeight / 2 + 'px';
 
 									/** 右侧结果 */
-									const resultContainer = el('div', { className: 'work-result-question-container' });
+									const resultContainer = h('div', { className: 'work-result-question-container' });
 									const nums: HTMLSpanElement[] = [];
 									/** 左侧渲染题目列表 */
 									const questions = results.map((result, index) => {
 										/** 左侧序号 */
-										const num = el(
+										const num = h(
 											'span',
 											{
 												className: 'search-infos-num',
@@ -912,7 +910,7 @@ export const CommonProject = Project.create({
 
 										nums.push(num);
 
-										return el(
+										return h(
 											'div',
 
 											[num, result.question],
@@ -962,14 +960,14 @@ export const CommonProject = Project.create({
 									}
 
 									container.replaceChildren(
-										el('div', [list, el('div', {}, [resultContainer])], (div) => {
+										h('div', [list, h('div', {}, [resultContainer])], (div) => {
 											div.style.display = 'flex';
 										})
 									);
 								}
 							} else {
 								container.replaceChildren(
-									el('div', '⚠️暂无任何搜索结果', (div) => {
+									h('div', '⚠️暂无任何搜索结果', (div) => {
 										div.style.textAlign = 'center';
 									})
 								);
@@ -981,31 +979,31 @@ export const CommonProject = Project.create({
 								behavior: 'auto'
 							});
 
-							const tip = el('div', [
-								el('div', { className: 'search-infos-num' }, '1'),
+							const tip = h('div', [
+								h('div', { className: 'search-infos-num' }, '1'),
 								'表示等待处理中',
-								el('br'),
-								el('div', { className: 'search-infos-num requested' }, '1'),
+								h('br'),
+								h('div', { className: 'search-infos-num requested' }, '1'),
 								'表示已完成搜索 ',
-								el('br'),
-								el('div', { className: 'search-infos-num finish' }, '1'),
+								h('br'),
+								h('div', { className: 'search-infos-num finish' }, '1'),
 								'表示已搜索已答题 '
 							]);
 
 							/** 添加信息 */
 							container.prepend(
-								el('hr'),
-								el(
+								h('hr'),
+								h(
 									'div',
 									[
-										$creator.space(
+										$ui.space(
 											[
-												el('span', `已搜题: ${this.cfg.requestedCount}/${this.cfg.totalQuestionCount}`),
-												el('span', `已答题: ${this.cfg.resolvedCount}/${this.cfg.totalQuestionCount}`),
-												el('a', '提示', (btn) => {
+												h('span', `已搜题: ${this.cfg.requestedCount}/${this.cfg.totalQuestionCount}`),
+												h('span', `已答题: ${this.cfg.resolvedCount}/${this.cfg.totalQuestionCount}`),
+												h('a', '提示', (btn) => {
 													btn.style.cursor = 'pointer';
 													btn.onclick = () => {
-														$modal('confirm', { content: tip, footer: undefined });
+														$modal.confirm({ content: tip, footer: undefined });
 													};
 												})
 											],
@@ -1017,44 +1015,35 @@ export const CommonProject = Project.create({
 									}
 								),
 
-								el('hr')
+								h('hr')
 							);
 						}, 100);
 
 						/** 渲染结果列表 */
 						const createResult = (result: SimplifyWorkResult | undefined) => {
 							if (result) {
-								const error = el('span', {}, (el) => (el.style.color = 'red'));
+								const error = h('span', {}, (el) => (el.style.color = 'red'));
 
 								if (result.requested === false && result.resolved === false) {
-									return el('div', [
+									return h('div', [
 										result.question,
-										$creator.createQuestionTitleExtra(result.question),
-										el('hr'),
+										createQuestionTitleExtra(result.question),
+										h('hr'),
 										'当前题目还未开始搜索，请稍等。'
 									]);
 								} else {
 									if (result.error) {
 										error.innerText = result.error;
-										return el('div', [
-											result.question,
-											$creator.createQuestionTitleExtra(result.question),
-											el('hr'),
-											error
-										]);
+										return h('div', [result.question, createQuestionTitleExtra(result.question), h('hr'), error]);
 									} else if (result.searchInfos.length === 0) {
 										error.innerText = '此题未搜索到答案';
-										return el('div', [
-											result.question,
-											$creator.createQuestionTitleExtra(result.question),
-											el('hr'),
-											error
-										]);
+										return h('div', [result.question, createQuestionTitleExtra(result.question), h('hr'), error]);
 									} else {
 										error.innerText = '此题未完成, 可能是没有匹配的选项。';
-										return el('div', [
+
+										return h('div', [
 											...(result.finish ? [] : [result.resolved === false ? '正在等待答题中，请稍等。' : error]),
-											el('search-infos-element', {
+											h(SearchInfosElement, {
 												infos: result.searchInfos,
 												question: result.question
 											})
@@ -1062,7 +1051,7 @@ export const CommonProject = Project.create({
 									}
 								}
 							} else {
-								return el('div', 'undefined');
+								return h('div', 'undefined');
 							}
 						};
 
@@ -1082,7 +1071,7 @@ export const CommonProject = Project.create({
 		}),
 		onlineSearch: new Script({
 			name: '🔎 在线搜题',
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			namespace: 'common.online-search',
 			configs: {
 				notes: {
@@ -1122,17 +1111,17 @@ export const CommonProject = Project.create({
 				);
 			},
 			onrender({ panel }) {
-				const content = el('div', '', (content) => {
+				const content = h('div', '', (content) => {
 					content.style.marginBottom = '12px';
 				});
 
 				const search = async (value: string) => {
 					if (CommonProject.scripts.settings.cfg.answererWrappers.length === 0) {
-						$modal('alert', { content: '请先在 通用-全局设置 配置题库，才能进行在线搜题。' });
+						$modal.alert({ content: '请先在 通用-全局设置 配置题库，才能进行在线搜题。' });
 						return;
 					}
 
-					content.replaceChildren(el('span', '搜索中...'));
+					content.replaceChildren(h('span', '搜索中...'));
 
 					if (value) {
 						const t = Date.now();
@@ -1143,16 +1132,16 @@ export const CommonProject = Project.create({
 						const resume = ((Date.now() - t) / 1000).toFixed(2);
 
 						content.replaceChildren(
-							el(
+							h(
 								'div',
 								[
-									el('hr'),
-									el(
+									h('hr'),
+									h(
 										'div',
 										{ style: { color: '#a1a1a1' } },
 										`搜索到 ${infos.map((i) => i.results).flat().length} 个结果，共耗时 ${resume} 秒`
 									),
-									el('search-infos-element', {
+									h(SearchInfosElement, {
 										infos: infos.map((info) => ({
 											results: info.results.map((res) => [res.question, res.answer] as [string, string]),
 											homepage: info.homepage,
@@ -1168,27 +1157,27 @@ export const CommonProject = Project.create({
 							)
 						);
 					} else {
-						content.replaceChildren(el('span', '题目不能为空！'));
+						content.replaceChildren(h('span', '题目不能为空！'));
 					}
 				};
 
-				const button = el('button', '搜索', (button) => {
+				const button = h('button', '搜索', (button) => {
 					button.className = 'base-style-button';
 					button.style.width = '120px';
 					button.onclick = () => {
 						search(this.cfg.searchValue);
 					};
 				});
-				const searchContainer = el('div', { style: { textAlign: 'end' } }, [button]);
+				const searchContainer = h('div', { style: { textAlign: 'end' } }, [button]);
 
-				panel.body.append(el('div', [content, searchContainer]));
+				panel.body.append(h('div', [content, searchContainer]));
 			}
 		}),
 		/** 渲染脚本，窗口渲染主要脚本 */
 		render: RenderScript,
 		hack: new Script({
 			name: '页面复制粘贴限制解除',
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			hideInPanel: true,
 			onactive() {
 				enableCopy([document, document.body]);
@@ -1204,12 +1193,12 @@ export const CommonProject = Project.create({
 		}),
 		disableDialog: new Script({
 			name: '禁止弹窗',
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			hideInPanel: true,
 			priority: 1,
 			onstart() {
 				function disableDialog(msg: string) {
-					$modal('alert', {
+					$modal.alert({
 						profile: '弹窗来自：' + location.origin,
 						content: msg
 					});
@@ -1225,7 +1214,7 @@ export const CommonProject = Project.create({
 		}),
 		apps: new Script({
 			name: '📱 拓展应用',
-			url: [['', /.*/]],
+			matches: [['', /.*/]],
 			namespace: 'common.apps',
 			configs: {
 				notes: {
@@ -1313,16 +1302,16 @@ export const CommonProject = Project.create({
 					 * 查看更新日志
 					 */
 					async showChangelog() {
-						const changelog = el('div', {
+						const changelog = h('div', {
 							className: 'markdown card',
 							innerHTML: '加载中...',
 							style: { maxWidth: '600px' }
 						});
-						$modal('simple', {
+						$modal.simple({
 							width: 600,
-							content: el('div', [
-								el('div', { className: 'notes card' }, [
-									$creator.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
+							content: h('div', [
+								h('div', { className: 'notes card' }, [
+									$ui.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
 								]),
 								changelog
 							])
@@ -1346,12 +1335,12 @@ export const CommonProject = Project.create({
 					cursor: 'pointer'
 				};
 
-				const cachesBtn = el('div', { innerText: '💾 题库缓存', style: btnStyle }, (btn) => {
+				const cachesBtn = h('div', { innerText: '💾 题库缓存', style: btnStyle }, (btn) => {
 					btn.onclick = () => {
 						const questionCaches = this.cfg.localQuestionCaches;
 
 						const list = questionCaches.map((c) =>
-							el(
+							h(
 								'div',
 								{
 									className: 'question-cache',
@@ -1363,9 +1352,9 @@ export const CommonProject = Project.create({
 									}
 								},
 								[
-									el('div', { className: 'title' }, [
-										$creator.tooltip(
-											el(
+									h('div', { className: 'title' }, [
+										$ui.tooltip(
+											h(
 												'span',
 												{
 													title: `来自：${c.from || '未知题库'}\n主页：${c.homepage || '未知主页'}`,
@@ -1375,25 +1364,25 @@ export const CommonProject = Project.create({
 											)
 										)
 									]),
-									el('div', { className: 'answer', style: { marginTop: '6px' } }, c.answer)
+									h('div', { className: 'answer', style: { marginTop: '6px' } }, c.answer)
 								]
 							)
 						);
 
-						$modal('simple', {
+						$modal.simple({
 							width: 800,
-							content: el('div', [
-								el('div', { className: 'notes card' }, [
-									$creator.notes([
+							content: h('div', [
+								h('div', { className: 'notes card' }, [
+									$ui.notes([
 										'题库缓存是将题库的题目和答案保存在内存，在重复使用时可以直接从内存获取，不需要再次请求题库。',
 										'以下是当前存储的题库，默认存储200题，当前页面关闭后会自动清除。'
 									])
 								]),
-								el('div', { className: 'card' }, [
-									$creator.space(
+								h('div', { className: 'card' }, [
+									$ui.space(
 										[
-											el('span', ['当前缓存数量：' + questionCaches.length]),
-											$creator.button('清空题库缓存', {}, (btn) => {
+											h('span', ['当前缓存数量：' + questionCaches.length]),
+											$ui.button('清空题库缓存', {}, (btn) => {
 												btn.onclick = () => {
 													this.cfg.localQuestionCaches = [];
 													list.forEach((el) => el.remove());
@@ -1404,17 +1393,17 @@ export const CommonProject = Project.create({
 									)
 								]),
 
-								el(
+								h(
 									'div',
-									questionCaches.length === 0 ? [el('div', { style: { textAlign: 'center' } }, '暂无题库缓存')] : list
+									questionCaches.length === 0 ? [h('div', { style: { textAlign: 'center' } }, '暂无题库缓存')] : list
 								)
 							])
 						});
 					};
 				});
 
-				const exportSetting = $creator.tooltip(
-					el(
+				const exportSetting = $ui.tooltip(
+					h(
 						'div',
 						{
 							innerText: '📤 导出全部设置',
@@ -1432,7 +1421,7 @@ export const CommonProject = Project.create({
 								}
 								const blob = new Blob([JSON.stringify(setting, null, 2)], { type: 'text/plain' });
 								const url = URL.createObjectURL(blob);
-								const a = el('a', { href: url, download: 'ocs-setting-export.ocssetting' });
+								const a = h('a', { href: url, download: 'ocs-setting-export.ocssetting' });
 								a.click();
 								URL.revokeObjectURL(url);
 							};
@@ -1440,8 +1429,8 @@ export const CommonProject = Project.create({
 					)
 				);
 
-				const importSetting = $creator.tooltip(
-					el(
+				const importSetting = $ui.tooltip(
+					h(
 						'div',
 						{
 							innerText: '📥 导入全部设置',
@@ -1450,7 +1439,7 @@ export const CommonProject = Project.create({
 						},
 						(btn) => {
 							btn.onclick = () => {
-								const input = el('input', { type: 'file', accept: '.ocssetting' });
+								const input = h('input', { type: 'file', accept: '.ocssetting' });
 								input.onchange = async () => {
 									const file = input.files?.[0];
 									if (file) {
@@ -1459,7 +1448,7 @@ export const CommonProject = Project.create({
 										for (const key of Object.keys(obj)) {
 											$store.set(key, obj[key]);
 										}
-										$message('success', { content: '设置导入成功，页面即将刷新。', duration: 3 });
+										$message.success({ content: '设置导入成功，页面即将刷新。', duration: 3 });
 										setTimeout(() => {
 											location.reload();
 										}, 3000);
@@ -1480,10 +1469,10 @@ export const CommonProject = Project.create({
 					};
 				});
 
-				const sep = (text: string) => el('div', { className: 'separator', style: { padding: '4px 0px' } }, text);
+				const sep = (text: string) => h('div', { className: 'separator', style: { padding: '4px 0px' } }, text);
 
 				panel.body.replaceChildren(
-					el('div', [sep('题库拓展'), cachesBtn, sep('其他功能'), exportSetting, importSetting])
+					h('div', [sep('题库拓展'), cachesBtn, sep('其他功能'), exportSetting, importSetting])
 				);
 			}
 		})
@@ -1506,15 +1495,15 @@ function insertCopyableStyle() {
 
 function createAnswererWrapperList(aw: AnswererWrapper[]) {
 	return aw.map((item) =>
-		el(
+		h(
 			'details',
 			[
-				el('summary', [
-					$creator.space([
-						el('span', item.name),
+				h('summary', [
+					$ui.space([
+						h('span', item.name),
 						(() => {
 							let isDisabled = CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.includes(item.name);
-							const btn = $creator.button(
+							const btn = $ui.button(
 								isDisabled ? '启用此题库' : '停用此题库',
 								{ className: isDisabled ? 'base-style-button' : 'base-style-button-secondary' },
 								(controlsBtn) => {
@@ -1527,7 +1516,7 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 												...CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames,
 												item.name
 											];
-											$message('warn', {
+											$message.warn({
 												content: '题库：' + item.name + ' 已被停用，如需开启请在：通用-全局设置-题库配置中开启。',
 												duration: 30
 											});
@@ -1536,7 +1525,7 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 												CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.filter(
 													(name) => name !== item.name
 												);
-											$message('success', {
+											$message.success({
 												content: '题库：' + item.name + ' 已启用。',
 												duration: 3
 											});
@@ -1549,14 +1538,14 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 						})()
 					])
 				]),
-				el('ul', [
-					el('li', ['名字\t', item.name]),
-					el('li', { innerHTML: `官网\t<a target="_blank" href=${item.homepage}>${item.homepage || '无'}</a>` }),
-					el('li', ['接口\t', item.url]),
-					el('li', ['请求方法\t', item.method]),
-					el('li', ['请求类型\t', item.type]),
-					el('li', ['请求头\t', JSON.stringify(item.headers, null, 4) || '无']),
-					el('li', ['请求体\t', JSON.stringify(item.data, null, 4) || '无'])
+				h('ul', [
+					h('li', ['名字\t', item.name]),
+					h('li', { innerHTML: `官网\t<a target="_blank" href=${item.homepage}>${item.homepage || '无'}</a>` }),
+					h('li', ['接口\t', item.url]),
+					h('li', ['请求方法\t', item.method]),
+					h('li', ['请求类型\t', item.type]),
+					h('li', ['请求头\t', JSON.stringify(item.headers, null, 4) || '无']),
+					h('li', ['请求体\t', JSON.stringify(item.data, null, 4) || '无'])
 				])
 			],
 			(details) => {
@@ -1568,45 +1557,47 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 
 const createGuide = () => {
 	const showProjectDetails = (project: Project) => {
-		$modal('simple', {
+		$modal.simple({
 			title: project.name,
 			width: 800,
-			content: el('div', [
-				el('div', [
+			content: h('div', [
+				h('div', [
 					'运行域名：',
-					...project.domains.map((d) =>
-						el(
+					...(project.domains || []).map((d) =>
+						h(
 							'a',
 							{ href: d.startsWith('http') ? d : 'https://' + d, target: '_blank', style: { margin: '0px 4px' } },
 							d
 						)
 					)
 				]),
-				el('div', '脚本列表：'),
-				el(
+				h('div', '脚本列表：'),
+				h(
 					'ul',
 					Object.keys(project.scripts)
 						.sort((a, b) => (project.scripts[b].hideInPanel ? -1 : 1))
 						.map((key) => {
 							const script = project.scripts[key];
-							return el(
+							return h(
 								'li',
 								[
-									el('b', script.name),
-									$creator.notes([
-										el('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
+									h('b', script.name),
+									$ui.notes([
+										h('span', ['操作面板：', script.hideInPanel ? '隐藏' : '显示']),
 
 										[
 											'运行页面：',
-											el(
+											h(
 												'ul',
-												script.url.map((i) =>
-													el('li', [
-														i[0],
-														'：',
-														i[1] instanceof RegExp ? i[1].toString().replace(/\\/g, '').slice(1, -1) : el('span', i[1])
-													])
-												)
+												script.matches
+													.map((m) => (Array.isArray(m) ? m : (['无描述', m] as [string, string | RegExp])))
+													.map((i) =>
+														h('li', [
+															i[0],
+															'：',
+															i[1] instanceof RegExp ? i[1].toString().replace(/\\/g, '').slice(1, -1) : h('span', i[1])
+														])
+													)
 											)
 										]
 									])
@@ -1624,21 +1615,19 @@ const createGuide = () => {
 		});
 	};
 
-	return el('div', { className: 'user-guide card' }, [
-		el('div', { className: 'separator', style: { padding: '12px 0px' } }, '✨ 支持的网课平台'),
-		el('div', [
+	return h('div', { className: 'user-guide card' }, [
+		h('div', { className: 'separator', style: { padding: '12px 0px' } }, '✨ 支持的网课平台'),
+		h('div', [
 			...[CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject].map((project) => {
-				const btn = el('button', { className: 'base-style-button-secondary', style: { margin: '4px' } }, [
-					project.name
-				]);
+				const btn = h('button', { className: 'base-style-button-secondary', style: { margin: '4px' } }, [project.name]);
 				btn.onclick = () => {
 					showProjectDetails(project);
 				};
 				return btn;
 			})
 		]),
-		el('div', { className: 'separator', style: { padding: '12px 0px' } }, '📖 使用教程'),
-		$creator.notes(
+		h('div', { className: 'separator', style: { padding: '12px 0px' } }, '📖 使用教程'),
+		$ui.notes(
 			[
 				'打开任意网课平台，等待脚本加载，',
 				'脚本加载后查看每个网课不同的使用提示。',

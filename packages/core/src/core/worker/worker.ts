@@ -1,4 +1,4 @@
-import { CommonEventEmitter } from '../../interfaces/common';
+import { CommonEventEmitter } from 'easy-us';
 import { domSearchAll } from '../utils/dom';
 import { RawElements, ResolverResult, WorkContext, WorkOptions, WorkResult, WorkUploadType } from './interface';
 import { defaultQuestionResolve } from './question.resolver';

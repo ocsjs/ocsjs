@@ -40,9 +40,8 @@ async function createUserJs(cb) {
 
 	/** @return {import('../packages/utils').CreateOptions} */
 	const createOptions = () => {
-		const projectList = ocs
-			.definedProjects()
-			.filter((p) => p.studyProject)
+		const { CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject } = ocs;
+		const projectList = [CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject]
 			.map((s) => `【${s.name}】`)
 			.join(' ');
 
@@ -50,7 +49,7 @@ async function createUserJs(cb) {
 			new Set(
 				ocs
 					.definedProjects()
-					.map((p) => p.domains.map((d) => `*://*.${d}/*`))
+					.map((p) => (p.domains || []).map((d) => `*://*.${d}/*`))
 					.flat()
 			)
 		);

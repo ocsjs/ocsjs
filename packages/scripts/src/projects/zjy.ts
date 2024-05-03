@@ -1,4 +1,5 @@
-import { $, $creator, $el, $message, OCSWorker, Project, Script, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { $, OCSWorker, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { Project, Script, $ui, $el, $message } from 'easy-us';
 import { volume } from '../utils/configs';
 import { waitForMedia } from '../utils/study';
 import { CommonWorkOptions, playMedia } from '../utils';
@@ -104,7 +105,7 @@ export const ZJYProject = Project.create({
 			namespace: 'zjy.study.main',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						['如果脚本卡死或者您不想学习，', '可以点击其他任意章节继续进行学习。'],
 						'提示：职教云无法使用倍速。'
 					]).outerHTML
@@ -141,7 +142,7 @@ export const ZJYProject = Project.create({
 							$console.error('获取课程信息失败，请跟作者反馈。');
 							return;
 						}
-						$message('success', { content: '开始学习：' + courseInfo.fileType + '-' + courseInfo.name });
+						$message.success({ content: '开始学习：' + courseInfo.fileType + '-' + courseInfo.name });
 						$console.info('开始学习：' + +courseInfo.fileType + '-' + courseInfo.name);
 						if (['ppt', 'doc', 'pptx', 'docx', 'pdf', 'txt'].some((i) => courseInfo.fileType === i)) {
 							await watchFile();
@@ -169,7 +170,7 @@ export const ZJYProject = Project.create({
 			namespace: 'zjy.work.main',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						'可以搭配 “通用-在线搜题” 一起使用。',
 						'请手动进入作业考试页面才能使用自动答题。'
@@ -254,7 +255,7 @@ async function next() {
 			$el('.preOrNext .next .el-link')?.click();
 		}
 	} else {
-		$message('success', {
+		$message.success({
 			duration: 0,
 			content: '全部任务已完成。'
 		});
@@ -296,7 +297,7 @@ function workOrExam(
 	type: 'work' | 'exam',
 	{ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions
 ) {
-	$message('info', { content: '开始作业' });
+	$message.info({ content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zjy'
 	});
@@ -388,11 +389,11 @@ function workOrExam(
 	worker
 		.doWork({ enable_debug: true })
 		.then(() => {
-			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			$message.info({ content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 			worker.emit('done');
 		})
 		.catch((err) => {
-			$message('error', { content: `作业/考试失败: ${err}`, duration: 0 });
+			$message.error({ content: `作业/考试失败: ${err}`, duration: 0 });
 		});
 
 	return worker;

@@ -1,4 +1,4 @@
-import { Project } from '@ocsjs/core';
+import { Project } from 'easy-us';
 import { CommonProject } from './projects/common';
 import { ZHSProject } from './projects/zhs';
 import { CXProject } from './projects/cx';
@@ -17,6 +17,8 @@ export { CXProject } from './projects/cx';
 export { ZJYProject } from './projects/zjy';
 export { IcveMoocProject } from './projects/icve';
 export { ICourseProject } from './projects/icourse';
+export { RenderScript } from './render';
+export { start } from 'easy-us';
 
 export function definedProjects(): Project[] {
 	return [ZHSProject, CXProject, IcveMoocProject, ZJYProject, ICourseProject, CommonProject, BackgroundProject];

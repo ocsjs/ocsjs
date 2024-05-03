@@ -1,20 +1,10 @@
-import {
-	$,
-	$creator,
-	$gm,
-	$message,
-	$modal,
-	$store,
-	Project,
-	RenderScript,
-	Script,
-	StoreListenerType,
-	el,
-	request
-} from '@ocsjs/core';
+import { request } from '@ocsjs/core';
+import { $ui, $gm, $message, $modal, $store, Project, Script, StoreListenerType, h, $ } from 'easy-us';
 import gt from 'semver/functions/gt';
 import { CommonProject } from './common';
 import { definedProjects } from '..';
+import { RenderScript } from '../render';
+import { SearchInfosElement } from '../elements/search.infos';
 
 const state = {
 	console: {
@@ -33,14 +23,35 @@ const state = {
 
 export type LogType = 'log' | 'info' | 'debug' | 'warn' | 'error';
 
+type RequestList = {
+	id: string;
+	url: string;
+	method: string;
+	type: string;
+	data: any;
+	headers: any;
+	response?: string;
+	error?: string;
+	time: number;
+}[];
+
 /** 后台进程，处理与PC软件端的通讯，以及其他后台操作 */
 export const BackgroundProject = Project.create({
 	name: '后台',
 	domains: [],
 	scripts: {
+		elementRegister: new Script({
+			name: '🔗 元素注册',
+			hideInPanel: true,
+			matches: [['所有页面', /.*/]],
+			onstart() {
+				// 注册自定义元素
+				$.loadCustomElements([SearchInfosElement]);
+			}
+		}),
 		console: new Script({
 			name: '📄 日志输出',
-			url: [['所有', /.*/]],
+			matches: [['所有', /.*/]],
 			namespace: 'render.console',
 			configs: {
 				logs: {
@@ -61,20 +72,20 @@ export const BackgroundProject = Project.create({
 
 				const createLog = (log: { type: LogType; content: string; time: number; stack: string }) => {
 					const date = new Date(log.time);
-					const item = el(
+					const item = h(
 						'div',
 						{
 							title: '双击复制日志信息',
 							className: 'item'
 						},
 						[
-							el(
+							h(
 								'span',
 								{ className: 'time' },
 								`${date.getHours().toFixed(0).padStart(2, '0')}:${date.getMinutes().toFixed(0).padStart(2, '0')} `
 							),
-							el('span', { className: log.type }, `[${getTypeDesc(log.type)}]`),
-							el('span', ':' + log.content)
+							h('span', { className: log.type }, `[${getTypeDesc(log.type)}]`),
+							h('span', ':' + log.content)
 						]
 					);
 
@@ -90,14 +101,14 @@ export const BackgroundProject = Project.create({
 				};
 
 				const showLogs = () => {
-					const div = el('div', { className: 'card console' });
+					const div = h('div', { className: 'card console' });
 
 					const logs = this.cfg.logs.map((log) => createLog(log));
 					if (logs.length) {
 						div.replaceChildren(...logs);
 					} else {
 						div.replaceChildren(
-							el('div', '暂无任何日志', (div) => {
+							h('div', '暂无任何日志', (div) => {
 								div.style.textAlign = 'center';
 							})
 						);
@@ -140,16 +151,16 @@ export const BackgroundProject = Project.create({
 		appConfigSync: new Script({
 			name: '🔄️ 软件配置同步',
 			namespace: 'background.app',
-			url: [['所有页面', /./]],
+			matches: [['所有页面', /./]],
 			// 如果是在OCS软件中则不显示此页面
 			hideInPanel: $gm.getInfos() === undefined,
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						[
-							el('span', [
+							h('span', [
 								'如果您使用',
-								el('a', { href: 'https://docs.ocsjs.com/docs/app', target: '_blank' }, 'OCS桌面软件'),
+								h('a', { href: 'https://docs.ocsjs.com/docs/app', target: '_blank' }, 'OCS桌面软件'),
 								'启动浏览器，并使用此脚本，'
 							]),
 							'我们会同步软件中的配置到此脚本上，方便多个浏览器的管理。',
@@ -180,11 +191,11 @@ export const BackgroundProject = Project.create({
 
 				const update = () => {
 					if (this.cfg.sync) {
-						const tip = el('div', { className: 'notes card' }, [`已成功同步软件中的配置.`]);
-						panel.body.replaceChildren(el('hr'), tip);
+						const tip = h('div', { className: 'notes card' }, [`已成功同步软件中的配置.`]);
+						panel.body.replaceChildren(h('hr'), tip);
 					} else if (this.cfg.connected) {
-						const tip = el('div', { className: 'notes card' }, [`已成功连接到软件，但配置为空。`]);
-						panel.body.replaceChildren(el('hr'), tip);
+						const tip = h('div', { className: 'notes card' }, [`已成功连接到软件，但配置为空。`]);
+						panel.body.replaceChildren(h('hr'), tip);
 					}
 				};
 				update();
@@ -198,7 +209,7 @@ export const BackgroundProject = Project.create({
 					if (closeSync) {
 						this.cfg.sync = false;
 						this.cfg.connected = false;
-						$message('success', { content: '已关闭同步，刷新页面后生效' });
+						$message.success({ content: '已关闭同步，刷新页面后生效' });
 					}
 				});
 			},
@@ -280,7 +291,7 @@ export const BackgroundProject = Project.create({
 
 												panel.lockWrapper.title =
 													'🚫已同步OCS桌面版软件配置，如需修改请在桌面版软件的左侧栏设置-通用设置-OCS配置，中进行修改。或者前往脚本悬浮窗:后台-软件配置同步 关闭配置同步功能。';
-												panel.lockWrapper = $creator.tooltip(panel.lockWrapper);
+												panel.lockWrapper = $ui.tooltip(panel.lockWrapper);
 											}
 										};
 										// 重新执行渲染
@@ -303,7 +314,7 @@ export const BackgroundProject = Project.create({
 		}),
 		update: new Script({
 			name: '📥 更新模块',
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			namespace: 'background.update',
 			configs: {
 				notes: {
@@ -339,17 +350,17 @@ export const BackgroundProject = Project.create({
 					return;
 				}
 
-				const changeLog = el('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
+				const changeLog = h('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
 				changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
 				const updatePage = this.startConfig?.updatePage || '';
 				panel.body.replaceChildren(
-					el('div', { className: 'card' }, [
-						el('hr'),
-						el('div', ['最新版本：' + version['last-version'] + ' - ', changeLog]),
-						el('hr'),
-						el('div', '当前版本：' + infos.script.version),
-						el('div', '脚本管理器：' + infos.scriptHandler),
-						el('div', ['脚本更新链接：', el('a', { target: '_blank', href: updatePage }, [updatePage || '无'])])
+					h('div', { className: 'card' }, [
+						h('hr'),
+						h('div', ['最新版本：' + version['last-version'] + ' - ', changeLog]),
+						h('hr'),
+						h('div', '当前版本：' + infos.script.version),
+						h('div', '脚本管理器：' + infos.scriptHandler),
+						h('div', ['脚本更新链接：', h('a', { target: '_blank', href: updatePage }, [updatePage || '无'])])
 					])
 				);
 				console.log('versions', {
@@ -375,30 +386,30 @@ export const BackgroundProject = Project.create({
 									gt(last, infos.script.version)
 								) {
 									const updatePage = this.startConfig?.updatePage || '';
-									const modal = $modal('confirm', {
+									const modal = $modal.confirm({
 										maskCloseable: false,
 										width: 600,
-										content: $creator.notes([`检测到新版本发布 ${last} ：`, [...(version.notes || [])]]),
-										footer: el('div', [
-											el('button', { className: 'base-style-button-secondary', innerText: '跳过此版本' }, (btn) => {
+										content: $ui.notes([`检测到新版本发布 ${last} ：`, [...(version.notes || [])]]),
+										footer: h('div', [
+											h('button', { className: 'base-style-button-secondary', innerText: '跳过此版本' }, (btn) => {
 												btn.onclick = () => {
 													this.cfg.ignoreVersions = [...this.cfg.ignoreVersions, last];
 													modal?.remove();
 												};
 											}),
-											el('button', { className: 'base-style-button-secondary', innerText: '今日不再提示' }, (btn) => {
+											h('button', { className: 'base-style-button-secondary', innerText: '今日不再提示' }, (btn) => {
 												btn.onclick = () => {
 													this.cfg.notToday = new Date().getDate();
 													modal?.remove();
 												};
 											}),
-											el('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
+											h('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
 												btn.onclick = () => {
 													if (updatePage) {
 														window.open(updatePage, '_blank');
 														modal?.remove();
 													} else {
-														$message('error', { content: '无法前往更新页面，更新链接为空' });
+														$message.error({ content: '无法前往更新页面，更新链接为空' });
 													}
 												};
 											})
@@ -414,40 +425,40 @@ export const BackgroundProject = Project.create({
 		dev: new Script({
 			name: '🛠️ 开发者调试',
 			namespace: 'background.dev',
-			url: [['所有页面', /./]],
+			matches: [['所有页面', /./]],
 			configs: {
 				notes: {
 					defaultValue: '开发人员调试用。<br>注入OCS_CONTEXT全局变量。用户可忽略此页面。'
 				}
 			},
 			onrender({ panel }) {
-				const injectBtn = el('button', { className: 'base-style-button' }, '点击注入全局变量');
+				const injectBtn = h('button', { className: 'base-style-button' }, '点击注入全局变量');
 				injectBtn.addEventListener('click', () => {
 					$gm.unsafeWindow.OCS_CONTEXT = self;
 				});
 
-				const showTabDataBtn = el('button', { className: 'base-style-button' }, '显示Tab存储');
+				const showTabDataBtn = h('button', { className: 'base-style-button' }, '显示Tab存储');
 				$gm.getTab((tab) => {
 					const els: HTMLElement[] = [];
 					for (const key in tab) {
 						if (Object.prototype.hasOwnProperty.call(tab, key)) {
-							els.push(el('div', [el('b', key + ' : '), el('code', JSON.stringify(tab[key]))]));
+							els.push(h('div', [h('b', key + ' : '), h('code', JSON.stringify(tab[key]))]));
 						}
 					}
 					showTabDataBtn.addEventListener('click', () => {
-						$modal('simple', {
-							content: el('div', els),
+						$modal.simple({
+							content: h('div', els),
 							width: window.document.documentElement.clientWidth / 2
 						});
 					});
 				});
 
-				panel.body.replaceChildren(el('div', { className: 'card' }, [injectBtn, showTabDataBtn]));
+				panel.body.replaceChildren(h('div', { className: 'card' }, [injectBtn, showTabDataBtn]));
 			}
 		}),
 		appLoginHelper: new Script({
 			name: '软件登录辅助',
-			url: [
+			matches: [
 				['超星登录', 'passport2.chaoxing.com/login'],
 				['智慧树登录', 'passport.zhihuishu.com/login'],
 				['职教云登录', 'zjy2.icve.com.cn/portal/login.html'],
@@ -464,7 +475,7 @@ export const BackgroundProject = Project.create({
 
 		errorHandle: new Script({
 			name: '全局错误捕获',
-			url: [['', /.*/]],
+			matches: [['', /.*/]],
 			hideInPanel: true,
 			onstart() {
 				const projects = definedProjects();
@@ -484,11 +495,11 @@ export const BackgroundProject = Project.create({
 		}),
 		requestList: new Script({
 			name: '📄 请求记录',
-			url: [['', /.*/]],
+			matches: [['', /.*/]],
 			priority: 99,
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'开发人员请求调试记录页面，小白勿入，最多只记录最近的100个请求数据',
 						'可打开F12控制台查看请求日志，或者下方的请求列表'
 					]).outerHTML
@@ -522,26 +533,16 @@ export const BackgroundProject = Project.create({
 					defaultValue: ''
 				},
 				list: {
-					defaultValue: [] as {
-						id: string;
-						url: string;
-						method: string;
-						type: string;
-						data: any;
-						headers: any;
-						response?: string;
-						error?: string;
-						time: number;
-					}[]
+					defaultValue: [] as RequestList
 				}
 			},
 			methods() {
-				const render = (list: typeof this.cfg.list) => {
+				const render = (list: RequestList) => {
 					this.panel?.body.replaceChildren();
 					this.panel?.body.append(
-						el('div', { className: 'card' }, [
-							el('div', { style: { padding: '8px 0px', textAlign: 'end' } }, [
-								el(
+						h('div', { className: 'card' }, [
+							h('div', { style: { padding: '8px 0px', textAlign: 'end' } }, [
+								h(
 									'button',
 									{
 										className: 'base-style-button-secondary',
@@ -555,7 +556,7 @@ export const BackgroundProject = Project.create({
 										};
 									}
 								),
-								el('button', { className: 'base-style-button', innerText: '🔍执行搜索' }, (btn) => {
+								h('button', { className: 'base-style-button', innerText: '🔍执行搜索' }, (btn) => {
 									btn.onclick = () => {
 										if (
 											this.cfg.methodFilter === 'none' &&
@@ -596,15 +597,15 @@ export const BackgroundProject = Project.create({
 									};
 								})
 							]),
-							el(
+							h(
 								'div',
 								{ style: { backgroundColor: '#292929', overflow: 'auto', maxHeight: window.innerHeight / 2 + 'px' } },
 								[
 									...(list.length === 0
-										? [el('div', { style: { color: 'white', textAlign: 'center' } }, '暂无数据')]
+										? [h('div', { style: { color: 'white', textAlign: 'center' } }, '暂无数据')]
 										: []),
 									...list.map((item) =>
-										el(
+										h(
 											'div',
 											{
 												title: Object.entries(item)
@@ -623,9 +624,9 @@ export const BackgroundProject = Project.create({
 												}
 											},
 											[
-												el('div', [
-													el('span', { style: { marginRight: '8px' } }, new Date(item.time).toLocaleTimeString()),
-													el(
+												h('div', [
+													h('span', { style: { marginRight: '8px' } }, new Date(item.time).toLocaleTimeString()),
+													h(
 														'span',
 														{
 															style: {
@@ -637,23 +638,23 @@ export const BackgroundProject = Project.create({
 														},
 														item.method
 													),
-													el(
+													h(
 														'span',
 														{ style: { color: item.response ? '#4eb74e' : '#eb6262', marginRight: '8px' } },
 														'●'
 													),
-													el(
+													h(
 														'div',
 														{ style: { display: 'inline-block', color: '#ececec' } },
 														item.url ? (item.url.length > 100 ? item.url.slice(0, 100) + '...' : item.url) : '-'
 													)
 												]),
-												el(
+												h(
 													'div',
 													{ style: { overflow: 'hidden', fontSize: '12px', color: '#8f8f8f' } },
 													item.data ? 'data: ' + item.data : ''
 												),
-												el(
+												h(
 													'div',
 													{ style: { overflow: 'hidden', fontSize: '12px', color: '#8f8f8f' } },
 													item.response ? 'resp: ' + item.response : item.error ? 'err : ' + item.error : ''

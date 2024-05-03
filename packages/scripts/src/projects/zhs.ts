@@ -1,18 +1,5 @@
-import {
-	$creator,
-	Project,
-	Script,
-	$el,
-	el,
-	$$el,
-	OCSWorker,
-	defaultAnswerWrapperHandler,
-	$message,
-	$,
-	$modal,
-	RemotePlaywright
-} from '@ocsjs/core';
-import type { MessageElement, RemotePage, SimplifyWorkResult } from '@ocsjs/core';
+import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement } from 'easy-us';
+import { RemotePage, SimplifyWorkResult, OCSWorker, defaultAnswerWrapperHandler, RemotePlaywright } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workNotes, definition, volume, restudy } from '../utils/configs';
 import {
@@ -46,14 +33,14 @@ export const ZHSProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',
-			url: [
+			matches: [
 				['学习首页', 'https://onlineweb.zhihuishu.com/onlinestuh5'],
 				['首页', 'https://www.zhihuishu.com/']
 			],
 			namespace: 'zhs.guide',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'请手动进入视频、作业、考试页面，脚本会自动运行。',
 						'兴趣课会自动下一个，所以不提供脚本。'
 					]).outerHTML
@@ -66,11 +53,11 @@ export const ZHSProject = Project.create({
 		}),
 		'gxk-study': new Script({
 			name: '🖥️ 共享课-学习脚本',
-			url: [['共享课学习页面', 'studyvideoh5.zhihuishu.com']],
+			matches: [['共享课学习页面', 'studyvideoh5.zhihuishu.com']],
 			namespace: 'zhs.gxk.study',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'章节测试请大家观看完视频后手动打开。',
 						[
 							'请大家仔细打开视频上方的”学前必读“，查看成绩分布。',
@@ -167,8 +154,8 @@ export const ZHSProject = Project.create({
 			},
 			onrender({ panel }) {
 				panel.body.replaceChildren(
-					el('hr'),
-					$creator.button('⏰检测是否需要规律学习', {}, (btn) => {
+					h('hr'),
+					$ui.button('⏰检测是否需要规律学习', {}, (btn) => {
 						btn.style.marginRight = '12px';
 						btn.onclick = () => {
 							$el('.iconbaizhoumoshi-xueqianbidu')?.click();
@@ -181,7 +168,7 @@ export const ZHSProject = Project.create({
 										div.style.display = 'block';
 									}
 									const num = parseInt(pmd.innerText.match(/学习习惯成绩（(\d+)分）/)?.[1] || '0');
-									$modal('alert', {
+									$modal.alert({
 										content:
 											`当前课程习惯分占比为${num}分，` +
 											(num
@@ -189,16 +176,16 @@ export const ZHSProject = Project.create({
 												: '可一直观看学习，无需定时停止。')
 									});
 								} else {
-									$modal('alert', { content: '检测失败，请确认在视频学习页面使用此按钮。' });
+									$modal.alert({ content: '检测失败，请确认在视频学习页面使用此按钮。' });
 								}
 							}, 100);
 						};
 					}),
-					$creator.button('📘查看学习记录', {}, (btn) => {
+					$ui.button('📘查看学习记录', {}, (btn) => {
 						btn.onclick = () => {
-							$modal('alert', {
+							$modal.alert({
 								title: '学习记录',
-								content: $creator.notes(
+								content: $ui.notes(
 									this.cfg.studyRecord.map((r) => {
 										const date = new Date(r.date);
 										return [
@@ -206,7 +193,7 @@ export const ZHSProject = Project.create({
 												.getDate()
 												.toString()
 												.padStart(2, '0')}`,
-											$creator.notes(r.courses.map((course) => `${course.name} - ${optimizeSecond(course.time)}`))
+											$ui.notes(r.courses.map((course) => `${course.name} - ${optimizeSecond(course.time)}`))
 										];
 									})
 								)
@@ -257,7 +244,7 @@ export const ZHSProject = Project.create({
 				// 监听定时停止
 				this.onConfigChange('stopTime', (stopTime) => {
 					if (stopTime === '0') {
-						$message('info', { content: '定时停止已关闭' });
+						$message.info({ content: '定时停止已关闭' });
 					} else {
 						autoStop(stopTime);
 					}
@@ -332,7 +319,7 @@ export const ZHSProject = Project.create({
 				};
 
 				const finish = () => {
-					$modal('alert', {
+					$modal.alert({
 						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 					});
 				};
@@ -386,7 +373,7 @@ export const ZHSProject = Project.create({
 					fixProcessBar();
 				}, 3000);
 
-				$message('info', { content: '3秒后开始学习', duration: 3 });
+				$message.info({ content: '3秒后开始学习', duration: 3 });
 
 				const study = async (opts: { next: boolean }) => {
 					if (state.study.stop === false) {
@@ -408,7 +395,7 @@ export const ZHSProject = Project.create({
 							finish();
 						}
 					} else {
-						$message('warn', {
+						$message.warn({
 							content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 						});
 						CommonProject.scripts.settings.methods.notificationBySetting(
@@ -423,7 +410,7 @@ export const ZHSProject = Project.create({
 		}),
 		'gxk-work': new Script({
 			name: '✍️ 共享课-作业考试脚本',
-			url: [
+			matches: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
 				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
 				['作业考试列表', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
@@ -431,7 +418,7 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.gxk.work',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'📢 如果未开始答题，请尝试刷新页面。',
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						'可以搭配 “通用-在线搜题” 一起使用。'
@@ -467,13 +454,13 @@ export const ZHSProject = Project.create({
 						if (isExam || isWork) {
 							const workInfo = await getWorkInfo(remotePage);
 							setTimeout(() => {
-								$message('info', { content: `开始${isExam ? '考试' : '作业'}` });
+								$message.info({ content: `开始${isExam ? '考试' : '作业'}` });
 								commonWork(this, {
 									workerProvider: (opts) => gxkWorkAndExam(workInfo, opts)
 								});
 							}, 1000);
 						} else {
-							$message('info', { content: '📢 请手动进入作业/考试，如果未开始答题，请尝试刷新页面。', duration: 0 });
+							$message.info({ content: '📢 请手动进入作业/考试，如果未开始答题，请尝试刷新页面。', duration: 0 });
 
 							CommonProject.scripts.render.methods.pin(this);
 						}
@@ -492,11 +479,11 @@ export const ZHSProject = Project.create({
 		}),
 		'xnk-study': new Script({
 			name: '🖥️ 校内课-学习脚本',
-			url: [['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']],
+			matches: [['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']],
 			namespace: 'zhs.xnk.study',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['章节测试请大家观看完视频后手动打开。', '此课程不能使用倍速。']).outerHTML
+					defaultValue: $ui.notes(['章节测试请大家观看完视频后手动打开。', '此课程不能使用倍速。']).outerHTML
 				},
 				restudy: restudy,
 				volume: volume
@@ -506,7 +493,7 @@ export const ZHSProject = Project.create({
 				CommonProject.scripts.render.methods.pin(this);
 
 				const finish = () => {
-					$modal('alert', {
+					$modal.alert({
 						content: '检测到当前视频全部播放完毕，如果还有未完成的视频请刷新重试，或者打开复习模式。'
 					});
 					CommonProject.scripts.settings.methods.notificationBySetting(
@@ -580,7 +567,7 @@ export const ZHSProject = Project.create({
 		}),
 		'xnk-work': new Script({
 			name: '✍️ 校内课-作业考试脚本',
-			url: [
+			matches: [
 				['校内课作业页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList'],
 				['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/examQ/examexercise']
 			],
@@ -635,7 +622,7 @@ async function watch(
 		// 如果视频元素无法访问，证明已经切换了视频
 		if (video?.isConnected === false) {
 			clearInterval(videoCheckInterval);
-			$message('info', { content: '检测到视频切换中...' });
+			$message.info({ content: '检测到视频切换中...' });
 			/**
 			 * 元素无法访问证明用户切换视频了
 			 * 所以不往下播放视频，而是重新播放用户当前选中的视频
@@ -727,7 +714,7 @@ function checkForCaptcha(update: (hasCaptcha: boolean) => void) {
 			update(true);
 			// 如果弹窗不存在，则显示
 			if (modal === undefined) {
-				modal = $modal('alert', { content: '当前检测到验证码，请输入后方可继续运行。' });
+				modal = $modal.alert({ content: '当前检测到验证码，请输入后方可继续运行。' });
 			}
 			// 如果没有通知过，则通知
 			if (!notified) {
@@ -751,7 +738,7 @@ function checkForCaptcha(update: (hasCaptcha: boolean) => void) {
 function waitForCaptcha(): void | Promise<void> {
 	const popup = getPopupCaptcha();
 	if (popup) {
-		$message('warn', { content: '当前检测到验证码，请输入后方可继续运行。' });
+		$message.warn({ content: '当前检测到验证码，请输入后方可继续运行。' });
 		CommonProject.scripts.settings.methods.notificationBySetting(
 			'智慧树脚本：当前检测到验证码，请输入后方可继续运行。',
 			{ duration: 0 }
@@ -801,7 +788,7 @@ function gxkWorkAndExam(
 		((workInfo?.rt?.examBase?.workExamParts as any[]) || [])?.map((p) => p.questionDtos).flat() || [];
 
 	const titleTransform = (_: any, index: number) => {
-		const div = el('div');
+		const div = h('div');
 
 		div.innerHTML = allExamParts[index]?.name || '题目读取失败';
 		return removeRedundantWords(optimizationElementWithImage(div).innerText || '', redundanceWordsText.split('\n'));
@@ -913,7 +900,7 @@ function gxkWorkAndExam(
 			if (worker.isClose === true) {
 				return;
 			}
-			$message('success', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
+			$message.success({ content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
 			await $.sleep(stopSecondWhenFinish * 1000);
 			// @ts-ignore
 			if (worker.isClose === true) {
@@ -927,7 +914,7 @@ function gxkWorkAndExam(
 				if (worker.isClose === true) {
 					return;
 				}
-				const modal = $modal('alert', {
+				const modal = $modal.alert({
 					content: '正在保存题目中（必须保存，否则填写的答案无效），<br>请勿操作...',
 					confirmButton: null
 				});
@@ -945,11 +932,11 @@ function gxkWorkAndExam(
 				}
 				modal?.remove();
 			}
-			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			$message.info({ content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 			worker.emit('done');
 		})
 		.catch((err) => {
-			$message('error', { content: '答题程序发生错误 : ' + err.message, duration: 0 });
+			$message.error({ content: '答题程序发生错误 : ' + err.message, duration: 0 });
 		});
 
 	return worker;
@@ -959,7 +946,7 @@ function gxkWorkAndExam(
  * 校内学分课的作业
  */
 function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions) {
-	$message('info', { content: '开始作业' });
+	$message.info({ content: '开始作业' });
 
 	CommonProject.scripts.workResults.methods.init();
 
@@ -1057,7 +1044,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 			await $.sleep(1000);
 		}
 
-		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+		$message.info({ content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 		worker.emit('done');
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-xnk';
 	})();
@@ -1094,13 +1081,13 @@ function autoStop(stopTime: string) {
 				clearInterval(state.study.stopInterval);
 				state.study.stop = true;
 				$el<HTMLVideoElement>('video')?.pause();
-				$modal('alert', { content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
+				$modal.alert({ content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
 			}
 		}, 1000);
 		const val = ZHSProject.scripts['gxk-study'].configs!.stopTime.options.find((t) => t[0] === stopTime)?.[0] || '0';
 		const date = new Date();
 		date.setMinutes(date.getMinutes() + parseFloat(val) * 60);
-		state.study.stopMessage = $message('info', {
+		state.study.stopMessage = $message.info({
 			duration: 0,
 			content: `在 ${date.toLocaleTimeString()} 脚本将自动暂停`
 		});

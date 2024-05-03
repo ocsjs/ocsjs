@@ -1,9 +1,5 @@
-import { SimplifyWorkResult } from '../core/worker';
-import { splitAnswer } from '../core/worker/utils';
-import { $creator } from '../utils';
-import { $ } from '../utils/common';
-import { el } from '../utils/dom';
-import { IElement } from './interface';
+import { SimplifyWorkResult, splitAnswer, createQuestionTitleExtra, $ } from '@ocsjs/core';
+import { h } from 'easy-us';
 
 /**
  * 判断是否有图片链接，如果有则使用 <img> 标签包裹，但如果已经被 <img> 包裹则不处理
@@ -23,30 +19,32 @@ const transformImgLinkOfQuestion = (question: string) => {
 /**
  * 搜索结果元素
  */
-export class SearchInfosElement extends IElement {
+export class SearchInfosElement extends HTMLElement {
 	/** 搜索结果 [题目，答案] */
 	infos: SimplifyWorkResult['searchInfos'] = [];
 	/** 当前的题目 */
 	question: string = '';
 
 	connectedCallback() {
+		console.log('connectedCallback : ', this);
+
 		const question = transformImgLinkOfQuestion(this.question || '无');
 
 		this.append(
-			el('div', [el('span', { innerHTML: question }), $creator.createQuestionTitleExtra(this.question)], (div) => {
+			h('div', [h('span', { innerHTML: question }), createQuestionTitleExtra(this.question)], (div) => {
 				div.style.padding = '4px';
 			}),
-			el('hr')
+			h('hr')
 		);
 
 		this.append(
 			...this.infos.map((info) => {
-				return el('details', { open: true }, [
-					el('summary', [el('a', { href: info.homepage, innerText: info.name, target: '_blank' })]),
+				return h('details', { open: true }, [
+					h('summary', [h('a', { href: info.homepage, innerText: info.name, target: '_blank' })]),
 
 					...(info.error
 						? /** 显示错误信息 */
-						  [el('span', { className: 'error' }, [info.error || '网络错误或者未知错误'])]
+						  [h('span', { className: 'error' }, [info.error || '网络错误或者未知错误'])]
 						: /** 显示结果列表 */
 						  []
 					).concat([
@@ -54,13 +52,13 @@ export class SearchInfosElement extends IElement {
 							const title = transformImgLinkOfQuestion(ans[0] || this.question || '无');
 							const answer = transformImgLinkOfQuestion(ans[1] || '无');
 
-							return el('div', { className: 'search-result' }, [
+							return h('div', { className: 'search-result' }, [
 								/** 题目 */
-								el('div', { className: 'question' }, [el('span', { innerHTML: title })]),
+								h('div', { className: 'question' }, [h('span', { innerHTML: title })]),
 								/** 答案 */
-								el('div', { className: 'answer' }, [
-									el('span', '答案：'),
-									...splitAnswer(answer).map((a) => el('code', { innerHTML: a }))
+								h('div', { className: 'answer' }, [
+									h('span', '答案：'),
+									...splitAnswer(answer).map((a) => h('code', { innerHTML: a }))
 								])
 							]);
 						})

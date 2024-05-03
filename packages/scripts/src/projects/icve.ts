@@ -1,21 +1,12 @@
 import {
-	$el,
-	Project,
-	Script,
 	$,
-	$$el,
-	$creator,
-	$modal,
 	SimplifyWorkResult,
 	defaultAnswerWrapperHandler,
-	el,
 	OCSWorker,
-	$gm,
-	cors,
-	$message,
 	defaultQuestionResolve,
 	splitAnswer
 } from '@ocsjs/core';
+import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 'easy-us';
 import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
@@ -64,7 +55,7 @@ export const IcveMoocProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',
-			url: [
+			matches: [
 				['个人首页', 'icve.com.cn/studycenter'],
 				['学习页面', 'icve.com.cn/study/directory'],
 				['MOOC学院-个人首页', 'user.icve.com.cn'],
@@ -73,7 +64,7 @@ export const IcveMoocProject = Project.create({
 			namespace: 'icve.guide',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['请点击任意课程进入', '进入课程后点击任意章节进入，即可自动学习']).outerHTML
+					defaultValue: $ui.notes(['请点击任意课程进入', '进入课程后点击任意章节进入，即可自动学习']).outerHTML
 				}
 			},
 			oncomplete() {
@@ -84,7 +75,7 @@ export const IcveMoocProject = Project.create({
 		studyCenter: new Script({
 			name: '🖥️ 智慧职教-学习中心',
 			namespace: 'icve.study.center',
-			url: [
+			matches: [
 				['学习中心页面', '/study/directory/dir_course.html'],
 				['课程列表', 'icve.com.cn/study/directory/directory_list.html']
 			],
@@ -117,7 +108,7 @@ export const IcveMoocProject = Project.create({
 						);
 					} catch (e) {
 						console.error(e);
-						$message('error', { content: '课程列表获取失败，请刷新页面重试。' });
+						$message.error('课程列表获取失败，请刷新页面重试。');
 						return;
 					}
 				}
@@ -133,7 +124,7 @@ export const IcveMoocProject = Project.create({
 					const res = await Promise.race([waitForElement('video, audio'), waitForElement('.docBox')]);
 					if (res) {
 						const jobName = document.querySelector('.tabsel.seled')?.getAttribute('title') || '-';
-						$message('info', { content: '开始任务：' + jobName });
+						$message.info('开始任务：' + jobName);
 						$console.log(`任务 ${jobName} 开始。`);
 						if (document.querySelector('video, audio')) {
 							const media = await waitForMedia();
@@ -171,7 +162,7 @@ export const IcveMoocProject = Project.create({
 								}
 							});
 						}
-						$message('success', { content: `任务 ${jobName} 完成，三秒后下一章` });
+						$message.success(`任务 ${jobName} 完成，三秒后下一章`);
 						$console.log(`任务 ${jobName} 完成，三秒后下一章`);
 					} else {
 						$console.error(`不支持的任务页面，请跟作者进行反馈。三秒后下一章`);
@@ -188,7 +179,7 @@ export const IcveMoocProject = Project.create({
 						const nextUrl = this.cfg.currentCourseUrlList[index + 1];
 						if (new URL(url).hash === new URL(location.href).hash) {
 							if (!nextUrl) {
-								$modal('alert', { content: '全部任务已完成' });
+								$modal.alert({ content: '全部任务已完成' });
 								CommonProject.scripts.settings.methods.notificationBySetting('全部任务点已完成！', {
 									duration: 0,
 									extraTitle: '智慧职教学习脚本'
@@ -208,10 +199,10 @@ export const IcveMoocProject = Project.create({
 		study: new Script({
 			name: '🖥️ MOOC学院-课程学习',
 			namespace: 'icve.study.main',
-			url: [['课程学习页面', '/learnspace/learn/learn/templateeight/index.action']],
+			matches: [['课程学习页面', '/learnspace/learn/learn/templateeight/index.action']],
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'如果视频无法播放，可以手动点击其他任务跳过视频。',
 						'经过测试视频倍速最多二倍，否则会判定无效。',
 						'手动进入作业页面才能使用自动答题。'
@@ -247,9 +238,9 @@ export const IcveMoocProject = Project.create({
 				state.study.playbackRateWarningListenerId =
 					this.onConfigChange('playbackRate', (playbackRate) => {
 						if (playbackRate > 4) {
-							$modal('alert', {
+							$modal.alert({
 								title: '⚠️高倍速警告',
-								content: $creator.notes(['高倍速可能导致视频无法完成！'])
+								content: $ui.notes(['高倍速可能导致视频无法完成！'])
 							});
 						}
 					}) || 0;
@@ -269,10 +260,10 @@ export const IcveMoocProject = Project.create({
 
 				if (mainContentWin) {
 					// 弹窗强制用户点击，防止视频无法自动播放
-					$modal('confirm', {
-						content: el('div', [
+					$modal.confirm({
+						content: h('div', [
 							'是否开始自动学习当前章节？',
-							el('br'),
+							h('br'),
 							'你也可以选择任意的章节进行点击，脚本会自动学习，并一直往下寻找章节。'
 						]),
 						cancelButtonText: '我想手动选择章节',
@@ -299,12 +290,12 @@ export const IcveMoocProject = Project.create({
 						// 如果是用户点击
 						if (e.isTrusted) {
 							if (job.getAttribute('itemtype') === 'exam') {
-								return $message('info', {
+								return $message.info({
 									duration: 60,
 									content: '检测到您手动选择了作业/考试章节，将不会自动跳转，请完成后手动选择其他章节，脚本会自动学习。'
 								});
 							} else {
-								$message('info', { content: '检测到章节切换，即将自动学习...' });
+								$message.info('检测到章节切换，即将自动学习...');
 							}
 						}
 
@@ -357,7 +348,7 @@ export const IcveMoocProject = Project.create({
 									}
 								});
 							} catch (err) {
-								$message('error', { content: String(err) });
+								$message.error(String(err));
 							}
 						} else if (iframe.src.includes('content_doc.action')) {
 							// 文档只需点击就算完成，等待5秒下一个
@@ -391,7 +382,7 @@ export const IcveMoocProject = Project.create({
 							nextEl.click();
 							scrollToJob();
 						} else {
-							$modal('alert', { content: '全部任务已完成' });
+							$modal.alert({ content: '全部任务已完成' });
 							CommonProject.scripts.settings.methods.notificationBySetting('全部任务点已完成！', {
 								duration: 0,
 								extraTitle: '智慧职教学习脚本'
@@ -404,11 +395,11 @@ export const IcveMoocProject = Project.create({
 
 		work: new Script({
 			name: '✍️ 作业考试脚本',
-			url: [['作业考试页面', '/exam']],
+			matches: [['作业考试页面', '/exam']],
 			namespace: 'icve.work',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						'可以搭配 “通用-在线搜题” 一起使用。',
 						'请手动进入作业考试页面才能使用自动答题。'
@@ -416,7 +407,7 @@ export const IcveMoocProject = Project.create({
 				}
 			},
 			async oncomplete() {
-				$message('info', { content: '自动答题时请勿切换题目，否则可能导致重复搜题或者脚本卡主。' });
+				$message.info('自动答题时请勿切换题目，否则可能导致重复搜题或者脚本卡主。');
 
 				// 回到第一题
 				const resetToBegin = () => {
@@ -435,7 +426,7 @@ export const IcveMoocProject = Project.create({
 		}),
 		workDispatcher: new Script({
 			name: '作业调度脚本',
-			url: [
+			matches: [
 				['作业进入页面', '/platformwebapi/student/exam/'],
 				['确认作业页面', '/student/exam/studentExam_studentInfo.action']
 			],
@@ -460,7 +451,7 @@ export const IcveMoocProject = Project.create({
 });
 
 function work({ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions) {
-	$message('info', { content: '开始作业' });
+	$message.info('开始作业');
 	CommonProject.scripts.workResults.methods.init();
 
 	console.log({ answererWrappers, period, thread });
@@ -634,7 +625,7 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 			}
 		}
 
-		$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+		$message.info({ content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 		worker.emit('done');
 		// 搜索完成后才会同步答案与题目的显示，防止题目错乱
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'icve';

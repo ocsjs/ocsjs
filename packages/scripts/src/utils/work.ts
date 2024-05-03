@@ -1,4 +1,5 @@
-import { $creator, $message, MessageElement, OCSWorker, Script, SimplifyWorkResult, WorkResult, el } from '@ocsjs/core';
+import { OCSWorker, SimplifyWorkResult, WorkResult } from '@ocsjs/core';
+import { $ui, $message, MessageElement, Script, h } from 'easy-us';
 import { CommonProject } from '../projects/common';
 import { CommonWorkOptions, workPreCheckMessage } from '.';
 
@@ -50,7 +51,7 @@ export function commonWork(
 		controlBtn.style.flex = '1';
 		controlBtn.style.padding = '4px';
 
-		const container = el(
+		const container = h(
 			'div',
 			{ style: { marginTop: '12px', display: 'flex' } },
 			worker?.isRunning ? [controlBtn, restartBtn] : [startBtn]
@@ -63,7 +64,7 @@ export function commonWork(
 	script.on('render', () => {
 		let gotoSettingsBtnContainer: string | HTMLElement = '';
 		if (checkFailed) {
-			const gotoSettingsBtn = $creator.button('👉 前往设置题库配置', {
+			const gotoSettingsBtn = $ui.button('👉 前往设置题库配置', {
 				className: 'base-style-button',
 				style: { flex: '1', padding: '4px' }
 			});
@@ -72,11 +73,11 @@ export function commonWork(
 			gotoSettingsBtn.onclick = () => {
 				CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
 			};
-			gotoSettingsBtnContainer = el('div', { style: { display: 'flex' } }, [gotoSettingsBtn]);
+			gotoSettingsBtnContainer = h('div', { style: { display: 'flex' } }, [gotoSettingsBtn]);
 		}
 
 		script.panel?.body?.replaceChildren(
-			el('div', { style: { marginTop: '12px' } }, [
+			h('div', { style: { marginTop: '12px' } }, [
 				gotoSettingsBtnContainer,
 				createControls().container,
 				workResultPanel()
@@ -126,9 +127,9 @@ export function createWorkerControl(options: {
 }) {
 	let stop = false;
 	let stopMessage: MessageElement | undefined;
-	const startBtn = $creator.button('▶️开始答题');
-	const restartBtn = $creator.button('🔃重新答题');
-	const controlBtn = $creator.button('⏸暂停');
+	const startBtn = $ui.button('▶️开始答题');
+	const restartBtn = $ui.button('🔃重新答题');
+	const controlBtn = $ui.button('⏸暂停');
 
 	startBtn.onclick = () => {
 		startBtn.remove();
@@ -145,7 +146,7 @@ export function createWorkerControl(options: {
 		worker?.emit?.(stop ? 'stop' : 'continuate');
 		controlBtn.value = stop ? '▶️继续' : '⏸️暂停';
 		if (stop) {
-			stopMessage = $message('warn', { duration: 0, content: '暂停中...' });
+			stopMessage = $message.warn({ duration: 0, content: '暂停中...' });
 		} else {
 			stopMessage?.remove();
 		}

@@ -3,28 +3,17 @@
 import {
 	OCSWorker,
 	defaultAnswerWrapperHandler,
-	$creator,
-	Project,
-	Script,
-	$el,
-	$gm,
-	$$el,
 	$,
 	StringUtils,
 	request,
 	defaultQuestionResolve,
 	DefaultWork,
 	splitAnswer,
-	MessageElement,
 	domSearch,
 	domSearchAll,
-	SearchInformation,
-	$modal,
-	$message,
-	el,
-	$store,
-	$menu
+	SearchInformation
 } from '@ocsjs/core';
+import { $modal, $message, h, $store, $menu, MessageElement, Project, Script, $el, $gm, $$el, $ui } from 'easy-us';
 
 import { CommonProject } from './common';
 import { workNotes, volume, playbackRate } from '../utils/configs';
@@ -109,7 +98,7 @@ export const CXProject = Project.create({
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',
-			url: [
+			matches: [
 				['首页', 'https://www.chaoxing.com'],
 				['旧版个人首页', 'chaoxing.com/space/index'],
 				['新版个人首页', 'chaoxing.com/base'],
@@ -129,14 +118,14 @@ export const CXProject = Project.create({
 		study: new Script({
 			name: '🖥️ 课程学习',
 			namespace: 'cx.new.study',
-			url: [
+			matches: [
 				['任务点页面', '/knowledge/cards'],
 				['阅读任务点', '/readsvr/book/mooc']
 				// 旧版浏览器好像不能识别二级 iframe ， 所以不能使用 'work/doHomeWorkNew' 以及其他二级 iframe 来触发路由
 			],
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
 						['任务点不是顺序执行，如果某一个任务没有动', '请查看是否有其他任务正在学习，耐心等待即可。'],
 						'闯关模式请注意题库如果没完成，需要自己完成才能解锁章节。',
@@ -228,11 +217,11 @@ export const CXProject = Project.create({
 			},
 			onrender({ panel }) {
 				if (!CommonProject.scripts.settings.cfg.answererWrappers?.length) {
-					const setting = el('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
+					const setting = h('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
 					setting.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
 					if (state.study.answererWrapperUnsetMessage === undefined) {
-						state.study.answererWrapperUnsetMessage = $message('warn', {
-							content: el('span', {}, ['检测到未设置题库配置，将无法自动答题，请切换到 ', setting, ' 页面进行配置。']),
+						state.study.answererWrapperUnsetMessage = $message.warn({
+							content: h('span', {}, ['检测到未设置题库配置，将无法自动答题，请切换到 ', setting, ' 页面进行配置。']),
 							duration: 0
 						});
 					}
@@ -243,9 +232,9 @@ export const CXProject = Project.create({
 				state.study.playbackRateWarningListenerId =
 					this.onConfigChange('playbackRate', (playbackRate) => {
 						if (playbackRate > 3) {
-							$modal('alert', {
+							$modal.alert({
 								title: '⚠️高倍速警告',
-								content: $creator.notes(['高倍速可能导致学习记录清空', '超星后台可以看到学习时长，请谨慎设置❗'])
+								content: $ui.notes(['高倍速可能导致学习记录清空', '超星后台可以看到学习时长，请谨慎设置❗'])
 							});
 						}
 					}) || 0;
@@ -288,7 +277,7 @@ export const CXProject = Project.create({
 		}),
 		work: new Script({
 			name: '✍️ 作业考试脚本',
-			url: [
+			matches: [
 				['作业页面', '/mooc2/work/dowork'],
 				['考试整卷预览页面', '/mooc2/exam/preview']
 			],
@@ -303,7 +292,7 @@ export const CXProject = Project.create({
 		}),
 		autoRead: new Script({
 			name: '🖥️ 自动阅读',
-			url: [
+			matches: [
 				['阅读页面', '/ztnodedetailcontroller/visitnodedetail'],
 				['课程目录', /chaoxing.com\/course\/\d+\.html/],
 				['课程目录', /chaoxing.com\/mooc-ans\/course\/\d+\.html/]
@@ -311,7 +300,7 @@ export const CXProject = Project.create({
 			namespace: 'cx.new.auto-read',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['阅读任务次日才会统计阅读时长']).outerHTML
+					defaultValue: $ui.notes(['阅读任务次日才会统计阅读时长']).outerHTML
 				},
 				restartAfterFinish: {
 					label: '无限阅读',
@@ -344,10 +333,10 @@ export const CXProject = Project.create({
 					} else {
 						if (this.cfg.restartAfterFinish) {
 							setTimeout(() => startAtFirst(), 3000);
-							$message('info', { content: '即将重新从头开始阅读', duration: 10 });
+							$message.info({ content: '即将重新从头开始阅读', duration: 10 });
 							$console.log('即将重新从头开始阅读');
 						} else {
-							$message('success', { content: '阅读任务已完成', duration: 0 });
+							$message.success({ content: '阅读任务已完成', duration: 0 });
 							$console.log('未检测到下一页');
 						}
 					}
@@ -367,7 +356,7 @@ export const CXProject = Project.create({
 		 */
 		pageRedirect: new Script({
 			name: '章节页面自动切换脚本',
-			url: [['课程任务页面', 'pageHeader=0']],
+			matches: [['课程任务页面', 'pageHeader=0']],
 			hideInPanel: true,
 			async oncomplete() {
 				if (top === window) {
@@ -376,7 +365,7 @@ export const CXProject = Project.create({
 						await $.sleep(1000);
 						// 跳转到最新版本的超星
 						a.click();
-						$message('info', {
+						$message.info({
 							content: '已经为您自动切换到章节列表页面，手动进入任意章节即可开始自动学习！'
 						});
 					}
@@ -385,7 +374,7 @@ export const CXProject = Project.create({
 		}),
 		versionRedirect: new Script({
 			name: '版本切换脚本',
-			url: [
+			matches: [
 				['', 'mooc2=0'],
 				['', 'mycourse/studentcourse'],
 				['', 'work/getAllWork'],
@@ -397,7 +386,7 @@ export const CXProject = Project.create({
 			hideInPanel: true,
 			async oncomplete() {
 				if (top === window) {
-					$message('warn', {
+					$message.warn({
 						content:
 							'OCS网课助手不支持旧版超星, 即将切换到超星新版, 如有其他第三方插件请关闭, 可能有兼容问题导致频繁切换。'
 					});
@@ -423,21 +412,21 @@ export const CXProject = Project.create({
 		}),
 		examRedirect: new Script({
 			name: '考试整卷预览脚本',
-			url: [
+			matches: [
 				['新版考试页面', 'exam-ans/exam/test/reVersionTestStartNew'],
 				// 2023/9月 新增
 				['新版考试页面2', 'mooc-ans/exam/test/reVersionTestStartNew']
 			],
 			hideInPanel: true,
 			oncomplete() {
-				$message('info', { content: '即将跳转到整卷预览页面进行考试。' });
+				$message.info({ content: '即将跳转到整卷预览页面进行考试。' });
 				setTimeout(() => $gm.unsafeWindow.topreview(), 3000);
 			}
 		}),
 		rateHack: new Script({
 			name: '屏蔽倍速限制',
 			hideInPanel: true,
-			url: [['', '/ananas/modules/video/']],
+			matches: [['', '/ananas/modules/video/']],
 			onstart() {
 				rateHack();
 			}
@@ -445,7 +434,7 @@ export const CXProject = Project.create({
 		copyHack: new Script({
 			name: '屏蔽复制粘贴限制',
 			hideInPanel: true,
-			url: [['所有页面', /.*/]],
+			matches: [['所有页面', /.*/]],
 			methods() {
 				return {
 					/** 解除输入框无法复制粘贴 */
@@ -464,8 +453,8 @@ export const CXProject = Project.create({
 									ue.body.addEventListener('click', async () => {
 										// http 下无法读取剪贴板，通过弹窗让用户输入然后同步到编辑器
 										if (CXProject.scripts.study.cfg.showTextareaWhenEdit) {
-											const defaultText = el('span', { innerHTML: ue.textarea.value }).textContent;
-											$modal('prompt', {
+											const defaultText = h('span', { innerHTML: ue.textarea.value }).textContent;
+											$modal.prompt({
 												content:
 													'请在此文本框进行编辑，防止超星无法复制粘贴。(如需关闭请前往设置: 课程学习-编辑时显示自定义编辑框)',
 												width: 800,
@@ -507,7 +496,7 @@ export const CXProject = Project.create({
 		}),
 		studyDispatcher: new Script({
 			name: '课程学习调度器',
-			url: [['课程学习页面', '/mycourse/studentstudy']],
+			matches: [['课程学习页面', '/mycourse/studentstudy']],
 			namespace: 'cx.new.study-dispatcher',
 			hideInPanel: true,
 			async oncomplete() {
@@ -539,7 +528,7 @@ export const CXProject = Project.create({
 					chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
 
 					if (chapters.length === 0) {
-						$message('warn', { content: '页面任务点数量为空! 请刷新重试!' });
+						$message.warn({ content: '页面任务点数量为空! 请刷新重试!' });
 					} else {
 						const params = new URLSearchParams(window.location.href);
 						const courseId = params.get('courseId');
@@ -557,7 +546,7 @@ export const CXProject = Project.create({
 		cxSecretFontRecognize: new Script({
 			name: '繁体字识别',
 			hideInPanel: true,
-			url: [
+			matches: [
 				['题目页面', 'work/doHomeWorkNew'],
 				['考试整卷预览', '/mooc2/exam/preview'],
 				['作业', '/mooc2/work/dowork']
@@ -573,7 +562,7 @@ function workOrExam(
 	type: 'work' | 'exam' = 'work',
 	{ answererWrappers, period, thread, redundanceWordsText, answerSeparators, answerMatchMode }: CommonWorkOptions
 ) {
-	$message('info', { content: `开始${type === 'work' ? '作业' : '考试'}` });
+	$message.info(`开始${type === 'work' ? '作业' : '考试'}`);
 
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'cx'
@@ -735,12 +724,12 @@ function workOrExam(
 	worker
 		.doWork()
 		.then(() => {
-			$message('info', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+			$message.info({ content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 			worker.emit('done');
 		})
 		.catch((err) => {
 			console.error(err);
-			$message('error', { content: '答题程序发生错误 : ' + err.message });
+			$message.error('答题程序发生错误 : ' + err.message);
 		});
 
 	return worker;
@@ -1081,7 +1070,7 @@ export async function study(opts: {
 
 		if (CXAnalyses.isInFinalTab()) {
 			if (await CXAnalyses.isStuckInBreakingMode()) {
-				return $modal('alert', {
+				return $modal.alert({
 					content: '检测到此章节重复进入, 为了避免无限重复, 请自行手动完成后手动点击下一章, 或者刷新重试。'
 				});
 			}
@@ -1096,7 +1085,7 @@ export async function study(opts: {
 					top?.document.querySelector<HTMLElement>('.posCatalog_name')?.click();
 				}, 10 * 1000);
 
-				$message('info', { content, duration: 30 });
+				$message.info({ content, duration: 30 });
 			} else {
 				if (CXAnalyses.isFinishedAllChapters()) {
 					content = '全部任务点已完成！';
@@ -1104,7 +1093,7 @@ export async function study(opts: {
 					content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
 				}
 
-				$modal('alert', { content: content });
+				$modal.alert({ content: content });
 			}
 
 			CommonProject.scripts.settings.methods.notificationBySetting(content, {
@@ -1136,13 +1125,13 @@ export async function study(opts: {
 
 	if (CXProject.scripts.study.cfg.autoNextPage) {
 		const msg = '页面任务点已完成，即将切换下一章。';
-		$message('success', { content: msg });
+		$message.success({ content: msg });
 		$console.info(msg);
 		await $.sleep(5000);
 		next();
 	} else {
 		const msg = '页面任务点已完成，自动下一章已关闭，请手动切换。';
-		$message('warn', { content: msg });
+		$message.warn({ content: msg });
 		$console.warn(msg);
 	}
 }
@@ -1215,14 +1204,14 @@ function searchJob(
 				if (media) {
 					if (!CXProject.scripts.study.cfg.enableMedia) {
 						const msg = `音视频自动学习功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
-						$message('warn', { content: msg });
+						$message.warn({ content: msg });
 						$console.warn(msg);
 					} else {
 						// 重复学习，或者未完成
 						if (opts.restudy || attachment.job) {
 							func = () => {
 								const msg = `即将${opts.restudy ? '重新' : ''}播放 : ` + jobName;
-								$message('info', { content: msg });
+								$message.info({ content: msg });
 								$console.log(msg);
 								return mediaTask(opts, media as HTMLMediaElement, doc);
 							};
@@ -1231,7 +1220,7 @@ function searchJob(
 				} else if (chapterTest) {
 					if (!CXProject.scripts.study.cfg.enableChapterTest) {
 						const msg = `章节测试自动答题功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
-						$message('warn', { content: msg });
+						$message.warn({ content: msg });
 						$console.warn(msg);
 					} else {
 						const status = win.document.querySelector<HTMLElement>('.testTit_status');
@@ -1239,20 +1228,20 @@ function searchJob(
 						// 已完成
 						if (status?.classList.contains('testTit_status_complete')) {
 							const msg = `章节测试已完成 : ` + jobName;
-							$message('success', { content: msg });
+							$message.success({ content: msg });
 							$console.log(msg);
 						} else {
 							if (attachment.job || CommonProject.scripts.settings.cfg['work-when-no-job']) {
 								func = () => {
 									const msg = `开始答题 : ` + jobName;
-									$message('info', { content: msg });
+									$message.info({ content: msg });
 									$console.log(msg);
 									return chapterTestTask(root, opts.workOptions);
 								};
 							}
 							if (attachment.job === undefined && CommonProject.scripts.settings.cfg['work-when-no-job'] === false) {
 								const msg = `当前作业 ${jobName} 不是任务点，但待完成，如需开启自动答题请前往：通用-全局设置，开启强制答题。`;
-								$message('warn', { content: msg });
+								$message.warn({ content: msg });
 								$console.warn(msg);
 							}
 						}
@@ -1260,13 +1249,13 @@ function searchJob(
 				} else if (read) {
 					if (!CXProject.scripts.study.cfg.enablePPT) {
 						const msg = `PPT/书籍阅读功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
-						$message('warn', { content: msg });
+						$message.warn({ content: msg });
 						$console.warn(msg);
 					} else {
 						if (attachment.job) {
 							func = () => {
 								const msg = `正在学习 : ` + jobName;
-								$message('warn', { content: msg });
+								$message.warn({ content: msg });
 								$console.log(msg);
 								return readTask(win);
 							};
@@ -1451,12 +1440,12 @@ async function chapterTestTask(
 ) {
 	if (answererWrappers === undefined || answererWrappers.length === 0) {
 		const msg = '检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。';
-		$message('error', { content: msg });
+		$message.error({ content: msg });
 		return $console.warn(msg);
 	}
 
-	$message('info', {
-		content: el('div', ['正在答题中，答题结果请前往：通用-搜索结果 进行查看']),
+	$message.info({
+		content: h('div', ['正在答题中，答题结果请前往：通用-搜索结果 进行查看']),
 		duration: 10
 	});
 
@@ -1680,7 +1669,7 @@ async function chapterTestTask(
 
 	const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;
 	$console.info(msg);
-	$message('info', { content: msg, duration: stopSecondWhenFinish });
+	$message.info({ content: msg, duration: stopSecondWhenFinish });
 	await $.sleep(stopSecondWhenFinish * 1000);
 
 	// 处理提交
@@ -1690,7 +1679,7 @@ async function chapterTestTask(
 		async callback(finishedRate, uploadable) {
 			const msg = `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '3秒后将自动提交' : '3秒后将自动保存'} `;
 			$console.info(msg);
-			$message('success', { content: msg, duration: 3 });
+			$message.success({ content: msg, duration: 3 });
 
 			await $.sleep(3000);
 

@@ -1,14 +1,5 @@
-import {
-	$,
-	$creator,
-	$message,
-	OCSWorker,
-	Project,
-	RemotePage,
-	RemotePlaywright,
-	Script,
-	defaultAnswerWrapperHandler
-} from '@ocsjs/core';
+import { $, OCSWorker, RemotePage, RemotePlaywright, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { $message, Project, Script, $ui } from 'easy-us';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
 import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
@@ -30,7 +21,7 @@ export const ICourseProject = Project.create({
 		dispatcher: new Script({
 			name: '调度器',
 			hideInPanel: true,
-			url: [['所有页面', 'icourse163.org']],
+			matches: [['所有页面', 'icourse163.org']],
 			oncomplete() {
 				setInterval(() => {
 					const hash = new URL(window.location.href).hash;
@@ -61,12 +52,12 @@ export const ICourseProject = Project.create({
 		}),
 		guide: new Script({
 			name: '💡 使用提示',
-			url: [['', 'icourse163.org']],
+			matches: [['', 'icourse163.org']],
 			// 添加版本号是因为只有 notes 会强制更新，其他配置项不会，如果需要修改 runAtHash ，需要更新版本号
 			namespace: 'icourse.guide-v1',
 			configs: {
 				notes: {
-					defaultValue: $creator.notes(['手动进入任意课程里的课件/作业，即可开始自动学习']).outerHTML
+					defaultValue: $ui.notes(['手动进入任意课程里的课件/作业，即可开始自动学习']).outerHTML
 				},
 				runAtHash: {
 					// 在没有进入学习页面前，都显示提示
@@ -87,13 +78,13 @@ export const ICourseProject = Project.create({
 			name: '🖥️ 学习脚本',
 			// 添加版本号是因为只有 notes 会强制更新，其他配置项不会，如果需要修改 runAtHash ，需要更新版本号
 			namespace: 'icourse.study-v1',
-			url: [
+			matches: [
 				['MOOC作业页面', 'icourse163.org/learn'],
 				['SPOC作业页面', 'icourse163.org/spoc/learn']
 			],
 			configs: {
 				notes: {
-					defaultValue: $creator.notes([
+					defaultValue: $ui.notes([
 						'请勿在使用过程中最小化浏览器',
 						'自动讨论默认关闭，如需开启请在下方设置中设置',
 						'作业请完成课程后手动进入'
@@ -223,7 +214,7 @@ export const ICourseProject = Project.create({
 								}
 							}
 							if (list.length === 0) {
-								$message('success', { content: '所有章节学习完成！', duration: 0 });
+								$message.success({ content: '所有章节学习完成！', duration: 0 });
 								$console.info('所有章节学习完成！');
 								CommonProject.scripts.settings.methods.notificationBySetting('所有章节学习完成！', {
 									duration: 0,
@@ -308,7 +299,7 @@ export const ICourseProject = Project.create({
 			name: '✍️ 作业脚本',
 			// 添加版本号是因为只有 notes 会强制更新，其他配置项不会，如果需要修改 runAtHash ，需要更新版本号
 			namespace: 'icourse.work-v1',
-			url: [
+			matches: [
 				['MOOC作业页面', 'icourse163.org/learn'],
 				['SPOC作业页面', 'icourse163.org/spoc/learn']
 			],
@@ -349,7 +340,7 @@ export const ICourseProject = Project.create({
 							});
 							const interval = setInterval(() => {
 								if (canRun() === false) {
-									$message('warn', { content: '检测到页面切换，无法继续答题，将关闭自动答题。' });
+									$message.warn('检测到页面切换，无法继续答题，将关闭自动答题。');
 									clearInterval(interval);
 									worker.emit('close');
 								}
@@ -362,7 +353,7 @@ export const ICourseProject = Project.create({
 				return {
 					main: async (canRun: () => boolean) => {
 						if (location.hash.includes('learn/quizscore')) {
-							$message('success', { content: '当前作业已完成，自动答题关闭。' });
+							$message.success('当前作业已完成，自动答题关闭。');
 							return;
 						}
 						return start('work-or-exam', canRun);
@@ -491,7 +482,7 @@ function workAndExam(
 				return;
 			}
 			if (type === 'chapter-test') {
-				$message('info', { content: `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。` });
+				$message.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
 				$console.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
 				await $.sleep(stopSecondWhenFinish * 1000);
 				if (worker.isClose) {
@@ -506,7 +497,7 @@ function workAndExam(
 							uploadable ? '3秒后将自动提交' : '3秒后将自动跳过（没保存按钮）'
 						} `;
 						$console.info(content);
-						$message('success', { content: content, duration: 0 });
+						$message.success({ content: content, duration: 0 });
 
 						await $.sleep(3000);
 						if (worker.isClose) {
@@ -523,13 +514,13 @@ function workAndExam(
 					}
 				});
 			} else {
-				$message('success', { content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
+				$message.success({ content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 			}
 
 			worker.emit('done');
 		})
 		.catch((err) => {
-			$message('error', { content: '答题程序发生错误 : ' + err.message, duration: 0 });
+			$message.error({ content: '答题程序发生错误 : ' + err.message, duration: 0 });
 		});
 
 	return worker;
