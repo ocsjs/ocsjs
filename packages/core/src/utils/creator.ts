@@ -1,25 +1,6 @@
 import { $ } from './common';
 import { $ui, h } from 'easy-us';
 
-export interface PreventTextOptions {
-	/** 按钮文字 */
-	name: string;
-	/**
-	 * 执行的延时
-	 * @default 5
-	 */
-	delay?: number;
-	/**
-	 * 时间到后是否自动删除该文本按钮元素
-	 * @default true
-	 */
-	autoRemove?: boolean;
-	/** 执行的回调 */
-	ondefault: (span: HTMLSpanElement) => void;
-	/** 不执行的回调 */
-	onprevent?: (span: HTMLSpanElement) => void;
-}
-
 let popupWin: Window | null;
 window.addEventListener('beforeunload', () => {
 	popupWin?.close();
