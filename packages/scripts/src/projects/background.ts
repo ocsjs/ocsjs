@@ -676,6 +676,10 @@ export const BackgroundProject = Project.create({
 				this.methods.render(this.cfg.list);
 			},
 			onstart() {
+				// 兼容其他环境
+				if ($gm.isInGMContext() === false) {
+					return;
+				}
 				/* global GM_xmlhttpRequest  RequestInfo RequestInit */
 				/* eslint-disable no-global-assign */
 				const gmRequest = GM_xmlhttpRequest;

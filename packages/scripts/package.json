@@ -41,7 +41,7 @@
 		"@ocsjs/core": "workspace:4.0.0-beta.0",
 		"@rollup/plugin-commonjs": "^24.0.0",
 		"browser-env": "^3.3.0",
-		"easy-us": "^0.0.11",
+		"easy-us": "^0.0.12",
 		"lodash": "^4.17.21",
 		"markdown-it": "^13.0.1",
 		"marked": "^4.2.12",
