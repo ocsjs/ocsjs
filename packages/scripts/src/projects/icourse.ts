@@ -7,6 +7,7 @@ import { $console } from './background';
 import { $playwright } from '../utils/app';
 import { waitForElement, waitForMedia } from '../utils/study';
 import { playbackRate, volume, workNotes } from '../utils/configs';
+import { $render } from '../utils/render';
 
 const state = {
 	currentMedia: undefined as HTMLMediaElement | undefined,
@@ -138,7 +139,7 @@ export const ICourseProject = Project.create({
 						}
 
 						// 移动窗口到边缘
-						CommonProject.scripts.render.methods.moveToEdge();
+						$render.moveToEdge();
 
 						const study = async () => {
 							const lessonName = document.querySelector('.j-lesson .j-up')?.textContent;
@@ -318,7 +319,7 @@ export const ICourseProject = Project.create({
 					CommonProject.scripts.render.methods.pin(this);
 
 					// 移动窗口到边缘
-					CommonProject.scripts.render.methods.moveToEdge();
+					$render.moveToEdge();
 
 					// 检查是否为软件环境
 					const remotePage = await RemotePlaywright.getCurrentPage();

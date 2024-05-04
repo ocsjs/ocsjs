@@ -13,6 +13,7 @@ import { CommonWorkOptions, playMedia } from '../utils';
 import { $console } from './background';
 import { waitForMedia } from '../utils/study';
 import { $playwright } from '../utils/app';
+import { $render } from '../utils/render';
 
 const state = {
 	study: {
@@ -297,7 +298,7 @@ export const ZHSProject = Project.create({
 							if (options.length !== 0) {
 								await waitForCaptcha();
 								// 最小化脚本窗口
-								CommonProject.scripts.render.methods.moveToEdge();
+								$render.moveToEdge();
 								// 随机选
 								const random = Math.floor(Math.random() * options.length);
 								await $.sleep(1000);
@@ -382,7 +383,7 @@ export const ZHSProject = Project.create({
 						if (item) {
 							await $.sleep(3000);
 							// 最小化脚本窗口
-							CommonProject.scripts.render.methods.moveToEdge();
+							$render.moveToEdge();
 							// 点击侧边栏任务
 							await remotePage.click(item);
 

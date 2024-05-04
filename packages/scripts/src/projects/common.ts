@@ -326,7 +326,11 @@ export const CommonProject = Project.create({
 																		]),
 																		...createAnswererWrapperList(awsResult)
 																	]),
-																	onConfirm: () => top?.document.location.reload(),
+																	onConfirm: () => {
+																		if ($gm.isInGMContext()) {
+																			top?.document.location.reload();
+																		}
+																	},
 																	...($gm.isInGMContext()
 																		? {
 																				confirmButtonText: '立即刷新',

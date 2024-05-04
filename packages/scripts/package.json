@@ -1,6 +1,6 @@
 {
 	"name": "@ocsjs/scripts",
-	"version": "4.0.0",
+	"version": "4.0.1",
 	"description": "core package of ocs",
 	"main": "./lib/index.js",
 	"types": "./lib/index.d.ts",
@@ -38,10 +38,10 @@
 		"vite-plugin-banner": "^0.6.1"
 	},
 	"dependencies": {
-		"@ocsjs/core": "workspace:4.0.0-beta.0",
+		"@ocsjs/core": "4.0.1",
 		"@rollup/plugin-commonjs": "^24.0.0",
 		"browser-env": "^3.3.0",
-		"easy-us": "^0.0.15",
+		"easy-us": "^0.0.18",
 		"lodash": "^4.17.21",
 		"markdown-it": "^13.0.1",
 		"marked": "^4.2.12",
