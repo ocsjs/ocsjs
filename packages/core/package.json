@@ -40,7 +40,7 @@
 		"vite-plugin-banner": "^0.6.1"
 	},
 	"dependencies": {
-		"easy-us": "^0.0.14",
+		"easy-us": "^0.0.15",
 		"events": "^3.3.0",
 		"lodash": "^4.17.21",
 		"playwright-core": "^1.40.1",
