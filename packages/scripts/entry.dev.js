@@ -20,7 +20,7 @@ if (
 ) {
 	const open = confirm(
 		`OCS网课脚本不支持当前的脚本管理器（${GM_info.scriptHandler}）。` +
-			'请前往 https://docs.ocsjs.com/docs/script 下载指定的脚本管理器，例如 “Scriptcat 脚本猫” 或者 “Tampermonkey 油猴”'
+		'请前往 https://docs.ocsjs.com/docs/script 下载指定的脚本管理器，例如 “Scriptcat 脚本猫” 或者 “Tampermonkey 油猴”'
 	);
 
 	if (open) {
@@ -40,9 +40,9 @@ const infos = GM_info;
 
 	// 运行脚本
 	start({
-		RenderScript,
 		projects: projects,
 		renderConfig: {
+			renderScript: RenderScript,
 			styles: [GM_getResourceText('STYLE')],
 			defaultPanelName: CommonProject.scripts.guide.namespace,
 			title: `OCS DEV-${infos.script.version}`
