@@ -1,5 +1,6 @@
-import { SimplifyWorkResult, splitAnswer, createQuestionTitleExtra, $ } from '@ocsjs/core';
+import { SimplifyWorkResult, splitAnswer, $ } from '@ocsjs/core';
 import { h } from 'easy-us';
+import { createQuestionTitleExtra } from '../utils';
 
 /**
  * 判断是否有图片链接，如果有则使用 <img> 标签包裹，但如果已经被 <img> 包裹则不处理

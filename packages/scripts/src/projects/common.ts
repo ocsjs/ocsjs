@@ -5,14 +5,13 @@ import {
 	request,
 	SimplifyWorkResult,
 	$,
-	WorkUploadType,
-	createQuestionTitleExtra
+	WorkUploadType
 } from '@ocsjs/core';
 import { $message, h, $gm, $store, Project, Script, $modal, StoreListenerType, $ui } from 'easy-us';
 import type { AnswerMatchMode, AnswererWrapper, SearchInformation } from '@ocsjs/core';
 import { CXProject, ICourseProject, IcveMoocProject, ZHSProject, ZJYProject } from '../index';
 import { markdown } from '../utils/markdown';
-import { enableCopy } from '../utils';
+import { createQuestionTitleExtra, enableCopy } from '../utils';
 import { SearchInfosElement } from '../elements/search.infos';
 import { RenderScript } from '../render';
 
