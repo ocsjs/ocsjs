@@ -1507,42 +1507,34 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 						(() => {
 							let isDisabled = CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.includes(item.name);
 
-							const btn = $ui.button(
-								isDisabled ? '启用' : '停用',
-								{
-									className: isDisabled ? 'base-style-button' : 'base-style-button-secondary danger'
-								},
-								(controlsBtn) => {
-									controlsBtn.onclick = () => {
-										isDisabled = !isDisabled;
-										controlsBtn.value = isDisabled ? '启用' : '停用';
-										controlsBtn.className = isDisabled ? 'base-style-button' : 'base-style-button-secondary danger';
-										if (isDisabled) {
-											CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames = [
-												...CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames,
-												item.name
-											];
-											$message.warn({
-												content: '题库：' + item.name + ' 已被停用，如需开启请在：通用-全局设置-题库配置中开启。',
-												duration: 30
-											});
-										} else {
-											CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames =
-												CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.filter(
-													(name) => name !== item.name
-												);
-											$message.success({
-												content: '题库：' + item.name + ' 已启用。',
-												duration: 3
-											});
-										}
-									};
+							const checkbox = h('input', { type: 'checkbox', checked: !isDisabled, className: 'base-style-switch' });
+
+							checkbox.onclick = () => {
+								isDisabled = !isDisabled;
+								if (isDisabled) {
+									CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames = [
+										...CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames,
+										item.name
+									];
+									$message.warn({
+										content: '题库：' + item.name + ' 已被停用，如需开启请在：通用-全局设置-题库配置中开启。',
+										duration: 30
+									});
+								} else {
+									CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames =
+										CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.filter(
+											(name) => name !== item.name
+										);
+									$message.success({
+										content: '题库：' + item.name + ' 已启用。',
+										duration: 3
+									});
 								}
-							);
+							};
 
-							btn.title = '点击停用或者启用题库，停用题库后将无法在自动答题中查询题目';
+							checkbox.title = '点击停用或者启用题库，停用题库后将无法在自动答题中查询题目';
 
-							return $ui.tooltip(btn);
+							return $ui.tooltip(checkbox);
 						})(),
 						h('span', item.name)
 					])
