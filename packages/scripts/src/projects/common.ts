@@ -517,7 +517,7 @@ export const CommonProject = Project.create({
 						'【Multiple Choice】',
 						'【single choice】',
 						'【multiple choice】',
-						'【True of False】'
+						'【True or False】'
 					].join('\n'),
 					label: '题目冗余字段自动删除',
 					tag: 'textarea',
