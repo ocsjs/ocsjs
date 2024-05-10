@@ -1504,17 +1504,19 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 			[
 				h('summary', [
 					$ui.space([
-						h('span', item.name),
 						(() => {
 							let isDisabled = CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames.includes(item.name);
+
 							const btn = $ui.button(
-								isDisabled ? '启用此题库' : '停用此题库',
-								{ className: isDisabled ? 'base-style-button' : 'base-style-button-secondary' },
+								isDisabled ? '启用' : '停用',
+								{
+									className: isDisabled ? 'base-style-button' : 'base-style-button-secondary danger'
+								},
 								(controlsBtn) => {
 									controlsBtn.onclick = () => {
 										isDisabled = !isDisabled;
-										controlsBtn.value = isDisabled ? '点击启用此题库' : '点击停用此题库';
-										controlsBtn.className = isDisabled ? 'base-style-button' : 'base-style-button-secondary';
+										controlsBtn.value = isDisabled ? '启用' : '停用';
+										controlsBtn.className = isDisabled ? 'base-style-button' : 'base-style-button-secondary danger';
 										if (isDisabled) {
 											CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames = [
 												...CommonProject.scripts.settings.cfg.disabledAnswererWrapperNames,
@@ -1538,8 +1540,11 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 								}
 							);
 
-							return btn;
-						})()
+							btn.title = '点击停用或者启用题库，停用题库后将无法在自动答题中查询题目';
+
+							return $ui.tooltip(btn);
+						})(),
+						h('span', item.name)
 					])
 				]),
 				h('ul', [
