@@ -388,10 +388,15 @@ export const CXProject = Project.create({
 				if (top === window) {
 					$message.warn({
 						content:
-							'OCS网课助手不支持旧版超星, 即将切换到超星新版, 如有其他第三方插件请关闭, 可能有兼容问题导致频繁切换。'
+							'OCS网课助手不支持旧版超星, 即将切换到超星新版, 如有其他第三方插件请关闭, 可能有兼容问题导致频繁切换。',
+						duration: 0
 					});
 					// 跳转到最新版本的超星
 					await $.sleep(2000);
+
+					// 检测是否有人脸识别
+					await waitForFaceRecognition();
+
 					const experience = document.querySelector('.experience') as HTMLElement;
 					if (experience) {
 						experience.click();
@@ -1778,6 +1783,9 @@ async function readerAndFillHandle(searchInfos: SearchInformation[], list: HTMLE
 	return { finish: false };
 }
 
+/**
+ * 等待人脸识别
+ */
 function waitForFaceRecognition() {
 	let notified = false;
 
@@ -1787,13 +1795,12 @@ function waitForFaceRecognition() {
 			if (face) {
 				if (!notified) {
 					notified = true;
+					const msg = '检测到人脸识别，请手动进行识别后脚本才会继续运行。';
 					if (CXProject.scripts.study.cfg.notifyWhenHasFaceRecognition) {
-						CommonProject.scripts.settings.methods.notificationBySetting(
-							'检测到人脸识别，请手动进行识别后脚本才会继续运行。',
-							{ duration: 0 }
-						);
+						CommonProject.scripts.settings.methods.notificationBySetting(msg, { duration: 0 });
 					}
-					$console.warn('检测到人脸识别，请手动进行识别后脚本才会继续运行。');
+					$message.warn({ content: msg, duration: 0 });
+					$console.warn(msg);
 				}
 			} else {
 				clearInterval(interval);
