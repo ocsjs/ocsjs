@@ -559,6 +559,23 @@ export const CXProject = Project.create({
 			async oncomplete() {
 				await mappingRecognize();
 			}
+		}),
+		// 积分课提示
+		jfkGuide: new Script({
+			name: '💡 积分课使用提示',
+			matches: [['积分课页面', '/plaza']],
+			namespace: 'cx.jfk.guide',
+			configs: {
+				notes: {
+					defaultValue: $ui.notes([
+						'积分课请进入课程后，开启复习模式，并且关闭自动下一章',
+						'课程完成后请手动切换，如果由脚本进行自动跳转会出现乱跳转的可能。'
+					]).outerHTML
+				}
+			},
+			oncomplete(...args) {
+				CommonProject.scripts.render.methods.pin(this);
+			}
 		})
 	}
 });
