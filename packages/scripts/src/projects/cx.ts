@@ -1647,17 +1647,15 @@ async function chapterTestTask(
 			/** 判断题转换成文字，以便于答题程序判断 */
 			if (type === 'judgement') {
 				elements.options.forEach((option) => {
-					if (option.innerText.includes('对') || option.innerText.includes('错')) {
+					const opt = option?.textContent?.trim() || '';
+					if (opt.includes('对') || opt.includes('错')) {
 						// 2023/8/5日后超星已修复判断题，将图片修改成文字，如果已经有对错的文本，则不需要再转换
 					}
 					// 如果是英语的对错题目，他是一个英文单词 True,False
-					else if (option?.textContent?.trim() === 'True') {
-						if (option?.textContent?.trim() === 'True') {
-							option.textContent = '√';
-						}
-						if (option?.textContent?.trim() === 'False') {
-							option.textContent = 'x';
-						}
+					else if (opt === 'True') {
+						option.textContent = '√';
+					} else if (opt === 'False') {
+						option.textContent = 'x';
 					} else {
 						const ri = option.querySelector('.ri');
 						const span = document.createElement('span');
