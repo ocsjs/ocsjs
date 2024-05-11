@@ -785,7 +785,6 @@ async function mappingRecognize(doc: Document = document) {
 				const hex = md5(JSON.stringify(path)).slice(24); // 8位即可区分
 				match[i.toString()] = fontMap[hex];
 			}
-
 			const fonts = CXAnalyses.getSecretFont(doc);
 			// 替换加密字体
 			fonts.forEach((el, index) => {
@@ -793,6 +792,11 @@ async function mappingRecognize(doc: Document = document) {
 				for (const key in match) {
 					const word = String.fromCharCode(parseInt(key));
 					const value = String.fromCharCode(match[key]);
+
+					// 如果相同，则不需要替换
+					if (word === value) {
+						continue;
+					}
 
 					while (html.indexOf(word) !== -1) {
 						html = html.replace(word, value);
