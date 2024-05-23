@@ -217,14 +217,7 @@ export const CXProject = Project.create({
 			},
 			onrender({ panel }) {
 				if (!CommonProject.scripts.settings.cfg.answererWrappers?.length) {
-					const setting = h('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
-					setting.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
-					if (state.study.answererWrapperUnsetMessage === undefined) {
-						state.study.answererWrapperUnsetMessage = $message.warn({
-							content: h('span', {}, ['检测到未设置题库配置，将无法自动答题，请切换到 ', setting, ' 页面进行配置。']),
-							duration: 0
-						});
-					}
+					answerWrapperEmptyWarning(10);
 				}
 
 				// 高倍速警告
@@ -1835,4 +1828,15 @@ function waitForFaceRecognition() {
 			}
 		}, 3000);
 	});
+}
+
+function answerWrapperEmptyWarning(duration: number) {
+	const setting = h('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
+	setting.onclick = () => CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
+	if (state.study.answererWrapperUnsetMessage === undefined) {
+		state.study.answererWrapperUnsetMessage = $message.warn({
+			content: h('span', {}, ['检测到未设置题库配置，将无法自动答题，请切换到 ', setting, ' 页面进行配置。']),
+			duration: duration
+		});
+	}
 }
