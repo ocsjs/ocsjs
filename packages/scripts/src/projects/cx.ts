@@ -23,6 +23,7 @@ import md5 from 'md5';
 import Typr from 'typr.js';
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
+import { waitForMedia } from '../utils/study';
 
 try {
 	/**
@@ -166,11 +167,6 @@ export const CXProject = Project.create({
 					attrs: { type: 'checkbox' },
 					defaultValue: true
 				},
-				reloadVideoWhenError: {
-					label: '视频加载错误时自动刷新',
-					attrs: { type: 'checkbox' },
-					defaultValue: false
-				},
 				showTextareaWhenEdit: {
 					label: '编辑时显示自定义编辑框',
 					attrs: {
@@ -181,7 +177,7 @@ export const CXProject = Project.create({
 					defaultValue: true
 				},
 				notifyWhenHasFaceRecognition: {
-					label: '当有人脸验证时通知我',
+					label: '出现人脸识别时通知我',
 					attrs: {
 						type: 'checkbox'
 					},
@@ -211,6 +207,11 @@ export const CXProject = Project.create({
 				},
 				enableChapterTest: {
 					label: '开启-章节测试自动答题',
+					attrs: { type: 'checkbox', title: '开启：章节测试自动答题' },
+					defaultValue: true
+				},
+				enableHyperlink: {
+					label: '开启-链接任务自动完成',
 					attrs: { type: 'checkbox', title: '开启：章节测试自动答题' },
 					defaultValue: true
 				}
@@ -1028,7 +1029,6 @@ export async function study(opts: {
 	playbackRate: number;
 	volume: number;
 	videoQuizStrategy: VideoQuizStrategy;
-	reloadVideoWhenError: boolean;
 	backToFirstWhenFinish: boolean;
 	workOptions: CommonWorkOptions;
 }) {
@@ -1185,7 +1185,6 @@ function searchJob(
 		playbackRate: number;
 		volume: number;
 		workOptions: CommonWorkOptions;
-		reloadVideoWhenError: boolean;
 		videoQuizStrategy: VideoQuizStrategy;
 	},
 	searchedJobs: Job[]
@@ -1195,9 +1194,11 @@ function searchJob(
 	const searchJobElement = (root: HTMLIFrameElement) => {
 		return domSearch(
 			{
-				media: 'video,audio',
+				videojs: '#video,#audio',
 				chapterTest: '.TiMu',
-				read: '#img.imglook'
+				read: '#img.imglook',
+				pptWithAudio: '.swiper-container',
+				hyperlink: '#hyperlink'
 			},
 			root.contentWindow!.document
 		);
@@ -1206,14 +1207,20 @@ function searchJob(
 	const search = (root: HTMLIFrameElement): Job | undefined => {
 		const win = root.contentWindow;
 
-		const { media, read, chapterTest } = searchJobElement(root);
+		const { videojs, read, chapterTest, hyperlink, pptWithAudio } = searchJobElement(root);
 
-		if (win && (media || read || chapterTest)) {
-			const doc = win.document;
+		if (win && (videojs || read || chapterTest || hyperlink || pptWithAudio)) {
+			// 获取任务点数据字符串
+			const frame_data_str =
+				win.frameElement?.getAttribute('data') ||
+				// 带音频的PPT，套了两层iframe
+				(win.frameElement as HTMLIFrameElement)?.contentWindow?.parent.frameElement?.getAttribute('data') ||
+				'{}';
 
-			const attachment: Attachment | undefined =
-				// @ts-ignore
-				knowCardWin.attachments[getValidNumber(win._jobindex, win.parent._jobindex)];
+			// 获取任务点数据
+			const attachment: Attachment | undefined = (knowCardWin.attachments as any[]).find(
+				(attachment) => attachment.jobid === JSON.parse(frame_data_str).jobid
+			);
 
 			// 任务点去重
 			if (attachment && searchedJobs.find((job) => job.mid === attachment.property.mid) === undefined) {
@@ -1221,10 +1228,11 @@ function searchJob(
 				const jobName = name || title || (bookname ? bookname + author : undefined) || '未知任务';
 
 				let func: { (): Promise<any> } | undefined;
-				if (media) {
+
+				if (videojs) {
 					if (!CXProject.scripts.study.cfg.enableMedia) {
-						const msg = `音视频自动学习功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
-						$message.warn({ content: msg });
+						const msg = `音视频自动学习功能已被关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message.warn({ content: msg, duration: 10 });
 						$console.warn(msg);
 					} else {
 						// 重复学习，或者未完成
@@ -1233,14 +1241,14 @@ function searchJob(
 								const msg = `即将${opts.restudy ? '重新' : ''}播放 : ` + jobName;
 								$message.info({ content: msg });
 								$console.log(msg);
-								return mediaTask(opts, media as HTMLMediaElement, doc);
+								return JobRunner.media(opts, win.document);
 							};
 						}
 					}
 				} else if (chapterTest) {
 					if (!CXProject.scripts.study.cfg.enableChapterTest) {
-						const msg = `章节测试自动答题功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
-						$message.warn({ content: msg });
+						const msg = `章节测试自动答题功能已被关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message.warn({ content: msg, duration: 10 });
 						$console.warn(msg);
 					} else {
 						const status = win.document.querySelector<HTMLElement>('.testTit_status');
@@ -1256,7 +1264,7 @@ function searchJob(
 									const msg = `开始答题 : ` + jobName;
 									$message.info({ content: msg });
 									$console.log(msg);
-									return chapterTestTask(root, opts.workOptions);
+									return JobRunner.chapter(root, opts.workOptions);
 								};
 							}
 							if (attachment.job === undefined && CommonProject.scripts.settings.cfg['work-when-no-job'] === false) {
@@ -1266,18 +1274,37 @@ function searchJob(
 							}
 						}
 					}
-				} else if (read) {
+				} else if (read || pptWithAudio) {
 					if (!CXProject.scripts.study.cfg.enablePPT) {
-						const msg = `PPT/书籍阅读功能已关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
-						$message.warn({ content: msg });
+						const msg = `PPT/书籍阅读功能已被关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message.warn({ content: msg, duration: 10 });
 						$console.warn(msg);
 					} else {
 						if (attachment.job) {
 							func = () => {
 								const msg = `正在学习 : ` + jobName;
-								$message.warn({ content: msg });
+								$message.info({ content: msg });
 								$console.log(msg);
-								return readTask(win);
+								if (read) {
+									return JobRunner.read(win);
+								} else {
+									return JobRunner.readPPTWithAudio(win);
+								}
+							};
+						}
+					}
+				} else if (hyperlink) {
+					if (!CXProject.scripts.study.cfg.enableHyperlink) {
+						const msg = `链接任务点已被关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message.warn({ content: msg, duration: 10 });
+						$console.warn(msg);
+					} else {
+						if (attachment.job) {
+							func = () => {
+								const msg = `正在完成链接阅读任务 : ` + jobName;
+								$message.info({ content: msg });
+								$console.log(msg);
+								return JobRunner.hyperlink(hyperlink);
 							};
 						}
 					}
@@ -1323,413 +1350,426 @@ export function fixedVideoProgress() {
 }
 
 /**
- * 播放视频和音频
+ * 任务点运行器
  */
-async function mediaTask(
-	setting: {
-		playbackRate: number;
-		volume: number;
-		reloadVideoWhenError: boolean;
-		videoQuizStrategy: VideoQuizStrategy;
-	},
-	media: HTMLMediaElement,
-	doc: Document
-) {
-	const { playbackRate = 1, volume = 0 } = setting;
+const JobRunner = {
+	/**
+	 * 播放视频和音频
+	 */
+	async media(
+		setting: {
+			playbackRate: number;
+			volume: number;
+			videoQuizStrategy: VideoQuizStrategy;
+		},
+		doc: Document
+	) {
+		const { playbackRate = 1, volume = 0 } = setting;
 
-	// @ts-ignore
-	const { videojs } = domSearch({ videojs: '#video,#audio' }, doc);
+		const media = await waitForMedia({ root: doc });
 
-	if (!videojs) {
-		$console.error('视频检测不到，请尝试刷新或者手动切换下一章。');
-		return;
-	}
+		// @ts-ignore
+		const { videojs } = domSearch({ videojs: '#video,#audio' }, doc);
 
-	state.study.videojs = videojs;
-	// @ts-ignore
-	top.currentMedia = media;
+		if (!videojs || !media) {
+			$console.error('视频检测不到，请尝试刷新或者手动切换下一章。');
+			return;
+		}
 
-	// 固定视频进度
-	fixedVideoProgress();
+		state.study.videojs = videojs;
+		// @ts-ignore
+		top.currentMedia = media;
 
-	// eslint-disable-next-line no-undef
-	let reloadInterval: NodeJS.Timer;
+		// 固定视频进度
+		fixedVideoProgress();
 
-	if (setting.reloadVideoWhenError) {
-		reloadInterval = setInterval(() => {
-			if (doc.documentElement.innerText.includes('网络错误导致视频下载中途失败')) {
-				$console.error('视频加载失败，即将刷新页面');
-				setTimeout(() => {
-					location.reload();
-				}, 3000);
-			}
-		}, 5000);
-	}
-
-	// 随机作答视频内题目
-	if (setting.videoQuizStrategy === 'random') {
-		const loop = async () => {
-			const submitBtn = () => doc.querySelector<HTMLElement>('#videoquiz-submit');
-			if (submitBtn()) {
-				const list = Array.from(doc.querySelectorAll<HTMLElement>('.ans-videoquiz-opt label'));
-				const answer = list[Math.floor(Math.random() * list.length)];
-				answer?.click();
-				submitBtn()?.click();
-				await $.sleep(3000);
-				// 隐藏视频内题目元素
-				const container = doc.querySelector<HTMLElement>('#video .ans-videoquiz');
-				const components = Array.from(doc.querySelectorAll<HTMLElement>('.x-component-default'));
-				if (container) {
-					container.remove();
-				}
-				if (components.length) {
-					for (const com of components) {
-						com.style.display = 'none';
+		// 随机作答视频内题目
+		if (setting.videoQuizStrategy === 'random') {
+			const loop = async () => {
+				const submitBtn = () => doc.querySelector<HTMLElement>('#videoquiz-submit');
+				if (submitBtn()) {
+					const list = Array.from(doc.querySelectorAll<HTMLElement>('.ans-videoquiz-opt label'));
+					const answer = list[Math.floor(Math.random() * list.length)];
+					answer?.click();
+					submitBtn()?.click();
+					await $.sleep(3000);
+					// 隐藏视频内题目元素
+					const container = doc.querySelector<HTMLElement>('#video .ans-videoquiz');
+					const components = Array.from(doc.querySelectorAll<HTMLElement>('.x-component-default'));
+					if (container) {
+						container.remove();
+					}
+					if (components.length) {
+						for (const com of components) {
+							com.style.display = 'none';
+						}
 					}
 				}
-			}
-			await $.sleep(3000);
-			await loop();
-		};
-		loop();
-	}
+				await $.sleep(3000);
+				await loop();
+			};
+			loop();
+		}
 
+		/**
+		 * 视频播放
+		 */
+		return new Promise<void>((resolve, reject) => {
+			const playFunction = async () => {
+				await waitForFaceRecognition();
+				if (media.ended === false) {
+					await $.sleep(1000);
+					media.play();
+					media.playbackRate = playbackRate;
+				}
+			};
+
+			media.addEventListener('pause', playFunction);
+
+			media.addEventListener('ended', () => {
+				media.removeEventListener('pause', playFunction);
+				$console.log('视频播放完毕');
+				resolve();
+			});
+
+			$console.log('视频开始播放');
+			media.volume = volume;
+
+			// 重置视频进度
+			media.currentTime = 0;
+
+			// 使用 setTimeout 解决 The play() request was interrupted by a call to pause() 问题
+			setTimeout(() => {
+				playMedia(() => media.play())
+					.then(() => {
+						media.playbackRate = playbackRate;
+					})
+					.catch(reject);
+			}, 200);
+		});
+	},
 	/**
-	 * 视频播放
+	 * 阅读，PPT
 	 */
-	await new Promise<void>((resolve, reject) => {
-		const playFunction = async () => {
-			await waitForFaceRecognition();
-			if (!media.ended) {
-				await $.sleep(1000);
-				media.play();
-				media.playbackRate = playbackRate;
-			}
-		};
+	async read(win: Window & { finishJob?: Function }) {
+		const finishJob = win.finishJob;
+		if (finishJob) finishJob();
+		await $.sleep(3000);
+	},
+	/**
+	 * 章节测验
+	 */
+	async chapter(
+		frame: HTMLIFrameElement,
+		{
+			answererWrappers,
+			period,
+			upload,
+			thread,
+			stopSecondWhenFinish,
+			redundanceWordsText,
+			answerSeparators,
+			answerMatchMode
+		}: CommonWorkOptions
+	) {
+		if (answererWrappers === undefined || answererWrappers.length === 0) {
+			return answerWrapperEmptyWarning(0);
+		}
 
-		media.addEventListener('pause', playFunction);
-
-		media.addEventListener('ended', () => {
-			$console.log('视频播放完毕');
-			media.removeEventListener('pause', playFunction);
-			clearInterval(reloadInterval);
-			resolve();
+		$message.info({
+			content: h('div', ['正在答题中，答题结果请前往：通用-搜索结果 进行查看']),
+			duration: 10
 		});
 
-		$console.log('视频开始播放');
-		media.volume = volume;
+		$console.info('开始章节测试');
 
-		// 重置视频进度
-		media.currentTime = 0;
+		const frameWindow = frame.contentWindow;
+		const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
-		// 使用 setTimeout 解决 The play() request was interrupted by a call to pause() 问题
-		setTimeout(() => {
-			playMedia(() => media.play())
-				.then(() => {
-					media.playbackRate = playbackRate;
-				})
-				.catch(reject);
-		}, 200);
-	});
-}
+		CommonProject.scripts.workResults.methods.init();
 
-/**
- * 阅读 ppt
- */
-async function readTask(win: Window & { finishJob?: Function }) {
-	const finishJob = win.finishJob;
-	if (finishJob) finishJob();
-	await $.sleep(3000);
-}
+		const chapterTestTaskQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
+			const transformed = StringUtils.of(
+				titles.map((t) => (t ? optimizationElementWithImage(t).innerText : '')).join(',')
+			)
+				.nowrap()
+				.nospace()
+				.toString()
+				.trim()
+				/** 超星旧版作业题目冗余数据 */
+				.replace(/^\d+[。、.]/, '')
+				.replace(/（\d+.\d+分）/, '')
+				.replace(/\(..题, .+?分\)/, '')
+				.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
+				.trim();
 
-/**
- * 章节测验
- */
-async function chapterTestTask(
-	frame: HTMLIFrameElement,
-	{
-		answererWrappers,
-		period,
-		upload,
-		thread,
-		stopSecondWhenFinish,
-		redundanceWordsText,
-		answerSeparators,
-		answerMatchMode
-	}: CommonWorkOptions
-) {
-	if (answererWrappers === undefined || answererWrappers.length === 0) {
-		const msg = '检测到题库配置为空，无法自动答题，请前往 “通用-全局设置” 页面进行配置。';
-		$message.error({ content: msg });
-		return $console.warn(msg);
-	}
+			return removeRedundantWords(transformed, redundanceWordsText.split('\n'));
+		};
 
-	$message.info({
-		content: h('div', ['正在答题中，答题结果请前往：通用-搜索结果 进行查看']),
-		duration: 10
-	});
+		/** 新建答题器 */
+		const worker = new OCSWorker({
+			root: TiMu,
+			elements: {
+				title: '.Zy_TItle .clearfix',
+				/**
+				 * 兼容各种选项
+				 *
+				 * ul li .after 单选多选
+				 * ul li label:not(.after) 判断题
+				 * ul li textarea 填空题
+				 */
+				options: 'ul li .after,ul li textarea,ul textarea,ul li label:not(.before)',
+				type: 'input[id^="answertype"]',
+				lineAnswerInput: '.line_answer input[name^=answer]',
+				lineSelectBox: '.line_answer_ct .selectBox '
+			},
+			thread: thread ?? 1,
+			answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+			answerMatchMode: answerMatchMode,
+			/** 默认搜题方法构造器 */
+			answerer: (elements, ctx) => {
+				const title = chapterTestTaskQuestionTitleTransform(elements.title);
+				if (title) {
+					const typeInput = elements.type[0] as HTMLInputElement;
 
-	$console.info('开始章节测试');
-
-	const frameWindow = frame.contentWindow;
-	const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
-
-	CommonProject.scripts.workResults.methods.init();
-
-	const chapterTestTaskQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
-		const transformed = StringUtils.of(
-			titles.map((t) => (t ? optimizationElementWithImage(t).innerText : '')).join(',')
-		)
-			.nowrap()
-			.nospace()
-			.toString()
-			.trim()
-			/** 超星旧版作业题目冗余数据 */
-			.replace(/^\d+[。、.]/, '')
-			.replace(/（\d+.\d+分）/, '')
-			.replace(/\(..题, .+?分\)/, '')
-			.replace(/[[(【（](.+题|名词解释|完形填空|阅读理解)[\])】）]/, '')
-			.trim();
-
-		return removeRedundantWords(transformed, redundanceWordsText.split('\n'));
-	};
-
-	/** 新建答题器 */
-	const worker = new OCSWorker({
-		root: TiMu,
-		elements: {
-			title: '.Zy_TItle .clearfix',
-			/**
-			 * 兼容各种选项
-			 *
-			 * ul li .after 单选多选
-			 * ul li label:not(.after) 判断题
-			 * ul li textarea 填空题
-			 */
-			options: 'ul li .after,ul li textarea,ul textarea,ul li label:not(.before)',
-			type: 'input[id^="answertype"]',
-			lineAnswerInput: '.line_answer input[name^=answer]',
-			lineSelectBox: '.line_answer_ct .selectBox '
-		},
-		thread: thread ?? 1,
-		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
-		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = chapterTestTaskQuestionTitleTransform(elements.title);
-			if (title) {
-				const typeInput = elements.type[0] as HTMLInputElement;
-
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+						await $.sleep((period ?? 3) * 1000);
+						return defaultAnswerWrapperHandler(answererWrappers, {
+							type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
+							title,
+							options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						});
 					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+				} else {
+					throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+				}
+			},
 
-		work: async (ctx) => {
-			const { elements, searchInfos } = ctx;
-			const typeInput = elements.type[0] as HTMLInputElement;
-			const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
+			work: async (ctx) => {
+				const { elements, searchInfos } = ctx;
+				const typeInput = elements.type[0] as HTMLInputElement;
+				const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
 
-			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
-				const resolver = defaultQuestionResolve(ctx)[type];
+				if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
+					const resolver = defaultQuestionResolve(ctx)[type];
 
-				const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
-					if (type === 'judgement' || type === 'single' || type === 'multiple') {
-						// 检查是否已经选择
-						const checked =
-							option?.parentElement?.querySelector('label input')?.getAttribute('checked') === 'checked' ||
-							// 适配2023/9月最新版本
-							option?.parentElement?.getAttribute('aria-checked') === 'true';
-						if (checked) {
-							// 跳过
-						} else {
-							option?.click();
-						}
-					} else if (type === 'completion' && answer.trim()) {
-						const text = option?.parentElement?.querySelector('textarea');
-						const textareaFrame = option?.parentElement?.querySelector('iframe');
-						if (text) {
-							text.value = answer;
-						}
-						if (textareaFrame?.contentDocument) {
-							textareaFrame.contentDocument.body.innerHTML = answer;
-						}
-						if (option?.parentElement?.parentElement) {
-							/** 如果存在保存按钮则点击 */
-							$el('[onclick*=saveQuestion]', option.parentElement.parentElement)?.click();
-						}
-					}
-				};
-
-				return await resolver(
-					searchInfos,
-					elements.options.map((option) => optimizationElementWithImage(option)),
-					handler
-				);
-			}
-			// 连线题自定义处理
-			else if (type && type === 'line') {
-				for (const answers of searchInfos.map((info) => info.results.map((res) => res.answer))) {
-					let ans = answers;
-					if (ans.length === 1) {
-						ans = splitAnswer(ans[0]);
-					}
-					if (ans.filter(Boolean).length !== 0 && elements.lineAnswerInput) {
-						//  选择答案
-						for (let index = 0; index < elements.lineSelectBox.length; index++) {
-							const box = elements.lineSelectBox[index];
-							if (ans[index]) {
-								$el(`li[data=${ans[index]}] a`, box)?.click();
-								await $.sleep(200);
+					const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
+						if (type === 'judgement' || type === 'single' || type === 'multiple') {
+							// 检查是否已经选择
+							const checked =
+								option?.parentElement?.querySelector('label input')?.getAttribute('checked') === 'checked' ||
+								// 适配2023/9月最新版本
+								option?.parentElement?.getAttribute('aria-checked') === 'true';
+							if (checked) {
+								// 跳过
+							} else {
+								option?.click();
+							}
+						} else if (type === 'completion' && answer.trim()) {
+							const text = option?.parentElement?.querySelector('textarea');
+							const textareaFrame = option?.parentElement?.querySelector('iframe');
+							if (text) {
+								text.value = answer;
+							}
+							if (textareaFrame?.contentDocument) {
+								textareaFrame.contentDocument.body.innerHTML = answer;
+							}
+							if (option?.parentElement?.parentElement) {
+								/** 如果存在保存按钮则点击 */
+								$el('[onclick*=saveQuestion]', option.parentElement.parentElement)?.click();
 							}
 						}
+					};
 
-						return { finish: true };
+					return await resolver(
+						searchInfos,
+						elements.options.map((option) => optimizationElementWithImage(option)),
+						handler
+					);
+				}
+				// 连线题自定义处理
+				else if (type && type === 'line') {
+					for (const answers of searchInfos.map((info) => info.results.map((res) => res.answer))) {
+						let ans = answers;
+						if (ans.length === 1) {
+							ans = splitAnswer(ans[0]);
+						}
+						if (ans.filter(Boolean).length !== 0 && elements.lineAnswerInput) {
+							//  选择答案
+							for (let index = 0; index < elements.lineSelectBox.length; index++) {
+								const box = elements.lineSelectBox[index];
+								if (ans[index]) {
+									$el(`li[data=${ans[index]}] a`, box)?.click();
+									await $.sleep(200);
+								}
+							}
+
+							return { finish: true };
+						}
 					}
+
+					return { finish: false };
 				}
 
 				return { finish: false };
-			}
+			},
 
-			return { finish: false };
-		},
-
-		/** 完成答题后 */
-		async onResultsUpdate(curr, _, res) {
-			CommonProject.scripts.workResults.methods.setResults(
-				simplifyWorkResult(res, chapterTestTaskQuestionTitleTransform)
-			);
-
-			if (curr.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([curr], chapterTestTaskQuestionTitleTransform)
+			/** 完成答题后 */
+			async onResultsUpdate(curr, _, res) {
+				CommonProject.scripts.workResults.methods.setResults(
+					simplifyWorkResult(res, chapterTestTaskQuestionTitleTransform)
 				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 
-			// 没有完成时随机作答
-			if (curr.result?.finish === false && curr.resolved === true) {
-				const options = curr.ctx?.elements?.options || [];
+				if (curr.result?.finish) {
+					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+						simplifyWorkResult([curr], chapterTestTaskQuestionTitleTransform)
+					);
+				}
+				CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 
-				const typeInput = curr.ctx?.elements?.type[0] as HTMLInputElement | undefined;
-				const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
+				// 没有完成时随机作答
+				if (curr.result?.finish === false && curr.resolved === true) {
+					const options = curr.ctx?.elements?.options || [];
 
-				const commonSetting = CommonProject.scripts.settings.cfg;
+					const typeInput = curr.ctx?.elements?.type[0] as HTMLInputElement | undefined;
+					const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
 
-				if (commonSetting['randomWork-choice'] && (type === 'judgement' || type === 'single' || type === 'multiple')) {
-					$console.log('正在随机作答');
+					const commonSetting = CommonProject.scripts.settings.cfg;
 
-					const option = options[Math.floor(Math.random() * options.length)];
-					// @ts-ignore 随机选择选项
-					option?.parentElement?.querySelector('a,label')?.click();
-				} else if (commonSetting['randomWork-complete'] && type === 'completion') {
-					$console.log('正在随机作答');
+					if (
+						commonSetting['randomWork-choice'] &&
+						(type === 'judgement' || type === 'single' || type === 'multiple')
+					) {
+						$console.log('正在随机作答');
 
-					// 随机填写答案
-					for (const option of options) {
-						const textarea = option?.parentElement?.querySelector('textarea');
-						const completeTexts = commonSetting['randomWork-completeTexts-textarea'].split('\n').filter(Boolean);
-						const text = completeTexts[Math.floor(Math.random() * completeTexts.length)];
-						const textareaFrame = option?.parentElement?.querySelector('iframe');
+						const option = options[Math.floor(Math.random() * options.length)];
+						// @ts-ignore 随机选择选项
+						option?.parentElement?.querySelector('a,label')?.click();
+					} else if (commonSetting['randomWork-complete'] && type === 'completion') {
+						$console.log('正在随机作答');
 
-						if (text) {
-							if (textarea) {
-								textarea.value = text;
+						// 随机填写答案
+						for (const option of options) {
+							const textarea = option?.parentElement?.querySelector('textarea');
+							const completeTexts = commonSetting['randomWork-completeTexts-textarea'].split('\n').filter(Boolean);
+							const text = completeTexts[Math.floor(Math.random() * completeTexts.length)];
+							const textareaFrame = option?.parentElement?.querySelector('iframe');
+
+							if (text) {
+								if (textarea) {
+									textarea.value = text;
+								}
+								if (textareaFrame?.contentDocument) {
+									textareaFrame.contentDocument.body.innerHTML = text;
+								}
+							} else {
+								$console.error('请设置随机填空的文案');
 							}
-							if (textareaFrame?.contentDocument) {
-								textareaFrame.contentDocument.body.innerHTML = text;
-							}
-						} else {
-							$console.error('请设置随机填空的文案');
+
+							await $.sleep(500);
 						}
-
-						await $.sleep(500);
 					}
 				}
+			},
+			async onElementSearched(elements) {
+				const typeInput = elements.type[0] as HTMLInputElement;
+				const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
+
+				/** 判断题转换成文字，以便于答题程序判断 */
+				if (type === 'judgement') {
+					elements.options.forEach((option) => {
+						const opt = option?.textContent?.trim() || '';
+						if (opt.includes('对') || opt.includes('错')) {
+							// 2023/8/5日后超星已修复判断题，将图片修改成文字，如果已经有对错的文本，则不需要再转换
+						}
+						// 如果是英语的对错题目，他是一个英文单词 True,False
+						else if (opt === 'True') {
+							option.textContent = '√';
+						} else if (opt === 'False') {
+							option.textContent = 'x';
+						} else {
+							const ri = option.querySelector('.ri');
+							const span = document.createElement('span');
+							span.innerText = ri ? '√' : '×';
+							option.appendChild(span);
+						}
+					});
+				}
 			}
-		},
-		async onElementSearched(elements) {
-			const typeInput = elements.type[0] as HTMLInputElement;
-			const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
+		});
 
-			/** 判断题转换成文字，以便于答题程序判断 */
-			if (type === 'judgement') {
-				elements.options.forEach((option) => {
-					const opt = option?.textContent?.trim() || '';
-					if (opt.includes('对') || opt.includes('错')) {
-						// 2023/8/5日后超星已修复判断题，将图片修改成文字，如果已经有对错的文本，则不需要再转换
-					}
-					// 如果是英语的对错题目，他是一个英文单词 True,False
-					else if (opt === 'True') {
-						option.textContent = '√';
-					} else if (opt === 'False') {
-						option.textContent = 'x';
-					} else {
-						const ri = option.querySelector('.ri');
-						const span = document.createElement('span');
-						span.innerText = ri ? '√' : '×';
-						option.appendChild(span);
-					}
-				});
-			}
-		}
-	});
+		const results = await worker.doWork();
 
-	const results = await worker.doWork();
+		const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;
+		$console.info(msg);
+		$message.info({ content: msg, duration: stopSecondWhenFinish });
+		await $.sleep(stopSecondWhenFinish * 1000);
 
-	const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;
-	$console.info(msg);
-	$message.info({ content: msg, duration: stopSecondWhenFinish });
-	await $.sleep(stopSecondWhenFinish * 1000);
-
-	// 处理提交
-	await worker.uploadHandler({
-		type: upload,
-		results,
-		async callback(finishedRate, uploadable) {
-			const msg = `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '3秒后将自动提交' : '3秒后将自动保存'} `;
-			$console.info(msg);
-			$message.success({ content: msg, duration: 3 });
-
-			await $.sleep(3000);
-
-			if (uploadable) {
-				// @ts-ignore 提交
-				frameWindow.btnBlueSubmit();
+		// 处理提交
+		await worker.uploadHandler({
+			type: upload,
+			results,
+			async callback(finishedRate, uploadable) {
+				const msg = `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '3秒后将自动提交' : '3秒后将自动保存'} `;
+				$console.info(msg);
+				$message.success({ content: msg, duration: 3 });
 
 				await $.sleep(3000);
-				/** 确定按钮 */
-				// @ts-ignore 确定
-				frameWindow.submitCheckTimes();
-				// @ts-ignore 2024/4 更新后上方函数无法关闭弹窗，需要手动关闭确定弹窗
-				top.$('#workpop').hide();
-			} else {
-				// @ts-ignore 禁止弹窗
-				frameWindow.alert = () => {};
-				// @ts-ignore 暂时保存
-				frameWindow.noSubmit();
+
+				if (uploadable) {
+					// @ts-ignore 提交
+					frameWindow.btnBlueSubmit();
+
+					await $.sleep(3000);
+					/** 确定按钮 */
+					// @ts-ignore 确定
+					frameWindow.submitCheckTimes();
+					// @ts-ignore 2024/4 更新后上方函数无法关闭弹窗，需要手动关闭确定弹窗
+					top.$('#workpop').hide();
+				} else {
+					// @ts-ignore 禁止弹窗
+					frameWindow.alert = () => {};
+					// @ts-ignore 暂时保存
+					frameWindow.noSubmit();
+				}
 			}
+		});
+
+		worker.emit('done');
+	},
+	/**
+	 * 带音频的PPT
+	 */
+	async readPPTWithAudio(win: Window & { swiperNext?: Function }) {
+		// 关闭音视频声音
+		win.document.querySelectorAll('audio').forEach((audio) => {
+			audio.addEventListener('play', () => {
+				audio.muted = true;
+			});
+		});
+
+		// 阅读PPT
+		const len = win.document.querySelectorAll('.swiper-container .swiper-slide').length;
+		for (let index = 0; index < len; index++) {
+			win.swiperNext?.();
+			await $.sleep(1000);
 		}
-	});
-
-	worker.emit('done');
-}
-
-/**
- * 获取有效的数字
- * @param nums
- */
-export function getValidNumber(...nums: number[]) {
-	return nums.map((num) => (typeof num === 'number' ? num : undefined)).find((num) => num !== undefined);
-}
+		await $.sleep(3000);
+	},
+	/**
+	 * 链接任务点
+	 */
+	async hyperlink(a: HTMLElement) {
+		// 修改点击事件，防止出现弹窗
+		const _click = a.onclick;
+		a.onclick = () => false;
+		// 点击完成
+		a.click();
+		// 还原点击事件
+		a.onclick = _click;
+		await $.sleep(3000);
+	}
+};
 
 /**
  * cx 题目类型 ：
