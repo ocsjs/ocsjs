@@ -505,6 +505,7 @@ export const CXProject = Project.create({
 			namespace: 'cx.new.study-dispatcher',
 			hideInPanel: true,
 			async oncomplete() {
+				// 注册快捷菜单
 				$menu('🖥️', { scriptPanelLink: CXProject.scripts.study });
 				$menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
 				$menu('🌏', { scriptPanelLink: CommonProject.scripts.workResults });
@@ -1808,8 +1809,17 @@ function waitForFaceRecognition() {
 
 	return new Promise<void>((resolve) => {
 		const interval = setInterval(() => {
-			const face = $el('#fcqrimg', top?.document);
-			if (face) {
+			// 人脸元素有时候 src 属性为空字符串，所以这里需要判断 src 是否为空字符串，如是则人脸识别会出现。
+			const faces = $$el<HTMLImageElement>('#fcqrimg', top?.document);
+			let active = false;
+			for (const face of faces) {
+				const src = face.getAttribute('src');
+				if (src) {
+					active = true;
+					break;
+				}
+			}
+			if (active) {
 				if (!notified) {
 					notified = true;
 					const msg = '检测到人脸识别，请手动进行识别后脚本才会继续运行。';
