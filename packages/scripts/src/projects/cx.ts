@@ -1219,7 +1219,7 @@ function searchJob(
 
 			// 获取任务点数据
 			const attachment: Attachment | undefined = (knowCardWin.attachments as any[]).find(
-				(attachment) => attachment.jobid === JSON.parse(frame_data_str).jobid
+				(attachment) => String(attachment.jobid) === String(JSON.parse(frame_data_str).jobid)
 			);
 
 			// 任务点去重
