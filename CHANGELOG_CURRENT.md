@@ -1,9 +1,9 @@
-## [4.9.17](https://github.com/ocsjs/ocsjs/compare/4.9.16...4.9.17) (2024-05-24)
+## [4.9.18](https://github.com/ocsjs/ocsjs/compare/4.9.17...4.9.18) (2024-06-04)
 
 
 ### Bug Fixes
 
-* **script:** 修复上个版本任务点检测不到的BUG ([8bf7551](https://github.com/ocsjs/ocsjs/commit/8bf7551b41cd543bd3f345ec63320c8fa661a4e6))
+* **script:** 修复全域名版本无法显示BUG ([6d52ec4](https://github.com/ocsjs/ocsjs/commit/6d52ec4983ce452fc072774abc358936380f4166))
 
 
 
