@@ -182,7 +182,7 @@ export function defaultQuestionResolve<E>(
 				}
 			} else if (ctx.answerMatchMode === 'exact') {
 				const sorted_exact_list = exact_list.sort((a, b) => b.length - a.length);
-				if (sorted_exact_list[0]) {
+				if (sorted_exact_list[0]?.length) {
 					for (let i = 0; i < sorted_exact_list[0].length; i++) {
 						await handler('multiple', sorted_exact_list[0][i].innerText, sorted_exact_list[0][i], ctx);
 					}
