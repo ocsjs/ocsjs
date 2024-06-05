@@ -1710,7 +1710,7 @@ const JobRunner = {
 			type: upload,
 			results,
 			async callback(finishedRate, uploadable) {
-				const msg = `完成率 ${finishedRate.toFixed(2)} :  ${uploadable ? '3秒后将自动提交' : '3秒后将自动保存'} `;
+				const msg = `完成率 ${finishedRate.toFixed(2)}% :  ${uploadable ? '3秒后将自动提交' : '3秒后将自动保存'} `;
 				$console.info(msg);
 				$message.success({ content: msg, duration: 3 });
 

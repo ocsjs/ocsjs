@@ -494,7 +494,7 @@ function workAndExam(
 					type: upload,
 					results,
 					async callback(finishedRate, uploadable) {
-						const content = `完成率 ${finishedRate.toFixed(2)} :  ${
+						const content = `完成率 ${finishedRate.toFixed(2)}% :  ${
 							uploadable ? '3秒后将自动提交' : '3秒后将自动跳过（没保存按钮）'
 						} `;
 						$console.info(content);
