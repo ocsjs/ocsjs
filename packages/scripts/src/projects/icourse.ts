@@ -297,9 +297,9 @@ export const ICourseProject = Project.create({
 			}
 		}),
 		work: new Script({
-			name: '✍️ 作业脚本',
+			name: '✍️ 作业考试脚本',
 			// 添加版本号是因为只有 notes 会强制更新，其他配置项不会，如果需要修改 runAtHash ，需要更新版本号
-			namespace: 'icourse.work-v1',
+			namespace: 'icourse.work-v2',
 			matches: [
 				['MOOC作业页面', 'icourse163.org/learn'],
 				['SPOC作业页面', 'icourse163.org/spoc/learn']
@@ -307,7 +307,7 @@ export const ICourseProject = Project.create({
 			configs: {
 				notes: workNotes,
 				runAtHash: {
-					defaultValue: '/learn/quiz'
+					defaultValue: ['/learn/quiz', '/learn/examObject']
 				}
 			},
 			methods() {
