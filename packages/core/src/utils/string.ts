@@ -22,14 +22,20 @@ export class StringUtils {
 		this._text = _text;
 	}
 
-	/** 删除换行符 */
-	static nowrap(str?: string) {
-		return str?.replace(/\n/g, '') || '';
+	/**
+	 * 删除换行符
+	 * @param replace_str 替代的字符串
+	 */
+	static nowrap(str: string, replace_str: string) {
+		return str?.replace(/\n/g, replace_str) || '';
 	}
 
-	/** 删除换行符 */
-	nowrap() {
-		this._text = StringUtils.nowrap(this._text);
+	/**
+	 * 删除换行符
+	 * @param replace_str 替代的字符串
+	 */
+	nowrap(replace_str: string) {
+		this._text = StringUtils.nowrap(this._text, replace_str);
 		return this;
 	}
 

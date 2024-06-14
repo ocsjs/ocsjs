@@ -56,7 +56,7 @@ export function defaultQuestionResolve<E>(
 			// 是否为纯ABCD答案
 			for (const info of infos) {
 				for (const res of info.results) {
-					const ans = StringUtils.nowrap(res.answer).trim();
+					const ans = StringUtils.nowrap(res.answer, '').trim();
 					if (ans.length === 1 && /[A-Z]/.test(ans)) {
 						const index = ans.charCodeAt(0) - 65;
 						if (options[index] === undefined) {
@@ -201,7 +201,7 @@ export function defaultQuestionResolve<E>(
 			const plainOptions = [];
 			// 纯ABCD答案
 			for (const result of results) {
-				const ans = StringUtils.nowrap(result.answer).trim();
+				const ans = StringUtils.nowrap(result.answer, '').trim();
 				const plainAnswer = resolvePlainAnswer(ans);
 				if (plainAnswer) {
 					for (const char of ans) {

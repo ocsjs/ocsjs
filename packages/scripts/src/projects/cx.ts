@@ -604,7 +604,7 @@ function workOrExam(
 			.join(',');
 
 		return removeRedundantWords(
-			StringUtils.of(optimizationTitle).nowrap().nospace().toString().trim(),
+			StringUtils.of(optimizationTitle).nowrap(' ').nospace().toString().trim(),
 			redundanceWordsText.split('\n')
 		);
 	};
@@ -1492,7 +1492,7 @@ const JobRunner = {
 			const transformed = StringUtils.of(
 				titles.map((t) => (t ? optimizationElementWithImage(t).innerText : '')).join(',')
 			)
-				.nowrap()
+				.nowrap(' ')
 				.nospace()
 				.toString()
 				.trim()
