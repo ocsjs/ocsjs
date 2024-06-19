@@ -27,8 +27,6 @@ export class SearchInfosElement extends HTMLElement {
 	question: string = '';
 
 	connectedCallback() {
-		console.log('connectedCallback : ', this);
-
 		const question = transformImgLinkOfQuestion(this.question || '无');
 
 		this.append(
