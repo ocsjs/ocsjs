@@ -98,7 +98,7 @@ export async function defaultAnswerWrapperHandler(
 							}
 							const result = handler(env);
 							if (result) {
-								Reflect.set(data, key, handler(env));
+								Reflect.set(data, key, result);
 							}
 						} else {
 							// 解析data数据
