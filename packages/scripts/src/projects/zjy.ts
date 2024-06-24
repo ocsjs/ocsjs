@@ -142,6 +142,9 @@ export const ZJYProject = Project.create({
 							$console.error('获取课程信息失败，请跟作者反馈。');
 							return;
 						}
+
+						const started_url = window.location.href;
+
 						$message.success({ content: '开始学习：' + courseInfo.fileType + '-' + courseInfo.name });
 						$console.info('开始学习：' + courseInfo.fileType + '-' + courseInfo.name);
 						if (['ppt', 'doc', 'pptx', 'docx', 'pdf', 'txt'].some((i) => courseInfo.fileType === i)) {
@@ -157,9 +160,11 @@ export const ZJYProject = Project.create({
 						} else {
 							$console.error(`未知的任务点 ${courseInfo.name}，类型 ${courseInfo.fileType}，请跟作者进行反馈。`);
 						}
-						$console.info('任务点结束，三秒后下一章');
-						await $.sleep(3000);
-						await next();
+						if (started_url === window.location.href) {
+							$console.info(courseInfo.name + ' 任务点结束，三秒后下一章');
+							await $.sleep(3000);
+							await next();
+						}
 					}
 				};
 			}
@@ -229,6 +234,7 @@ async function start(): Promise<CourseType | undefined> {
 	const vue = $el('.guide')?.__vue__;
 	const info = vue?.courseList?.id ? vue?.courseList : vue?.designData;
 	if (info?.id !== undefined) {
+		console.log('info', info);
 		return info;
 	} else {
 		return undefined;
@@ -242,8 +248,6 @@ function getNextObject() {
 async function next() {
 	const nextObject = getNextObject();
 	const id = new URL(window.location.href).searchParams.get('id');
-	console.log(nextObject);
-
 	if (id && nextObject?.id !== undefined) {
 		// 跳过讨论
 		if (['测验', '讨论'].some((i) => nextObject.fileType === i)) {
