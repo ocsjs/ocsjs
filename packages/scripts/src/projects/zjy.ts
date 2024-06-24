@@ -143,7 +143,7 @@ export const ZJYProject = Project.create({
 							return;
 						}
 						$message.success({ content: '开始学习：' + courseInfo.fileType + '-' + courseInfo.name });
-						$console.info('开始学习：' + +courseInfo.fileType + '-' + courseInfo.name);
+						$console.info('开始学习：' + courseInfo.fileType + '-' + courseInfo.name);
 						if (['ppt', 'doc', 'pptx', 'docx', 'pdf', 'txt'].some((i) => courseInfo.fileType === i)) {
 							await watchFile();
 						} else if (['video', 'audio', 'mp4', 'mp3', 'flv'].some((i) => courseInfo.fileType === i)) {
