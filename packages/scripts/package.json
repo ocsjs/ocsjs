@@ -38,7 +38,7 @@
 		"vite-plugin-banner": "^0.6.1"
 	},
 	"dependencies": {
-		"@ocsjs/core": "4.0.2",
+		"@ocsjs/core": "4.0.3",
 		"@rollup/plugin-commonjs": "^24.0.0",
 		"browser-env": "^3.3.0",
 		"easy-us": "^0.0.20",
