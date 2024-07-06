@@ -50,7 +50,8 @@ export const IcveMoocProject = Project.create({
 		'icve.com.cn',
 		'course.icve.com.cn',
 		// 智慧职教套壳
-		'courshare.cn'
+		'courshare.cn',
+		'webtrn.cn'
 	],
 	scripts: {
 		guide: new Script({
@@ -336,7 +337,12 @@ export const IcveMoocProject = Project.create({
 
 										media.addEventListener('pause', async () => {
 											if (!media.ended) {
-												await waitForPopupQuestion(doc);
+												await Promise.race([
+													// 测验弹窗
+													waitForPopupQuestion(doc),
+													// 30分钟是否继续学习弹窗
+													handleContinueDialog()
+												]);
 												await $.sleep(1000);
 												playMedia(() => media.play());
 											}
@@ -656,5 +662,32 @@ function waitForPopupQuestion(dom: Document) {
 				}, 3000);
 			}
 		}, 1000);
+
+		setTimeout(() => {
+			clearInterval(interval);
+			resolve();
+			console.log('未找到弹窗，继续执行');
+		}, 60 * 1000);
+	});
+}
+
+function handleContinueDialog() {
+	return new Promise<void>((resolve, reject) => {
+		const interval = setInterval(() => {
+			const el = document.querySelector<HTMLElement>('.layui-layer-btn0');
+			if (el) {
+				el.click();
+				setTimeout(() => {
+					clearInterval(interval);
+					resolve();
+				}, 1000);
+			}
+		}, 3000);
+
+		setTimeout(() => {
+			clearInterval(interval);
+			resolve();
+			console.log('未找到弹窗，继续执行');
+		}, 60 * 1000);
 	});
 }
