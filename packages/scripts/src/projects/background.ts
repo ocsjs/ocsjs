@@ -1,6 +1,7 @@
 import { request } from '@ocsjs/core';
 import { $ui, $gm, $message, $modal, $store, Project, Script, StoreListenerType, h, $ } from 'easy-us';
-import gt from 'semver/functions/gt';
+import semver_gt from 'semver/functions/gt';
+import semver_valid from 'semver/functions/valid';
 import { CommonProject } from './common';
 import { definedProjects } from '..';
 import { RenderScript } from '../render';
@@ -375,6 +376,12 @@ export const BackgroundProject = Project.create({
 					if (this.cfg.notToday === -1 || this.cfg.notToday !== new Date().getDate()) {
 						const infos = $gm.getInfos();
 						if (infos) {
+							// 版本表达式验证
+							if (!!semver_valid(infos.script.version) === false) {
+								$message.error(`当前版本号 (${infos.script.version}) 不符合semver版本书写规范，请重新修改版本。`);
+								return;
+							}
+
 							// 避免阻挡用户操作，这里等页面运行一段时间后再进行更新提示
 							setTimeout(async () => {
 								const version = await this.methods.getLastVersion();
@@ -384,7 +391,7 @@ export const BackgroundProject = Project.create({
 									// 跳过主动忽略的版本
 									this.cfg.ignoreVersions.includes(last) === false &&
 									// 版本比较
-									gt(last, infos.script.version)
+									semver_gt(last, infos.script.version)
 								) {
 									const updatePage = this.startConfig?.updatePage || '';
 									const modal = $modal.confirm({
