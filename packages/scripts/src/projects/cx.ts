@@ -1436,6 +1436,15 @@ const JobRunner = {
 		 * 视频播放
 		 */
 		return new Promise<void>((resolve, reject) => {
+			// 检测视频
+			const reloadInterval = setInterval(() => {
+				if (doc.documentElement.innerText.includes('网络错误导致视频下载中途失败')) {
+					$console.error('检测到视频加载失败，即将跳过视频。');
+					$message.error('检测到视频加载失败，即将跳过视频。');
+					setTimeout(resolve, 3000);
+				}
+			}, 3000);
+
 			const playFunction = async () => {
 				await waitForFaceRecognition();
 				if (media.ended === false) {
@@ -1450,6 +1459,7 @@ const JobRunner = {
 			media.addEventListener('ended', () => {
 				media.removeEventListener('pause', playFunction);
 				$console.log('视频播放完毕');
+				clearInterval(reloadInterval);
 				resolve();
 			});
 
