@@ -25,6 +25,32 @@ import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { waitForMedia } from '../utils/study';
 
+/**
+ * 于 4.9.20 后更新，出现顶层套壳页面跨域 :
+ * top : zjelib.cn <body>
+ * iframe : mooc1.xxx.zjelib.cn/.../mycourse/studentstudy/...  <iframe src=....>
+ * 导致top指向zjelib跨域无法访问，所以这里尝试寻找真正的top窗口对象，只有域名中包含 /mycourse/studentstudy 才是可操作的 top
+ */
+let top = window.top;
+try {
+	let _self = $gm.unsafeWindow;
+	let _try_count = 10;
+	while (_self.parent !== undefined && _try_count > 0) {
+		if (_self.location.href.includes('/mycourse/studentstudy')) {
+			top = _self;
+			console.log('[ocsjs] top change to :' + top.location.href);
+			break;
+		} else {
+			_try_count--;
+			// @ts-ignore
+			_self = _self.parent;
+		}
+	}
+} catch (e) {
+	console.warn('[ocsjs] fail of find top');
+	console.warn(e);
+}
+
 try {
 	/**
 	 *
@@ -94,7 +120,8 @@ export const CXProject = Project.create({
 		'hnvist.cn',
 		'fjlecb.cn',
 		'gdhkmooc.com',
-		'cugbonline.cn'
+		'cugbonline.cn',
+		'zjelib.cn'
 	],
 	scripts: {
 		guide: new Script({
@@ -1130,13 +1157,7 @@ export async function study(opts: {
 				 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
 				 */
 				// @ts-ignore
-				$gm.unsafeWindow.top?.PCount.next(
-					count.length.toString(),
-					curChapterId.value,
-					curCourseId.value,
-					curClazzId.value,
-					''
-				);
+				top?.PCount.next(count.length.toString(), curChapterId.value, curCourseId.value, curClazzId.value, '');
 			} else {
 				$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
 			}
