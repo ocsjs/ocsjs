@@ -30,7 +30,8 @@ const isWork =
 	window.location.href.includes('icve-study/coursePreview/jobTes') ||
 	window.location.href.includes('study/spockeepTest') ||
 	window.location.href.includes('study/spocjobTest');
-const isExam = window.location.href.includes('icve-study/coursePreview/test');
+const isExam =
+	window.location.href.includes('icve-study/coursePreview/test') || window.location.href.includes('study/spoctest');
 
 /**
  * 职教云网课
@@ -256,7 +257,10 @@ async function next() {
 			await $.sleep(3000);
 			window.location.href = window.location.href.replace(id, res.data.next.id);
 		} else {
+			// 旧版本
 			$el('.preOrNext .next .el-link')?.click();
+			// 2024/8/10 更新
+			$el('.preOrNext .next')?.click();
 		}
 	} else {
 		$message.success({
