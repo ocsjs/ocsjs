@@ -121,7 +121,8 @@ export const CXProject = Project.create({
 		'fjlecb.cn',
 		'gdhkmooc.com',
 		'cugbonline.cn',
-		'zjelib.cn'
+		'zjelib.cn',
+		'cqrspx.cn'
 	],
 	scripts: {
 		guide: new Script({
