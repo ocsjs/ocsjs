@@ -1439,7 +1439,7 @@ const JobRunner = {
 		return new Promise<void>((resolve, reject) => {
 			// 检测视频
 			const reloadInterval = setInterval(() => {
-				if (doc.documentElement.innerText.includes('网络错误导致视频下载中途失败')) {
+				if (['视频文件损坏', '网络错误导致视频下载中途失败'].some((s) => doc.documentElement.innerText.includes(s))) {
 					$console.error('检测到视频加载失败，即将跳过视频。');
 					$message.error('检测到视频加载失败，即将跳过视频。');
 					setTimeout(resolve, 3000);
