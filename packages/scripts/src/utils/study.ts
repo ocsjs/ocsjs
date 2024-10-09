@@ -16,6 +16,7 @@ export async function waitForMedia(options?: {
 	 * 根元素
 	 */
 	root?: HTMLElement | Document;
+	timeout?: number;
 }) {
 	const res = await Promise.race([
 		new Promise<HTMLVideoElement | HTMLAudioElement>((resolve, reject) => {
@@ -27,9 +28,9 @@ export async function waitForMedia(options?: {
 					clearInterval(interval);
 					resolve(video);
 				}
-			}, 1000);
+			}, 200);
 		}),
-		$.sleep(3 * 60 * 1000)
+		$.sleep(options?.timeout ?? 3 * 60 * 1000)
 	]);
 	if (res) {
 		return res;
