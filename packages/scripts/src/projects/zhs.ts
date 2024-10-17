@@ -497,6 +497,8 @@ export const ZHSProject = Project.create({
 							$render.moveToEdge();
 							// 点击侧边栏任务
 							await remotePage.click(item);
+							// 两次点击修复黑屏问题
+							await remotePage.click(item);
 
 							watch(
 								processor,
