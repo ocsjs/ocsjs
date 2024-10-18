@@ -621,17 +621,15 @@ async function discussion(
 		res = content;
 	}
 
-	const p = document
-		.querySelector<HTMLIFrameElement>('[id*=ueditor]')
-		?.contentDocument?.querySelector<HTMLElement>('body p');
+	const p = document.querySelector<HTMLDivElement>('.j-reply-add div.ql-editor.ql-blank p');
 	if (p) {
 		p.innerText = res;
 		await $.sleep(1000);
-		const submit = document.querySelector('.ui-richEditor .u-btn-sm');
+		const submit = document.querySelector('.j-reply-add .editbtn');
 		if (submit) {
 			await remotePage.click(submit);
 		} else {
-			$console.error('提交按钮获取失败！');
+			$console.error('获取提交按钮失败！');
 		}
 		await $.sleep(2000);
 	} else {
