@@ -153,7 +153,7 @@ class StudyVideoH5 implements ZHSProcessor {
 			}
 			await $.sleep(1000);
 			// 关闭弹窗
-			const close_btn_selector = '#playTopic-dialog .close-btn';
+			const close_btn_selector = '#playTopic-dialog .el-dialog__headerbtn';
 			if (this.remotePage) {
 				await this.remotePage.click(close_btn_selector);
 			} else {
