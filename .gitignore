@@ -5,6 +5,10 @@ package-lock.json
 
 **/*.zip
 
+# DesktopServices Store
+
+.DS_Store
+
 # tsc
 
 lib/
