@@ -13,12 +13,13 @@ export function request<T extends 'json' | 'text'>(
 		responseType?: T;
 		headers?: Record<string, string>;
 		data?: Record<string, any>;
+		timeout?: number;
 	}
 ): Promise<T extends 'json' ? any : string> {
 	return new Promise((resolve, reject) => {
 		try {
 			/** 默认参数 */
-			const { responseType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
+			const { responseType = 'json', method = 'get', type = 'fetch', data = {}, headers = {}, timeout = 60000 } = opts || {};
 			/** 环境变量 */
 			const env = $.isInBrowser() ? 'browser' : 'node';
 
@@ -39,6 +40,7 @@ export function request<T extends 'json' | 'text'>(
 						data: requestData,
 						headers: Object.keys(headers).length ? headers : undefined,
 						responseType: responseType === 'json' ? 'json' : undefined,
+						timeout,
 						onload: (response) => {
 							if (response.status === 200) {
 								if (responseType === 'json') {
@@ -54,9 +56,12 @@ export function request<T extends 'json' | 'text'>(
 								reject(response.responseText);
 							}
 						},
-						onerror: (err) => {
+						ontimeout: () => {
+							reject(new Error('GM_xmlhttpRequest 请求超时'));
+						},
+						onerror: (err: any) => {
 							console.error('GM_xmlhttpRequest error', err);
-							reject(err);
+							reject(new Error(err?.error || 'GM_xmlhttpRequest 请求失败'));
 						}
 					});
 				} else {
@@ -65,8 +70,12 @@ export function request<T extends 'json' | 'text'>(
 			} else {
 				const fet: typeof fetch = env === 'node' ? require('node-fetch').default : fetch;
 
-				fet(url, { body: method === 'post' ? JSON.stringify(data) : undefined, method, headers })
+				const controller = new AbortController();
+				const timer = setTimeout(() => controller.abort(), timeout);
+
+				fet(url, { body: method === 'post' ? JSON.stringify(data) : undefined, method, headers, signal: controller.signal as any })
 					.then((response) => {
+						clearTimeout(timer);
 						if (responseType === 'json') {
 							response.json().then(resolve).catch(reject);
 						} else {
@@ -75,6 +84,7 @@ export function request<T extends 'json' | 'text'>(
 						}
 					})
 					.catch((error) => {
+						clearTimeout(timer);
 						reject(new Error(error));
 					});
 			}
