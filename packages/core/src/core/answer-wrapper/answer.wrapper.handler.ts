@@ -4,7 +4,9 @@ import { $ } from '../../utils';
 
 export const AnswerWrapperHandlerConfig = {
 	// 超时时间，单位毫秒
-	timeout_seconds: 60
+	timeout_seconds: 60,
+	keep_service_worker_alive: true,
+	service_worker_keepalive_interval_seconds: 15
 };
 
 /**
@@ -122,7 +124,12 @@ export async function defaultAnswerWrapperHandler(
 						responseType: contentType,
 						data: requestData,
 						type,
-						headers: JSON.parse(JSON.stringify(headers || {}))
+						headers: JSON.parse(JSON.stringify(headers || {})),
+						timeout: (AnswerWrapperHandlerConfig.timeout_seconds ?? 60) * 1000,
+						keepAlive: {
+							enabled: AnswerWrapperHandlerConfig.keep_service_worker_alive,
+							interval: (AnswerWrapperHandlerConfig.service_worker_keepalive_interval_seconds ?? 15) * 1000
+						}
 					}),
 					$.sleep((AnswerWrapperHandlerConfig.timeout_seconds ?? 60) * 1000)
 				]);
