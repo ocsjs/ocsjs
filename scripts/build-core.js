@@ -24,11 +24,11 @@ async function buildPackages() {
 	// @ts-ignore
 	await execOut('tsc', { cwd: '../packages/core' });
 	// @ts-ignore
-	await execOut('vite build', { cwd: '../packages/core' });
+	await execOut('$env:VITE_BUILD_PATH="../../dist"; vite build', { cwd: '../packages/core', shell: 'powershell' });
 	// @ts-ignore
 	await execOut('tsc', { cwd: '../packages/scripts' });
 	// @ts-ignore
-	await execOut('vite build', { cwd: '../packages/scripts' });
+	await execOut('$env:VITE_BUILD_PATH="../../dist"; vite build', { cwd: '../packages/scripts', shell: 'powershell' });
 }
 
 async function createUserJs() {
