@@ -313,7 +313,7 @@ class StudyPlusH5 extends StudyVideoH5 implements ZHSProcessor {
 
 	getNext(opts: { next: boolean; restudy: boolean }) {
 		let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.child-main')).filter((el) =>
-			el.querySelector('.child-time')
+			el.parentElement?.querySelector('.child-time')
 		);
 		console.log(videoItems);
 		// 如果不是复习模式，则排除掉已经完成的任务
@@ -343,39 +343,53 @@ class StudyPlusH5 extends StudyVideoH5 implements ZHSProcessor {
 	}
 
 	async handleTestDialog(remotePage?: RemotePage) {
-		const question_box = $el('.class-question-box');
+		const question_box = $el('.ai-test-question-wrapper');
+		const done = $el('.ai-test-question-wrapper .done');
 		if (question_box) {
-			const options = $$el('.options option');
-			if (options.length !== 0) {
-				await waitForCaptcha();
-				// 最小化脚本窗口
-				$render.moveToEdge();
-				// 随机选
-				const random = Math.floor(Math.random() * options.length);
-				await $.sleep(1000);
-				if (remotePage) {
-					await remotePage.click(options[random]);
-				} else {
-					options[random].click();
+			$message.info('正在关闭弹窗测验...');
+			const close_btn = $el('.close-box', question_box);
+			if (done) {
+				if (close_btn) {
+					if (remotePage) {
+						await remotePage.click(close_btn);
+					} else {
+						close_btn.click();
+					}
 				}
+			} else {
+				const options = $$el('.options .option', question_box);
+				if (options.length !== 0) {
+					await waitForCaptcha();
+					// 最小化脚本窗口
+					$render.moveToEdge();
+					// 随机选
+					const random = Math.floor(Math.random() * options.length);
+					await $.sleep(1000);
+					if (remotePage) {
+						await remotePage.click(options[random]);
+					} else {
+						options[random].click();
+					}
 
-				await $.sleep(1000);
-			}
-			await $.sleep(1000);
-			const close_btn = $el('.close_btn');
-			if (close_btn) {
-				if (remotePage) {
-					await remotePage.click(close_btn);
-				} else {
-					close_btn.click();
+					await $.sleep(1000);
 				}
-			}
-			const submit_btn = $el('.submit-btn');
-			if (submit_btn) {
-				if (remotePage) {
-					await remotePage.click(submit_btn);
-				} else {
-					submit_btn.click();
+				await $.sleep(1000);
+				const submit_btn = $el('.submit-btn .submits');
+				if (submit_btn) {
+					if (remotePage) {
+						await remotePage.click(submit_btn);
+					} else {
+						submit_btn.click();
+					}
+				}
+				await $.sleep(1000);
+
+				if (close_btn) {
+					if (remotePage) {
+						await remotePage.click(close_btn);
+					} else {
+						close_btn.click();
+					}
 				}
 			}
 		}
@@ -630,7 +644,8 @@ export const ZHSProject = Project.create({
 			matches: [
 				['共享课学习页面', 'studyvideoh5.zhihuishu.com'],
 				['新共享课学习页面', 'studyplush5.zhihuishu.com'],
-				['新版AI课页面', 'fusioncourseh5.zhihuishu.com/stuStudy']
+				['新版AI课页面', 'fusioncourseh5.zhihuishu.com/stuStudy'],
+				['2025-9月新智慧共享课学习页面', 'studywisdomh5.zhihuishu.com/study/index']
 			],
 			namespace: 'zhs.gxk.study',
 			configs: {
@@ -795,11 +810,13 @@ export const ZHSProject = Project.create({
 					? 'AI课程'
 					: location.href.includes('studyplush5')
 					? '新共享课'
+					: location.href.includes('studywisdomh5')
+					? '新智慧共享课'
 					: '共享课';
 
 				const ProcessorConstructor = location.href.includes('fusioncourseh5')
 					? FusionCourseH5
-					: location.href.includes('studyplush5')
+					: location.href.includes('studyplush5') || location.href.includes('studywisdomh5')
 					? StudyPlusH5
 					: StudyVideoH5;
 
@@ -819,10 +836,11 @@ export const ZHSProject = Project.create({
 						} else {
 							setTimeout(() => {
 								resolve(waitForVideoJob());
-							}, 1000);
+							}, 200);
 						}
 					});
 				};
+
 				await waitForVideoJob();
 
 				// 初始化处理器
@@ -870,7 +888,7 @@ export const ZHSProject = Project.create({
 				// 自动隐藏弹窗
 				processor.hideDialog();
 				// 自动过弹窗测验
-				processor.handleTestDialog();
+				processor.handleTestDialog(processor.remotePage);
 
 				setInterval(async () => {
 					// 删除遮罩层
@@ -1566,10 +1584,7 @@ export const ZHSProject = Project.create({
 		}),
 		'wisdom-study': new Script({
 			name: '🖥️ 新智慧学习-学习脚本',
-			matches: [
-				['2025-9月新智慧学习页面', 'studywisdomh5.zhihuishu.com/study/index'],
-				['2025-12月新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index']
-			],
+			matches: [['2025-12月新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index']],
 			namespace: 'zhs.wisdom.study',
 			configs: {
 				notes: {
@@ -1747,14 +1762,6 @@ export const ZHSProject = Project.create({
 					});
 				};
 
-				/** 固定视频进度 */
-				const fixProcessBar = () => {
-					const bar = document.querySelector<HTMLElement>('.controlsBar');
-					if (bar) {
-						bar.style.cssText = 'z-index: 2; overflow: inherit; display: block;';
-					}
-				};
-
 				await waitForLoad();
 
 				await $.sleep(3000);
@@ -1832,7 +1839,6 @@ export const ZHSProject = Project.create({
 						}
 					};
 
-					$message.info('开始播放');
 					// 部分用户视频加载很慢，这里等待一下
 					try {
 						const media = await waitForMedia({
@@ -1866,6 +1872,7 @@ export const ZHSProject = Project.create({
 						}
 					}, 3000);
 
+					$message.info('开始播放');
 					playMedia(() => video?.play()).then(() => {
 						const current = document.querySelector<HTMLElement>(
 							'.chapter-item.current , .chapter-content-second.current'
@@ -2396,9 +2403,11 @@ async function watch(
 		// 上面操作会导致元素刷新，这里重新获取视频
 		try {
 			await $.sleep(1000);
+			fixProcessBar();
 			// 设置清晰度
 			await processor.switchLine(options.definition || 'line1bq');
 			await $.sleep(1000);
+			fixProcessBar();
 			// 设置播放速度
 			await processor.switchPlaybackRate(options.playbackRate);
 			await $.sleep(1000);
@@ -3563,6 +3572,9 @@ function fixProcessBar() {
 	const bar = document.querySelector<HTMLElement>('.controlsBar');
 	if (bar) {
 		bar.style.display = 'block';
+		// 适配 wisdomh5
+		bar.style.zIndex = '2';
+		bar.style.overflow = '';
 	}
 }
 

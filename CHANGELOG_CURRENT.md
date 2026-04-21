@@ -1,21 +1,12 @@
-## [4.12.37](https://github.com/ocsjs/ocsjs/compare/4.12.32...4.12.37) (2026-04-15)
+## [4.12.39](https://github.com/ocsjs/ocsjs/compare/4.12.38...4.12.39) (2026-04-20)
 
 
 ### Bug Fixes
 
-* **script:** 修复超星某些章节测试无法自动答题的BUG ([62b0aaf](https://github.com/ocsjs/ocsjs/commit/62b0aaf86416a07051513e7fbebcce94f29c12cc))
-
-
-### Features
-
-* **script:** 添加智慧树2026上学期新版HIKE AI教学中心视频学习功能 ([392a1a5](https://github.com/ocsjs/ocsjs/commit/392a1a59d5c352e0ca893bf72799cce9333e7f08))
-
-
-### Performance Improvements
-
-* **script:** 适配超星积分课的阅读任务不会自动开始阅读的问题 ([9b8ff4f](https://github.com/ocsjs/ocsjs/commit/9b8ff4f4e34b3e9de6e4c863b10b24bc7d7cf607))
-* **script:** 添加超星阅读界面的使用提示 ([a8aa869](https://github.com/ocsjs/ocsjs/commit/a8aa8695efe8fb1c74baaab106c4c2401f86de53))
-* **script:** 优化超星跳转时间太长的问题，改成智能等待时间 ([6314616](https://github.com/ocsjs/ocsjs/commit/631461620821559ea1bf068ba2445308df4995f1))
+* 修复智慧职教题目识别丢失img的src问题 ([482ac64](https://github.com/ocsjs/ocsjs/commit/482ac64f6d9ee0dc54a8bef1fe210ccb4b02d25a))
+* 修复智慧职教题目识别丢失img的src问题,使用与学习通页面相同的方法 ([488f467](https://github.com/ocsjs/ocsjs/commit/488f467a8c212e17a866f0746e86a6c0084f1e2b))
+* 修复智慧职教题目识别丢失img的src问题,使用与学习通页面相同的方法,且考虑纯图片无法识别问题 ([3a23e04](https://github.com/ocsjs/ocsjs/commit/3a23e04d89bb7913638ec880e9817aaa013143ba))
+* 修复智慧职教题目识别丢失img的src问题,使用与学习通页面相同的方法,且考虑纯图片无法识别问题 ([d020954](https://github.com/ocsjs/ocsjs/commit/d0209548c56f6205b7c9edf4fe7ef84f334d03ec))
 
 
 

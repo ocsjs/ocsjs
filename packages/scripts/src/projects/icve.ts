@@ -8,6 +8,7 @@ import {
 	QuestionTypes
 } from '@ocsjs/core';
 import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 'easy-us';
+import { optimizationElementWithImage } from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
@@ -952,10 +953,13 @@ function aiWork({ answererWrappers, period, thread, answerSeparators, answerMatc
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
-			.filter((t) => t?.innerText)
+			.filter((t) => t?.innerText || t?.querySelector('img'))
 			.map((t) => {
 				if (t) {
-					return t.innerText.trim();
+					const el = optimizationElementWithImage(t, true);
+					// 使用 textContent 而非 innerText，因为 innerText 受 CSS 影响，
+					// fontSize: 0px 的隐藏 span 中的图片 URL 不会被 innerText 获取
+					return (el.textContent || '').replace(/\s+/g, ' ').trim() || '';
 				}
 				return '';
 			})
@@ -1005,7 +1009,7 @@ function aiWork({ answererWrappers, period, thread, answerSeparators, answerMatc
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: getType(ctx.elements.options) || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
 					});
 				});
 			} else {
@@ -1040,6 +1044,8 @@ function aiWork({ answererWrappers, period, thread, answerSeparators, answerMatc
 		},
 		onElementSearched(elements, root) {
 			console.log('elements', elements);
+			// 对选项元素进行图片优化，使默认 resolver 的 innerText 匹配也能获取到图片链接
+			elements.options?.forEach((option) => optimizationElementWithImage(option));
 		},
 
 		/**

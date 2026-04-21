@@ -1,3 +1,24 @@
+## 4.12.39 (2026-04-20)
+
+
+### 🔧 修复内容
+
+* 修复智慧职教题目识别丢失img的src问题 <a href="https://github.com/ocsjs/ocsjs/commit/482ac64f6d9ee0dc54a8bef1fe210ccb4b02d25a">></a>
+* 修复智慧职教题目识别丢失img的src问题,使用与学习通页面相同的方法 <a href="https://github.com/ocsjs/ocsjs/commit/488f467a8c212e17a866f0746e86a6c0084f1e2b">></a>
+* 修复智慧职教题目识别丢失img的src问题,使用与学习通页面相同的方法,且考虑纯图片无法识别问题 <a href="https://github.com/ocsjs/ocsjs/commit/3a23e04d89bb7913638ec880e9817aaa013143ba">></a>
+* 修复智慧职教题目识别丢失img的src问题,使用与学习通页面相同的方法,且考虑纯图片无法识别问题 <a href="https://github.com/ocsjs/ocsjs/commit/d0209548c56f6205b7c9edf4fe7ef84f334d03ec">></a>
+
+
+
+## 4.12.38 (2026-04-20)
+
+
+### 🔧 修复内容
+
+* 兼容26年上半年智慧树新版studywisdomh5网课更新 <a href="https://github.com/ocsjs/ocsjs/commit/cf52bf019b3f9c36c82bc5b90e5e3125510ff3cb">></a>
+
+
+
 ## 4.12.37 (2026-04-15)
 
 
