@@ -6,10 +6,14 @@ import {
 	SimplifyWorkResult,
 	$,
 	WorkUploadType,
-	AnswerWrapperHandlerConfig
+	AnswerWrapperHandlerConfig,
+	createLLMAnswererWrapper,
+	extractLLMConfig,
+	testLLMConnection,
+	LLMHandlerConfig
 } from '@ocsjs/core';
 import { $message, h, $gm, $store, Project, Script, $modal, StoreListenerType, $ui } from 'easy-us';
-import type { AnswerMatchMode, AnswererWrapper, SearchInformation } from '@ocsjs/core';
+import type { AnswerMatchMode, AnswererWrapper, SearchInformation, LLMConfig } from '@ocsjs/core';
 import { CXProject, ICourseProject, IcveMoocProject, ZHSProject, ZJYProject } from '../index';
 import { markdown } from '../utils/markdown';
 import { enableCopy } from '../utils';
@@ -169,6 +173,13 @@ export const CommonProject = Project.create({
 													'大学生网课题库接口适配器: 将不同的题库整合为一个API接口。详细查看 https://github.com/DokiDoki1103/tikuAdapter'
 											},
 											'TikuAdapter'
+										),
+										h(
+											'option',
+											{
+												title: '使用大模型API进行答题，支持OpenAI兼容格式的API'
+											},
+											'大模型'
 										)
 									]
 								)
@@ -238,9 +249,29 @@ export const CommonProject = Project.create({
 													const value = textarea.value;
 
 													if (!value) {
+														if (select.value === '大模型') {
+															modal?.remove();
+															const llmBtn = document.querySelector<HTMLInputElement>(
+																'[data-config-key="common.settings.llmConfigButton"]'
+															);
+															if (llmBtn) {
+																llmBtn.click();
+															}
+															return;
+														}
 														$modal.alert({
 															content: h('div', '不能为空！')
 														});
+														return;
+													}
+													if (select.value === '大模型') {
+														modal?.remove();
+														const llmBtn = document.querySelector<HTMLInputElement>(
+															'[data-config-key="common.settings.llmConfigButton"]'
+														);
+														if (llmBtn) {
+															llmBtn.click();
+														}
 														return;
 													}
 													if (value.includes('adapter-service/search') && (select.value === 'TikuAdapter') === false) {
@@ -420,6 +451,24 @@ export const CommonProject = Project.create({
 									])
 								])
 							});
+						};
+					}
+				},
+				llmConfig: {
+					defaultValue: {} as LLMConfig
+				},
+				llmConfigButton: {
+					label: '大模型配置',
+					defaultValue: '点击配置',
+					attrs: {
+						type: 'button',
+						title: '配置大模型API，使用AI进行自动答题，可作为题库的替代方案。'
+					},
+					onload() {
+						const config = CommonProject.scripts.settings.cfg.llmConfig;
+						this.value = config?.apikey ? '当前已配置大模型，点击重新配置' : '点击配置';
+						this.onclick = () => {
+							showLLMConfigModal(this);
 						};
 					}
 				},
@@ -702,8 +751,10 @@ export const CommonProject = Project.create({
 			// 实时更新内部设置
 			oncomplete() {
 				AnswerWrapperHandlerConfig.timeout_seconds = this.cfg.answerWrapperHandlerTimeout;
+				LLMHandlerConfig.timeout_seconds = this.cfg.answerWrapperHandlerTimeout;
 				this.onConfigChange('answerWrapperHandlerTimeout', (sec) => {
 					AnswerWrapperHandlerConfig.timeout_seconds = sec;
+					LLMHandlerConfig.timeout_seconds = sec;
 				});
 			},
 			onrender({ panel }) {
@@ -756,6 +807,15 @@ export const CommonProject = Project.create({
 									: await Promise.race([
 											(async () => {
 												try {
+													if (item.type === 'llm') {
+														const testResult = await testLLMConnection(item);
+														if (testResult.success) {
+															return 'llm-ok';
+														} else {
+															error = new Error(testResult.error);
+															return false;
+														}
+													}
 													return await request(new URL(item.url).origin + '/?t=' + t, {
 														type: 'GM_xmlhttpRequest',
 														method: 'head',
@@ -1619,6 +1679,156 @@ export const CommonProject = Project.create({
 	}
 });
 
+function showLLMConfigModal(buttonEl: HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement) {
+	const existingLLMWrapper = (CommonProject.scripts.settings.cfg.answererWrappers || []).find(
+		(aw: AnswererWrapper) => aw.type === 'llm'
+	);
+	const existingConfig = existingLLMWrapper
+		? extractLLMConfig(existingLLMWrapper)
+		: CommonProject.scripts.settings.cfg.llmConfig;
+
+	const apikeyInput = h('input', {
+		className: 'modal-input',
+		type: 'password',
+		style: { width: 'calc(100% - 20px)', marginBottom: '8px' },
+		placeholder: '必填，例如 sk-xxxxxxxx',
+		value: existingConfig?.apikey || ''
+	});
+
+	const urlInput = h('input', {
+		className: 'modal-input',
+		type: 'text',
+		style: { width: 'calc(100% - 20px)', marginBottom: '8px' },
+		placeholder: '必填，例如 https://api.openai.com/v1/chat/completions',
+		value: existingConfig?.url || ''
+	});
+
+	const modelInput = h('input', {
+		className: 'modal-input',
+		type: 'text',
+		style: { width: 'calc(100% - 20px)', marginBottom: '8px' },
+		placeholder: '必填，例如 gpt-3.5-turbo',
+		value: existingConfig?.model || ''
+	});
+
+	const messagesInput = h('textarea', {
+		className: 'modal-input',
+		style: { minHeight: '150px', width: 'calc(100% - 20px)', maxWidth: '100%', marginBottom: '8px' },
+		placeholder: '选填，自定义消息模板，支持 {title}, {options}, {type} 占位符',
+		value: existingConfig?.messages || ''
+	});
+
+	const modal = $modal.prompt({
+		width: 600,
+		maskCloseable: false,
+		content: $ui.notes([
+			['配置大模型API，使用AI进行自动答题。'],
+			['支持 OpenAI 兼容格式的 API（包括国内中转站、本地部署的 Ollama 等）。'],
+			['⚠️ 大模型API按token计费，请注意费用控制。'],
+			['⚠️ 大模型响应可能较慢（5-30秒），请耐心等待。']
+		]),
+		footer: h('div', { style: { width: '100%' } }, [
+			h('div', { style: { marginBottom: '4px' } }, [
+				h('label', { style: { display: 'block', fontWeight: 'bold', marginBottom: '2px' } }, 'API密钥 (apikey) *'),
+				apikeyInput
+			]),
+			h('div', { style: { marginBottom: '4px' } }, [
+				h('label', { style: { display: 'block', fontWeight: 'bold', marginBottom: '2px' } }, '接口地址 (url) *'),
+				urlInput
+			]),
+			h('div', { style: { marginBottom: '4px' } }, [
+				h('label', { style: { display: 'block', fontWeight: 'bold', marginBottom: '2px' } }, '模型名称 (model) *'),
+				modelInput
+			]),
+			h('div', { style: { marginBottom: '4px' } }, [
+				h('label', { style: { display: 'block', fontWeight: 'bold', marginBottom: '2px' } }, '消息模板 (messages)'),
+				messagesInput
+			]),
+			h(
+				'div',
+				{ style: { display: 'flex', flexWrap: 'wrap', marginTop: '12px', fontSize: '12px', justifyContent: 'end' } },
+				[
+					h('button', '取消', (btn) => {
+						btn.className = 'modal-cancel-button';
+						btn.style.marginRight = '12px';
+						btn.onclick = () => modal?.remove();
+					}),
+					h('button', '保存配置', (btn) => {
+						btn.className = 'modal-confirm-button';
+						btn.onclick = async () => {
+							const apikey = apikeyInput.value.trim();
+							const url = urlInput.value.trim();
+							const model = modelInput.value.trim();
+							const messages = messagesInput.value.trim();
+
+							if (!apikey) {
+								$modal.alert({ content: 'API密钥不能为空！' });
+								return;
+							}
+							if (!url) {
+								$modal.alert({ content: '接口地址不能为空！' });
+								return;
+							}
+							if (!model) {
+								$modal.alert({ content: '模型名称不能为空！' });
+								return;
+							}
+
+							if (!/^https?:\/\/.+/.test(url)) {
+								$modal.alert({ content: '接口地址格式错误，请输入有效的URL（以http://或https://开头）！' });
+								return;
+							}
+
+							const llmConfig: LLMConfig = { apikey, url, model, messages: messages || undefined };
+							const llmWrapper = createLLMAnswererWrapper(llmConfig);
+
+							const aws: AnswererWrapper[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
+							const existingIndex = aws.findIndex((aw) => aw.type === 'llm');
+							if (existingIndex >= 0) {
+								aws[existingIndex] = llmWrapper;
+							} else {
+								aws.push(llmWrapper);
+							}
+
+							CommonProject.scripts.settings.cfg.answererWrappers = aws;
+							CommonProject.scripts.settings.cfg.llmConfig = llmConfig;
+							buttonEl.value = '当前已配置大模型，点击重新配置';
+
+							modal?.remove();
+
+							$modal.confirm({
+								width: 400,
+								content: h('div', [
+									h('div', ['🎉 大模型配置成功！']),
+									h('div', ['模型：', h('b', model)]),
+									h('div', ['接口：', h('b', url)]),
+									h('div', { style: { marginTop: '8px' } }, [
+										h('b', ' 刷新网页后 '),
+										'重新进入',
+										h('b', ' 答题页面 '),
+										'即可使用大模型答题。'
+									])
+								]),
+								onConfirm: () => {
+									if ($gm.isInGMContext()) {
+										top?.document.location.reload();
+									}
+								},
+								...($gm.isInGMContext()
+									? {
+											confirmButtonText: '立即刷新',
+											cancelButtonText: '稍后刷新'
+									  }
+									: {})
+							});
+						};
+					})
+				]
+			)
+		])
+	});
+}
+
 function insertCopyableStyle() {
 	const style = document.createElement('style');
 	style.innerHTML = `
@@ -1680,9 +1890,16 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 					h('li', { innerHTML: `官网\t<a target="_blank" href=${item.homepage}>${item.homepage || '无'}</a>` }),
 					h('li', ['接口\t', item.url]),
 					h('li', ['请求方法\t', item.method]),
-					h('li', ['请求类型\t', item.type]),
-					h('li', ['请求头\t', JSON.stringify(item.headers, null, 4) || '无']),
-					h('li', ['请求体\t', JSON.stringify(item.data, null, 4) || '无'])
+					h('li', ['请求类型\t', item.type === 'llm' ? '大模型(llm)' : item.type]),
+					...(item.type === 'llm'
+						? [
+								h('li', ['模型\t', item.data?.model || '未知']),
+								h('li', ['API密钥\t', item.headers?.Authorization ? '已配置' : '未配置'])
+						  ]
+						: [
+								h('li', ['请求头\t', JSON.stringify(item.headers, null, 4) || '无']),
+								h('li', ['请求体\t', JSON.stringify(item.data, null, 4) || '无'])
+						  ])
 				])
 			],
 			(details) => {

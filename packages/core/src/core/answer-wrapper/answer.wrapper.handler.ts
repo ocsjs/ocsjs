@@ -1,6 +1,7 @@
 import { AnswererWrapper, SearchInformation, Result } from './interface';
 import { request } from '../utils/request';
 import { $ } from '../../utils';
+import { llmAnswerWrapperHandler } from './llm.handler';
 
 export const AnswerWrapperHandlerConfig = {
 	// 超时时间，单位毫秒
@@ -58,6 +59,11 @@ export async function defaultAnswerWrapperHandler(
 	// 多线程请求
 	await Promise.all(
 		temp.map(async (wrapper) => {
+			if (wrapper.type === 'llm') {
+				const info = await llmAnswerWrapperHandler(wrapper, env);
+				searchInfos.push(info);
+				return;
+			}
 			// 解构数据，并赋初始值
 			const {
 				name = '未知题库',
