@@ -1,14 +1,22 @@
 import { $, $elements, Project, Script, $message, $modal, $el } from 'easy-us';
 import { $msg, playMedia } from '../utils';
-import { request } from '@ocsjs/core';
 import { restudy, volume } from '../utils/configs';
 import { waitForElement } from '../utils/study';
 import { CommonProject } from './common';
+import { EXAM_FONT_GLYPH_HASH_MAP } from './yuketang.font.map';
 
 const state = {
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined
 	}
+};
+
+const fontDecodeState = {
+	loader: {
+		opentype: null as Promise<any> | null
+	},
+	fontMaps: new Map<string, Map<string, string>>(),
+	fontLoads: new Map<string, Promise<Map<string, string>>>()
 };
 
 export const YKTProject = Project.create({
@@ -158,39 +166,279 @@ export const YKTProject = Project.create({
 		// TODO 作业
 		'font-decrypt': new Script({
 			name: '🔤 字体解密',
-			matches: [['AI伴学自测界面', '/v2/web/iframe-self-test']],
+			matches: [['雨课堂加密字体页面', /\/v2\/web\/iframe-self-test|\/exercise\/|\/exam\//]],
 			async oncomplete() {
-				const mapping = await loadFontMapping();
-
-				console.log(mapping);
-
-				const els = Array.from(document.querySelectorAll('.xuetangx-com-encrypted-font'));
-				for (const el of els) {
-					// 替换
-					for (const _char in mapping) {
-						if (el.textContent?.includes(_char)) {
-							el.textContent = el.textContent.replace(new RegExp(_char, 'g'), mapping[_char]);
-						}
-					}
+				try {
+					$msg.info('正在解析雨课堂加密字体');
+					const count = await decodeElementInPlace(document.body);
+					$msg.success(`字体替换完成，共处理 ${count} 个元素`);
+					console.log('字体替换完成', { count });
+				} catch (err) {
+					$msg.error('字体解密失败，请刷新页面重试：' + String(err));
 				}
-
-				console.log('字体替换完成');
 			}
 		})
 	}
 });
 
-async function loadFontMapping() {
+function getHostWindow() {
 	try {
-		$msg.info('正在解析字体');
-		return await request('https://cdn.ocsjs.com/resources/font/yuketang_font_map.json', {
-			type: 'GM_xmlhttpRequest',
-			method: 'get',
-			responseType: 'json'
-		});
-	} catch (err) {
-		$msg.error('载繁体字库加载失败，请刷新页面重试：' + String(err));
+		const hostWindow = (globalThis as any).unsafeWindow;
+		if (hostWindow) {
+			return hostWindow as Window;
+		}
+	} catch {}
+	return window;
+}
+
+function loadExternalScriptOnce(src: string, globalName: string, stateKey: 'opentype'): Promise<any> {
+	const hostWindow = getHostWindow() as any;
+	if (hostWindow[globalName]) {
+		return Promise.resolve(hostWindow[globalName]);
 	}
+	if (fontDecodeState.loader[stateKey]) {
+		return fontDecodeState.loader[stateKey]!;
+	}
+
+	fontDecodeState.loader[stateKey] = new Promise((resolve, reject) => {
+		const script = hostWindow.document.createElement('script');
+		script.src = src;
+		script.async = true;
+		script.onload = () => {
+			if (hostWindow[globalName]) {
+				resolve(hostWindow[globalName]);
+			} else {
+				reject(new Error(`script loaded but missing global ${globalName}`));
+			}
+		};
+		script.onerror = () => reject(new Error(`failed to load script: ${src}`));
+		hostWindow.document.head.appendChild(script);
+	});
+
+	return fontDecodeState.loader[stateKey]!;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label = 'timeout'): Promise<T> {
+	return new Promise((resolve, reject) => {
+		const timer = setTimeout(() => reject(new Error(label)), ms);
+		promise.then(
+			(value) => {
+				clearTimeout(timer);
+				resolve(value);
+			},
+			(error) => {
+				clearTimeout(timer);
+				reject(error);
+			}
+		);
+	});
+}
+
+async function ensureFontDecodeDependencies() {
+	const hostWindow = getHostWindow() as any;
+	if (!hostWindow.opentype) {
+		await withTimeout(
+			loadExternalScriptOnce(
+				'https://cdn.jsdelivr.net/npm/opentype.js@1.3.4/dist/opentype.min.js',
+				'opentype',
+				'opentype'
+			),
+			15000,
+			'load opentype.js timeout'
+		);
+	}
+}
+
+function normalizeScrapeText(text: string) {
+	return String(text || '')
+		.replace(/上一题|下一题|已提交|收起解析|查看解析/g, '')
+		.replace(/^\s*[\r\n]/gm, '')
+		.trim();
+}
+
+function normalizeFontFamilyName(value: string) {
+	return String(value || '')
+		.split(',')[0]
+		.replace(/["']/g, '')
+		.trim()
+		.toLowerCase();
+}
+
+function getEncryptedFontInfo(element: HTMLElement) {
+	const doc = element.ownerDocument || document;
+	const family =
+		normalizeFontFamilyName(getHostWindow().getComputedStyle(element).fontFamily) || 'exam-data-decrypt-font';
+	let src = '';
+
+	for (const styleSheet of Array.from(doc.styleSheets || [])) {
+		let rules: CSSRuleList | undefined;
+		try {
+			rules = styleSheet.cssRules;
+		} catch {
+			continue;
+		}
+		if (!rules) {
+			continue;
+		}
+		for (const rule of Array.from(rules)) {
+			if (rule.type !== CSSRule.FONT_FACE_RULE) {
+				continue;
+			}
+			const ff = rule as CSSFontFaceRule;
+			const ruleFamily = normalizeFontFamilyName(ff.style.getPropertyValue('font-family'));
+			if (ruleFamily !== family) {
+				continue;
+			}
+			const srcText = String(ff.style.getPropertyValue('src') || '').trim();
+			const urlMatch = srcText.match(/url\((['"]?)(.*?)\1\)/i);
+			src = urlMatch ? urlMatch[2] : srcText;
+			if (src) {
+				try {
+					src = new URL(src, doc.baseURI || location.href).toString();
+				} catch {}
+				break;
+			}
+		}
+		if (src) {
+			break;
+		}
+	}
+	return { family, src, signature: `${family}|${src}` };
+}
+
+function getGlyphPathSignature(font: any, glyph: any) {
+	const commands = glyph.getPath(0, 0, font.unitsPerEm).commands;
+	const parts: string[] = [];
+	for (const cmd of commands) {
+		parts.push(cmd.type);
+		if ('x' in cmd) {
+			parts.push(Number(cmd.x).toFixed(3));
+			parts.push(Number(cmd.y).toFixed(3));
+		}
+		if ('x1' in cmd) {
+			parts.push(Number(cmd.x1).toFixed(3));
+			parts.push(Number(cmd.y1).toFixed(3));
+		}
+		if ('x2' in cmd) {
+			parts.push(Number(cmd.x2).toFixed(3));
+			parts.push(Number(cmd.y2).toFixed(3));
+		}
+	}
+	return parts.join('|');
+}
+
+function fnv1a64(text: string) {
+	const Big = BigInt;
+	let hash = Big('0xcbf29ce484222325');
+	const mask = Big('0xffffffffffffffff');
+	const prime = Big('0x100000001b3');
+	const bytes = new TextEncoder().encode(String(text || ''));
+	for (const byte of bytes) {
+		hash ^= BigInt(byte);
+		hash = (hash * prime) & mask;
+	}
+	return hash.toString(16).padStart(16, '0');
+}
+
+async function ensureFontCharMap(fontInfo: { signature: string; src: string }) {
+	if (fontDecodeState.fontMaps.has(fontInfo.signature)) {
+		return fontDecodeState.fontMaps.get(fontInfo.signature)!;
+	}
+	if (fontDecodeState.fontLoads.has(fontInfo.signature)) {
+		return fontDecodeState.fontLoads.get(fontInfo.signature)!;
+	}
+
+	const loadPromise = (async () => {
+		const charMap = new Map<string, string>();
+		try {
+			if (!fontInfo.src) {
+				throw new Error('missing font url');
+			}
+			await ensureFontDecodeDependencies();
+			const opentype = (getHostWindow() as any).opentype || (window as any).opentype;
+			if (!opentype) {
+				throw new Error('opentype.js not ready');
+			}
+			const response = await withTimeout(fetch(fontInfo.src, { credentials: 'omit' }), 15000, 'download font timeout');
+			if (!response.ok) {
+				throw new Error(`download font failed: ${response.status}`);
+			}
+			const buffer = await withTimeout(response.arrayBuffer(), 15000, 'read font timeout');
+			const font = opentype.parse(buffer);
+			const cmap = font?.tables?.cmap?.glyphIndexMap || font?.encoding?.cmap?.glyphIndexMap || {};
+			for (const cpStr of Object.keys(cmap)) {
+				const fakeChar = String.fromCodePoint(Number(cpStr));
+				const glyphIndex = cmap[cpStr];
+				const glyph = font.glyphs.get(glyphIndex);
+				if (!glyph) {
+					continue;
+				}
+				const glyphHash = fnv1a64(getGlyphPathSignature(font, glyph));
+				const realChar = EXAM_FONT_GLYPH_HASH_MAP[glyphHash];
+				if (realChar) {
+					charMap.set(fakeChar, realChar);
+				}
+			}
+		} catch (error) {
+			console.error('yuketang font decode failed', error);
+		}
+		fontDecodeState.fontMaps.set(fontInfo.signature, charMap);
+		fontDecodeState.fontLoads.delete(fontInfo.signature);
+		return charMap;
+	})();
+
+	fontDecodeState.fontLoads.set(fontInfo.signature, loadPromise);
+	return loadPromise;
+}
+
+function isEncryptedGlyphElement(element: Element) {
+	if (!(element instanceof HTMLElement)) {
+		return false;
+	}
+	if (element.classList.contains('xuetangx-com-encrypted-font')) {
+		return true;
+	}
+	const family = getHostWindow().getComputedStyle(element).fontFamily || '';
+	return /exam-data-decrypt-font/i.test(family);
+}
+
+function getEncryptedLeafElements(root: HTMLElement) {
+	const nodes = [root, ...Array.from(root.querySelectorAll('*'))].filter((node) =>
+		isEncryptedGlyphElement(node as Element)
+	) as HTMLElement[];
+	return nodes.filter(
+		(node) => !Array.from(node.querySelectorAll('*')).some((child) => isEncryptedGlyphElement(child))
+	);
+}
+
+function decodeTextByCharMap(text: string, charMap: Map<string, string>) {
+	return Array.from(String(text || ''))
+		.map((ch) => {
+			if (!ch || /\s/.test(ch)) {
+				return ch;
+			}
+			return charMap.get(ch) || ch;
+		})
+		.join('');
+}
+
+async function decodeEncryptedElement(element: HTMLElement) {
+	const encryptedText = String(element.innerText || element.textContent || '');
+	const fontInfo = getEncryptedFontInfo(element);
+	const charMap = await ensureFontCharMap(fontInfo);
+	return normalizeScrapeText(decodeTextByCharMap(encryptedText, charMap));
+}
+
+async function decodeElementInPlace(element: HTMLElement) {
+	const encryptedLeaves = getEncryptedLeafElements(element);
+	let count = 0;
+	for (const leaf of encryptedLeaves) {
+		leaf.textContent = await decodeEncryptedElement(leaf);
+		leaf.classList.remove('xuetangx-com-encrypted-font');
+		leaf.style.fontFamily = 'inherit';
+		count++;
+	}
+	return count;
 }
 
 /**
