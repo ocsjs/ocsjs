@@ -1,9 +1,11 @@
-import { $, $elements, Project, Script, $message, $modal, $el } from 'easy-us';
+import { $, $elements, Project, Script, $message, $modal, $el, $ui } from 'easy-us';
 import { $msg, playMedia } from '../utils';
 import { request } from '@ocsjs/core';
 import { restudy, volume } from '../utils/configs';
 import { waitForElement } from '../utils/study';
 import { CommonProject } from './common';
+import { commonWork } from '../utils/work';
+import { yktExamWork } from './yuketang.exam';
 
 const state = {
 	study: {
@@ -13,7 +15,7 @@ const state = {
 
 export const YKTProject = Project.create({
 	name: '雨课堂',
-	domains: ['yuketang.cn'],
+	domains: ['yuketang.cn', 'xuetangx.com'],
 	scripts: {
 		guide: new Script({
 			name: '🖥️ 使用提示',
@@ -153,6 +155,27 @@ export const YKTProject = Project.create({
 				};
 
 				study();
+			}
+		}),
+		work: new Script({
+			name: '✍️ 作业/考试脚本',
+			matches: [['考试页面', 'examination.xuetangx.com/exam']],
+			namespace: 'yuketang.work',
+			configs: {
+				notes: {
+					defaultValue: $ui.notes([
+						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
+						'可以搭配 “通用-在线搜题” 一起使用。',
+						'请手动进入作业考试页面才能使用自动答题。',
+						'自动答题时请勿切换题目，否则可能导致重复搜题或者脚本卡主。'
+					]).outerHTML
+				}
+			},
+			oncomplete() {
+				$message.warn({ content: '自动答题时请勿切换题目，否则可能导致重复搜题或者脚本卡主。', duration: 0 });
+				commonWork(this, {
+					workerProvider: yktExamWork
+				});
 			}
 		}),
 		// TODO 作业
