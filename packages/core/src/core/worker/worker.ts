@@ -451,6 +451,9 @@ export class CustomOCSWorker extends CommonEventEmitter<WorkerEvents> {
 
 			await $.sleep(this.opts.period);
 		}
+
+		this.isRunning = false;
+		return results;
 	}
 }
 
