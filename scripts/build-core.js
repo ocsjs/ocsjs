@@ -24,11 +24,11 @@ async function buildPackages() {
 	// @ts-ignore
 	await execOut('tsc', { cwd: '../packages/core' });
 	// @ts-ignore
-	await execOut('$env:VITE_BUILD_PATH="../../dist"; vite build', { cwd: '../packages/core', shell: 'powershell' });
+	await execOut('vite build', { cwd: '../packages/core' });
 	// @ts-ignore
 	await execOut('tsc', { cwd: '../packages/scripts' });
 	// @ts-ignore
-	await execOut('$env:VITE_BUILD_PATH="../../dist"; vite build', { cwd: '../packages/scripts', shell: 'powershell' });
+	await execOut('vite build', { cwd: '../packages/scripts' });
 }
 
 async function createUserJs() {
@@ -44,8 +44,8 @@ async function createUserJs() {
 
 	/** @return {import('../packages/utils').CreateOptions} */
 	const createOptions = () => {
-		const { CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject, YKTProject } = ocs;
-		const projectList = [CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject, YKTProject]
+		const { CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject } = ocs;
+		const projectList = [CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject]
 			.map((s) => `【${s.name}】`)
 			.join(' ');
 
