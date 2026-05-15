@@ -30,7 +30,11 @@ const state = {
 /**
  * 需要软件辅助的掌握度页面
  */
-const remote_not_required_pages = ['fusioncourseh5.zhihuishu.com', 'studywisdomh5.zhihuishu.com'];
+const remote_not_required_pages = [
+	'fusioncourseh5.zhihuishu.com',
+	'studywisdomh5.zhihuishu.com',
+	'wisdom-mooc.zhihuishu.com'
+];
 
 const gxk_read_notes = [
 	'⚠️ 如果未开始答题，请尝试刷新页面。',
@@ -319,7 +323,7 @@ class StudyPlusH5 extends StudyVideoH5 implements ZHSProcessor {
 		// 如果不是复习模式，则排除掉已经完成的任务
 		if (!opts.restudy) {
 			videoItems = videoItems.filter((el) => {
-				if (el.querySelector('.child-check')) {
+				if (el.parentElement?.querySelector('.finish-icon')) {
 					return false;
 				}
 				return true;
@@ -1375,7 +1379,8 @@ export const ZHSProject = Project.create({
 				['新形态课程作业页面', 'smartcourseexam.zhihuishu.com/ReviewExam'],
 				['新形态课程-掌握提升页面', 'studentexamcomh5.zhihuishu.com/studentReviewTestOrExam'],
 				['新形态课程-AI助教掌握度', 'fusioncourseh5.zhihuishu.com/exam'],
-				['新形态课程-新AI助教掌握度', 'studywisdomh5.zhihuishu.com/exam']
+				['新形态课程-新AI助教掌握度', 'studywisdomh5.zhihuishu.com/exam'],
+				['新形态课程-新AI学伴掌握度', 'wisdom-mooc.zhihuishu.com/exam']
 			],
 			namespace: 'zhs.smart.work',
 			configs: {

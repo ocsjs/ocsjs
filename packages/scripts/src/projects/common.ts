@@ -137,14 +137,14 @@ export const CommonProject = Project.create({
 					},
 					onload() {
 						const aws: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
-						this.value = aws.length ? '当前有' + aws.length + '个可用题库，点击重新配置' : '点击配置';
+						this.value = aws.length ? aws.length + ' 个可用题库（点击进入配置）' : '点击进入配置';
 
 						this.onclick = () => {
 							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
 							const copy = $ui.copy('复制题库配置', JSON.stringify(aw, null, 4));
 
 							const list = h('div', [
-								h('div', aw.length ? ['以下是已经解析过的题库配置：', copy] : ''),
+								h('div', { style: { marginTop: '8px' } }, aw.length ? ['以下是已经解析过的题库配置：', copy] : ''),
 								...createAnswererWrapperList(aw)
 							]);
 							const textarea = h(
@@ -190,30 +190,43 @@ export const CommonProject = Project.create({
 								maskCloseable: false,
 								content: $ui.notes([
 									[
-										h('div', [
-											'题库配置填写教程：',
+										h('div', { style: { fontSize: '16px', marginBottom: '8px' } }, [
+											h('b', '题库配置填写教程👉：'),
 											h('a', { href: 'https://docs.ocsjs.com/docs/work' }, 'https://docs.ocsjs.com/docs/work')
 										])
 									],
 									[
-										h('div', [
-											'⚠️ 如果无法粘贴，请点->：',
-											h('button', '读取剪贴板', (btn) => {
-												btn.classList.add('base-style-button');
-												btn.onclick = () => {
-													navigator.clipboard.readText().then((result) => {
-														textarea.value = result;
-													});
-												};
-											}),
-											'，并同意浏览器上方的剪贴板读取申请。'
-										])
+										h(
+											'div',
+											{
+												className: 'secondary'
+											},
+											[
+												'⚠️ 如果无法粘贴，请点->：',
+												h('button', '读取剪贴板', (btn) => {
+													btn.classList.add('base-style-button');
+													btn.onclick = () => {
+														navigator.clipboard.readText().then((result) => {
+															textarea.value = result;
+														});
+													};
+												}),
+												'，并同意浏览器上方的剪贴板读取申请。'
+											]
+										)
 									],
-									['⚠️ 如果想添加多个不同的题库配置，请在每个配置之间使用三个井号隔开: ###。'],
-									['⚠️ 配置第三方题库出现网页弹窗的，点击永久允许连接。'],
+									[
+										h(
+											'div',
+											{ className: 'secondary' },
+											'⚠️ 如果想添加多个不同的题库配置，请在每个配置之间使用三个井号隔开: ###。'
+										)
+									],
+									[h('div', { className: 'secondary' }, '⚠️ 配置第三方题库出现网页弹窗的，点击永久允许连接。')],
 									...(aw.length ? [list] : [])
 								]),
 								footer: h('div', { style: { width: '100%' } }, [
+									h('div', { className: 'separator secondary' }, '题库配置填写/修改区'),
 									textarea,
 									h('div', { style: { display: 'flex', flexWrap: 'wrap', marginTop: '12px', fontSize: '12px' } }, [
 										h('div', ['解析器：', select], (div) => {

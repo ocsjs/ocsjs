@@ -8,11 +8,11 @@ import {
 	QuestionTypes
 } from '@ocsjs/core';
 import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 'easy-us';
-import { optimizationElementWithImage } from '../utils/work';
+import { optimizationElementWithImage, commonWork, simplifyWorkResult } from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
-import { commonWork, simplifyWorkResult } from '../utils/work';
+
 import { $console, BackgroundProject } from './background';
 import { waitForElement, waitForMedia } from '../utils/study';
 

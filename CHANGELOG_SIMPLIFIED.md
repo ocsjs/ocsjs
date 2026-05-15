@@ -1,3 +1,50 @@
+## 4.13.7 (2026-05-14)
+
+
+### ✨ 更新内容
+
+* 新增雨课堂V2学习内容自动看视频、和讨论功能 <a href="https://github.com/ocsjs/ocsjs/commit/d8095b63104706cb2ac46d899e573da6c778eafa">></a>
+
+
+
+## 4.13.6 (2026-05-12)
+
+
+### 🔧 修复内容
+
+* 适配智慧树-智慧课程-AI学伴掌握度无法答题的问题 <a href="https://github.com/ocsjs/ocsjs/commit/ce6262fabaa3edcf38056863c7c30319ff5ece48">></a>
+
+
+### ⚡ 优化提升
+
+* 修改题库配置按钮文案，优化题库配置界面文案，主次分明 <a href="https://github.com/ocsjs/ocsjs/commit/3d237ea7c2284c7560ef6fe8801b5491ed3e6dfc">></a>
+
+
+
+## 4.13.4 (2026-04-23)
+
+
+### ✨ 更新内容
+
+* 兼容超星长时阅读任务点（限制翻页时间） <a href="https://github.com/ocsjs/ocsjs/commit/ac34ba2d543afe9dc09c1803b558f7b37dbce095">></a>
+* 添加超星域名支持：jnzyjsxy.cn <a href="https://github.com/ocsjs/ocsjs/commit/a27cb49b9111e3317120c33eff75981de4b19ed8">></a>
+
+
+
+## 4.13.2 (2026-04-22)
+
+
+### 🔧 修复内容
+
+* 修复智慧树26年上半年studywisdomh5复习模式错误的问题 <a href="https://github.com/ocsjs/ocsjs/commit/2e82a0a8ea4cca4265ba592336a2762bf156ec08">></a>
+
+
+### ✨ 更新内容
+
+* 兼容雨课堂AI学伴自动学习 <a href="https://github.com/ocsjs/ocsjs/commit/c96f4db7d949df6f3fc983a6ae4783ece9b19783">></a>
+
+
+
 ## 4.12.39 (2026-04-20)
 
 

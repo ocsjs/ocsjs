@@ -29,7 +29,7 @@ import md5 from 'md5';
 import Typr from 'typr.js';
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
-import { waitForMedia } from '../utils/study';
+import { waitForElement, waitForMedia } from '../utils/study';
 
 // @ts-ignore
 let top: Window = globalThis.top;
@@ -113,6 +113,7 @@ export const CXProject = Project.create({
 		'cqie.cn',
 		'ccqmxx.com',
 		'jxgmxy.com',
+		'jnzyjsxy.cn',
 		// 超星学习通PPT，2025下半年更新的PTT图书新域名
 		'sslibrary.com'
 	],
@@ -328,13 +329,52 @@ export const CXProject = Project.create({
 			async onactive() {
 				/** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */
 				if (/\/readsvr\/book\/mooc/.test(location.href)) {
-					$console.log('正在完成书籍/PPT...');
-					setTimeout(() => {
+					// 26年上半学期新阅读任务点，计时翻页，达到一定时间才能翻下一页，这里等待时间然后执行翻页完成任务。
+					if (document.querySelector('#reader')) {
 						// @ts-ignore
-						// eslint-disable-next-line no-undef
-						readweb.goto(epage);
-					}, 5000);
-
+						require(['reader'], (_reader) => {
+							waitForElement('.readerPager').then(() => {
+								setTimeout(async () => {
+									const jumper = document.querySelector<HTMLSelectElement>('#pagejump');
+									if (_reader?.goPage && jumper) {
+										// 等待时间
+										const timing = parseInt(new URL(location.href).searchParams.get('timing')?.toString() || '60') + 3;
+										console.log(timing);
+										await $.sleep(timing * 1000);
+										/**
+											 *  1:书名页
+												2:版权页
+												3:前言页
+												4:目录页
+												5:正文275页
+												7:封底页
+											*/
+										jumper.value = '5';
+										jumper.dispatchEvent(new Event('change'));
+										console.log('已跳转正文页');
+										await $.sleep(timing * 1000);
+										jumper.value = '7';
+										jumper.dispatchEvent(new Event('change'));
+										console.log('已跳转封底页');
+										await $.sleep(timing * 1000);
+										Array.from(document.querySelectorAll<HTMLElement>('.readerPager'))
+											.filter((el) => el.style.zIndex === '101')[0]
+											.click();
+										console.log('阅读完成');
+									}
+								}, 3000);
+							});
+						});
+					}
+					// 普通阅读任务点，id 是 #ReadWeb
+					else {
+						$console.log('正在完成书籍/PPT...');
+						setTimeout(() => {
+							// @ts-ignore
+							// eslint-disable-next-line no-undef
+							readweb.goto(epage);
+						}, 5000);
+					}
 					return;
 				}
 
@@ -1427,7 +1467,8 @@ function searchJob(
 				chapterTest: '.TiMu',
 				read: '#img.imglook',
 				pptWithAudio: '.swiper-container',
-				hyperlink: '#hyperlink'
+				hyperlink: '#hyperlink',
+				timereader: 'iframe[name="bookifame"][src*="timing"]'
 			},
 			root.contentWindow!.document
 		);
@@ -1436,9 +1477,9 @@ function searchJob(
 	const search = (root: HTMLIFrameElement): Job | undefined => {
 		const win = root.contentWindow;
 
-		const { videojs, read, chapterTest, hyperlink, pptWithAudio } = searchJobElement(root);
+		const { videojs, read, chapterTest, hyperlink, pptWithAudio, timereader } = searchJobElement(root);
 
-		if (win && (videojs || read || chapterTest || hyperlink || pptWithAudio)) {
+		if (win && (videojs || read || chapterTest || hyperlink || pptWithAudio || timereader)) {
 			// 获取任务点数据字符串
 			const frame_data_str =
 				win.frameElement?.getAttribute('data') ||
@@ -1536,7 +1577,7 @@ function searchJob(
 							}
 						}
 					}
-				} else if (read || pptWithAudio) {
+				} else if (read || pptWithAudio || timereader) {
 					if (!CXProject.scripts.study.cfg.enablePPT) {
 						const msg = `PPT/书籍阅读功能已被关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
 						$message.warn({ content: msg, duration: 10 });
@@ -1549,6 +1590,8 @@ function searchJob(
 								$console.log(msg);
 								if (read) {
 									return JobRunner.read(win);
+								} else if (timereader) {
+									return JobRunner.timereader(timereader as HTMLIFrameElement);
 								} else {
 									return JobRunner.readPPTWithAudio(win);
 								}
@@ -1732,6 +1775,22 @@ const JobRunner = {
 		const finishJob = win.finishJob;
 		if (finishJob) finishJob();
 		await $.sleep(3000);
+	},
+	/**
+	 * 时间阅读
+	 */
+	async timereader(iframe: HTMLIFrameElement) {
+		const src = iframe.getAttribute('src')?.toString() || '';
+		const timing = src ? parseInt(new URL(src).searchParams.get('timing')?.toString() || '60') : 60;
+		$message.info({
+			content: `正在学习长时阅读任务，请稍等，不要切换..（预计${(timing + 3) * 3}秒）`,
+			duration: (timing + 3) * 3
+		});
+		// 这里依靠 onactive 第一个跨域处理程序，等待处理后继续即可
+		// 一共有三步，第一步等待timing，然后切换正文页，然后是封底页，最后点击一次PPT文档切换界面，即可完成任务
+		await $.sleep((timing + 3) * 3 * 1000);
+		$message.success('长时阅读任务完成！');
+		await $.sleep(5000);
 	},
 	/**
 	 * 章节测验
