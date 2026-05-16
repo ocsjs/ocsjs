@@ -13,6 +13,9 @@ export class AnswerWrapperParser {
 			if (aw.length) {
 				for (let i = 0; i < aw.length; i++) {
 					const item = aw[i];
+					if (!item || typeof item !== 'object' || Array.isArray(item)) {
+						throw new Error(`第 ${i + 1} 个题库配置格式错误，应为对象格式`);
+					}
 					if (typeof item.name !== 'string') {
 						throw new Error(`第 ${i + 1} 个题库的 名字(name) 为空`);
 					}
@@ -22,10 +25,10 @@ export class AnswerWrapperParser {
 					if (typeof item.handler !== 'string') {
 						throw new Error(`第 ${i + 1} 个题库的 解析器(handler) 为空`);
 					}
-					if (item.headers && typeof item.headers !== 'object') {
+					if (item.headers && (typeof item.headers !== 'object' || Array.isArray(item.headers))) {
 						throw new Error(`第 ${i + 1} 个题库的 头部信息(header) 应为 对象 格式`);
 					}
-					if (item.data && typeof item.data !== 'object') {
+					if (item.data && (typeof item.data !== 'object' || Array.isArray(item.data))) {
 						throw new Error(`第 ${i + 1} 个题库的 提交数据(data) 应为 对象 格式`);
 					}
 					const contentTypes = ['json', 'text'] as AnswererWrapper['contentType'][];
@@ -52,11 +55,13 @@ export class AnswerWrapperParser {
 
 	static fromJSONString(json: string) {
 		const raw = json.toString();
+		let result: any;
 		try {
-			return JSON.parse(raw);
+			result = JSON.parse(raw);
 		} catch {
-			throw new Error(`格式错误，必须为：json字符串 或 题库配置链接`);
+			throw new Error(`格式错误，必须为：json字符串、base64 或 题库配置链接`);
 		}
+		return this.fromObject(result);
 	}
 
 	/** 从 url 中解析 */
@@ -71,7 +76,20 @@ export class AnswerWrapperParser {
 
 	/** 从 base64 解析 */
 	static fromBase64(base64: string) {
-		return this.fromJSONString(Buffer.from(base64, 'base64').toString('utf8'));
+		let raw = '';
+		if (typeof atob === 'function') {
+			const binary = atob(base64.trim());
+			raw = decodeURIComponent(
+				Array.from(binary)
+					.map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+					.join('')
+			);
+		} else if (typeof Buffer !== 'undefined') {
+			raw = Buffer.from(base64.trim(), 'base64').toString('utf8');
+		} else {
+			throw new Error('当前环境不支持解析 base64 题库配置');
+		}
+		return this.fromJSONString(raw);
 	}
 
 	/**
@@ -82,7 +100,15 @@ export class AnswerWrapperParser {
 			if (value.startsWith('http')) {
 				return this.fromURL(value);
 			} else {
-				return this.fromJSONString(value);
+				try {
+					return this.fromJSONString(value);
+				} catch (error) {
+					try {
+						return this.fromBase64(value);
+					} catch {
+						throw error;
+					}
+				}
 			}
 		} else {
 			return this.fromObject(value);

@@ -171,7 +171,7 @@ export function createDefaultQuestionResolver<E>(
 						// similarSum 是匹配精度，其结果决定同样数量的情况下，哪一个的精度更高
 
 						// 高到低排序
-						return bsc + bss - asc + ass;
+						return bsc + bss - (asc + ass);
 					});
 
 				if (sorted_similar_list[0]) {

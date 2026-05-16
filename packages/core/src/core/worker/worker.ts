@@ -269,6 +269,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		const requestThreadHandler = async () => {
 			/** 线程锁 */
 			const locks: number[] = [];
+			const threadCount = Math.max(1, this.opts.thread || 1);
 
 			const waitForLock = () => {
 				return new Promise<number>((resolve, reject) => {
@@ -295,13 +296,13 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				requestThreads.push(() => requestThread(index));
 			}
 
-			for (let index = 0; index < (this.opts.thread || 1); index++) {
+			for (let index = 0; index < threadCount; index++) {
 				locks.push(index + 1);
 			}
 			let requestFinished = 0;
 
 			const promises: Function[] = [];
-			for (let index = 0; index < (this.opts.thread || 1); index++) {
+			for (let index = 0; index < threadCount; index++) {
 				promises.push(async () => {
 					try {
 						while (requestFinished < results.length && requestThreads.length > 0 && this.isClose === false) {
@@ -393,7 +394,7 @@ export class CustomOCSWorker extends CommonEventEmitter<WorkerEvents> {
 
 		if (options?.enable_debug) {
 			console.debug('开始答题', this);
-			console.debug('题目数量: ', this.opts.questions.length);
+			console.debug('题目数量: ', questions.length);
 		}
 		const results: SimplifyWorkResult[] = [];
 
@@ -451,6 +452,9 @@ export class CustomOCSWorker extends CommonEventEmitter<WorkerEvents> {
 
 			await $.sleep(this.opts.period);
 		}
+
+		this.isRunning = false;
+		return results;
 	}
 }
 
