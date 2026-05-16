@@ -21,17 +21,16 @@ export function request<T extends 'json' | 'text'>(
 			const { responseType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
 			/** 环境变量 */
 			const env = $.isInBrowser() ? 'browser' : 'node';
+			const contentType = headers['Content-Type'] || headers['content-type'] || '';
+			const requestData = contentType.includes('application/x-www-form-urlencoded')
+				? new URLSearchParams(data).toString()
+				: Object.keys(data).length
+				? JSON.stringify(data)
+				: undefined;
 
 			/** 如果是跨域模式并且是浏览器环境 */
 			if (type === 'GM_xmlhttpRequest' && env === 'browser') {
 				if (typeof GM_xmlhttpRequest !== 'undefined') {
-					const contentType = headers['Content-Type'] || headers['content-type'];
-					const requestData =
-						contentType === 'application/x-www-form-urlencoded'
-							? new URLSearchParams(data).toString()
-							: Object.keys(data).length
-							? JSON.stringify(data)
-							: undefined;
 					// eslint-disable-next-line no-undef
 					GM_xmlhttpRequest({
 						url,
@@ -43,7 +42,11 @@ export function request<T extends 'json' | 'text'>(
 							if (response.status === 200) {
 								if (responseType === 'json') {
 									try {
-										resolve(JSON.parse(response.responseText));
+										resolve(
+											typeof response.response === 'object' && response.response !== null
+												? response.response
+												: JSON.parse(response.responseText)
+										);
 									} catch (error) {
 										reject(error);
 									}
@@ -65,8 +68,15 @@ export function request<T extends 'json' | 'text'>(
 			} else {
 				const fet: typeof fetch = env === 'node' ? require('node-fetch').default : fetch;
 
-				fet(url, { body: method === 'post' ? JSON.stringify(data) : undefined, method, headers })
+				fet(url, { body: method === 'post' ? requestData : undefined, method, headers })
 					.then((response) => {
+						if (!response.ok) {
+							response
+								.text()
+								.then((text) => reject(text))
+								.catch(() => reject(new Error(`Request failed with status ${response.status}`)));
+							return;
+						}
 						if (responseType === 'json') {
 							response.json().then(resolve).catch(reject);
 						} else {

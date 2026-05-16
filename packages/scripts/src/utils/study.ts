@@ -19,9 +19,10 @@ export async function waitForMedia(options?: {
 	timeout?: number;
 	filter?: (video: HTMLVideoElement | HTMLAudioElement) => boolean;
 }) {
+	let interval: any;
 	const res = await Promise.race([
-		new Promise<HTMLVideoElement | HTMLAudioElement>((resolve, reject) => {
-			const interval = setInterval(() => {
+		new Promise<HTMLVideoElement | HTMLAudioElement>((resolve) => {
+			interval = setInterval(() => {
 				const video = (options?.root || document).querySelector<HTMLVideoElement | HTMLAudioElement>(
 					`${options?.videoSelector || 'video'},${options?.audioSelector || 'audio'}`
 				);
@@ -33,6 +34,7 @@ export async function waitForMedia(options?: {
 		}),
 		$.sleep(options?.timeout ?? 3 * 60 * 1000)
 	]);
+	clearInterval(interval);
 	if (res) {
 		return res;
 	} else {

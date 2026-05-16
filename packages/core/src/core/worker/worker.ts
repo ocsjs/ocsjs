@@ -393,7 +393,7 @@ export class CustomOCSWorker extends CommonEventEmitter<WorkerEvents> {
 
 		if (options?.enable_debug) {
 			console.debug('开始答题', this);
-			console.debug('题目数量: ', this.opts.questions.length);
+			console.debug('题目数量: ', questions.length);
 		}
 		const results: SimplifyWorkResult[] = [];
 

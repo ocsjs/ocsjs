@@ -52,11 +52,13 @@ export class AnswerWrapperParser {
 
 	static fromJSONString(json: string) {
 		const raw = json.toString();
+		let result: any;
 		try {
-			return JSON.parse(raw);
+			result = JSON.parse(raw);
 		} catch {
-			throw new Error(`格式错误，必须为：json字符串 或 题库配置链接`);
+			throw new Error(`格式错误，必须为：json字符串、base64 或 题库配置链接`);
 		}
+		return this.fromObject(result);
 	}
 
 	/** 从 url 中解析 */
@@ -71,7 +73,20 @@ export class AnswerWrapperParser {
 
 	/** 从 base64 解析 */
 	static fromBase64(base64: string) {
-		return this.fromJSONString(Buffer.from(base64, 'base64').toString('utf8'));
+		let raw = '';
+		if (typeof atob === 'function') {
+			const binary = atob(base64.trim());
+			raw = decodeURIComponent(
+				Array.from(binary)
+					.map((char) => `%${char.charCodeAt(0).toString(16).padStart(2, '0')}`)
+					.join('')
+			);
+		} else if (typeof Buffer !== 'undefined') {
+			raw = Buffer.from(base64.trim(), 'base64').toString('utf8');
+		} else {
+			throw new Error('当前环境不支持解析 base64 题库配置');
+		}
+		return this.fromJSONString(raw);
 	}
 
 	/**
@@ -82,7 +97,15 @@ export class AnswerWrapperParser {
 			if (value.startsWith('http')) {
 				return this.fromURL(value);
 			} else {
-				return this.fromJSONString(value);
+				try {
+					return this.fromJSONString(value);
+				} catch (error) {
+					try {
+						return this.fromBase64(value);
+					} catch {
+						throw error;
+					}
+				}
 			}
 		} else {
 			return this.fromObject(value);
