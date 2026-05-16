@@ -269,6 +269,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		const requestThreadHandler = async () => {
 			/** 线程锁 */
 			const locks: number[] = [];
+			const threadCount = Math.max(1, this.opts.thread || 1);
 
 			const waitForLock = () => {
 				return new Promise<number>((resolve, reject) => {
@@ -295,13 +296,13 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				requestThreads.push(() => requestThread(index));
 			}
 
-			for (let index = 0; index < (this.opts.thread || 1); index++) {
+			for (let index = 0; index < threadCount; index++) {
 				locks.push(index + 1);
 			}
 			let requestFinished = 0;
 
 			const promises: Function[] = [];
-			for (let index = 0; index < (this.opts.thread || 1); index++) {
+			for (let index = 0; index < threadCount; index++) {
 				promises.push(async () => {
 					try {
 						while (requestFinished < results.length && requestThreads.length > 0 && this.isClose === false) {

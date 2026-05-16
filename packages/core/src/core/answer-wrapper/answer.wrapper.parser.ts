@@ -13,6 +13,9 @@ export class AnswerWrapperParser {
 			if (aw.length) {
 				for (let i = 0; i < aw.length; i++) {
 					const item = aw[i];
+					if (!item || typeof item !== 'object' || Array.isArray(item)) {
+						throw new Error(`第 ${i + 1} 个题库配置格式错误，应为对象格式`);
+					}
 					if (typeof item.name !== 'string') {
 						throw new Error(`第 ${i + 1} 个题库的 名字(name) 为空`);
 					}
@@ -22,10 +25,10 @@ export class AnswerWrapperParser {
 					if (typeof item.handler !== 'string') {
 						throw new Error(`第 ${i + 1} 个题库的 解析器(handler) 为空`);
 					}
-					if (item.headers && typeof item.headers !== 'object') {
+					if (item.headers && (typeof item.headers !== 'object' || Array.isArray(item.headers))) {
 						throw new Error(`第 ${i + 1} 个题库的 头部信息(header) 应为 对象 格式`);
 					}
-					if (item.data && typeof item.data !== 'object') {
+					if (item.data && (typeof item.data !== 'object' || Array.isArray(item.data))) {
 						throw new Error(`第 ${i + 1} 个题库的 提交数据(data) 应为 对象 格式`);
 					}
 					const contentTypes = ['json', 'text'] as AnswererWrapper['contentType'][];

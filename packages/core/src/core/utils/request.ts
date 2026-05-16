@@ -22,7 +22,7 @@ export function request<T extends 'json' | 'text'>(
 			/** 环境变量 */
 			const env = $.isInBrowser() ? 'browser' : 'node';
 			const contentType = headers['Content-Type'] || headers['content-type'] || '';
-			const requestData = contentType.includes('application/x-www-form-urlencoded')
+			const requestData = contentType.toLocaleLowerCase().includes('application/x-www-form-urlencoded')
 				? new URLSearchParams(data).toString()
 				: Object.keys(data).length
 				? JSON.stringify(data)
@@ -66,7 +66,8 @@ export function request<T extends 'json' | 'text'>(
 					reject(new Error('GM_xmlhttpRequest is not defined'));
 				}
 			} else {
-				const fet: typeof fetch = env === 'node' ? require('node-fetch').default : fetch;
+				const fet: typeof fetch =
+					env === 'node' && typeof fetch !== 'function' ? require('node-fetch').default : fetch;
 
 				fet(url, { body: method === 'post' ? requestData : undefined, method, headers })
 					.then((response) => {
@@ -85,7 +86,7 @@ export function request<T extends 'json' | 'text'>(
 						}
 					})
 					.catch((error) => {
-						reject(new Error(error));
+						reject(error instanceof Error ? error : new Error(String(error)));
 					});
 			}
 		} catch (error) {
