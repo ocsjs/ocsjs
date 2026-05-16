@@ -11,9 +11,12 @@
 	"scripts": {
 		"dev": "gulp -f ./scripts/dev-core.js & npm run changelog:simplify",
 		"build": "gulp -f ./scripts/build-core.js",
+		"build:core": "pnpm build",
 		"tsc": "pnpm lint && gulp -f ./scripts/tsc.js",
-		"lint": "pnpm format && eslint  ./packages --ext .ts,.tsx,.js,.jsx --fix",
+		"lint": "eslint ./packages --ext .ts,.tsx,.js,.jsx",
+		"lint:fix": "eslint ./packages --ext .ts,.tsx,.js,.jsx --fix",
 		"format": "prettier -c ./.prettierrc.json  **/*.ts  **/*.js  **/*.css  --write",
+		"format:check": "prettier -c ./.prettierrc.json  **/*.ts  **/*.js  **/*.css",
 		"release": "sh ./scripts/release.sh",
 		"pub:minor": "npm version minor && pnpm build:core && npm publish",
 		"pub:major": "npm version major && pnpm build:core && npm publish",
