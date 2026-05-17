@@ -28,8 +28,8 @@ export default defineConfig({
 	build: {
 		/** 取消css代码分离 */
 		cssCodeSplit: false,
-		/** @ts-ignore 输出路径 */
-		outDir: process.env.VITE_BUILD_PATH,
+		/** 输出路径 */
+		outDir: process.env.VITE_BUILD_PATH || '../../dist',
 		/** 清空输出路径 */
 		emptyOutDir: false,
 		/** 是否压缩代码 */
