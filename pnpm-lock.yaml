@@ -79,8 +79,8 @@ importers:
   packages/core:
     dependencies:
       easy-us:
-        specifier: ^0.0.57
-        version: 0.0.57(typescript@4.9.5)
+        specifier: ^0.0.60
+        version: 0.0.60(typescript@4.9.5)
       events:
         specifier: ^3.3.0
         version: 3.3.0
@@ -137,8 +137,8 @@ importers:
         specifier: ^3.3.0
         version: 3.3.0
       easy-us:
-        specifier: ^0.0.57
-        version: 0.0.57(typescript@4.9.5)
+        specifier: ^0.0.63
+        version: 0.0.63(typescript@4.9.5)
       lodash:
         specifier: ^4.17.21
         version: 4.17.21
@@ -1988,8 +1988,22 @@ packages:
       object.defaults: 1.1.0
     dev: true
 
-  /easy-us@0.0.57(typescript@4.9.5):
-    resolution: {integrity: sha512-CqjnwuEgibyOXLOE1NPjGQLLbvtsgMRC6S+ajPULjVI8dydVSZ0CR1DsHlFRB4zEwcR/Zj/Eo0ocYuIxPZ+2tQ==}
+  /easy-us@0.0.60(typescript@4.9.5):
+    resolution: {integrity: sha512-GF5oyf/xE5KojvRzt30wTi43ILf/eB+ulQdMdZF63fxevLcVZ7ivccmOdJfZAeCV5q63Z5D50PRzwbd9BiDxFA==}
+    dependencies:
+      '@rollup/plugin-typescript': 11.1.6(typescript@4.9.5)
+      events: 3.3.0
+      lodash: 4.17.21
+      semver: 7.6.0
+      string-similarity: 4.0.4
+    transitivePeerDependencies:
+      - rollup
+      - tslib
+      - typescript
+    dev: false
+
+  /easy-us@0.0.63(typescript@4.9.5):
+    resolution: {integrity: sha512-EwG+VGnx2LWHS7ApThLKJwGJQX6K790s8BPPWGPj4z62keexNCZBc2Bgxwif9N59x96691UV54pNUZLBtfwdXg==}
     dependencies:
       '@rollup/plugin-typescript': 11.1.6(typescript@4.9.5)
       events: 3.3.0
@@ -4070,6 +4084,7 @@ packages:
 
   /json-schema-traverse@1.0.0:
     resolution: {integrity: sha512-NM8/P9n3XjXhIZn1lLhkFaACTOURQXjWhV4BA/RnOv8xvgqtqpAX9IO4mRQxSx1Rlo4tqzeqb0sOlruaOy3dug==}
+    requiresBuild: true
     dev: true
 
   /json-schema@0.4.0:
@@ -5384,6 +5399,7 @@ packages:
   /require-from-string@2.0.2:
     resolution: {integrity: sha512-Xf0nWe6RseziFMu+Ap9biiUbmplq6S9/p+7w7YXP/JBHhrUDDUhwa+vANyubuqfZWTveU//DYVGsDG7RKL/vEw==}
     engines: {node: '>=0.10.0'}
+    requiresBuild: true
     dev: true
 
   /require-main-filename@1.0.1:

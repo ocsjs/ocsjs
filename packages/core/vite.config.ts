@@ -21,7 +21,7 @@ export default defineConfig({
 		/** 取消css代码分离 */
 		cssCodeSplit: false,
 		/** 输出路径 */
-		outDir: process.env.VITE_BUILD_PATH,
+		outDir: process.env.VITE_BUILD_PATH || '../../dist',
 		/** 清空输出路径 */
 		emptyOutDir: false,
 		/** 是否压缩代码 */
