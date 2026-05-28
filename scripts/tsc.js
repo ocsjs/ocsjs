@@ -4,6 +4,7 @@ const { execOut } = require('./utils');
 exports.default = series(
 	series(
 		() => execOut('tsc', { cwd: '../packages/utils' }),
-		() => execOut('tsc', { cwd: '../packages/core' })
+		() => execOut('tsc', { cwd: '../packages/core' }),
+		() => execOut('tsc', { cwd: '../packages/scripts' })
 	)
 );
