@@ -1442,8 +1442,8 @@ export const ZHSProject = Project.create({
 			oncomplete() {
 				this.methods.start();
 			},
-			onhistorychange(type, ...args) {
-				if (type === 'push') {
+			onhistorychanged(type, ...args) {
+				if (type === 'pushed') {
 					this.methods.start();
 				}
 			}
@@ -1589,7 +1589,10 @@ export const ZHSProject = Project.create({
 		}),
 		'wisdom-study': new Script({
 			name: '🖥️ 新智慧学习-学习脚本',
-			matches: [['2025-12月新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index']],
+			matches: [
+				['2025-12月新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index'],
+				['学习提示', 'wisdom-mooc.zhihuishu.com/study/analysis']
+			],
 			namespace: 'zhs.wisdom.study',
 			configs: {
 				notes: {
@@ -1630,6 +1633,10 @@ export const ZHSProject = Project.create({
 				}
 			},
 			async oncomplete() {
+				if (location.href.includes('https://wisdom-mooc.zhihuishu.com/study/analysis')) {
+					return $message.info({ content: '请手动进入掌握度进行自动答题。', duration: 10 });
+				}
+
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 				const processor = new WishdomH5();

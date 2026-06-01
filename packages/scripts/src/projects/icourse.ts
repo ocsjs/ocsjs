@@ -481,7 +481,15 @@ function workAndExam(
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return removeRedundantWords(
 			titles
-				.map((t) => (t ? optimizationElementWithImage(t, true).innerText : ''))
+				.filter((t) => t?.innerText || t?.querySelector('img'))
+				.map((t) => {
+					if (t) {
+						const el = optimizationElementWithImage(t, true);
+						// textContent can still read the hidden image URL placeholders.
+						return (el.textContent || '').replace(/\s+/g, ' ').trim() || '';
+					}
+					return '';
+				})
 				.filter((t) => t.trim() !== '')
 				.join(',')
 				// /\u200B/g 排除不可见的空格
@@ -510,7 +518,7 @@ function workAndExam(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
 					});
 				});
 			} else {
@@ -546,6 +554,7 @@ function workAndExam(
 		},
 		onElementSearched(elements, root) {
 			elements.options.forEach((el) => {
+				optimizationElementWithImage(el);
 				const correct = el.querySelector<HTMLElement>('.u-icon-correct');
 				const wrong = el.querySelector<HTMLElement>('.u-icon-wrong');
 				if (correct) {

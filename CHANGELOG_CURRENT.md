@@ -1,9 +1,9 @@
-## [4.13.7](https://github.com/ocsjs/ocsjs/compare/4.13.6...4.13.7) (2026-05-14)
+## [4.13.16](https://github.com/ocsjs/ocsjs/compare/4.13.15...4.13.16) (2026-05-29)
 
 
-### Features
+### Bug Fixes
 
-* **script:** 新增雨课堂V2学习内容自动看视频、和讨论功能 ([d8095b6](https://github.com/ocsjs/ocsjs/commit/d8095b63104706cb2ac46d899e573da6c778eafa))
+* **script:** 兼容职教云资源库WAV音频任务点播放 ([76a1e56](https://github.com/ocsjs/ocsjs/commit/76a1e565b20e2b36a0aebd97c13c760dff0c7fa9))
 
 
 

@@ -26,6 +26,8 @@ const work_pages: [string, string][] = [
 	['资源库keep作业页面', 'study/spockeepTest'],
 	['资源库job作业页面', 'study/spocjobTest'],
 	['资源库考试', 'study/spoctest'],
+	['课堂测试作业界面', 'study/courseteaching/test/homeWork'],
+
 	['作业页面', 'icve-study/coursePreview/jobTes'],
 	['考试页面', 'icve-study/coursePreview/test'],
 	['考试页面', 'icve-study/test'],
@@ -37,7 +39,8 @@ const isWork = () => {
 		window.location.href.includes('icve-study/coursePreview/jobTes') ||
 		window.location.href.includes('icve-study/coursePreview/keepTest') ||
 		window.location.href.includes('study/spockeepTest') ||
-		window.location.href.includes('study/spocjobTest')
+		window.location.href.includes('study/spocjobTest') ||
+		window.location.href.includes('study/courseteaching/test/homeWork')
 	);
 };
 const isExam = () => {
@@ -101,7 +104,8 @@ export const ZJYProject = Project.create({
 				 * 这个页面需要手动选择时间查找并进入，课程里面无连串课程查找，只能在当前页面整理
 				 */
 				['内容资源页面', 'zjy2.icve.com.cn/study/studentFast/classroomNow'],
-				['在线课堂学习页面', 'zjy2.icve.com.cn/study/studentFast/courseware']
+				['在线课堂学习页面', 'zjy2.icve.com.cn/study/studentFast/courseware'],
+				['课堂作业测试界面', 'zjy2.icve.com.cn/study/courseteaching/test/homeWork']
 			],
 			hideInPanel: true,
 			methods() {
@@ -292,7 +296,7 @@ export const ZJYProject = Project.create({
 						$console.info(msg);
 						if (['ppt', 'doc', 'pptx', 'docx', 'pdf', 'txt', 'ppt文档', 'xls', 'xlsx'].some((i) => courseType === i)) {
 							await watchFile(this.cfg.pptReadPeriod);
-						} else if (['video', 'audio', 'mp4', 'mp3', 'flv', '视频'].some((i) => courseType === i)) {
+						} else if (['video', 'audio', 'mp4', 'mp3', 'flv', 'wav', '视频'].some((i) => courseType === i)) {
 							const text = $el('.guide')?.textContent || '';
 							msg = `任务点 ${courseInfo.name}，不支持播放。`;
 							if (text.includes('很抱歉，您的浏览器不支持播放此类文件') || text.includes('此视频暂无法播放')) {
@@ -626,7 +630,14 @@ function waitForLoad() {
  * 等待试卷作业加载
  */
 async function waitForQuestions() {
-	return waitForElement('.subjectList');
+	return waitForElement(
+		[
+			// 一般选择器
+			'.subjectList',
+			// 课堂作业（study/courseteaching/test/homeWork）的特殊选择器
+			'.subjectListTest'
+		].join(',')
+	);
 }
 
 function workOrExam(

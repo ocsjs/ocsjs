@@ -382,6 +382,18 @@ export const CommonProject = Project.create({
 															return;
 														}
 
+														// 判断题库是否超过限制（10个），如果超过则提示
+														if (awsResult.length > 10) {
+															$modal.alert({
+																content: h('div', [
+																	'题库配置过多可能会导致答题效率降低，建议不超过10个题库，目前解析到' +
+																		awsResult.length +
+																		'个题库，请删除一些不必要的题库后重新配置！'
+																])
+															});
+															return;
+														}
+
 														CommonProject.scripts.settings.cfg.answererWrappers = awsResult;
 														this.value = '当前有' + awsResult.length + '个可用题库';
 														$modal.confirm({
@@ -787,18 +799,33 @@ export const CommonProject = Project.create({
 						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
 						'🔄️刷新题库状态'
 					);
+					const errorSolveGuide = h(
+						'button',
+						{
+							className: 'base-style-button ',
+							style: { display: 'none' },
+							onclick() {
+								window.open('https://docs.ocsjs.com/docs/other/FQA#tk-error', '_blank');
+							}
+						},
+						'📖连接失败如何解决？'
+					);
 					refresh.onclick = () => {
 						updateState();
 					};
 					const tableContainer = h('div');
 					refresh.style.display = 'none';
 					tableContainer.style.display = 'none';
-					panel.body.append(h('div', { style: { display: 'flex' } }, [testNotification, refresh]), tableContainer);
+					panel.body.append(
+						h('div', { style: { display: 'flex' } }, [testNotification, refresh, errorSolveGuide]),
+						tableContainer
+					);
 
 					// 更新题库状态
 					const updateState = async () => {
 						// 清空元素
 						tableContainer.replaceChildren();
+						errorSolveGuide.style.display = 'none';
 						let loadedCount = 0;
 
 						if (this.cfg.answererWrappers.length) {
@@ -848,6 +875,10 @@ export const CommonProject = Project.create({
 									success = true;
 								} else {
 									success = false;
+								}
+
+								if (error) {
+									errorSolveGuide.style.display = 'block';
 								}
 
 								const body = h('tbody');
@@ -1996,6 +2027,10 @@ const createGuide = () => {
 	const changeLog = h('button', { className: 'base-style-button-secondary' }, '📄更新日志');
 	changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
 
+	const closeGuide = h('button', { className: 'base-style-button-secondary' }, '📄如何关闭脚本？');
+	closeGuide.onclick = () =>
+		window.open('https://docs.ocsjs.com/docs/script#%E5%85%B3%E9%97%AD%E8%84%9A%E6%9C%AC%E6%95%99%E7%A8%8B', '_blank');
+
 	const cardStyle: Partial<CSSStyleDeclaration> = {
 		border: '1px solid #eee',
 		borderRadius: '4px',
@@ -2026,7 +2061,8 @@ const createGuide = () => {
 			h('div', { style: { marginBottom: '8px', fontWeight: 'bold' } }, '🌐快捷访问：'),
 			gotoHome,
 			contactUs,
-			changeLog
+			changeLog,
+			closeGuide
 		])
 	]);
 };

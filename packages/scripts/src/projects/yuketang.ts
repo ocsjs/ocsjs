@@ -146,17 +146,28 @@ export const YKTProject = Project.create({
 				}
 
 				if (document.location.pathname.includes('v2/web/xcloud/video-student')) {
-					await waitForElement('#video-box');
-					await $.sleep(2000);
-					await v2_watch({
-						volume: this.cfg.volume,
-						playbackRate: this.cfg.playbackRate
-					});
-					this.cfg.goNext = true;
-					$message.info('视频学习完成，即将自动进入下一节');
-					setTimeout(() => {
-						location.href = this.cfg.currentStudyUrl;
-					}, 3000);
+					try {
+						await waitForElement(
+							[
+								// 正常视频
+								'#video-box',
+								// AI学伴视频（会生成一个数字人物口型解说在视频旁）
+								'.digital-human-video-element-selector'
+							].join(',')
+						);
+						await $.sleep(2000);
+						await v2_watch({
+							volume: this.cfg.volume,
+							playbackRate: this.cfg.playbackRate
+						});
+						this.cfg.goNext = true;
+						$message.info('视频学习完成，即将自动进入下一节');
+						setTimeout(() => {
+							location.href = this.cfg.currentStudyUrl;
+						}, 3000);
+					} catch (e) {
+						$msg.error({ content: String(e), duration: 0 });
+					}
 					return;
 				}
 
@@ -514,12 +525,20 @@ async function ai_watch(options: { volume: number; playbackRate: number }) {
 async function v2_watch(options: { volume: number; playbackRate: number }) {
 	const set = async () => {
 		await $.sleep(1000);
-		// 这里无法通过直接修改数值来修改倍速和音量，需要调用播放器的接口来修改
-		const video_vue_data = document.querySelector<any>('.xtplayer').__vue__;
-		video_vue_data.player.options.speed.value = parseFloat(options.playbackRate.toString());
-		video_vue_data.player.options.volume.value = options.volume;
-		// 应用更改的音量和倍速设置
-		video_vue_data.player.init();
+
+		const is_digital_human_video = !!document.querySelector('.digital-human-video-element-selector');
+
+		if (is_digital_human_video) {
+			// 成绩单里面进AI学伴会直接变成V2版本的视频，可能是雨课堂自身的BUG
+			throw new Error('AI学伴视频请在学习内容中进入，不要在成绩单里进入。');
+		} else {
+			// 这里无法通过直接修改数值来修改倍速和音量，需要调用播放器的接口来修改
+			const video_vue_data = document.querySelector<any>('.xtplayer').__vue__;
+			video_vue_data.player.options.speed.value = parseFloat(options.playbackRate.toString());
+			video_vue_data.player.options.volume.value = options.volume;
+			// 应用更改的音量和倍速设置
+			video_vue_data.player.init();
+		}
 
 		const media = (await waitForElement('video', {
 			timeout_seconds: 10 * 1000

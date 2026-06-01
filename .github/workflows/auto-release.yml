@@ -42,12 +42,6 @@ jobs:
       - name: Build ocs scripts
         run: npm run build
 
-      - name: Build ChangeLogs
-        run: |
-          npm run changelog
-          npm run changelog:simplify
-          npm run changelog:current
-
       - name: Fetch Change logs
         if: runner.os == 'Linux'
         run: |
