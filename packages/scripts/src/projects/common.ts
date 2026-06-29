@@ -518,17 +518,28 @@ export const CommonProject = Project.create({
 					attrs: { type: 'checkbox', title: '请谨慎使用高级设置，可能会影响答题效果，小白在未理解的情况下谨慎调整。' }
 				},
 				answerWrapperHandlerTimeout: {
-					showIf: 'common.settings.advancedSettings',
 					elementClassName: 'config-details',
 					label: '搜题最大耗时（秒）',
 					attrs: {
 						type: 'number',
 						min: 10,
-						step: 1,
-						max: 3 * 60,
-						title: '搜题超时时间，单位为秒，超过这个时间直接放弃，进行下一题搜索。'
+						step: 5,
+						max: 300,
+						title: '搜题超时时间，单位为秒，超过这个时间直接放弃，进行下一题搜索。如果使用 ZError 等 AI 题库，建议设置为 60-120 秒。'
 					},
 					defaultValue: 120
+				},
+				workTimeout: {
+					elementClassName: 'config-details',
+					label: '总答题超时（分钟）',
+					attrs: {
+						type: 'number',
+						min: 0,
+						step: 1,
+						max: 120,
+						title: '整套题的总答题时间上限（分钟），从开始答题计时，超过后自动停止。设置为 0 表示不限制。'
+					},
+					defaultValue: 30
 				},
 				stopSecondWhenFinish: {
 					showIf: 'common.settings.advancedSettings',
@@ -717,6 +728,8 @@ export const CommonProject = Project.create({
 				this.onConfigChange('answerWrapperHandlerTimeout', (sec) => {
 					AnswerWrapperHandlerConfig.timeout_seconds = sec;
 				});
+				// 缓存总答题超时配置到全局变量，供 OCSWorker 读取
+				this.onConfigChange('workTimeout', (_min) => {});
 			},
 			onrender({ panel }) {
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境

@@ -12,6 +12,8 @@ export interface CommonWorkOptions {
 	stopSecondWhenFinish: number;
 	redundanceWordsText: string;
 	answerSeparators: string;
+	/** æ»ç­é¢è¶æ¶ï¼åéï¼ï¼0 è¡¨ç¤ºä¸éå¶ */
+	workTimeout?: number;
 }
 
 /** 创建答题预处理信息 */

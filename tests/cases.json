@@ -563,7 +563,7 @@
     {
       "a": "答案一;答案二",
       "blanks": 3,
-      "expect": ""
+      "expect": "答案一;答案二"
     },
     {
       "a": "apple",
@@ -588,7 +588,7 @@
     {
       "a": "A;B;C",
       "blanks": 2,
-      "expect": ""
+      "expect": "A;B C"
     }
   ]
 }

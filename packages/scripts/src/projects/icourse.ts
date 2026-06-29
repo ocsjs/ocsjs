@@ -473,7 +473,7 @@ function waitForQuestion() {
 function workAndExam(
 	rp: RemotePage,
 	type: 'chapter-test' | 'work' | 'exam',
-	{ answererWrappers, redundanceWordsText, upload, stopSecondWhenFinish, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, redundanceWordsText, upload, stopSecondWhenFinish, answerSeparators, workTimeout }: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'icourse'

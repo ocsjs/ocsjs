@@ -1,4 +1,4 @@
-import { $, OCSWorker, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { $, OCSWorker, defaultAnswerWrapperHandler, setInputValue } from '@ocsjs/core';
 import { Project, Script, $ui, $el, $message, $modal, h } from 'easy-us';
 import { volume } from '../utils/configs';
 import { waitForMedia, waitForElement } from '../utils/study';
@@ -640,7 +640,7 @@ async function waitForQuestions() {
 	);
 }
 
-function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
+function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions) {
 	$message.info({ content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zjy'
@@ -708,11 +708,9 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 					const text = option.querySelector<HTMLInputElement>('input[type="text"]');
 					const textarea = option.querySelector<HTMLTextAreaElement>('textarea');
 					if (text) {
-						text.value = answer;
-						text.dispatchEvent(new Event('input', { bubbles: true }));
+						setInputValue(text, answer);
 					} else if (textarea) {
-						textarea.value = answer;
-						textarea.dispatchEvent(new Event('input', { bubbles: true }));
+						setInputValue(textarea, answer);
 					}
 				}
 			}

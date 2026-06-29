@@ -6,7 +6,7 @@ import {
 	createDefaultQuestionResolver,
 	splitAnswer,
 	QuestionTypes
-} from '@ocsjs/core';
+, setInputValue } from '@ocsjs/core';
 import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 'easy-us';
 import { optimizationElementWithImage, commonWork, simplifyWorkResult } from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
@@ -761,7 +761,7 @@ async function watchMedia() {
 	});
 }
 
-function work({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
+function work({ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions) {
 	$message.info('开始作业');
 	CommonProject.scripts.workResults.methods.init();
 
@@ -873,7 +873,7 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 						const text = option.querySelector('textarea');
 						const textIframe = option.querySelector<HTMLIFrameElement>('iframe[id*="ueditor"]');
 						if (text) {
-							text.value = answer;
+							setInputValue(text, answer);
 						}
 						if (textIframe) {
 							const view = textIframe.contentWindow?.document.querySelector<HTMLElement>('body.view > p');
@@ -924,7 +924,8 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 
 	(async () => {
 		while (next && worker.isClose === false) {
-			await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
+			worker.workTimeoutMinutes = workTimeout || 0;
+	await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
 			await $.sleep(1000);
 			next = getNextBtn();
 			if (next.style.display === 'none') {
@@ -944,7 +945,7 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 	return worker;
 }
 
-function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
+function aiWork({ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions) {
 	$message.info('开始作业');
 	CommonProject.scripts.workResults.methods.init();
 
@@ -1077,7 +1078,8 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 
 	(async () => {
 		while (next && worker.isClose === false) {
-			await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
+			worker.workTimeoutMinutes = workTimeout || 0;
+	await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
 			await $.sleep(1000);
 			next = getNextBtn();
 			if (next.getAttribute('disabled')) {

@@ -28,16 +28,27 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 	isClose = false;
 	isStop = false;
 	totalQuestionCount = 0;
+	workStartTime: number = 0;
+	workTimeoutMinutes: number = 0;
 
 	constructor(opts: WorkOptions<E>) {
 		super();
 		this.opts = opts;
 	}
 
+	/** 检查总答题是否超时 */
+	isWorkTimeout(): boolean {
+		return this.workTimeoutMinutes > 0 && this.workStartTime > 0
+			&& (Date.now() - this.workStartTime) > this.workTimeoutMinutes * 60 * 1000;
+	}
+
 	/** 启动答题器  */
 	async doWork(options?: { enable_debug?: boolean }) {
 		this.emit('start');
 		this.isRunning = true;
+
+		// 记录开始答题时间
+		this.workStartTime = Date.now();
 
 		this.once('close', () => {
 			this.isClose = true;
@@ -116,6 +127,13 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			const result = results[index];
 			const ctx = result.ctx || ({} as WorkContext<E>);
 
+				/** 检查总答题超时 */
+				if (this.isWorkTimeout()) {
+					console.warn('总答题超时，自动停止');
+					this.isClose = true;
+					this.isRunning = false;
+					return;
+				}
 			/** 强行关闭 */
 			if (this.isClose === true) {
 				this.isRunning = false;
@@ -189,6 +207,13 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		const resolverThread = async () => {
 			for (let index = 0; index < results.length; index++) {
 				const result = results[index];
+				/** 检查总答题超时 */
+				if (this.isWorkTimeout()) {
+					console.warn('总答题超时，自动停止');
+					this.isClose = true;
+					this.isRunning = false;
+					return;
+				}
 
 				let error: string | undefined;
 				let res: ResolverResult | undefined;

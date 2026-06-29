@@ -12,7 +12,7 @@ import {
 	domSearch,
 	domSearchAll,
 	SearchInformation
-} from '@ocsjs/core';
+, setInputValue } from '@ocsjs/core';
 import { $modal, h, $store, MessageElement, Project, Script, $el, $gm, $$el, $ui, cors, $message } from 'easy-us';
 
 import { CommonProject } from './common';
@@ -744,6 +744,7 @@ function workOrExam(
 		thread,
 		redundanceWordsText,
 		answerSeparators,
+		workTimeout,
 		preview_mode
 	}: CommonWorkOptions & {
 		// 整卷预览模式
@@ -872,7 +873,7 @@ function workOrExam(
 							const text = option?.querySelector('textarea');
 							const textareaFrame = option?.querySelector('iframe');
 							if (text) {
-								text.value = answer;
+								setInputValue(text, answer);
 							}
 							if (textareaFrame?.contentDocument) {
 								textareaFrame.contentDocument.body.innerHTML = answer;
@@ -967,7 +968,8 @@ function workOrExam(
 
 		(async () => {
 			while (next && worker.isClose === false) {
-				await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
+				worker.workTimeoutMinutes = workTimeout || 0;
+			await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
 				$message.info({ content: '已完成，即将下一题', duration: 0 });
 				await $.sleep(3000);
 				next = getNextBtn();
@@ -1931,7 +1933,7 @@ const JobRunner = {
 							const text = option?.parentElement?.querySelector('textarea');
 							const textareaFrame = option?.parentElement?.querySelector('iframe');
 							if (text) {
-								text.value = answer;
+								setInputValue(text, answer);
 							}
 							if (textareaFrame?.contentDocument) {
 								textareaFrame.contentDocument.body.innerHTML = answer;
@@ -2075,6 +2077,7 @@ const JobRunner = {
 			}
 		});
 
+		worker.workTimeoutMinutes = workTimeout || 0;
 		const results = await worker.doWork();
 
 		const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;

@@ -1,5 +1,5 @@
 import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement, $store, $gm } from 'easy-us';
-import { RemotePage, SimplifyWorkResult, OCSWorker, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { setInputValue,  RemotePage, SimplifyWorkResult, OCSWorker, defaultAnswerWrapperHandler } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workNotes, definition, volume, restudy } from '../utils/configs';
 import {
@@ -2585,7 +2585,7 @@ function getPopupCaptcha() {
  */
 function gxkWorkAndExam(
 	workInfo: any,
-	{ answererWrappers, period, thread, stopSecondWhenFinish, redundanceWordsText, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, period, thread, stopSecondWhenFinish, redundanceWordsText, answerSeparators, workTimeout }: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zhs-gxk'
@@ -2677,7 +2677,7 @@ function gxkWorkAndExam(
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector('textarea');
 					if (text) {
-						text.value = answer;
+						setInputValue(text, answer);
 						await $.sleep(200);
 					}
 				}
@@ -2761,7 +2761,7 @@ function gxkWorkAndExam(
 /**
  * 校内学分课的作业
  */
-function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
+function xnkWork({ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions) {
 	$message.info({ content: '开始作业' });
 
 	CommonProject.scripts.workResults.methods.init();
@@ -2815,7 +2815,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 				} else if (type === 'completion' && answer.trim()) {
 					const text = option.querySelector('textarea');
 					if (text) {
-						text.value = answer;
+						setInputValue(text, answer);
 						await $.sleep(200);
 					}
 				}
@@ -2874,7 +2874,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
  */
 function smartWork(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 	$message.warn({
@@ -3034,7 +3034,7 @@ function smartWork(
 
 function smartExam(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 	$message.warn({
@@ -3183,7 +3183,7 @@ function smartExam(
 
 function fusioncourseWork(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 
@@ -3304,7 +3304,7 @@ function fusioncourseWork(
 
 function hikeWork(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 
@@ -3433,7 +3433,7 @@ function hikeWork(
 
 function hikeHomework(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators, workTimeout }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 
