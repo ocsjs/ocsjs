@@ -9,6 +9,11 @@
 
 
 
+## [4.15.4](https://github.com/ocsjs/ocsjs/compare/4.15.3...4.15.4) (2026-07-01)
+
+
+* 修复Release流程中 ncipollo/release-action 把body删除导致没有 changelog 的功能 ([cbd9296](https://github.com/ocsjs/ocsjs/commit/cbd929678681cd0e17cb3d458aeaaa7c2a243584))
+
 ## [4.15.3](https://github.com/ocsjs/ocsjs/compare/4.15.2...4.15.3) (2026-07-01)
 
 
