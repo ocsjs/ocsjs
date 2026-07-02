@@ -1,0 +1,107 @@
+{
+	"$schema": "http://json-schema.org/draft-07/schema#",
+	"title": "Answerer Test Config",
+	"description": "tests/answerer.test.ts 的配置文件 schema，用于 VSCode 类型提示与校验。",
+	"type": "object",
+	"additionalProperties": false,
+	"properties": {
+		"$schema": { "type": "string", "description": "JSON Schema 引用路径" },
+		"title": {
+			"type": "string",
+			"description": "题目标题文本（可包含图片 URL）"
+		},
+		"options": {
+			"description": "选项文本，支持字符串或字符串数组（数组会按行拼接为字符串）",
+			"oneOf": [
+				{ "type": "string" },
+				{ "type": "array", "items": { "type": "string" } }
+			]
+		},
+		"type": {
+			"type": "string",
+			"description": "题目类型，如 single / multiple / completion / judgement 等",
+			"default": "unknown"
+		},
+		"verbose": {
+			"type": "boolean",
+			"description": "是否打印响应与请求数据",
+			"default": false
+		},
+		"imageOptimize": {
+			"type": "boolean",
+			"description": "是否开启图片题优化（下载图片转 base64，写入 images / suggestion_title / suggestion_options 字段）",
+			"default": true
+		},
+		"wrappers": {
+			"type": "array",
+			"description": "题库配置列表（AnswererWrapper[]），支持数组 / JSON 字符串 / URL / base64",
+			"items": { "$ref": "#/definitions/AnswererWrapper" }
+		}
+	},
+	"required": ["title", "wrappers"],
+	"definitions": {
+		"AnswererWrapper": {
+			"type": "object",
+			"additionalProperties": false,
+			"properties": {
+				"name": { "type": "string", "description": "题库名字" },
+				"homepage": { "type": "string", "description": "题库主页" },
+				"url": { "type": "string", "description": "题库请求地址" },
+				"method": {
+					"type": "string",
+					"enum": ["get", "post"],
+					"default": "get",
+					"description": "请求方法；图片题优化需使用 post"
+				},
+				"type": {
+					"type": "string",
+					"enum": ["fetch", "GM_xmlhttpRequest"],
+					"default": "fetch",
+					"description": "请求模式"
+				},
+				"contentType": {
+					"type": "string",
+					"enum": ["json", "text"],
+					"default": "json",
+					"description": "响应解析类型"
+				},
+				"responseType": {
+					"type": "string",
+					"enum": ["json", "text"],
+					"description": "（同 contentType，兼容字段）"
+				},
+				"headers": {
+					"type": "object",
+					"description": "附带请求头；POST 未提供 Content-Type 时默认 application/json",
+					"additionalProperties": { "type": "string" }
+				},
+				"data": {
+					"type": "object",
+					"description": "请求数据。值为字符串时支持 ${title} / ${options} / ${type} / ${images} / ${suggestion_title} / ${suggestion_options} 占位符；值为 { handler: string } 时按函数求值（用于保留数组等非字符串结构）",
+					"additionalProperties": {
+						"oneOf": [
+							{ "type": "string" },
+							{
+								"type": "object",
+								"properties": {
+									"handler": { "type": "string" }
+								},
+								"required": ["handler"],
+								"additionalProperties": false
+							}
+						]
+					}
+				},
+				"handler": {
+					"type": "string",
+					"description": "响应处理器函数字符串，入参为响应内容，返回 [题目, 答案] 或二维数组"
+				},
+				"v": {
+					"type": "number",
+					"description": "题库配置版本号（可选），v2 起支持图片题优化字段"
+				}
+			},
+			"required": ["name", "url", "handler"]
+		}
+	}
+}
