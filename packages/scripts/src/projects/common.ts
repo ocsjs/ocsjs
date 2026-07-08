@@ -8,7 +8,7 @@ import {
 	WorkUploadType,
 	AnswerWrapperHandlerConfig
 } from '@ocsjs/core';
-import { $message, h, $gm, $store, Project, Script, $modal, StoreListenerType, $ui } from 'easy-us';
+import { $message, h, $gm, $store, Project, Script, $modal, StoreListenerType, $ui, MessageElement } from 'easy-us';
 import type { AnswererWrapper, SearchInformation } from '@ocsjs/core';
 import { CXProject, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '../index';
 import { markdown } from '../utils/markdown';
@@ -69,7 +69,9 @@ const state = {
 	setting: {
 		listenerIds: {
 			aw: 0 as StoreListenerType
-		}
+		},
+		/** 图片题优化兼容性提示消息（可移除） */
+		imageOptimizeMessage: undefined as MessageElement | undefined
 	}
 };
 
@@ -511,6 +513,17 @@ export const CommonProject = Project.create({
 						});
 					}
 				},
+				imageOptimize: {
+					label: '图片题优化',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'遇到图片题解析图片成 Base64 上传给题库，防止遇到防盗链等问题无法加载。' +
+							'需题库配置支持（POST 方法且引用了 ${images} / ${suggestion_title} / ${suggestion_options} 字段），' +
+							'否则会提示你去源头更新并重新配置题库。原题 title / options 不会被修改。'
+					},
+					defaultValue: true
+				},
 				advancedSettings: {
 					...dropdownStyle,
 					defaultValue: false,
@@ -717,6 +730,44 @@ export const CommonProject = Project.create({
 				this.onConfigChange('answerWrapperHandlerTimeout', (sec) => {
 					AnswerWrapperHandlerConfig.timeout_seconds = sec;
 				});
+
+				// 图片题优化兼容性检测：仅提示，不限制。
+				// 因为上传内容由题库配置占位符决定，原题 title / options 不再被覆盖，
+				// 旧配置不会上传新增字段，所以即便不支持也是安全的，这里只做引导提示。
+				const checkImageOptimizeCompatibility = () => {
+					const wrappers = this.cfg.answererWrappers || [];
+					// 题库为空 / 关闭图片题优化：清除提示
+					if (!this.cfg.imageOptimize || wrappers.length === 0) {
+						state.setting.imageOptimizeMessage?.remove();
+						state.setting.imageOptimizeMessage = undefined;
+						return;
+					}
+					if (!isAnswererWrappersSupportImageOptimize(wrappers)) {
+						if (!state.setting.imageOptimizeMessage) {
+							state.setting.imageOptimizeMessage = $message.warn({
+								content: h('div', [
+									'图片题优化已开启，但当前题库配置暂不支持（需 POST 方法并引用 ',
+									h('code', '${images}'),
+									' / ',
+									h('code', '${suggestion_title}'),
+									' / ',
+									h('code', '${suggestion_options}'),
+									' 字段）。',
+									h('br'),
+									'请前往题库配置源头获取新配置并重新配置题库，否则图片题优化功能无法生效。'
+								]),
+								duration: 0
+							});
+						}
+					} else {
+						state.setting.imageOptimizeMessage?.remove();
+						state.setting.imageOptimizeMessage = undefined;
+					}
+				};
+
+				checkImageOptimizeCompatibility();
+				this.onConfigChange('imageOptimize', () => checkImageOptimizeCompatibility());
+				this.onConfigChange('answererWrappers', () => checkImageOptimizeCompatibility());
 			},
 			onrender({ panel }) {
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境

@@ -43,6 +43,27 @@ function getArg(flag: string): string | undefined {
 	return idx !== -1 ? process.argv[idx + 1] : undefined;
 }
 
+/**
+ * 将 base64 图片写入 tests/image/ 目录，便于在 IDE 中直接查看。
+ * 入参为 data URL：data:<mime>;base64,<b64>
+ * 返回写入的文件相对路径。
+ */
+function writeImageToFile(dataUrl: string, index: number): string | undefined {
+	const m = dataUrl.match(/^data:([^;,]+).*?;base64,(.+)$/s);
+	if (!m) {
+		console.log(`   [图片${index}] (无法解析 base64)`);
+		return;
+	}
+	const [, mimeType, b64] = m;
+	// mime → 扩展名
+	const ext = mimeType === 'image/jpeg' ? 'jpg' : mimeType.replace(/^image\//, '');
+	const dir = 'tests/image';
+	fs.mkdirSync(dir, { recursive: true });
+	const filePath = `${dir}/图片${index}.${ext}`;
+	fs.writeFileSync(filePath, b64, 'base64');
+	return filePath;
+}
+
 // ========== 配置加载 ==========
 
 const CONFIG_PATH = getArg('--config') || 'answerer.config.json';
@@ -143,6 +164,15 @@ async function main() {
 	}
 	console.log('\n📦 搜题环境变量:');
 	console.log(JSON.stringify(envPreview, null, 2).replace(/^/gm, '   '));
+
+	// 将 base64 图片写入 tests/image/ 目录，便于在 IDE 中直接查看
+	if (Array.isArray(env.images) && env.images.length) {
+		console.log('\n🖼️  图片已写入 tests/image/:');
+		env.images.forEach((b64: string, i: number) => {
+			const path = writeImageToFile(b64, i + 1);
+			if (path) console.log(`   [图片${i + 1}] -> ${path}`);
+		});
+	}
 
 	// 执行搜题
 	console.log('\n⏳ 正在搜题...');

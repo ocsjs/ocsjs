@@ -1,7 +1,27 @@
-import { SimplifyWorkResult, WorkerEvents, WorkResult } from '@ocsjs/core';
+import {
+	SimplifyWorkResult,
+	WorkerEvents,
+	WorkResult,
+	defaultAnswerWrapperHandler,
+	AnswererWrapper,
+	SearchInformation,
+	WorkContext,
+	$
+} from '@ocsjs/core';
 import { $ui, $message, MessageElement, Script, h, CommonEventEmitter, cors, $elements } from 'easy-us';
 import { CommonProject } from '../projects/common';
 import { CommonWorkOptions, workPreCheckMessage } from '.';
+import {
+	buildAnswererEnv,
+	createImageSuggestion,
+	imageToBase64,
+	ImageSuggestionResult,
+	isAnswererWrappersSupportImageOptimize
+} from './answerer-env';
+
+// 重新导出，保持对外 API 不变（common.ts / exploration.ts 等仍从本文件导入）
+export { buildAnswererEnv, createImageSuggestion, imageToBase64, isAnswererWrappersSupportImageOptimize };
+export type { ImageSuggestionResult };
 
 export let globalControlPanel: HTMLElement | null = null;
 
@@ -288,3 +308,42 @@ export const closeAnswerWrapperEmptyWarning = cors.defineTopFunction(() => {
 	answererWrapperUnsetMessage?.remove();
 	answererWrapperUnsetMessage = undefined;
 });
+
+/**
+ * 创建通用的 answerer 回调，封装搜题缓存、延迟、env 构建、AI 图片建议等公共逻辑
+ * @param options.titleTransform 标题转换函数，接收 (elements, ctx)，返回字符串标题
+ * @param options.optionsTransform 选项转换函数（可选），接收 (elements, ctx)，返回选项文本字符串；
+ *   默认取 ctx.elements.options 的 innerText 拼接
+ * @param options.answererWrappers 题库配置
+ * @param options.period 搜题间隔（秒），默认 3
+ */
+export function createCommonAnswerer(options: {
+	titleTransform: (elements: any, ctx: WorkContext<any>) => string;
+	optionsTransform?: (elements: any, ctx: WorkContext<any>) => string;
+	answererWrappers: AnswererWrapper[];
+	period?: number;
+}) {
+	return async (elements: any, ctx: WorkContext<any>): Promise<SearchInformation[]> => {
+		const title = options.titleTransform(elements, ctx);
+		if (!title) {
+			throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+		}
+
+		return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+			await $.sleep((options.period ?? 3) * 1000);
+			const opt = options.optionsTransform
+				? options.optionsTransform(elements, ctx)
+				: (ctx.elements.options ?? [])
+						.filter(Boolean)
+						.map((o: HTMLElement | undefined) => o!.innerText)
+						.join('\n');
+			const env = await buildAnswererEnv({
+				type: ctx.type,
+				title,
+				options: opt,
+				enableImageOptimize: CommonProject.scripts.settings.cfg.imageOptimize
+			});
+			return defaultAnswerWrapperHandler(options.answererWrappers, env);
+		});
+	};
+}

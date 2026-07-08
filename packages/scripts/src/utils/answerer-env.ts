@@ -1,3 +1,5 @@
+import { getImageSize, upscalePngDataUrl } from './png-upscaler';
+
 export interface ImageSuggestionResult {
 	/** base64 图片数组，顺序对应 [图片1]、[图片2]… */
 	images: string[];
@@ -20,7 +22,20 @@ function isNodeEnv(): boolean {
 async function nodeFetchToBase64(url: string): Promise<string> {
 	// eslint-disable-next-line @typescript-eslint/no-var-requires
 	const fet: typeof fetch = require('node-fetch').default || require('node-fetch');
-	const res = await fet(url);
+	// 携带 Referer / User-Agent 绕过防盗链（如 chaoxing 403）
+	let referer = '';
+	try {
+		referer = new URL(url).origin + '/';
+	} catch {
+		// 非 URL，忽略
+	}
+	const res = await fet(url, {
+		headers: {
+			Referer: referer,
+			'User-Agent':
+				'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+		}
+	});
 	if (!res.ok) {
 		throw new Error(`图片下载失败 ${res.status}`);
 	}
@@ -121,11 +136,24 @@ function gmXmlHttpRequestFallback(url: string, resolve: (value: string) => void,
 	});
 }
 
+/**
+ * 将任意 data URL（可能含 charset 等参数、或非 png mime）统一为 data:image/png;base64,{b64} 格式。
+ * 仅重写前缀与 mime，不转换图片字节。
+ */
+function normalizeToPngDataUrl(dataUrl: string): string {
+	const m = dataUrl.match(/^data:[^;,]+.*?;base64,(.+)$/);
+	return `data:image/png;base64,${m ? m[1] : dataUrl}`;
+}
+
+/** 图片最小边长阈值：低于此值的图片会被题库/模型（如豆包 14px）拒绝，需放大后再提交 */
+const MIN_IMAGE_DIMENSION = 14;
+
 export async function createImageSuggestion(
 	title: string,
 	options?: string
 ): Promise<ImageSuggestionResult | undefined> {
-	const imageUrlRegex = /https?:\/\/\S+\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?\S*)?/gi;
+	// 匹配图片 URL：非贪婪且排除中文/全角字符，避免跨越多个 URL 或中文文本拼成非法 URL
+	const imageUrlRegex = /https?:\/\/[^\s一-鿿＀-￯]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s一-鿿＀-￯]*)?/gi;
 
 	// 收集标题和选项中的所有图片 URL，保持顺序
 	const titleUrls = title.match(imageUrlRegex) || [];
@@ -159,12 +187,32 @@ export async function createImageSuggestion(
 	if (base64Map.size === 0) return undefined;
 
 	// 构建 URL → [图片N] 的映射，同时按顺序收集 base64 数组
+	// 按 allUrls（题目/选项中的出现顺序）遍历，而非下载完成顺序，保证编号与原文一致
+	// 占位符左右各加两个空格，与相邻中文/符号分隔，便于题库解析
 	const images: string[] = [];
 	const placeholderMap = new Map<string, string>();
-	for (const url of base64Map.keys()) {
-		placeholderMap.set(url, `[图片${images.length + 1}]`);
-		images.push(base64Map.get(url)!);
+	for (const url of allUrls) {
+		const base64 = base64Map.get(url);
+		if (!base64) continue;
+		// 统一为 data:image/png;base64,{b64} 格式，去除 charset 等参数与原始 mime 差异
+		let normalized = normalizeToPngDataUrl(base64);
+		// 过小图片放大到 ≥ MIN_IMAGE_DIMENSION，避免模型（如豆包 14px）拒绝
+		const size = getImageSize(normalized);
+		if (size && (size.width < MIN_IMAGE_DIMENSION || size.height < MIN_IMAGE_DIMENSION)) {
+			try {
+				normalized = await upscalePngDataUrl(normalized, MIN_IMAGE_DIMENSION);
+			} catch (e: any) {
+				console.warn(
+					`[imageOptimize] 图片 ${size.width}x${size.height} 放大失败，已跳过：${url}（${e?.message}）`
+				);
+				continue;
+			}
+		}
+		placeholderMap.set(url, ` [图片${images.length + 1}] `);
+		images.push(normalized);
 	}
+
+	if (images.length === 0) return undefined;
 
 	// 标题：URL 替换为 [图片N] 占位符（不含 base64）
 	let suggestionTitle = title;

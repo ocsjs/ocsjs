@@ -47,6 +47,21 @@ export async function defaultAnswerWrapperHandler(
 		title?: string;
 		options?: string;
 		type?: string;
+		/**
+		 * 图片题优化：base64 图片数组（顺序对应 [图片1]、[图片2]…）。
+		 * 仅在开启图片题优化且题目/选项含图片时由 buildAnswererEnv 注入。
+		 */
+		images?: string[];
+		/**
+		 * 图片题优化：原题标题中图片 URL 替换为 [图片N] 占位符后的文本。
+		 * 未注入时默认为空字符串。
+		 */
+		suggestion_title?: string;
+		/**
+		 * 图片题优化：原选项中图片 URL 替换为 [图片N] 占位符后的文本。
+		 * 未注入时默认为空字符串。
+		 */
+		suggestion_options?: string;
 		[x: string]: any;
 	}
 ): Promise<SearchInformation[]> {
@@ -55,6 +70,16 @@ export async function defaultAnswerWrapperHandler(
 	if (temp.length === 0) {
 		throw new Error('题库配置不能为空，请配置后重新开始自动答题。');
 	}
+
+	// 上下文环境字段默认值：防止题库配置中 ${title} / ${options} / ${type} /
+	// ${images} / ${suggestion_title} / ${suggestion_options} 等占位符因字段缺失
+	// 被替换为 'undefined' 字面量。
+	if (env.title === undefined) env.title = '';
+	if (env.options === undefined) env.options = '';
+	if (env.type === undefined) env.type = 'unknown';
+	if (env.images === undefined) env.images = [];
+	if (env.suggestion_title === undefined) env.suggestion_title = '';
+	if (env.suggestion_options === undefined) env.suggestion_options = '';
 	// 多线程请求
 	await Promise.all(
 		temp.map(async (wrapper) => {
@@ -65,10 +90,17 @@ export async function defaultAnswerWrapperHandler(
 				method = 'get',
 				type = 'fetch',
 				contentType = 'json',
+				responseType = 'json',
 				headers = {},
 				data: wrapperData = {},
 				handler = 'return (res)=> [JSON.stringify(res), undefined]'
 			} = wrapper;
+			// POST 请求若未显式提供 Content-Type，默认按 JSON 提交
+			if (method.toLocaleLowerCase() === 'post') {
+				if (!Object.keys(headers).some((k) => k.toLowerCase() === 'content-type')) {
+					headers['Content-Type'] = 'application/json';
+				}
+			}
 			try {
 				// 答案列表
 				let results: Result[] = [];
@@ -118,8 +150,8 @@ export async function defaultAnswerWrapperHandler(
 				const responseData = await Promise.race([
 					request(url.toString(), {
 						method,
-						// 历史遗留的命名问题
-						responseType: contentType,
+						// contentType: 历史遗留的命名问题
+						responseType: responseType || contentType,
 						data: requestData,
 						type,
 						headers: JSON.parse(JSON.stringify(headers || {}))

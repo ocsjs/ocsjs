@@ -35,8 +35,13 @@ export interface AnswererWrapper {
 	data?: Record<string, any>;
 	/** 请求方法 */
 	method: 'post' | 'get';
+	/**
+	 * 定义 handler 中的参数类型
+	 * @deprecated 该字段已废弃，使用 responseType 替代
+	 */
+	contentType?: 'json' | 'text';
 	/** 定义 handler 中的参数类型 */
-	contentType: 'json' | 'text';
+	responseType?: 'json' | 'text';
 	/** 请求模式 */
 	type: 'fetch' | 'GM_xmlhttpRequest';
 	/** 附带请求头 */
