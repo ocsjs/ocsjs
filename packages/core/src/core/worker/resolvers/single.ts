@@ -14,11 +14,12 @@ export interface SingleResolveResult {
 /**
  * 单选题匹配算法（自适应）
  *
- * 四阶段自动匹配，无需手动选择模式：
- * 1. 归一化精确匹配 — 去除标点/空格/全角半角差异后精确比对
- * 2. 相似匹配 — 取所有选项中相似度最高且超过阈值的那个
- * 3. 纯ABCD答案兜底
- * 4. 多片段答案适配 — 题库答案被分隔符拆成多片段时，合并为一个答案后重新调用本算法
+ * 五阶段自动匹配，无需手动选择模式：
+ * 1. 投票机制 — 多个题库返回不同答案时，优先选择出现次数最多的答案
+ * 2. 归一化精确匹配 — 去除标点/空格/全角半角差异后精确比对
+ * 3. 相似匹配 — 取所有选项中相似度最高且超过阈值的那个
+ * 4. 纯ABCD答案兜底
+ * 5. 多片段答案适配 — 题库答案被分隔符拆成多片段时，合并为一个答案后重新调用本算法
  *
  * @param answers  所有题库返回的答案列表
  * @param options   选项文本列表
@@ -28,6 +29,55 @@ export function resolveSingle(answers: string[], options: string[], separators?:
 	const allAnswer = answers.map((a) => splitAnswer(a, separators)).flat();
 	const optionStrings = options.map(removeRedundant);
 
+	// ========== 阶段1: 投票机制（多题库答案投票） ==========
+	if (answers.length > 1) {
+		const answerVotes: Map<string, number> = new Map();
+
+		for (const answer of allAnswer) {
+			const normalizedAns = StringUtils.nowrap(answer, '').trim().toLowerCase();
+			if (normalizedAns) {
+				answerVotes.set(normalizedAns, (answerVotes.get(normalizedAns) || 0) + 1);
+			}
+		}
+
+		// 找出出现次数最多的答案
+		let maxCount = 0;
+		let votedAnswer = '';
+		for (const [ans, count] of answerVotes.entries()) {
+			if (count > maxCount) {
+				maxCount = count;
+				votedAnswer = ans;
+			}
+		}
+
+		// 如果某个答案出现次数超过1次，优先使用它
+		if (maxCount > 1 && votedAnswer) {
+			// 使用投票获胜的答案进行匹配
+			const votedAnswerOriginal = allAnswer.find(
+				(a) => StringUtils.nowrap(a, '').trim().toLowerCase() === votedAnswer
+			);
+			if (votedAnswerOriginal) {
+				const voteResult = resolveSingleAnswer([votedAnswerOriginal], options, optionStrings, separators);
+				if (voteResult.finish) {
+					return voteResult;
+				}
+			}
+		}
+	}
+
+	// ========== 阶段2-5: 原有匹配逻辑 ==========
+	return resolveSingleAnswer(allAnswer, options, optionStrings, separators);
+}
+
+/**
+ * 单选题答案解析的核心逻辑
+ */
+function resolveSingleAnswer(
+	allAnswer: string[],
+	options: string[],
+	optionStrings: string[],
+	separators?: string[]
+): SingleResolveResult {
 	// ========== 阶段1: 归一化精确匹配 ==========
 	const normalizedResult = answerNormalizedMatch(allAnswer, optionStrings);
 	if (normalizedResult.length) {
@@ -76,7 +126,7 @@ export function resolveSingle(answers: string[], options: string[], separators?:
 	// 合并后的答案既无法精确匹配、相似度也达不到阈值，从而返回未命中。
 	if (allAnswer.length > 1) {
 		const merged = allAnswer.join('');
-		const r = resolveSingle([merged], options, separators);
+		const r = resolveSingleAnswer([merged], options, optionStrings, separators);
 		if (r.finish) {
 			return r;
 		}
