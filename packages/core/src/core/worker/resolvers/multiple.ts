@@ -28,6 +28,7 @@ export interface MultipleResolveResult {
  *    不取"选项包含答案"方向，避免 "TCP" 误选 "TCP/IP协议" 等语义不一致的选项
  * 2. 相似匹配 + 领先度消歧 — 候选选项两两比较，文本相似时只保留匹配度更高的
  * 3. 纯ABCD答案兜底
+ * 4. 投票机制 — 多个题库返回不同答案时，优先选择出现次数最多的答案组合
  *
  * @param resultAnswers  每个题库结果的原始答案字符串列表
  * @param options         选项文本列表
@@ -116,6 +117,40 @@ export function resolveMultiple(
 		groups[i] = best;
 	}
 
+	// ========== 投票机制：多题库返回不同答案时，优先选择出现次数最多的答案组合 ==========
+	const answerVotes: Map<string, { options: string[]; count: number; totalRating: number }> = new Map();
+
+	for (const group of groups) {
+		if (group.similarCount > 0) {
+			// 将选项排序后作为key，确保相同答案组合能被识别
+			const key = [...group.options].sort().join('|||');
+			const existing = answerVotes.get(key);
+			if (existing) {
+				existing.count++;
+				existing.totalRating += group.similarSum;
+			} else {
+				answerVotes.set(key, {
+					options: group.options,
+					count: 1,
+					totalRating: group.similarSum
+				});
+			}
+		}
+	}
+
+	// 选择出现次数最多的答案，如果次数相同则选择总评分最高的
+	let bestVote: { options: string[]; count: number; totalRating: number } | undefined;
+	for (const vote of answerVotes.values()) {
+		if (!bestVote || vote.count > bestVote.count || (vote.count === bestVote.count && vote.totalRating > bestVote.totalRating)) {
+			bestVote = vote;
+		}
+	}
+
+	if (bestVote && bestVote.count > 0) {
+		return { finish: true, options: bestVote.options, groups: groups.filter((g) => g.similarCount !== 0) };
+	}
+
+	// 原有逻辑：如果投票机制没有结果，则使用最高匹配度的
 	const sorted = groups
 		.filter((g) => g.similarCount !== 0)
 		.sort((a, b) => {

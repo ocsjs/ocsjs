@@ -1160,30 +1160,55 @@ export const ZHSProject = Project.create({
 						const include_jobs = ['video', 'book', /** 一般是PPT */ 'other', /** 一般是文档 */ 'text'];
 
 						const getNextJob = () => {
-							const cards = Array.from(document.querySelectorAll('[class*="card-container"]'));
+							// 根据模式决定卡片来源
+							let cards: HTMLElement[];
+							if (this.cfg.switchMode === 'job') {
+								// job 模式：只收集必学区域的卡片
+								const sections = document.querySelectorAll('.resources-section');
+								cards = [];
+								for (const section of sections) {
+									const titleEl = section.querySelector('.resources-detail-title');
+									// 跳过选学区域
+									if (titleEl?.textContent?.includes('选学')) continue;
+									const cardsInSection = section.querySelectorAll('[class*="card-container"]');
+									cards.push(...(Array.from(cardsInSection) as HTMLElement[]));
+								}
+							} else if (this.cfg.switchMode === 'all') {
+								// all 模式：获取所有卡片
+								cards = Array.from(document.querySelectorAll('[class*="card-container"]'));
+							} else {
+								// 默认模式
+								cards = Array.from(document.querySelectorAll('[class*="card-container"]'));
+							}
+
+							// 如果没有卡片（job 模式下可能无必学卡片），返回 undefined，交给上层跳转章节
+							if (cards.length === 0) return undefined;
 
 							// 如果没有正在选中的章节，证明第一个就是外链模式，此时默认点击第一个
 							if (cards.some((card) => card.classList.contains('active')) === false) {
 								return cards[0];
 							}
 
-							let target_el;
-							const start_index = cards.findIndex((c) => c.classList.contains('active')) || 0;
+							// 找到当前 active 的卡片索引
+							const start_index = cards.findIndex((c) => c.classList.contains('active'));
+							if (start_index === -1) {
+								return cards[0];
+							}
+
+							// 从 active 的下一个开始查找
 							for (let index = start_index + 1; index < cards.length; index++) {
 								const card = cards[index];
 
 								if (this.cfg.restudy) {
-									target_el = card;
-									break;
+									return card;
 								} else {
 									if (card.querySelector('.finished-icon')?.textContent?.includes('已完成')) {
 										continue;
 									}
-									target_el = card;
-									break;
+									return card;
 								}
 							}
-							return target_el;
+							return undefined;
 						};
 						const getNext = () => {
 							const infos = getInfos();

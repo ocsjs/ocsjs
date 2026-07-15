@@ -13,12 +13,13 @@ export function request<T extends 'json' | 'text'>(
 		responseType?: T;
 		headers?: Record<string, string>;
 		data?: Record<string, any>;
+		timeout?: number; // 请求超时时间（毫秒），默认 60000
 	}
 ): Promise<T extends 'json' ? any : string> {
 	return new Promise((resolve, reject) => {
 		try {
 			/** 默认参数 */
-			const { responseType = 'json', method = 'get', type = 'fetch', data = {}, headers = {} } = opts || {};
+			const { responseType = 'json', method = 'get', type = 'fetch', data = {}, headers = {}, timeout = 60000 } = opts || {};
 			/** 环境变量 */
 			const env = $.isInBrowser() ? 'browser' : 'node';
 
@@ -39,6 +40,7 @@ export function request<T extends 'json' | 'text'>(
 						data: requestData,
 						headers: Object.keys(headers).length ? headers : undefined,
 						responseType: responseType === 'json' ? 'json' : undefined,
+						timeout: timeout, // 设置超时时间
 						onload: (response) => {
 							if (response.status === 200) {
 								if (responseType === 'json') {
@@ -51,12 +53,17 @@ export function request<T extends 'json' | 'text'>(
 									resolve(response.responseText || '');
 								}
 							} else {
-								reject(response.responseText);
+								reject(new Error(`HTTP ${response.status}: ${response.responseText}`));
 							}
 						},
-						onerror: (err) => {
+						ontimeout: () => {
+							// 超时时立即 reject
+							reject(new Error('GM_xmlhttpRequest 请求超时'));
+						},
+						onerror: (err: any) => {
 							console.error('GM_xmlhttpRequest error', err);
-							reject(err);
+							// 传递 Error 实例而非原始对象
+							reject(new Error(err?.error || 'GM_xmlhttpRequest 请求失败'));
 						}
 					});
 				} else {
@@ -65,8 +72,18 @@ export function request<T extends 'json' | 'text'>(
 			} else {
 				const fet: typeof fetch = env === 'node' ? require('node-fetch').default : fetch;
 
-				fet(url, { body: method === 'post' ? JSON.stringify(data) : undefined, method, headers })
+				// 使用 AbortController 实现超时
+				const controller = new AbortController();
+				const timer = setTimeout(() => controller.abort(), timeout);
+
+				fet(url, {
+					body: method === 'post' ? JSON.stringify(data) : undefined,
+					method,
+					headers,
+					signal: controller.signal
+				})
 					.then((response) => {
+						clearTimeout(timer);
 						if (responseType === 'json') {
 							response.json().then(resolve).catch(reject);
 						} else {
@@ -75,7 +92,12 @@ export function request<T extends 'json' | 'text'>(
 						}
 					})
 					.catch((error) => {
-						reject(new Error(error));
+						clearTimeout(timer);
+						if (error.name === 'AbortError') {
+							reject(new Error('fetch 请求超时'));
+						} else {
+							reject(new Error(error));
+						}
 					});
 			}
 		} catch (error) {

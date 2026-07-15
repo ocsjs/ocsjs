@@ -122,7 +122,8 @@ export async function defaultAnswerWrapperHandler(
 						responseType: contentType,
 						data: requestData,
 						type,
-						headers: JSON.parse(JSON.stringify(headers || {}))
+						headers: JSON.parse(JSON.stringify(headers || {})),
+						timeout: (AnswerWrapperHandlerConfig.timeout_seconds ?? 60) * 1000
 					}),
 					$.sleep((AnswerWrapperHandlerConfig.timeout_seconds ?? 60) * 1000)
 				]);
