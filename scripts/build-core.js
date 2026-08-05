@@ -45,8 +45,8 @@ async function createUserJs() {
 
 	/** @return {import('../packages/utils').CreateOptions} */
 	const createOptions = () => {
-		const { CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject, YKTProject } = ocs;
-		const projectList = [CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject, YKTProject]
+		const { CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject } = ocs;
+		const projectList = [CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject]
 			.map((s) => `【${s.name}】`)
 			.join(' ');
 

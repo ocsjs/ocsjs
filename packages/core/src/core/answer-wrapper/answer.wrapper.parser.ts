@@ -19,7 +19,7 @@ export class AnswerWrapperParser {
 					if (typeof item.url !== 'string') {
 						throw new Error(`第 ${i + 1} 个题库的 接口地址(url) 为空`);
 					}
-					if (typeof item.handler !== 'string') {
+					if (typeof item.handler !== 'string' && item.type !== 'llm') {
 						throw new Error(`第 ${i + 1} 个题库的 解析器(handler) 为空`);
 					}
 					if (item.headers && typeof item.headers !== 'object') {
@@ -36,9 +36,17 @@ export class AnswerWrapperParser {
 					if (item.method && methods.every((i) => i !== item.method)) {
 						throw new Error(`第 ${i + 1} 个题库的 method 必须为以下选项中的一个  ${methods.join(', ')}`);
 					}
-					const types = ['fetch', 'GM_xmlhttpRequest'] as AnswererWrapper['type'][];
+					const types = ['fetch', 'GM_xmlhttpRequest', 'llm'] as AnswererWrapper['type'][];
 					if (item.type && types.every((i) => i !== item.type)) {
 						throw new Error(`第 ${i + 1} 个题库的 type 必须为以下选项中的一个  ${types.join(', ')}`);
+					}
+					if (item.type === 'llm') {
+						if (item.headers?.Authorization === undefined) {
+							throw new Error(`第 ${i + 1} 个题库(大模型)的 Authorization 请求头为空`);
+						}
+						if (item.data?.model === undefined) {
+							throw new Error(`第 ${i + 1} 个题库(大模型)的 model 字段为空`);
+						}
 					}
 				}
 				return aw;

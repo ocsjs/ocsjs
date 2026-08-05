@@ -38,7 +38,7 @@ export interface AnswererWrapper {
 	/** 定义 handler 中的参数类型 */
 	contentType: 'json' | 'text';
 	/** 请求模式 */
-	type: 'fetch' | 'GM_xmlhttpRequest';
+	type: 'fetch' | 'GM_xmlhttpRequest' | 'llm';
 	/** 附带请求头 */
 	headers: Record<string, string>;
 	/**
@@ -64,4 +64,18 @@ export interface AnswererWrapper {
 	 *
 	 */
 	handler: string;
+}
+
+/**
+ * 大模型API配置
+ */
+export interface LLMConfig {
+	/** API密钥 */
+	apikey: string;
+	/** 接口地址 */
+	url: string;
+	/** 模型名称 */
+	model: string;
+	/** 消息模板（选填），支持 ${title}, ${options}, ${type} 占位符 */
+	messages?: string;
 }
