@@ -1,0 +1,41 @@
+name: 💡 新功能建议
+description: 为这个项目提出新想法或改进建议
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢提交功能建议！请尽可能详细地描述你的需求。
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: 前置检查
+      options:
+        - label: 我已搜索过现有 issues，没有找到类似建议
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题描述
+      description: 这个功能要解决什么问题？
+      placeholder: "我在使用时遇到这样的困扰..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: 期望的解决方案
+      description: 你希望实现什么样的功能？
+      placeholder: "我希望能够..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: 补充说明
+      description: 任何相关的背景信息或使用场景

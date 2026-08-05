@@ -1,0 +1,46 @@
+{
+	"release-type": "node",
+	"include-component-in-tag": false,
+	"include-v-in-tag": false,
+	"separate-pull-requests": true,
+	"skip-parse-errors": true,
+	"packages": {
+		".": {
+			"component": "",
+			"release-type": "node"
+		}
+	},
+	"changelog-sections": [
+		{
+			"type": "feat"
+		},
+		{
+			"type": "fix"
+		},
+		{
+			"type": "perf"
+		},
+		{
+			"type": "docs"
+		},
+		{
+			"type": "refactor"
+		},
+		{
+			"type": "chore",
+			"hidden": true
+		},
+		{
+			"type": "ci",
+			"hidden": true
+		},
+		{
+			"type": "test",
+			"hidden": true
+		},
+		{
+			"type": "style",
+			"hidden": true
+		}
+	]
+}

@@ -46,12 +46,19 @@ export const YKTProject = Project.create({
 			name: '🖥️ 使用提示',
 			matches: [
 				['雨课堂课程列表', '/v2/web/index'],
-				['学习内容界面', '/v2/web/studentLog']
+				['学习内容界面', '/v2/web/studentLog'],
+				['长江雨课堂手机版主页', '/m/v2/course/normalcourse/logs']
 			],
 			namespace: 'yuketang.study.guide',
 			configs: {
 				notes: {
 					defaultValue: '请点击课程里面任意章节，进入学习。'
+				}
+			},
+			oncomplete(...args) {
+				// 手机版，点击视频自动检测并跳转电脑版学习
+				if (location.href.includes('/m/v2/course/normalcourse/logs')) {
+					$message.info('请点击任意视频，进入自动学习。');
 				}
 			}
 		}),
@@ -305,7 +312,10 @@ export const YKTProject = Project.create({
 		}),
 		ai: new Script({
 			name: '🤖 AI学伴',
-			matches: [['AI学伴课程界面', '/ai-workspace/lms-graph']],
+			matches: [
+				['AI学伴课程界面', '/ai-workspace/lms-graph'],
+				['AI学伴课程界面手机版', '/ai-workspace/lms-graph-mobile']
+			],
 			namespace: 'yuketang.study.ai',
 			configs: {
 				notes: {
@@ -331,6 +341,13 @@ export const YKTProject = Project.create({
 				}
 			},
 			async oncomplete() {
+				if (location.href.includes('ai-workspace/lms-graph-mobile')) {
+					await $message.warn('即将切换到电脑版AI课程...');
+					await $.sleep(3000);
+					location.href = location.href.replace('lms-graph-mobile', 'lms-graph');
+					return;
+				}
+
 				await $.sleep(3000);
 				CommonProject.scripts.render.methods.pin(this);
 

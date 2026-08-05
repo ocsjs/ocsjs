@@ -1,6 +1,6 @@
 {
 	"name": "ocsjs",
-	"version": "4.13.16",
+	"version": "4.15.3",
 	"description": "ocs - online course script 在线网络课程辅助工具",
 	"types": "./lib/src/core/index.d.ts",
 	"main": "./lib/src/core/index.js",
@@ -18,17 +18,14 @@
 		"pub:minor": "npm version minor && pnpm build:core && npm publish",
 		"pub:major": "npm version major && pnpm build:core && npm publish",
 		"changelog:simplify": "gulp -f ./scripts/simplify_changelog.js",
-		"changelog": "conventional-changelog -p angular -i CHANGELOG.md --same-file -r 0",
-		"changelog:current": "conventional-changelog -p angular -o CHANGELOG_CURRENT.md -r 1",
-		"init-commitizen": "commitizen init cz-conventional-changelog --save --save-exact"
+		"test": "tsx tests/resolver.test.ts"
 	},
 	"devDependencies": {
 		"@html-eslint/eslint-plugin": "^0.15.0",
-		"@types/node": "^17.0.16",
+		"@types/node": "^17.0.45",
 		"@typescript-eslint/eslint-plugin": "^5.19.0",
 		"@typescript-eslint/parser": "^5.19.0",
 		"browser-env": "^3.3.0",
-		"conventional-changelog-cli": "^2.2.2",
 		"cz-conventional-changelog": "^3.3.0",
 		"del": "^6.0.0",
 		"eslint": "^7.32.0",
@@ -43,6 +40,7 @@
 		"gulp-cli": "^2.3.0",
 		"gulp-zip": "^5.1.0",
 		"prettier": "^2.6.2",
+		"tsx": "^4.22.4",
 		"typescript": "^4.5.5"
 	},
 	"repository": {
@@ -65,12 +63,12 @@
 		"url": "https://github.com/ocsjs/ocsjs/issues"
 	},
 	"homepage": "https://github.com/ocsjs/ocsjs#readme",
+	"dependencies": {
+		"@microsoft/tsdoc": "^0.14.2"
+	},
 	"config": {
 		"commitizen": {
 			"path": "./node_modules/cz-conventional-changelog"
 		}
-	},
-	"dependencies": {
-		"@microsoft/tsdoc": "^0.14.2"
 	}
 }

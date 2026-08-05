@@ -761,7 +761,7 @@ async function watchMedia() {
 	});
 }
 
-function work({ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions) {
+function work({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
 	$message.info('开始作业');
 	CommonProject.scripts.workResults.methods.init();
 
@@ -821,7 +821,6 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
@@ -945,7 +944,7 @@ function work({ answererWrappers, period, thread, answerSeparators, answerMatchM
 	return worker;
 }
 
-function aiWork({ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions) {
+function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
 	$message.info('开始作业');
 	CommonProject.scripts.workResults.methods.init();
 
@@ -999,7 +998,6 @@ function aiWork({ answererWrappers, period, thread, answerSeparators, answerMatc
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);

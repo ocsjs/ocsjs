@@ -56,7 +56,7 @@ export function domSearchAll<E extends RawElements>(
 			typeof item === 'string'
 				? Array.from(root.querySelectorAll(item))
 				: typeof item === 'function'
-				? item(root)
+				? item(root).filter(Boolean)
 				: item.map((fun) => fun(root))
 		);
 	});

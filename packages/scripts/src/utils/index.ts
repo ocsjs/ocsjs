@@ -1,4 +1,4 @@
-import { $, AnswerMatchMode, AnswererWrapper, WorkUploadType } from '@ocsjs/core';
+import { $, AnswererWrapper, WorkUploadType } from '@ocsjs/core';
 import { $ui, $message, $modal, MessageElement, h } from 'easy-us';
 import { $console } from '../projects/background';
 import { answerWrapperEmptyWarning } from './work';
@@ -12,7 +12,6 @@ export interface CommonWorkOptions {
 	stopSecondWhenFinish: number;
 	redundanceWordsText: string;
 	answerSeparators: string;
-	answerMatchMode: AnswerMatchMode;
 }
 
 /** 创建答题预处理信息 */

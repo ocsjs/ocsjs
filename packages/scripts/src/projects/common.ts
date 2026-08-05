@@ -13,8 +13,8 @@ import {
 	LLMHandlerConfig
 } from '@ocsjs/core';
 import { $message, h, $gm, $store, Project, Script, $modal, StoreListenerType, $ui } from 'easy-us';
-import type { AnswerMatchMode, AnswererWrapper, SearchInformation, LLMConfig } from '@ocsjs/core';
-import { CXProject, ICourseProject, IcveMoocProject, ZHSProject, ZJYProject } from '../index';
+import type { AnswererWrapper, SearchInformation } from '@ocsjs/core';
+import { CXProject, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '../index';
 import { markdown } from '../utils/markdown';
 import { enableCopy } from '../utils';
 import { SearchInfosElement } from '../elements/search.infos';
@@ -94,16 +94,14 @@ export const CommonProject = Project.create({
 				notes: {
 					defaultValue: $ui.notes([
 						'打开任意网课平台，进入视频、作业页面等待脚本运行，',
-						'任何疑问请查看上方交流群，进群后带截图进行反馈。',
-						'温馨提示: ',
-						'⚠️ 禁止与其他脚本一起使用，否则会不兼容导致无法运行！',
-						'⚠️ 禁止最小化浏览器、切屏，否则可能导致脚本无法运行！'
+						'⚠️ 禁止与其他脚本一起使用（不兼容），也不能开多个相同脚本',
+						'⚠️ 禁止最小化浏览器、切屏，否则可能导致脚本无法运行！',
+						'有疑问请访问下方交流群，进群后带截图进行反馈。'
 					]).outerHTML
 				}
 			},
 			onrender({ panel }) {
 				const guide = createGuide();
-				guide.style.width = '480px';
 				panel.body.replaceChildren(guide);
 			}
 		}),
@@ -541,12 +539,12 @@ export const CommonProject = Project.create({
 				'randomWork-choice': {
 					defaultValue: false,
 					label: '(仅超星)随机选择',
-					attrs: { type: 'checkbox', title: '题库搜索不到答案时，随机选择任意一个选项' }
+					attrs: { type: 'checkbox', title: '题库搜索不到答案时，随机选择任意一个选项，仅支持超星章节测试' }
 				},
 				'randomWork-complete': {
 					defaultValue: false,
 					label: '(仅超星)随机填空',
-					attrs: { type: 'checkbox', title: '题库搜索不到答案时，随机填写以下任意一个文案' }
+					attrs: { type: 'checkbox', title: '题库搜索不到答案时，随机填写以下任意一个文案，仅支持超星章节测试' }
 				},
 				'randomWork-completeTexts-textarea': {
 					defaultValue: ['不会', '不知道', '不清楚', '不懂', '不会写'].join('\n'),
@@ -622,17 +620,6 @@ export const CommonProject = Project.create({
 							}
 						});
 					}
-				},
-				answerMatchMode: {
-					showIf: 'common.settings.advancedSettings',
-					elementClassName: 'config-details',
-					label: '答案匹配模式',
-					tag: 'select',
-					defaultValue: 'similar' as AnswerMatchMode,
-					options: [
-						['similar', '相似匹配', '答案相似度达到60%以上就匹配'],
-						['exact', '精确匹配', '答案必须完全一致才匹配']
-					]
 				},
 				redundanceWordsText: {
 					showIf: 'common.settings.advancedSettings',
@@ -1265,24 +1252,8 @@ export const CommonProject = Project.create({
 						/** 渲染结果列表 */
 						const createResult = (result: SimplifyWorkResult | undefined) => {
 							if (result) {
-								let info: HTMLElement | null = null;
-
-								if (result.requested === false && result.resolved === false) {
-									info = h('div', { className: 'result-info unresolved' }, '等待搜索中... 🔍');
-								} else if (result.error) {
-									info = h('div', { className: 'result-info error' }, '❌ ' + result.error);
-								} else if (result.searchInfos.length === 0) {
-									info = h('div', { className: 'result-info no-answer' }, '❌ 题库没搜索到答案');
-								} else {
-									info = result.finish
-										? null
-										: result.resolved === false
-										? h('div', { className: 'result-info unresolved' }, '等待顺序答题中... ⏱️')
-										: h('div', { className: 'result-info error' }, '❌ 此题未完成, 可能是没有匹配的选项。');
-								}
-
 								return h('div', [
-									h('div', { className: 'alert-info-wrapper' }, [info ?? h('div')]),
+									createSearchResultAlertElement(result),
 									h(SearchInfosElement, {
 										infos: result.searchInfos,
 										question: result.question,
@@ -1386,7 +1357,8 @@ export const CommonProject = Project.create({
 												(res) => [res.question, res.answer, res.extra_data] as [string, string, object]
 											),
 											homepage: info.homepage,
-											name: info.name
+											name: info.name,
+											error: info.error
 										})),
 										question: value
 									})
@@ -2046,7 +2018,7 @@ const createGuide = () => {
 			]),
 
 			h('div', [
-				...[CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject].map((project) => {
+				...[CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject, YKTProject].map((project) => {
 					const btn = h('button', { className: 'base-style-button-secondary', style: { margin: '4px' } }, [
 						project.name
 					]);
@@ -2066,3 +2038,34 @@ const createGuide = () => {
 		])
 	]);
 };
+
+function createSearchResultAlertElement(result: SimplifyWorkResult) {
+	let info: HTMLElement | null = null;
+	let err = result.error || result.searchInfos.find((i) => i.error)?.error;
+	if (result.requested === false && result.resolved === false) {
+		info = h('div', { className: 'result-info unresolved' }, '等待搜索中... 🔍');
+	} else if (err) {
+		let href = '#';
+		if (err?.includes('is not valid JSON')) {
+			err = '题库返回数据错误';
+			href = 'https://docs.ocsjs.com/docs/other/FQA#tk-data-error';
+		} else if (err?.includes('题库连接失败')) {
+			err = '题库连接失败';
+			href = 'https://docs.ocsjs.com/docs/other/FQA#tk-error';
+		}
+		info = h('div', { className: 'result-info error' }, [
+			'❌ ' + err,
+			h('a', { href, target: '_blank', style: { marginLeft: '3px' } }, '解决方法?')
+		]);
+	} else if (result.searchInfos.length === 0) {
+		info = h('div', { className: 'result-info no-answer' }, '❌ 题库没搜索到答案');
+	} else {
+		info = result.finish
+			? null
+			: result.resolved === false
+			? h('div', { className: 'result-info unresolved' }, '等待顺序答题中... ⏱️')
+			: h('div', { className: 'result-info error' }, '❌ 此题未完成, 可能是没有匹配的选项。');
+	}
+
+	return h('div', { className: 'alert-info-wrapper' }, [info ?? h('div')]);
+}

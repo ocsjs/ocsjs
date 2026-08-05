@@ -125,6 +125,23 @@ export async function parseMetaDataResources(
 }
 
 /**
+ * 创建 META 信息文件
+ * 解析用户脚本中的 ==UserScript== 头部信息，生成仅包含 META 信息的 meta.js 文件
+ * @param opts.dist 用户脚本文件路径
+ * @param opts.metaDist meta.js 文件输出路径，默认基于 dist 替换后缀为 .meta.js
+ */
+export async function createMetaFile(opts: { dist: string; metaDist?: string }) {
+	const content = readFileSync(opts.dist).toString();
+	const metaMatch = content.match(/\/\/ ==UserScript==[\s\S]*?\/\/ ==\/UserScript==/);
+	if (!metaMatch) {
+		throw new Error('META information not found in ' + opts.dist);
+	}
+	const metaContent = metaMatch[0];
+	const metaDist = opts.metaDist || opts.dist.replace(/\.user\.js$/, '.meta.js');
+	return writeFileSync(metaDist, metaContent);
+}
+
+/**
  * 创建用户脚本
  */
 export async function createUserScript(opts: CreateOptions) {
@@ -150,5 +167,5 @@ export async function createUserScript(opts: CreateOptions) {
 		readFileSync(opts.entry).toString()
 	].join('\n'.repeat(2));
 
-	return writeFileSync(opts.dist, content);
+	writeFileSync(opts.dist, content);
 }

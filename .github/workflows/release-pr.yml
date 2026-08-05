@@ -1,0 +1,22 @@
+name: Release PR
+
+on:
+  push:
+    branches:
+      - "4.0"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN  }}
+          skip-github-release: true # 只创建 PR，不创建 Release
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

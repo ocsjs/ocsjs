@@ -62,7 +62,7 @@ hr {
 	-webkit-appearance: none;
 
 	width: fit-content;
-	min-width: 36px;
+	min-width: 48px;
 	height: 20px;
 	border-radius: 100px;
 	display: flex;
@@ -80,7 +80,7 @@ hr {
 	}
 
 	&:checked::before {
-		transform: translate(100%, 0px);
+		transform: translate(24px, 0px);
 	}
 
 	&::before {
@@ -831,7 +831,11 @@ search-infos-element {
 	padding: 8px 12px;
 	margin-bottom: 12px;
 	line-height: 20px;
-	max-height: 400px;
+	overflow: auto;
+}
+
+.search-info-title .title-content {
+	max-height: 200px;
 	overflow: auto;
 }
 

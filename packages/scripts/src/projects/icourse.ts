@@ -5,8 +5,8 @@ import { CommonProject } from './common';
 import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 import { $console, BackgroundProject } from './background';
 import { $playwright } from '../utils/app';
-import { waitForElement, waitForMedia } from '../utils/study';
-import { playbackRate, volume, workNotes } from '../utils/configs';
+import { waitForElement, waitForMedia, waitFor } from '../utils/study';
+import { playbackRate, volume } from '../utils/configs';
 import { $render } from '../utils/render';
 
 const $msg_and_log = (type: 'info' | 'warn' | 'error', msg: string) => {
@@ -359,7 +359,17 @@ export const ICourseProject = Project.create({
 				['考试页面', 'icourse163.org/mooc/main/newExam']
 			],
 			configs: {
-				notes: workNotes,
+				notes: {
+					defaultValue: $ui.notes([
+						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
+						'⚠️禁止同时开多个作业/考试页面。',
+						[
+							'⚠️由于MOOC限制、答题速度和搜题速度将默认调慢',
+							' 防止出现网络并发，导致无法选上选项的问题。',
+							' 答题和搜题过慢是正常情况。'
+						]
+					]).outerHTML
+				},
 				runAtHash: {
 					defaultValue: ['/learn/quiz', '/learn/examObject']
 				}
@@ -461,18 +471,9 @@ function waitForQuestion() {
 }
 
 function workAndExam(
-	remotePage: RemotePage,
+	rp: RemotePage,
 	type: 'chapter-test' | 'work' | 'exam',
-	{
-		answererWrappers,
-		period,
-		thread,
-		redundanceWordsText,
-		upload,
-		stopSecondWhenFinish,
-		answerSeparators,
-		answerMatchMode
-	}: CommonWorkOptions
+	{ answererWrappers, redundanceWordsText, upload, stopSecondWhenFinish, answerSeparators }: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'icourse'
@@ -506,15 +507,14 @@ function workAndExam(
 			title: type === 'exam' ? '[class*=questionInfo]' : '.j-title .j-richTxt',
 			options: type === 'exam' ? '[class*=index-module__optionBody]' : '.choices li,.inputArea'
 		},
-		thread: thread ?? 1,
+		thread: 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
 			if (title) {
 				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
+					await $.sleep(5 * 1000);
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
@@ -532,22 +532,29 @@ function workAndExam(
 					if (work_type === 'exam') {
 						const input = option.querySelector('input');
 						if (input && !input?.checked) {
-							await $.sleep(200);
-							return input.click();
+							return await networkIdleRequire(rp, async () => {
+								await $.sleep(1000);
+								return input.click();
+							});
 						}
 					}
 					const text = option.querySelector('.f-richEditorText');
 					const input = option.querySelector('input');
 					if (input && !input?.checked && text) {
-						await $.sleep(200);
-						await remotePage.click(text);
+						await networkIdleRequire(rp, async () => {
+							await $.sleep(1000);
+							await rp.click(text);
+						});
 					}
 				} else if (type === 'completion' && answer.trim()) {
-					const text = option.querySelector('textarea');
-
-					if (text) {
-						text.value = answer.trim();
-						await remotePage.fill('textarea', answer.trim());
+					const textarea = option.querySelector('textarea');
+					const id = textarea?.getAttribute('id')?.toString() || '';
+					if (id && textarea?.value.trim() !== answer.trim()) {
+						await networkIdleRequire(rp, async () => {
+							await $.sleep(1000);
+							await rp.click('#' + id);
+							await rp.fill('#' + id, answer.trim());
+						});
 					}
 				}
 			}
@@ -604,9 +611,13 @@ function workAndExam(
 							return;
 						}
 						if (uploadable) {
+							// 先收起面板防止阻挡，元素无法通过移动脚本面板去点击
+							CommonProject.scripts.render.methods.minimize();
+							CommonProject.scripts.render.methods.setPosition(100, 200);
+
 							const sumbit = document.querySelector('.j-submit');
 							if (sumbit) {
-								await remotePage.click(sumbit);
+								await rp.click(sumbit);
 							} else {
 								$msg_and_log('warn', '没有找到提交按钮，将跳过提交。');
 							}
@@ -734,5 +745,25 @@ async function discussion(
 		await $.sleep(2000);
 	} else {
 		$msg_and_log('error', '获取评论输入框失败！');
+	}
+}
+
+/**
+ * 执行回调，并且检测是否触发并发限制
+ * 如果限制，等待一段时间后重新执行回调
+ */
+async function networkIdleRequire(rp: RemotePage, cb: () => void | Promise<void>) {
+	await cb();
+	// ux-modal  ux-modal-fadeIn
+	const modal = await waitFor(() => document.querySelector('.ux-modal_content_content'), {
+		check_period_ms: 200,
+		timeout_seconds: 1
+	});
+	if (modal) {
+		const msg = $message.warn('答题速度过快导致并发限制、3秒后再继续答题。');
+		await rp.click('.ux-modal-btn');
+		await $.sleep(3000);
+		await cb();
+		msg?.remove();
 	}
 }

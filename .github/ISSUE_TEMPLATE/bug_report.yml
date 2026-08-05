@@ -1,0 +1,68 @@
+name: 🐞 Bug 报告
+description: 报告软件错误，帮助我们改进
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢提交 Bug 报告！请填写以下信息以帮助我们快速定位问题。
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: 前置检查
+      description: 在提交前请确认以下事项
+      options:
+        - label: 我已搜索过现有 issues，没有找到类似问题
+          required: true
+        - label: 我已尝试过最新版本
+          required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: 操作系统
+      description: 请选择你使用的操作系统
+      options:
+        - Windows (10/11)
+        - Windows 7/8
+        - macOS (Intel)
+        - macOS (Apple Silicon)
+        - Linux (Ubuntu/Debian)
+        - Linux (其他发行版)
+      default: 0
+    validations:
+      required: true
+
+  - type: dropdown
+    id: site
+    attributes:
+      label: 网课平台
+      description: 请选择问题出现的网课平台
+      options:
+        - 超星学习通
+        - 知道智慧树
+        - 职教云/智慧职教
+        - 中国大学MOOC
+        - 雨课堂
+        - 其他
+      default: 0
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 问题描述
+      description: 请清晰简洁地描述这个 bug
+      placeholder: "发生了什么？你看到了什么异常行为？"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 日志/截图
+      description: 如有错误日志或截图请在此粘贴
+      render: shell

@@ -1467,6 +1467,13 @@ export const ZHSProject = Project.create({
 						// 检查是否为软件环境
 						CommonProject.scripts.render.methods.pin(this);
 						await waitForElement('.question-area-content');
+
+						// 考完后的试卷预览
+						if (document.querySelector('[mode="REVIEW_MODE"]')) {
+							$message.info('当前试卷状态已完成、脚本将停止运行。');
+							return;
+						}
+
 						commonWork(this, {
 							workerProvider: (opts) => {
 								return smartExam(undefined, opts);
@@ -1581,6 +1588,11 @@ export const ZHSProject = Project.create({
 			],
 			namespace: 'zhs.xnk.work',
 			configs: { notes: workNotes },
+			onhistorychanged(type) {
+				if (type === 'pushed') {
+					this.oncomplete?.();
+				}
+			},
 			async oncomplete() {
 				commonWork(this, {
 					workerProvider: xnkWork
@@ -2340,7 +2352,10 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		'hike-homework': new Script({
-			matches: [['AI教学中心-题目作业', '/stu/answer-homework']],
+			matches: [
+				['AI教学中心-题目作业', '/stu/answer-homework'],
+				['AI教学中心-作业任务页面', '/stu-exam/answer-exam']
+			],
 			name: '✍️ 教学空间-AI智慧课程-题目作业脚本',
 			namespace: 'zhs.hike.homework',
 			configs: {
@@ -2577,15 +2592,7 @@ function getPopupCaptcha() {
  */
 function gxkWorkAndExam(
 	workInfo: any,
-	{
-		answererWrappers,
-		period,
-		thread,
-		stopSecondWhenFinish,
-		redundanceWordsText,
-		answerSeparators,
-		answerMatchMode
-	}: CommonWorkOptions
+	{ answererWrappers, period, thread, stopSecondWhenFinish, redundanceWordsText, answerSeparators }: CommonWorkOptions
 ) {
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zhs-gxk'
@@ -2634,7 +2641,6 @@ function gxkWorkAndExam(
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(undefined, request_index++);
@@ -2762,7 +2768,7 @@ function gxkWorkAndExam(
 /**
  * 校内学分课的作业
  */
-function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions) {
+function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
 	$message.info({ content: '开始作业' });
 
 	CommonProject.scripts.workResults.methods.init();
@@ -2780,7 +2786,8 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 	let resolvedCount = 0;
 
 	const worker = new OCSWorker({
-		root: '.questionBox',
+		// .questionBox 有两个同样的，这里选择具有直接子元素questionContent的div元素，保证题目唯一
+		root: 'div:has(> .questionContent)' /** .questionBox */,
 		elements: {
 			title: '.questionContent',
 			options: '.optionUl label',
@@ -2788,7 +2795,6 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
@@ -2875,7 +2881,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators, answerMat
  */
 function smartWork(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 	$message.warn({
@@ -2906,7 +2912,6 @@ function smartWork(
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
@@ -3036,7 +3041,7 @@ function smartWork(
 
 function smartExam(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 	$message.warn({
@@ -3064,11 +3069,10 @@ function smartExam(
 		elements: {
 			type: 'div.flex.items-center.mb-\\[16px\\]',
 			title: 'div.flex-1 .mb-\\[32px\\] .text-mainText.font-medium',
-			options: 'label.user-select.group'
+			options: 'label.user-select.group,div.real-editor'
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
@@ -3088,13 +3092,13 @@ function smartExam(
 		work: {
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;
-				if (type?.includes('单选题')) {
+				if (type?.includes('单选')) {
 					return 'single';
 				} else if (type?.includes('多选题')) {
 					return 'multiple';
-				} else if (type?.includes('判断题')) {
+				} else if (type?.includes('判断')) {
 					return 'judgement';
-				} else if (type?.includes('填空')) {
+				} else if (type?.includes('填空') || type?.includes('问答')) {
 					return 'completion';
 				} else {
 					return undefined;
@@ -3112,6 +3116,21 @@ function smartExam(
 						}
 						await $.sleep(200);
 					}
+				} else if (type === 'completion') {
+					// 简答
+					if (option.classList.contains('real-editor')) {
+						// @ts-ignore
+						option.ckeditorInstance.data.set(answer);
+					} else {
+						const input = option.querySelector<HTMLInputElement>('input');
+						if (input) {
+							input.value = answer;
+							Reflect.set(input, 'composition', true);
+							input.dispatchEvent(new Event('input', { bubbles: true }));
+						}
+					}
+
+					await $.sleep(200);
 				}
 			}
 		},
@@ -3186,7 +3205,7 @@ function smartExam(
 
 function fusioncourseWork(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 
@@ -3210,7 +3229,6 @@ function fusioncourseWork(
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
@@ -3308,7 +3326,7 @@ function fusioncourseWork(
 
 function hikeWork(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 
@@ -3332,7 +3350,6 @@ function hikeWork(
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);
@@ -3438,7 +3455,7 @@ function hikeWork(
 
 function hikeHomework(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
 
@@ -3457,12 +3474,11 @@ function hikeHomework(
 		root: '.question-item',
 		elements: {
 			type: '.title-box,.combination-title',
-			title: '.qeustion-content > span, .combination-content > span',
+			title: '.qeustion-content , .combination-content ',
 			options: '.option-item, .vditor-content'
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);

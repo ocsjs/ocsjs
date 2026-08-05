@@ -76,6 +76,7 @@ export interface RemotePage {
 	dblclick: Page['dblclick'];
 	bringToFront: Page['bringToFront'];
 	dragAndDrop: Page['dragAndDrop'];
+	inputValue: Page['inputValue'];
 	fill: Page['fill'];
 	focus: Page['focus'];
 	hover: Page['hover'];

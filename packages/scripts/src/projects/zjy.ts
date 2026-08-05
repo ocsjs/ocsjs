@@ -640,10 +640,7 @@ async function waitForQuestions() {
 	);
 }
 
-function workOrExam(
-	type: 'work' | 'exam',
-	{ answererWrappers, period, thread, answerSeparators, answerMatchMode }: CommonWorkOptions
-) {
+function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
 	$message.info({ content: '开始作业' });
 	CommonProject.scripts.workResults.methods.init({
 		questionPositionSyncHandlerType: 'zjy'
@@ -664,7 +661,6 @@ function workOrExam(
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			const title = titleTransform(elements.title);

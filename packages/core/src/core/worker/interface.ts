@@ -3,12 +3,18 @@ import { SearchInformation } from '../answer-wrapper/interface';
 export type ElementResolver<R> = (root: HTMLElement | Document) => R;
 export type RawElements = Record<
 	string | symbol,
-	string | ElementResolver<HTMLElement[]> | ElementResolver<HTMLElement>[]
+	string | ElementResolver<(HTMLElement | null | undefined)[]> | ElementResolver<HTMLElement | null | undefined>[]
 > & {
 	/** 题目元素选择器 */
-	title?: string | ElementResolver<HTMLElement[]> | ElementResolver<HTMLElement>[];
+	title?:
+		| string
+		| ElementResolver<(HTMLElement | null | undefined)[]>
+		| ElementResolver<HTMLElement | null | undefined>[];
 	/** 题目选项的元素选择器 */
-	options?: string | ElementResolver<HTMLElement[]> | ElementResolver<HTMLElement>[];
+	options?:
+		| string
+		| ElementResolver<(HTMLElement | null | undefined)[]>
+		| ElementResolver<HTMLElement | null | undefined>[];
 };
 
 export type SearchedElements<E, T> = Record<keyof E, T> & {
@@ -31,12 +37,6 @@ export interface WorkContext<E> {
 	type: QuestionTypes;
 	/** 答案分隔符 */
 	answerSeparators?: string[];
-	/**
-	 * 答案匹配模式
-	 * exact : 精准匹配模式, 只有答案相同才匹配
-	 * similar : 相似匹配, 只要答案相似就匹配
-	 */
-	answerMatchMode: AnswerMatchMode;
 }
 
 /** 答案题目处理器结果 */
@@ -206,8 +206,6 @@ export interface WorkOptions<E extends RawElements> {
 	thread?: number;
 	/** 分隔符 */
 	answerSeparators?: string[];
-	/** 答案匹配模式 */
-	answerMatchMode?: AnswerMatchMode;
 	/** 当元素被搜索到 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>, root: HTMLElement) => void | Promise<void>;
 	/** 监听搜题结果 */

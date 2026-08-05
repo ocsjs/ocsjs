@@ -78,8 +78,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				root: questionRoot,
 				elements: domSearchAll<E>(this.opts.elements, questionRoot),
 				type: undefined,
-				answerSeparators: this.opts.answerSeparators,
-				answerMatchMode: this.opts.answerMatchMode || 'similar'
+				answerSeparators: this.opts.answerSeparators
 			};
 
 			/** 执行元素搜索钩子 */

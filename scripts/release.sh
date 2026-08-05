@@ -1,48 +1,23 @@
 #!/usr/bin/env bash
+set -e
 
-# 自动发布npm包
+# Release helper - 推送代码到 4.0 分支
+# release-please 会自动创建/更新发布 PR
+# 合并发布 PR 即可触发自动发布
 
-# 从控制台获取需要发布的版本
-read -p "请输入需要发布的版本(例如: 0.0.1): " version
-# 判断是否为空
-if [ -z "$version" ]; then
-    echo "版本号不能为空!"
-    exit 1
-fi
-# 确认是否发布版本
-read -p "确认发布版本 $version ? [y/n]: " isRelease
-# 判断是发布，还是取消发布
-if [ "$isRelease" = "y" ]; then
-    # 发布
-    echo "版本发布 $version"
-    
-    # 代码检查
-    npm run lint &&
-    # 更新版本
-    npm version "$version" --no-git-tag-version &&
-    # 本地构建
-    echo "本地构建" && 
-    npm run build &&
-    # 更新日志
-    npm run changelog &&
-    # 更新日志
-    npm run changelog:simplify &&
-        # 更新日志
-    npm run changelog:current &&
-    # 保存
-    git add package.json CHANGELOG.md CHANGELOG_SIMPLIFIED.md CHANGELOG_CURRENT.md &&
-    git commit -m "version release $version" &&
-    git tag "$version" &&
-    echo "开始发布" &&
-    # 发布到Github
-    git push origin 4.0 --tags &&
-    # 发布到npm
-    npm publish &&
-    echo "$version 发布成功"
-    elif [ "$isRelease" = "n" ]; then
-    echo "取消发布"
-else
-    echo "输入有误"
-fi
+echo "=== OCS Release Helper ==="
+echo ""
+echo "将推送代码到 4.0 分支，release-please 会自动创建/更新发布 PR。"
+echo "合并发布 PR 即可触发自动发布。"
+echo ""
 
+echo "Running lint check..."
+npm run lint
 
+echo ""
+echo "Lint 通过，推送到 origin/4.0..."
+git push origin 4.0
+
+echo ""
+echo "完成！请到 GitHub 查看 release-please 的发布 PR。"
+echo "审核并合并发布 PR 即可创建新的 Release。"

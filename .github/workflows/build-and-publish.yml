@@ -1,0 +1,90 @@
+name: Build and Publish
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Use Node.js 18.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18.x
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Setup env
+        run: |
+          echo 'BUILD_PATH="../release"' > ./scripts/.env
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/core/.env
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/scripts/.env
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date)" >> $GITHUB_ENV
+          echo "VERSION=${GITHUB_REF_NAME}" >> $GITHUB_ENV
+          echo "DOWNLOAD_URL=https://github.com/ocsjs/ocsjs/releases/download/${GITHUB_REF_NAME}/" >> $GITHUB_ENV
+
+      - name: Install Dependencies
+        run: |
+          npm install pnpm -g
+          pnpm install -w
+          cd packages/scripts && pnpm install && cd ../../
+          npm run tsc
+
+      - name: Build ocs scripts
+        run: npm run build
+
+      - name: Generate simplified changelog
+        run: npm run changelog:simplify
+
+      - name: Update release with artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ env.VERSION }}
+          artifactContentType: "text/html"
+          artifacts: |
+            ./release/ocs.user.js
+            ./release/ocs.meta.js
+            ./release/ocs.common.user.js
+            ./release/core.js
+            ./release/index.js
+            ./CHANGELOG_SIMPLIFIED.md
+          allowUpdates: true
+          # 上传产物时保留 release-please 已写入的 changelog body，
+          # 否则 ncipollo 会用空 body 覆盖，导致后续追加点拨时 changelog 丢失
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+
+      - name: Append custom release notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          EXISTING_BODY=$(gh release view "$TAG_NAME" --json body -q .body 2>/dev/null || echo "")
+          DL="${{ env.DOWNLOAD_URL }}"
+          VER="${{ env.VERSION }}"
+          BT="${{ env.BUILDTIME }}"
+          CUSTOM_NOTES="
+          ---
+
+          ## 资源下载列表
+
+          - [用户脚本](${DL}ocs.user.js)
+          - [用户脚本(全域名通用版)](${DL}ocs.common.user.js)
+          - [核心库](${DL}core.js)
+          - [简洁更新日志](${DL}CHANGELOG_SIMPLIFIED.md)
+          - [META](${DL}ocs.meta.js)
+
+          ### 快捷访问
+          - [官网](https://docs.ocsjs.com/)
+
+          Created at ${BT}.
+          "
+
+          gh release edit "$TAG_NAME" --notes "${EXISTING_BODY}${CUSTOM_NOTES}"

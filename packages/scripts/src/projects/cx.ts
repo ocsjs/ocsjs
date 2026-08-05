@@ -115,7 +115,9 @@ export const CXProject = Project.create({
 		'jxgmxy.com',
 		'jnzyjsxy.cn',
 		// 超星学习通PPT，2025下半年更新的PTT图书新域名
-		'sslibrary.com'
+		'sslibrary.com',
+		// 26年新增官方域名
+		'xuexi365.com'
 	],
 	scripts: {
 		/**
@@ -219,9 +221,14 @@ export const CXProject = Project.create({
 					],
 					defaultValue: 'next' as 'next' | 'job' | 'manually'
 				},
+				autoJumpToUnFinishJob: {
+					label: '自动切换未完成章节',
+					attrs: { type: 'checkbox', title: '在自动学习前寻找未完成章节并跳转（积分课、智慧课程：推荐关闭）' },
+					defaultValue: true
+				},
 				restudy: {
 					label: '复习模式',
-					attrs: { title: '已经完成的视频继续学习，并从当前的章节往下开始学习', type: 'checkbox' },
+					attrs: { title: '已经完成的视频继续学习', type: 'checkbox' },
 					defaultValue: false
 				},
 				forceLearn: {
@@ -511,8 +518,7 @@ export const CXProject = Project.create({
 				['', 'mycourse/studentcourse'],
 				['', 'work/getAllWork'],
 				['', 'work/doHomeWorkNew'],
-				['', 'exam/test\\?'],
-				['', 'mooc-ans/mycourse/studentstudy']
+				['', 'exam/test\\?']
 			],
 			hideInPanel: true,
 			async oncomplete() {
@@ -663,24 +669,21 @@ export const CXProject = Project.create({
 			namespace: 'cx.new.study-dispatcher',
 			hideInPanel: true,
 			async oncomplete() {
-				// 开始任务切换
-				const restudy = CXProject.scripts.study.cfg.restudy;
-
 				CommonProject.scripts.render.methods.pin(CXProject.scripts.study);
 
 				let chapters = await CXAnalyses.waitForChapterInfos();
 
-				if (!restudy) {
-					// 如果不是复习模式，则寻找需要运行的任务
-					const params = new URLSearchParams(window.location.href);
-					const mooc = params.get('mooc2');
-					/** 切换新版 */
-					if (mooc === null) {
-						params.set('mooc2', '1');
-						window.location.replace(decodeURIComponent(params.toString()));
-						return;
-					}
+				const params = new URLSearchParams(window.location.href);
+				const mooc = params.get('mooc2');
+				/** 切换新版 */
+				if (mooc === null) {
+					params.set('mooc2', '1');
+					window.location.replace(decodeURIComponent(params.toString()));
+					return;
+				}
 
+				// 寻找需要运行的任务
+				if (CXProject.scripts.study.cfg.autoJumpToUnFinishJob) {
 					// 过滤掉已完成的章节
 					chapters = chapters.filter((chapter) => chapter.unFinishCount !== 0);
 
@@ -690,23 +693,17 @@ export const CXProject = Project.create({
 						const params = new URLSearchParams(window.location.href);
 						const courseId = params.get('courseId');
 						const classId = params.get('clazzid');
-						setTimeout(() => {
-							//  进入需要进行的章节，并且当前章节未被选中
-							if ($$el(`.posCatalog_active[id="cur${chapters[0].chapterId}"]`).length === 0) {
-								$gm.unsafeWindow.getTeacherAjax(courseId, classId, chapters[0].chapterId);
-								// 自动滚动
-								setTimeout(() => {
-									CXAnalyses.scrollToActiveChapter();
-								}, 1000);
-							}
-						}, 1000);
+						//  进入需要进行的章节，并且当前章节未被选中
+						if ($$el(`.posCatalog_active[id="cur${chapters[0].chapterId}"]`).length === 0) {
+							$gm.unsafeWindow.getTeacherAjax(courseId, classId, chapters[0].chapterId);
+						}
+						await $.sleep(1000);
 					}
-				} else {
-					// 自动滚动
-					setTimeout(() => {
-						CXAnalyses.scrollToActiveChapter();
-					}, 1000);
 				}
+
+				// 自动滚动
+				await $.sleep(1000);
+				CXAnalyses.scrollToActiveChapter();
 			}
 		}),
 		cxSecretFontRecognize: new Script({
@@ -749,7 +746,6 @@ function workOrExam(
 		thread,
 		redundanceWordsText,
 		answerSeparators,
-		answerMatchMode,
 		preview_mode
 	}: CommonWorkOptions & {
 		// 整卷预览模式
@@ -766,40 +762,55 @@ function workOrExam(
 
 	// 处理作业和考试题目的方法
 	const workOrExamQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
+		// 是否为多个小题的题目
+		const is_multiple_question = titles.length > 1;
 		const optimizationTitle = titles
-			.map((titleElement) => {
-				if (titleElement) {
-					const titleCloneEl = titleElement.cloneNode(true) as HTMLElement;
+			.map((el, i) => {
+				if (el) {
+					const titleCloneEl = el.cloneNode(true) as HTMLElement;
 					const childNodes = titleCloneEl.childNodes;
-					// 删除序号
-					childNodes[0].remove();
-					// 删除题型
-					childNodes[0].remove();
+					// 一般多小题题目只有第一个 title 存在题型文本
+					if (i === 0) {
+						// 删除序号
+						childNodes[0]?.remove();
+						// 删除题型
+						childNodes[0]?.remove();
+					}
 					// 显示图片链接在题目中
 					return optimizationElementWithImage(titleCloneEl, true).innerText;
 				}
 				return '';
 			})
-			.join(',');
+			.join('\n');
 
 		return removeRedundantWords(
-			StringUtils.of(optimizationTitle).nowrap(' ').nospace().toString().trim(),
+			StringUtils.of(optimizationTitle)
+				.nowrap(is_multiple_question ? '\n' : ' ')
+				.nospace()
+				.toString()
+				.trim(),
 			redundanceWordsText.split('\n')
 		);
 	};
 
+	// 这里跟章节测试的连线题不一样，章节测试是新版连线题
 	/** 新建答题器 */
 	const worker = new OCSWorker({
 		root: '.questionLi',
 		elements: {
-			title: [
-				/** 题目标题 */
-				(root) => $el('h3', root) as HTMLElement
-				// /** 连线题第一组 */
-				// (root) => $el('.line_wid_half.fl', root),
-				// /** 连线题第二组 */
-				// (root) => $el('.line_wid_half.fr', root)
-			],
+			title: (root) =>
+				$$el(
+					// 非预览模式的样式跟正常的不一样
+					!preview_mode
+						? ['.splitS-left .mark_name', '.line_wid_half.fl,.line_wid_half.fr'].join(',')
+						: [
+								':scope > h3',
+								':scope > div:not(.stem_answer,.mark_answer)',
+								':scope > p',
+								'.line_wid_half.fl,.line_wid_half.fr'
+						  ].join(','),
+					root
+				).filter((e) => !!e.textContent?.trim()),
 			options: '.answerBg .answer_p, .textDIV, .eidtDiv',
 			type: type === 'exam' ? 'input[name^="type"]' : 'input[id^="answertype"]',
 			lineAnswerInput: '.line_answer input[name^=answer]',
@@ -811,7 +822,6 @@ function workOrExam(
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-		answerMatchMode: answerMatchMode,
 		/** 默认搜题方法构造器 */
 		answerer: (elements, ctx) => {
 			if (elements.title) {
@@ -819,13 +829,14 @@ function workOrExam(
 				const title = workOrExamQuestionTitleTransform(elements.title);
 				if (title) {
 					const typeInput = elements.type[0] as HTMLInputElement;
+					const type = (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown';
 					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
 						await $.sleep((period ?? 3) * 1000);
 						return defaultAnswerWrapperHandler(answererWrappers, {
-							type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
+							type,
 							title,
 							options:
-								ctx.type === 'completion'
+								type === 'completion'
 									? ''
 									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
 						});
@@ -840,8 +851,12 @@ function workOrExam(
 
 		work: async (ctx) => {
 			const { elements, searchInfos } = ctx;
-			const typeInput = elements.type[0] as HTMLInputElement;
-			const type = getQuestionType(parseInt(typeInput.value));
+
+			// 在非预览模式下会出现多个干扰项 type，这里提取正确的
+
+			const type = getQuestionType(
+				parseInt(elements.type.find((t) => t.getAttribute('name')?.match(/type\d+/))?.getAttribute('value') || '-1')
+			);
 
 			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = createDefaultQuestionResolver(ctx)[type];
@@ -880,7 +895,11 @@ function workOrExam(
 					if (ans.length === 1) {
 						ans = splitAnswer(ans[0]);
 					}
-					if (ans.filter(Boolean).length !== 0 && elements.lineAnswerInput) {
+					if (
+						ans.filter(Boolean).length !== 0 &&
+						elements.lineAnswerInput &&
+						ans.filter(Boolean).length === elements.lineSelectBox.length
+					) {
 						//  选择答案
 						for (let index = 0; index < elements.lineSelectBox.length; index++) {
 							const box = elements.lineSelectBox[index];
@@ -951,7 +970,8 @@ function workOrExam(
 		(async () => {
 			while (next && worker.isClose === false) {
 				await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
-				await $.sleep(1000);
+				$message.info({ content: '已完成，即将下一题', duration: 0 });
+				await $.sleep(3000);
 				next = getNextBtn();
 				next?.click();
 				await $.sleep(1000);
@@ -1804,8 +1824,7 @@ const JobRunner = {
 			thread,
 			stopSecondWhenFinish,
 			redundanceWordsText,
-			answerSeparators,
-			answerMatchMode
+			answerSeparators
 		}: CommonWorkOptions
 	) {
 		if (answererWrappers === undefined || answererWrappers.length === 0) {
@@ -1847,7 +1866,13 @@ const JobRunner = {
 		const worker = new OCSWorker({
 			root: TiMu,
 			elements: {
-				title: '.Zy_TItle .clearfix',
+				title: [
+					(root) => $el('.Zy_TItle .clearfix', root),
+					// /** 连线题第一组 */
+					(root) => $el('.firstUlList', root),
+					// /** 连线题第二组 */
+					(root) => $el('.secondUlList', root)
+				],
 				/**
 				 * 兼容各种选项
 				 *
@@ -1857,25 +1882,24 @@ const JobRunner = {
 				 */
 				options: 'ul li .after,ul li textarea,ul textarea,ul li label:not(.before)',
 				type: 'input[id^="answertype"]',
-				lineAnswerInput: '.line_answer input[name^=answer]',
-				lineSelectBox: '.line_answer_ct .selectBox '
+				lineSelectBox: '.thirdUlList .dept_select'
 			},
 			thread: thread ?? 1,
 			answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
-			answerMatchMode: answerMatchMode,
 			/** 默认搜题方法构造器 */
 			answerer: (elements, ctx) => {
 				const title = chapterTestTaskQuestionTitleTransform(elements.title);
 				if (title) {
 					const typeInput = elements.type[0] as HTMLInputElement;
+					const type = (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown';
 
 					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
 						await $.sleep((period ?? 3) * 1000);
 						return defaultAnswerWrapperHandler(answererWrappers, {
-							type: (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown',
+							type,
 							title,
 							options:
-								ctx.type === 'completion'
+								type === 'completion'
 									? ''
 									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
 						});
@@ -1929,22 +1953,31 @@ const JobRunner = {
 				}
 				// 连线题自定义处理
 				else if (type && type === 'line') {
-					for (const answers of searchInfos.map((info) => info.results.map((res) => res.answer))) {
-						let ans = answers;
-						if (ans.length === 1) {
-							ans = splitAnswer(ans[0]);
+					const select = (el: HTMLElement, opt_val: string) => {
+						const selected = el.querySelector(`option[selected]`);
+						const opt = el.querySelector(`option[value="${opt_val}"]`);
+						selected?.removeAttribute('selected');
+						if (opt) {
+							opt.setAttribute('selected', '');
 						}
-						if (ans.filter(Boolean).length !== 0 && elements.lineAnswerInput) {
-							//  选择答案
-							for (let index = 0; index < elements.lineSelectBox.length; index++) {
-								const box = elements.lineSelectBox[index];
-								if (ans[index]) {
-									$el(`li[data=${ans[index]}] a`, box)?.click();
-									await $.sleep(200);
-								}
-							}
+					};
 
-							return { finish: true };
+					for (const answers of searchInfos.map((info) => info.results.map((res) => res.answer))) {
+						for (const ans of answers) {
+							const splited_ans = splitAnswer(ans);
+							if (splited_ans.length !== 0 && elements.lineSelectBox.length === splited_ans.length) {
+								//  选择答案
+								for (let index = 0; index < elements.lineSelectBox.length; index++) {
+									const box = elements.lineSelectBox[index];
+									if (splited_ans[index]) {
+										select(box, splited_ans[index]);
+										const text = box.parentElement?.querySelector('.chosen-single span');
+										if (text) text.textContent = splited_ans[index];
+										await $.sleep(200);
+									}
+								}
+								return { finish: true };
+							}
 						}
 					}
 
