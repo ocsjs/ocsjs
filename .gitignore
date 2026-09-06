@@ -86,10 +86,14 @@ web_modules/
 
 # dotenv environment variable files
 .env
+.env.answerer
 .env.development.local
 .env.test.local
 .env.production.local
 .env.local
+
+# answerer test config (contains real tokens — keep the *.example.json tracked)
+answerer.config.json
 
 # parcel-bundler cache (https://parceljs.org/)
 .cache
@@ -140,3 +144,5 @@ dist/
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+# 测试生成的图片输出
+tests/image/
