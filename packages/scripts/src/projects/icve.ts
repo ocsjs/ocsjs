@@ -1,14 +1,13 @@
 import {
 	$,
 	SimplifyWorkResult,
-	defaultAnswerWrapperHandler,
 	OCSWorker,
 	createDefaultQuestionResolver,
 	splitAnswer,
 	QuestionTypes
 } from '@ocsjs/core';
 import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 'easy-us';
-import { optimizationElementWithImage, commonWork, simplifyWorkResult } from '../utils/work';
+import { extractTextWithImages, commonWork, createCommonAnswerer, simplifyWorkResult } from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
@@ -822,21 +821,15 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: getType(ctx.elements.options) || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
+			optionsTransform: (elements: any, ctx: any) => {
+				ctx.type = getType(ctx.elements.options) || 'unknown';
+				return ctx.elements.options.map((o: any) => o.innerText).join('\n');
+			},
+			answererWrappers,
+			period
+		}),
 		async work(ctx) {
 			const options = ctx.elements.options;
 
@@ -950,20 +943,24 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 
 	console.log({ answererWrappers, period, thread });
 
-	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return titles
+	const titleTransform = (titles: (HTMLElement | undefined)[]): { text: string; images: string[] } => {
+		const images: string[] = [];
+		const text = titles
 			.filter((t) => t?.innerText || t?.querySelector('img'))
 			.map((t) => {
 				if (t) {
-					const el = optimizationElementWithImage(t, true);
-					// 使用 textContent 而非 innerText，因为 innerText 受 CSS 影响，
-					// fontSize: 0px 的隐藏 span 中的图片 URL 不会被 innerText 获取
-					return (el.textContent || '').replace(/\s+/g, ' ').trim() || '';
+					// 结构化遍历提取文本与图片 URL（不改造 DOM、不读 innerText/textContent）
+					const extracted = extractTextWithImages(t);
+					images.push(...extracted.images);
+					return extracted.text.replace(/\s+/g, ' ').trim() || '';
 				}
 				return '';
 			})
 			.join(',');
+		return { text, images };
 	};
+	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
+	const titleText = (titles: (HTMLElement | undefined)[]) => titleTransform(titles).text;
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
@@ -999,23 +996,23 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: getType(ctx.elements.options) || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+				titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
+				optionsTransform: (elements: any, ctx: any) => {
+					ctx.type = getType(ctx.elements.options) || 'unknown';
+					const optResults = ctx.elements.options.map((o: any) => extractTextWithImages(o));
+					return {
+						text: optResults.map((r: { text: string }) => r.text).join('\n'),
+						images: optResults.flatMap((r: { images: string[] }) => r.images)
+					};
+				},
+				answererWrappers,
+				period
+			}),
 
 		work: {
+			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
+			optionText: (o: HTMLElement) => extractTextWithImages(o).text,
 			type: (ctx) => {
 				return getType(ctx.elements.options) as QuestionTypes;
 			},
@@ -1042,8 +1039,6 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 		},
 		onElementSearched(elements, root) {
 			console.log('elements', elements);
-			// 对选项元素进行图片优化，使默认 resolver 的 innerText 匹配也能获取到图片链接
-			elements.options?.forEach((option) => optimizationElementWithImage(option));
 		},
 
 		/**
@@ -1052,7 +1047,7 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 		 */
 		onResultsUpdate(currentResult) {
 			if (currentResult.resolved) {
-				workResults.push(...simplifyWorkResult([currentResult], titleTransform));
+				workResults.push(...simplifyWorkResult([currentResult], titleText));
 				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
 				requestedCount++;
@@ -1060,7 +1055,7 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 
 				if (currentResult.result?.finish) {
 					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([currentResult], titleTransform)
+						simplifyWorkResult([currentResult], titleText)
 					);
 				}
 				CommonProject.scripts.workResults.methods.updateWorkState({

@@ -1,11 +1,11 @@
 import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement, $store, $gm } from 'easy-us';
-import { RemotePage, SimplifyWorkResult, OCSWorker, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { RemotePage, SimplifyWorkResult, OCSWorker } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workNotes, definition, volume, restudy } from '../utils/configs';
 import {
 	commonWork,
-	createUnVisibleTextOfImage,
-	optimizationElementWithImage,
+	createCommonAnswerer,
+	extractTextWithImages,
 	removeRedundantWords,
 	simplifyWorkResult
 } from '../utils/work';
@@ -2606,15 +2606,18 @@ function gxkWorkAndExam(
 	const allExamParts =
 		((workInfo?.rt?.examBase?.workExamParts as any[]) || [])?.map((p) => p.questionDtos).flat() || [];
 
-	const titleTransform = (_: any, index: number) => {
+	const titleTransform = (_: any, index: number): { text: string; images: string[] } => {
 		const div = h('div');
 
 		div.innerHTML = allExamParts[index]?.name || '题目读取失败';
-		return removeRedundantWords(
-			optimizationElementWithImage(div, true).innerText || '',
-			redundanceWordsText.split('\n')
-		);
+		const extracted = extractTextWithImages(div);
+		return {
+			text: removeRedundantWords(extracted.text || '', redundanceWordsText.split('\n')),
+			images: extracted.images
+		};
 	};
+	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
+	const titleText = (_: any, index: number) => titleTransform(_, index).text;
 	let request_index = 0;
 	/** 新建答题器 */
 	const worker = new OCSWorker({
@@ -2625,39 +2628,29 @@ function gxkWorkAndExam(
 			 * .smallStem_describe > div:nth-child(2): 阅读理解小题题目
 			 */
 			title: '.subject_describe > div,.smallStem_describe > div:nth-child(2)',
-			// 选项中图片识别
-			options: (root) =>
-				$$el('.subject_node .nodeLab', root).map((t) => {
-					for (const img of Array.from(t.querySelectorAll<HTMLImageElement>('.node_detail img'))) {
-						// zhs选项中如果已显示的图片则不存在 data-src，如果未显示则存在 data-src
-						if (img.dataset.src) {
-							img.src = img.dataset.src;
-						}
-						// 不使用 optimizationElementWithImage 是因为zhs的选项按钮也是一个图片
-						createUnVisibleTextOfImage(img);
-					}
-					return t;
-				})
+			// 选项元素：data-src→src 懒加载提升与图片过滤移入 work.optionText，不在选择器中改造 DOM
+			options: '.subject_node .nodeLab'
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(undefined, request_index++);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: () => titleTransform(undefined, request_index++),
+			answererWrappers,
+			period
+		}),
 		work: {
+			/**
+			 * 选项文本提供器：zhs 选项按钮也是图片，仅采集 .node_detail 内的图片；
+			 * 同时将 data-src 提升为 src（懒加载），替代旧 createUnVisibleTextOfImage 注入。
+			 */
+			optionText: (o: HTMLElement) =>
+				extractTextWithImages(o, {
+					imgFilter: (img) => {
+						if (img.dataset.src) img.src = img.dataset.src;
+						return !!img.closest('.node_detail');
+					}
+				}).text,
 			type(ctx) {
 				const type = ctx.elements.title[0].parentElement?.parentElement
 					?.querySelector('.subject_type')
@@ -2692,7 +2685,7 @@ function gxkWorkAndExam(
 		},
 		/** 完成答题后 */
 		onResultsUpdate(curr, index, res) {
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
+			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleText));
 
 			if (curr.result?.finish) {
 				const title = allExamParts[index]?.name;
@@ -2776,7 +2769,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.map((t) => (t ? extractTextWithImages(t).text : ''))
 			.join(',');
 	};
 
@@ -2796,21 +2789,11 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements) => titleTransform(elements.title),
+			answererWrappers,
+			period
+		}),
 		work: {
 			/** 自定义处理器 */
 			async handler(type, answer, option, ctx) {
@@ -2895,7 +2878,7 @@ function smartWork(
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.map((t) => (t ? extractTextWithImages(t).text : ''))
 			.join(',');
 	};
 
@@ -2913,21 +2896,11 @@ function smartWork(
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements) => titleTransform(elements.title),
+			answererWrappers,
+			period
+		}),
 		work: {
 			type(ctx) {
 				const type = ctx.elements.title[0]?.parentElement?.querySelector('.letterSortNum')?.textContent;
@@ -3055,7 +3028,7 @@ function smartExam(
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.map((t) => (t ? extractTextWithImages(t).text : ''))
 			.join(',');
 	};
 
@@ -3074,21 +3047,11 @@ function smartExam(
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements) => titleTransform(elements.title),
+			answererWrappers,
+			period
+		}),
 		work: {
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;
@@ -3216,7 +3179,7 @@ function fusioncourseWork(
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.map((t) => (t ? extractTextWithImages(t).text : ''))
 			.join(',');
 	};
 
@@ -3230,21 +3193,11 @@ function fusioncourseWork(
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements) => titleTransform(elements.title),
+			answererWrappers,
+			period
+		}),
 		work: {
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;
@@ -3337,7 +3290,7 @@ function hikeWork(
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.map((t) => (t ? extractTextWithImages(t).text : ''))
 			.join(',');
 	};
 
@@ -3351,21 +3304,11 @@ function hikeWork(
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements) => titleTransform(elements.title),
+			answererWrappers,
+			period
+		}),
 		work: {
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;
@@ -3466,7 +3409,7 @@ function hikeHomework(
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? optimizationElementWithImage(t).innerText : ''))
+			.map((t) => (t ? extractTextWithImages(t).text : ''))
 			.join(',');
 	};
 
@@ -3480,21 +3423,11 @@ function hikeHomework(
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements) => titleTransform(elements.title),
+			answererWrappers,
+			period
+		}),
 		work: {
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;

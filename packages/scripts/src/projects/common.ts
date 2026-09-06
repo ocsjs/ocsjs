@@ -16,6 +16,7 @@ import { enableCopy } from '../utils';
 import { SearchInfosElement } from '../elements/search.infos';
 import { RenderScript } from '../render';
 import { dropdownStyle } from '../utils/configs';
+import { buildAnswererEnv, isAnswererWrappersSupportImageOptimize } from '../utils/work';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
@@ -617,9 +618,7 @@ export const CommonProject = Project.create({
 					},
 					onload(el) {
 						el.addEventListener('change', () => {
-							if (String(el.value).trim() === '') {
-								el.value = el.defaultValue;
-							}
+							if (String(el.value).trim() === '') el.value = el.defaultValue;
 						});
 					}
 				},
@@ -1326,9 +1325,11 @@ export const CommonProject = Project.create({
 
 					if (value) {
 						const t = Date.now();
-						const infos = await defaultAnswerWrapperHandler(CommonProject.scripts.settings.cfg.answererWrappers, {
-							title: value
+						const env = await buildAnswererEnv({
+							title: value,
+							enableImageOptimize: CommonProject.scripts.settings.cfg.imageOptimize
 						});
+						const infos = await defaultAnswerWrapperHandler(CommonProject.scripts.settings.cfg.answererWrappers, env);
 						// 耗时计算
 						const resume = ((Date.now() - t) / 1000).toFixed(2);
 
@@ -1879,7 +1880,7 @@ function createSearchResultAlertElement(result: SimplifyWorkResult) {
 	if (result.requested === false && result.resolved === false) {
 		info = h('div', { className: 'result-info unresolved' }, '等待搜索中... 🔍');
 	} else if (err) {
-		let href = '#';
+		let href = '';
 		if (err?.includes('is not valid JSON')) {
 			err = '题库返回数据错误';
 			href = 'https://docs.ocsjs.com/docs/other/FQA#tk-data-error';
@@ -1887,10 +1888,12 @@ function createSearchResultAlertElement(result: SimplifyWorkResult) {
 			err = '题库连接失败';
 			href = 'https://docs.ocsjs.com/docs/other/FQA#tk-error';
 		}
-		info = h('div', { className: 'result-info error' }, [
-			'❌ ' + err,
-			h('a', { href, target: '_blank', style: { marginLeft: '3px' } }, '解决方法?')
-		]);
+		if (href) {
+			info = h('div', { className: 'result-info error' }, [
+				'❌ ' + err,
+				h('a', { href, target: '_blank', style: { marginLeft: '3px' } }, '解决方法?')
+			]);
+		}
 	} else if (result.searchInfos.length === 0) {
 		info = h('div', { className: 'result-info no-answer' }, '❌ 题库没搜索到答案');
 	} else {
@@ -1898,7 +1901,7 @@ function createSearchResultAlertElement(result: SimplifyWorkResult) {
 			? null
 			: result.resolved === false
 			? h('div', { className: 'result-info unresolved' }, '等待顺序答题中... ⏱️')
-			: h('div', { className: 'result-info error' }, '❌ 此题未完成, 可能是没有匹配的选项。');
+			: h('div', { className: 'result-info error' }, '❌ 给出的答案和选项不匹配，可能是题库答案错误');
 	}
 
 	return h('div', { className: 'alert-info-wrapper' }, [info ?? h('div')]);

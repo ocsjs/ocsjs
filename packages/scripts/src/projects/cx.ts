@@ -2,7 +2,6 @@
 
 import {
 	OCSWorker,
-	defaultAnswerWrapperHandler,
 	$,
 	StringUtils,
 	request,
@@ -20,7 +19,8 @@ import { workNotes, volume, playbackRate, dropdownStyle } from '../utils/configs
 import {
 	answerWrapperEmptyWarning,
 	commonWork,
-	optimizationElementWithImage,
+	createCommonAnswerer,
+	extractTextWithImages,
 	removeRedundantWords,
 	simplifyWorkResult
 } from '../utils/work';
@@ -761,9 +761,12 @@ function workOrExam(
 	}
 
 	// 处理作业和考试题目的方法
-	const workOrExamQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
+	const workOrExamQuestionTitleTransform = (
+		titles: (HTMLElement | undefined)[]
+	): { text: string; images: string[] } => {
 		// 是否为多个小题的题目
 		const is_multiple_question = titles.length > 1;
+		const images: string[] = [];
 		const optimizationTitle = titles
 			.map((el, i) => {
 				if (el) {
@@ -776,14 +779,16 @@ function workOrExam(
 						// 删除题型
 						childNodes[0]?.remove();
 					}
-					// 显示图片链接在题目中
-					return optimizationElementWithImage(titleCloneEl, true).innerText;
+					// 结构化遍历提取文本与图片 URL（不改造 DOM、不读 innerText）
+					const extracted = extractTextWithImages(titleCloneEl);
+					images.push(...extracted.images);
+					return extracted.text;
 				}
 				return '';
 			})
 			.join('\n');
 
-		return removeRedundantWords(
+		const text = removeRedundantWords(
 			StringUtils.of(optimizationTitle)
 				.nowrap(is_multiple_question ? '\n' : ' ')
 				.nospace()
@@ -791,7 +796,11 @@ function workOrExam(
 				.trim(),
 			redundanceWordsText.split('\n')
 		);
+		return { text, images };
 	};
+	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
+	const workOrExamQuestionTitleText = (titles: (HTMLElement | undefined)[]) =>
+		workOrExamQuestionTitleTransform(titles).text;
 
 	// 这里跟章节测试的连线题不一样，章节测试是新版连线题
 	/** 新建答题器 */
@@ -823,31 +832,27 @@ function workOrExam(
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			if (elements.title) {
-				// 处理作业和考试题目
-				const title = workOrExamQuestionTitleTransform(elements.title);
-				if (title) {
-					const typeInput = elements.type[0] as HTMLInputElement;
-					const type = (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown';
-					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-						await $.sleep((period ?? 3) * 1000);
-						return defaultAnswerWrapperHandler(answererWrappers, {
-							type,
-							title,
-							options:
-								type === 'completion'
-									? ''
-									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
-						});
-					});
-				} else {
-					throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
+		answerer: createCommonAnswerer({
+			titleTransform: (elements, ctx) => {
+				if (elements.title) {
+					return workOrExamQuestionTitleTransform(elements.title);
 				}
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+				return '';
+			},
+			optionsTransform: (elements, ctx) => {
+				const typeInput = elements.type?.[0] as HTMLInputElement;
+				const type = (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown';
+				ctx.type = type as any;
+				if (type === 'completion') return '';
+				const optResults = (ctx.elements.options ?? []).filter(Boolean).map((o: any) => extractTextWithImages(o));
+				return {
+					text: optResults.map((r) => r.text).join('\n'),
+					images: optResults.flatMap((r) => r.images)
+				};
+			},
+			answererWrappers,
+			period
+		}),
 
 		work: async (ctx) => {
 			const { elements, searchInfos } = ctx;
@@ -859,10 +864,10 @@ function workOrExam(
 			);
 
 			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
-				const resolver = createDefaultQuestionResolver(ctx)[type];
+				const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text)[type];
 				return await resolver(
 					searchInfos,
-					elements.options.map((option) => optimizationElementWithImage(option)),
+					elements.options as HTMLElement[],
 					async (type, answer, option) => {
 						// 如果存在已经选择的选项
 						if (type === 'judgement' || type === 'single' || type === 'multiple') {
@@ -933,20 +938,20 @@ function workOrExam(
 			if (!preview_mode) {
 				if (current.result?.finish) {
 					await CommonProject.scripts.workResults.methods.appendResults(
-						simplifyWorkResult(res, workOrExamQuestionTitleTransform)
+						simplifyWorkResult(res, workOrExamQuestionTitleText)
 					);
 					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([current], workOrExamQuestionTitleTransform)
+						simplifyWorkResult([current], workOrExamQuestionTitleText)
 					);
 				}
 				return;
 			}
 
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleTransform));
+			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleText));
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 			if (current.result?.finish) {
 				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], workOrExamQuestionTitleTransform)
+					simplifyWorkResult([current], workOrExamQuestionTitleText)
 				);
 			}
 		}
@@ -1843,24 +1848,36 @@ const JobRunner = {
 		// 固定显示答题结果面板
 		CORSUtils.pinWorkPanel();
 
-		const chapterTestTaskQuestionTitleTransform = (titles: (HTMLElement | undefined)[]) => {
+		const chapterTestTaskQuestionTitleTransform = (
+			titles: (HTMLElement | undefined)[]
+		): { text: string; images: string[] } => {
+			const images: string[] = [];
 			const removed = removeRedundantWords(
-				titles.map((t) => (t ? optimizationElementWithImage(t, true).innerText : '')).join(','),
+				titles
+					.map((t) => {
+						if (!t) return '';
+						const extracted = extractTextWithImages(t);
+						images.push(...extracted.images);
+						return extracted.text;
+					})
+					.join(','),
 				redundanceWordsText.split('\n')
 			);
 
-			return (
-				removed
-					.trim()
-					/** 超星旧版作业题目冗余数据 */
-					.replace(/^\d+[。、.]/, '')
-					.replace(/（\d+\.\d+分）/, '')
-					.replace(/\(..题, \d+?分\)/, '')
-					.replace(/\(..题, \d+\.\d+分\)/, '')
-					.replace(/[[(【（](..题|名词解释|完形填空|阅读理解)[\])】）]/, '')
-					.trim()
-			);
+			const text = removed
+				.trim()
+				/** 超星旧版作业题目冗余数据 */
+				.replace(/^\d+[。、.]/, '')
+				.replace(/（\d+\.\d+分）/, '')
+				.replace(/\(..题, \d+?分\)/, '')
+				.replace(/\(..题, \d+\.\d+分\)/, '')
+				.replace(/[[(【（](..题|名词解释|完形填空|阅读理解)[\])】）]/, '')
+				.trim();
+			return { text, images };
 		};
+		/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
+		const chapterTestTaskQuestionTitleText = (titles: (HTMLElement | undefined)[]) =>
+			chapterTestTaskQuestionTitleTransform(titles).text;
 
 		/** 新建答题器 */
 		const worker = new OCSWorker({
@@ -1887,27 +1904,19 @@ const JobRunner = {
 			thread: thread ?? 1,
 			answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 			/** 默认搜题方法构造器 */
-			answerer: (elements, ctx) => {
-				const title = chapterTestTaskQuestionTitleTransform(elements.title);
-				if (title) {
-					const typeInput = elements.type[0] as HTMLInputElement;
+			answerer: createCommonAnswerer({
+				titleTransform: (elements, ctx) => chapterTestTaskQuestionTitleTransform(elements.title),
+				optionsTransform: (elements, ctx) => {
+					const typeInput = elements.type?.[0] as HTMLInputElement;
 					const type = (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown';
-
-					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-						await $.sleep((period ?? 3) * 1000);
-						return defaultAnswerWrapperHandler(answererWrappers, {
-							type,
-							title,
-							options:
-								type === 'completion'
-									? ''
-									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
-						});
-					});
-				} else {
-					throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-				}
-			},
+					ctx.type = type as any;
+					if (type === 'completion') return '';
+					const optResults = (ctx.elements.options ?? []).filter(Boolean).map((o: any) => extractTextWithImages(o));
+					return { text: optResults.map((r) => r.text).join('\n'), images: optResults.flatMap((r) => r.images) };
+				},
+				answererWrappers,
+				period
+			}),
 
 			work: async (ctx) => {
 				const { elements, searchInfos } = ctx;
@@ -1915,7 +1924,7 @@ const JobRunner = {
 				const type = typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined;
 
 				if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
-					const resolver = createDefaultQuestionResolver(ctx)[type];
+					const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text)[type];
 
 					const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
 						if (type === 'judgement' || type === 'single' || type === 'multiple') {
@@ -1947,7 +1956,7 @@ const JobRunner = {
 
 					return await resolver(
 						searchInfos,
-						elements.options.map((option) => optimizationElementWithImage(option)),
+						elements.options as HTMLElement[],
 						handler
 					);
 				}
@@ -1990,12 +1999,12 @@ const JobRunner = {
 			/** 完成答题后 */
 			async onResultsUpdate(curr, _, res) {
 				CommonProject.scripts.workResults.methods.setResults(
-					simplifyWorkResult(res, chapterTestTaskQuestionTitleTransform)
+					simplifyWorkResult(res, chapterTestTaskQuestionTitleText)
 				);
 
 				if (curr.result?.finish) {
 					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([curr], chapterTestTaskQuestionTitleTransform)
+						simplifyWorkResult([curr], chapterTestTaskQuestionTitleText)
 					);
 				}
 				CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);

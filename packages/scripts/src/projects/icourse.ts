@@ -1,8 +1,8 @@
-import { $, OCSWorker, RemotePage, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { $, OCSWorker, RemotePage } from '@ocsjs/core';
 import { $message, Project, Script, $ui, $store } from 'easy-us';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
-import { commonWork, optimizationElementWithImage, removeRedundantWords, simplifyWorkResult } from '../utils/work';
+import { commonWork, createCommonAnswerer, extractTextWithImages, removeRedundantWords, simplifyWorkResult } from '../utils/work';
 import { $console, BackgroundProject } from './background';
 import { $playwright } from '../utils/app';
 import { waitForElement, waitForMedia, waitFor } from '../utils/study';
@@ -479,15 +479,17 @@ function workAndExam(
 		questionPositionSyncHandlerType: 'icourse'
 	});
 
-	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return removeRedundantWords(
+	const titleTransform = (titles: (HTMLElement | undefined)[]): { text: string; images: string[] } => {
+		const images: string[] = [];
+		const text = removeRedundantWords(
 			titles
 				.filter((t) => t?.innerText || t?.querySelector('img'))
 				.map((t) => {
 					if (t) {
-						const el = optimizationElementWithImage(t, true);
-						// textContent can still read the hidden image URL placeholders.
-						return (el.textContent || '').replace(/\s+/g, ' ').trim() || '';
+						// 结构化遍历提取文本与图片 URL（不改造 DOM、不读 innerText/textContent）
+						const extracted = extractTextWithImages(t);
+						images.push(...extracted.images);
+						return extracted.text.replace(/\s+/g, ' ').trim() || '';
 					}
 					return '';
 				})
@@ -497,7 +499,10 @@ function workAndExam(
 				.replace(/[\u200A-\u200F]/g, ''),
 			redundanceWordsText.split('\n')
 		);
+		return { text, images };
 	};
+	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
+	const titleText = (titles: (HTMLElement | undefined)[]) => titleTransform(titles).text;
 	const work_type = type;
 
 	/** 新建答题器 */
@@ -510,22 +515,21 @@ function workAndExam(
 		thread: 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep(5 * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+				titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
+				optionsTransform: (elements: any, ctx: any) => {
+					const optResults = ctx.elements.options.map((o: any) => extractTextWithImages(o));
+					return {
+						text: optResults.map((r: { text: string }) => r.text).join('\n'),
+						images: optResults.flatMap((r: { images: string[] }) => r.images)
+					};
+				},
+				answererWrappers,
+				period: 5
+			}),
 		work: {
+			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
+			optionText: (o: HTMLElement) => extractTextWithImages(o).text,
 			/** 自定义处理器 */
 			async handler(type, answer, option) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
@@ -561,7 +565,7 @@ function workAndExam(
 		},
 		onElementSearched(elements, root) {
 			elements.options.forEach((el) => {
-				optimizationElementWithImage(el);
+				// 保留对/错图标替换；图片 URL 改由 work.optionText 提取，不再改造 DOM
 				const correct = el.querySelector<HTMLElement>('.u-icon-correct');
 				const wrong = el.querySelector<HTMLElement>('.u-icon-wrong');
 				if (correct) {
@@ -574,10 +578,10 @@ function workAndExam(
 		},
 		/** 完成答题后 */
 		onResultsUpdate(curr, _, res) {
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
+			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleText));
 
 			if (curr.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
+				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleText));
 			}
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}

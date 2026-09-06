@@ -22,6 +22,7 @@ import {
 // 重新导出，保持对外 API 不变（common.ts / exploration.ts 等仍从本文件导入）
 export { buildAnswererEnv, createImageSuggestion, imageToBase64, isAnswererWrappersSupportImageOptimize };
 export type { ImageSuggestionResult };
+// extractTextWithImages / ExtractTextOptions 已在下方直接 export
 
 export let globalControlPanel: HTMLElement | null = null;
 
@@ -201,39 +202,57 @@ export function createWorkerControl(options: {
 }
 
 /**
- * 图片识别，将图片链接追加到 text 中
- * 返回一个克隆的节点
+ * 结构化 DOM 遍历：提取文本与图片 URL。
+ *
+ * 替代旧的 `optimizationElementWithImage(...).innerText` 链路：
+ * - 不改造 DOM、不读 innerText、不用正则。
+ * - `text` 产出原始 URL 文本（URL 两侧加空格分隔，避免相邻 URL 拼接）。
+ * - `images` 额外返回按文档顺序的 URL 数组，供 createImageSuggestion 跳过正则。
+ * - 跳过 `display:none` 的元素（模拟 innerText 对非渲染节点的跳过）。
+ * - 对 detached 元素（如 zhs 由 JSON HTML 构建的 div）同样适用。
  */
-export function optimizationElementWithImage(root: HTMLElement, clone_node: boolean = false): HTMLElement {
-	const clone = clone_node ? (root.cloneNode(true) as HTMLElement) : root;
-	for (const img of Array.from(clone.querySelectorAll('img'))) {
-		// 如果已经存在识别结果，则不处理
-		if (
-			Array.from(img.parentElement!.querySelectorAll('span')).some(
-				(e) => e.style.fontSize === '0px' && e.textContent?.includes(img.src)
-			)
-		) {
-			continue;
-		}
-
-		const src = document.createElement('span');
-		src.innerText = img.src;
-		// 隐藏图片，但不影响 innerText 的获取
-		src.style.fontSize = '0px';
-		img.after(src);
-	}
-	return clone;
+export interface ExtractTextOptions {
+	/** 仅收集满足条件的 img（如 zhs 选项需排除按钮图片） */
+	imgFilter?: (img: HTMLImageElement) => boolean;
 }
-
-/**
- * 创建一个不可见的文本节点，追加到图片后面，便于文本获取
- */
-export function createUnVisibleTextOfImage(img: HTMLImageElement) {
-	const src = document.createElement('span');
-	src.innerText = img.src;
-	// 隐藏图片，但不影响 innerText 的获取
-	src.style.fontSize = '0px';
-	img.after(src);
+export function extractTextWithImages(
+	root: HTMLElement,
+	opts?: ExtractTextOptions
+): { text: string; images: string[] } {
+	const parts: string[] = [];
+	const images: string[] = [];
+	const walk = (node: Node) => {
+		if (node.nodeType === Node.TEXT_NODE) {
+			parts.push(node.textContent || '');
+			return;
+		}
+		if (node.nodeType !== Node.ELEMENT_NODE) return;
+		const el = node as HTMLElement;
+		if (el.tagName === 'IMG') {
+			const img = el as HTMLImageElement;
+			if (opts?.imgFilter && !opts.imgFilter(img)) return;
+			const url = img.src;
+			if (url) {
+				parts.push(` ${url} `);
+				images.push(url);
+			}
+			return;
+		}
+		if (el.tagName === 'BR') {
+			parts.push('\n');
+			return;
+		}
+		// 跳过 display:none（仅对已挂载元素；detached 元素 getComputedStyle 返回空，不跳过）
+		try {
+			const view = el.ownerDocument?.defaultView;
+			if (view && el.isConnected && view.getComputedStyle(el).display === 'none') return;
+		} catch {
+			// 忽略
+		}
+		for (const child of Array.from(el.childNodes)) walk(child);
+	};
+	walk(root);
+	return { text: parts.join(''), images };
 }
 
 /** 将 {@link WorkResult} 转换成 {@link SimplifyWorkResult} */
@@ -318,29 +337,39 @@ export const closeAnswerWrapperEmptyWarning = cors.defineTopFunction(() => {
  * @param options.period 搜题间隔（秒），默认 3
  */
 export function createCommonAnswerer(options: {
-	titleTransform: (elements: any, ctx: WorkContext<any>) => string;
-	optionsTransform?: (elements: any, ctx: WorkContext<any>) => string;
+	titleTransform: (elements: any, ctx: WorkContext<any>) => string | { text: string; images?: string[] };
+	optionsTransform?: (elements: any, ctx: WorkContext<any>) => string | { text: string; images?: string[] };
 	answererWrappers: AnswererWrapper[];
 	period?: number;
 }) {
+	const normalize = (v: string | { text: string; images?: string[] } | undefined): { text: string; images?: string[] } => {
+		if (v == null) return { text: '' };
+		return typeof v === 'string' ? { text: v } : v;
+	};
 	return async (elements: any, ctx: WorkContext<any>): Promise<SearchInformation[]> => {
-		const title = options.titleTransform(elements, ctx);
+		const titleResult = normalize(options.titleTransform(elements, ctx));
+		const title = titleResult.text;
 		if (!title) {
 			throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
 		}
+		const titleImages = titleResult.images;
 
 		return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
 			await $.sleep((options.period ?? 3) * 1000);
-			const opt = options.optionsTransform
-				? options.optionsTransform(elements, ctx)
-				: (ctx.elements.options ?? [])
-						.filter(Boolean)
-						.map((o: HTMLElement | undefined) => o!.innerText)
-						.join('\n');
+			const optResult = normalize(
+				options.optionsTransform
+					? options.optionsTransform(elements, ctx)
+					: (ctx.elements.options ?? [])
+							.filter(Boolean)
+							.map((o: HTMLElement | undefined) => o!.innerText)
+							.join('\n')
+			);
 			const env = await buildAnswererEnv({
 				type: ctx.type,
 				title,
-				options: opt,
+				options: optResult.text,
+				titleImages,
+				optionsImages: optResult.images,
 				enableImageOptimize: CommonProject.scripts.settings.cfg.imageOptimize
 			});
 			return defaultAnswerWrapperHandler(options.answererWrappers, env);

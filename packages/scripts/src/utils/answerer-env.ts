@@ -150,14 +150,19 @@ const MIN_IMAGE_DIMENSION = 14;
 
 export async function createImageSuggestion(
 	title: string,
-	options?: string
+	options?: string,
+	/** DOM 调用方可直接传入按文档顺序的标题图片 URL，跳过正则提取 */
+	titleImages?: string[],
+	/** DOM 调用方可直接传入按文档顺序的选项图片 URL，跳过正则提取 */
+	optionImages?: string[]
 ): Promise<ImageSuggestionResult | undefined> {
 	// 匹配图片 URL：非贪婪且排除中文/全角字符，避免跨越多个 URL 或中文文本拼成非法 URL
 	const imageUrlRegex = /https?:\/\/[^\s一-鿿＀-￯]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s一-鿿＀-￯]*)?/gi;
 
 	// 收集标题和选项中的所有图片 URL，保持顺序
-	const titleUrls = title.match(imageUrlRegex) || [];
-	const optionUrls = options?.match(imageUrlRegex) || [];
+	// 若调用方提供 images 数组则直接使用（DOM 遍历所得，跳过正则）；否则回退到正则提取（字符串输入场景）
+	const titleUrls = titleImages && titleImages.length ? titleImages.slice() : title.match(imageUrlRegex) || [];
+	const optionUrls = optionImages && optionImages.length ? optionImages.slice() : options?.match(imageUrlRegex) || [];
 
 	if (titleUrls.length === 0 && optionUrls.length === 0) return undefined;
 
@@ -270,6 +275,10 @@ export async function buildAnswererEnv(params: {
 	title: string;
 	/** 选项文本，支持字符串或字符串数组（数组会按行拼接为字符串） */
 	options?: string | string[];
+	/** DOM 调用方传入的标题图片 URL（跳过正则提取） */
+	titleImages?: string[];
+	/** DOM 调用方传入的选项图片 URL（跳过正则提取） */
+	optionsImages?: string[];
 	enableImageOptimize?: boolean;
 }): Promise<Record<string, any>> {
 	// options 归一化为字符串：数组按行拼接，保证后续占位符替换与图片匹配均为字符串处理
@@ -285,7 +294,7 @@ export async function buildAnswererEnv(params: {
 		options
 	};
 	if (params.enableImageOptimize) {
-		const suggestion = await createImageSuggestion(params.title, options);
+		const suggestion = await createImageSuggestion(params.title, options, params.titleImages, params.optionsImages);
 		if (suggestion) {
 			// 新增独立字段，由题库配置（v2）显式引用后才会被提交
 			// images / suggestion_options 去重，避免重复数据上传

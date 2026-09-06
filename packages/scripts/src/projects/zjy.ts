@@ -1,11 +1,11 @@
-import { $, OCSWorker, defaultAnswerWrapperHandler } from '@ocsjs/core';
+import { $, OCSWorker } from '@ocsjs/core';
 import { Project, Script, $ui, $el, $message, $modal, h } from 'easy-us';
 import { volume } from '../utils/configs';
 import { waitForMedia, waitForElement } from '../utils/study';
 import { $msg, CommonWorkOptions, playMedia } from '../utils';
 import { $console, BackgroundProject } from './background';
 import { CommonProject } from './common';
-import { commonWork, simplifyWorkResult } from '../utils/work';
+import { commonWork, createCommonAnswerer, simplifyWorkResult } from '../utils/work';
 
 type CourseType = {
 	levelName: string;
@@ -662,21 +662,11 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
-		answerer: (elements, ctx) => {
-			const title = titleTransform(elements.title);
-			if (title) {
-				return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
-					await $.sleep((period ?? 3) * 1000);
-					return defaultAnswerWrapperHandler(answererWrappers, {
-						type: ctx.type || 'unknown',
-						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
-					});
-				});
-			} else {
-				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
-			}
-		},
+		answerer: createCommonAnswerer({
+			titleTransform: (elements, _ctx) => titleTransform(elements.title),
+			answererWrappers,
+			period
+		}),
 		work: {
 			type(ctx) {
 				const options = ctx.elements.options;

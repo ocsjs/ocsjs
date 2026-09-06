@@ -12,9 +12,12 @@ const transformImgLinkOfQuestion = (question: string) => {
 		img.replaceWith(img.src);
 	}
 	// 最后将所有图片链接替换成 img 标签
-	return dom.documentElement.innerHTML.replace(/https?:\/\/.+?\.(png|jpg|jpeg|gif)/g, (img) => {
-		return `<img src="${img}" />`;
-	});
+	// 含 query string 与 fragment，避免 URL 被截断（如带 ?response-content-disposition=... 的鉴权链接）
+	// 排除空白/引号/</CJK，避免跨越标签或吞掉相邻中文
+	return dom.documentElement.innerHTML.replace(
+		/https?:\/\/[^"'<\s一-鿿]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s"'<>一-鿿]*)?(?:#[^\s"'<>一-鿿]*)?/g,
+		(img) => `<img src="${img}" />`
+	);
 };
 
 /**
