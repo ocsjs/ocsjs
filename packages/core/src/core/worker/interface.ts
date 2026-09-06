@@ -110,6 +110,12 @@ export interface DefaultWork<E extends RawElements> {
 	/** 工作器的题目类型 */
 	type?: QuestionTypes | { (ctx: WorkContext<E>): QuestionTypes };
 	/**
+	 * 选项文本提供器：替代默认 `o.innerText`。
+	 * 图片题等场景下 innerText 无法获取 img 的 URL，需由调用方通过 DOM 遍历提供。
+	 * 不传则回退到 `o.innerText`。
+	 */
+	optionText?: (el: HTMLElement, i: number) => string;
+	/**
      * 处理器， 每个题目的处理器， 实例可看默认的 zhs `作业脚本` 写法 : https://github.com/ocsjs/ocsjs/blob/3.0/packages/scripts/src/browser/zhs/work.ts
      *
      *

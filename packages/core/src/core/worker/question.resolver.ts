@@ -3,8 +3,15 @@ import { resolveSingle, resolveMultiple, resolveJudgement, resolveCompletion, is
 
 /** 默认答案题目处理器 */
 export function createDefaultQuestionResolver<E>(
-	ctx: WorkContext<E>
+	ctx: WorkContext<E>,
+	/**
+	 * 选项文本提供器：替代 `o.innerText`。
+	 * 图片题等场景下 innerText 无法获取 img 的 URL，需由调用方通过 DOM 遍历提供。
+	 * 不传则回退到 `o.innerText`，旧调用方零影响。
+	 */
+	optionText?: (el: HTMLElement, i: number) => string
 ): Record<'single' | 'multiple' | 'completion' | 'judgement', QuestionResolver<E>> {
+	const toText = (o: HTMLElement, i: number) => (optionText ? optionText(o, i) : o.innerText);
 	return {
 		/**
 		 * 单选题处理器
@@ -12,7 +19,7 @@ export function createDefaultQuestionResolver<E>(
 		 * 委托给 resolveSingle 纯函数，将 DOM 元素适配为字符串
 		 */
 		async single(infos, options, handler) {
-			const optionTexts = options.map((o) => o.innerText);
+			const optionTexts = options.map((o, i) => toText(o, i));
 
 			// 选项具备判断题性质时，直接走判断题处理逻辑
 			if (isJudgementOptions(optionTexts.map((o) => o.trim()))) {
@@ -45,7 +52,7 @@ export function createDefaultQuestionResolver<E>(
 		 */
 		async multiple(infos, options, handler) {
 			const resultAnswers = infos.map((info) => info.results.map((res) => res.answer)).flat();
-			const optionTexts = options.map((o) => o.innerText);
+			const optionTexts = options.map((o, i) => toText(o, i));
 
 			const result = resolveMultiple(resultAnswers, optionTexts, ctx.answerSeparators);
 
@@ -69,7 +76,7 @@ export function createDefaultQuestionResolver<E>(
 		 */
 		async judgement(infos, options, handler) {
 			const answerGroups = infos.map((info) => info.results.map((res) => res.answer));
-			const optionTexts = options.map((o) => o.innerText);
+			const optionTexts = options.map((o, i) => toText(o, i));
 
 			const result = resolveJudgement(answerGroups, optionTexts);
 

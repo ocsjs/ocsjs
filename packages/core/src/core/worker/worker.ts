@@ -217,7 +217,11 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 								/** 使用默认处理器 */
 
 								if (result.ctx.type) {
-									const resolver = createDefaultQuestionResolver(result.ctx)[result.ctx.type];
+									const resolver = createDefaultQuestionResolver(
+										result.ctx,
+										// @ts-ignore work.optionText 跨 E 类型透传
+										this.opts.work.optionText
+									)[result.ctx.type];
 									const handler = this.opts.work.handler;
 									res = await resolver(result.ctx.searchInfos, result.ctx.elements.options as HTMLElement[], handler);
 								} else {
