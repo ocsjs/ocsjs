@@ -167,10 +167,35 @@ export const CommonProject = Project.create({
 													'大学生网课题库接口适配器: 将不同的题库整合为一个API接口。详细查看 https://github.com/DokiDoki1103/tikuAdapter'
 											},
 											'TikuAdapter'
+										),
+										h(
+											'option',
+											{
+												value: 'ai',
+												title:
+													'使用自己的大模型 API 自动答题（兼容 OpenAI 接口）: 只需要填写接口地址，API Key，模型名，例如 DeepSeek、Kimi、通义千问。'
+											},
+											'AI 大模型'
 										)
 									]
 								)
 							);
+
+							/** 大模型配置表单，已配置过则回显 */
+							const savedAI = aw.find((item) => item.handler === AI_ANSWERER_HANDLER);
+							const aiForm = createAIAnswererForm(savedAI);
+
+							/** 切换解析器时，显示对应的配置区域 */
+							const syncConfigVisible = () => {
+								const isAI = select.value === 'ai';
+								textarea.style.display = isAI ? 'none' : '';
+								aiForm.element.style.display = isAI ? '' : 'none';
+							};
+							select.onchange = syncConfigVisible;
+							if (savedAI) {
+								select.value = 'ai';
+							}
+							syncConfigVisible();
 
 							const modal = $modal.prompt({
 								width: 600,
@@ -215,6 +240,7 @@ export const CommonProject = Project.create({
 								footer: h('div', { style: { width: '100%' } }, [
 									h('div', { className: 'separator secondary' }, '题库配置填写/修改区'),
 									textarea,
+									aiForm.element,
 									h('div', { style: { display: 'flex', flexWrap: 'wrap', marginTop: '12px', fontSize: '12px' } }, [
 										h('div', ['解析器：', select], (div) => {
 											div.style.marginRight = '12px';
@@ -247,14 +273,15 @@ export const CommonProject = Project.create({
 													const connects: string[] = $gm.getMetadataFromScriptHead('connect');
 
 													const value = textarea.value;
+													const isAI = select.value === 'ai';
 
-													if (!value) {
+													if (!isAI && !value) {
 														$modal.alert({
 															content: h('div', '不能为空！')
 														});
 														return;
 													}
-													if (value.includes('adapter-service/search') && (select.value === 'TikuAdapter') === false) {
+													if (select.value === '默认' && value.includes('adapter-service/search')) {
 														$modal.alert({
 															content: h('div', [
 																'检测到您可能正在使用 ',
@@ -278,7 +305,19 @@ export const CommonProject = Project.create({
 
 													try {
 														let awsResult: AnswererWrapper[] = [];
-														if (select.value === 'TikuAdapter') {
+														if (isAI) {
+															const config = aiForm.getConfig();
+															const error = validateAIAnswererConfig(config);
+															if (error) {
+																$modal.alert({ content: h('div', error) });
+																return;
+															}
+															// 保留其它题库，仅新增或更新大模型题库
+															awsResult = (value ? await AnswerWrapperParser.from(value) : []).filter(
+																(item: AnswererWrapper) => item.handler !== AI_ANSWERER_HANDLER
+															);
+															awsResult.push(createAIAnswererWrapper(config));
+														} else if (select.value === 'TikuAdapter') {
 															if (value.startsWith('http') === false) {
 																$modal.alert({
 																	content: h('div', [
@@ -1706,6 +1745,154 @@ function createAnswererWrapperList(aw: AnswererWrapper[]) {
 			}
 		)
 	);
+}
+
+/** 兼容 OpenAI 接口的大模型预设，选择后自动填充接口地址和模型名 */
+const AI_PROVIDERS = [
+	{ name: 'DeepSeek', url: 'https://api.deepseek.com/chat/completions', model: 'deepseek-chat' },
+	{ name: 'OpenAI', url: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o-mini' },
+	{ name: '自定义', url: '', model: '' }
+];
+
+/** 大模型接口配置 */
+interface AIAnswererConfig {
+	url: string;
+	apiKey: string;
+	model: string;
+}
+
+/** 大模型的答题提示词，输出的答案格式需要能被答题器的答案解析器识别 */
+const AI_ANSWERER_PROMPT = [
+	'你是答题机器人，只输出最终答案，禁止解释，禁止 markdown，禁止添加「答案：」等前缀。',
+	'单选题只输出选项字母，例如：B',
+	'多选题输出所有正确选项的字母，并用 # 连接，例如：A#C',
+	'判断题只输出 正确 或 错误',
+	'填空题按顺序输出答案，并用 # 连接'
+].join('\n');
+
+/** 大模型题库的响应解析器，用于兼容 OpenAI 响应格式，并识别 AI 题库 */
+const AI_ANSWERER_HANDLER =
+	'return (res)=> { const content = res?.choices?.[0]?.message?.content?.trim(); return content ? [undefined, content, { ai: true }] : undefined; }';
+
+/** 根据配置创建大模型题库 */
+function createAIAnswererWrapper({ url, apiKey, model }: AIAnswererConfig): AnswererWrapper {
+	return {
+		name: `AI 大模型（${model}）`,
+		url,
+		method: 'post',
+		type: 'GM_xmlhttpRequest',
+		contentType: 'json',
+		headers: {
+			'Content-Type': 'application/json',
+			Authorization: `Bearer ${apiKey}`
+		},
+		data: {
+			model,
+			temperature: 0,
+			messages: [
+				{ role: 'system', content: AI_ANSWERER_PROMPT },
+				// eslint-disable-next-line no-template-curly-in-string
+				{ role: 'user', content: '题目：${title}\n选项：\n${options}\n题型：${type}' }
+			]
+		},
+		handler: AI_ANSWERER_HANDLER
+	};
+}
+
+/** 校验大模型配置，返回错误提示，校验通过返回空字符串 */
+function validateAIAnswererConfig({ url, apiKey, model }: AIAnswererConfig) {
+	if (!url.startsWith('http')) return '请填写接口地址，例如：https://api.deepseek.com/chat/completions';
+	if (!apiKey) return '请填写 API Key';
+	if (!model) return '请填写模型名称，例如：deepseek-chat';
+	return '';
+}
+
+/** 创建一行大模型配置表单项 */
+function createAIConfigRow(label: string, control: HTMLElement) {
+	control.style.flex = '1';
+	control.style.minWidth = '0';
+	return h('div', { style: { display: 'flex', alignItems: 'center', marginTop: '6px' } }, [
+		h('div', { style: { width: '72px', flexShrink: '0', fontSize: '12px' } }, label),
+		control
+	]);
+}
+
+/**
+ * 创建大模型 API 配置表单
+ *
+ * @param saved 已经配置过的大模型题库，用于回显
+ */
+function createAIAnswererForm(saved?: AnswererWrapper) {
+	const provider = h(
+		'select',
+		{ className: 'modal-input' },
+		AI_PROVIDERS.map((p) => h('option', p.name))
+	);
+	const url = h('input', { className: 'modal-input', placeholder: 'https://api.deepseek.com/chat/completions' });
+	const apiKey = h('input', { className: 'modal-input', type: 'password', placeholder: 'sk-...' });
+	const model = h('input', { className: 'modal-input', placeholder: 'deepseek-chat' });
+
+	if (saved) {
+		url.value = saved.url;
+		apiKey.value = saved.headers?.Authorization?.replace(/^Bearer\s+/i, '') || '';
+		model.value = saved.data?.model || '';
+	}
+	provider.value = AI_PROVIDERS.find((p) => p.url === url.value)?.name || '自定义';
+
+	/** 选择预设后自动填充接口地址和模型名 */
+	provider.onchange = () => {
+		const preset = AI_PROVIDERS.find((p) => p.name === provider.value);
+		if (preset?.url) {
+			url.value = preset.url;
+			model.value = preset.model;
+		}
+	};
+
+	const getConfig = (): AIAnswererConfig => ({
+		url: url.value.trim(),
+		apiKey: apiKey.value.trim(),
+		model: model.value.trim()
+	});
+
+	const testButton = h('button', { className: 'modal-cancel-button', style: { marginLeft: '12px' } }, '测试');
+	testButton.onclick = async () => {
+		const config = getConfig();
+		const error = validateAIAnswererConfig(config);
+		if (error) {
+			$modal.alert({ content: h('div', error) });
+			return;
+		}
+		testButton.disabled = true;
+		testButton.innerText = '测试中...';
+		// 使用与答题完全一致的流程进行测试，避免测试通过但答题失败
+		const [info] = await defaultAnswerWrapperHandler([createAIAnswererWrapper(config)], {
+			type: 'single',
+			title: '1 + 1 = 2 是否正确？',
+			options: '正确\n错误'
+		});
+		testButton.disabled = false;
+		testButton.innerText = '测试';
+		$modal.alert({
+			title: info.error ? '❌ 测试失败' : '✅ 测试成功',
+			content: h('div', [info.error || `模型回答：${info.results[0]?.answer || '（空）'}`])
+		});
+	};
+
+	const element = h('div', { style: { display: 'none', marginTop: '8px' } }, [
+		createAIConfigRow('服务商', provider),
+		createAIConfigRow('接口地址', url),
+		createAIConfigRow('API Key', apiKey),
+		createAIConfigRow('模型', model),
+		h('div', { style: { display: 'flex', alignItems: 'flex-end', marginTop: '8px' } }, [
+			$ui.notes([
+				'兼容 OpenAI 接口的大模型均可使用：DeepSeek、Kimi、通义千问、one-api 等。',
+				'API Key 会明文保存在脚本配置中，建议使用单独的 Key。'
+			]),
+			testButton
+		])
+	]);
+
+	return { element, getConfig };
 }
 
 const createGuide = () => {
