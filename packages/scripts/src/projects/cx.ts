@@ -30,6 +30,7 @@ import Typr from 'typr.js';
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { waitForElement, waitForMedia } from '../utils/study';
+import { CXRequest } from './cx-request';
 
 // @ts-ignore
 let top: Window = globalThis.top;
@@ -210,6 +211,46 @@ export const CXProject = Project.create({
 							'视频有时在学习过程中会弹出题目，这个好像并不计算在分数内，所以可以忽略，视频可以正常观看，这里提供几个方法处理题目'
 					},
 					defaultValue: 'random' as VideoQuizStrategy
+				},
+				mediaMode: {
+					label: '视频完成方式',
+					tag: 'select',
+					options: [
+						['play', '模拟播放', '在当前页面播放视频（原有行为）'],
+						[
+							'request',
+							'发包上报',
+							'不播放视频，直接按播放器协议上报进度。服务端按真实经过的时间判定，所以单个视频仍按真实节奏上报，靠并发数同时推进多个视频。启用了抓拍/人脸识别的课程会被拒绝执行，请改用「模拟播放」'
+						]
+					],
+					defaultValue: 'play' as 'play' | 'request'
+				},
+				mediaConcurrency: {
+					label: '发包并发数',
+					attrs: {
+						type: 'number',
+						min: '1',
+						max: '50',
+						step: '1',
+						title: '同时上报的视频任务数，默认 10：一批 10 个视频的总耗时约等于其中最长那个视频的时长'
+					},
+					defaultValue: 10
+				},
+				mediaPace: {
+					label: '发包节奏倍数',
+					attrs: {
+						type: 'number',
+						min: '0.1',
+						max: '5',
+						step: '0.1',
+						title: '1.0 = 声明多少秒就真实等多少秒（已验证可用）。调小会更快，但服务端可能只回 HTTP 200 而不算完成'
+					},
+					defaultValue: 1.0
+				},
+				mediaSkipFinished: {
+					label: '发包时跳过已完成章节',
+					attrs: { type: 'checkbox', title: '按目录上的未完成任务点数（橙色数字）过滤章节' },
+					defaultValue: true
 				},
 				mode: {
 					label: '跳转模式',
@@ -399,6 +440,41 @@ export const CXProject = Project.create({
 
 					this.onConfigChange('playbackRate', updateMediaState);
 					this.onConfigChange('volume', updateMediaState);
+
+					// 发包模式：不播放视频，直接按播放器协议上报进度（含并发）
+					if (this.cfg.mediaMode === 'request') {
+						// 置顶面板，方便看日志
+						CommonProject.scripts.render.methods.pin(this);
+						const concurrency = Number(this.cfg.mediaConcurrency) || 10;
+						const paceFactor = Number(this.cfg.mediaPace) || 1;
+						$console.log(
+							`发包模式已开启：并发 ${concurrency}，节奏 ${paceFactor}x。进度看「📄 日志」标签页，请不要手动切换章节。`
+						);
+
+						try {
+							await CXRequest.run({
+								concurrency,
+								paceFactor,
+								skipFinished: this.cfg.mediaSkipFinished !== false
+							});
+						} catch (e) {
+							// run() 内部已经把异常写进日志面板，这里再弹一次保证一定被看到
+							$console.error('发包模式异常', e);
+						}
+
+						// 有人脸识别的课程会被拒绝执行（CXRequest 在收集阶段就中止），这里告诉用户原因
+						$modal.alert({
+							title: CXRequest.state.blocked ? '⚠️ 发包模式已中止' : '✅ 发包模式结束',
+							content: $ui.notes([
+								CXRequest.state.note,
+								`完成 ${CXRequest.state.ok} ｜ 未确认 ${CXRequest.state.fail} ｜ 跳过已完成 ${CXRequest.state.skip}`,
+								'详细过程见「📄 日志」标签页'
+							]),
+							maskCloseable: false,
+							confirmButtonText: '我已知晓'
+						});
+						return;
+					}
 
 					await study({
 						...this.cfg,
