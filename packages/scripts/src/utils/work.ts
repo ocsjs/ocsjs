@@ -372,7 +372,26 @@ export function createCommonAnswerer(options: {
 				optionsImages: optResult.images,
 				enableImageOptimize: CommonProject.scripts.settings.cfg.imageOptimize
 			});
-			return defaultAnswerWrapperHandler(options.answererWrappers, env);
+			const searchInfos = await defaultAnswerWrapperHandler(options.answererWrappers, env);
+			// 将 AI 答案中的 [图片N] 占位符还原为对应图片 URL，使选项匹配可以命中图片选项。
+			// 顺序与 createImageSuggestion 的编号规则一致：标题图片在前、选项图片在后，按文档顺序去重。
+			const orderedImages: string[] = [];
+			for (const url of [...(titleImages ?? []), ...(optResult.images ?? [])]) {
+				if (!orderedImages.includes(url)) orderedImages.push(url);
+			}
+			if (orderedImages.length) {
+				for (const info of searchInfos) {
+					for (const res of info.results) {
+						if (res.answer && res.answer.includes('[图片')) {
+							res.answer = res.answer.replace(
+								/\[图片(\d+)\]/g,
+								(m, n) => orderedImages[Number(n) - 1] ?? m
+							);
+						}
+					}
+				}
+			}
+			return searchInfos;
 		});
 	};
 }

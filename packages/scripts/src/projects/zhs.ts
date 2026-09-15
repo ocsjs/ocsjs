@@ -2606,6 +2606,17 @@ function gxkWorkAndExam(
 	};
 	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
 	const titleText = (_: any, index: number) => titleTransform(_, index).text;
+	/**
+	 * 选项内容提取：zhs 选项按钮也是图片，仅采集 .node_detail 内的图片；
+	 * 同时将 data-src 提升为 src（懒加载），替代旧 createUnVisibleTextOfImage 注入。
+	 */
+	const optionExtract = (o: HTMLElement) =>
+		extractTextWithImages(o, {
+			imgFilter: (img) => {
+				if (img.dataset.src) img.src = img.dataset.src;
+				return !!img.closest('.node_detail');
+			}
+		});
 	let request_index = 0;
 	/** 新建答题器 */
 	const worker = new OCSWorker({
@@ -2624,21 +2635,20 @@ function gxkWorkAndExam(
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
 			titleTransform: () => titleTransform(undefined, request_index++),
+			optionsTransform: (elements, ctx) => {
+				if (ctx.type === 'completion') return '';
+				const optResults = (ctx.elements.options ?? []).filter(Boolean).map((o: any) => optionExtract(o));
+				return {
+					text: optResults.map((r: { text: string }) => r.text).join('\n'),
+					images: optResults.flatMap((r: { images: string[] }) => r.images)
+				};
+			},
 			answererWrappers,
 			period
 		}),
 		work: {
-			/**
-			 * 选项文本提供器：zhs 选项按钮也是图片，仅采集 .node_detail 内的图片；
-			 * 同时将 data-src 提升为 src（懒加载），替代旧 createUnVisibleTextOfImage 注入。
-			 */
-			optionText: (o: HTMLElement) =>
-				extractTextWithImages(o, {
-					imgFilter: (img) => {
-						if (img.dataset.src) img.src = img.dataset.src;
-						return !!img.closest('.node_detail');
-					}
-				}).text,
+			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
+			optionText: (o: HTMLElement) => optionExtract(o).text,
 			type(ctx) {
 				const type = ctx.elements.title[0].parentElement?.parentElement
 					?.querySelector('.subject_type')
@@ -2863,12 +2873,16 @@ function smartWork(
 
 	CommonProject.scripts.workResults.methods.init();
 
-	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return titles
+	const titleTransformWithImages = (titles: (HTMLElement | undefined)[]) => {
+		const results = titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? extractTextWithImages(t).text : ''))
-			.join(',');
+			.map((t) => (t ? extractTextWithImages(t) : { text: '', images: [] as string[] }));
+		return {
+			text: results.map((r) => r.text).join(','),
+			images: results.flatMap((r) => r.images)
+		};
 	};
+	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
@@ -2885,11 +2899,23 @@ function smartWork(
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
-			titleTransform: (elements) => titleTransform(elements.title),
+			titleTransform: (elements) => titleTransformWithImages(elements.title),
+			optionsTransform: (elements, ctx) => {
+				if (ctx.type === 'completion') return '';
+				const optResults = (ctx.elements.options ?? [])
+					.filter(Boolean)
+					.map((o: any) => extractTextWithImages(o));
+				return {
+					text: optResults.map((r: { text: string }) => r.text).join('\n'),
+					images: optResults.flatMap((r: { images: string[] }) => r.images)
+				};
+			},
 			answererWrappers,
 			period
 		}),
 		work: {
+			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
+			optionText: (o: HTMLElement) => extractTextWithImages(o).text,
 			type(ctx) {
 				const type = ctx.elements.title[0]?.parentElement?.querySelector('.letterSortNum')?.textContent;
 				if (type?.includes('单选题')) {
@@ -3013,12 +3039,16 @@ function smartExam(
 
 	CommonProject.scripts.workResults.methods.init();
 
-	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return titles
+	const titleTransformWithImages = (titles: (HTMLElement | undefined)[]) => {
+		const results = titles
 			.filter((t) => t?.innerText)
-			.map((t) => (t ? extractTextWithImages(t).text : ''))
-			.join(',');
+			.map((t) => (t ? extractTextWithImages(t) : { text: '', images: [] as string[] }));
+		return {
+			text: results.map((r) => r.text).join(','),
+			images: results.flatMap((r) => r.images)
+		};
 	};
+	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
@@ -3036,11 +3066,23 @@ function smartExam(
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
-			titleTransform: (elements) => titleTransform(elements.title),
+			titleTransform: (elements) => titleTransformWithImages(elements.title),
+			optionsTransform: (elements, ctx) => {
+				if (ctx.type === 'completion') return '';
+				const optResults = (ctx.elements.options ?? [])
+					.filter(Boolean)
+					.map((o: any) => extractTextWithImages(o));
+				return {
+					text: optResults.map((r: { text: string }) => r.text).join('\n'),
+					images: optResults.flatMap((r: { images: string[] }) => r.images)
+				};
+			},
 			answererWrappers,
 			period
 		}),
 		work: {
+			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
+			optionText: (o: HTMLElement) => extractTextWithImages(o).text,
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;
 				if (type?.includes('单选')) {
