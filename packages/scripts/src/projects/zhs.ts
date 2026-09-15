@@ -1,7 +1,24 @@
 import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement, $store, $gm } from 'easy-us';
 import { RemotePage, SimplifyWorkResult, OCSWorker } from '@ocsjs/core';
 import { CommonProject } from './common';
-import { workNotes, definition, volume, restudy } from '../utils/configs';
+import { definition, volume, restudy } from '../utils/configs';
+import {
+	playbackRate as studyPlaybackRate,
+	reloadWhenError,
+	studyNotes,
+	workNotes,
+	workCenterConfigs,
+	studyCenterConfigs,
+	stopTime,
+	switchMode,
+	skipStudyTimeWarnDialog
+} from '../utils/zhs.configs';
+import {
+	migrateZhsStudyConfigs,
+	migrateZhsWorkConfigs,
+	zhsStudyNamespace,
+	zhsWorkNamespace
+} from '../utils/config-migrate';
 import {
 	commonWork,
 	createCommonAnswerer,
@@ -641,33 +658,110 @@ export const ZHSProject = Project.create({
 			oncomplete() {
 				// 置顶
 				CommonProject.scripts.render.methods.pin(this);
+				// 检测学习/视频界面分辨率，过小则提示用户自动调整缩放
+				ensureWideViewport();
+			},
+			onrender({ panel }) {
+				// 仅在油猴环境中显示设置跳转按钮（桌面软件等环境的脚本设置在其他平台/界面中显示）
+				if ($gm.isInGMContext()) {
+					/** 跳转到指定设置中心面板 */
+					const gotoPanel = (scriptKey: 'study-center' | 'work-center') => {
+						const target = ZHSProject.scripts[scriptKey];
+						// projectName 仅在面板渲染过时才被框架赋值，首次跳转需要手动补齐，
+						// 否则 pin 会退化为按 namespace 匹配，可能选中到被隐藏的脚本面板
+						target.projectName = ZHSProject.name;
+						CommonProject.scripts.render.methods.pin(target);
+					};
+					panel.body.replaceChildren(
+						h('hr'),
+						$ui.button('👉 前往学习设置', {}, (btn) => {
+							btn.style.marginRight = '12px';
+							btn.onclick = () => gotoPanel('study-center');
+						}),
+						$ui.button('👉 前往作业设置', {}, (btn) => {
+							btn.onclick = () => gotoPanel('work-center');
+						})
+					);
+				}
+			}
+		}),
+		/**
+		 * 智慧树学习设置中心。
+		 *
+		 * 作为所有学习脚本的唯一可见入口，集中展示统一的使用提示与学习配置。
+		 * 实际的学习逻辑仍由下方被 hideInPanel 的各个学习脚本处理。
+		 */
+		'study-center': new Script({
+			name: '🖥️ 智慧树-学习设置',
+			matches: [
+				['共享课学习页面', 'studyvideoh5.zhihuishu.com'],
+				['新共享课学习页面', 'studyplush5.zhihuishu.com'],
+				['新版AI课页面', 'fusioncourseh5.zhihuishu.com/stuStudy'],
+				['2025-9月新智慧共享课学习页面', 'studywisdomh5.zhihuishu.com/study/index'],
+				['新形态课程学习页面', 'smartcoursestudent.zhihuishu.com/learnPage'],
+				['新形态课程新域名学习页面', 'ai-smart-course-student-pro.zhihuishu.com/learnPage'],
+				['新形态课程首页', 'smartcoursestudent.zhihuishu.com/singleCourse'],
+				['新形态课程新域名课程首页', 'ai-smart-course-student-pro.zhihuishu.com/singleCourse'],
+				['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning'],
+				['新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index'],
+				['AI教学空间学习首页', 'hike-teaching-center.polymas.com/stu-hike/agent-course-hike/ai-course-center'],
+				['AI教学空间学习页面', 'tools-hike/studentStudyResource'],
+				['AI教学空间学习首页(v2)', /polymas.com\/stu-hike\/agent-course-full\/.*\/stu\/(course-home|study)/],
+				['AI教学空间学习页面(v2)', '/stu/study/resource-detail']
+			],
+			namespace: zhsStudyNamespace,
+			configs: studyCenterConfigs,
+			oncomplete() {
+				// 迁移旧命名空间配置
+				migrateZhsStudyConfigs();
+				// 置顶设置中心，作为用户主要交互入口
+				CommonProject.scripts.render.methods.pin(this);
+			}
+		}),
+		/**
+		 * 智慧树作业考试设置中心。
+		 *
+		 * 作为所有作业/考试/掌握度脚本的唯一可见入口，集中展示统一的使用提示与作业考试配置。
+		 * 实际的答题逻辑仍由下方被 hideInPanel 的各个作业考试脚本处理。
+		 */
+		'work-center': new Script({
+			name: '📝 智慧树-作业考试设置',
+			matches: [
+				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
+				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
+				['作业考试列表', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?'],
+				['新形态课程作业页面', 'smartcourseexam.zhihuishu.com/ReviewExam'],
+				['新形态课程-掌握提升页面', 'studentexamcomh5.zhihuishu.com/studentReviewTestOrExam'],
+				['新形态课程-AI助教掌握度', 'fusioncourseh5.zhihuishu.com/exam'],
+				['新形态课程-新AI助教掌握度', 'studywisdomh5.zhihuishu.com/exam'],
+				['新形态课程-新AI学伴掌握度', 'wisdom-mooc.zhihuishu.com/exam'],
+				['新形态课程-考试界面', 'examloop.zhihuishu.com/exam'],
+				['校内课作业页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList'],
+				['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/examQ/examexercise'],
+				['AI教学中心-作业任务页面', '/stu-hike/stuHomeworkDo'],
+				['AI教学中心-题目作业', '/stu/answer-homework'],
+				['AI教学中心-考试页面', '/stu-exam/answer-exam']
+			],
+			namespace: zhsWorkNamespace,
+			configs: workCenterConfigs,
+			oncomplete() {
+				// 迁移旧命名空间配置
+				migrateZhsWorkConfigs();
+				// 置顶设置中心
+				CommonProject.scripts.render.methods.pin(this);
 			}
 		}),
 		'gxk-study': new Script({
 			name: '🖥️ 共享课-学习脚本',
+			hideInPanel: true,
 			matches: [
 				['共享课学习页面', 'studyvideoh5.zhihuishu.com'],
 				['新共享课学习页面', 'studyplush5.zhihuishu.com'],
 				['新版AI课页面', 'fusioncourseh5.zhihuishu.com/stuStudy'],
 				['2025-9月新智慧共享课学习页面', 'studywisdomh5.zhihuishu.com/study/index']
 			],
-			namespace: 'zhs.gxk.study',
+			namespace: zhsStudyNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes([
-						'章节测试请大家观看完视频后手动打开。',
-						[
-							'请大家仔细打开视频上方的”学前必读“，查看成绩分布。',
-							'如果 “平时成绩-学习习惯成绩” 占比多的话，就需要规律学习。',
-							'每天定时半小时可获得一分习惯分。',
-							'如果不想要习惯分可忽略。'
-						],
-						'请使用时关闭卡巴斯基软件，否则会被检测出异常脚本。',
-						'不要最小化浏览器，可能导致脚本暂停。',
-						'运行中请将浏览器缩放调整至适合的大小，避免元素遮挡，无法点击',
-						'例如：调整缩放到 50%，然后刷新页面即可'
-					]).outerHTML
-				},
 				/** 学习记录 []  */
 				studyRecord: {
 					defaultValue: [] as {
@@ -684,37 +778,12 @@ export const ZHSProject = Project.create({
 						appConfigSync: false
 					}
 				},
-				stopTime: {
-					label: '定时停止',
-					tag: 'select',
-					attrs: { title: '到时间后自动暂停脚本' },
-					defaultValue: '0',
-					options: [
-						['0', '关闭'],
-						['0.5', '半小时后'],
-						['1', '一小时后'],
-						['2', '两小时后']
-					]
-				},
+				stopTime,
 				restudy: restudy,
-				reloadWhenError: {
-					label: '黑屏自动刷新',
-					attrs: { title: '视频黑屏或者检测不到视频时自动刷新页面', type: 'checkbox' },
-					defaultValue: true
-				},
+				reloadWhenError,
 				volume: volume,
 				definition: definition,
-				playbackRate: {
-					label: '视频倍速',
-					tag: 'select',
-					attrs: { title: '目前智慧树倍速最高只能1.5x，超出有封号风险' },
-					defaultValue: 1,
-					options: [
-						['1', '1 x'],
-						['1.25', '1.25 x'],
-						['1.5', '1.5 x']
-					]
-				}
+				playbackRate: studyPlaybackRate
 			},
 			methods() {
 				return {
@@ -807,6 +876,8 @@ export const ZHSProject = Project.create({
 				}
 			},
 			async oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
+				migrateZhsStudyConfigs();
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 
@@ -980,20 +1051,14 @@ export const ZHSProject = Project.create({
 		}),
 		'gxk-work': new Script({
 			name: '✍️ 共享课-作业考试脚本',
+			hideInPanel: true,
 			matches: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
 				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
 				['作业考试列表', 'zhihuishu.com/stuExamWeb.html#/webExamList\\?']
 			],
-			namespace: 'zhs.gxk.work',
+			namespace: zhsWorkNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes([
-						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
-						'可以搭配 “通用-在线搜题” 一起使用。',
-						...gxk_read_notes
-					]).outerHTML
-				},
 				workDelay: {
 					label: '作业答题开始时间延迟（秒）',
 					defaultValue: 3,
@@ -1090,48 +1155,24 @@ export const ZHSProject = Project.create({
 		}),
 		'smart-study': new Script({
 			name: '🖥️ 新形态课程-学习脚本',
+			hideInPanel: true,
 			matches: [
 				['新形态课程学习页面', 'smartcoursestudent.zhihuishu.com/learnPage'],
 				['新形态课程新域名学习页面', 'ai-smart-course-student-pro.zhihuishu.com/learnPage'],
 				['新形态课程首页', 'smartcoursestudent.zhihuishu.com/singleCourse'],
 				['新形态课程新域名课程首页', 'ai-smart-course-student-pro.zhihuishu.com/singleCourse']
 			],
-			namespace: 'zhs.smart.study',
+			namespace: zhsStudyNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes([
-						'掌握度和作业请视频看完后自行手动进入',
-						'不要最小化浏览器/关闭电脑屏幕，可能导致脚本暂停。',
-						'任意选择一个章节，脚本会自动往下学“必学”课程。',
-						'运行中请将浏览器缩放调整至适合的大小，避免元素遮挡，无法点击',
-						'例如：调整缩放到 50%，然后刷新页面即可'
-					]).outerHTML
-				},
-				switchMode: {
-					label: '跳转模式',
-					tag: 'select',
-					defaultValue: 'job' as 'job' | 'all',
-					options: [
-						['job', '只跳转必学章节', '章节后面有必学，并且必学数量未完成的章节，如果全部完成将停止学习'],
-						['all', '顺序跳转']
-					]
-				},
+				switchMode,
 				restudy: restudy,
 				volume: volume,
 				definition: definition,
-				playbackRate: {
-					label: '视频倍速',
-					tag: 'select',
-					defaultValue: 1,
-					attrs: { title: '目前智慧树倍速最高只能1.5x，超出有封号风险' },
-					options: [
-						['1', '1 x'],
-						['1.25', '1.25 x'],
-						['1.5', '1.5 x']
-					]
-				}
+				playbackRate: studyPlaybackRate
 			},
 			oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
+				migrateZhsStudyConfigs();
 				this.methods.start();
 			},
 			onhistorychange(type, ...args) {
@@ -1375,6 +1416,7 @@ export const ZHSProject = Project.create({
 		}),
 		'smart-work': new Script({
 			name: '✍️ 新形态课程-作业/考试/掌握度脚本',
+			hideInPanel: true,
 			matches: [
 				['新形态课程作业页面', 'smartcourseexam.zhihuishu.com/ReviewExam'],
 				['新形态课程-掌握提升页面', 'studentexamcomh5.zhihuishu.com/studentReviewTestOrExam'],
@@ -1382,19 +1424,8 @@ export const ZHSProject = Project.create({
 				['新形态课程-新AI助教掌握度', 'studywisdomh5.zhihuishu.com/exam'],
 				['新形态课程-新AI学伴掌握度', 'wisdom-mooc.zhihuishu.com/exam']
 			],
-			namespace: 'zhs.smart.work',
+			namespace: zhsWorkNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes([
-						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
-						'可以搭配 “通用-在线搜题” 一起使用。',
-						'⚠️ 如果没开始答题，请尝试刷新页面。',
-						'⚠️ 禁止一次性打开多个作业/考试页面。',
-						...(remote_not_required_pages.some((domain) => location.href.includes(domain))
-							? []
-							: ['⚠️ 答题中请勿进行任何操作，如需暂停答题', '请等待全部题目搜索完成并执行自动保存功能后才能操作。'])
-					]).outerHTML
-				},
 				workDelay: {
 					label: '作业答题开始时间延迟（秒）',
 					defaultValue: 3,
@@ -1450,17 +1481,10 @@ export const ZHSProject = Project.create({
 		}),
 		'smart-exam': new Script({
 			name: '✍️ 新形态课程-考试脚本',
+			hideInPanel: true,
 			matches: [['新形态课程-考试界面', 'examloop.zhihuishu.com/exam']],
-			configs: {
-				notes: {
-					defaultValue: $ui.notes([
-						'自动答题前请在 “通用-全局设置” 中设置题库配置。',
-						'可以搭配 “通用-在线搜题” 一起使用。',
-						'⚠️ 如果没开始答题，请尝试刷新页面。',
-						'⚠️ 禁止一次性打开多个作业/考试页面。'
-					]).outerHTML
-				}
-			},
+			namespace: zhsWorkNamespace,
+			configs: {} as any,
 			methods() {
 				return {
 					start: async () => {
@@ -1483,21 +1507,23 @@ export const ZHSProject = Project.create({
 				};
 			},
 			oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
+				migrateZhsWorkConfigs();
 				this.methods.start();
 			}
 		}),
 		'xnk-study': new Script({
 			name: '🖥️ 校内课（翻转课）-学习脚本',
+			hideInPanel: true,
 			matches: [['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning']],
-			namespace: 'zhs.xnk.study',
+			namespace: zhsStudyNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes(['章节测试请大家观看完视频后手动打开。', '此课程不能使用倍速。']).outerHTML
-				},
 				restudy: restudy,
 				volume: volume
 			},
 			oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
+				migrateZhsStudyConfigs();
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 
@@ -1582,18 +1608,21 @@ export const ZHSProject = Project.create({
 		}),
 		'xnk-work': new Script({
 			name: '✍️ 校内课-作业考试脚本',
+			hideInPanel: true,
 			matches: [
 				['校内课作业页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList'],
 				['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/examQ/examexercise']
 			],
-			namespace: 'zhs.xnk.work',
-			configs: { notes: workNotes },
+			namespace: zhsWorkNamespace,
+			configs: {},
 			onhistorychanged(type) {
 				if (type === 'pushed') {
 					this.oncomplete?.();
 				}
 			},
 			async oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
+				migrateZhsWorkConfigs();
 				commonWork(this, {
 					workerProvider: xnkWork
 				});
@@ -1601,50 +1630,23 @@ export const ZHSProject = Project.create({
 		}),
 		'wisdom-study': new Script({
 			name: '🖥️ 新智慧学习-学习脚本',
+			hideInPanel: true,
 			matches: [
 				['2025-12月新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index'],
 				['学习提示', 'wisdom-mooc.zhihuishu.com/study/analysis']
 			],
-			namespace: 'zhs.wisdom.study',
+			namespace: zhsStudyNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes([
-						'掌握度和作业请视频看完后自行手动进入',
-						'不要最小化浏览器/关闭电脑屏幕，可能导致脚本暂停。',
-						'请使用时关闭卡巴斯基软件，否则会被检测出异常脚本。',
-						'运行中请将浏览器缩放调整至适合的大小，避免元素遮挡，无法点击',
-						'例如：调整缩放到 50%，然后刷新页面即可'
-					]).outerHTML
-				},
 				restudy: restudy,
-				skipStudyTimeWarnDialog: {
-					label: '忽略习惯分弹窗',
-					attrs: {
-						title: '如果课程有习惯分需要自行控制学习时长，如果忽略习惯分提示，则可能没有习惯分。',
-						type: 'checkbox'
-					},
-					defaultValue: false
-				},
-				reloadWhenError: {
-					label: '视频黑屏时自动刷新',
-					attrs: { type: 'checkbox', title: '当视频出现加载失败，或者黑屏等异常时，自动刷新页面3次尝试修复' },
-					defaultValue: true
-				},
+				skipStudyTimeWarnDialog,
+				reloadWhenError,
 				volume: volume,
 				definition: definition,
-				playbackRate: {
-					label: '视频倍速',
-					tag: 'select',
-					defaultValue: 1,
-					attrs: { title: '目前智慧树倍速最高只能1.5x，超出有封号风险' },
-					options: [
-						['1', '1 x'],
-						['1.25', '1.25 x'],
-						['1.5', '1.5 x']
-					]
-				}
+				playbackRate: studyPlaybackRate
 			},
 			async oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
+				migrateZhsStudyConfigs();
 				if (location.href.includes('https://wisdom-mooc.zhihuishu.com/study/analysis')) {
 					return $message.info({ content: '请手动进入掌握度进行自动答题。', duration: 10 });
 				}
@@ -1929,36 +1931,22 @@ export const ZHSProject = Project.create({
 		}),
 		hike: new Script({
 			name: '🖥️ 教学空间-AI智慧课程-学习脚本',
+			hideInPanel: true,
 			matches: [
 				['学习首页', 'hike-teaching-center.polymas.com/stu-hike/agent-course-hike/ai-course-center'],
 				['学习页面', 'tools-hike/studentStudyResource']
 			],
-			namespace: 'zhs.hike.study',
+			namespace: zhsStudyNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes(['请手动进入视频、作业、考试页面，脚本会自动运行。']).outerHTML
-				},
 				restudy: restudy,
-				reloadWhenError: {
-					label: '视频黑屏时自动刷新',
-					attrs: { type: 'checkbox', title: '当视频出现加载失败，或者黑屏等异常时，自动刷新页面3次尝试修复' },
-					defaultValue: true
-				},
+				reloadWhenError,
 				volume: volume,
 				definition: definition,
-				playbackRate: {
-					label: '视频倍速',
-					tag: 'select',
-					defaultValue: 1,
-					attrs: { title: '目前智慧树倍速最高只能1.5x，超出有封号风险' },
-					options: [
-						['1', '1 x'],
-						['1.25', '1.25 x'],
-						['1.5', '1.5 x']
-					]
-				}
+				playbackRate: studyPlaybackRate
 			},
 			async oncomplete(...args) {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
+				migrateZhsStudyConfigs();
 				// 置顶当前脚本
 				CommonProject.scripts.render.methods.pin(this);
 				if (location.href.includes('stu-hike/agent-course-hike/ai-course-center')) {
@@ -2149,27 +2137,23 @@ export const ZHSProject = Project.create({
 		}),
 		hike_v2: new Script({
 			name: '🖥️ 教学空间-AI智慧课程-学习脚本',
+			hideInPanel: true,
 			matches: [
 				['学习首页', /polymas.com\/stu-hike\/agent-course-full\/.*\/stu\/(course-home|study)/],
 				['学习页面', '/stu/study/resource-detail']
 			],
-			namespace: 'zhs.hike_v2.study',
+			namespace: zhsStudyNamespace,
 			configs: {
-				notes: {
-					defaultValue: $ui.notes(['请手动进入视频、作业、考试页面，脚本会自动运行。']).outerHTML
-				},
 				restudy: restudy,
-				reloadWhenError: {
-					label: '视频黑屏时自动刷新',
-					attrs: { type: 'checkbox', title: '当视频出现加载失败，或者黑屏等异常时，自动刷新页面3次尝试修复' },
-					defaultValue: true
-				},
+				reloadWhenError,
 				volume: volume
 			},
 			oncomplete(...args) {
 				this.onhistorychange?.('push', ...args);
 			},
 			async onhistorychange(type) {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
+				migrateZhsStudyConfigs();
 				if (type !== 'push') {
 					return;
 				}
@@ -2328,9 +2312,9 @@ export const ZHSProject = Project.create({
 		'hike-work': new Script({
 			matches: [['AI教学中心-作业任务页面', '/stu-hike/stuHomeworkDo']],
 			name: '✍️ 教学空间-AI智慧课程-作业考试脚本',
-			namespace: 'zhs.hike.work',
+			hideInPanel: true,
+			namespace: zhsWorkNamespace,
 			configs: {
-				notes: workNotes,
 				workDelay: {
 					label: '作业答题开始时间延迟（秒）',
 					defaultValue: 3,
@@ -2338,6 +2322,8 @@ export const ZHSProject = Project.create({
 				}
 			},
 			async oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
+				migrateZhsWorkConfigs();
 				// 检查是否为软件环境
 				CommonProject.scripts.render.methods.pin(this);
 
@@ -2357,9 +2343,9 @@ export const ZHSProject = Project.create({
 				['AI教学中心-作业任务页面', '/stu-exam/answer-exam']
 			],
 			name: '✍️ 教学空间-AI智慧课程-题目作业脚本',
-			namespace: 'zhs.hike.homework',
+			hideInPanel: true,
+			namespace: zhsWorkNamespace,
 			configs: {
-				notes: workNotes,
 				workDelay: {
 					label: '作业答题开始时间延迟（秒）',
 					defaultValue: 3,
@@ -2367,6 +2353,8 @@ export const ZHSProject = Project.create({
 				}
 			},
 			async oncomplete() {
+				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
+				migrateZhsWorkConfigs();
 				// 检查是否为软件环境
 				CommonProject.scripts.render.methods.pin(this);
 
@@ -3519,7 +3507,11 @@ function autoStop(stopTime: string) {
 				$modal.alert({ content: '脚本暂停，已获得今日平时分，如需继续观看，请刷新页面。' });
 			}
 		}, 1000);
-		const val = ZHSProject.scripts['gxk-study'].configs!.stopTime.options.find((t) => t[0] === stopTime)?.[0] || '0';
+		// 从配置的 options 中校验当前定时值是否合法（keep 与 stopTime.options 定义同步）
+		const val =
+			((ZHSProject.scripts['gxk-study'].configs!.stopTime.options || []) as string[][]).find(
+				(t) => t[0] === stopTime
+			)?.[0] || '0';
 		const date = new Date();
 		date.setMinutes(date.getMinutes() + parseFloat(val) * 60);
 		state.study.stopMessage = $message.info({
@@ -3527,6 +3519,58 @@ function autoStop(stopTime: string) {
 			content: `在 ${date.toLocaleTimeString()} 脚本将自动暂停`
 		});
 	}
+}
+
+/** 学习/视频界面所需的最小分辨率（宽 x 高） */
+const MIN_VIEWPORT_WIDTH = 1280;
+const MIN_VIEWPORT_HEIGHT = 720;
+
+/**
+ * 检测智慧树学习/视频界面的分辨率，如果低于 1280x720，
+ * 则弹窗提示用户，点击确定后自动调整缩放以达到最小要求。
+ *
+ * 说明：分辨率过小会导致页面元素重叠/遮挡，影响学习、播放等自动点击功能。
+ */
+function ensureWideViewport() {
+	const { innerWidth: width, innerHeight: height } = window;
+	if (width >= MIN_VIEWPORT_WIDTH && height >= MIN_VIEWPORT_HEIGHT) {
+		return;
+	}
+	$modal.confirm({
+		title: '界面分辨率提示',
+		content: h('div', {}, [
+			'当前界面分辨率过小，可能影响学习、播放等自动点击功能，点击确定自动调整界面尺寸。',
+			h('div', { style: { fontSize: '12px', color: '#999', marginTop: '8px' } }, '如需恢复请刷新界面')
+		]),
+		confirmButtonText: '确定',
+		cancelButtonText: '暂不调整',
+		onConfirm: () => {
+			adjustViewportScale(width, height);
+		}
+	});
+}
+
+/**
+ * 通过 html 的 zoom 缩放样式，把界面调整到满足 1280x720 最小分辨率要求。
+ * 缩放比例取宽、高两个方向所需缩放中的较大值，确保两个方向都满足最小要求。
+ */
+function adjustViewportScale(width: number, height: number) {
+	const scale = Math.min(1, Math.min(width / MIN_VIEWPORT_WIDTH, height / MIN_VIEWPORT_HEIGHT));
+	if (scale >= 1) {
+		return;
+	}
+	const styleId = 'ocs-viewport-scale-style';
+	let style = document.getElementById(styleId) as HTMLStyleElement | null;
+	if (style === null) {
+		style = document.createElement('style');
+		style.id = styleId;
+		document.head.append(style);
+	}
+	style.innerText = `html { zoom: ${scale}; }`;
+	$message.success({
+		duration: 5,
+		content: `已自动调整缩放至 ${Math.round(scale * 100)}%，以满足 1280x720 最小分辨率要求`
+	});
 }
 /** 固定视频进度 */
 function fixProcessBar() {
