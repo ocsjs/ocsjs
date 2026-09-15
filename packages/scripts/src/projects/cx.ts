@@ -177,6 +177,29 @@ export const CXProject = Project.create({
 					return;
 				}
 				$message.info('请手动进入视频、作业、考试页面，脚本会自动运行。');
+			},
+			onrender({ panel }) {
+				// 仅在油猴环境中显示设置跳转按钮（桌面软件等环境的脚本设置在其他平台/界面中显示）
+				if ($gm.isInGMContext()) {
+					/** 跳转到指定脚本面板 */
+					const gotoPanel = (scriptKey: 'study' | 'work') => {
+						const target = CXProject.scripts[scriptKey];
+						// projectName 仅在面板渲染过时才被框架赋值，首次跳转需要手动补齐，
+						// 否则 pin 会退化为按 namespace 匹配，可能选中到被隐藏的脚本面板
+						target.projectName = CXProject.name;
+						CommonProject.scripts.render.methods.pin(target);
+					};
+					panel.body.replaceChildren(
+						h('hr'),
+						$ui.button('👉 前往学习设置', {}, (btn) => {
+							btn.style.marginRight = '12px';
+							btn.onclick = () => gotoPanel('study');
+						}),
+						$ui.button('👉 前往作业设置', {}, (btn) => {
+							btn.onclick = () => gotoPanel('work');
+						})
+					);
+				}
 			}
 		}),
 		study: new Script({
