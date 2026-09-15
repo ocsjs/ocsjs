@@ -48,7 +48,7 @@ hr {
 	padding: @form-control-padding;
 	margin: 0px;
 	background-color: @form-control-bg;
-	border-radius: 2px;
+	border-radius: 8px;
 	color: black;
 
 	&::placeholder {
@@ -99,11 +99,12 @@ hr {
 	-webkit-appearance: none;
 
 	border-radius: 4px;
-	background-color: white;
-	border: 1px solid #2c92ff;
-	color: #409eff;
+	background-color: #409eff;
+	border: 1px solid #409eff;
+	color: white;
 	cursor: pointer !important;
 	margin-bottom: 4px;
+	transition: all 0.2s ease;
 
 	&:active {
 		box-shadow: 0px 0px 8px #0e8de2a5;
@@ -114,23 +115,26 @@ hr {
 	}
 
 	&:hover {
-		background-color: #7abbff24;
-	}
-
-	&.danger:hover {
-		background-color: #ffdede86;
-	}
-
-	&:disabled {
-		background-color: white;
-		border: 1px solid #c0c0c0;
-		color: #aeaeae;
-		cursor: not-allowed;
+		background-color: #66b1ff;
+		border-color: #66b1ff;
 	}
 
 	&.danger {
-		color: #f36669;
-		border-color: #dd5a5d;
+		background-color: #f56c6c;
+		border-color: #f56c6c;
+		color: white;
+	}
+
+	&.danger:hover {
+		background-color: #f78989;
+		border-color: #f78989;
+	}
+
+	&:disabled {
+		background-color: #a0cfff;
+		border-color: #a0cfff;
+		color: white;
+		cursor: not-allowed !important;
 	}
 
 	&:disabled:active {
@@ -141,9 +145,15 @@ hr {
 .base-style-button-secondary {
 	.base-style-button();
 
-	color: gray;
+	color: #606266;
 	background-color: white;
 	border: 1px solid #dcdcdc;
+
+	&:hover {
+		color: #409eff;
+		border-color: #c6e2ff;
+		background-color: #ecf5ff;
+	}
 }
 
 container-element.hidden {
@@ -165,9 +175,10 @@ container-element {
 	-moz-osx-font-smoothing: grayscale;
 	color: #636363;
 	box-shadow: 0 0 24px -12px #3f3f3f;
-	border-radius: 8px;
+	border-radius: 12px;
 	letter-spacing: 0.5px;
 	border: 1px solid #c1c1c1;
+	background-color: #f5f5f5;
 }
 
 @base-height: 32px;
@@ -176,17 +187,15 @@ container-element {
 header-element {
 	display: flex;
 	align-items: center;
-	background-color: white;
-	border-radius: 8px 8px 0px 0px;
+	border-radius: 12px 12px 0px 0px;
 	user-select: none;
-	padding: 4px;
 	padding-bottom: 0px;
 
 	.extra-menu-bar {
 		width: 100%;
 		padding: 4px;
-		padding-bottom: 0px;
-		margin-top: 4px;
+		padding-bottom: 4px;
+		background-color: white;
 		border-top: 1px solid #e8e8e8;
 		/** 默认隐藏，一直到需要激活的时候再更改 */
 		display: none;
@@ -209,14 +218,22 @@ header-element {
 		}
 	}
 
-	.profile {
-		flex: 1;
-		cursor: move;
+	.header-menu-bar {
+		padding-top: 4px;
+		border-top-left-radius: 12px;
+		border-top-right-radius: 12px;
+		background-color: #f5f7fa;
+		align-items: center;
+		gap: 0px;
 	}
 
-	.switch:hover,
-	.dropdown:hover {
-		background-color: #f3f3f3;
+	.profile {
+		cursor: move;
+		margin-right: 4px;
+	}
+
+	.switch:hover {
+		background-color: #e4e9f0;
 	}
 
 	.close:hover {
@@ -229,8 +246,76 @@ header-element {
 	}
 
 	.dropdown {
-		line-height: 24px;
-		text-decoration: underline;
+		line-height: 20px;
+
+		// 未激活 tab：扁平文本样式（daisyUI tabs-lift），仅 hover 时轻微反馈
+		.dropdown-trigger-element {
+			padding: 2px 12px;
+			border: none;
+			border-top: 1px solid #00000000;
+			border-radius: 8px 8px 0px 0px;
+			font-weight: 500;
+			color: #606266;
+			background-color: transparent;
+			cursor: pointer;
+			transition: background-color 0.2s ease, color 0.2s ease;
+
+			&:hover {
+				background-color: #ffffff80;
+				color: #1890ff;
+			}
+		}
+
+		&.active {
+			.dropdown-trigger-element {
+				// ===== daisyUI tabs-lift 变量 =====
+				--tab-border: 1px;
+				--tab-border-color: #e8ecf1;
+				--tab-bg: #ffffff;
+				--tab-radius-limit: 8px;
+				--tab-radius-grad: #0000 calc(69% - var(--tab-border)),
+					var(--tab-border-color) calc(69% - var(--tab-border) + 0.25px), var(--tab-border-color) 69%,
+					var(--tab-bg) calc(69% + 0.25px);
+				--radius-start: radial-gradient(circle at top left, var(--tab-radius-grad));
+				--radius-end: radial-gradient(circle at top right, var(--tab-radius-grad));
+
+				position: relative;
+				color: #1890ff;
+				font-weight: 600;
+				// 左右 padding 补偿侧边 border，保持文字位置与未激活态一致
+				padding: 2px 11px;
+				background-color: var(--tab-bg);
+				border: var(--tab-border) solid var(--tab-border-color);
+				border-bottom: none;
+				border-radius: var(--tab-radius-limit) var(--tab-radius-limit) 0 0;
+				// 正下方铺 1px 白色阴影带，盖住标题栏横线（等价 daisyUI 的 tab-content 负 margin）
+				box-shadow: 0 1px 0 var(--tab-bg);
+
+				// 底部左右反向圆角（daisyUI ::before 机制）：
+				// 环内透明露出标题栏底色，环外填 tab 底色并盖住侧边框下端与横线
+				&::before {
+					content: '';
+					z-index: 1;
+					position: absolute;
+					inset: auto calc(-1 * var(--tab-radius-limit)) -1px calc(-1 * var(--tab-radius-limit));
+					height: calc(var(--tab-radius-limit) + var(--tab-border));
+					transform: translate(0px, 1px);
+					pointer-events: none;
+					background-image: var(--radius-start), var(--radius-end), linear-gradient(var(--tab-bg), var(--tab-bg));
+					background-size: var(--tab-radius-limit) var(--tab-radius-limit),
+						var(--tab-radius-limit) var(--tab-radius-limit), 100% var(--tab-border);
+					background-position: top left, top right, bottom left;
+					background-repeat: no-repeat;
+				}
+			}
+		}
+	}
+
+	.switch {
+		border-radius: 8px;
+		line-height: 20px;
+		margin-left: auto;
+		transition: background-color 0.2s ease;
 	}
 
 	.switch,
@@ -267,12 +352,13 @@ header-element {
 	overflow: auto;
 	width: auto;
 	height: 100%;
+	overscroll-behavior: contain;
 }
 
 script-panel-element {
 	display: block;
 	background-color: white;
-	border-radius: 0px 0px 8px 8px;
+	border-radius: 0px 0px 12px 12px;
 	padding: 0px 8px 12px 8px;
 	overflow: auto;
 
@@ -291,17 +377,64 @@ script-panel-element + script-panel-element {
 
 .card {
 	background-color: white;
-	border-radius: 2px;
+	border-radius: 10px;
 	padding: 0px 8px;
 }
 
 .notes {
 	background: #0099ff0e;
 	border-left: 4px solid #0099ff65;
+	border-radius: 4px 10px 10px 4px;
 	width: -webkit-fill-available;
 	margin: 0px 8px;
 	line-height: 26px;
 	letter-spacing: 1px;
+
+	.notes-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		cursor: pointer;
+		user-select: none;
+		font-weight: bold;
+
+		.notes-title {
+			display: inline-flex;
+			align-items: center;
+			gap: 4px;
+		}
+
+		.notes-info-icon {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 14px;
+			height: 14px;
+			border-radius: 50%;
+			background-color: #1890ff;
+			color: white;
+			font-size: 10px;
+			font-weight: bold;
+			font-style: italic;
+			line-height: 1;
+			user-select: none;
+		}
+	}
+
+	.notes-collapse-icon {
+		font-size: 12px;
+		transition: transform 0.2s;
+	}
+
+	&.collapsed {
+		.notes-body {
+			display: none;
+		}
+
+		.notes-collapse-icon {
+			transform: rotate(-90deg);
+		}
+	}
 }
 
 .secondary {
@@ -320,7 +453,7 @@ script-panel-element + script-panel-element {
 	white-space: normal;
 	max-width: 200px;
 	height: auto;
-	border-radius: 2px;
+	border-radius: 6px;
 	line-height: 18px;
 }
 
@@ -391,7 +524,7 @@ script-panel-element + script-panel-element {
 					outline: none;
 					border: none;
 					border: 1px solid #e4e4e4;
-					border-radius: 4px;
+					border-radius: 8px;
 					padding: @form-control-padding;
 
 					.base-style-active-form-control();
@@ -415,6 +548,9 @@ script-panel-element + script-panel-element {
 
 				input[type='button'] {
 					.base-style-button();
+					// 宽度根据文本自适应
+					width: auto;
+					padding: 4px 12px;
 				}
 
 				/** check box 的样式 */
@@ -422,7 +558,7 @@ script-panel-element + script-panel-element {
 					.base-style-switch();
 				}
 
-				input:not([type='checkbox'], [type='radio']),
+				input:not([type='checkbox'], [type='radio'], [type='button']),
 				textarea,
 				select {
 					width: -webkit-fill-available;
@@ -438,9 +574,45 @@ script-panel-element + script-panel-element {
 
 			.config-wrapper > *:not(.tooltip) {
 				background-color: @form-control-bg;
-				border-radius: 2px;
+				border-radius: 8px;
 				color: black;
 				float: right;
+			}
+
+			/** 前后插槽容器：仅作布局，抵消 > * 规则带来的底色与圆角 */
+			.config-wrapper > .config-provider-container {
+				display: inline-flex;
+				align-items: center;
+				gap: 6px;
+				background-color: transparent;
+				border-radius: 0px;
+				padding: 0px;
+
+				.config-prefix,
+				.config-suffix {
+					display: inline-flex;
+					align-items: center;
+					white-space: nowrap;
+					line-height: 20px;
+					flex-shrink: 0;
+				}
+
+				/** 插槽中的按钮：去除下外边距保持垂直居中，禁止收缩 */
+				.base-style-button,
+				.base-style-button-secondary {
+					margin-bottom: 0px;
+					white-space: nowrap;
+					flex-shrink: 0;
+				}
+
+				/** 容器内的表单控件：恢复独立控件底色 */
+				> input:not([type='checkbox'], [type='radio'], [type='button']),
+				> select,
+				> textarea {
+					width: auto;
+					min-width: 60px;
+					background-color: @form-control-bg;
+				}
 			}
 			.config-wrapper > *:disabled {
 				cursor: not-allowed;
@@ -464,7 +636,7 @@ script-panel-element + script-panel-element {
 	// 提示内容
 	message-element {
 		display: flex;
-		border-radius: 4px;
+		border-radius: 8px;
 		padding: 4px 12px;
 		margin-bottom: 4px;
 
@@ -523,7 +695,7 @@ modal-element {
 	top: 50%;
 	left: 50%;
 	background-color: white;
-	border-radius: 4px;
+	border-radius: 14px;
 	box-shadow: 0px 0px 24px -12px black;
 	border: 1px solid #929292;
 	height: fit-content;
@@ -652,8 +824,8 @@ container-element.minimize {
 }
 
 container-element.minimize header-element {
-	padding: 8px;
-	border-radius: 8px;
+	border-radius: 12px;
+	padding-bottom: 8px;
 	box-shadow: 0px 0px 24px -12px black;
 }
 
@@ -938,10 +1110,11 @@ search-infos-element {
 	position: absolute;
 	background-color: #ffffff;
 	overflow: auto;
-	box-shadow: 0px 8px 16px 0px #00000033;
+	box-shadow: 0 6px 16px 0 #00000014, 0 3px 6px -4px #0000001f;
 	z-index: 1;
-	border-radius: 4px;
-	padding: 8px 12px;
+	border: 1px solid #e8ecf1;
+	border-radius: 12px;
+	padding: 4px;
 	min-width: 120px;
 
 	&.show {
@@ -954,17 +1127,20 @@ search-infos-element {
 	z-index: 999;
 
 	.dropdown-option {
-		padding-left: 4px;
+		padding: 4px 12px;
 		white-space: nowrap;
+		border-radius: 8px;
+		transition: background-color 0.2s ease, color 0.2s ease;
 	}
 
 	.dropdown-option:hover {
-		background-color: #f3f3f3;
+		background-color: #f5f5f5;
 	}
 
 	.dropdown-option.active {
 		background-color: #1890ff1a;
 		color: #1890ff;
+		font-weight: 500;
 	}
 }
 

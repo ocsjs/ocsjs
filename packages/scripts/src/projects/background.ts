@@ -926,18 +926,8 @@ export const BackgroundProject = Project.create({
 					[CXProject.scripts.studyDispatcher, CXProject.scripts.study],
 					CXProject.scripts.work,
 					CXProject.scripts.autoRead,
-					ZHSProject.scripts['gxk-study'],
-					ZHSProject.scripts['xnk-study'],
-					ZHSProject.scripts.hike,
-					ZHSProject.scripts['smart-study'],
-					ZHSProject.scripts['wisdom-study'],
-					ZHSProject.scripts['xnk-study'],
-					ZHSProject.scripts['gxk-work'],
-					ZHSProject.scripts['xnk-work'],
-					ZHSProject.scripts['hike-work'],
-					ZHSProject.scripts['smart-work'],
-					ZHSProject.scripts['smart-exam'],
-					ZHSProject.scripts['xnk-work'],
+					ZHSProject.scripts['study-center'],
+					ZHSProject.scripts['work-center'],
 					[ICourseProject.scripts.dispatcher, ICourseProject.scripts.study],
 					ICourseProject.scripts.work,
 					[ZJYProject.scripts.dispatcher, ZJYProject.scripts.study],
@@ -973,8 +963,6 @@ export const BackgroundProject = Project.create({
 				if (currentStudyScript) await $menu('🖥️', { scriptPanelLink: currentStudyScript });
 				await $menu('🔎', { scriptPanelLink: CommonProject.scripts.workResults });
 				await $menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
-				await $menu('📥', { scriptPanelLink: BackgroundProject.scripts.update });
-				await $menu('📄', { scriptPanelLink: BackgroundProject.scripts.console });
 			}
 		})
 	}

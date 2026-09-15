@@ -802,10 +802,7 @@ export const CommonProject = Project.create({
 					const tableContainer = h('div');
 					refresh.style.display = 'none';
 					tableContainer.style.display = 'none';
-					panel.body.append(
-						h('div', { style: { display: 'flex' } }, [testNotification, refresh, errorSolveGuide]),
-						tableContainer
-					);
+					panel.body.append(h('div', { style: { display: 'flex' } }, [refresh, errorSolveGuide]), tableContainer);
 
 					// 更新题库状态
 					const updateState = async () => {
@@ -1846,25 +1843,25 @@ const createGuide = () => {
 	};
 
 	return h('div', { className: 'user-guide' }, [
-		h('div', { style: cardStyle }, [
+		h('div', [
 			h('div', { style: { marginBottom: '4px', fontWeight: 'bold' } }, [
 				'✨兼容的网课平台：',
 				h('span', { className: 'secondary', style: { fontWeight: 'normal' } }, '（未适配的平台将无法运行，请等待适配）')
 			]),
 
-			h('div', [
-				...[CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject, YKTProject].map((project) => {
-					const btn = h('button', { className: 'base-style-button-secondary', style: { margin: '4px' } }, [
-						project.name
-					]);
+			h(
+				'div',
+				{ style: { display: 'flex', flexWrap: 'wrap', gap: '4px', maxWidth: '400px' } },
+				[CXProject, ZHSProject, ZJYProject, IcveMoocProject, ICourseProject, YKTProject].map((project) => {
+					const btn = h('button', { className: 'base-style-button-secondary' }, [project.name]);
 					btn.onclick = () => {
 						showProjectDetails(project);
 					};
-					return btn;
+					return h('span', [btn]);
 				})
-			])
+			)
 		]),
-		h('div', { style: { ...cardStyle, marginTop: '12px' } }, [
+		h('div', { style: { marginTop: '12px' } }, [
 			h('div', { style: { marginBottom: '8px', fontWeight: 'bold' } }, '🌐快捷访问：'),
 			gotoHome,
 			contactUs,
@@ -1901,7 +1898,7 @@ function createSearchResultAlertElement(result: SimplifyWorkResult) {
 			? null
 			: result.resolved === false
 			? h('div', { className: 'result-info unresolved' }, '等待顺序答题中... ⏱️')
-			: h('div', { className: 'result-info error' }, '❌ 给出的答案和选项不匹配，可能是题库答案错误');
+			: h('div', { className: 'result-info warn' }, '⚠️ 给出的答案和选项不匹配，可能是题库答案错误');
 	}
 
 	return h('div', { className: 'alert-info-wrapper' }, [info ?? h('div')]);

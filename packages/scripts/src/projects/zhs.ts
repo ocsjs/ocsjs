@@ -836,7 +836,7 @@ export const ZHSProject = Project.create({
 							if (href) {
 								$modal.alert({
 									title: '规律学习检测',
-									content: `自动检测功能已失效，<a href="${href}"> -> 点击此处 <- </a> 前往成绩分析页面，点击 <b>“学习习惯”</b> 即可查看习惯分详情。`
+									content: `自动检测功能已失效，<a href="${href}"> -> 点击此处 <- </a> 前往成绩分析页面，点击 <b>"学习习惯"</b> 即可查看习惯分详情。`
 								});
 							} else {
 								$modal.alert({
@@ -1351,8 +1351,8 @@ export const ZHSProject = Project.create({
 								});
 							} catch {
 								const msg = '未找到学习视频，即将自动下一节！';
-								$message.error(msg);
-								$console.error(msg);
+								$message.warn(msg);
+								$console.warn(msg);
 								await $.sleep(3000);
 								await next();
 								return;

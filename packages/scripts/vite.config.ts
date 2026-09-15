@@ -41,6 +41,13 @@ export default defineConfig({
 			name: 'OCS',
 			fileName: () => 'index.js',
 			formats: ['umd']
+		},
+		/**
+		 * pnpm link 后 easy-us 被解析到仓库真实路径（如 ../eus/lib），不在 node_modules 内，
+		 * 需把该路径纳入 commonjs 转换（easy-us 的 lib 是 CJS 产物）
+		 */
+		commonjsOptions: {
+			include: [/node_modules/, /eus/, /easy-us/]
 		}
 	},
 
