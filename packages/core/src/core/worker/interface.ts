@@ -194,8 +194,13 @@ export type AnswererType<E> = (
  * 答题器参数
  */
 export interface WorkOptions<E extends RawElements> {
-	/** 父元素 */
-	root: string | HTMLElement[];
+	/**
+	 * 父元素
+	 *
+	 * 传入函数时会在每次 OCSWorker.doWork 时重新执行，
+	 * 用于题目根节点需要动态变化（例如超星非预览模式逐题翻页）的场景。
+	 */
+	root: string | HTMLElement[] | (() => HTMLElement[]);
 	/** dom元素解析器，可以在 WorkContext.elements 中使用解析后的元素 */
 	elements: E;
 	/** 查题器 */
