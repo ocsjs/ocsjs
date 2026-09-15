@@ -788,30 +788,89 @@ function workOrExam(
 				.nowrap(is_multiple_question ? '\n' : ' ')
 				.nospace()
 				.toString()
-				.trim(),
+				.trim()
+				// 删除共享题干小题的序号，例如 "(1)" "1."
+				.replace(/^[ \t]*[（(]\d+[)）][ \t]*/gm, '')
+				.replace(/^[ \t]*\d+[.、][ \t]*/gm, ''),
 			redundanceWordsText.split('\n')
 		);
+	};
+
+	/** 共享题干题目（如 A3 题型）的小题选择器 */
+	const subQuestionSelector =
+		'.readComprehensionQues > .reading_answer, .readComprehensionQues > .filling_answer';
+
+	/** 是否为共享题干中的小题（题干与选项都在小题内部） */
+	const isSubQuestionRoot = (root: HTMLElement) =>
+		!!root.closest('.readComprehensionQues') && $$el('.stem_answer .answer_p', root).length > 0;
+
+	/**
+	 * 共享题干题目（如 A3 题型）整题只有一份材料，若干小题共用题干。
+	 * 若直接用 .questionLi 作根节点，只能搜到整段材料，读不到小题与选项。
+	 * 因此在所有小题都自带选项时按小题拆分，题干由「材料 + 小题题目」组成。
+	 */
+	const getSubQuestionRoots = (questionRoot: HTMLElement) => {
+		const items = $$el<HTMLElement>(subQuestionSelector, questionRoot);
+		if (items.length === 0) return [] as HTMLElement[];
+		// 新版共享题干小题：每个小题自带独立选项按钮（.stem_answer .answer_p）。
+		// 旧版小题使用 saveSingleSelect，应继续走原有整题处理，不在此拆分。
+		const optionBasedItems = items.filter((item) => {
+			const hasOwnOptions = $$el('.stem_answer .answer_p', item).length > 0;
+			const isLegacyItem = $$el('span.saveSingleSelect', item).length > 0;
+			return hasOwnOptions && !isLegacyItem;
+		});
+		// 只有全部小题都符合新版结构时才拆分，否则保持原有整题处理
+		return optionBasedItems.length === items.length ? optionBasedItems : ([] as HTMLElement[]);
+	};
+
+	/** 拆分共享题干题目后的题目根节点（每次答题重新获取，兼容非预览模式逐题翻页） */
+	const getQuestionRoots = () =>
+		$$el<HTMLElement>('.questionLi').flatMap((questionRoot) => {
+			const subQuestionRoots = getSubQuestionRoots(questionRoot);
+			return subQuestionRoots.length ? subQuestionRoots : [questionRoot];
+		});
+
+	/** 获取题目类型；共享题干小题的类型保存在小题自身的 qtype 上 */
+	const getRootQuestionType = (root: HTMLElement, typeElements: HTMLElement[]) => {
+		const subQuestionType = getQuestionType(parseInt(root.getAttribute('qtype') || ''));
+		if (subQuestionType) return subQuestionType;
+
+		// 在非预览模式下会出现多个干扰项 type，这里提取正确的
+		const typeElement =
+			typeElements.find((t) => t.getAttribute('name')?.match(/type\d+/)) ??
+			typeElements[0] ??
+			$el<HTMLElement>(
+				'input[id^="answertype"], input[name^="type"]',
+				(root.closest('.questionLi') as HTMLElement) || root
+			) ?? undefined;
+
+		return getQuestionType(parseInt(typeElement?.getAttribute('value') || '-1'));
 	};
 
 	// 这里跟章节测试的连线题不一样，章节测试是新版连线题
 	/** 新建答题器 */
 	const worker = new OCSWorker({
-		root: '.questionLi',
+		root: getQuestionRoots,
 		elements: {
 			title: (root) =>
-				$$el(
-					// 非预览模式的样式跟正常的不一样
-					!preview_mode
-						? ['.splitS-left .mark_name', '.line_wid_half.fl,.line_wid_half.fr'].join(',')
-						: [
-								':scope > h3',
-								':scope > div:not(.stem_answer,.mark_answer)',
-								':scope > p',
-								'.line_wid_half.fl,.line_wid_half.fr'
-						  ].join(','),
-					root
-				).filter((e) => !!e.textContent?.trim()),
-			options: '.answerBg .answer_p, .textDIV, .eidtDiv',
+				isSubQuestionRoot(root as HTMLElement)
+					? ([
+							$el(':scope > h3', (root as HTMLElement).closest('.questionLi') as HTMLElement),
+							$el('.reader_answer_tit, .filling_answer_tit', root)
+						  ].filter((e) => !!e?.textContent?.trim()) as HTMLElement[])
+					: $$el(
+							// 非预览模式的样式跟正常的不一样
+							!preview_mode
+								? ['.splitS-left .mark_name', '.line_wid_half.fl,.line_wid_half.fr'].join(',')
+								: [
+										':scope > h3',
+										':scope > div:not(.stem_answer,.mark_answer)',
+										':scope > p',
+										'.line_wid_half.fl,.line_wid_half.fr'
+									  ].join(','),
+							root
+						  ).filter((e) => !!e.textContent?.trim()),
+			options: '.answerBg .answer_p, .textDIV, .eidtDiv, .stem_answer .answer_p',
 			type: type === 'exam' ? 'input[name^="type"]' : 'input[id^="answertype"]',
 			lineAnswerInput: '.line_answer input[name^=answer]',
 			lineSelectBox: '.line_answer_ct .selectBox ',
@@ -828,8 +887,7 @@ function workOrExam(
 				// 处理作业和考试题目
 				const title = workOrExamQuestionTitleTransform(elements.title);
 				if (title) {
-					const typeInput = elements.type[0] as HTMLInputElement;
-					const type = (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown';
+					const type = getRootQuestionType(ctx.root, elements.type) || 'unknown';
 					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
 						await $.sleep((period ?? 3) * 1000);
 						return defaultAnswerWrapperHandler(answererWrappers, {
@@ -852,11 +910,7 @@ function workOrExam(
 		work: async (ctx) => {
 			const { elements, searchInfos } = ctx;
 
-			// 在非预览模式下会出现多个干扰项 type，这里提取正确的
-
-			const type = getQuestionType(
-				parseInt(elements.type.find((t) => t.getAttribute('name')?.match(/type\d+/))?.getAttribute('value') || '-1')
-			);
+			const type = getRootQuestionType(ctx.root, elements.type);
 
 			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = createDefaultQuestionResolver(ctx)[type];

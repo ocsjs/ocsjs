@@ -52,8 +52,12 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		});
 
 		/** 寻找题目父节点 */
-		const questionRoots: HTMLElement[] | null =
-			typeof this.opts.root === 'string' ? Array.from(document.querySelectorAll(this.opts.root)) : this.opts.root;
+		const questionRoots: HTMLElement[] =
+			typeof this.opts.root === 'string'
+				? Array.from(document.querySelectorAll(this.opts.root))
+				: typeof this.opts.root === 'function'
+				? this.opts.root()
+				: this.opts.root;
 
 		this.totalQuestionCount += questionRoots.length;
 
