@@ -517,6 +517,21 @@ export const CommonProject = Project.create({
 					label: '高级设置',
 					attrs: { type: 'checkbox', title: '请谨慎使用高级设置，可能会影响答题效果，小白在未理解的情况下谨慎调整。' }
 				},
+				answerWrapperSearchMode: {
+					showIf: 'common.settings.advancedSettings',
+					elementClassName: 'config-details',
+					label: '多题库搜题模式',
+					attrs: {
+						title:
+							'顺序搜题：按照题库配置顺序依次请求，命中答案后立即停止，可节省后续题库的调用次数。并行搜题：同时请求所有题库并合并结果（原有行为）。'
+					},
+					tag: 'select',
+					defaultValue: 'parallel' as 'parallel' | 'sequential',
+					options: [
+						['parallel', '并行搜题（同时请求所有题库，默认）'],
+						['sequential', '顺序搜题（按顺序请求，命中后停止以节省题库次数）']
+					]
+				},
 				answerWrapperHandlerTimeout: {
 					showIf: 'common.settings.advancedSettings',
 					elementClassName: 'config-details',
@@ -713,6 +728,10 @@ export const CommonProject = Project.create({
 			},
 			// 实时更新内部设置
 			oncomplete() {
+				AnswerWrapperHandlerConfig.search_mode = this.cfg.answerWrapperSearchMode;
+				this.onConfigChange('answerWrapperSearchMode', (mode: 'parallel' | 'sequential') => {
+					AnswerWrapperHandlerConfig.search_mode = mode;
+				});
 				AnswerWrapperHandlerConfig.timeout_seconds = this.cfg.answerWrapperHandlerTimeout;
 				this.onConfigChange('answerWrapperHandlerTimeout', (sec) => {
 					AnswerWrapperHandlerConfig.timeout_seconds = sec;

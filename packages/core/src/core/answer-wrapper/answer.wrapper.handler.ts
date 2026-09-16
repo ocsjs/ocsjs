@@ -4,7 +4,14 @@ import { $ } from '../../utils';
 
 export const AnswerWrapperHandlerConfig = {
 	// 超时时间，单位毫秒
-	timeout_seconds: 60
+	timeout_seconds: 60,
+	/**
+	 * 多题库搜题模式
+	 *
+	 * - `parallel`：并行请求所有题库并合并结果（默认，保持原有行为）
+	 * - `sequential`：按照配置顺序依次请求，命中答案后立即停止，节省后续题库的调用次数
+	 */
+	search_mode: 'parallel' as 'parallel' | 'sequential'
 };
 
 /**
@@ -55,130 +62,150 @@ export async function defaultAnswerWrapperHandler(
 	if (temp.length === 0) {
 		throw new Error('题库配置不能为空，请配置后重新开始自动答题。');
 	}
-	// 多线程请求
-	await Promise.all(
-		temp.map(async (wrapper) => {
-			// 解构数据，并赋初始值
-			const {
-				name = '未知题库',
-				homepage = '#',
-				method = 'get',
-				type = 'fetch',
-				contentType = 'json',
-				headers = {},
-				data: wrapperData = {},
-				handler = 'return (res)=> [JSON.stringify(res), undefined]'
-			} = wrapper;
-			try {
-				// 答案列表
-				let results: Result[] = [];
-				// 请求数据
-				let requestData;
-				// 请求地址
-				let url: URL;
-				if (method.toLocaleLowerCase() === 'get') {
-					url = new URL(resolvePlaceHolder(wrapper.url, { encodeURI: true }));
-					/**
-					 * 如果 data 存在数据并且 method 为 get，则将 data 数据拼接到 url 上，覆盖原有的  url 同名参数
-					 * data 参数的优先级高于 url 参数
-					 */
-					Object.keys(wrapperData).forEach((key) => {
-						// searchParams.set 方法会自动编码，所以不需要 encodeURI: true
-						url.searchParams.set(key, resolvePlaceHolder(wrapperData[key]));
-					});
-					// get 的请求数据为空
-					requestData = {};
-				} else if (method.toLocaleLowerCase() === 'post') {
-					url = new URL(wrapper.url);
-					// 构造请求数据
-					const data: Record<string, string> = Object.create({});
-					/** 构造一个请求数据 */
-					Object.keys(wrapperData).forEach((key) => {
-						// 如果存在字段解析器
-						if (typeof (wrapperData as any)[key] === 'object' && Reflect.has((wrapperData as any)[key], 'handler')) {
-							// eslint-disable-next-line no-new-func
-							const handler = Function(Reflect.get((wrapperData as any)[key], 'handler'))();
-							if (typeof handler !== 'function') {
-								throw new Error('data 字段解析器必须返回一个函数');
-							}
-							const result = handler(env);
-							Reflect.set(data, key, result);
-						} else {
-							// 解析data数据
-							Reflect.set(data, key, resolvePlaceHolder(wrapperData[key]));
+	// 构造每个题库的请求任务（延迟执行，避免顺序模式下提前发起全部请求）
+	const tasks = temp.map((wrapper) => async () => {
+		// 解构数据，并赋初始值
+		const {
+			name = '未知题库',
+			homepage = '#',
+			method = 'get',
+			type = 'fetch',
+			contentType = 'json',
+			headers = {},
+			data: wrapperData = {},
+			handler = 'return (res)=> [JSON.stringify(res), undefined]'
+		} = wrapper;
+		try {
+			// 答案列表
+			let results: Result[] = [];
+			// 请求数据
+			let requestData;
+			// 请求地址
+			let url: URL;
+			if (method.toLocaleLowerCase() === 'get') {
+				url = new URL(resolvePlaceHolder(wrapper.url, { encodeURI: true }));
+				/**
+				 * 如果 data 存在数据并且 method 为 get，则将 data 数据拼接到 url 上，覆盖原有的  url 同名参数
+				 * data 参数的优先级高于 url 参数
+				 */
+				Object.keys(wrapperData).forEach((key) => {
+					// searchParams.set 方法会自动编码，所以不需要 encodeURI: true
+					url.searchParams.set(key, resolvePlaceHolder(wrapperData[key]));
+				});
+				// get 的请求数据为空
+				requestData = {};
+			} else if (method.toLocaleLowerCase() === 'post') {
+				url = new URL(wrapper.url);
+				// 构造请求数据
+				const data: Record<string, string> = Object.create({});
+				/** 构造一个请求数据 */
+				Object.keys(wrapperData).forEach((key) => {
+					// 如果存在字段解析器
+					if (typeof (wrapperData as any)[key] === 'object' && Reflect.has((wrapperData as any)[key], 'handler')) {
+						// eslint-disable-next-line no-new-func
+						const handler = Function(Reflect.get((wrapperData as any)[key], 'handler'))();
+						if (typeof handler !== 'function') {
+							throw new Error('data 字段解析器必须返回一个函数');
 						}
-					});
-
-					requestData = data;
-				} else {
-					throw new Error('不支持的请求方式');
-				}
-
-				// 发送请求
-				const responseData = await Promise.race([
-					request(url.toString(), {
-						method,
-						// 历史遗留的命名问题
-						responseType: contentType,
-						data: requestData,
-						type,
-						headers: JSON.parse(JSON.stringify(headers || {}))
-					}),
-					$.sleep((AnswerWrapperHandlerConfig.timeout_seconds ?? 60) * 1000)
-				]);
-				if (responseData === undefined) {
-					throw new Error('题库请求超时，可能是题库问题，或者请检查网络或者重试。');
-				}
-
-				/** 从 handler 获取搜索到的题目和回答 */
-
-				// eslint-disable-next-line no-new-func
-				const responseHandler = Function(handler)();
-				if (typeof responseHandler !== 'function') {
-					throw new Error('handler 响应处理器必须返回一个函数');
-				}
-				const info = responseHandler(responseData);
-				if (info && Array.isArray(info)) {
-					/** 如果返回一个二维数组 */
-					if (info.every((item: any) => Array.isArray(item))) {
-						results = results.concat(
-							info.map((item: any) => ({
-								question: item[0],
-								answer: item[1],
-								extra_data: item[2] || {}
-							}))
-						);
+						const result = handler(env);
+						Reflect.set(data, key, result);
 					} else {
-						results.push({
-							question: info[0],
-							answer: info[1],
-							extra_data: info[2] || {}
-						});
+						// 解析data数据
+						Reflect.set(data, key, resolvePlaceHolder(wrapperData[key]));
 					}
-				}
+				});
 
-				searchInfos.push({
-					url: wrapper.url,
-					name,
-					homepage,
-					results,
-					response: responseData,
-					data: requestData
-				});
-			} catch (error) {
-				console.error(error);
-				searchInfos.push({
-					url: wrapper.url,
-					name,
-					homepage,
-					results: [],
-					response: undefined,
-					data: undefined,
-					error: (error as any)?.message || '题库连接失败'
-				});
+				requestData = data;
+			} else {
+				throw new Error('不支持的请求方式');
 			}
-		})
-	);
+
+			// 发送请求
+			const responseData = await Promise.race([
+				request(url.toString(), {
+					method,
+					// 历史遗留的命名问题
+					responseType: contentType,
+					data: requestData,
+					type,
+					headers: JSON.parse(JSON.stringify(headers || {}))
+				}),
+				$.sleep((AnswerWrapperHandlerConfig.timeout_seconds ?? 60) * 1000)
+			]);
+			if (responseData === undefined) {
+				throw new Error('题库请求超时，可能是题库问题，或者请检查网络或者重试。');
+			}
+
+			/** 从 handler 获取搜索到的题目和回答 */
+
+			// eslint-disable-next-line no-new-func
+			const responseHandler = Function(handler)();
+			if (typeof responseHandler !== 'function') {
+				throw new Error('handler 响应处理器必须返回一个函数');
+			}
+			const info = responseHandler(responseData);
+			if (info && Array.isArray(info)) {
+				/** 如果返回一个二维数组 */
+				if (info.every((item: any) => Array.isArray(item))) {
+					results = results.concat(
+						info.map((item: any) => ({
+							question: item[0],
+							answer: item[1],
+							extra_data: item[2] || {}
+						}))
+					);
+				} else {
+					results.push({
+						question: info[0],
+						answer: info[1],
+						extra_data: info[2] || {}
+					});
+				}
+			}
+
+			searchInfos.push({
+				url: wrapper.url,
+				name,
+				homepage,
+				results,
+				response: responseData,
+				data: requestData
+			});
+		} catch (error) {
+			console.error(error);
+			searchInfos.push({
+				url: wrapper.url,
+				name,
+				homepage,
+				results: [],
+				response: undefined,
+				data: undefined,
+				error: (error as any)?.message || '题库连接失败'
+			});
+		}
+	});
+
+	if (AnswerWrapperHandlerConfig.search_mode === 'sequential') {
+		/**
+		 * 顺序搜题：按照配置顺序依次请求题库，命中答案后立即停止，
+		 * 避免继续消耗后续题库的调用次数。
+		 * 同时在检索信息中记录剩余题库与本次搜题上下文，
+		 * 供「答案无法匹配页面选项」时继续尝试后续题库。
+		 */
+		for (let index = 0; index < tasks.length; index++) {
+			const before = searchInfos.length;
+			await tasks[index]();
+			const info = searchInfos[before];
+			if (info && info.results.length > 0) {
+				info._remainingWrappers = temp.slice(index + 1);
+				info._searchEnv = env;
+				break;
+			}
+		}
+	} else {
+		/** 并行搜题：同时请求所有题库并合并结果（默认行为） */
+		await Promise.all(tasks.map((task) => task()));
+	}
 
 	// 替换占位符
 	function resolvePlaceHolder(data: any, options?: { encodeURI?: boolean }) {

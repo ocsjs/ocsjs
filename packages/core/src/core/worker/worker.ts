@@ -13,7 +13,7 @@ import {
 } from './interface';
 import { createDefaultQuestionResolver } from './question.resolver';
 import { defaultWorkTypeResolver } from './utils';
-import { AnswerWrapperHandlerConfig } from '../answer-wrapper';
+import { AnswerWrapperHandlerConfig, defaultAnswerWrapperHandler, type SearchInformation } from '../answer-wrapper';
 
 /**
  * 自动答题器， 传入一些指定的配置， 就可以进行自动答题。
@@ -185,6 +185,43 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			});
 		};
 
+		/**
+		 * 顺序搜题模式下，当前题库虽然返回了答案、但答案无法匹配到页面选项时，
+		 * 使用剩余题库继续尝试，避免因为题库答案与页面选项不一致而漏答。
+		 * 仅在答案处理结果为「未完成」且存在剩余题库时才会重试，
+		 * 并行搜题模式（默认）不携带剩余题库，因此行为与之前保持一致。
+		 */
+		const retryWithRemainingWrappers = async (
+			result: WorkResult<E>,
+			current: ResolverResult | undefined,
+			resolveWith: (searchInfos: SearchInformation[]) => Promise<ResolverResult>
+		): Promise<ResolverResult | undefined> => {
+			if (!current || current.finish !== false) return current;
+
+			const hitInfo = result.ctx?.searchInfos.find((info) => info._remainingWrappers !== undefined);
+			const remainingWrappers = hitInfo?._remainingWrappers ?? [];
+			if (remainingWrappers.length === 0) return current;
+
+			const searchEnv = hitInfo?._searchEnv ?? {};
+
+			for (const wrapper of remainingWrappers) {
+				try {
+					const retryInfos = await defaultAnswerWrapperHandler([wrapper], searchEnv);
+					if (retryInfos.length === 0 || retryInfos[0].results.length === 0) continue;
+
+					const retryResult = await resolveWith(retryInfos);
+					if (retryResult.finish === true) {
+						result.ctx!.searchInfos = retryInfos;
+						return retryResult;
+					}
+				} catch (err) {
+					console.error('备用题库搜索失败: ', err);
+				}
+			}
+
+			return current;
+		};
+
 		/** 答题线程， */
 		const resolverThread = async () => {
 			for (let index = 0; index < results.length; index++) {
@@ -220,6 +257,9 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 									const resolver = createDefaultQuestionResolver(result.ctx)[result.ctx.type];
 									const handler = this.opts.work.handler;
 									res = await resolver(result.ctx.searchInfos, result.ctx.elements.options as HTMLElement[], handler);
+									res = await retryWithRemainingWrappers(result, res, (searchInfos) =>
+										resolver(searchInfos, result.ctx!.elements.options as HTMLElement[], handler)
+									);
 								} else {
 									error = '题目类型解析失败, 请自行提供解析器, 或者忽略此题。';
 								}
@@ -230,6 +270,10 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 							/** 使用自定义处理器 */
 							const work = this.opts.work;
 							res = await work(result.ctx);
+							res = await retryWithRemainingWrappers(result, res, async (searchInfos) => {
+								result.ctx!.searchInfos = searchInfos;
+								return await work(result.ctx!);
+							});
 						}
 					} else {
 						error = '搜索不到答案, 请重新运行, 或者忽略此题。';
