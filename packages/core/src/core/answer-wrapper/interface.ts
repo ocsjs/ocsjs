@@ -19,6 +19,14 @@ export interface SearchInformation {
 	data?: any;
 	/** 错误数据 */
 	error?: string;
+	/**
+	 * （顺序搜题模式）当前题库命中后，尚未请求的剩余题库。
+	 * 用于当前题库虽然返回了答案、但答案无法匹配到页面选项时，继续尝试后续题库。
+	 */
+	// eslint-disable-next-line no-use-before-define
+	_remainingWrappers?: AnswererWrapper[];
+	/** （顺序搜题模式）本次搜题的上下文，用于对剩余题库重放请求 */
+	_searchEnv?: Record<string, any>;
 }
 
 /**
