@@ -21,6 +21,11 @@ const transformImgLinkOfQuestion = (question: string) => {
 };
 
 /**
+ * 移除特殊字符、空格、换行，用于判断题库返回的题目是否和原题完全匹配
+ */
+const normalizeQuestion = (question: string) => question.replace(/[^\p{L}\p{N}]/gu, '');
+
+/**
  * 搜索结果元素
  */
 export class SearchInfosElement extends HTMLElement {
@@ -76,6 +81,8 @@ export class SearchInfosElement extends HTMLElement {
 						...info.results.map((ans) => {
 							const title = transformImgLinkOfQuestion(ans[0] || this.question || '无');
 							const answer = transformImgLinkOfQuestion(ans[1] || '无');
+							/** 返回的题目和原题完全匹配时，不再重复显示题目 */
+							const isSameQuestion = normalizeQuestion(ans[0] || '') === normalizeQuestion(this.question || '');
 							const extra_data = JSON.parse(JSON.stringify(ans[2] || {}));
 
 							if (extra_data.ai) {
@@ -92,14 +99,14 @@ export class SearchInfosElement extends HTMLElement {
 								extra_data.tags.push({
 									text: '题库缓存',
 									title:
-										'此答案来自本地缓存，由在线题库搜索后保存在本地。\n- 清空缓存：请前往通用-拓展应用-题库缓存\n- 关闭缓存：请前往通用-全局设置-题库缓存',
+										'此答案来自本地缓存，由在线题库搜索后保存在本地。\n- 清空缓存：请前往通用-全局设置-题库缓存功能-管理缓存\n- 关闭缓存：请前往通用-全局设置-题库缓存功能',
 									color: 'gray'
 								});
 							}
 
 							return h('div', { className: 'search-result' }, [
-								/** 题目 */
-								h('div', { className: 'question' }, [h('span', { innerHTML: title })]),
+								/** 题目（和原题完全匹配时不显示，避免重复） */
+								...(isSameQuestion ? [] : [h('div', { className: 'question' }, [h('span', { innerHTML: title })])]),
 								/** 答案 */
 								h('div', { className: 'answer' }, [
 									h('span', '答案：'),

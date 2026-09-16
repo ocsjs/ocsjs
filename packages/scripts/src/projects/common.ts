@@ -450,36 +450,36 @@ export const CommonProject = Project.create({
 					}
 				},
 				upload: {
-					label: '答题完成后',
+					label: '答案提交方式',
 					tag: 'select',
 					defaultValue: 80 as WorkUploadType,
 					options: [
-						['save', '自动保存', '完成后自动保存答案, 注意如果你开启了随机作答, 有可能分辨不出答案是否正确。'],
-						['nomove', '不保存也不提交', '等待时间过后将会自动下一节, 适合在测试脚本时使用。'],
+						[
+							'save',
+							'自动保存（不提交）',
+							'答题结束后自动保存答案，但不会提交试卷。注意：如果开启了随机作答，保存后可能无法分辨答案是否正确。'
+						],
+						[
+							'nomove',
+							'不保存也不提交',
+							'答题结束后不进行任何保存或提交，等待时间过后自动进入下一节，适合测试脚本时使用。'
+						],
 						...([10, 20, 30, 40, 50, 60, 70, 80, 90].map((rate) => [
 							rate,
-							`搜到${rate}%的题目则自动提交`,
-							`例如: 100题中查询到 ${rate} 题的答案,（答案不一定正确）, 则会自动提交。`
+							`搜到 ${rate}%的答案就自动提交`,
+							`例如共100道题，只要有 ${rate} 道题搜索到答案，就会自动提交试卷（答案不一定正确）。`
 						]) as [any, string, string][]),
-						['100', '每个题目都查到答案才自动提交', '答案不一定正确'],
-						['force', '强制自动提交', '不管答案是否正确直接强制自动提交，如需开启，请配合随机作答谨慎使用。']
+						['100', '全部题目都搜到答案才提交', '所有题目都搜索到答案后才自动提交试卷（答案不一定正确）。'],
+						[
+							'force',
+							'不管有没有答案都强制提交',
+							'不管是否搜到答案、答案是否正确，答题结束后直接强制提交试卷。风险较高，如需开启请配合随机作答谨慎使用。'
+						]
 					],
 					attrs: {
 						title:
-							'自动答题完成后的设置，目前仅在 超星学习通的章节测试 中生效, 鼠标悬浮在选项上可以查看每个选项的具体解释。'
+							'提交方式（提交率）：设置自动答题结束后如何保存/提交答案\n鼠标悬浮在选项上可以查看每个选项的具体解释。'
 					}
-				},
-				thread: {
-					label: '线程数量（个）',
-					attrs: {
-						type: 'number',
-						min: 1,
-						step: 1,
-						max: 3,
-						title:
-							'同一时间内答题线程工作的数量（例子：三个线程则代表一秒内同时搜索三道题），过多可能导致题库服务器压力过大，请适当调低。'
-					},
-					defaultValue: 1
 				},
 				'work-when-no-job': {
 					defaultValue: false,
@@ -514,7 +514,29 @@ export const CommonProject = Project.create({
 						});
 					}
 				},
+				advancedSettings: {
+					...dropdownStyle,
+					defaultValue: false,
+					label: '高级设置',
+					attrs: { type: 'checkbox', title: '请谨慎使用高级设置，可能会影响答题效果，小白在未理解的情况下谨慎调整。' }
+				},
+				thread: {
+					showIf: 'common.settings.advancedSettings',
+					elementClassName: 'config-details',
+					label: '线程数量（个）',
+					attrs: {
+						type: 'number',
+						min: 1,
+						step: 1,
+						max: 3,
+						title:
+							'同一时间内答题线程工作的数量（例子：三个线程则代表一秒内同时搜索三道题），过多可能导致题库服务器压力过大，请适当调低。'
+					},
+					defaultValue: 1
+				},
 				imageOptimize: {
+					showIf: 'common.settings.advancedSettings',
+					elementClassName: 'config-details',
 					label: '图片题优化',
 					attrs: {
 						type: 'checkbox',
@@ -524,12 +546,6 @@ export const CommonProject = Project.create({
 							'否则会提示你去源头更新并重新配置题库。原题 title / options 不会被修改。'
 					},
 					defaultValue: true
-				},
-				advancedSettings: {
-					...dropdownStyle,
-					defaultValue: false,
-					label: '高级设置',
-					attrs: { type: 'checkbox', title: '请谨慎使用高级设置，可能会影响答题效果，小白在未理解的情况下谨慎调整。' }
 				},
 				answerWrapperHandlerTimeout: {
 					showIf: 'common.settings.advancedSettings',
@@ -631,6 +647,17 @@ export const CommonProject = Project.create({
 					},
 					tag: 'select',
 					defaultValue: 'only-notify' as 'only-notify' | 'notify-and-voice' | 'all' | 'no-notify',
+					suffixSlot: function () {
+						const btn = h(
+							'button',
+							{ className: 'base-style-button-secondary', disabled: this.cfg.answererWrappers.length === 0 },
+							'📢测试通知'
+						);
+						btn.onclick = () => {
+							this.methods.notificationBySetting('这是一条测试通知');
+						};
+						return btn;
+					},
 					options: [
 						['only-notify', '只显示右下角通知'],
 						['notify-and-voice', '通知以及提示音（叮的一声）'],
@@ -638,20 +665,17 @@ export const CommonProject = Project.create({
 						['no-notify', '关闭系统通知']
 					]
 				},
-				notificationWebhooks: {
-					label: '通知回调',
-					attrs: {
-						title:
-							// eslint-disable-next-line no-template-curly-in-string
-							'发送系统通知时发送回调请求，用于专业开发人员对接其他通知系统。（每行填写一个URL，顺序发送GET请求，${message} 为消息占位符，可用于消息变量替换）'
-					},
-					tag: 'textarea',
-					defaultValue: ''
-				},
 				enableQuestionCaches: {
 					label: '题库缓存功能',
 					defaultValue: true,
-					attrs: { type: 'checkbox', title: '详情请前往 通用-其他应用-题库拓展查看。' }
+					attrs: { type: 'checkbox' },
+					suffixSlot: function () {
+						const btn = h('button', { className: 'base-style-button-secondary' }, '⚙️管理缓存');
+						btn.onclick = () => {
+							CommonProject.scripts.apps.methods.showQuestionCaches();
+						};
+						return btn;
+					}
 				}
 			},
 			methods() {
@@ -696,29 +720,6 @@ export const CommonProject = Project.create({
 								important: this.cfg.notification === 'all',
 								silent: this.cfg.notification === 'only-notify'
 							});
-
-							const message = (opts?.extraTitle ? opts?.extraTitle + '：' : '') + content;
-
-							const webhooks = this.cfg.notificationWebhooks
-								.split('\n')
-								.map((i) => i.trim())
-								.filter(Boolean);
-
-							for (const webhook of webhooks) {
-								let resolved_webhook = webhook;
-								// eslint-disable-next-line no-template-curly-in-string
-								resolved_webhook = webhook.replace('${message}', encodeURIComponent(message));
-								request(resolved_webhook, {
-									method: 'get',
-									type: 'GM_xmlhttpRequest'
-								})
-									.then((result) => {
-										console.debug('通知回调成功', { webhook: resolved_webhook, result });
-									})
-									.catch((err) => {
-										console.debug('通知回调失败', { webhook: resolved_webhook, err });
-									});
-							}
 						}
 					}
 				};
@@ -771,15 +772,7 @@ export const CommonProject = Project.create({
 			onrender({ panel }) {
 				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
 				if ($gm.isInGMContext()) {
-					panel.body.replaceChildren(...(this.cfg.answererWrappers.length ? [h('hr')] : []));
-					const testNotification = h(
-						'button',
-						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
-						'📢测试系统通知'
-					);
-					testNotification.onclick = () => {
-						this.methods.notificationBySetting('这是一条测试通知');
-					};
+					panel.body.replaceChildren(h('hr'));
 					const refresh = h(
 						'button',
 						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
@@ -817,8 +810,7 @@ export const CommonProject = Project.create({
 							refresh.textContent = '🚫正在加载题库状态...';
 							refresh.setAttribute('disabled', 'true');
 
-							const table = h('table');
-							table.style.width = '100%';
+							const list = h('div', { className: 'answerer-status-list' });
 							this.cfg.answererWrappers.forEach(async (item) => {
 								const t = Date.now();
 								let success = false;
@@ -855,21 +847,31 @@ export const CommonProject = Project.create({
 									errorSolveGuide.style.display = 'block';
 								}
 
-								const body = h('tbody');
-								body.append(h('td', item.name));
-								body.append(
-									h('td', [
-										$ui.tooltip(
-											h(
-												'span',
-												{ title: isDisabled ? '题目已经被停用，请在上方题库配置中点击开启。' : '' },
-												success ? '连接成功🟢' : isDisabled ? '已停用⚪' : error ? '连接失败🔴' : '连接超时🟡'
-											)
-										)
+								const status = success ? 'success' : isDisabled ? 'disabled' : error ? 'error' : 'timeout';
+								const statusText = (
+									{
+										success: '连接成功',
+										disabled: '已停用',
+										error: '连接失败',
+										timeout: '连接超时'
+									} as const
+								)[status];
+
+								const badge = h('span', { className: `badge ${status}` }, statusText);
+								if (isDisabled) {
+									badge.title = '此题库已被停用，请在上方题库配置中点击开启。';
+									$ui.tooltip(badge);
+								}
+
+								list.append(
+									h('div', { className: 'answerer-status-item' }, [
+										h('span', { className: 'name' }, item.name),
+										h('span', { className: 'status' }, [
+											h('span', { className: 'latency' }, `延迟 ${success ? Date.now() - t : '---'}ms`),
+											badge
+										])
 									])
 								);
-								body.append(h('td', `延迟 : ${success ? Date.now() - t : '---'}/ms`));
-								table.append(body);
 								loadedCount++;
 
 								if (loadedCount === this.cfg.answererWrappers.length) {
@@ -879,7 +881,7 @@ export const CommonProject = Project.create({
 									}, 2000);
 								}
 							});
-							tableContainer.append(table);
+							tableContainer.append(list);
 						} else {
 							refresh.style.display = 'none';
 							tableContainer.style.display = 'none';
@@ -905,23 +907,6 @@ export const CommonProject = Project.create({
 				notes: {
 					defaultValue: $ui.notes(['点击题目序号，查看搜索结果', '如果没有搜到，可能是题库没有收录该题目答案'])
 						.outerHTML
-				},
-				/**
-				 * 显示类型
-				 * list: 显示为题目列表
-				 * numbers: 显示为序号列表
-				 */
-				type: {
-					label: '显示类型',
-					tag: 'select',
-					options: [
-						['numbers', '序号列表'],
-						['questions', '题目列表']
-					],
-					attrs: {
-						title: '使用题目列表可能会造成页面卡顿。'
-					},
-					defaultValue: 'numbers' as 'questions' | 'numbers'
 				},
 				totalQuestionCount: {
 					defaultValue: 0
@@ -1004,10 +989,7 @@ export const CommonProject = Project.create({
 						let scrollPercent = 0;
 
 						/** 列表 */
-						const list = h('div', { className: 'work-result-list' });
-
-						/** 是否悬浮在题目上 */
-						let mouseoverIndex = -1;
+						const list = $ui.tooltip(h('div', { className: 'work-result-list' }));
 
 						list.onscroll = () => {
 							scrollPercent = list.scrollTop / list.scrollHeight;
@@ -1047,125 +1029,80 @@ export const CommonProject = Project.create({
 									this.cfg.currentResultIndex = 0;
 								}
 
-								// 渲染序号或者题目列表
-								if (this.cfg.type === 'numbers') {
-									const resultContainer = h('div', { className: 'work-result-container' });
+								// 渲染序号结果
+								const resultContainer = h('div', { className: 'work-result-container' });
 
-									list.style.marginBottom = '12px';
-									list.style.overflow = 'auto';
-									list.style.maxHeight = '300px';
+								list.style.marginBottom = '12px';
+								list.style.overflow = 'auto';
+								list.style.maxHeight = '300px';
 
-									/** 渲染序号 */
-									const nums = results.map((result, index) => {
-										return h('span', { className: 'search-infos-num', innerText: (index + 1).toString() }, (num) => {
-											setNumStyle(result, num, index);
+								/** 基础提示信息 */
+								const baseInfos = [
+									`已搜题: ${this.cfg.requestedCount}/${this.cfg.totalQuestionCount}`,
+									`已答题: ${this.cfg.resolvedCount}/${this.cfg.totalQuestionCount}`,
+									'⚪ 白色序号：等待处理中',
+									'🔵 蓝边序号：已完成搜索',
+									'🔵 蓝色序号：已搜索已答题',
+									'🔴 红色序号：搜索失败或未搜索到答案',
+									'',
+									'👉点击序号，查看搜索结果'
+								];
 
-											num.onclick = () => {
-												for (const n of nums) {
-													n.classList.remove('active');
-												}
-												num.classList.add('active');
-												// 更新显示序号
-												this.cfg.currentResultIndex = index;
-												// 重新渲染结果列表
-												resultContainer.replaceChildren(createResult(result));
-												// 触发页面题目元素同步器
-												if (this.cfg.questionPositionSyncHandlerType) {
-													state.workResult.questionPositionSyncHandler[this.cfg.questionPositionSyncHandlerType]?.(
-														index
-													);
-												}
-											};
-										});
-									});
+								/** 渲染序号 */
+								const nums = results.map((result, index) => {
+									return h('span', { className: 'search-infos-num', innerText: (index + 1).toString() }, (num) => {
+										setNumStyle(result, num, index);
 
-									list.replaceChildren(...nums);
-									// 初始显示指定序号的结果
-									resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
-
-									container.replaceChildren(list, resultContainer);
-								} else {
-									/** 左侧题目列表 */
-
-									list.style.overflow = 'auto';
-									list.style.maxHeight = window.innerHeight / 2 + 'px';
-
-									/** 右侧结果 */
-									const resultContainer = h('div', { className: 'work-result-question-container' });
-									const nums: HTMLSpanElement[] = [];
-									/** 左侧渲染题目列表 */
-									const questions = results.map((result, index) => {
-										/** 左侧序号 */
-										const num = h(
-											'span',
-											{
-												className: 'search-infos-num',
-												innerHTML: (index + 1).toString()
-											},
-											(num) => {
-												num.style.marginRight = '12px';
-												num.style.display = 'inline-block';
-												setNumStyle(result, num, index);
+										num.onclick = () => {
+											for (const n of nums) {
+												n.classList.remove('active');
 											}
-										);
-
-										nums.push(num);
-
-										return h(
-											'div',
-
-											[num, result.question],
-											(question) => {
-												question.onmouseover = () => {
-													mouseoverIndex = index;
-													// 重新渲染结果列表
-													resultContainer.replaceChildren(createResult(result));
-												};
-
-												question.onmouseleave = () => {
-													mouseoverIndex = -1;
-													// 重新显示指定序号的结果
-													resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
-												};
-
-												question.onclick = () => {
-													for (const n of nums) {
-														n.classList.remove('active');
-													}
-													for (const q of questions) {
-														q.classList.remove('active');
-													}
-													nums[index].classList.add('active');
-													question.classList.add('active');
-													// 更新显示序号
-													this.cfg.currentResultIndex = index;
-													// 重新渲染结果列表
-													resultContainer.replaceChildren(createResult(result));
-													// 触发页面题目元素同步器
-													if (this.cfg.questionPositionSyncHandlerType) {
-														state.workResult.questionPositionSyncHandler[this.cfg.questionPositionSyncHandlerType]?.(
-															index
-														);
-													}
-												};
+											num.classList.add('active');
+											// 更新显示序号
+											this.cfg.currentResultIndex = index;
+											// 重新渲染结果列表
+											resultContainer.replaceChildren(createResult(result));
+											// 触发页面题目元素同步器
+											if (this.cfg.questionPositionSyncHandlerType) {
+												state.workResult.questionPositionSyncHandler[this.cfg.questionPositionSyncHandlerType]?.(index);
 											}
-										);
+										};
 									});
+								});
 
-									list.replaceChildren(...questions);
-									// 初始显示指定序号的结果
-									if (mouseoverIndex === -1) {
-										resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
-									} else {
-										resultContainer.replaceChildren(createResult(results[mouseoverIndex]));
-									}
+								list.replaceChildren(...nums);
+								// 初始显示指定序号的结果
+								resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
 
-									container.replaceChildren(
-										h('div', [list, h('div', {}, [resultContainer])], (div) => {
-											div.style.display = 'flex';
-										})
-									);
-								}
+								container.replaceChildren(list, resultContainer);
+
+								/** 恢复高度 */
+								list.scrollTo({
+									top: scrollPercent * list.scrollHeight,
+									behavior: 'auto'
+								});
+
+								/** 将搜索状态提示应用到序号区域，鼠标悬浮后显示 */
+								list.setAttribute('data-title', baseInfos.join('\n'));
+
+								/** 清空搜索结果按钮，显示在所有搜索结果的最下方 */
+								container.append(
+									h('div', { style: { textAlign: 'right', marginTop: '8px' } }, [
+										$ui.tooltip(
+											$ui.button('清空搜索结果', { className: 'base-style-button-secondary' }, (btn) => {
+												btn.title = '仅用于不会自动清空搜索结果的场景，例如超星非整卷预览模式';
+												btn.onclick = () => {
+													this.methods.clearResults();
+													const { panel, header } = CXProject.scripts.work;
+													if (panel && header) {
+														CXProject.scripts.work.onrender?.({ panel, header });
+														CommonProject.scripts.workResults.onrender?.({ panel, header });
+													}
+												};
+											})
+										)
+									])
+								);
 							} else {
 								container.replaceChildren(
 									h('div', { className: 'alert-info-wrapper' }, [
@@ -1176,64 +1113,6 @@ export const CommonProject = Project.create({
 									])
 								);
 							}
-
-							/** 恢复高度 */
-							list.scrollTo({
-								top: scrollPercent * list.scrollHeight,
-								behavior: 'auto'
-							});
-
-							const tip = h('div', [
-								h('div', { className: 'search-infos-num' }, '1'),
-								' 表示等待处理中',
-								h('br'),
-								h('div', { className: 'search-infos-num requested' }, '1'),
-								' 表示已完成搜索 ',
-								h('br'),
-								h('div', { className: 'search-infos-num finish' }, '1'),
-								' 表示已搜索已答题 '
-							]);
-
-							/** 添加信息 */
-							container.prepend(
-								h('hr'),
-								h(
-									'div',
-									[
-										$ui.space(
-											[
-												h('span', `已搜题: ${this.cfg.requestedCount}/${this.cfg.totalQuestionCount}`),
-												h('span', `已答题: ${this.cfg.resolvedCount}/${this.cfg.totalQuestionCount}`),
-												h('a', '提示', (btn) => {
-													btn.style.cursor = 'pointer';
-													btn.onclick = () => {
-														$modal.confirm({ content: tip, footer: undefined });
-													};
-												}),
-												$ui.tooltip(
-													h('a', '清空结果', (btn) => {
-														btn.title = '仅用于不会自动清空搜索结果的场景，例如超星非整卷预览模式';
-														btn.style.cursor = 'pointer';
-														btn.onclick = () => {
-															this.methods.clearResults();
-															const { panel, header } = CXProject.scripts.work;
-															if (panel && header) {
-																CXProject.scripts.work.onrender?.({ panel, header });
-																CommonProject.scripts.workResults.onrender?.({ panel, header });
-															}
-														};
-													})
-												)
-											],
-											{ separator: '|' }
-										)
-									],
-									(div) => {
-										div.style.textAlign = 'center';
-										div.style.fontSize = '12px';
-									}
-								)
-							);
 						}, 100);
 
 						/** 渲染结果列表 */
@@ -1253,7 +1132,6 @@ export const CommonProject = Project.create({
 						};
 
 						render();
-						this.onConfigChange('type', render);
 						this.onConfigChange('requestedCount', render);
 						this.onConfigChange('resolvedCount', render);
 						$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
@@ -1267,7 +1145,7 @@ export const CommonProject = Project.create({
 			}
 		}),
 		onlineSearch: new Script({
-			name: '🔎 在线搜题',
+			name: '🌐 在线搜题',
 			matches: [['所有页面', /.*/]],
 			namespace: 'common.online-search',
 			configs: {
@@ -1322,7 +1200,7 @@ export const CommonProject = Project.create({
 
 					if (value) {
 						const t = Date.now();
-						const env = await buildAnswererEnv({
+						const { env } = await buildAnswererEnv({
 							title: value,
 							enableImageOptimize: CommonProject.scripts.settings.cfg.imageOptimize
 						});
@@ -1501,44 +1379,9 @@ export const CommonProject = Project.create({
 						return results;
 					},
 					/**
-					 * 查看更新日志
+					 * 展示题库缓存管理弹窗
 					 */
-					async showChangelog() {
-						const changelog = h('div', {
-							className: 'markdown card',
-							innerHTML: '加载中...',
-							style: { maxWidth: '600px' }
-						});
-						$modal.simple({
-							width: 600,
-							content: h('div', [
-								h('div', { className: 'notes card' }, [
-									$ui.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
-								]),
-								changelog
-							])
-						});
-						const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
-							type: 'GM_xmlhttpRequest',
-							responseType: 'text',
-							method: 'get'
-						});
-						changelog.innerHTML = markdown(md);
-					}
-				};
-			},
-			onrender({ panel }) {
-				const btnStyle: Partial<CSSStyleDeclaration> = {
-					padding: '6px 12px',
-					margin: '4px',
-					marginBottom: '8px',
-					boxShadow: '0px 0px 4px #bebebe',
-					borderRadius: '8px',
-					cursor: 'pointer'
-				};
-
-				const cachesBtn = h('div', { innerText: '💾 题库缓存', style: btnStyle }, (btn) => {
-					btn.onclick = () => {
+					showQuestionCaches: () => {
 						const questionCaches = this.cfg.localQuestionCaches;
 
 						const list = questionCaches.map((c) =>
@@ -1604,8 +1447,43 @@ export const CommonProject = Project.create({
 								)
 							])
 						});
-					};
-				});
+					},
+					/**
+					 * 查看更新日志
+					 */
+					async showChangelog() {
+						const changelog = h('div', {
+							className: 'markdown card',
+							innerHTML: '加载中...',
+							style: { maxWidth: '600px' }
+						});
+						$modal.simple({
+							width: 600,
+							content: h('div', [
+								h('div', { className: 'notes card' }, [
+									$ui.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
+								]),
+								changelog
+							])
+						});
+						const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
+							type: 'GM_xmlhttpRequest',
+							responseType: 'text',
+							method: 'get'
+						});
+						changelog.innerHTML = markdown(md);
+					}
+				};
+			},
+			onrender({ panel }) {
+				const btnStyle: Partial<CSSStyleDeclaration> = {
+					padding: '6px 12px',
+					margin: '4px',
+					marginBottom: '8px',
+					boxShadow: '0px 0px 4px #bebebe',
+					borderRadius: '8px',
+					cursor: 'pointer'
+				};
 
 				const exportSetting = $ui.tooltip(
 					h(
@@ -1665,7 +1543,7 @@ export const CommonProject = Project.create({
 					)
 				);
 
-				[cachesBtn, exportSetting, importSetting].forEach((btn) => {
+				[exportSetting, importSetting].forEach((btn) => {
 					btn.onmouseover = () => {
 						btn.style.boxShadow = '0px 0px 4px #0099ff9c';
 					};
@@ -1676,9 +1554,7 @@ export const CommonProject = Project.create({
 
 				const sep = (text: string) => h('div', { className: 'separator', style: { padding: '4px 0px' } }, text);
 
-				panel.body.replaceChildren(
-					h('div', [sep('题库拓展'), cachesBtn, sep('其他功能'), exportSetting, importSetting])
-				);
+				panel.body.replaceChildren(h('div', [sep('其他功能'), exportSetting, importSetting]));
 			}
 		})
 	}
