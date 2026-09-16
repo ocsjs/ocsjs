@@ -797,95 +797,148 @@ export const CommonProject = Project.create({
 					tableContainer.style.display = 'none';
 					panel.body.append(h('div', { style: { display: 'flex' } }, [refresh, errorSolveGuide]), tableContainer);
 
+					/** 状态探测调用代际：防止并发调用时旧结果覆盖新结果 */
+					let probeGeneration = 0;
+
+					interface ProbeResult {
+						item: AnswererWrapper;
+						status: 'success' | 'disabled' | 'error' | 'timeout' | 'invalid';
+						/** HTTP 状态码（仅收到响应时存在） */
+						statusCode?: number;
+						error?: any;
+						latency?: number;
+					}
+
+					/** 探测单个题库：任何 HTTP 响应都视为可达，仅网络错误/超时算失败 */
+					const probeAnswerer = async (item: AnswererWrapper): Promise<ProbeResult> => {
+						if (this.cfg.disabledAnswererWrapperNames.includes(item.name)) {
+							return { item, status: 'disabled' };
+						}
+						let probeUrl: URL;
+						try {
+							probeUrl = new URL(item.url);
+						} catch {
+							return { item, status: 'invalid' };
+						}
+						const t = Date.now();
+						probeUrl.searchParams.set('t', String(t));
+						const doProbe = async (method: 'head' | 'get'): Promise<{ status: number; responseText: string }> => {
+							const res = (await request(probeUrl.toString(), {
+								type: 'GM_xmlhttpRequest',
+								method,
+								responseType: 'text',
+								anyStatus: true
+							})) as unknown as { status: number; responseText: string };
+							// HEAD 不被支持（405/501）时回退 GET 再试一次
+							if (method === 'head' && (res.status === 405 || res.status === 501)) {
+								return doProbe('get');
+							}
+							return res;
+						};
+						try {
+							const res = await Promise.race([
+								doProbe('head'),
+								(async () => {
+									await $.sleep(10 * 1000);
+									return undefined;
+								})()
+							]);
+							if (res === undefined) return { item, status: 'timeout' };
+							const latency = Date.now() - t;
+							const ok = res.status >= 200 && res.status < 400;
+							return ok
+								? { item, status: 'success', statusCode: res.status, latency }
+								: { item, status: 'error', statusCode: res.status, latency, error: new Error('HTTP ' + res.status) };
+						} catch (error) {
+							return { item, status: 'error', error };
+						}
+					};
+
 					// 更新题库状态
 					const updateState = async () => {
+						const generation = ++probeGeneration;
 						// 清空元素
 						tableContainer.replaceChildren();
 						errorSolveGuide.style.display = 'none';
-						let loadedCount = 0;
 
-						if (this.cfg.answererWrappers.length) {
-							refresh.style.display = 'block';
-							tableContainer.style.display = 'block';
-							refresh.textContent = '🚫正在加载题库状态...';
-							refresh.setAttribute('disabled', 'true');
-
-							const list = h('div', { className: 'answerer-status-list' });
-							this.cfg.answererWrappers.forEach(async (item) => {
-								const t = Date.now();
-								let success = false;
-								let error;
-								const isDisabled = this.cfg.disabledAnswererWrapperNames.find((name) => name === item.name);
-
-								const res = isDisabled
-									? false
-									: await Promise.race([
-											(async () => {
-												try {
-													return await request(new URL(item.url).origin + '/?t=' + t, {
-														type: 'GM_xmlhttpRequest',
-														method: 'head',
-														responseType: 'text'
-													});
-												} catch (err) {
-													error = err;
-													return false;
-												}
-											})(),
-											(async () => {
-												await $.sleep(10 * 1000);
-												return false;
-											})()
-									  ]);
-								if (typeof res === 'string') {
-									success = true;
-								} else {
-									success = false;
-								}
-
-								if (error) {
-									errorSolveGuide.style.display = 'block';
-								}
-
-								const status = success ? 'success' : isDisabled ? 'disabled' : error ? 'error' : 'timeout';
-								const statusText = (
-									{
-										success: '连接成功',
-										disabled: '已停用',
-										error: '连接失败',
-										timeout: '连接超时'
-									} as const
-								)[status];
-
-								const badge = h('span', { className: `badge ${status}` }, statusText);
-								if (isDisabled) {
-									badge.title = '此题库已被停用，请在上方题库配置中点击开启。';
-									$ui.tooltip(badge);
-								}
-
-								list.append(
-									h('div', { className: 'answerer-status-item' }, [
-										h('span', { className: 'name' }, item.name),
-										h('span', { className: 'status' }, [
-											h('span', { className: 'latency' }, `延迟 ${success ? Date.now() - t : '---'}ms`),
-											badge
-										])
-									])
-								);
-								loadedCount++;
-
-								if (loadedCount === this.cfg.answererWrappers.length) {
-									setTimeout(() => {
-										refresh.textContent = '🔄️刷新题库状态';
-										refresh.removeAttribute('disabled');
-									}, 2000);
-								}
-							});
-							tableContainer.append(list);
-						} else {
+						if (this.cfg.answererWrappers.length === 0) {
 							refresh.style.display = 'none';
 							tableContainer.style.display = 'none';
+							return;
 						}
+						refresh.style.display = 'block';
+						tableContainer.style.display = 'block';
+						refresh.textContent = '🚫正在加载题库状态...';
+						refresh.setAttribute('disabled', 'true');
+
+						// probeAnswerer 内部全 try/catch，Promise.all 不会 reject
+						const results = await Promise.all(this.cfg.answererWrappers.map((item) => probeAnswerer(item)));
+						// 等待期间已有更新的调用：丢弃本次结果
+						if (generation !== probeGeneration) return;
+
+						if (results.some((r) => r.status === 'error' && r.statusCode === undefined)) {
+							errorSolveGuide.style.display = 'block';
+						}
+
+						const statusTextMap = {
+							success: '连接成功',
+							disabled: '已停用',
+							error: '连接失败',
+							timeout: '连接超时',
+							invalid: '配置错误'
+						} as const;
+
+						// 按配置顺序渲染
+						const list = h('div', { className: 'answerer-status-list' });
+						for (const r of results) {
+							const badge = h(
+								'span',
+								{ className: `badge ${r.status === 'invalid' ? 'error' : r.status}` },
+								statusTextMap[r.status] + (r.statusCode !== undefined ? ` (${r.statusCode})` : '')
+							);
+							if (r.status === 'disabled') {
+								badge.title = '此题库已被停用，请在上方题库配置中点击开启。';
+								$ui.tooltip(badge);
+							}
+							// 首页按钮：仅当题库配置了 homepage 时可点击，新窗口打开
+							const hasHomepage = !!r.item.homepage && r.item.homepage !== '#';
+							const homepageBtn = h(
+								'a',
+								{
+									className: 'homepage-link',
+									href: hasHomepage ? r.item.homepage! : 'javascript:void(0)',
+									target: '_blank',
+									title: hasHomepage ? '前往题库首页' : '此题库未配置首页',
+									// h() 的 style 仅支持对象形式（内部 Object.assign 合并）
+									style: Object.assign(
+										{ textDecoration: 'none', marginRight: '6px', flexShrink: '0' },
+										hasHomepage ? {} : { opacity: '0.4', cursor: 'default' }
+									)
+								},
+								'🏠'
+							);
+
+							list.append(
+								h('div', { className: 'answerer-status-item' }, [
+									h('span', { style: { display: 'flex', alignItems: 'center', overflow: 'hidden' } }, [
+										homepageBtn,
+										h('span', { className: 'name' }, r.item.name)
+									]),
+									h('span', { className: 'status' }, [
+										h(
+											'span',
+											{ className: 'latency' },
+											r.latency !== undefined ? `延迟 ${r.latency}ms` : r.status === 'timeout' ? '延迟 >10000ms' : ''
+										),
+										badge
+									])
+								])
+							);
+						}
+						tableContainer.append(list);
+
+						refresh.textContent = '🔄️刷新题库状态';
+						refresh.removeAttribute('disabled');
 					};
 
 					updateState();

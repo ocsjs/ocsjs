@@ -13,6 +13,12 @@ export function request<T extends 'json' | 'text'>(
 		responseType?: T;
 		headers?: Record<string, string>;
 		data?: Record<string, any>;
+		/**
+		 * 状态探测场景：收到任何 HTTP 状态码都不 reject，
+		 * 统一 resolve `{ status: number, responseText: string }`（仅网络错误才 reject）。
+		 * 不传时保持原行为（GM 分支仅 200 resolve，fetch 分支不校验状态码）。
+		 */
+		anyStatus?: boolean;
 	}
 ): Promise<T extends 'json' ? any : string> {
 	return new Promise((resolve, reject) => {
@@ -40,6 +46,10 @@ export function request<T extends 'json' | 'text'>(
 						headers: Object.keys(headers).length ? headers : undefined,
 						responseType: responseType === 'json' ? 'json' : undefined,
 						onload: (response) => {
+							if (opts.anyStatus) {
+								resolve({ status: response.status, responseText: response.responseText || '' } as any);
+								return;
+							}
 							if (response.status === 200) {
 								if (responseType === 'json') {
 									try {
@@ -67,6 +77,13 @@ export function request<T extends 'json' | 'text'>(
 
 				fet(url, { body: method === 'post' ? JSON.stringify(data) : undefined, method, headers })
 					.then((response) => {
+						if (opts.anyStatus) {
+							response
+								.text()
+								.then((text) => resolve({ status: response.status, responseText: text } as any))
+								.catch(reject);
+							return;
+						}
 						if (responseType === 'json') {
 							response.json().then(resolve).catch(reject);
 						} else {
