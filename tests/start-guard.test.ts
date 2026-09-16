@@ -18,6 +18,9 @@ import {
 	OCS_WINDOW_MOUNTED_ATTRIBUTE,
 	releaseWindowMount
 } from '../packages/scripts/src/utils/start-guard';
+import type { shouldMountWindow as ShouldMountWindow } from '../packages/scripts/src/index';
+
+let shouldMountWindow: typeof ShouldMountWindow;
 
 let pass = 0;
 let fail = 0;
@@ -53,6 +56,8 @@ const mountNo = () => false;
 async function main() {
 	// 该测试在 node 环境中运行，需要先模拟浏览器全局对象再加载模块
 	browserEnv();
+	// index 会连带加载 easy-us，必须在浏览器全局对象就绪之后再导入
+	({ shouldMountWindow } = await import('../packages/scripts/src/index'));
 
 	console.log('\n  挂载名额的获取与释放');
 	{
@@ -189,6 +194,21 @@ async function main() {
 
 		check('document-start 下仍然只执行一次', startCount === 1, `实际 ${startCount} 次`);
 		check('等待后名额被占用', isWindowMounted(root));
+	}
+
+	console.log('\n  挂载条件与 easy-us 保持一致');
+	{
+		const project = (hideInPanel?: boolean) => ({
+			name: 'P',
+			namespace: 'p',
+			scripts: { x: { name: 'x', namespace: 'n', matches: ['.*'], excludes: [], cfg: {}, hideInPanel } }
+		});
+		const config = (hideInPanel?: boolean) => ({ projects: [project(hideInPanel)], renderConfig: {} } as any);
+
+		check('hideInPanel 为 undefined 时需要显示悬浮窗', shouldMountWindow(config(undefined)) === true);
+		check('hideInPanel 为 false 时需要显示悬浮窗', shouldMountWindow(config(false)) === true);
+		check('hideInPanel 为 true 时不显示悬浮窗', shouldMountWindow(config(true)) === false);
+		check('没有匹配脚本时不显示悬浮窗', shouldMountWindow({ projects: [], renderConfig: {} } as any) === false);
 	}
 
 	console.log(`\n  ✅ ${pass} 通过    ${fail} 失败   共 ${pass + fail} 项\n`);

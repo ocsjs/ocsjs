@@ -11,10 +11,11 @@ import { YKTProject } from './projects/yuketang';
 
 /** 导出所有的 OCS 核心模块 */
 export * from '@ocsjs/core';
-/** 判断当前页面是否存在需要显示悬浮窗的脚本（与 easy-us 的挂载条件保持一致） */
-function shouldMountWindow(config: Parameters<typeof rawStart>[0]) {
+/** 判断当前页面是否存在需要显示悬浮窗的脚本（与 easy-us 的挂载条件完全一致） */
+export function shouldMountWindow(config: Parameters<typeof rawStart>[0]) {
 	if (self !== top) return false;
-	return $.getMatchedScripts(config.projects, [location.href]).some((s) => s.hideInPanel === false);
+	// 与 easy-us 的挂载条件保持一致：hideInPanel 为 undefined 时同样需要显示面板
+	return $.getMatchedScripts(config.projects, [location.href]).some((s) => !!s.hideInPanel === false);
 }
 
 /**
