@@ -963,6 +963,7 @@ export const BackgroundProject = Project.create({
 				if (currentStudyScript) await $menu('🖥️', { scriptPanelLink: currentStudyScript });
 				await $menu('🔎', { scriptPanelLink: CommonProject.scripts.workResults });
 				await $menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
+				await $menu('📄', { scriptPanelLink: BackgroundProject.scripts.console });
 			}
 		})
 	}
