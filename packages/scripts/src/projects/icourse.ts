@@ -518,7 +518,8 @@ function workAndExam(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
+						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText)
 					});
 				});
 			} else {
