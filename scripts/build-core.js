@@ -36,6 +36,9 @@ async function createUserJs() {
 	/** 模拟浏览器环境 */
 	require('browser-env')();
 
+	/** 使用本地合并后的样式（easy-us 基础样式 + OCS 自定义样式，由 packages/scripts/assets/less/style.less 编译生成） */
+	const CSS_PATH = path.join(__dirname, '../packages/scripts/assets/css/style.css')
+
 	// @ts-ignore
 	globalThis.unsafeWindow = {};
 
@@ -85,7 +88,9 @@ async function createUserJs() {
 				homepage: 'https://docs.ocsjs.com',
 				source: 'https://github.com/ocsjs/ocsjs',
 				icon: 'https://cdn.ocsjs.com/logo.png',
-				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'zaizhexue.top', 'localhost', '127.0.0.1'],
+				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'zaizhexue.top', 'localhost', '127.0.0.1',
+					// 智慧树阿里云资源，应用： 图片题资源访问
+					'aliyuncs.com'],
 				match: matchMetadata,
 				grant: [
 					'GM_info',
@@ -103,7 +108,7 @@ async function createUserJs() {
 					'GM_removeValueChangeListener'
 				],
 				require: [path.join(__dirname, distPath, 'index.js')],
-				resource: [`STYLE ${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`],
+				resource: [`STYLE ${CSS_PATH}`],
 				'run-at': 'document-start',
 				antifeature: 'payment'
 			},
@@ -124,12 +129,12 @@ async function createUserJs() {
 	devOpts.parseResource = false;
 	devOpts.metadata.name = devOpts.metadata.name + '(dev)';
 	devOpts.metadata.require = ['file:///' + path.join(distResolvedPath, 'index.js')];
-	devOpts.metadata.resource = [`STYLE file:///${path.join(__dirname, '../packages/scripts/assets/css/style.css')}`];
+	devOpts.metadata.resource = [`STYLE file:///${CSS_PATH}`];
 	devOpts.entry = path.join(__dirname, '../packages/scripts/entry.dev.js');
 	devOpts.dist = path.join(distResolvedPath, 'ocs.dev.user.js');
 	/** 导出样式文件 */
 	fs.copyFileSync(
-		path.join(__dirname, '../packages/scripts/assets/css/style.css'),
+		CSS_PATH,
 		path.join(distResolvedPath, 'style.css')
 	);
 	console.log('createUserScript: ', devOpts.metadata.name, devOpts.dist);
