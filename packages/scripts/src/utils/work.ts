@@ -346,6 +346,12 @@ export function createCommonAnswerer(options: {
 		if (v == null) return { text: '' };
 		return typeof v === 'string' ? { text: v } : v;
 	};
+	/** 题目文本中的图片 URL 快速检测（仅用于降级提示，非精确提取；无 /g 标志，test 调用安全） */
+	const QUESTION_IMAGE_REGEX = /https?:\/\/[^\s]+?\.(?:png|jpe?g|gif|bmp|webp|svg)/i;
+	/** 降级提示仅每次会话提示一次，避免逐题刷屏 */
+	let imageOptimizeOffWarned = false;
+	let imageConvertFailWarned = false;
+
 	return async (elements: any, ctx: WorkContext<any>): Promise<SearchInformation[]> => {
 		const titleResult = normalize(options.titleTransform(elements, ctx));
 		const title = titleResult.text;
@@ -364,7 +370,19 @@ export function createCommonAnswerer(options: {
 							.map((o: HTMLElement | undefined) => o!.innerText)
 							.join('\n')
 			);
-			const env = await buildAnswererEnv({
+			const questionHasImages =
+				(titleImages?.length ?? 0) + (optResult.images?.length ?? 0) > 0 ||
+				QUESTION_IMAGE_REGEX.test(title) ||
+				QUESTION_IMAGE_REGEX.test(optResult.text);
+			// 题目含图片但未开启图片题优化：此前为静默降级（原始 URL 发出后大概率搜不到），显式提示用户开启
+			if (questionHasImages && !CommonProject.scripts.settings.cfg.imageOptimize && !imageOptimizeOffWarned) {
+				imageOptimizeOffWarned = true;
+				$message.warn({
+					content: '检测到题目包含图片，但未开启「图片题优化」（通用-全局设置-高级设置中开启），图片题将无法搜题。',
+					duration: 10
+				});
+			}
+			const { env, imageUrls } = await buildAnswererEnv({
 				type: ctx.type,
 				title,
 				options: optResult.text,
@@ -372,21 +390,28 @@ export function createCommonAnswerer(options: {
 				optionsImages: optResult.images,
 				enableImageOptimize: CommonProject.scripts.settings.cfg.imageOptimize
 			});
+			// 已开启优化但全部图片转换失败（CORS/防盗链极端情况）：此前静默回退普通题，显式提示
+			if (
+				questionHasImages &&
+				CommonProject.scripts.settings.cfg.imageOptimize &&
+				imageUrls.length === 0 &&
+				!imageConvertFailWarned
+			) {
+				imageConvertFailWarned = true;
+				$message.warn({
+					content: '题目图片下载或转换失败（可能跨域受限），本题将按普通题目搜索，图片题可能无法匹配。',
+					duration: 10
+				});
+			}
 			const searchInfos = await defaultAnswerWrapperHandler(options.answererWrappers, env);
 			// 将 AI 答案中的 [图片N] 占位符还原为对应图片 URL，使选项匹配可以命中图片选项。
-			// 顺序与 createImageSuggestion 的编号规则一致：标题图片在前、选项图片在后，按文档顺序去重。
-			const orderedImages: string[] = [];
-			for (const url of [...(titleImages ?? []), ...(optResult.images ?? [])]) {
-				if (!orderedImages.includes(url)) orderedImages.push(url);
-			}
-			if (orderedImages.length) {
+			// imageUrls 与实际上传的 env.images 严格同序（createImageSuggestion 单一数据源，含转换失败过滤）。
+			// 覆盖服务端未还原的场景：标题图占位符 / 选项行数不对齐 / 第三方题库。
+			if (imageUrls.length) {
 				for (const info of searchInfos) {
 					for (const res of info.results) {
 						if (res.answer && res.answer.includes('[图片')) {
-							res.answer = res.answer.replace(
-								/\[图片(\d+)\]/g,
-								(m, n) => orderedImages[Number(n) - 1] ?? m
-							);
+							res.answer = res.answer.replace(/\[图片(\d+)\]/g, (m, n) => imageUrls[Number(n) - 1] ?? m);
 						}
 					}
 				}

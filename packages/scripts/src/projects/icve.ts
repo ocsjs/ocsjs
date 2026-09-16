@@ -766,20 +766,26 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 
 	console.log({ answererWrappers, period, thread });
 
-	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return titles
-			.filter((t) => t?.innerText)
+	const titleTransformWithImages = (titles: (HTMLElement | undefined)[]) => {
+		const images: string[] = [];
+		const text = titles
+			.filter((t) => t?.innerText || t?.querySelector('img'))
 			.map((t) => {
 				if (t) {
 					const title = t.cloneNode(true) as HTMLElement;
 					title.querySelector('[name*="questionIndex"]')?.remove();
 					title.querySelector('.q_score')?.remove();
-					return title.innerText.trim().replace(/^、/, '') || '';
+					const extracted = extractTextWithImages(title);
+					images.push(...extracted.images);
+					return extracted.text.trim().replace(/^、/, '') || '';
 				}
 				return '';
 			})
 			.join(',');
+		return { text, images };
 	};
+	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
+	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
 	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
@@ -822,10 +828,16 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
-			titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
+			titleTransform: (elements: any, _ctx: any) => titleTransformWithImages(elements.title),
 			optionsTransform: (elements: any, ctx: any) => {
-				ctx.type = getType(ctx.elements.options) || 'unknown';
-				return ctx.elements.options.map((o: any) => o.innerText).join('\n');
+				const type = getType(ctx.elements.options) || 'unknown';
+				ctx.type = type;
+				if (type === 'completion') return '';
+				const optResults = (ctx.elements.options ?? []).filter(Boolean).map((o: any) => extractTextWithImages(o));
+				return {
+					text: optResults.map((r: { text: string }) => r.text).join('\n'),
+					images: optResults.flatMap((r: { images: string[] }) => r.images)
+				};
 			},
 			answererWrappers,
 			period
@@ -855,7 +867,8 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 					}
 				}
 			} else {
-				const resolver = createDefaultQuestionResolver(ctx)[type];
+				/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
+				const resolver = createDefaultQuestionResolver(ctx, (o: HTMLElement) => extractTextWithImages(o).text)[type];
 				const res = await resolver(ctx.searchInfos, ctx.elements.options, (type, answer, option) => {
 					if (type === 'judgement' || type === 'single' || type === 'multiple') {
 						// 这里只用判断多选题是否选中，如果选中就不用再点击了，单选题是 radio，所以不用判断。

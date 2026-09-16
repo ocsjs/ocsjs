@@ -3,6 +3,8 @@ import { getImageSize, upscalePngDataUrl } from './png-upscaler';
 export interface ImageSuggestionResult {
 	/** base64 图片数组，顺序对应 [图片1]、[图片2]… */
 	images: string[];
+	/** 与 images 严格同序的图片原始 URL（[图片N] 还原的单一数据源，已跳过转换失败项） */
+	urls: string[];
 	/** 原题标题中图片 URL 替换为 [图片N] 占位符后的文本（不含 base64） */
 	suggestion_title: string;
 	/** 原选项中图片 URL 替换为 [图片N] 占位符后的文本（不含 base64），无图片时为 undefined */
@@ -47,12 +49,44 @@ async function nodeFetchToBase64(url: string): Promise<string> {
 }
 
 /**
+ * URL → base64 会话级缓存（LRU）。
+ * 同一份试卷中公式图常在多题间复用，重试/重新答题也会重复请求同一批图片，
+ * 命中缓存可跳过网络下载与 Canvas 转换。
+ */
+const IMAGE_BASE64_CACHE_MAX = 200;
+const imageBase64Cache = new Map<string, string>();
+
+/**
  * 将图片转换为 base64 字符串
  * 支持传入 URL 字符串或 HTMLImageElement
  * 优先使用 Canvas 方式（浏览器已携带认证信息加载图片，可绕过防盗链）
  * Canvas 失败时（跨域无 CORS 头导致画布被污染）回退到 GM_xmlhttpRequest
  */
 export function imageToBase64(source: string | HTMLImageElement): Promise<string> {
+	const url = typeof source === 'string' ? source : source.src;
+	// data URL 本身已是 base64 且键过长，不参与缓存
+	if (url && !url.startsWith('data:')) {
+		const cached = imageBase64Cache.get(url);
+		if (cached) {
+			// LRU：命中后刷新为最新插入位置
+			imageBase64Cache.delete(url);
+			imageBase64Cache.set(url, cached);
+			return Promise.resolve(cached);
+		}
+		return convertImageToBase64(source).then((b64) => {
+			if (imageBase64Cache.size >= IMAGE_BASE64_CACHE_MAX) {
+				// 删除最老条目（Map 按插入顺序迭代）
+				imageBase64Cache.delete(imageBase64Cache.keys().next().value!);
+			}
+			imageBase64Cache.set(url, b64);
+			return b64;
+		});
+	}
+	return convertImageToBase64(source);
+}
+
+/** 实际的图片转 base64 实现（不经过缓存，由 {@link imageToBase64} 调用） */
+function convertImageToBase64(source: string | HTMLImageElement): Promise<string> {
 	return new Promise((resolve, reject) => {
 		// 如果是 HTMLImageElement，直接用 Canvas 绘制转换
 		if (typeof HTMLImageElement !== 'undefined' && source instanceof HTMLImageElement) {
@@ -195,6 +229,7 @@ export async function createImageSuggestion(
 	// 按 allUrls（题目/选项中的出现顺序）遍历，而非下载完成顺序，保证编号与原文一致
 	// 占位符左右各加两个空格，与相邻中文/符号分隔，便于题库解析
 	const images: string[] = [];
+	const urls: string[] = [];
 	const placeholderMap = new Map<string, string>();
 	for (const url of allUrls) {
 		const base64 = base64Map.get(url);
@@ -215,6 +250,7 @@ export async function createImageSuggestion(
 		}
 		placeholderMap.set(url, ` [图片${images.length + 1}] `);
 		images.push(normalized);
+		urls.push(url);
 	}
 
 	if (images.length === 0) return undefined;
@@ -239,6 +275,7 @@ export async function createImageSuggestion(
 
 	return {
 		images,
+		urls,
 		suggestion_title: suggestionTitle,
 		...(suggestionOptions !== undefined ? { suggestion_options: suggestionOptions } : {})
 	};
@@ -257,19 +294,6 @@ function dedupeLines(str: string): string {
 	return result.join('\n');
 }
 
-/** 数组去重，保持首次出现的顺序 */
-function dedupeArray<T>(arr: T[]): T[] {
-	const seen = new Set<T>();
-	const result: T[] = [];
-	for (const item of arr) {
-		if (!seen.has(item)) {
-			seen.add(item);
-			result.push(item);
-		}
-	}
-	return result;
-}
-
 export async function buildAnswererEnv(params: {
 	type?: string;
 	title: string;
@@ -280,7 +304,11 @@ export async function buildAnswererEnv(params: {
 	/** DOM 调用方传入的选项图片 URL（跳过正则提取） */
 	optionsImages?: string[];
 	enableImageOptimize?: boolean;
-}): Promise<Record<string, any>> {
+}): Promise<{
+	env: Record<string, any>;
+	/** 与 env.images 严格同序的图片原始 URL（无图片时为空数组），供 [图片N] 还原直接使用 */
+	imageUrls: string[];
+}> {
 	// options 归一化为字符串：数组按行拼接，保证后续占位符替换与图片匹配均为字符串处理
 	const rawOptions = Array.isArray(params.options)
 		? params.options.filter((o) => o != null && o !== '').join('\n')
@@ -293,19 +321,22 @@ export async function buildAnswererEnv(params: {
 		title: params.title,
 		options
 	};
+	let imageUrls: string[] = [];
 	if (params.enableImageOptimize) {
 		const suggestion = await createImageSuggestion(params.title, options, params.titleImages, params.optionsImages);
 		if (suggestion) {
 			// 新增独立字段，由题库配置（v2）显式引用后才会被提交
-			// images / suggestion_options 去重，避免重复数据上传
-			env.images = dedupeArray(suggestion.images);
+			// 注意：env.images 不做内容去重——[图片N] 占位符编号与 images 顺序严格对应，
+			// 按 base64 内容去重会破坏对齐（服务端 dedupQuestionData 已有带重映射的去重）。
+			env.images = suggestion.images;
+			imageUrls = suggestion.urls;
 			env.suggestion_title = suggestion.suggestion_title;
 			if (suggestion.suggestion_options !== undefined) {
 				env.suggestion_options = dedupeLines(suggestion.suggestion_options);
 			}
 		}
 	}
-	return env;
+	return { env, imageUrls };
 }
 
 /**

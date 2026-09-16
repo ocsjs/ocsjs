@@ -147,7 +147,7 @@ async function main() {
 	// 使用 buildAnswererEnv 构建 env（与生产管线一致）
 	// 原 title / options 保留不动；图片 URL 会下载转 base64，写入新增字段
 	// images / suggestion_title / suggestion_options
-	const env = await buildAnswererEnv({ type, title, options, enableImageOptimize: imageOptimize });
+	const { env, imageUrls } = await buildAnswererEnv({ type, title, options, enableImageOptimize: imageOptimize });
 
 	// 输出 env 便于核对图片题优化的新增字段
 	const envPreview: Record<string, any> = { ...env };
@@ -162,6 +162,8 @@ async function main() {
 			envPreview[key] = envPreview[key].slice(0, 200) + `...（共 ${env[key].length} 字符）`;
 		}
 	}
+	// 与 env.images 严格同序的原始 URL（[图片N] 还原数据源）
+	envPreview.image_urls = imageUrls;
 	console.log('\n📦 搜题环境变量:');
 	console.log(JSON.stringify(envPreview, null, 2).replace(/^/gm, '   '));
 
