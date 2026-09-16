@@ -1,0 +1,643 @@
+/**
+ * OCS 自定义样式（已从 easy-us 样式中隔离）
+ * 本文件仅包含与 easy-us/assets/css/style.css 不同或新增的自定义规则。
+ */
+/** ===== 主题变量 ===== */
+/** 主色 */
+/** 按钮颜色 */
+/** 焦点边框/阴影 */
+/** ===== 通用 mixin ===== */
+/** 输入控件焦点样式 */
+/** 输入控件焦点样式（非 checkbox/radio 时填充白底） */
+/** 按钮基础样式 */
+/** 按钮状态样式（需在次级样式之前调用，保证次级 hover 覆盖默认 hover） */
+/** 次级按钮样式（白底灰边） */
+/** 标签配色 */
+a {
+	color: #1890ff;
+}
+.base-style-active-form-control:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.base-style-active-form-control:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.base-style-switch:checked {
+	background: #1890ff;
+}
+/**
+ * 注意：.base-style-button / .base-style-button-secondary 与 easy-us 中的 mixin 同名，
+ * easy-us 调用 .base-style-button() 时会把同名规则集的【内部嵌套规则】一并展开，
+ * 因此这两个类的状态规则必须保持扁平写法（单独定义），不能嵌套在类内部。
+ */
+.base-style-button {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: #409eff;
+	border: 1px solid #409eff;
+	color: white;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	transition: all 0.2s ease;
+}
+.base-style-button:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.base-style-button:hover {
+	background-color: #66b1ff;
+	border-color: #66b1ff;
+}
+.base-style-button:disabled {
+	background-color: #a0cfff;
+	border-color: #a0cfff;
+	color: white;
+	cursor: not-allowed !important;
+}
+.base-style-button-secondary {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: #409eff;
+	border: 1px solid #409eff;
+	color: white;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	transition: all 0.2s ease;
+	color: #606266;
+	background-color: white;
+	border: 1px solid #dcdcdc;
+}
+.base-style-button-secondary:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.base-style-button-secondary:hover {
+	background-color: #66b1ff;
+	border-color: #66b1ff;
+}
+.base-style-button-secondary:disabled {
+	background-color: #a0cfff;
+	border-color: #a0cfff;
+	color: white;
+	cursor: not-allowed !important;
+}
+.base-style-button-secondary:hover {
+	color: #409eff;
+	border-color: #c6e2ff;
+	background-color: #ecf5ff;
+}
+header-element .extra-menu-bar .script-panel-link {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: #409eff;
+	border: 1px solid #409eff;
+	color: white;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	transition: all 0.2s ease;
+	color: #606266;
+	background-color: white;
+	border: 1px solid #dcdcdc;
+	padding-bottom: 2px;
+	margin-bottom: 0px;
+}
+header-element .extra-menu-bar .script-panel-link:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+header-element .extra-menu-bar .script-panel-link:hover {
+	background-color: #66b1ff;
+	border-color: #66b1ff;
+}
+header-element .extra-menu-bar .script-panel-link:disabled {
+	background-color: #a0cfff;
+	border-color: #a0cfff;
+	color: white;
+	cursor: not-allowed !important;
+}
+header-element .extra-menu-bar .script-panel-link:hover {
+	color: #409eff;
+	border-color: #c6e2ff;
+	background-color: #ecf5ff;
+}
+header-element .extra-menu-bar .script-panel-link.active {
+	background-color: #1890ff1a;
+	border-color: #1890ff;
+	color: #1890ff;
+}
+header-element .dropdown .dropdown-trigger-element:hover {
+	background-color: #ffffff80;
+	color: #1890ff;
+}
+header-element .dropdown.active .dropdown-trigger-element {
+	--tab-border: 1px;
+	--tab-border-color: #e8ecf1;
+	--tab-bg: #ffffff;
+	--tab-radius-limit: 8px;
+	--tab-radius-grad: #0000 calc(69% - var(--tab-border)), var(--tab-border-color) calc(69% - var(--tab-border) + 0.25px),
+		var(--tab-border-color) 69%, var(--tab-bg) calc(69% + 0.25px);
+	--radius-start: radial-gradient(circle at top left, var(--tab-radius-grad));
+	--radius-end: radial-gradient(circle at top right, var(--tab-radius-grad));
+	position: relative;
+	color: #1890ff;
+	font-weight: 600;
+	padding: 2px 11px;
+	background-color: var(--tab-bg);
+	border: var(--tab-border) solid var(--tab-border-color);
+	border-bottom: none;
+	border-radius: var(--tab-radius-limit) var(--tab-radius-limit) 0 0;
+	box-shadow: 0 1px 0 var(--tab-bg);
+}
+.notes {
+	background: #0099ff0e;
+	border-left: 4px solid #0099ff65;
+	border-radius: 4px 10px 10px 4px;
+	width: -webkit-fill-available;
+	margin: 0px 8px;
+	line-height: 26px;
+	letter-spacing: 1px;
+}
+.notes .notes-header .notes-info-icon {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 14px;
+	height: 14px;
+	border-radius: 50%;
+	background-color: #1890ff;
+	color: white;
+	font-size: 10px;
+	font-weight: bold;
+	font-style: italic;
+	line-height: 1;
+	user-select: none;
+}
+.configs .configs-body config-element .config-wrapper select:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.configs .configs-body config-element .config-wrapper select:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.configs .configs-body config-element .config-wrapper textarea:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.configs .configs-body config-element .config-wrapper textarea:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.configs .configs-body config-element .config-wrapper input:not([type='button']):focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+.configs
+	.configs-body
+	config-element
+	.config-wrapper
+	input:not([type='button']):focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+.configs .configs-body config-element .config-wrapper input[type='button'] {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: #409eff;
+	border: 1px solid #409eff;
+	color: white;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	transition: all 0.2s ease;
+	width: auto;
+	padding: 4px 12px;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:hover {
+	background-color: #66b1ff;
+	border-color: #66b1ff;
+}
+.configs .configs-body config-element .config-wrapper input[type='button']:disabled {
+	background-color: #a0cfff;
+	border-color: #a0cfff;
+	color: white;
+	cursor: not-allowed !important;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox']:checked {
+	background: #1890ff;
+}
+.configs .configs-body config-element .config-wrapper input[type='checkbox'],
+.configs .configs-body config-element .config-wrapper input[type='radio'],
+.configs .configs-body config-element .config-wrapper input[type='range'] {
+	accent-color: #0e8ee2;
+}
+.message-container message-element.info {
+	background-color: #c9e7ff;
+	color: #004d95;
+	border: 1px solid #1890ff69;
+}
+modal-element .modal-input:focus {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+}
+modal-element .modal-input:focus:not([type='checkbox'], [type='radio']) {
+	border: 1px solid #0e8de290;
+	box-shadow: 0px 0px 4px #0e8de252;
+	background-color: white !important;
+}
+modal-element .modal-cancel-button {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: #409eff;
+	border: 1px solid #409eff;
+	color: white;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	transition: all 0.2s ease;
+	color: gray;
+	background-color: white;
+	border: 1px solid #dcdcdc;
+}
+modal-element .modal-cancel-button:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+modal-element .modal-cancel-button:hover {
+	background-color: #66b1ff;
+	border-color: #66b1ff;
+}
+modal-element .modal-cancel-button:disabled {
+	background-color: #a0cfff;
+	border-color: #a0cfff;
+	color: white;
+	cursor: not-allowed !important;
+}
+modal-element .modal-confirm-button {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: #409eff;
+	border: 1px solid #409eff;
+	color: white;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	transition: all 0.2s ease;
+}
+modal-element .modal-confirm-button:active {
+	box-shadow: 0px 0px 8px #0e8de2a5;
+}
+modal-element .modal-confirm-button:hover {
+	background-color: #66b1ff;
+	border-color: #66b1ff;
+}
+modal-element .modal-confirm-button:disabled {
+	background-color: #a0cfff;
+	border-color: #a0cfff;
+	color: white;
+	cursor: not-allowed !important;
+}
+/** ===== 题库状态列表 ===== */
+.answerer-status-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 8px;
+}
+.answerer-status-list .answerer-status-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	border: 1px solid #e8e8e8;
+	border-radius: 8px;
+	background-color: #fafafa;
+}
+.answerer-status-list .answerer-status-item .name {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+.answerer-status-list .answerer-status-item .status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	flex-shrink: 0;
+}
+.answerer-status-list .answerer-status-item .status .latency {
+	color: #8c8c8c;
+}
+.answerer-status-list .answerer-status-item .status .badge {
+	padding: 2px 8px;
+	border-radius: 10px;
+}
+.answerer-status-list .answerer-status-item .status .badge.success {
+	color: #52c41a;
+	background-color: #f6ffed;
+	border: 1px solid #b7eb8f;
+}
+.answerer-status-list .answerer-status-item .status .badge.error {
+	color: #ff4d4f;
+	background-color: #fff1f0;
+	border: 1px solid #ffa39e;
+}
+.answerer-status-list .answerer-status-item .status .badge.timeout {
+	color: #faad14;
+	background-color: #fffbe6;
+	border: 1px solid #ffe58f;
+}
+.answerer-status-list .answerer-status-item .status .badge.disabled {
+	color: #8c8c8c;
+	background-color: #f5f5f5;
+	border: 1px solid #d9d9d9;
+}
+.dropdown.active .dropdown-trigger-element {
+	color: #1890ff;
+}
+.dropdown-content .dropdown-option.active {
+	background-color: #1890ff1a;
+	color: #1890ff;
+	font-weight: 500;
+}
+/** ===== 搜索结果样式（从 easy-us 迁移，仅 OCS 项目使用） ===== */
+.search-infos-num {
+	width: 26px;
+	margin: 2px;
+	height: 20px;
+	border-radius: 4px;
+	display: inline-block;
+	background-color: white;
+	text-align: center;
+	cursor: pointer;
+	border: 1px solid #b6b6b6;
+}
+.search-infos-num.requested {
+	border: 1px solid #63b4ff;
+	color: #63b4ff;
+}
+.search-infos-num.active {
+	background-color: #127de1 !important;
+	color: white;
+}
+.search-infos-num.error {
+	border: 1px solid #ff8789ed;
+	background-color: #ff6b6ded;
+	color: white;
+}
+.search-infos-num.finish {
+	background-color: #63b4ff;
+	border: 1px solid #63b4ff;
+	color: white;
+}
+search-infos-element {
+	display: block;
+	overflow: auto;
+}
+search-infos-element .search-result {
+	margin-bottom: 12px;
+	padding-left: 12px;
+}
+search-infos-element .search-result .question {
+	font-weight: bold;
+	max-height: 200px;
+	overflow: auto;
+}
+search-infos-element .search-result .answer {
+	color: #7c7c7c;
+}
+search-infos-element .search-result .answer code {
+	border-bottom: 1px solid #dcdcdc;
+	padding: 2px 0px;
+	border-radius: 2px;
+	margin: 4px;
+	line-height: 22px;
+}
+search-infos-element .search-result .answer code + code {
+	margin-left: 4px;
+}
+search-infos-element .search-result .search-result-answer-tag {
+	padding: 2px 6px;
+	border-radius: 2px;
+	font-size: 12px;
+	cursor: pointer;
+	margin-right: 6px;
+}
+search-infos-element .search-result .search-result-answer-tag + .search-result-answer-tag {
+	margin-left: 4px;
+}
+search-infos-element .search-result .search-result-answer-tag.blue {
+	color: #1890ff;
+	background-color: #e6f7ff;
+	border: 1px solid #91d5ff;
+}
+search-infos-element .search-result .search-result-answer-tag.green {
+	color: #52c41a;
+	background-color: #f6ffed;
+	border: 1px solid #b7eb8f;
+}
+search-infos-element .search-result .search-result-answer-tag.gray {
+	color: #595959;
+	background-color: #fafafa;
+	border: 1px solid #d9d9d9;
+}
+search-infos-element .search-result .search-result-answer-tag.red {
+	color: #ff4d4f;
+	background-color: #fff1f0;
+	border: 1px solid #ffa39e;
+}
+search-infos-element .search-result .search-result-answer-tag.yellow {
+	color: #faad14;
+	background-color: #fffbe6;
+	border: 1px solid #ffe58f;
+}
+search-infos-element .search-result-question-type {
+	background-color: #e6f7ff;
+	border: 1px solid #91d5ff;
+	color: #1890ff;
+	margin-right: 8px;
+	padding: 0px 4px;
+	border-radius: 4px;
+}
+search-infos-element .error {
+	color: #ff6b6ded;
+	display: inline-block;
+	padding-left: 12px;
+}
+.work-result-list {
+	max-height: 400px;
+	overflow: auto;
+	margin-bottom: 12px;
+	padding: 6px;
+}
+.work-result-question-container {
+	position: absolute;
+	width: 400px;
+	left: -100%;
+	top: 0px;
+	background: white;
+	border: 1px solid #cbcbcb;
+	border-radius: 4px;
+	box-shadow: 0px 0px 12px #d1cfcf;
+	padding: 12px;
+}
+.work-result-question-container .close-search-result {
+	font-size: 12px;
+	margin-left: 8px;
+	text-decoration: underline;
+	color: gray;
+	cursor: pointer;
+}
+.search-info-title {
+	border: 1px solid #e1e1e1;
+	border-radius: 4px;
+	padding: 8px 12px;
+	margin-bottom: 12px;
+	line-height: 20px;
+	overflow: auto;
+}
+.search-info-title .title-content {
+	max-height: 200px;
+	overflow: auto;
+}
+.search-info-details {
+	margin-left: 4px;
+}
+.alert-info-wrapper {
+	margin-bottom: 8px;
+}
+.alert-info-wrapper .result-info {
+	padding: 12px;
+	text-align: center;
+	border-radius: 6px;
+}
+.alert-info-wrapper .unresolved,
+.alert-info-wrapper .no-answer {
+	color: #a1a1a1;
+	background-color: #f7f7f7;
+}
+.alert-info-wrapper .warn {
+	color: #d48806;
+	background-color: #fffbe6;
+}
+.alert-info-wrapper .error {
+	color: #ff4d4f;
+	background-color: #fff1f0;
+}
+/** ===== 使用指南/控制台/Markdown 样式（从 easy-us 迁移，仅 OCS 项目使用） ===== */
+.user-guide > li {
+	padding: 4px 0px;
+}
+.copy,
+.question-title-extra-btn {
+	margin-left: 4px;
+	padding: 2px 4px;
+	border-radius: 2px;
+	box-shadow: 0 0 4px #b1b1b1;
+	cursor: pointer !important;
+	font-weight: normal;
+	font-size: 12px;
+}
+.console {
+	max-height: 300px;
+	max-width: 400px;
+	overflow: auto;
+	background-color: #292929;
+	padding: 12px 6px;
+	color: #ececec;
+	font-size: 12px;
+}
+.console .item {
+	padding: 3px 0px;
+	border-radius: 2px;
+}
+.console .item .time {
+	color: #757575;
+}
+.console .item .info {
+	background-color: #2196f3a3;
+}
+.console .item .warn {
+	background-color: #ffc107db;
+}
+.console .item .error {
+	background-color: #f36c71cc;
+}
+.console .item .debug,
+.console .item .log {
+	background-color: #9e9e9ec4;
+}
+.console *::selection {
+	background-color: #ffffff6b;
+}
+.markdown {
+	max-width: 400px;
+	max-height: 50vh;
+	overflow: auto;
+}
+.markdown code {
+	padding: 2px 4px;
+	background-color: #f0f0f0;
+	border-radius: 6px;
+	font-size: 12px;
+}
+.markdown blockquote {
+	padding: 4px 4px 4px 12px;
+	margin: 0px;
+	color: #b5b5b5;
+	border-left: #ababab 2px solid;
+}
+.markdown blockquote p {
+	margin: 0px;
+}
+.markdown h1,
+.markdown h2,
+.markdown h3,
+.markdown h4,
+.markdown h5,
+.markdown h6,
+.markdown p {
+	margin: 8px 0px;
+}
+/** ===== 动画 ===== */
+@keyframes show {
+	0% {
+		transform: translateY(20px);
+		opacity: 0;
+	}
+	100% {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+@keyframes fade-in {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+@keyframes fade-out {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}

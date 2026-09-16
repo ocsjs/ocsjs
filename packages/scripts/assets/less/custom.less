@@ -1,0 +1,660 @@
+/**
+ * OCS 自定义样式（已从 easy-us 样式中隔离）
+ * 本文件仅包含与 easy-us/assets/css/style.css 不同或新增的自定义规则。
+ */
+
+/** ===== 主题变量（对齐 easy-us 主题，跟随 @primary 一键更换） ===== */
+/** 注意：本文件依赖 easy-us/assets/less/style.less 中的主题变量，需在其之后编译（见 style.less） */
+/** 主色 */
+@ocs-primary: @primary;
+/** 按钮颜色 */
+@ocs-button-primary: @primary;
+@ocs-button-hover: @primary-hover;
+@ocs-button-disabled: @primary-light;
+/** 焦点边框/阴影 */
+@ocs-focus-border: @primary;
+@ocs-focus-shadow: @primary-ring;
+@ocs-focus-active-shadow: fade(@primary, 65%);
+
+/** ===== 通用 mixin ===== */
+/** 输入控件焦点样式 */
+.ocs-focus-ring() {
+	border: 1px solid @ocs-focus-border;
+	box-shadow: 0px 0px 4px @ocs-focus-shadow;
+}
+
+/** 输入控件焦点样式（非 checkbox/radio 时填充白底） */
+.ocs-focus-ring-filled() {
+	.ocs-focus-ring();
+
+	&:not([type='checkbox'], [type='radio']) {
+		.ocs-focus-ring();
+		background-color: white !important;
+	}
+}
+
+/** 按钮基础样式 */
+.ocs-button() {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	border-radius: 4px;
+	background-color: @ocs-button-primary;
+	border: 1px solid @ocs-button-primary;
+	color: white;
+	cursor: pointer !important;
+	margin-bottom: 4px;
+	transition: all 0.2s ease;
+}
+
+/** 按钮状态样式（需在次级样式之前调用，保证次级 hover 覆盖默认 hover） */
+.ocs-button-states() {
+	&:active {
+		.ocs-button-active();
+	}
+
+	&:hover {
+		.ocs-button-hover();
+	}
+
+	&:disabled {
+		.ocs-button-disabled();
+	}
+}
+
+.ocs-button-active() {
+	box-shadow: 0px 0px 8px @ocs-focus-active-shadow;
+}
+
+.ocs-button-hover() {
+	background-color: @ocs-button-hover;
+	border-color: @ocs-button-hover;
+}
+
+.ocs-button-disabled() {
+	background-color: @ocs-button-disabled;
+	border-color: @ocs-button-disabled;
+	color: white;
+	cursor: not-allowed !important;
+}
+
+/** 次级按钮样式（白底灰边） */
+.ocs-button-secondary() {
+	color: #606266;
+	background-color: white;
+	border: 1px solid #dcdcdc;
+}
+
+.ocs-button-secondary-hover() {
+	color: @ocs-button-primary;
+	border-color: lighten(@primary, 20%);
+	background-color: @primary-ghost;
+}
+
+/** 标签配色 */
+.ocs-tag-color(@color, @bg, @border) {
+	color: @color;
+	background-color: @bg;
+	border: 1px solid @border;
+}
+
+a {
+	color: @ocs-primary;
+}
+
+.base-style-active-form-control:focus {
+	.ocs-focus-ring-filled();
+}
+
+.base-style-switch:checked {
+	background: @ocs-primary;
+}
+
+/**
+ * 注意：.base-style-button / .base-style-button-secondary 与 easy-us 中的 mixin 同名，
+ * easy-us 调用 .base-style-button() 时会把同名规则集的【内部嵌套规则】一并展开，
+ * 因此这两个类的状态规则必须保持扁平写法（单独定义），不能嵌套在类内部。
+ */
+.base-style-button {
+	.ocs-button();
+}
+
+.base-style-button:active {
+	.ocs-button-active();
+}
+
+.base-style-button:hover {
+	.ocs-button-hover();
+}
+
+.base-style-button:disabled {
+	.ocs-button-disabled();
+}
+
+.base-style-button-secondary {
+	.ocs-button();
+	.ocs-button-secondary();
+}
+
+.base-style-button-secondary:active {
+	.ocs-button-active();
+}
+
+.base-style-button-secondary:hover {
+	.ocs-button-hover();
+}
+
+.base-style-button-secondary:disabled {
+	.ocs-button-disabled();
+}
+
+.base-style-button-secondary:hover {
+	.ocs-button-secondary-hover();
+}
+
+header-element {
+	.extra-menu-bar .script-panel-link {
+		.ocs-button();
+		.ocs-button-states();
+		.ocs-button-secondary();
+
+		&:hover {
+			.ocs-button-secondary-hover();
+		}
+
+		padding-bottom: 2px;
+		margin-bottom: 0px;
+
+		&.active {
+			background-color: @primary-soft;
+			border-color: @ocs-primary;
+			color: @ocs-primary;
+		}
+	}
+
+	.dropdown .dropdown-trigger-element:hover {
+		background-color: #ffffff80;
+		color: @ocs-primary;
+	}
+
+	.dropdown.active .dropdown-trigger-element {
+		--tab-border: 1px;
+		--tab-border-color: #e8ecf1;
+		--tab-bg: #ffffff;
+		--tab-radius-limit: 8px;
+		--tab-radius-grad: #0000 calc(69% - var(--tab-border)),
+			var(--tab-border-color) calc(69% - var(--tab-border) + 0.25px), var(--tab-border-color) 69%,
+			var(--tab-bg) calc(69% + 0.25px);
+		--radius-start: radial-gradient(circle at top left, var(--tab-radius-grad));
+		--radius-end: radial-gradient(circle at top right, var(--tab-radius-grad));
+		position: relative;
+		color: @ocs-primary;
+		font-weight: 600;
+		padding: 2px 11px;
+		background-color: var(--tab-bg);
+		border: var(--tab-border) solid var(--tab-border-color);
+		border-bottom: none;
+		border-radius: var(--tab-radius-limit) var(--tab-radius-limit) 0 0;
+		box-shadow: 0 1px 0 var(--tab-bg);
+	}
+}
+
+.notes {
+	background: @primary-ghost;
+	border-left: 4px solid @primary-border;
+	border-radius: 4px 10px 10px 4px;
+	width: -webkit-fill-available;
+	margin: 0px 8px;
+	line-height: 26px;
+	letter-spacing: 1px;
+
+	.notes-header .notes-info-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background-color: @ocs-primary;
+		color: white;
+		font-size: 10px;
+		font-weight: bold;
+		font-style: italic;
+		line-height: 1;
+		user-select: none;
+	}
+}
+
+.configs .configs-body config-element .config-wrapper {
+	select:focus {
+		.ocs-focus-ring-filled();
+	}
+
+	textarea:focus {
+		.ocs-focus-ring-filled();
+	}
+
+	input:not([type='button']):focus {
+		.ocs-focus-ring-filled();
+	}
+
+	input[type='button'] {
+		.ocs-button();
+		.ocs-button-states();
+
+		// 宽度根据文本自适应，padding 稍大以保证可点击区域
+		width: auto;
+		padding: 4px 12px;
+	}
+
+	input[type='checkbox']:checked {
+		background: @ocs-primary;
+	}
+
+	input[type='checkbox'],
+	input[type='radio'],
+	input[type='range'] {
+		accent-color: @primary;
+	}
+}
+
+.message-container message-element.info {
+	// 使用 mix 生成不透明实色，避免 fade 半透明背景透出页面内容
+	background-color: mix(@primary, #ffffff, 20%);
+	color: darken(@primary, 30%);
+	border: 1px solid mix(@primary, #ffffff, 40%);
+}
+
+modal-element {
+	.modal-input:focus {
+		.ocs-focus-ring-filled();
+	}
+
+	.modal-cancel-button {
+		.ocs-button();
+		.ocs-button-states();
+
+		color: gray;
+		background-color: white;
+		border: 1px solid #dcdcdc;
+	}
+
+	.modal-confirm-button {
+		.ocs-button();
+		.ocs-button-states();
+	}
+}
+
+/** ===== 题库状态列表 ===== */
+.answerer-status-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 8px;
+
+	.answerer-status-item {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 8px 12px;
+		border: 1px solid #e8e8e8;
+		border-radius: 8px;
+		background-color: #fafafa;
+
+		.name {
+			font-weight: 500;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		.status {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			font-size: 12px;
+			flex-shrink: 0;
+
+			.latency {
+				color: #8c8c8c;
+			}
+
+			.badge {
+				padding: 2px 8px;
+				border-radius: 10px;
+
+				&.success {
+					.ocs-tag-color(#52c41a, #f6ffed, #b7eb8f);
+				}
+
+				&.error {
+					.ocs-tag-color(#ff4d4f, #fff1f0, #ffa39e);
+				}
+
+				&.timeout {
+					.ocs-tag-color(#faad14, #fffbe6, #ffe58f);
+				}
+
+				&.disabled {
+					.ocs-tag-color(#8c8c8c, #f5f5f5, #d9d9d9);
+				}
+			}
+		}
+	}
+}
+
+.dropdown.active .dropdown-trigger-element {
+	color: @ocs-primary;
+}
+
+.dropdown-content .dropdown-option.active {
+	background-color: @primary-soft;
+	color: @ocs-primary;
+	font-weight: 500;
+}
+
+/** ===== 搜索结果样式（从 easy-us 迁移，仅 OCS 项目使用） ===== */
+.search-infos-num {
+	width: 26px;
+	margin: 2px;
+	height: 20px;
+	border-radius: 4px;
+	display: inline-block;
+	background-color: white;
+	text-align: center;
+	cursor: pointer;
+	border: 1px solid #b6b6b6;
+
+	&.requested {
+		border: 1px solid lighten(@primary, 15%);
+		color: lighten(@primary, 15%);
+	}
+
+	&.active {
+		background-color: @primary !important;
+		color: white;
+	}
+
+	&.error {
+		border: 1px solid #ff8789ed;
+		background-color: #ff6b6ded;
+		color: white;
+	}
+
+	&.finish {
+		background-color: lighten(@primary, 15%);
+		border: 1px solid lighten(@primary, 15%);
+		color: white;
+	}
+}
+
+search-infos-element {
+	display: block;
+	overflow: auto;
+
+	.search-result {
+		margin-bottom: 12px;
+		padding-left: 12px;
+
+		.question {
+			font-weight: bold;
+			max-height: 200px;
+			overflow: auto;
+		}
+
+		.answer {
+			color: #7c7c7c;
+
+			code {
+				border-bottom: 1px solid #dcdcdc;
+				padding: 2px 0px;
+				border-radius: 2px;
+				margin: 4px;
+				line-height: 22px;
+			}
+
+			code + code {
+				margin-left: 4px;
+			}
+		}
+
+		.search-result-answer-tag {
+			padding: 2px 6px;
+			border-radius: 2px;
+			font-size: 12px;
+			cursor: pointer;
+			margin-right: 6px;
+
+			& + .search-result-answer-tag {
+				margin-left: 4px;
+			}
+
+			&.blue {
+				.ocs-tag-color(@ocs-primary, fade(@primary, 8%), @primary-border);
+			}
+
+			&.green {
+				.ocs-tag-color(#52c41a, #f6ffed, #b7eb8f);
+			}
+
+			&.gray {
+				.ocs-tag-color(#595959, #fafafa, #d9d9d9);
+			}
+
+			&.red {
+				.ocs-tag-color(#ff4d4f, #fff1f0, #ffa39e);
+			}
+
+			&.yellow {
+				.ocs-tag-color(#faad14, #fffbe6, #ffe58f);
+			}
+		}
+	}
+
+	.search-result-question-type {
+		background-color: fade(@primary, 8%);
+		border: 1px solid @primary-border;
+		color: @ocs-primary;
+		margin-right: 8px;
+		padding: 0px 4px;
+		border-radius: 4px;
+	}
+
+	.error {
+		color: #ff6b6ded;
+		display: inline-block;
+		padding-left: 12px;
+	}
+}
+
+.work-result-list {
+	max-height: 400px;
+	overflow: auto;
+	margin-bottom: 12px;
+	padding: 6px;
+}
+
+.work-result-question-container {
+	position: absolute;
+	width: 400px;
+	left: -100%;
+	top: 0px;
+	background: white;
+	border: 1px solid #cbcbcb;
+	border-radius: 4px;
+	box-shadow: 0px 0px 12px #d1cfcf;
+	padding: 12px;
+
+	.close-search-result {
+		font-size: 12px;
+		margin-left: 8px;
+		text-decoration: underline;
+		color: gray;
+		cursor: pointer;
+	}
+}
+
+.search-info-title {
+	border: 1px solid #e1e1e1;
+	border-radius: 4px;
+	padding: 8px 12px;
+	margin-bottom: 12px;
+	line-height: 20px;
+	overflow: auto;
+
+	.title-content {
+		max-height: 200px;
+		overflow: auto;
+	}
+}
+
+.search-info-details {
+	margin-left: 4px;
+}
+
+.alert-info-wrapper {
+	margin-bottom: 8px;
+
+	.result-info {
+		padding: 12px;
+		text-align: center;
+		border-radius: 6px;
+	}
+
+	.unresolved,
+	.no-answer {
+		color: #a1a1a1;
+		background-color: #f7f7f7;
+	}
+
+	.warn {
+		color: #d48806;
+		background-color: #fffbe6;
+	}
+
+	.error {
+		color: #ff4d4f;
+		background-color: #fff1f0;
+	}
+}
+
+/** ===== 使用指南/控制台/Markdown 样式（从 easy-us 迁移，仅 OCS 项目使用） ===== */
+.user-guide > li {
+	padding: 4px 0px;
+}
+
+.copy,
+.question-title-extra-btn {
+	margin-left: 4px;
+	padding: 2px 4px;
+	border-radius: 2px;
+	box-shadow: 0 0 4px #b1b1b1;
+	cursor: pointer !important;
+	font-weight: normal;
+	font-size: 12px;
+}
+
+.console {
+	max-height: 300px;
+	max-width: 400px;
+	overflow: auto;
+	background-color: #292929;
+	padding: 12px 6px;
+	color: #ececec;
+	font-size: 12px;
+
+	.item {
+		padding: 3px 0px;
+		border-radius: 2px;
+
+		.time {
+			color: #757575;
+		}
+
+		.info {
+			background-color: fade(@primary, 64%);
+		}
+
+		.warn {
+			background-color: #ffc107db;
+		}
+
+		.error {
+			background-color: #f36c71cc;
+		}
+
+		.debug,
+		.log {
+			background-color: #9e9e9ec4;
+		}
+	}
+
+	// 文字选中样式
+	*::selection {
+		background-color: #ffffff6b;
+	}
+}
+
+.markdown {
+	max-width: 400px;
+	max-height: 50vh;
+	overflow: auto;
+
+	code {
+		padding: 2px 4px;
+		background-color: #f0f0f0;
+		border-radius: 6px;
+		font-size: 12px;
+	}
+
+	blockquote {
+		padding: 4px 4px 4px 12px;
+		margin: 0px;
+		color: #b5b5b5;
+		border-left: #ababab 2px solid;
+
+		p {
+			margin: 0px;
+		}
+	}
+
+	h1,
+	h2,
+	h3,
+	h4,
+	h5,
+	h6,
+	p {
+		margin: 8px 0px;
+	}
+}
+
+/** ===== 动画 ===== */
+@keyframes show {
+	0% {
+		transform: translateY(20px);
+		opacity: 0;
+	}
+	100% {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes fade-in {
+	0% {
+		opacity: 0;
+	}
+	100% {
+		opacity: 1;
+	}
+}
+
+@keyframes fade-out {
+	0% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+	}
+}
