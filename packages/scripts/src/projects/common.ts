@@ -17,6 +17,7 @@ import { SearchInfosElement } from '../elements/search.infos';
 import { RenderScript } from '../render';
 import { dropdownStyle } from '../utils/configs';
 import { buildAnswererEnv, isAnswererWrappersSupportImageOptimize } from '../utils/work';
+import { initEdgeMinimize } from '../utils/edge-minimize';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
@@ -1308,6 +1309,14 @@ export const CommonProject = Project.create({
 		}),
 		/** 渲染脚本，窗口渲染主要脚本 */
 		render: RenderScript,
+		edgeMinimize: new Script({
+			name: '边缘最小化图标模式',
+			matches: [['所有页面', /.*/]],
+			hideInPanel: true,
+			oncomplete() {
+				initEdgeMinimize();
+			}
+		}),
 		hack: new Script({
 			name: '页面复制粘贴限制解除',
 			matches: [['所有页面', /.*/]],

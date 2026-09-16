@@ -22,6 +22,7 @@ export { IcveMoocProject } from './projects/icve';
 export { ICourseProject } from './projects/icourse';
 export { YKTProject } from './projects/yuketang';
 export { RenderScript } from './render';
+export { logoSvg } from './utils/logo';
 
 export function definedProjects(): Project[] {
 	return [

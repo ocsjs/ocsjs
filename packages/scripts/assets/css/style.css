@@ -186,6 +186,7 @@ container-element {
   z-index: 99999;
   text-align: left;
   min-width: 300px;
+  width: max-content;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #636363;
@@ -1749,4 +1750,78 @@ search-infos-element .error {
   100% {
     opacity: 0;
   }
+}
+/** ===== 边缘最小化图标模式 ===== */
+container-element .edge-minimize-icon {
+  display: none;
+}
+container-element.edge-minimize {
+  min-width: unset;
+  width: 48px;
+  overflow: hidden;
+}
+container-element.edge-minimize header-element {
+  display: none;
+}
+container-element.edge-minimize .edge-minimize-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  cursor: pointer;
+  user-select: none;
+}
+container-element.edge-minimize .edge-minimize-icon svg {
+  width: 32px;
+  height: 32px;
+}
+container-element.edge-minimize.edge-left {
+  border-radius: 0 12px 12px 0;
+}
+container-element.edge-minimize.edge-right {
+  border-radius: 12px 0 0 12px;
+}
+/** ===== 吸附过渡动画（仅在程序化吸附时临时添加） ===== */
+container-element.edge-snapping {
+  transition: left 0.2s ease, top 0.2s ease;
+}
+/** ===== 边缘拖放高亮区域 ===== */
+.edge-drop-zone {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 100px;
+  z-index: 99998;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.edge-drop-zone .edge-drop-zone-tip {
+  writing-mode: vertical-rl;
+  font-size: 20px;
+  font-weight: bold;
+  letter-spacing: 6px;
+  color: rgba(43, 103, 255, 0.9);
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.9);
+  user-select: none;
+}
+.edge-drop-zone.show {
+  opacity: 1;
+}
+.edge-drop-zone.zone-left {
+  left: 0;
+  background: linear-gradient(to right, rgba(43, 103, 255, 0.25), transparent);
+  border-right: 2px solid rgba(43, 103, 255, 0.6);
+}
+.edge-drop-zone.zone-right {
+  right: 0;
+  background: linear-gradient(to left, rgba(43, 103, 255, 0.25), transparent);
+  border-left: 2px solid rgba(43, 103, 255, 0.6);
+}
+container-element .edge-minimize-icon {
+  touch-action: none;
 }
