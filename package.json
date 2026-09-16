@@ -19,6 +19,8 @@
 		"pub:major": "npm version major && pnpm build:core && npm publish",
 		"changelog:simplify": "gulp -f ./scripts/simplify_changelog.js",
 		"test": "tsx tests/resolver.test.ts",
+		"test:eus": "pnpm -C A:/VSCode/code/eus build && pnpm -C packages/core link A:/VSCode/code/eus && pnpm -C packages/scripts link A:/VSCode/code/eus && npm run build",
+		"test:eus:reset": "pnpm install -w && cd packages/scripts && pnpm install",
 		"test:answerer": "tsx --import ./tests/setup-browser-env.ts tests/answerer.test.ts"
 	},
 	"devDependencies": {
@@ -65,7 +67,8 @@
 	},
 	"homepage": "https://github.com/ocsjs/ocsjs#readme",
 	"dependencies": {
-		"@microsoft/tsdoc": "^0.14.2"
+		"@microsoft/tsdoc": "^0.14.2",
+		"easy-us": "link:../eus"
 	},
 	"config": {
 		"commitizen": {
