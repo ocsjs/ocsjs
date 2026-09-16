@@ -46,11 +46,21 @@ export async function defaultAnswerWrapperHandler(
 	env: {
 		title?: string;
 		options?: string;
+		/** 选项数组，便于题库接口直接拿到结构化选项（未提供时会由 options 按换行自动推导） */
+		optionsArray?: string[];
 		type?: string;
 		[x: string]: any;
 	}
 ): Promise<SearchInformation[]> {
 	const searchInfos: SearchInformation[] = [];
+	/**
+	 * 补充 optionsArray 占位符：
+	 * 各项目通常将选项以换行拼接后传入 options，这里在未显式提供 optionsArray 时自动推导，
+	 * 使得题库配置中可以直接使用 ${optionsArray} 拿到结构化选项数组。
+	 */
+	if (env.optionsArray === undefined) {
+		env.optionsArray = typeof env.options === 'string' && env.options.length > 0 ? env.options.split('\n') : [];
+	}
 	const temp: AnswererWrapper[] = JSON.parse(JSON.stringify(answererWrappers));
 	if (temp.length === 0) {
 		throw new Error('题库配置不能为空，请配置后重新开始自动答题。');
@@ -84,7 +94,9 @@ export async function defaultAnswerWrapperHandler(
 					 */
 					Object.keys(wrapperData).forEach((key) => {
 						// searchParams.set 方法会自动编码，所以不需要 encodeURI: true
-						url.searchParams.set(key, resolvePlaceHolder(wrapperData[key]));
+						const value = resolvePlaceHolder(wrapperData[key]);
+						/** 若占位符解析结果为数组（如 ${optionsArray}），序列化为 JSON 字符串 */
+						url.searchParams.set(key, Array.isArray(value) ? JSON.stringify(value) : value);
 					});
 					// get 的请求数据为空
 					requestData = {};
@@ -183,11 +195,24 @@ export async function defaultAnswerWrapperHandler(
 	// 替换占位符
 	function resolvePlaceHolder(data: any, options?: { encodeURI?: boolean }) {
 		if (typeof data === 'string') {
+			/**
+			 * 如果整个字段值就是一个占位符（例如 `"${optionsArray}"`），且对应的环境变量是数组，
+			 * 则直接返回该数组：POST 请求会以数组形式提交，GET 请求会序列化为 JSON 字符串。
+			 */
+			const singleMatch = data.match(/^\${(.*?)}$/);
+			if (singleMatch) {
+				const singleValue = env[singleMatch[1]];
+				if (Array.isArray(singleValue)) {
+					return options?.encodeURI ? encodeURIComponent(JSON.stringify(singleValue)) : singleValue;
+				}
+			}
 			const matches = data.match(/\${(.*?)}/g) || [];
 			matches.forEach((placeHolder) => {
 				/** 获取占位符的值 */
 				const value: any = env[placeHolder.replace(/\${(.*)}/, '$1')];
-				data = data.replace(placeHolder, options?.encodeURI ? encodeURIComponent(value) : value);
+				/** 内嵌在字符串中的数组占位符序列化为 JSON 字符串 */
+				const resolved = Array.isArray(value) ? JSON.stringify(value) : value;
+				data = data.replace(placeHolder, options?.encodeURI ? encodeURIComponent(resolved) : resolved);
 			});
 		} else if (typeof data === 'object') {
 			// 递归替换

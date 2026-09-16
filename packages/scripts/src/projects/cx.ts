@@ -838,7 +838,11 @@ function workOrExam(
 							options:
 								type === 'completion'
 									? ''
-									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
+									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n'),
+							optionsArray:
+								type === 'completion'
+									? []
+									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText)
 						});
 					});
 				} else {
@@ -1901,7 +1905,11 @@ const JobRunner = {
 							options:
 								type === 'completion'
 									? ''
-									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
+									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n'),
+							optionsArray:
+								type === 'completion'
+									? []
+									: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText)
 						});
 					});
 				} else {

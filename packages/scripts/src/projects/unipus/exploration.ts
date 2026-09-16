@@ -898,7 +898,8 @@ async function singleQuestionHandle({
 	const searchedInfos = await CommonProject.scripts.apps.methods.searchAnswerInCaches(question, async () => {
 		return defaultAnswerWrapperHandler(answererWrappers, {
 			type: type,
-			title: question
+			title: question,
+			optionsArray: options.map((o) => o.innerText)
 		});
 	});
 
@@ -1086,7 +1087,8 @@ async function handleCommonUnitTest(
 					return defaultAnswerWrapperHandler(opts.answererWrappers, {
 						type: ctx.type,
 						title,
-						options: ctx.type === 'completion' ? '' : ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.type === 'completion' ? '' : ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.type === 'completion' ? [] : ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {

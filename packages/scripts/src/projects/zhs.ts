@@ -2650,7 +2650,8 @@ function gxkWorkAndExam(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {
@@ -2804,7 +2805,8 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {
@@ -2921,7 +2923,8 @@ function smartWork(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {
@@ -3082,7 +3085,8 @@ function smartExam(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {
@@ -3238,7 +3242,8 @@ function fusioncourseWork(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {
@@ -3359,7 +3364,8 @@ function hikeWork(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {
@@ -3488,7 +3494,8 @@ function hikeHomework(
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {

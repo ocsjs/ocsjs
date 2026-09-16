@@ -670,7 +670,8 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: ctx.type || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {

@@ -830,7 +830,8 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: getType(ctx.elements.options) || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => o.innerText).join('\n')
+						options: ctx.elements.options.map((o) => o.innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => o.innerText)
 					});
 				});
 			} else {
@@ -1007,7 +1008,8 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 					return defaultAnswerWrapperHandler(answererWrappers, {
 						type: getType(ctx.elements.options) || 'unknown',
 						title,
-						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n')
+						options: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText).join('\n'),
+						optionsArray: ctx.elements.options.map((o) => optimizationElementWithImage(o, true).innerText)
 					});
 				});
 			} else {
