@@ -43,7 +43,6 @@
 	border: 1px solid @ocs-button-primary;
 	color: white;
 	cursor: pointer !important;
-	margin-bottom: 4px;
 	transition: all 0.2s ease;
 }
 
@@ -755,4 +754,285 @@ header-element {
 	.profile {
 		gap: 8px;
 	}
+}
+
+// 修复：取消按钮（白底灰字）hover 时背景变蓝但字色不变，导致文字与背景融合看不清
+modal-element .modal-cancel-button:hover {
+	color: white;
+}
+
+/** ===== 题库配置弹窗组件（src/utils/ui.ts 配套样式） ===== */
+
+// 题库卡片
+.aw-card {
+	border: 1px solid #e3e8ee;
+	border-radius: 8px;
+	background-color: #fff;
+	margin-bottom: 8px;
+	overflow: hidden;
+	transition: box-shadow 0.2s ease, border-color 0.2s ease;
+
+	&:hover {
+		border-color: #b6c6dd;
+		box-shadow: 0 2px 8px rgba(31, 35, 41, 0.08);
+	}
+}
+
+.aw-card-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 12px;
+	cursor: pointer;
+	transition: background-color 0.15s ease;
+
+	&:hover {
+		background-color: #f5f8fb;
+	}
+}
+
+.aw-card-name {
+	font-weight: 600;
+	font-size: 14px;
+	color: #1f2329;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	transition: opacity 0.2s ease;
+
+	.aw-card.disabled & {
+		opacity: 0.45;
+	}
+}
+
+.aw-card-badge {
+	flex: none;
+	max-width: 140px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 11px;
+	line-height: 18px;
+	color: #5a6b85;
+	background-color: #eef2f7;
+	border-radius: 999px;
+	padding: 0 8px;
+}
+
+.aw-card-spacer {
+	flex: 1;
+}
+
+.aw-card-chevron {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex: none;
+	width: 20px;
+	height: 20px;
+	color: #9aa4b2;
+	border-radius: 4px;
+	transition: transform 0.2s ease;
+	transform: rotate(-90deg);
+
+	.aw-card.expanded & {
+		transform: rotate(0deg);
+	}
+}
+
+.aw-card-body {
+	display: none;
+	border-top: 1px solid #eef2f7;
+	background-color: #f8fafc;
+	padding: 10px 14px;
+
+	.aw-card.expanded & {
+		display: block;
+	}
+}
+
+.aw-card-rows {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.aw-card-row {
+	display: flex;
+	align-items: flex-start;
+	line-height: 22px;
+	font-size: 13px;
+}
+
+.aw-card-label {
+	flex: none;
+	width: 64px;
+	margin-right: 8px;
+	color: #8a94a6;
+}
+
+.aw-card-value {
+	word-break: break-all;
+	color: #1f2329;
+}
+
+// 题库区块头（标题 + 右对齐复制按钮）
+.aw-section-header {
+	margin-top: 12px;
+	margin-bottom: 8px;
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.aw-section-copy {
+	padding: 2px 8px;
+	font-size: 12px;
+	margin-left: auto;
+}
+
+// 一键获取 Hero 头部
+.aw-connect-hero {
+	text-align: center;
+	padding: 20px 16px;
+	background-color: #f6f8fb;
+	border: 1px solid #eef2f7;
+	border-radius: 12px;
+	margin-bottom: 16px;
+}
+
+.aw-connect-hero-icon {
+	font-size: 28px;
+	line-height: 1;
+	margin-bottom: 8px;
+}
+
+.aw-connect-hero-title {
+	font-size: 18px;
+	font-weight: 700;
+	color: #1f2329;
+	margin-bottom: 6px;
+}
+
+.aw-connect-hero-subtitle {
+	font-size: 13px;
+	color: #5a6b85;
+	line-height: 18px;
+}
+
+.aw-connect-hero-extra {
+	font-size: 13px;
+	color: #5a6b85;
+	line-height: 18px;
+	margin-top: 6px;
+
+	b {
+		color: #1f2329;
+	}
+}
+
+// 步骤指示器
+.aw-steps {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 12px 0;
+}
+
+.aw-step {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 12px;
+	color: #5a6b85;
+}
+
+.aw-step-num {
+	flex: none;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background-color: @primary;
+	color: #fff;
+	font-size: 11px;
+	line-height: 16px;
+	text-align: center;
+}
+
+.aw-step-arrow {
+	color: #c1c9d4;
+	font-size: 12px;
+}
+
+// 状态提示框（默认隐藏，按类型着色）
+.aw-connect-status {
+	display: none;
+	padding: 10px 14px;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	font-size: 13px;
+	line-height: 20px;
+	text-align: center;
+	margin-bottom: 12px;
+
+	&.info {
+		display: block;
+		background-color: #eef4ff;
+		border-color: #c9d9ff;
+		color: #3f5de0;
+	}
+
+	&.success {
+		display: block;
+		background-color: #e8f7ee;
+		border-color: #b7e3c7;
+		color: #2e7d4f;
+	}
+
+	&.error {
+		display: block;
+		background-color: #fdeeee;
+		border-color: #f5c6c6;
+		color: #c0392b;
+	}
+}
+
+// 一键获取按钮（主色 CTA）
+.aw-connect-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: #fff;
+	background-color: @primary;
+	border: none;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background-color 0.15s ease, opacity 0.15s ease;
+
+	&:hover:not(:disabled) {
+		background-color: @primary-hover;
+	}
+
+	&:disabled {
+		opacity: 0.75;
+		cursor: not-allowed;
+	}
+}
+
+// 加载图标旋转动画
+@keyframes ocs-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.aw-spin {
+	animation: ocs-spin 0.8s linear infinite;
+	margin-right: 6px;
 }
