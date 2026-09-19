@@ -436,7 +436,8 @@ export const CommonProject = Project.create({
 							/** 一键获取按钮（位于弹窗底部，主色 CTA；获取中显示旋转加载），仅配置了 provider 时创建 */
 							const connectButton = provider
 								? h('button', '点击前往获取题库', (btn) => {
-										btn.className = 'aw-connect-btn';
+										// 无题库时底部按钮居中放大（.lg 见 custom.less）
+										btn.className = 'aw-connect-btn' + (aw.length ? '' : ' lg');
 
 										const defaultLabel = '点击前往获取题库';
 										/** 切换加载状态：获取中禁用并显示旋转图标（样式由 .aw-connect-btn:disabled / .aw-spin 控制） */
@@ -674,7 +675,11 @@ export const CommonProject = Project.create({
 									connectStatus,
 									...(aw.length ? [createAnswererWrapperSection(aw, '已解析的题库配置：', answererListHandlers)] : [])
 								]);
-								/** 底部按钮：清空题库配置 + 自定义题库靠左，关闭 + 一键获取靠右 */
+								/**
+								 * 底部按钮：
+								 * - 有题库：清空题库配置 + 自定义题库（小尺寸）靠左，关闭 + 一键获取靠右
+								 * - 无题库：隐藏自定义题库，关闭 + 一键获取居中并放大
+								 */
 								const connectFooter = h(
 									'div',
 									{
@@ -698,24 +703,30 @@ export const CommonProject = Project.create({
 														btn.style.padding = '2px 8px';
 														btn.style.fontSize = '12px';
 														btn.onclick = () => clearAnswererConfig();
+													}),
+													h('button', '自定义题库', (btn) => {
+														btn.className = 'modal-cancel-button';
+														btn.style.padding = '2px 8px';
+														btn.style.fontSize = '12px';
+														// 与右侧关闭/获取按钮同一行对齐，左组按钮靠左放置
+														btn.style.marginRight = 'auto';
+														btn.title = '手动填写或粘贴题库配置';
+														btn.onclick = () => {
+															modal?.remove();
+															openAnswererModal('custom');
+														};
 													})
 											  ]
 											: []),
-										h('button', '自定义题库', (btn) => {
-											btn.className = 'modal-cancel-button';
-											btn.style.padding = '2px 8px';
-											btn.style.fontSize = '12px';
-											// 与右侧关闭/获取按钮同一行对齐，左组按钮靠左放置
-											btn.style.marginRight = 'auto';
-											btn.title = '手动填写或粘贴题库配置';
-											btn.onclick = () => {
-												modal?.remove();
-												openAnswererModal('custom');
-											};
-										}),
 										h('button', '关闭', (btn) => {
 											btn.className = 'modal-cancel-button';
-											enlargeFooterButton(btn);
+											if (aw.length) {
+												enlargeFooterButton(btn);
+											} else {
+												// 无题库时与获取按钮同为居中主操作，放大尺寸
+												btn.style.padding = '8px 24px';
+												btn.style.fontSize = '15px';
+											}
 											btn.onclick = () => modal?.remove();
 										}),
 										connectButton
@@ -735,6 +746,16 @@ export const CommonProject = Project.create({
 								content: modalContent,
 								footer: modalFooter
 							});
+
+							// 无题库时进入一键配置弹窗，延迟 1 秒自动开始获取（仍在用户激活窗口期内，window.open 不会被拦截）
+							if (mode === 'official' && aw.length === 0 && connectButton) {
+								setTimeout(() => {
+									// 延迟期间用户已关闭弹窗则不再自动获取
+									if (modal?.isConnected) {
+										connectButton.click();
+									}
+								}, 1000);
+							}
 						};
 
 						// 主按钮默认打开一键题库配置

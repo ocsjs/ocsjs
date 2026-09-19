@@ -2067,6 +2067,10 @@ modal-element .modal-cancel-button:hover {
   opacity: 0.75;
   cursor: not-allowed;
 }
+.aw-connect-btn.lg {
+  padding: 8px 24px;
+  font-size: 15px;
+}
 @keyframes ocs-spin {
   to {
     transform: rotate(360deg);
