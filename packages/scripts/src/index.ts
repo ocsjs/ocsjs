@@ -22,7 +22,14 @@ export { IcveMoocProject } from './projects/icve';
 export { ICourseProject } from './projects/icourse';
 export { YKTProject } from './projects/yuketang';
 export { RenderScript } from './render';
-export { logoSvg } from './utils/logo';
+export { logoSvg } from './utils/ui';
+export {
+	setAnswererConfigProvider,
+	getAnswererConfigProvider,
+	openAnswererConnect,
+	waitForAnswererConfig
+} from './utils/answerer-connect';
+export type { AnswererConfigProvider } from './utils/answerer-connect';
 
 export function definedProjects(): Project[] {
 	return [

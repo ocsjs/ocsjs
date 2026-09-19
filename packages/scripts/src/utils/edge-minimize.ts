@@ -1,6 +1,6 @@
 import { $elements, h } from 'easy-us';
 import { CommonProject } from '../projects/common';
-import { logoSvg } from './logo';
+import { logoSvg } from './ui';
 
 /** 固定吸附范围：视口左右各 100px */
 const EDGE_WIDTH = 100;
