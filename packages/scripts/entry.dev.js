@@ -31,6 +31,13 @@ if (
 
 const { start, definedProjects, CommonProject, RenderScript, logoSvg } = OCS;
 
+// 预设题库配置一键获取渠道（题库站登录后 postMessage 自动回填，无需手动复制粘贴）
+// 对接文档：docs/题库配置一键获取对接文档.md（言溪题库，协议 v1）；未配置时不显示一键获取入口，手动配置功能不受影响
+OCS.setAnswererConfigProvider({
+	name: '言溪题库',
+	connectUrl: 'https://tk.enncy.cn/ocs/connect'
+});
+
 const infos = GM_info;
 
 (function () {
