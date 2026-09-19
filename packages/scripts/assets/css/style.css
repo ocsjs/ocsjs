@@ -734,6 +734,7 @@ script-panel-element + script-panel-element {
   width: 100%;
   transform: translate(-50%, 0px);
   min-width: 300px;
+  z-index: 2;
 }
 .message-container message-element {
   display: flex;
@@ -1110,6 +1111,27 @@ modal-element {
 /* 向上箭头（选中状态） */
 .checked .checkbox-label::before {
   content: '🔼';
+}
+/** 气泡自适应：不可视气泡固定显示在屏幕正上方（从顶部向下滑出自身高度） */
+message-element.message-viewport-top {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 99999;
+  max-width: 90vw;
+  animation: message-viewport-top-slide-down 0.25s ease;
+  transition: top 0.2s ease;
+}
+@keyframes message-viewport-top-slide-down {
+  from {
+    transform: translateX(-50%) translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
 }
 /** OCS 自定义样式 */
 /**
@@ -1592,8 +1614,6 @@ search-infos-element .error {
 .work-result-list {
   max-height: 400px;
   overflow: auto;
-  margin-bottom: 12px;
-  padding: 6px;
 }
 .work-result-question-container {
   position: absolute;
@@ -1757,24 +1777,27 @@ container-element .edge-minimize-icon {
 }
 container-element.edge-minimize {
   min-width: unset;
-  width: 48px;
-  overflow: hidden;
+  width: 64px;
 }
 container-element.edge-minimize header-element {
   display: none;
+}
+container-element.edge-minimize .message-container {
+  left: 0;
+  transform: none;
 }
 container-element.edge-minimize .edge-minimize-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   cursor: pointer;
   user-select: none;
 }
 container-element.edge-minimize .edge-minimize-icon svg {
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
 }
 container-element.edge-minimize.edge-left {
   border-radius: 0 12px 12px 0;
@@ -1824,4 +1847,7 @@ container-element.edge-snapping {
 }
 container-element .edge-minimize-icon {
   touch-action: none;
+}
+header-element .profile {
+  gap: 8px;
 }

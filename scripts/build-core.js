@@ -10,6 +10,7 @@ const { createUserScript, createMetaFile } = require('../packages/utils');
 const path = require('path');
 const dotenv = require('dotenv');
 const fs = require('fs');
+const { build: buildStyle } = require('./build-style');
 
 dotenv.config();
 
@@ -36,7 +37,8 @@ async function createUserJs() {
 	/** 模拟浏览器环境 */
 	require('browser-env')();
 
-	/** 使用本地合并后的样式（easy-us 基础样式 + OCS 自定义样式，由 packages/scripts/assets/less/style.less 编译生成） */
+	/** 先编译样式（easy-us 基础样式 + OCS 自定义样式），保证 style.css 为最新 */
+	await buildStyle();
 	const CSS_PATH = path.join(__dirname, '../packages/scripts/assets/css/style.css')
 
 	// @ts-ignore

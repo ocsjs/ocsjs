@@ -470,8 +470,6 @@ search-infos-element {
 .work-result-list {
 	max-height: 400px;
 	overflow: auto;
-	margin-bottom: 12px;
-	padding: 6px;
 }
 
 .work-result-question-container {
@@ -665,25 +663,31 @@ container-element .edge-minimize-icon {
 }
 container-element.edge-minimize {
 	min-width: unset;
-	width: 48px;
-	overflow: hidden;
+	width: 64px;
 
 	header-element {
 		display: none;
+	}
+
+	// 吸附状态下气泡消息显示在图标上方，并与图标左对齐
+	// （message-container 默认居中于面板，且 overflow 裁剪会导致其不可见）
+	.message-container {
+		left: 0;
+		transform: none;
 	}
 
 	.edge-minimize-icon {
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		width: 48px;
-		height: 48px;
+		width: 64px;
+		height: 64px;
 		cursor: pointer;
 		user-select: none;
 
 		svg {
-			width: 32px;
-			height: 32px;
+			width: 42px;
+			height: 42px;
 		}
 	}
 
@@ -741,4 +745,11 @@ container-element.edge-snapping {
 
 container-element .edge-minimize-icon {
 	touch-action: none;
+}
+
+// 优化间隔
+header-element {
+	.profile {
+		gap: 8px;
+	}
 }

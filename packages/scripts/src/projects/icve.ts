@@ -762,7 +762,8 @@ async function watchMedia() {
 
 function work({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
 	$message.info('开始作业');
-	CommonProject.scripts.workResults.methods.init();
+	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
+	CommonProject.scripts.workResults.methods.init({ dynamic: true });
 
 	console.log({ answererWrappers, period, thread });
 
@@ -952,7 +953,8 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 
 function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
 	$message.info('开始作业');
-	CommonProject.scripts.workResults.methods.init();
+	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
+	CommonProject.scripts.workResults.methods.init({ dynamic: true });
 
 	console.log({ answererWrappers, period, thread });
 

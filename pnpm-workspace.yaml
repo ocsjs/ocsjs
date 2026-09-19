@@ -1,6 +1,3 @@
 packages:
   - packages/**
   - '!**/dist/**'
-
-overrides:
-  easy-us: link:../eus

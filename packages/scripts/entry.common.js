@@ -29,7 +29,7 @@ if (
 	return;
 }
 
-const { start, definedProjects, CommonProject, RenderScript } = OCS;
+const { start, definedProjects, CommonProject, RenderScript, logoSvg } = OCS;
 
 const infos = GM_info;
 
@@ -45,7 +45,7 @@ const infos = GM_info;
 			renderScript: RenderScript,
 			styles: [STYLE],
 			defaultPanelName: CommonProject.scripts.guide.namespace,
-			title: `OCS-全域名通用版-${infos.script.version}`
+			title: `${logoSvg} OCS 全域名通用版 <span style="font-size: 12px; color: #969696;">v${infos.script.version}</span>`
 		},
 		updatePage:
 			GM_info.scriptHandler === 'Tampermonkey'

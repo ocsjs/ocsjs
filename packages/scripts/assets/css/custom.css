@@ -647,24 +647,27 @@ container-element .edge-minimize-icon {
 }
 container-element.edge-minimize {
   min-width: unset;
-  width: 48px;
-  overflow: hidden;
+  width: 64px;
 }
 container-element.edge-minimize header-element {
   display: none;
+}
+container-element.edge-minimize .message-container {
+  left: 0;
+  transform: none;
 }
 container-element.edge-minimize .edge-minimize-icon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 64px;
+  height: 64px;
   cursor: pointer;
   user-select: none;
 }
 container-element.edge-minimize .edge-minimize-icon svg {
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 42px;
 }
 container-element.edge-minimize.edge-left {
   border-radius: 0 12px 12px 0;

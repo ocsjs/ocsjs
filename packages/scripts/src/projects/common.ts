@@ -974,6 +974,13 @@ export const CommonProject = Project.create({
 				currentResultIndex: {
 					defaultValue: 0
 				},
+				/**
+				 * 是否为动态答题器（题目动态加载，结果逐题累积，例如超星非整卷预览、智慧树/智慧职教逐题作答），
+				 * 动态答题器不会自动清空搜索结果，因此需要显示手动清空按钮
+				 */
+				dynamicResults: {
+					defaultValue: false
+				},
 				questionPositionSyncHandlerType: {
 					defaultValue: undefined as keyof typeof state.workResult.questionPositionSyncHandler | undefined
 				}
@@ -1017,16 +1024,23 @@ export const CommonProject = Project.create({
 						return $store.setTab(TAB_WORK_RESULTS_KEY, results);
 					},
 					async appendResults(results: SimplifyWorkResult[]) {
+						// 追加结果代表当前为动态答题器（结果逐题累积，不会自动清空）
+						CommonProject.scripts.workResults.cfg.dynamicResults = true;
 						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
 						data.push(...results);
 						return $store.setTab(TAB_WORK_RESULTS_KEY, data);
 					},
 					/**
 					 * 刷新搜索结果状态，清空搜索结果，置顶搜索结果面板
+					 * @param opts.dynamic 是否为动态答题器（题目动态加载，结果逐题累积），动态答题器会显示手动清空按钮
 					 */
-					init(opts?: { questionPositionSyncHandlerType?: keyof typeof state.workResult.questionPositionSyncHandler }) {
+					init(opts?: {
+						questionPositionSyncHandlerType?: keyof typeof state.workResult.questionPositionSyncHandler;
+						dynamic?: boolean;
+					}) {
 						CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType =
 							opts?.questionPositionSyncHandlerType;
+						CommonProject.scripts.workResults.cfg.dynamicResults = opts?.dynamic ?? false;
 						// 刷新搜索结果状态
 						CommonProject.scripts.workResults.methods.refreshState();
 						// 清空搜索结果
@@ -1086,10 +1100,6 @@ export const CommonProject = Project.create({
 								// 渲染序号结果
 								const resultContainer = h('div', { className: 'work-result-container' });
 
-								list.style.marginBottom = '12px';
-								list.style.overflow = 'auto';
-								list.style.maxHeight = '300px';
-
 								/** 基础提示信息 */
 								const baseInfos = [
 									`已搜题: ${this.cfg.requestedCount}/${this.cfg.totalQuestionCount}`,
@@ -1139,24 +1149,27 @@ export const CommonProject = Project.create({
 								/** 将搜索状态提示应用到序号区域，鼠标悬浮后显示 */
 								list.setAttribute('data-title', baseInfos.join('\n'));
 
-								/** 清空搜索结果按钮，显示在所有搜索结果的最下方 */
-								container.append(
-									h('div', { style: { textAlign: 'right', marginTop: '8px' } }, [
-										$ui.tooltip(
-											$ui.button('清空搜索结果', { className: 'base-style-button-secondary' }, (btn) => {
-												btn.title = '仅用于不会自动清空搜索结果的场景，例如超星非整卷预览模式';
-												btn.onclick = () => {
-													this.methods.clearResults();
-													const { panel, header } = CXProject.scripts.work;
-													if (panel && header) {
-														CXProject.scripts.work.onrender?.({ panel, header });
-														CommonProject.scripts.workResults.onrender?.({ panel, header });
-													}
-												};
-											})
-										)
-									])
-								);
+								/** 清空搜索结果按钮：仅动态答题器（结果逐题累积、不会自动清空）时显示在所有搜索结果的最下方 */
+								if (this.cfg.dynamicResults) {
+									container.append(
+										h('div', { style: { textAlign: 'right', marginTop: '8px' } }, [
+											$ui.tooltip(
+												$ui.button('清空搜索结果', { className: 'base-style-button-secondary' }, (btn) => {
+													btn.title =
+														'当前为动态答题模式（题目逐题加载，结果累积显示），不会自动清空搜索结果\n点击后清空搜索结果';
+													btn.onclick = () => {
+														this.methods.clearResults();
+														const { panel, header } = CXProject.scripts.work;
+														if (panel && header) {
+															CXProject.scripts.work.onrender?.({ panel, header });
+															CommonProject.scripts.workResults.onrender?.({ panel, header });
+														}
+													};
+												})
+											)
+										])
+									);
+								}
 							} else {
 								container.replaceChildren(
 									h('div', { className: 'alert-info-wrapper' }, [
@@ -1313,7 +1326,11 @@ export const CommonProject = Project.create({
 			name: '边缘最小化图标模式',
 			matches: [['所有页面', /.*/]],
 			hideInPanel: true,
-			oncomplete() {
+			// onactive 立即检测吸附状态，避免刷新后吸附激活过慢
+			onactive() {
+				if (self !== top) {
+					return;
+				}
 				initEdgeMinimize();
 			}
 		}),

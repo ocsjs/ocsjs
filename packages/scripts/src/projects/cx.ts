@@ -270,8 +270,16 @@ export const CXProject = Project.create({
 					},
 					defaultValue: false
 				},
+				enables: {
+					...dropdownStyle,
+					label: '高级设置',
+					attrs: { type: 'checkbox' },
+					defaultValue: false
+				},
 				showTextareaWhenEdit: {
+					elementClassName: 'config-details',
 					label: '编辑时显示自定义编辑框',
+					showIf: 'cx.new.study.enables',
 					attrs: {
 						type: 'checkbox',
 						title:
@@ -280,17 +288,13 @@ export const CXProject = Project.create({
 					defaultValue: true
 				},
 				notifyWhenHasFaceRecognition: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
 					label: '出现人脸识别时通知我',
 					attrs: {
 						type: 'checkbox'
 					},
 					defaultValue: true
-				},
-				enables: {
-					...dropdownStyle,
-					label: '高级设置',
-					attrs: { type: 'checkbox' },
-					defaultValue: false
 				},
 				/**
 				 *
@@ -888,33 +892,29 @@ function workOrExam(
 
 			if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 				const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text)[type];
-				return await resolver(
-					searchInfos,
-					elements.options as HTMLElement[],
-					async (type, answer, option) => {
-						// 如果存在已经选择的选项
-						if (type === 'judgement' || type === 'single' || type === 'multiple') {
-							if (option?.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
-								option.click();
-								await $.sleep(500);
-							}
-						} else if (type === 'completion' && answer.trim()) {
-							const text = option?.querySelector('textarea');
-							const textareaFrame = option?.querySelector('iframe');
-							if (text) {
-								text.value = answer;
-							}
-							if (textareaFrame?.contentDocument) {
-								textareaFrame.contentDocument.body.innerHTML = answer;
-							}
-							if (option?.parentElement?.parentElement) {
-								/** 如果存在保存按钮则点击 */
-								$el('[onclick*=saveQuestion]', option?.parentElement?.parentElement)?.click();
-								await $.sleep(500);
-							}
+				return await resolver(searchInfos, elements.options as HTMLElement[], async (type, answer, option) => {
+					// 如果存在已经选择的选项
+					if (type === 'judgement' || type === 'single' || type === 'multiple') {
+						if (option?.parentElement && $$el('[class*="check_answer"]', option.parentElement).length === 0) {
+							option.click();
+							await $.sleep(500);
+						}
+					} else if (type === 'completion' && answer.trim()) {
+						const text = option?.querySelector('textarea');
+						const textareaFrame = option?.querySelector('iframe');
+						if (text) {
+							text.value = answer;
+						}
+						if (textareaFrame?.contentDocument) {
+							textareaFrame.contentDocument.body.innerHTML = answer;
+						}
+						if (option?.parentElement?.parentElement) {
+							/** 如果存在保存按钮则点击 */
+							$el('[onclick*=saveQuestion]', option?.parentElement?.parentElement)?.click();
+							await $.sleep(500);
 						}
 					}
-				);
+				});
 			}
 			// 连线题自定义处理
 			else if (type && type === 'line') {
@@ -1977,11 +1977,7 @@ const JobRunner = {
 						}
 					};
 
-					return await resolver(
-						searchInfos,
-						elements.options as HTMLElement[],
-						handler
-					);
+					return await resolver(searchInfos, elements.options as HTMLElement[], handler);
 				}
 				// 连线题自定义处理
 				else if (type && type === 'line') {
@@ -2021,9 +2017,7 @@ const JobRunner = {
 
 			/** 完成答题后 */
 			async onResultsUpdate(curr, _, res) {
-				CommonProject.scripts.workResults.methods.setResults(
-					simplifyWorkResult(res, chapterTestTaskQuestionTitleText)
-				);
+				CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, chapterTestTaskQuestionTitleText));
 
 				if (curr.result?.finish) {
 					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(

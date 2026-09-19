@@ -2762,7 +2762,8 @@ function gxkWorkAndExam(
 function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions) {
 	$message.info({ content: '开始作业' });
 
-	CommonProject.scripts.workResults.methods.init();
+	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
+	CommonProject.scripts.workResults.methods.init({ dynamic: true });
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
 		return titles
@@ -2871,7 +2872,8 @@ function smartWork(
 		closeable: false
 	});
 
-	CommonProject.scripts.workResults.methods.init();
+	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
+	CommonProject.scripts.workResults.methods.init({ dynamic: true });
 
 	const titleTransformWithImages = (titles: (HTMLElement | undefined)[]) => {
 		const results = titles
@@ -3037,7 +3039,8 @@ function smartExam(
 		closeable: false
 	});
 
-	CommonProject.scripts.workResults.methods.init();
+	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
+	CommonProject.scripts.workResults.methods.init({ dynamic: true });
 
 	const titleTransformWithImages = (titles: (HTMLElement | undefined)[]) => {
 		const results = titles
@@ -3313,8 +3316,10 @@ function hikeWork(
 ) {
 	$message.info({ content: '开始作业' });
 
+	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
 	CommonProject.scripts.workResults.methods.init({
-		questionPositionSyncHandlerType: 'zhs-hike'
+		questionPositionSyncHandlerType: 'zhs-hike',
+		dynamic: true
 	});
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {

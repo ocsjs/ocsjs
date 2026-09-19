@@ -5,7 +5,7 @@ import { logoSvg } from './logo';
 /** 固定吸附范围：视口左右各 100px */
 const EDGE_WIDTH = 100;
 /** 图标尺寸（px），与 custom.less 中 .edge-minimize 的宽高一致 */
-const ICON_SIZE = 48;
+const ICON_SIZE = 64;
 /** 吸附过渡动画时长（ms），与 .edge-snapping 的 transition 一致 */
 const SNAP_ANIMATION_MS = 250;
 
@@ -52,6 +52,10 @@ export function updateEdgeMode() {
 		container.classList.add(EDGE_CLASS);
 		container.classList.remove(...SIDE_CLASSES);
 		container.classList.add(`edge-${side}`);
+		// 吸附后头部被隐藏，悬停其上的 tooltip 气泡不会触发 mouseleave 而残留显示，手动隐藏
+		if ($elements.tooltipContainer) {
+			$elements.tooltipContainer.style.display = 'none';
+		}
 		if (container.offsetLeft !== snappedX) {
 			// 吸附到边缘并持久化位置（刷新后重新判定可自动恢复），附带过渡动画
 			snapping = true;
@@ -142,9 +146,7 @@ function enableIconDraggable(icon: HTMLElement, container: HTMLElement) {
 			const clientWidth = document.documentElement.clientWidth;
 			// 向内越过吸附范围 + 图标宽度的阈值时退出图标模式
 			const outOfZone =
-				side === 'left'
-					? ev.clientX > EDGE_WIDTH + ICON_SIZE
-					: ev.clientX < clientWidth - EDGE_WIDTH - ICON_SIZE;
+				side === 'left' ? ev.clientX > EDGE_WIDTH + ICON_SIZE : ev.clientX < clientWidth - EDGE_WIDTH - ICON_SIZE;
 			if (outOfZone && !exited) {
 				exited = true;
 				container.classList.remove(EDGE_CLASS, ...SIDE_CLASSES);
@@ -172,11 +174,15 @@ function enableIconDraggable(icon: HTMLElement, container: HTMLElement) {
 	});
 }
 
+/** 是否已初始化（幂等保护，防止重复挂图标与重复监听） */
+let inited = false;
+
 /**
  * 初始化边缘最小化图标模式（全页面执行一次）。
  * @param retry 容器元素未就绪时的重试次数（每次间隔 1s）
  */
 export function initEdgeMinimize(retry = 3) {
+	if (inited) return;
 	const container = getContainer();
 	if (!container) {
 		if (retry > 0) {
@@ -184,6 +190,7 @@ export function initEdgeMinimize(retry = 3) {
 		}
 		return;
 	}
+	inited = true;
 	const render = CommonProject.scripts.render;
 
 	// 图标元素：edge 模式下替代 header 显示，支持点击还原与拖拽
