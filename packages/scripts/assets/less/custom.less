@@ -819,6 +819,69 @@ modal-element .modal-cancel-button:hover {
 	padding: 0 8px;
 }
 
+.aw-card-home {
+	flex: none;
+	text-decoration: none;
+	font-size: 13px;
+	line-height: 1;
+
+	&.no-home {
+		opacity: 0.4;
+		cursor: default;
+	}
+}
+
+// 状态标签组：状态标签 + 延迟标签，间隔排列不拥挤
+.aw-card-status-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex: none;
+}
+
+// 连接状态徽标（HTTP 状态码 + 延迟）
+.aw-card-status {
+	flex: none;
+	font-size: 11px;
+	line-height: 18px;
+	padding: 0 8px;
+	border-radius: 999px;
+	background-color: #eef2f7;
+	color: #5a6b85;
+	white-space: nowrap;
+
+	&.probing {
+		color: #9aa4b2;
+	}
+
+	&.success {
+		background-color: #e8f7ee;
+		color: #2e7d4f;
+	}
+
+	&.error,
+	&.invalid {
+		background-color: #fdeeee;
+		color: #c0392b;
+	}
+
+	&.timeout {
+		background-color: #fdf3e5;
+		color: #b26a00;
+	}
+
+	&.disabled {
+		background-color: #eef2f7;
+		color: #8a94a6;
+	}
+
+	// 延迟标签：固定中性灰，与状态标签区分
+	&.latency {
+		background-color: #eef2f7;
+		color: #5a6b85;
+	}
+}
+
 .aw-card-spacer {
 	flex: 1;
 }
@@ -1041,4 +1104,54 @@ modal-element .modal-cancel-button:hover {
 .aw-spin {
 	animation: ocs-spin 0.8s linear infinite;
 	margin-right: 6px;
+}
+
+/** ===== 快捷菜单链接按钮（background.ts $menu 注册）淡入淡出动画 ===== */
+
+// 依次注册追加时逐个淡入；active/hover 状态颜色平滑过渡
+.script-panel-link {
+	animation: ocs-menu-fade-in 0.3s ease both;
+	transition: opacity 0.25s ease, background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease,
+		transform 0.25s ease;
+
+	&:hover {
+		opacity: 0.85;
+	}
+
+	&.active {
+		transition: opacity 0.25s ease, background-color 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+	}
+}
+
+@keyframes ocs-menu-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/** ===== 搜索结果面板：序号列表前的帮助图标（承载答题进度/序号解释提示） ===== */
+.search-infos-help {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	margin-right: 4px;
+	border-radius: 50%;
+	border: 1px solid #c1c9d4;
+	color: #9aa4b2;
+	font-weight: bold;
+	cursor: help;
+	user-select: none;
+
+	&:hover {
+		border-color: @primary;
+		color: @primary;
+	}
 }
