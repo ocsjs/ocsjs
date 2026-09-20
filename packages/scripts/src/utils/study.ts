@@ -45,7 +45,7 @@ export async function waitForMedia(options?: {
 }
 
 export function waitForElement(
-	selector: string | { (): HTMLElement | undefined },
+	selector: string | { (): HTMLElement | undefined | null },
 	opts?: { timeout_seconds?: number; check_period_ms?: number }
 ) {
 	return waitFor(() => {
