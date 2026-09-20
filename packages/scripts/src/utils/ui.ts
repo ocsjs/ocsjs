@@ -1,5 +1,6 @@
 /* eslint-disable max-len */
 import { h, $ui } from 'easy-us';
+import { request, $ } from '@ocsjs/core';
 import type { AnswererWrapper } from '@ocsjs/core';
 
 /**
@@ -32,6 +33,90 @@ export interface AnswererListHandlers {
 /** 展开箭头 SVG（代替 details/summary 的默认箭头，旋转动画由 CSS 控制） */
 const CHEVRON_SVG = `<svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 
+/** 题库连接状态 */
+export type AnswererProbeStatus = 'success' | 'disabled' | 'error' | 'timeout' | 'invalid';
+
+/** 题库延迟探测结果 */
+export interface AnswererProbeResult {
+	status: AnswererProbeStatus;
+	/** HTTP 状态码（仅收到响应时存在） */
+	statusCode?: number;
+	/** 延迟毫秒数（仅收到响应时存在） */
+	latency?: number;
+	error?: any;
+}
+
+/**
+ * 探测单个题库：HEAD 请求（405/501 回退 GET），10 秒超时
+ * 任何 HTTP 响应都视为可达，仅网络错误/超时算失败
+ * @param item 题库配置
+ * @param disabled 是否已停用（停用时直接返回，不发请求）
+ */
+export async function probeAnswerer(item: AnswererWrapper, disabled: boolean): Promise<AnswererProbeResult> {
+	if (disabled) {
+		return { status: 'disabled' };
+	}
+	let probeUrl: URL;
+	try {
+		probeUrl = new URL(item.url);
+	} catch {
+		return { status: 'invalid' };
+	}
+	const t = Date.now();
+	probeUrl.searchParams.set('t', String(t));
+	const doProbe = async (method: 'head' | 'get'): Promise<{ status: number; responseText: string }> => {
+		const res = (await request(probeUrl.toString(), {
+			type: 'GM_xmlhttpRequest',
+			method,
+			responseType: 'text',
+			anyStatus: true
+		})) as unknown as { status: number; responseText: string };
+		// HEAD 不被支持（405/501）时回退 GET 再试一次
+		if (method === 'head' && (res.status === 405 || res.status === 501)) {
+			return doProbe('get');
+		}
+		return res;
+	};
+	try {
+		const res = await Promise.race([
+			doProbe('head'),
+			(async () => {
+				await $.sleep(10 * 1000);
+				return undefined;
+			})()
+		]);
+		if (res === undefined) return { status: 'timeout' };
+		const latency = Date.now() - t;
+		const ok = res.status >= 200 && res.status < 400;
+		return ok
+			? { status: 'success', statusCode: res.status, latency }
+			: { status: 'error', statusCode: res.status, latency, error: new Error('HTTP ' + res.status) };
+	} catch (error) {
+		return { status: 'error', error };
+	}
+}
+
+/** 格式化探测结果为状态标签文本：状态提示（HTTP 状态码） */
+function formatProbeStatus(r: AnswererProbeResult): string {
+	switch (r.status) {
+		case 'success':
+			return `连接成功（${r.statusCode}）`;
+		case 'error':
+			return r.statusCode !== undefined ? `连接失败（${r.statusCode}）` : '连接失败';
+		case 'timeout':
+			return '连接超时';
+		case 'disabled':
+			return '已停用';
+		case 'invalid':
+			return '配置错误';
+	}
+}
+
+/** 格式化延迟标签文本（无延迟数据时不显示延迟标签） */
+function formatProbeLatency(r: AnswererProbeResult): string | undefined {
+	return r.latency !== undefined ? `延迟 ${r.latency}毫秒` : undefined;
+}
+
 /**
  * 题库配置卡片列表
  *
@@ -51,6 +136,35 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 	return aw.map((item) => {
 		const card = h('div', { className: 'aw-card' + (handlers.isDisabled(item.name) ? ' disabled' : '') });
 
+		/** 状态标签组：状态提示（HTTP 状态码）+ 延迟，分两个标签显示 */
+		const statusEl = h('span', { className: 'aw-card-status-group' }, [
+			h('span', { className: 'aw-card-status probing' }, '检测中…')
+		]);
+		const renderStatus = (r: AnswererProbeResult) => {
+			const latencyText = formatProbeLatency(r);
+			statusEl.replaceChildren(
+				h('span', { className: 'aw-card-status ' + r.status }, formatProbeStatus(r)),
+				...(latencyText ? [h('span', { className: 'aw-card-status latency' }, latencyText)] : [])
+			);
+			statusEl.title =
+				r.status === 'success'
+					? `连接成功，HTTP ${r.statusCode}，延迟 ${r.latency}毫秒`
+					: r.status === 'disabled'
+						? '此题库已被停用，点击右侧开关启用'
+						: r.status === 'error'
+							? '连接失败' + (r.error?.message ? `：${r.error.message}` : '')
+							: r.status === 'timeout'
+								? '连接超时（>10秒）'
+								: '题库配置 URL 无法解析';
+		};
+		/** 发起延迟探测（列表渲染 / 题库变更 / 重新启用时自动调用） */
+		const startProbe = () => {
+			statusEl.replaceChildren(h('span', { className: 'aw-card-status probing' }, '检测中…'));
+			statusEl.title = '正在检测题库连接状态';
+			probeAnswerer(item, handlers.isDisabled(item.name)).then(renderStatus);
+		};
+		startProbe();
+
 		/** 启用/停用开关（阻止冒泡，避免触发卡片展开） */
 		const checkbox = h('input', {
 			type: 'checkbox',
@@ -61,6 +175,12 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 			const disabled = !checkbox.checked;
 			card.classList.toggle('disabled', disabled);
 			handlers.onToggle(item.name, disabled);
+			// 停用时直接标记，重新启用时自动探测
+			if (disabled) {
+				renderStatus({ status: 'disabled' });
+			} else {
+				startProbe();
+			}
 		};
 		checkbox.title = '点击停用或者启用题库，停用题库后将无法在自动答题中查询题目';
 		const switchWrapper = $ui.tooltip(checkbox);
@@ -75,10 +195,26 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 			}
 		})();
 
-		/** 卡片头：名称 + 域名徽标 + 右侧开关 + 箭头，点击整行展开/收起 */
+		/** 主页图标：点击进入题库主页（阻止冒泡，避免触发卡片展开） */
+		const hasHomepage = !!item.homepage && item.homepage !== '#';
+		const homeLink = h(
+			'a',
+			{
+				className: 'aw-card-home' + (hasHomepage ? '' : ' no-home'),
+				href: hasHomepage ? item.homepage! : 'javascript:void(0)',
+				target: '_blank',
+				title: hasHomepage ? '前往题库首页' : '此题库未配置首页'
+			},
+			'🏠'
+		);
+		homeLink.onclick = (e) => e.stopPropagation();
+
+		/** 卡片头：主页图标 + 名称 + 域名徽标 + 状态徽标 + 右侧开关 + 箭头，点击整行展开/收起 */
 		const header = h('div', { className: 'aw-card-header' }, [
+			homeLink,
 			h('span', { className: 'aw-card-name' }, item.name),
 			h('span', { className: 'aw-card-badge', title: item.url }, host),
+			statusEl,
 			h('span', { className: 'aw-card-spacer' }),
 			switchWrapper,
 			h('span', { className: 'aw-card-chevron', innerHTML: CHEVRON_SVG })
@@ -130,6 +266,93 @@ export function createAnswererWrapperSection(
 		h('div', { className: 'aw-section-header' }, [h('b', title), ...(copyBtn ? [copyBtn] : [])]),
 		...createAnswererWrapperList(aw, handlers)
 	]);
+}
+
+/**
+ * 「⋯」题库配置获取方式下拉按钮
+ *
+ * 悬浮显示下拉框（官方题库 / 自定义题库），点击选项直接打开对应配置弹窗：
+ * - 弹窗打开函数由题库配置按钮（answererWrappersButton）的 onload 暴露在 provider 上
+ * - 未暴露时兜底触发主按钮点击（默认官方一键获取）
+ * - 定位：右对齐「⋯」按钮；面板下方空间不足时自动向上弹出
+ */
+export function createAnswererModeDropdown(): HTMLElement {
+	const dropdown = h('dropdown-element');
+	// 必须在插入文档前设置，connectedCallback 会根据该值绑定事件
+	// hover 触发：鼠标悬浮「⋯」按钮显示，移开（含点击其他区域）自动隐藏
+	dropdown.trigger = 'hover';
+	dropdown.triggerElement = h(
+		'button',
+		{
+			className: 'base-style-button-secondary',
+			style: { marginLeft: '4px', padding: '4px 12px' }
+		},
+		'⋯'
+	);
+
+	// flex 布局消除 inline-block 行盒的基线空隙，使内容区与按钮底部零间隙衔接
+	dropdown.style.display = 'inline-flex';
+
+	// 下拉框定位：右对齐「⋯」按钮，避免超出面板宽度被 overflow:auto 裁剪并撑出横向滚动条
+	const content = dropdown.content;
+	content.style.top = '100%';
+	content.style.right = '0';
+	content.style.left = 'auto';
+
+	/** 面板下方空间不足时向上弹出，避免撑出面板纵向滚动条 */
+	const refreshPosition = () => {
+		const panel = dropdown.closest('script-panel-element');
+		if (!panel) return;
+		const flipUp =
+			dropdown.triggerElement.getBoundingClientRect().bottom + content.offsetHeight >
+			panel.getBoundingClientRect().bottom;
+		content.style.top = flipUp ? 'auto' : '100%';
+		content.style.bottom = flipUp ? '100%' : 'auto';
+	};
+	// 悬浮展开后重算弹出方向（库在 mouseenter 时添加 show，延迟到下一帧再计算）
+	dropdown.triggerElement.addEventListener('mouseenter', () => {
+		setTimeout(() => {
+			if (content.classList.contains('show')) refreshPosition();
+		});
+	});
+
+	const options: Record<'official' | 'custom', HTMLDivElement> = {
+		official: $ui.tooltip(
+			h(
+				'div',
+				{
+					className: 'dropdown-option',
+					title: '打开官方题库获取弹窗，登录题库网站后自动回填配置，无需手动复制粘贴'
+				},
+				'官方题库'
+			)
+		),
+		custom: $ui.tooltip(
+			h('div', { className: 'dropdown-option', title: '打开手动配置弹窗，手动填写或粘贴题库配置' }, '自定义题库')
+		)
+	};
+	/** 点击选项直接打开对应配置弹窗（主按钮默认官方一键获取，自定义题库仅从此处进入） */
+	const openAnswererModal = (mode: 'official' | 'custom') => {
+		const configEl = dropdown.closest('config-element') as
+			| (HTMLElement & {
+					provider?: HTMLElement & {
+						openAnswererModal?: (mode: 'official' | 'custom') => void;
+					};
+			  })
+			| null;
+		// onload 回调的 this 指向 provider，openAnswererModal 暴露在 provider 上
+		const provider = configEl?.provider;
+		// 优先调用暴露的打开函数（可指定模式），兜底触发主按钮点击（默认官方）
+		if (provider?.openAnswererModal) {
+			provider.openAnswererModal(mode);
+		} else {
+			provider?.click();
+		}
+	};
+	options.official.onclick = () => openAnswererModal('official');
+	options.custom.onclick = () => openAnswererModal('custom');
+	dropdown.content.append(options.official, options.custom);
+	return dropdown;
 }
 
 /**

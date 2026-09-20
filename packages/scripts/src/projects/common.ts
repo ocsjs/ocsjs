@@ -8,7 +8,7 @@ import {
 	WorkUploadType,
 	AnswerWrapperHandlerConfig
 } from '@ocsjs/core';
-import { $message, h, $gm, $store, Project, Script, $modal, StoreListenerType, $ui, MessageElement } from 'easy-us';
+import { $message, h, $gm, $store, Project, Script, $modal, $ui, MessageElement } from 'easy-us';
 import type { AnswererWrapper, SearchInformation } from '@ocsjs/core';
 import { CXProject, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '../index';
 import { markdown } from '../utils/markdown';
@@ -19,7 +19,14 @@ import { dropdownStyle } from '../utils/configs';
 import { buildAnswererEnv, isAnswererWrappersSupportImageOptimize } from '../utils/work';
 import { getAnswererConfigProvider, openAnswererConnect, waitForAnswererConfig } from '../utils/answerer-connect';
 import { initEdgeMinimize } from '../utils/edge-minimize';
-import { createAnswererWrapperSection, createSteps, createStatusBox, createHero, loadingSpinSvg } from '../utils/ui';
+import {
+	createAnswererWrapperSection,
+	createSteps,
+	createStatusBox,
+	createHero,
+	createAnswererModeDropdown,
+	loadingSpinSvg
+} from '../utils/ui';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
@@ -98,9 +105,6 @@ const state = {
 		}
 	},
 	setting: {
-		listenerIds: {
-			aw: 0 as StoreListenerType
-		},
 		/** 图片题优化兼容性提示消息（可移除） */
 		imageOptimizeMessage: undefined as MessageElement | undefined
 	}
@@ -162,88 +166,10 @@ export const CommonProject = Project.create({
 					attrs: {
 						type: 'button'
 					},
-					/** 「⋯」更多按钮：悬浮显示下拉框，选择题库配置获取方式（官方题库 / 自定义题库），点击选项直接打开对应弹窗 */
+					/** 「⋯」更多按钮：悬浮显示下拉框，选择题库配置获取方式（官方题库 / 自定义题库），点击选项直接打开对应弹窗（组件见 utils/ui.ts） */
 					suffixSlot() {
-						const dropdown = h('dropdown-element');
-						// 必须在插入文档前设置，connectedCallback 会根据该值绑定事件
-						// hover 触发：鼠标悬浮「⋯」按钮显示，移开（含点击其他区域）自动隐藏
-						dropdown.trigger = 'hover';
-						dropdown.triggerElement = h(
-							'button',
-							{
-								className: 'base-style-button-secondary',
-								style: { marginLeft: '4px', padding: '4px 12px' }
-							},
-							'⋯'
-						);
-
-						// flex 布局消除 inline-block 行盒的基线空隙，使内容区与按钮底部零间隙衔接
-						dropdown.style.display = 'inline-flex';
-
-						// 下拉框定位：右对齐「⋯」按钮，避免超出面板宽度被 overflow:auto 裁剪并撑出横向滚动条
-						const content = dropdown.content;
-						content.style.top = '100%';
-						content.style.right = '0';
-						content.style.left = 'auto';
-
-						/** 面板下方空间不足时向上弹出，避免撑出面板纵向滚动条 */
-						const refreshPosition = () => {
-							const panel = dropdown.closest('script-panel-element');
-							if (!panel) return;
-							const flipUp =
-								dropdown.triggerElement.getBoundingClientRect().bottom + content.offsetHeight >
-								panel.getBoundingClientRect().bottom;
-							content.style.top = flipUp ? 'auto' : '100%';
-							content.style.bottom = flipUp ? '100%' : 'auto';
-						};
-						// 悬浮展开后重算弹出方向（库在 mouseenter 时添加 show，延迟到下一帧再计算）
-						dropdown.triggerElement.addEventListener('mouseenter', () => {
-							setTimeout(() => {
-								if (content.classList.contains('show')) refreshPosition();
-							});
-						});
-
-						const options: Record<'official' | 'custom', HTMLDivElement> = {
-							official: $ui.tooltip(
-								h(
-									'div',
-									{
-										className: 'dropdown-option',
-										title: '打开官方题库获取弹窗，登录题库网站后自动回填配置，无需手动复制粘贴'
-									},
-									'官方题库'
-								)
-							),
-							custom: $ui.tooltip(
-								h(
-									'div',
-									{ className: 'dropdown-option', title: '打开手动配置弹窗，手动填写或粘贴题库配置' },
-									'自定义题库'
-								)
-							)
-						};
-						/** 点击选项直接打开对应配置弹窗（主按钮默认官方一键获取，自定义题库仅从此处进入） */
-						const openAnswererModal = (mode: 'official' | 'custom') => {
-							const configEl = dropdown.closest('config-element') as
-								| (HTMLElement & {
-										provider?: HTMLElement & {
-											openAnswererModal?: (mode: 'official' | 'custom') => void;
-										};
-								  })
-								| null;
-							// onload 回调的 this 指向 provider，openAnswererModal 暴露在 provider 上
-							const provider = configEl?.provider;
-							// 优先调用暴露的打开函数（可指定模式），兜底触发主按钮点击（默认官方）
-							if (provider?.openAnswererModal) {
-								provider.openAnswererModal(mode);
-							} else {
-								provider?.click();
-							}
-						};
-						options.official.onclick = () => openAnswererModal('official');
-						options.custom.onclick = () => openAnswererModal('custom');
-						dropdown.content.append(options.official, options.custom);
-						return dropdown;
+						// 未配置一键获取渠道时不显示「⋯」下拉（主按钮直接使用自定义题库弹窗）
+						return getAnswererConfigProvider() ? createAnswererModeDropdown() : '';
 					},
 					onload() {
 						const aws: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
@@ -256,8 +182,17 @@ export const CommonProject = Project.create({
 						const openAnswererModal = (mode: 'official' | 'custom') => {
 							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
 
-							/** 已配置题库列表（通用组件，一键获取/手动配置弹窗共用） */
-							const existingList = createAnswererWrapperSection(aw, '已解析的题库配置：', answererListHandlers);
+							/** 题库列表容器：打开弹窗 / 题库变更时重新渲染，组件内部自动检测延迟 */
+							const listContainer = h('div');
+							const renderAnswererList = () => {
+								const current: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
+								listContainer.replaceChildren(
+									...(current.length
+										? [createAnswererWrapperSection(current, '已解析的题库配置：', answererListHandlers)]
+										: [])
+								);
+							};
+							renderAnswererList();
 							const textarea = h(
 								'textarea',
 								{
@@ -311,8 +246,11 @@ export const CommonProject = Project.create({
 								awsResult = result_set;
 
 								// 判断新旧是否一致，如果一致则提示（视为成功：配置已生效，无需重复写入）
+								// 一键获取流程（showSuccessModal=false）不弹提示，由弹窗内成功状态承接
 								if (JSON.stringify(CommonProject.scripts.settings.cfg.answererWrappers) === JSON.stringify(awsResult)) {
-									$modal.alert({ content: h('div', ['✅️已应用题库配置，但您新配置的题库似乎没有变化~']) });
+									if (showSuccessModal) {
+										$modal.alert({ content: h('div', ['✅️已应用题库配置，但您新配置的题库似乎没有变化~']) });
+									}
 									return true;
 								}
 
@@ -467,6 +405,8 @@ export const CommonProject = Project.create({
 												// 一键获取流程：不弹出「配置成功」弹窗，用弹窗内成功状态替代
 												const saved = await applyAws(aws, false);
 												if (saved) {
+													// 接收配置后延迟 1 秒，再进入 3 秒关闭倒计时
+													await new Promise((r) => setTimeout(r, 1000));
 													// 3 秒倒计时提示后自动关闭题库站小窗（浏览器仅允许关闭由脚本 window.open 打开的窗口）
 													for (let i = 3; i > 0; i--) {
 														setConnectStatus(`✅ 题库配置已保存，${i} 秒后自动关闭小窗…`, 'success');
@@ -669,12 +609,7 @@ export const CommonProject = Project.create({
 
 							if (mode === 'official' && provider && connectHero && connectButton && connectSteps) {
 								/** 官方题库面板：Hero 头部 + 步骤条 + 状态区域 + 已配置题库列表（获取按钮在底部） */
-								const connectPanel = h('div', [
-									connectHero,
-									connectSteps,
-									connectStatus,
-									...(aw.length ? [createAnswererWrapperSection(aw, '已解析的题库配置：', answererListHandlers)] : [])
-								]);
+								const connectPanel = h('div', [connectHero, connectSteps, connectStatus, listContainer]);
 								/**
 								 * 底部按钮：
 								 * - 有题库：清空题库配置 + 自定义题库（小尺寸）靠左，关闭 + 一键获取靠右
@@ -736,7 +671,7 @@ export const CommonProject = Project.create({
 								modalFooter = connectFooter;
 							} else {
 								// 自定义题库（或未配置 provider）：保持原有单页结构，已配置列表脱离 notes 独立展示
-								modalContent = h('div', [manualNotes, ...(aw.length ? [existingList] : [])]);
+								modalContent = h('div', [manualNotes, listContainer]);
 								modalFooter = manualFooter;
 							}
 
@@ -746,6 +681,23 @@ export const CommonProject = Project.create({
 								content: modalContent,
 								footer: modalFooter
 							});
+
+							// 题库变更（保存/清空/一键获取回填）时重新渲染列表并自动检测延迟，弹窗关闭时注销监听
+							const awChangeListener = CommonProject.scripts.settings.onConfigChange(
+								'answererWrappers',
+								(_key, _value, remote) => {
+									if (remote === false) {
+										renderAnswererList();
+									}
+								}
+							);
+							if (modal) {
+								const originalRemove = modal.remove.bind(modal);
+								modal.remove = () => {
+									CommonProject.scripts.settings.offConfigChange(awChangeListener);
+									originalRemove();
+								};
+							}
 
 							// 无题库时进入一键配置弹窗，延迟 1 秒自动开始获取（仍在用户激活窗口期内，window.open 不会被拦截）
 							if (mode === 'official' && aw.length === 0 && connectButton) {
@@ -758,8 +710,8 @@ export const CommonProject = Project.create({
 							}
 						};
 
-						// 主按钮默认打开一键题库配置
-						this.onclick = () => openAnswererModal('official');
+						// 主按钮默认打开一键题库配置；未配置获取渠道时使用自定义题库弹窗
+						this.onclick = () => openAnswererModal(getAnswererConfigProvider() ? 'official' : 'custom');
 						// 暴露给「⋯」下拉框的选项进入对应配置弹窗（自定义题库仅从此处进入）
 						(this as any).openAnswererModal = openAnswererModal;
 					}
@@ -793,7 +745,7 @@ export const CommonProject = Project.create({
 					],
 					attrs: {
 						title:
-							'提交方式（提交率）：设置自动答题结束后如何保存/提交答案\n鼠标悬浮在选项上可以查看每个选项的具体解释。'
+							'提交方式（提交率）：设置自动答题结束后如何保存/提交答案\n鼠标悬浮在选项上可以查看每个选项的具体解释。\n\n注意：提交率无法控制题库的正确率，题库搜索到的答案不一定正确。'
 					}
 				},
 				'work-when-no-job': {
@@ -1079,188 +1031,6 @@ export const CommonProject = Project.create({
 				checkImageOptimizeCompatibility();
 				this.onConfigChange('imageOptimize', () => checkImageOptimizeCompatibility());
 				this.onConfigChange('answererWrappers', () => checkImageOptimizeCompatibility());
-			},
-			onrender({ panel }) {
-				// 因为需要用到 GM_xhr 所以判断是否处于用户脚本环境
-				if ($gm.isInGMContext()) {
-					panel.body.replaceChildren(h('hr'));
-					const refresh = h(
-						'button',
-						{ className: 'base-style-button', disabled: this.cfg.answererWrappers.length === 0 },
-						'🔄️刷新题库状态'
-					);
-					const errorSolveGuide = h(
-						'button',
-						{
-							className: 'base-style-button ',
-							style: { display: 'none' },
-							onclick() {
-								window.open('https://docs.ocsjs.com/docs/other/FQA#tk-error', '_blank');
-							}
-						},
-						'📖连接失败如何解决？'
-					);
-					refresh.onclick = () => {
-						updateState();
-					};
-					const tableContainer = h('div');
-					refresh.style.display = 'none';
-					tableContainer.style.display = 'none';
-					panel.body.append(h('div', { style: { display: 'flex' } }, [refresh, errorSolveGuide]), tableContainer);
-
-					/** 状态探测调用代际：防止并发调用时旧结果覆盖新结果 */
-					let probeGeneration = 0;
-
-					interface ProbeResult {
-						item: AnswererWrapper;
-						status: 'success' | 'disabled' | 'error' | 'timeout' | 'invalid';
-						/** HTTP 状态码（仅收到响应时存在） */
-						statusCode?: number;
-						error?: any;
-						latency?: number;
-					}
-
-					/** 探测单个题库：任何 HTTP 响应都视为可达，仅网络错误/超时算失败 */
-					const probeAnswerer = async (item: AnswererWrapper): Promise<ProbeResult> => {
-						if (this.cfg.disabledAnswererWrapperNames.includes(item.name)) {
-							return { item, status: 'disabled' };
-						}
-						let probeUrl: URL;
-						try {
-							probeUrl = new URL(item.url);
-						} catch {
-							return { item, status: 'invalid' };
-						}
-						const t = Date.now();
-						probeUrl.searchParams.set('t', String(t));
-						const doProbe = async (method: 'head' | 'get'): Promise<{ status: number; responseText: string }> => {
-							const res = (await request(probeUrl.toString(), {
-								type: 'GM_xmlhttpRequest',
-								method,
-								responseType: 'text',
-								anyStatus: true
-							})) as unknown as { status: number; responseText: string };
-							// HEAD 不被支持（405/501）时回退 GET 再试一次
-							if (method === 'head' && (res.status === 405 || res.status === 501)) {
-								return doProbe('get');
-							}
-							return res;
-						};
-						try {
-							const res = await Promise.race([
-								doProbe('head'),
-								(async () => {
-									await $.sleep(10 * 1000);
-									return undefined;
-								})()
-							]);
-							if (res === undefined) return { item, status: 'timeout' };
-							const latency = Date.now() - t;
-							const ok = res.status >= 200 && res.status < 400;
-							return ok
-								? { item, status: 'success', statusCode: res.status, latency }
-								: { item, status: 'error', statusCode: res.status, latency, error: new Error('HTTP ' + res.status) };
-						} catch (error) {
-							return { item, status: 'error', error };
-						}
-					};
-
-					// 更新题库状态
-					const updateState = async () => {
-						const generation = ++probeGeneration;
-						// 清空元素
-						tableContainer.replaceChildren();
-						errorSolveGuide.style.display = 'none';
-
-						if (this.cfg.answererWrappers.length === 0) {
-							refresh.style.display = 'none';
-							tableContainer.style.display = 'none';
-							return;
-						}
-						refresh.style.display = 'block';
-						tableContainer.style.display = 'block';
-						refresh.textContent = '🚫正在加载题库状态...';
-						refresh.setAttribute('disabled', 'true');
-
-						// probeAnswerer 内部全 try/catch，Promise.all 不会 reject
-						const results = await Promise.all(this.cfg.answererWrappers.map((item) => probeAnswerer(item)));
-						// 等待期间已有更新的调用：丢弃本次结果
-						if (generation !== probeGeneration) return;
-
-						if (results.some((r) => r.status === 'error' && r.statusCode === undefined)) {
-							errorSolveGuide.style.display = 'block';
-						}
-
-						const statusTextMap = {
-							success: '连接成功',
-							disabled: '已停用',
-							error: '连接失败',
-							timeout: '连接超时',
-							invalid: '配置错误'
-						} as const;
-
-						// 按配置顺序渲染
-						const list = h('div', { className: 'answerer-status-list' });
-						for (const r of results) {
-							const badge = h(
-								'span',
-								{ className: `badge ${r.status === 'invalid' ? 'error' : r.status}` },
-								statusTextMap[r.status] + (r.statusCode !== undefined ? ` (${r.statusCode})` : '')
-							);
-							if (r.status === 'disabled') {
-								badge.title = '此题库已被停用，请在上方题库配置中点击开启。';
-								$ui.tooltip(badge);
-							}
-							// 首页按钮：仅当题库配置了 homepage 时可点击，新窗口打开
-							const hasHomepage = !!r.item.homepage && r.item.homepage !== '#';
-							const homepageBtn = h(
-								'a',
-								{
-									className: 'homepage-link',
-									href: hasHomepage ? r.item.homepage! : 'javascript:void(0)',
-									target: '_blank',
-									title: hasHomepage ? '前往题库首页' : '此题库未配置首页',
-									// h() 的 style 仅支持对象形式（内部 Object.assign 合并）
-									style: Object.assign(
-										{ textDecoration: 'none', marginRight: '6px', flexShrink: '0' },
-										hasHomepage ? {} : { opacity: '0.4', cursor: 'default' }
-									)
-								},
-								'🏠'
-							);
-
-							list.append(
-								h('div', { className: 'answerer-status-item' }, [
-									h('span', { style: { display: 'flex', alignItems: 'center', overflow: 'hidden' } }, [
-										homepageBtn,
-										h('span', { className: 'name' }, r.item.name)
-									]),
-									h('span', { className: 'status' }, [
-										h(
-											'span',
-											{ className: 'latency' },
-											r.latency !== undefined ? `延迟 ${r.latency}ms` : r.status === 'timeout' ? '延迟 >10000ms' : ''
-										),
-										badge
-									])
-								])
-							);
-						}
-						tableContainer.append(list);
-
-						refresh.textContent = '🔄️刷新题库状态';
-						refresh.removeAttribute('disabled');
-					};
-
-					updateState();
-
-					this.offConfigChange(state.setting.listenerIds.aw);
-					state.setting.listenerIds.aw = this.onConfigChange('answererWrappers', (_, __, remote) => {
-						if (remote === false) {
-							updateState();
-						}
-					});
-				}
 			}
 		}),
 		workResults: new Script({
@@ -1444,7 +1214,19 @@ export const CommonProject = Project.create({
 									});
 								});
 
-								list.replaceChildren(...nums);
+								/** 问号图标：承载答题进度与序号解释提示，避免整区域 tooltip 阻挡序号点击 */
+								const helpIcon = $ui.tooltip(
+									h(
+										'span',
+										{
+											className: 'search-infos-help',
+											title: baseInfos.join('\n')
+										},
+										'?'
+									)
+								);
+
+								list.replaceChildren(helpIcon, ...nums);
 								// 初始显示指定序号的结果
 								resultContainer.replaceChildren(createResult(results[this.cfg.currentResultIndex]));
 
@@ -1455,9 +1237,6 @@ export const CommonProject = Project.create({
 									top: scrollPercent * list.scrollHeight,
 									behavior: 'auto'
 								});
-
-								/** 将搜索状态提示应用到序号区域，鼠标悬浮后显示 */
-								list.setAttribute('data-title', baseInfos.join('\n'));
 
 								/** 清空搜索结果按钮：仅动态答题器（结果逐题累积、不会自动清空）时显示在所有搜索结果的最下方 */
 								if (this.cfg.dynamicResults) {
