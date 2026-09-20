@@ -10,6 +10,7 @@ import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 
 import { extractTextWithImages, commonWork, createCommonAnswerer, simplifyWorkResult } from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
+import { createSteps } from '../utils/ui';
 import { CommonProject } from './common';
 
 import { $console, BackgroundProject } from './background';
@@ -72,11 +73,11 @@ export const IcveMoocProject = Project.create({
 			namespace: 'icve.guide',
 			configs: {
 				notes: {
-					defaultValue: $ui.notes(['请点击任意课程进入', '进入课程后点击任意章节进入，即可自动学习']).outerHTML
+					defaultValue: createSteps(['点击任意课程进入', '点击任意章节进入学习', '等待脚本自动运行']).outerHTML
 				}
 			},
 			oncomplete() {
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 			}
 		}),
 		/** 智慧职教学习中心 */
@@ -121,7 +122,7 @@ export const IcveMoocProject = Project.create({
 					}
 				}
 
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 
 				this.onConfigChange('playbackRate', (playbackRate) => {
 					state.study.currentMedia && (state.study.currentMedia.playbackRate = parseFloat(playbackRate.toString()));
@@ -254,7 +255,7 @@ export const IcveMoocProject = Project.create({
 					}) || 0;
 			},
 			async oncomplete() {
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 
 				await $.sleep(3000);
 
@@ -508,7 +509,7 @@ export const IcveMoocProject = Project.create({
 			},
 			async oncomplete(type) {
 				// 置顶页面
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 
 				this.onConfigChange('volume', (val) => {
 					if (state.study.currentMedia) {
@@ -913,7 +914,7 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 				resolvedCount++;
 
 				if (currentResult.result?.finish) {
-					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([currentResult], titleTransform)
 					);
 				}
@@ -1012,18 +1013,18 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
-				titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
-				optionsTransform: (elements: any, ctx: any) => {
-					ctx.type = getType(ctx.elements.options) || 'unknown';
-					const optResults = ctx.elements.options.map((o: any) => extractTextWithImages(o));
-					return {
-						text: optResults.map((r: { text: string }) => r.text).join('\n'),
-						images: optResults.flatMap((r: { images: string[] }) => r.images)
-					};
-				},
-				answererWrappers,
-				period
-			}),
+			titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
+			optionsTransform: (elements: any, ctx: any) => {
+				ctx.type = getType(ctx.elements.options) || 'unknown';
+				const optResults = ctx.elements.options.map((o: any) => extractTextWithImages(o));
+				return {
+					text: optResults.map((r: { text: string }) => r.text).join('\n'),
+					images: optResults.flatMap((r: { images: string[] }) => r.images)
+				};
+			},
+			answererWrappers,
+			period
+		}),
 
 		work: {
 			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
@@ -1069,7 +1070,7 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 				resolvedCount++;
 
 				if (currentResult.result?.finish) {
-					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([currentResult], titleText)
 					);
 				}

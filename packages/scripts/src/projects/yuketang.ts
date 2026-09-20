@@ -1,5 +1,6 @@
 import { $, $elements, Project, Script, $message, $modal, $el, h, cors, $ui } from 'easy-us';
 import { $msg, playMedia } from '../utils';
+import { createSteps } from '../utils/ui';
 import { request } from '@ocsjs/core';
 import { restudy, volume } from '../utils/configs';
 import { waitForElement } from '../utils/study';
@@ -52,7 +53,7 @@ export const YKTProject = Project.create({
 			namespace: 'yuketang.study.guide',
 			configs: {
 				notes: {
-					defaultValue: '请点击课程里面任意章节，进入学习。'
+					defaultValue: createSteps(['登录网课平台', '点击课程中任意章节进入学习', '等待脚本自动运行']).outerHTML
 				}
 			},
 			oncomplete(...args) {

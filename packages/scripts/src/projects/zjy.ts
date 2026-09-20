@@ -3,6 +3,7 @@ import { Project, Script, $ui, $el, $message, $modal, h } from 'easy-us';
 import { volume } from '../utils/configs';
 import { waitForMedia, waitForElement } from '../utils/study';
 import { $msg, CommonWorkOptions, playMedia } from '../utils';
+import { createSteps } from '../utils/ui';
 import { $console, BackgroundProject } from './background';
 import { CommonProject } from './common';
 import { commonWork, createCommonAnswerer, simplifyWorkResult } from '../utils/work';
@@ -75,7 +76,7 @@ export const ZJYProject = Project.create({
 			namespace: 'zjy.study.guide',
 			configs: {
 				notes: {
-					defaultValue: '请点击任意章节，进入学习。'
+					defaultValue: createSteps(['登录网课平台', '点击任意章节进入学习', '等待脚本自动运行']).outerHTML
 				}
 			}
 		}),
@@ -710,7 +711,7 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
 
 			if (curr.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
 			}
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}

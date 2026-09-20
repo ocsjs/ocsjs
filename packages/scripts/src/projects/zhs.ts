@@ -27,6 +27,7 @@ import {
 	simplifyWorkResult
 } from '../utils/work';
 import { CommonWorkOptions, playMedia } from '../utils';
+import { createSteps } from '../utils/ui';
 import { $console, BackgroundProject } from './background';
 import { waitForMedia, waitForElement } from '../utils/study';
 import { $playwright } from '../utils/app';
@@ -488,8 +489,8 @@ class WishdomH5 extends StudyVideoH5 implements ZHSProcessor {
 			if (options.length !== 0) {
 				await waitForCaptcha();
 				// 最小化脚本窗口
-				CommonProject.scripts.render.methods.minimize();
-				CommonProject.scripts.render.methods.setPosition(100, 200);
+				BackgroundProject.scripts.render.methods.minimize();
+				BackgroundProject.scripts.render.methods.setPosition(100, 200);
 				// 随机选
 				const random = Math.floor(Math.random() * options.length);
 				await $.sleep(1000);
@@ -649,15 +650,14 @@ export const ZHSProject = Project.create({
 			namespace: 'zhs.guide',
 			configs: {
 				notes: {
-					defaultValue: $ui.notes([
-						'请手动进入视频、作业、考试页面，脚本会自动运行。',
-						'兴趣课会自动下一个，所以不提供脚本。'
-					]).outerHTML
+					defaultValue:
+						createSteps(['登录网课平台', '进入任意视频、作业/考试界面', '等待脚本自动运行']).outerHTML +
+						$ui.notes(['兴趣课会自动下一个，所以不提供脚本。']).outerHTML
 				}
 			},
 			oncomplete() {
 				// 置顶
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 				// 检测学习/视频界面分辨率，过小则提示用户自动调整缩放
 				ensureWideViewport();
 			},
@@ -670,7 +670,7 @@ export const ZHSProject = Project.create({
 						// projectName 仅在面板渲染过时才被框架赋值，首次跳转需要手动补齐，
 						// 否则 pin 会退化为按 namespace 匹配，可能选中到被隐藏的脚本面板
 						target.projectName = ZHSProject.name;
-						CommonProject.scripts.render.methods.pin(target);
+						BackgroundProject.scripts.render.methods.pin(target);
 					};
 					panel.body.replaceChildren(
 						h('hr'),
@@ -715,7 +715,7 @@ export const ZHSProject = Project.create({
 				// 迁移旧命名空间配置
 				migrateZhsStudyConfigs();
 				// 置顶设置中心，作为用户主要交互入口
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 			}
 		}),
 		/**
@@ -748,7 +748,7 @@ export const ZHSProject = Project.create({
 				// 迁移旧命名空间配置
 				migrateZhsWorkConfigs();
 				// 置顶设置中心
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 			}
 		}),
 		'gxk-study': new Script({
@@ -1097,9 +1097,9 @@ export const ZHSProject = Project.create({
 
 							// 移动到边缘
 							$render.moveToEdge();
-							CommonProject.scripts.render.methods.normal();
+							BackgroundProject.scripts.render.methods.normal();
 							// 固定脚本
-							CommonProject.scripts.render.methods.pin(this);
+							BackgroundProject.scripts.render.methods.pin(this);
 
 							// 阅读须知
 							if (this.cfg.readNotes === false) {
@@ -1136,7 +1136,7 @@ export const ZHSProject = Project.create({
 						} else {
 							$message.info({ content: '📢 请手动进入作业/考试，如果未开始答题，请尝试刷新页面。', duration: 0 });
 
-							CommonProject.scripts.render.methods.pin(this);
+							BackgroundProject.scripts.render.methods.pin(this);
 						}
 					}
 				};
@@ -1483,7 +1483,7 @@ export const ZHSProject = Project.create({
 				return {
 					start: async () => {
 						// 检查是否为软件环境
-						CommonProject.scripts.render.methods.pin(this);
+						BackgroundProject.scripts.render.methods.pin(this);
 						await waitForElement('.question-area-content');
 
 						// 考完后的试卷预览
@@ -2312,7 +2312,7 @@ export const ZHSProject = Project.create({
 				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
 				migrateZhsWorkConfigs();
 				// 检查是否为软件环境
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 
 				await waitForElement('.q_main');
 
@@ -2343,7 +2343,7 @@ export const ZHSProject = Project.create({
 				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
 				migrateZhsWorkConfigs();
 				// 检查是否为软件环境
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 
 				await waitForElement('.question-item');
 
@@ -2675,7 +2675,7 @@ function gxkWorkAndExam(
 			if (curr.result?.finish) {
 				const title = allExamParts[index]?.name;
 				if (title) {
-					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([curr], (_: any, __: number) => title)
 					);
 				}
@@ -2812,7 +2812,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 			}
 
 			if (current.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -2961,7 +2961,7 @@ function smartWork(
 			}
 
 			if (current.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3127,7 +3127,7 @@ function smartExam(
 			}
 
 			if (current.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3258,7 +3258,7 @@ function fusioncourseWork(
 			}
 
 			if (current.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3371,7 +3371,7 @@ function hikeWork(
 			}
 
 			if (current.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3487,7 +3487,7 @@ function hikeHomework(
 			}
 
 			if (current.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}

@@ -29,6 +29,7 @@ import md5 from 'md5';
 import Typr from 'typr.js';
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
+import { createSteps } from '../utils/ui';
 import { waitForElement, waitForMedia } from '../utils/study';
 
 // @ts-ignore
@@ -169,7 +170,7 @@ export const CXProject = Project.create({
 			namespace: 'cx.guide',
 			configs: {
 				notes: {
-					defaultValue: `请手动进入视频、作业、考试页面，脚本会自动运行。`
+					defaultValue: createSteps(['登录网课平台', '进入任意视频、作业/考试界面', '等待脚本自动运行']).outerHTML
 				}
 			},
 			oncomplete() {
@@ -177,6 +178,7 @@ export const CXProject = Project.create({
 					$message.success('已进入学习页面，请等待自动运行...');
 					return;
 				}
+				if (self !== top) return;
 				$message.info('请手动进入视频、作业、考试页面，脚本会自动运行。');
 			},
 			onrender({ panel }) {
@@ -188,7 +190,7 @@ export const CXProject = Project.create({
 						// projectName 仅在面板渲染过时才被框架赋值，首次跳转需要手动补齐，
 						// 否则 pin 会退化为按 namespace 匹配，可能选中到被隐藏的脚本面板
 						target.projectName = CXProject.name;
-						CommonProject.scripts.render.methods.pin(target);
+						BackgroundProject.scripts.render.methods.pin(target);
 					};
 					panel.body.replaceChildren(
 						h('hr'),
@@ -477,7 +479,7 @@ export const CXProject = Project.create({
 			},
 			oncomplete() {
 				// 置顶
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 				$message.info('请手动点击任意章节开始自动阅读');
 
 				// 自动进入章节功能，如果不是阅读页面则自动进入
@@ -755,14 +757,13 @@ export const CXProject = Project.create({
 			namespace: 'cx.jfk.guide',
 			configs: {
 				notes: {
-					defaultValue: $ui.notes([
-						'积分课请进入课程后，开启复习模式，并且关闭自动下一章',
-						'课程完成后请手动切换，如果由脚本进行自动跳转会出现乱跳转的可能。'
-					]).outerHTML
+					defaultValue:
+						createSteps(['进入课程', '开启复习模式，并关闭自动下一章', '课程完成后手动切换'])
+							.outerHTML + $ui.notes(['⚠️ 如果由脚本进行自动跳转会出现乱跳转的可能，请手动切换课程。']).outerHTML
 				}
 			},
 			oncomplete(...args) {
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 			}
 		})
 	}
@@ -966,7 +967,7 @@ function workOrExam(
 					await CommonProject.scripts.workResults.methods.appendResults(
 						simplifyWorkResult(res, workOrExamQuestionTitleText)
 					);
-					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([current], workOrExamQuestionTitleText)
 					);
 				}
@@ -976,7 +977,7 @@ function workOrExam(
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleText));
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 			if (current.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], workOrExamQuestionTitleText)
 				);
 			}
@@ -1863,7 +1864,7 @@ const JobRunner = {
 		}
 
 		$console.info('开始章节测试');
-		const visual_state = CommonProject.scripts.render.cfg.visual;
+		const visual_state = BackgroundProject.scripts.render.cfg.visual;
 
 		const frameWindow = frame.contentWindow;
 		const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
@@ -2023,7 +2024,7 @@ const JobRunner = {
 				CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, chapterTestTaskQuestionTitleText));
 
 				if (curr.result?.finish) {
-					CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([curr], chapterTestTaskQuestionTitleText)
 					);
 				}
@@ -2144,7 +2145,7 @@ const JobRunner = {
 		});
 
 		// 还原尺寸状态
-		if (visual_state === 'minimize' && CommonProject.scripts.render.cfg.visual !== 'minimize') {
+		if (visual_state === 'minimize' && BackgroundProject.scripts.render.cfg.visual !== 'minimize') {
 			CORSUtils.panelMinimize();
 		}
 
@@ -2335,12 +2336,12 @@ function waitForFaceRecognition() {
 
 const CORSUtils = {
 	pinWorkPanel: cors.defineTopFunction(() => {
-		CommonProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
+		BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.workResults);
 	}),
 	panelNormal: cors.defineTopFunction(() => {
-		CommonProject.scripts.render.methods.normal();
+		BackgroundProject.scripts.render.methods.normal();
 	}),
 	panelMinimize: cors.defineTopFunction(() => {
-		CommonProject.scripts.render.methods.minimize();
+		BackgroundProject.scripts.render.methods.minimize();
 	})
 };

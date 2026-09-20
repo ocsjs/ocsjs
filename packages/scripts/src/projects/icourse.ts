@@ -1,6 +1,7 @@
 import { $, OCSWorker, RemotePage } from '@ocsjs/core';
 import { $message, Project, Script, $ui, $store } from 'easy-us';
 import { CommonWorkOptions, playMedia } from '../utils';
+import { createSteps } from '../utils/ui';
 import { CommonProject } from './common';
 import {
 	commonWork,
@@ -74,7 +75,7 @@ export const ICourseProject = Project.create({
 			namespace: 'icourse.guide-v1',
 			configs: {
 				notes: {
-					defaultValue: $ui.notes(['手动进入任意课程里的课件/作业，即可开始自动学习']).outerHTML
+					defaultValue: createSteps(['登录网课平台', '进入任意课程的课件/作业界面', '等待脚本自动运行']).outerHTML
 				},
 				runAtHash: {
 					// 在没有进入学习页面前，都显示提示
@@ -85,7 +86,7 @@ export const ICourseProject = Project.create({
 				return {
 					main: async () => {
 						console.log(state, this.cfg.runAtHash);
-						CommonProject.scripts.render.methods.pin(this);
+						BackgroundProject.scripts.render.methods.pin(this);
 					}
 				};
 			}
@@ -393,8 +394,8 @@ export const ICourseProject = Project.create({
 					// 等待加载题目
 					await waitForQuestion();
 
-					CommonProject.scripts.render.methods.pin(this);
-					CommonProject.scripts.render.methods.normal();
+					BackgroundProject.scripts.render.methods.pin(this);
+					BackgroundProject.scripts.render.methods.normal();
 
 					$msg_and_log('info', '开始答题');
 					commonWork(this, {
@@ -451,7 +452,7 @@ export const ICourseProject = Project.create({
 			},
 			hideInPanel: true,
 			oncomplete(...args) {
-				CommonProject.scripts.render.methods.pin(this);
+				BackgroundProject.scripts.render.methods.pin(this);
 				$message.info('检测到中国大学MOOC空白页面，即将重定向修复...');
 				setTimeout(() => {
 					location.href = 'https://www.icourse163.org/';
@@ -583,7 +584,7 @@ function workAndExam(
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleText));
 
 			if (curr.result?.finish) {
-				CommonProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleText));
+				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleText));
 			}
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}
@@ -618,8 +619,8 @@ function workAndExam(
 						}
 						if (uploadable) {
 							// 先收起面板防止阻挡，元素无法通过移动脚本面板去点击
-							CommonProject.scripts.render.methods.minimize();
-							CommonProject.scripts.render.methods.setPosition(100, 200);
+							BackgroundProject.scripts.render.methods.minimize();
+							BackgroundProject.scripts.render.methods.setPosition(100, 200);
 
 							const sumbit = document.querySelector('.j-submit');
 							if (sumbit) {
