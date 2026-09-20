@@ -1,5 +1,6 @@
 import { $elements, h } from 'easy-us';
 import { CommonProject } from '../projects/common';
+import { BackgroundProject } from '../projects/background';
 import { logoSvg } from './ui';
 
 /** 固定吸附范围：视口左右各 100px */
@@ -32,7 +33,7 @@ function getContainer(): HTMLElement | undefined {
 export function updateEdgeMode() {
 	const container = getContainer();
 	if (!container || snapping) return;
-	const render = CommonProject.scripts.render;
+	const render = BackgroundProject.scripts.render;
 
 	const clientWidth = document.documentElement.clientWidth;
 	// 以面板中心点判定：避免宽面板仅边缘擦过吸附区就触发吸附
@@ -88,7 +89,7 @@ function updateDropZone(clientX: number) {
 	if (!zone) return;
 	const clientWidth = document.documentElement.clientWidth;
 	const side =
-		CommonProject.scripts.render.cfg.visual !== 'minimize'
+		BackgroundProject.scripts.render.cfg.visual !== 'minimize'
 			? undefined
 			: clientX <= EDGE_WIDTH
 			? 'left'
@@ -117,7 +118,7 @@ function ensurePanelInViewport(container: HTMLElement) {
 	const x = Math.min(Math.max(container.offsetLeft, 0), maxX);
 	const y = Math.min(Math.max(container.offsetTop, 10), maxY);
 	if (x !== container.offsetLeft || y !== container.offsetTop) {
-		CommonProject.scripts.render.methods.setPosition(x, y);
+		BackgroundProject.scripts.render.methods.setPosition(x, y);
 	}
 }
 
@@ -161,10 +162,10 @@ function enableIconDraggable(icon: HTMLElement, container: HTMLElement) {
 			document.removeEventListener('pointerup', onUp);
 			if (dragging) {
 				// 持久化位置并重新判定（拖回吸附区域则重新吸附）
-				CommonProject.scripts.render.methods.setPosition(container.offsetLeft, container.offsetTop);
+				BackgroundProject.scripts.render.methods.setPosition(container.offsetLeft, container.offsetTop);
 				updateEdgeMode();
 			} else {
-				CommonProject.scripts.render.methods.normal();
+				BackgroundProject.scripts.render.methods.normal();
 				// 展开为正常尺寸后（下一帧待样式生效），校正位置保证面板完整显示在屏幕内
 				requestAnimationFrame(() => ensurePanelInViewport(container));
 			}
@@ -191,7 +192,7 @@ export function initEdgeMinimize(retry = 3) {
 		return;
 	}
 	inited = true;
-	const render = CommonProject.scripts.render;
+	const render = BackgroundProject.scripts.render;
 
 	// 图标元素：edge 模式下替代 header 显示，支持点击还原与拖拽
 	const edgeIcon = h('div', {

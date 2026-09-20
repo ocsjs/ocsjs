@@ -1,4 +1,6 @@
 import { RemotePlaywright, request } from '@ocsjs/core';
+import type { SearchInformation, SimplifyWorkResult } from '@ocsjs/core';
+import { markdown } from '../utils/markdown';
 import {
 	$ui,
 	$gm,
@@ -49,6 +51,59 @@ type RequestList = {
 	error?: string;
 	time: number;
 }[];
+
+/**
+ * 题库缓存类型
+ */
+type QuestionCache = { title: string; answer: string; from: string; homepage: string; ai?: boolean };
+
+/**
+ * 监听网页开发者工具打开事件（仅触发一次，多种方式组合检测）。
+ * 浏览器没有标准的开发者工具开关事件，以下为业界常用方案的组合：
+ * 1. 快捷键监听：F12 / Ctrl(⌘)+Shift+I / Ctrl(⌘)+Shift+J / Ctrl(⌘)+Shift+C
+ * 2. 视口差值检测：dock（内嵌）模式打开时挤压页面视口，outer 与 inner 差值变大（兜底，覆盖菜单/右键“检查”打开的情况）
+ * 3. console 对象嗅探：Chrome 等浏览器仅在控制台打开时才会为 console.log 的对象求值，
+ *    利用 id getter 是否被调用来判断（可覆盖独立窗口模式，控制台面板需处于可见状态）
+ */
+function onDevtoolsOpen(callback: () => void) {
+	let triggered = false;
+	const trigger = () => {
+		if (triggered) return;
+		triggered = true;
+		window.removeEventListener('keydown', onKeydown, true);
+		clearInterval(timer);
+		callback();
+	};
+
+	// 方式一：监听打开开发者工具的快捷键
+	const onKeydown = (e: KeyboardEvent) => {
+		if (e.key === 'F12' || ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()))) {
+			trigger();
+		}
+	};
+	window.addEventListener('keydown', onKeydown, true);
+
+	// 方式三探针：控制台打开时 console.log 会对对象求值，从而触发 id getter
+	const probe = h('div');
+	Object.defineProperty(probe, 'id', {
+		get: () => {
+			trigger();
+			return 'devtools-probe';
+		}
+	});
+
+	const timer = setInterval(() => {
+		// 方式二：dock 模式视口差值检测（阈值 160px）
+		const widthDiff = window.outerWidth - window.innerWidth;
+		const heightDiff = window.outerHeight - window.innerHeight;
+		if (widthDiff > 160 || heightDiff > 160) {
+			trigger();
+			return;
+		}
+		// 方式三：console 对象嗅探（周期性记录，控制台打开时求值触发 getter）
+		console.log(probe);
+	}, 1000);
+}
 
 /** 后台进程，处理与PC软件端的通讯，以及其他后台操作 */
 export const BackgroundProject = Project.create({
@@ -161,6 +216,274 @@ export const BackgroundProject = Project.create({
 				};
 
 				show();
+			}
+		}),
+		/** 渲染脚本，窗口渲染主要脚本（从 通用 迁移至 其他） */
+		render: RenderScript,
+		apps: new Script({
+			name: '📱 拓展应用',
+			matches: [['', /.*/]],
+			// namespace 保持 common.apps 不变，避免丢失已存储的题库缓存等配置
+			namespace: 'common.apps',
+			configs: {
+				notes: {
+					defaultValue: '这里是一些其他的应用或者拓展功能。'
+				},
+				/**
+				 * 题库缓存
+				 */
+				localQuestionCaches: {
+					defaultValue: [] as QuestionCache[],
+					extra: {
+						appConfigSync: false
+					}
+				}
+			},
+			methods() {
+				return {
+					/**
+					 * 添加题库缓存
+					 */
+					addQuestionCache: async (...questionCacheItems: QuestionCache[]) => {
+						const questionCaches: QuestionCache[] = this.cfg.localQuestionCaches;
+						for (const item of questionCacheItems) {
+							// 去重
+							if (questionCaches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
+								questionCaches.unshift(item);
+							}
+						}
+
+						// 限制数量
+						questionCaches.splice(200);
+						this.cfg.localQuestionCaches = questionCaches;
+					},
+					addQuestionCacheFromWorkResult(swr: SimplifyWorkResult[]) {
+						BackgroundProject.scripts.apps.methods.addQuestionCache(
+							...swr
+								.map((r) =>
+									r.searchInfos
+										.map((i) =>
+											i.results
+												.filter((res) => res[1])
+												.map((res) => ({
+													title: r.question,
+													answer: res[1],
+													from: i.name.replace(/【题库缓存】/g, ''),
+													homepage: i.homepage || ''
+												}))
+												.flat()
+										)
+										.flat()
+								)
+								.flat()
+						);
+					},
+					/**
+					 * 将题库缓存作为题库并进行题目搜索
+					 * @param title 题目
+					 * @param whenSearchEmpty 当搜索结果为空，或者题库缓存功能被关闭时执行的函数
+					 */
+					searchAnswerInCaches: async (
+						title: string,
+						whenSearchEmpty: () => SearchInformation[] | Promise<SearchInformation[]>
+					): Promise<SearchInformation[]> => {
+						if (CommonProject.scripts.settings.cfg.enableQuestionCaches === false) {
+							return await whenSearchEmpty();
+						}
+
+						let results: SearchInformation[] = [];
+						const caches = this.cfg.localQuestionCaches;
+						for (const cache of caches) {
+							if (cache.title.trim() === title.trim()) {
+								results.push({
+									name: cache.from,
+									homepage: cache.homepage,
+									results: [{ answer: cache.answer, question: cache.title, extra_data: { ai: cache.ai, cache: true } }]
+								});
+							}
+						}
+						if (results.length === 0) {
+							results = await whenSearchEmpty();
+						}
+						return results;
+					},
+					/**
+					 * 展示题库缓存管理弹窗
+					 */
+					showQuestionCaches: () => {
+						const questionCaches = this.cfg.localQuestionCaches;
+
+						const list = questionCaches.map((c) =>
+							h(
+								'div',
+								{
+									className: 'question-cache',
+									style: {
+										margin: '8px',
+										border: '1px solid lightgray',
+										borderRadius: '4px',
+										padding: '8px'
+									}
+								},
+								[
+									h('div', { className: 'title' }, [
+										$ui.tooltip(
+											h(
+												'span',
+												{
+													title: `来自：${c.from || '未知题库'}\n主页：${c.homepage || '未知主页'}`,
+													style: { fontWeight: 'bold' }
+												},
+												c.title
+											)
+										)
+									]),
+									h('div', { className: 'answer', style: { marginTop: '6px' } }, c.answer)
+								]
+							)
+						);
+
+						const countEl = h('span', ['当前缓存数量：' + questionCaches.length]);
+
+						$modal.simple({
+							width: 800,
+							content: h('div', [
+								h('div', { className: 'notes card' }, [
+									$ui.notes([
+										'题库缓存是将题库的题目和答案保存在内存，在重复使用时可以直接从内存获取，不需要再次请求题库。',
+										'以下是当前存储的题库，默认存储200题，当前页面关闭后会自动清除。'
+									])
+								]),
+								h('div', { className: 'card' }, [
+									$ui.space(
+										[
+											countEl,
+											$ui.button('清空题库缓存', {}, (btn) => {
+												btn.onclick = () => {
+													this.cfg.localQuestionCaches = [];
+													countEl.innerText = '当前缓存数量：0';
+													list.forEach((el) => el.remove());
+												};
+											})
+										],
+										{ separator: '|' }
+									)
+								]),
+
+								h(
+									'div',
+									questionCaches.length === 0 ? [h('div', { style: { textAlign: 'center' } }, '暂无题库缓存')] : list
+								)
+							])
+						});
+					},
+					/**
+					 * 查看更新日志
+					 */
+					async showChangelog() {
+						const changelog = h('div', {
+							className: 'markdown card',
+							innerHTML: '加载中...',
+							style: { maxWidth: '600px' }
+						});
+						$modal.simple({
+							width: 600,
+							content: h('div', [
+								h('div', { className: 'notes card' }, [
+									$ui.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
+								]),
+								changelog
+							])
+						});
+						const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
+							type: 'GM_xmlhttpRequest',
+							responseType: 'text',
+							method: 'get'
+						});
+						changelog.innerHTML = markdown(md);
+					}
+				};
+			},
+			onrender({ panel }) {
+				const btnStyle: Partial<CSSStyleDeclaration> = {
+					padding: '6px 12px',
+					margin: '4px',
+					marginBottom: '8px',
+					boxShadow: '0px 0px 4px #bebebe',
+					borderRadius: '8px',
+					cursor: 'pointer'
+				};
+
+				const exportSetting = $ui.tooltip(
+					h(
+						'div',
+						{
+							innerText: '📤 导出全部设置',
+							style: btnStyle,
+							title: '导出全部页面的设置，包括全局设置，题库配置，学习设置等等。（文件后缀名为：.ocssetting）'
+						},
+						(btn) => {
+							btn.onclick = () => {
+								const setting = Object.create({});
+								for (const key of $store.list()) {
+									const val = $store.get(key);
+									if (val) {
+										Reflect.set(setting, key, val);
+									}
+								}
+								const blob = new Blob([JSON.stringify(setting, null, 2)], { type: 'text/plain' });
+								const url = URL.createObjectURL(blob);
+								const a = h('a', { href: url, download: 'ocs-setting-export.ocssetting' });
+								a.click();
+								URL.revokeObjectURL(url);
+							};
+						}
+					)
+				);
+
+				const importSetting = $ui.tooltip(
+					h(
+						'div',
+						{
+							innerText: '📥 导入全部设置',
+							style: btnStyle,
+							title: '导入并且覆盖当前的全部设置。（文件后缀名为：.ocssetting）'
+						},
+						(btn) => {
+							btn.onclick = () => {
+								const input = h('input', { type: 'file', accept: '.ocssetting' });
+								input.onchange = async () => {
+									const file = input.files?.[0];
+									if (file) {
+										const setting = await file.text();
+										const obj = JSON.parse(setting);
+										for (const key of Object.keys(obj)) {
+											$store.set(key, obj[key]);
+										}
+										$message.success({ content: '设置导入成功，页面即将刷新。', duration: 3 });
+										setTimeout(() => {
+											location.reload();
+										}, 3000);
+									}
+								};
+								input.click();
+							};
+						}
+					)
+				);
+
+				[exportSetting, importSetting].forEach((btn) => {
+					btn.onmouseover = () => {
+						btn.style.boxShadow = '0px 0px 4px #0099ff9c';
+					};
+					btn.onmouseout = () => {
+						btn.style.boxShadow = '0px 0px 4px #bebebe';
+					};
+				});
+
+				const sep = (text: string) => h('div', { className: 'separator', style: { padding: '4px 0px' } }, text);
+
+				panel.body.replaceChildren(h('div', [sep('其他功能'), exportSetting, importSetting]));
 			}
 		}),
 		appConfigSync: new Script({
@@ -376,6 +699,8 @@ export const BackgroundProject = Project.create({
 					} catch (e) {
 						console.error(e);
 						this.cfg.sync_status = 'unconnect';
+						// 可能是桌面软件未启动，或者未开启配置同步功能，此时直接隐藏脚本面板，防止用户误操作
+						this.hidePanel();
 					}
 				}
 			}
@@ -419,7 +744,7 @@ export const BackgroundProject = Project.create({
 				}
 
 				const changeLog = h('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
-				changeLog.onclick = () => CommonProject.scripts.apps.methods.showChangelog();
+				changeLog.onclick = () => BackgroundProject.scripts.apps.methods.showChangelog();
 				const updatePage = this.startConfig?.updatePage || '';
 				panel.body.replaceChildren(
 					h('div', { className: 'card' }, [
@@ -500,6 +825,21 @@ export const BackgroundProject = Project.create({
 			name: '🛠️ 开发者调试',
 			namespace: 'background.dev',
 			matches: [['所有页面', /./]],
+			onstart() {
+				if (self !== top) return;
+
+				// 默认隐藏开发者相关面板，监听开发者工具（F12）打开后再显示
+				const devScripts = [this, BackgroundProject.scripts.requestList];
+				for (const script of devScripts) {
+					script.hidePanel();
+				}
+				onDevtoolsOpen(() => {
+					for (const script of devScripts) {
+						script.showPanel();
+					}
+					$message.info({ content: '检测到开发者工具已打开，已显示 开发者调试/请求记录 面板。', duration: 5 });
+				});
+			},
 			configs: {
 				notes: {
 					defaultValue: '开发人员调试用。<br>注入OCS_CONTEXT全局变量。用户可忽略此页面。'
@@ -969,7 +1309,7 @@ export const BackgroundProject = Project.create({
 						// 注册当前学习脚本的快捷菜单
 						await $menu('🖥️', { scriptPanelLink: currentStudyScript });
 						// 置顶面板
-						CommonProject.scripts.render.methods.pin(currentStudyScript);
+						BackgroundProject.scripts.render.methods.pin(currentStudyScript);
 					}
 				}, 3000);
 			}

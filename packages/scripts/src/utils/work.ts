@@ -10,6 +10,7 @@ import {
 } from '@ocsjs/core';
 import { $ui, $message, MessageElement, Script, h, CommonEventEmitter, cors, $elements } from 'easy-us';
 import { CommonProject } from '../projects/common';
+import { BackgroundProject } from '../projects/background';
 import { CommonWorkOptions, workPreCheckMessage } from '.';
 import {
 	buildAnswererEnv,
@@ -41,7 +42,7 @@ export function commonWork(
 	}
 ) {
 	// 置顶当前脚本
-	CommonProject.scripts.render.methods.pin(script);
+	BackgroundProject.scripts.render.methods.pin(script);
 	let worker: CommonEventEmitter<WorkerEvents> | undefined;
 
 	/**
@@ -112,7 +113,7 @@ export function commonWork(
 				gotoSettingsBtn.style.flex = '1';
 				gotoSettingsBtn.style.padding = '4px';
 				gotoSettingsBtn.onclick = () => {
-					CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
+					BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.settings);
 				};
 				gotoSettingsBtnContainer = h('div', { style: { display: 'flex' } }, [gotoSettingsBtn]);
 			}
@@ -310,7 +311,7 @@ let answererWrapperUnsetMessage: MessageElement | undefined;
 export const answerWrapperEmptyWarning = cors.defineTopFunction((duration: number) => {
 	const setting = h('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
 	setting.onclick = () => {
-		CommonProject.scripts.render.methods.pin(CommonProject.scripts.settings);
+		BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.settings);
 		setTimeout(() => {
 			$elements.root?.querySelector<HTMLElement>('[value="点击配置"]')?.click();
 		}, 500);
@@ -360,7 +361,7 @@ export function createCommonAnswerer(options: {
 		}
 		const titleImages = titleResult.images;
 
-		return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
+		return BackgroundProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
 			await $.sleep((options.period ?? 3) * 1000);
 			const optResult = normalize(
 				options.optionsTransform
