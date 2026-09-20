@@ -255,7 +255,15 @@ export const CXProject = Project.create({
 					attrs: { title: '已经完成的视频继续学习', type: 'checkbox' },
 					defaultValue: false
 				},
+				enables: {
+					...dropdownStyle,
+					label: '高级设置',
+					attrs: { type: 'checkbox' },
+					defaultValue: false
+				},
 				forceLearn: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
 					label: '强制学习',
 					attrs: {
 						title: '视频一般分为：非任务点、任务点、和已完成任务点，当遇到“非任务点”时需要开启此选项才会进行学习',
@@ -264,17 +272,13 @@ export const CXProject = Project.create({
 					defaultValue: false
 				},
 				backToFirstWhenFinish: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
 					label: '完成全部后重新学习',
 					attrs: {
 						type: 'checkbox',
 						title: '当章节已经学习完成至最后一章时，跳转到第一个章节重新开始学习。'
 					},
-					defaultValue: false
-				},
-				enables: {
-					...dropdownStyle,
-					label: '高级设置',
-					attrs: { type: 'checkbox' },
 					defaultValue: false
 				},
 				showTextareaWhenEdit: {
@@ -697,8 +701,6 @@ export const CXProject = Project.create({
 			namespace: 'cx.new.study-dispatcher',
 			hideInPanel: true,
 			async oncomplete() {
-				CommonProject.scripts.render.methods.pin(CXProject.scripts.study);
-
 				let chapters = await CXAnalyses.waitForChapterInfos();
 
 				const params = new URLSearchParams(window.location.href);

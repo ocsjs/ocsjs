@@ -2,7 +2,13 @@ import { $, OCSWorker, RemotePage } from '@ocsjs/core';
 import { $message, Project, Script, $ui, $store } from 'easy-us';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
-import { commonWork, createCommonAnswerer, extractTextWithImages, removeRedundantWords, simplifyWorkResult } from '../utils/work';
+import {
+	commonWork,
+	createCommonAnswerer,
+	extractTextWithImages,
+	removeRedundantWords,
+	simplifyWorkResult
+} from '../utils/work';
 import { $console, BackgroundProject } from './background';
 import { $playwright } from '../utils/app';
 import { waitForElement, waitForMedia, waitFor } from '../utils/study';
@@ -79,7 +85,6 @@ export const ICourseProject = Project.create({
 				return {
 					main: async () => {
 						console.log(state, this.cfg.runAtHash);
-
 						CommonProject.scripts.render.methods.pin(this);
 					}
 				};
@@ -140,8 +145,6 @@ export const ICourseProject = Project.create({
 			methods() {
 				return {
 					main: async ({ canRun, job_id }: { canRun: () => boolean; job_id: string }) => {
-						CommonProject.scripts.render.methods.pin(this);
-
 						const remotePage = await BackgroundProject.scripts.dev.methods.getRemotePlaywrightCurrentPage();
 						// 检查是否为软件环境
 						if (!remotePage) {
@@ -394,7 +397,6 @@ export const ICourseProject = Project.create({
 					CommonProject.scripts.render.methods.normal();
 
 					$msg_and_log('info', '开始答题');
-					CommonProject.scripts.render.methods.pin(this);
 					commonWork(this, {
 						workerProvider: (opts) => {
 							const worker = workAndExam(remotePage, type, opts);
@@ -516,17 +518,17 @@ function workAndExam(
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
-				titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
-				optionsTransform: (elements: any, ctx: any) => {
-					const optResults = ctx.elements.options.map((o: any) => extractTextWithImages(o));
-					return {
-						text: optResults.map((r: { text: string }) => r.text).join('\n'),
-						images: optResults.flatMap((r: { images: string[] }) => r.images)
-					};
-				},
-				answererWrappers,
-				period: 5
-			}),
+			titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
+			optionsTransform: (elements: any, ctx: any) => {
+				const optResults = ctx.elements.options.map((o: any) => extractTextWithImages(o));
+				return {
+					text: optResults.map((r: { text: string }) => r.text).join('\n'),
+					images: optResults.flatMap((r: { images: string[] }) => r.images)
+				};
+			},
+			answererWrappers,
+			period: 5
+		}),
 		work: {
 			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
 			optionText: (o: HTMLElement) => extractTextWithImages(o).text,

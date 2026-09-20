@@ -692,7 +692,7 @@ export const ZHSProject = Project.create({
 		 * 实际的学习逻辑仍由下方被 hideInPanel 的各个学习脚本处理。
 		 */
 		'study-center': new Script({
-			name: '🖥️ 智慧树-学习设置',
+			name: '🖥️ 学习设置',
 			matches: [
 				['共享课学习页面', 'studyvideoh5.zhihuishu.com'],
 				['新共享课学习页面', 'studyplush5.zhihuishu.com'],
@@ -725,7 +725,7 @@ export const ZHSProject = Project.create({
 		 * 实际的答题逻辑仍由下方被 hideInPanel 的各个作业考试脚本处理。
 		 */
 		'work-center': new Script({
-			name: '📝 智慧树-作业考试设置',
+			name: '📝 作业考试设置',
 			matches: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
 				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
@@ -878,8 +878,6 @@ export const ZHSProject = Project.create({
 			async oncomplete() {
 				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
 				migrateZhsStudyConfigs();
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
 
 				const type = location.href.includes('fusioncourseh5')
 					? 'AI课程'
@@ -1187,8 +1185,6 @@ export const ZHSProject = Project.create({
 							$message.info({ content: '请点击任意章节开始进行自动学习', duration: 60 });
 							return;
 						}
-						// 置顶当前脚本
-						CommonProject.scripts.render.methods.pin(this);
 						const processor = new StudyVideoH5();
 
 						const getInfos = () => Array.from(document.querySelectorAll<HTMLElement>('.section-item-collapse-info'));
@@ -1436,8 +1432,6 @@ export const ZHSProject = Project.create({
 				return {
 					start: async () => {
 						// 检查是否为软件环境
-						CommonProject.scripts.render.methods.pin(this);
-
 						let remotePage: RemotePage | undefined;
 						// 掌握度
 						const remote_not_required = remote_not_required_pages.some((domain) => location.href.includes(domain));
@@ -1524,8 +1518,6 @@ export const ZHSProject = Project.create({
 			oncomplete() {
 				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
 				migrateZhsStudyConfigs();
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
 
 				const finish = () => {
 					$modal.alert({
@@ -1650,9 +1642,6 @@ export const ZHSProject = Project.create({
 				if (location.href.includes('https://wisdom-mooc.zhihuishu.com/study/analysis')) {
 					return $message.info({ content: '请手动进入掌握度进行自动答题。', duration: 10 });
 				}
-
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
 				const processor = new WishdomH5();
 
 				// // 点击显示进度条，否则无法进行倍速，清晰度等操作
@@ -1947,8 +1936,6 @@ export const ZHSProject = Project.create({
 			async oncomplete(...args) {
 				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
 				migrateZhsStudyConfigs();
-				// 置顶当前脚本
-				CommonProject.scripts.render.methods.pin(this);
 				if (location.href.includes('stu-hike/agent-course-hike/ai-course-center')) {
 					$message.info({ content: '请手动进入视频、作业、考试页面，脚本会自动运行。', duration: 60 });
 					return;
@@ -2904,9 +2891,7 @@ function smartWork(
 			titleTransform: (elements) => titleTransformWithImages(elements.title),
 			optionsTransform: (elements, ctx) => {
 				if (ctx.type === 'completion') return '';
-				const optResults = (ctx.elements.options ?? [])
-					.filter(Boolean)
-					.map((o: any) => extractTextWithImages(o));
+				const optResults = (ctx.elements.options ?? []).filter(Boolean).map((o: any) => extractTextWithImages(o));
 				return {
 					text: optResults.map((r: { text: string }) => r.text).join('\n'),
 					images: optResults.flatMap((r: { images: string[] }) => r.images)
@@ -3072,9 +3057,7 @@ function smartExam(
 			titleTransform: (elements) => titleTransformWithImages(elements.title),
 			optionsTransform: (elements, ctx) => {
 				if (ctx.type === 'completion') return '';
-				const optResults = (ctx.elements.options ?? [])
-					.filter(Boolean)
-					.map((o: any) => extractTextWithImages(o));
+				const optResults = (ctx.elements.options ?? []).filter(Boolean).map((o: any) => extractTextWithImages(o));
 				return {
 					text: optResults.map((r: { text: string }) => r.text).join('\n'),
 					images: optResults.flatMap((r: { images: string[] }) => r.images)

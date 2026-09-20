@@ -52,7 +52,7 @@ type RequestList = {
 
 /** 后台进程，处理与PC软件端的通讯，以及其他后台操作 */
 export const BackgroundProject = Project.create({
-	name: '后台',
+	name: '其他',
 	domains: [],
 	scripts: {
 		elementRegister: new Script({
@@ -921,49 +921,57 @@ export const BackgroundProject = Project.create({
 			name: '📁 菜单管理',
 			hideInPanel: true,
 			matches: [['所有页面', /.*/]],
-			async onactive() {
-				const currentStudyScript = [
-					[CXProject.scripts.studyDispatcher, CXProject.scripts.study],
-					CXProject.scripts.work,
-					CXProject.scripts.autoRead,
-					ZHSProject.scripts['study-center'],
-					ZHSProject.scripts['work-center'],
-					[ICourseProject.scripts.dispatcher, ICourseProject.scripts.study],
-					ICourseProject.scripts.work,
-					[ZJYProject.scripts.dispatcher, ZJYProject.scripts.study],
-					ZJYProject.scripts.work,
-					IcveMoocProject.scripts.study,
-					IcveMoocProject.scripts.work,
-					YKTProject.scripts.ai,
-					YKTProject.scripts.v2_study
-				]
-					.map((m) => {
-						const url = window.location.href;
-
-						const data = {
-							matches: Array.isArray(m) ? m[0].matches : m.matches,
-							target: Array.isArray(m) ? m[1] : m
-						};
-
-						if (
-							data.matches.some((regexp) => {
-								const r = Array.isArray(regexp) ? regexp[1] : regexp;
-								return typeof r === 'string' ? url.includes(r) : r.test(url);
-							})
-						) {
-							return data.target;
-						}
-
-						return undefined;
-					})
-					.find((m) => m !== undefined);
-
+			async oncomplete() {
 				// 注册快捷菜单
 				await $menu('🏠', { scriptPanelLink: CommonProject.scripts.guide });
-				if (currentStudyScript) await $menu('🖥️', { scriptPanelLink: currentStudyScript });
 				await $menu('🔎', { scriptPanelLink: CommonProject.scripts.workResults });
 				await $menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
 				await $menu('📄', { scriptPanelLink: BackgroundProject.scripts.console });
+
+				setTimeout(async () => {
+					const currentStudyScript = [
+						[CXProject.scripts.studyDispatcher, CXProject.scripts.study],
+						CXProject.scripts.work,
+						CXProject.scripts.autoRead,
+						ZHSProject.scripts['study-center'],
+						ZHSProject.scripts['work-center'],
+						[ICourseProject.scripts.dispatcher, ICourseProject.scripts.study],
+						ICourseProject.scripts.work,
+						[ZJYProject.scripts.dispatcher, ZJYProject.scripts.study],
+						ZJYProject.scripts.work,
+						IcveMoocProject.scripts.study,
+						IcveMoocProject.scripts.work,
+						YKTProject.scripts.ai,
+						YKTProject.scripts.v2_study
+					]
+						.map((m) => {
+							const url = window.location.href;
+
+							const data = {
+								matches: Array.isArray(m) ? m[0].matches : m.matches,
+								target: Array.isArray(m) ? m[1] : m
+							};
+
+							if (
+								data.matches.some((regexp) => {
+									const r = Array.isArray(regexp) ? regexp[1] : regexp;
+									return typeof r === 'string' ? url.includes(r) : r.test(url);
+								})
+							) {
+								return data.target;
+							}
+
+							return undefined;
+						})
+						.find((m) => m !== undefined);
+
+					if (currentStudyScript) {
+						// 注册当前学习脚本的快捷菜单
+						await $menu('🖥️', { scriptPanelLink: currentStudyScript });
+						// 置顶面板
+						CommonProject.scripts.render.methods.pin(currentStudyScript);
+					}
+				}, 3000);
 			}
 		})
 	}

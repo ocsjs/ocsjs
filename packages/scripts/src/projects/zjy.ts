@@ -207,9 +207,6 @@ export const ZJYProject = Project.create({
 						state.studyingId = id;
 						state.studying = true;
 
-						// 置顶页面
-						CommonProject.scripts.render.methods.pin(this);
-
 						this.onConfigChange('volume', (val) => {
 							if (state.media) {
 								state.media.volume = parseFloat(val.toString());
