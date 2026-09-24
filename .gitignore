@@ -147,5 +147,5 @@ dist/
 # 测试生成的图片输出
 tests/image/
 
-# 项目计划文档（仅本地保存，不提交）
-.codebuddy/plans/
+# 开发工具 
+.codebuddy/

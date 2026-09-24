@@ -4,7 +4,6 @@ import {
 	OCSWorker,
 	$,
 	StringUtils,
-	request,
 	createDefaultQuestionResolver,
 	DefaultWork,
 	splitAnswer,
@@ -12,6 +11,7 @@ import {
 	domSearchAll,
 	SearchInformation
 } from '@ocsjs/core';
+import { crackFont, collectChars, decryptElements, extractFontFromStyle } from '../utils/font-decrypt';
 import { $modal, h, $store, MessageElement, Project, Script, $el, $gm, $$el, $ui, cors, $message } from 'easy-us';
 
 import { CommonProject } from './common';
@@ -24,9 +24,6 @@ import {
 	removeRedundantWords,
 	simplifyWorkResult
 } from '../utils/work';
-import md5 from 'md5';
-// @ts-ignore
-import Typr from 'typr.js';
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
@@ -35,17 +32,14 @@ import { waitForElement, waitForMedia } from '../utils/study';
 // @ts-ignore
 let top: Window = globalThis.top;
 
-try {
-	/**
-	 *
-	 *  将繁体字映射载入内存。
-	 *  为什么不存 localStorage 和 GM_setValue
-	 *  localStorage: 存在被检测风险，谁都能访问
-	 *  GM_setValue: 文件太大影响I/O速度
-	 */
-	// @ts-ignore
-	top.typrMapping = top.typrMapping || undefined;
+/**
+ * 超星 font-cxsecret 解密用的参考特征表（FRB2 位打包格式，wght 350/400 字重特征）。
+ * 由官方 Source Han Sans Normal 字重离线生成（生成脚本见 .codebuddy/font_analysis/），
+ * 与平台加密方式无关，无需随超星改字体而更新。
+ */
+const CX_SECRET_REF_TABLE_URL = 'https://cdn.ocsjs.com/resources/font/font_ref_cx.bin';
 
+try {
 	// @ts-ignore 任务点
 	top.jobs = top.jobs || [];
 
@@ -758,8 +752,8 @@ export const CXProject = Project.create({
 			configs: {
 				notes: {
 					defaultValue:
-						createSteps(['进入课程', '开启复习模式，并关闭自动下一章', '课程完成后手动切换'])
-							.outerHTML + $ui.notes(['⚠️ 如果由脚本进行自动跳转会出现乱跳转的可能，请手动切换课程。']).outerHTML
+						createSteps(['进入课程', '开启复习模式，并关闭自动下一章', '课程完成后手动切换']).outerHTML +
+						$ui.notes(['⚠️ 如果由脚本进行自动跳转会出现乱跳转的可能，请手动切换课程。']).outerHTML
 				}
 			},
 			oncomplete(...args) {
@@ -1020,94 +1014,50 @@ function workOrExam(
 }
 
 /**
- * 繁体字识别-字典匹配
+ * 加密文字识别（字形置换解密）
+ *
+ * 超星 font-cxsecret 加密原理：页面内嵌 base64 字体（SourceHanSansCN-Normal 子集），
+ * 字体中码点 X 的字形轮廓实际画的是另一个字，浏览器渲染正常但 HTML 文本是乱码。
+ *
+ * 本实现使用"位图特征匹配"解密（utils/font-decrypt 框架）：
+ * 渲染密文字 -> 与官方原版字体的预计算特征表做最近邻匹配 -> 还原真实字符。
+ * 相比旧的 typr.js 路径哈希方案，优势是抗"轮廓扰动"（新版 cx 字体的撇捺位移），
+ * 特征表由官方字体一次生成，无需随平台改字体而更新维护。
+ *
+ * @see 算法详解见 utils/font-decrypt/bitmap.ts 文件头注释
  * @see 参考 https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
  */
 async function mappingRecognize(doc: Document = document) {
-	let typrMapping = Object.create({});
-	try {
-		// @ts-ignore
-		top.typrMapping = top.typrMapping || (await loadTyprMapping());
-		// @ts-ignore
-		typrMapping = top.typrMapping;
-	} catch {
-		// 超星考试可能嵌套其他平台中，所以会存在跨域，这里需要处理一下跨域情况，如果是跨域直接在当前页面加载字库
-		typrMapping = await loadTyprMapping();
+	// 从 @font-face 的 data URI 中提取加密字体
+	const fontBuffer = extractFontFromStyle(doc, 'font-cxsecret');
+	if (!fontBuffer) {
+		$console.log('未检测到加密文字。');
+		return;
+	}
+	const fonts = CXAnalyses.getSecretFont(doc);
+	if (fonts.length === 0) {
+		return;
 	}
 
-	/** 判断是否有繁体字 */
-	const fontFaceEl = Array.from(doc.head.querySelectorAll('style')).find((style) =>
-		style.textContent?.includes('font-cxsecret')
-	);
-
-	const base64ToUint8Array = (base64: string) => {
-		const data = window.atob(base64);
-		const buffer = new Uint8Array(data.length);
-		for (let i = 0; i < data.length; ++i) {
-			buffer[i] = data.charCodeAt(i);
-		}
-		return buffer;
-	};
-
-	const fontMap = typrMapping;
-	if (fontFaceEl && Object.keys(fontMap).length > 0) {
-		// 解析font-cxsecret字体
-		const font = fontFaceEl.textContent?.match(/base64,([\w\W]+?)'/)?.[1];
-
-		if (font) {
-			$console.log('正在识别繁体字');
-
-			const code = Typr.parse(base64ToUint8Array(font));
-
-			// 匹配解密字体
-			const match: any = {};
-			for (let i = 19968; i < 40870; i++) {
-				// 中文[19968, 40869]
-				const Glyph = Typr.U.codeToGlyph(code, i);
-				if (!Glyph) continue;
-				const path = Typr.U.glyphToPath(code, Glyph);
-				const hex = md5(JSON.stringify(path)).slice(24); // 8位即可区分
-				match[i.toString()] = fontMap[hex];
-			}
-			const fonts = CXAnalyses.getSecretFont(doc);
-			// 替换加密字体
-			fonts.forEach((el, index) => {
-				let html = el.innerHTML;
-				for (const key in match) {
-					const word = String.fromCharCode(parseInt(key));
-					const value = String.fromCharCode(match[key]);
-
-					// 如果相同，则不需要替换
-					if (word === value) {
-						continue;
-					}
-
-					while (html.indexOf(word) !== -1) {
-						html = html.replace(word, value);
-					}
-				}
-
-				el.innerHTML = html;
-				el.classList.remove('font-cxsecret'); // 移除字体加密
-			});
-
-			$console.log('识别繁体字完成。');
-		} else {
-			$console.log('未检测到繁体字。');
-		}
-	}
-}
-
-async function loadTyprMapping() {
+	$message.info('正在识别加密文字（位图特征匹配）');
+	const t = Date.now();
 	try {
-		$console.log('正在加载繁体字库。');
-		return await request('https://cdn.ocsjs.com/resources/font/table.json', {
-			type: 'GM_xmlhttpRequest',
-			method: 'get',
-			responseType: 'json'
+		// 只破解页面实际出现的字符（通常几十个），避免全字表扫描
+		const { map, details } = await crackFont(fontBuffer, collectChars(fonts), {
+			refTableUrl: CX_SECRET_REF_TABLE_URL,
+			onProgress: (done, total) => console.log(`加密文字识别中 ${done}/${total}`)
 		});
+		const lowMargin = details.filter((d) => d.margin < 0.3);
+		if (lowMargin.length > 0) {
+			const msg = `有 ${lowMargin.length} 个字符识别置信度较低，可能存在误差`;
+			$console.warn(msg);
+			console.log(msg, lowMargin);
+		}
+		decryptElements(fonts, map);
+		fonts.forEach((el) => el.classList.remove('font-cxsecret')); // 移除字体加密
+		$message.info('识别加密文字完成，耗时 ' + ((Date.now() - t) / 1000).toFixed(1) + ' 秒');
 	} catch (err) {
-		$console.error('载繁体字库加载失败，请刷新页面重试：', String(err));
+		$console.error('加密文字识别失败：', String(err));
 	}
 }
 

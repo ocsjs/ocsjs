@@ -1,4 +1,4 @@
-import { $, CommonEventEmitter } from 'easy-us';
+import { $, $message, CommonEventEmitter } from 'easy-us';
 import { domSearchAll } from '../utils/dom';
 import {
 	CustomWorkOptions,
@@ -29,9 +29,71 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 	isStop = false;
 	totalQuestionCount = 0;
 
+	/** 元素观察器定时器（root 消失检测） */
+	private rootObserverTimer?: ReturnType<typeof setInterval>;
+	/** root 开始持续消失的时间戳（未消失为 undefined） */
+	private rootLostSince?: number;
+
 	constructor(opts: WorkOptions<E>) {
 		super();
 		this.opts = opts;
+	}
+
+	/**
+	 * 启动元素观察器（幂等）：root 元素从界面消失时自动关闭答题。
+	 *
+	 * 场景：location.hash 更新 / SPA 页面切换后，脚本沙盒不会被重置，
+	 * 答题程序仍在运行但操作的是已脱离文档的旧元素，此时必须自动关闭。
+	 *
+	 * 判定方式（间隔轮询）：
+	 * - root 为字符串选择器：document.querySelector(root) 是否存在
+	 * - root 为元素数组：每次检测重新读取数组内容（支持消费方原地刷新数组），
+	 *   任一元素 isConnected 即视为存活
+	 * 持续消失超过 lostTimeoutMs 才判定丢失，防止框架重渲染/正常切题时
+	 * 元素瞬时脱离文档导致的误判。
+	 */
+	private startRootObserver() {
+		const cfg = this.opts.rootObserver;
+		if (!cfg?.enabled || this.rootObserverTimer !== undefined) {
+			return;
+		}
+		const interval = cfg.checkIntervalMs ?? 1000;
+		const lostTimeout = cfg.lostTimeoutMs ?? 1000;
+		this.rootObserverTimer = setInterval(() => {
+			if (this.isClose) {
+				this.stopRootObserver();
+				return;
+			}
+			const alive =
+				typeof this.opts.root === 'string'
+					? !!document.querySelector(this.opts.root)
+					: this.opts.root.some((el) => el.isConnected);
+			if (alive) {
+				this.rootLostSince = undefined;
+				return;
+			}
+			this.rootLostSince ??= Date.now();
+			if (Date.now() - this.rootLostSince >= lostTimeout) {
+				this.stopRootObserver();
+				cfg.onRootLost?.();
+				if (!this.isClose) {
+					$message.warn({
+						content: '⚠️ 题目元素已从页面消失（页面可能已跳转或刷新），答题程序已自动关闭。',
+						duration: 0
+					});
+				}
+				this.emit('close');
+			}
+		}, interval);
+	}
+
+	/** 停止元素观察器 */
+	private stopRootObserver() {
+		if (this.rootObserverTimer !== undefined) {
+			clearInterval(this.rootObserverTimer);
+			this.rootObserverTimer = undefined;
+		}
+		this.rootLostSince = undefined;
 	}
 
 	/** 启动答题器  */
@@ -41,7 +103,11 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 
 		this.once('close', () => {
 			this.isClose = true;
+			this.stopRootObserver();
 		});
+
+		// 启动元素观察器：root 消失时自动关闭（幂等，重复 doWork 不会重复创建）
+		this.startRootObserver();
 
 		this.on('stop', () => {
 			this.isStop = true;
