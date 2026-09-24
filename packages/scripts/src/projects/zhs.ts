@@ -3201,6 +3201,16 @@ function fusioncourseWork(
 
 	const worker = new OCSWorker({
 		root: '.exam-item',
+		// 元素观察器：页面 hash 跳转/任务点切换导致作业 iframe 重建、
+		// 题目容器脱离文档时，自动关闭答题并警告（3 秒阈值覆盖正常切题重渲染）
+		rootObserver: {
+			enabled: true,
+			onRootLost: () => {
+				// 关闭答题的同时清空搜索结果面板与计数，避免残留过期结果
+				CommonProject.scripts.workResults.methods.clearResults();
+				CommonProject.scripts.workResults.methods.refreshState();
+			}
+		},
 		elements: {
 			type: '.quest-type',
 			title: '.quest-title .option-name',

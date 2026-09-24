@@ -197,6 +197,23 @@ export type AnswererType<E> = (
 ) => SearchInformation[] | Promise<SearchInformation[]>;
 
 /**
+ * 元素观察器配置：root 元素从界面消失时自动关闭答题器
+ */
+export interface RootObserverOptions {
+	/** 是否启用（默认 false，不传配置则完全不启用，向后兼容） */
+	enabled?: boolean;
+	/** 检测间隔（毫秒），默认 1000 */
+	checkIntervalMs?: number;
+	/**
+	 * root 元素持续消失多少毫秒后判定为丢失（默认 3000）。
+	 * 必须大于框架重渲染/正常切题的元素重建时间，防止瞬时脱离误判。
+	 */
+	lostTimeoutMs?: number;
+	/** 判定丢失时的回调（在关闭答题器之前触发，可用于自定义提示） */
+	onRootLost?: () => void;
+}
+
+/**
  * 答题器参数
  */
 export interface WorkOptions<E extends RawElements> {
@@ -212,6 +229,11 @@ export interface WorkOptions<E extends RawElements> {
 	thread?: number;
 	/** 分隔符 */
 	answerSeparators?: string[];
+	/**
+	 * 元素观察器：root 元素从界面消失（如 location.hash 跳转、SPA 页面切换，
+	 * 但脚本沙盒未重置、答题程序仍在运行）时，自动触发 close 关闭答题并弹出警告。
+	 */
+	rootObserver?: RootObserverOptions;
 	/** 当元素被搜索到 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>, root: HTMLElement) => void | Promise<void>;
 	/** 监听搜题结果 */
