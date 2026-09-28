@@ -51,7 +51,6 @@ export class SearchInfosElement extends HTMLElement {
 			h(
 				'div',
 				[
-					...(type_label ? [h('span', { className: 'search-result-question-type' }, type_label)] : []),
 					h('div', { className: 'title-content' }, [
 						...question
 							.split('\n')
@@ -59,7 +58,11 @@ export class SearchInfosElement extends HTMLElement {
 							.filter(Boolean)
 							.map((l) => h('div', { innerHTML: l }))
 					]),
-					createQuestionTitleExtra(this.question)
+					// 题型标签放到操作行内"复制"按钮左侧，避免独占一行高度
+					createQuestionTitleExtra(
+						this.question,
+						...(type_label ? [h('span', { className: 'search-result-question-type' }, type_label)] : [])
+					)
 				],
 				(div) => {
 					div.className = 'search-info-title';
