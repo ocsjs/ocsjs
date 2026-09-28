@@ -169,24 +169,52 @@ window.addEventListener('beforeunload', () => {
  * 创建关于问题题目的拓展功能按钮，包括复制和百度一下
  * @param question 问题
  */
-export function createQuestionTitleExtra(question: string) {
-	const space = $ui.space(
-		[
-			$ui.copy('复制', question),
-			h('span', { className: 'question-title-extra-btn', innerText: '🌏百度一下' }, (btn) => {
-				btn.onclick = () => {
-					popupWin?.close();
-					popupWin = $.createCenteredPopupWindow(`https://www.baidu.com/s?wd=${question}`, '百度搜索', {
-						width: 1000,
-						height: 800,
-						resizable: true,
-						scrollbars: true
-					});
-				};
-			})
-		],
-		{ x: 4 }
-	);
+/**
+ * 题目区域的额外操作行（右对齐，按钮统一为项目通用按钮样式）。
+ * @param question 题目文本（复制/搜索用）
+ * @param left 需要放在"复制"按钮左侧的元素（如题型标签），避免独占一行高度
+ */
+export function createQuestionTitleExtra(question: string, ...left: HTMLElement[]) {
+	/**
+	 * 通用次要按钮样式 + 原有紧凑尺寸。
+	 * 注意必须用 flex 居中而非 line-height：appearance:none 后 input 文本垂直位置由字体
+	 * metrics 决定（line-height:normal 随字体变化），不同页面字体下文本会上下偏移；
+	 * line-height:1 + flex 居中与字体无关，且避免 emoji 行盒撑高按钮。
+	 */
+	const btnAttrs = {
+		className: 'base-style-button-secondary',
+		style: {
+			padding: '0 4px',
+			fontSize: '12px',
+			height: '20px',
+			lineHeight: '1',
+			display: 'inline-flex',
+			alignItems: 'center',
+			justifyContent: 'center'
+		}
+	};
+	/** 复制题目按钮（点击后短暂显示反馈） */
+	const copyBtn = $ui.button('复制', btnAttrs);
+	copyBtn.onclick = () => {
+		navigator.clipboard.writeText(question);
+		copyBtn.value = '已复制√';
+		setTimeout(() => {
+			copyBtn.value = '复制';
+		}, 500);
+	};
+	/** 百度搜题按钮 */
+	const baiduBtn = $ui.button('🌏百度一下', btnAttrs);
+	baiduBtn.onclick = () => {
+		popupWin?.close();
+		popupWin = $.createCenteredPopupWindow(`https://www.baidu.com/s?wd=${question}`, '百度搜索', {
+			width: 1000,
+			height: 800,
+			resizable: true,
+			scrollbars: true
+		});
+	};
+
+	const space = $ui.space([...left, copyBtn, baiduBtn], { x: 4 });
 	space.style.marginTop = '6px';
 	space.style.textAlign = 'right';
 	return h('div', { style: { textAlign: 'right' } }, [space]);
