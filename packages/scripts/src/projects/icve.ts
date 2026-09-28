@@ -68,7 +68,8 @@ export const IcveMoocProject = Project.create({
 				['个人首页', 'icve.com.cn/studycenter'],
 				['学习页面', 'icve.com.cn/study/directory'],
 				['MOOC学院-个人首页', 'user.icve.com.cn'],
-				['MOOC学院-首页', 'mooc.icve.com.cn']
+				['MOOC学院-首页', 'mooc.icve.com.cn'],
+				['AI课程首页', 'ai.icve.com.cn/app/my-excellent-home']
 			],
 			namespace: 'icve.guide',
 			configs: {
@@ -466,6 +467,7 @@ export const IcveMoocProject = Project.create({
 			namespace: 'icve.ai.study',
 			matches: [
 				['课程页面', 'ai.icve.com.cn/app/coursedetails-excellent'],
+				['课程页面', 'ai.icve.com.cn/app/my-excellent-home'],
 				['学习页面', 'ai.icve.com.cn/excellent-study']
 			],
 			configs: {
@@ -508,6 +510,10 @@ export const IcveMoocProject = Project.create({
 				}
 			},
 			async oncomplete(type) {
+				if (document.location.href.includes('ai.icve.com.cn/app/my-excellent-home')) {
+					return $message.info('点击任意课程开始自动学习');
+				}
+
 				// 置顶页面
 				BackgroundProject.scripts.render.methods.pin(this);
 
@@ -574,7 +580,7 @@ export const IcveMoocProject = Project.create({
 					});
 
 					// 选择未展开的章节
-					const titles = Array.from(document.querySelectorAll<HTMLElement>('.one-title')).filter(
+					const not_scrolled_titles = Array.from(document.querySelectorAll<HTMLElement>('.one-title')).filter(
 						(el) => !el.querySelector('.zhankai')
 					);
 					const waitForChapterOpen = (title: HTMLElement) => {
@@ -597,12 +603,12 @@ export const IcveMoocProject = Project.create({
 							}, 10 * 1000);
 						});
 					};
-					for (const title of titles) {
+					for (const nst of not_scrolled_titles) {
 						try {
-							title.querySelector<HTMLElement>('.jiantou')?.click();
-							title.focus();
-							title.scrollIntoView({ behavior: 'smooth', block: 'center' });
-							await waitForChapterOpen(title);
+							nst.querySelector<HTMLElement>('.jiantou')?.click();
+							nst.focus();
+							nst.scrollIntoView({ behavior: 'smooth', block: 'center' });
+							await waitForChapterOpen(nst);
 							await $.sleep(1000);
 						} catch (e) {
 							$console.error('打开章节失败', e);
