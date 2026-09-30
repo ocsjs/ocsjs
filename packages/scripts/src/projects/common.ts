@@ -1622,6 +1622,14 @@ const createGuide = () => {
 	]);
 };
 
+/** 按题型区分"答案无法作答"的提示文案 */
+const typeMismatchTexts: Record<string, string> = {
+	single: '⚠️ 给出的答案和选项不匹配，可能是题库答案错误',
+	multiple: '⚠️ 给出的答案和选项不匹配，可能是题库答案错误',
+	judgement: '⚠️ 无法选择，可能是题库答案错误',
+	completion: '⚠️ 给出的答案无法填入，可能是题库答案错误或者格式错误'
+};
+
 function createSearchResultAlertElement(result: SimplifyWorkResult) {
 	let info: HTMLElement | null = null;
 	let err = result.error || result.searchInfos.find((i) => i.error)?.error;
@@ -1645,11 +1653,12 @@ function createSearchResultAlertElement(result: SimplifyWorkResult) {
 	} else if (result.searchInfos.length === 0) {
 		info = h('div', { className: 'result-info no-answer' }, '❌ 题库没搜索到答案');
 	} else {
+		const mismatchText = (result.type && typeMismatchTexts[result.type]) || typeMismatchTexts.single;
 		info = result.finish
 			? null
 			: result.resolved === false
 			? h('div', { className: 'result-info unresolved' }, '等待顺序答题中... ⏱️')
-			: h('div', { className: 'result-info warn' }, '⚠️ 给出的答案和选项不匹配，可能是题库答案错误');
+			: h('div', { className: 'result-info warn' }, mismatchText);
 	}
 
 	return h('div', { className: 'alert-info-wrapper' }, [info ?? h('div')]);
