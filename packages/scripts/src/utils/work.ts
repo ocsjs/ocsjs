@@ -25,7 +25,41 @@ export { buildAnswererEnv, createImageSuggestion, imageToBase64, isAnswererWrapp
 export type { ImageSuggestionResult };
 // extractTextWithImages / ExtractTextOptions 已在下方直接 export
 
-export let globalControlPanel: HTMLElement | null = null;
+/** commonWork 单次调用的可变状态（render 处理器通过绑定引用读取，重复调用时替换引用避免串台） */
+interface CommonWorkState {
+	worker: CommonEventEmitter<WorkerEvents> | undefined;
+	/** 是否已经按下了开始按钮 */
+	startBtnPressed: boolean;
+	/** 是否题库配置检查失败 */
+	checkFailed: boolean;
+	/** 是否正在运行 */
+	running: boolean;
+	/** 当前控制面板元素（start 后为 [暂停|重新答题] 运行态面板） */
+	controlPanel: HTMLElement | null;
+	/** 是否暂停中（提升到 state：面板重建后按钮状态与 worker 实际状态保持一致） */
+	paused: boolean;
+	/** 嵌入脚本面板的搜索结果区域（复用避免 createWorkResultsPanel 监听器累积） */
+	resultPanel: HTMLElement | null;
+}
+
+/**
+ * 各脚本的 render 处理器绑定。
+ * 每个脚本仅注册一次处理器；重复调用 commonWork 时仅替换执行内容引用，
+ * 避免处理器无限叠加、旧闭包持有失效状态互相覆盖面板。
+ */
+const commonWorkRenderBindings = new WeakMap<Script, { current: () => void }>();
+
+/** 为脚本注册一次性的 render 处理器；已注册过时更新其执行内容 */
+function bindCommonWorkRender(script: Script, render: () => void) {
+	const binding = commonWorkRenderBindings.get(script);
+	if (binding) {
+		binding.current = render;
+		return;
+	}
+	const created = { current: render };
+	commonWorkRenderBindings.set(script, created);
+	script.on('render', () => created.current());
+}
 
 /**
  * 通用作业考试工具方法
@@ -34,7 +68,6 @@ export function commonWork(
 	script: Script,
 	options: {
 		start_delay_seconds?: number;
-		enable_control_panel?: boolean;
 		workerProvider: (opts: CommonWorkOptions) => CommonEventEmitter<WorkerEvents> | undefined;
 		beforeRunning?: () => void | Promise<void>;
 		onRestart?: () => void | Promise<void>;
@@ -43,28 +76,32 @@ export function commonWork(
 ) {
 	// 置顶当前脚本
 	BackgroundProject.scripts.render.methods.pin(script);
-	let worker: CommonEventEmitter<WorkerEvents> | undefined;
 
-	/**
-	 * 是否已经按下了开始按钮
-	 */
-	let startBtnPressed = false;
-	/**
-	 * 是否检查失败
-	 */
-	let checkFailed = false;
-
-	/**
-	 * 是否正在运行
-	 */
-	let running = false;
+	/** 本次调用的可变状态（实例隔离，不与其它 commonWork 调用共享） */
+	const state: CommonWorkState = {
+		worker: undefined,
+		startBtnPressed: false,
+		checkFailed: false,
+		running: false,
+		controlPanel: null,
+		paused: false,
+		resultPanel: null
+	};
 
 	/** 显示答题控制按钮 */
 	const createWorkControlPanel = () => {
 		const { controlBtn, restartBtn, startBtn } = createWorkerControl({
-			workerProvider: () => worker,
+			workerProvider: () => state.worker,
+			paused: {
+				get value() {
+					return state.paused;
+				},
+				set value(v) {
+					state.paused = v;
+				}
+			},
 			onStart: async () => {
-				startBtnPressed = true;
+				state.startBtnPressed = true;
 				if (checkMessage instanceof MessageElement) {
 					checkMessage.remove();
 				}
@@ -72,7 +109,9 @@ export function commonWork(
 				start();
 			},
 			onRestart: async () => {
-				worker?.emit('close');
+				state.worker?.emit('close');
+				// 允许 start() 重入（start 内有 running 防重入守卫）
+				state.running = false;
 				await options.onRestart?.();
 				start();
 			}
@@ -87,46 +126,52 @@ export function commonWork(
 
 		const container = h(
 			'div',
-			{ style: { marginTop: '12px', display: 'flex' } },
-			running ? [controlBtn, restartBtn] : [startBtn]
+			{ className: 'work-control-panel' },
+			state.running ? [controlBtn, restartBtn] : [startBtn]
 		);
 
-		globalControlPanel = container;
+		state.controlPanel = container;
 
 		return { container, startBtn, restartBtn, controlBtn };
 	};
 	const workResultPanel = () => CommonProject.scripts.workResults.methods.createWorkResultsPanel();
 
-	const sync_script = [script];
-	if (options.enable_control_panel) {
-		sync_script.push(CommonProject.scripts.workResults);
-	}
+	/** 渲染面板内容（render 事件与 start() 共用，保证两处内容一致） */
+	const renderPanelBody = () => {
+		let gotoSettingsBtnContainer: string | HTMLElement = '';
+		if (state.checkFailed) {
+			const gotoSettingsBtn = $ui.button('👉 前往设置题库配置', {
+				className: 'base-style-button',
+				style: { flex: '1', padding: '4px' }
+			});
+			gotoSettingsBtn.onclick = () => {
+				BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.settings);
+			};
+			gotoSettingsBtnContainer = h('div', { style: { display: 'flex' } }, [gotoSettingsBtn]);
+		}
 
-	for (const script of sync_script) {
-		script.on('render', () => {
-			let gotoSettingsBtnContainer: string | HTMLElement = '';
-			if (checkFailed) {
-				const gotoSettingsBtn = $ui.button('👉 前往设置题库配置', {
-					className: 'base-style-button',
-					style: { flex: '1', padding: '4px' }
-				});
-				gotoSettingsBtn.style.flex = '1';
-				gotoSettingsBtn.style.padding = '4px';
-				gotoSettingsBtn.onclick = () => {
-					BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.settings);
-				};
-				gotoSettingsBtnContainer = h('div', { style: { display: 'flex' } }, [gotoSettingsBtn]);
-			}
+		// 搜索结果区域复用：仅当被框架重建（detached）后才新建，
+		// 避免 createWorkResultsPanel 每次调用都累积一组 config/store 监听器
+		if (!state.resultPanel?.isConnected) {
+			state.resultPanel = workResultPanel();
+		}
 
-			script.panel?.body?.replaceChildren(
-				h('div', { style: { marginTop: '12px' } }, [
-					gotoSettingsBtnContainer,
-					...(options.enable_control_panel ? [globalControlPanel || createWorkControlPanel().container] : []),
-					workResultPanel()
-				])
-			);
-		});
-	}
+		script.panel?.body?.replaceChildren(
+			h('div', { style: { marginTop: '12px' } }, [
+				h('hr'),
+				gotoSettingsBtnContainer,
+				// 控制面板始终渲染：未开始时为"开始答题"按钮；
+				// start() 后复用 state.controlPanel（暂停 | 重新答题），re-render 不会丢失
+				state.controlPanel || createWorkControlPanel().container,
+				state.resultPanel
+			])
+		);
+	};
+
+	// 控制区域与搜索结果区域只嵌入当前（学校）脚本面板；
+	// CommonProject 的"搜索结果"脚本面板保持其自身 onrender 的纯结果区，不显示控制按钮，
+	// 也避免同一个 DOM 元素被两个面板互相"偷走"导致状态不同步
+	bindCommonWorkRender(script, renderPanelBody);
 
 	const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
 
@@ -134,34 +179,64 @@ export function commonWork(
 	 * 检查题库是否配置，并询问是否开始答题
 	 */
 	let checkMessage = workPreCheckMessage({
-		onrun: () => startBtnPressed === false && start(),
+		onrun: () => state.startBtnPressed === false && start(),
 		onclose: (_, closedMsg) => (checkMessage = closedMsg),
 		onNoAnswererWrappers: () => {
-			checkFailed = true;
+			state.checkFailed = true;
 		},
 		...workOptions,
 		start_delay_seconds: options.start_delay_seconds
 	});
 
 	const start = async () => {
+		// 防重入：运行中重复触发（如连点重新开始）直接忽略
+		if (state.running) {
+			return;
+		}
 		await options.beforeRunning?.();
-		running = true;
-		worker = options.workerProvider(workOptions);
+		state.running = true;
+		state.worker = options.workerProvider(workOptions);
 
-		if (worker) {
-			options.onWorkerCreated?.(worker);
+		if (state.worker) {
+			options.onWorkerCreated?.(state.worker);
 		}
 
-		const { container, controlBtn } = createWorkControlPanel();
-		// 更新状态
-		script.panel?.body?.replaceChildren(container, workResultPanel());
+		const { controlBtn } = createWorkControlPanel();
+		// 更新面板为运行态（与 render 事件共用同一渲染逻辑）
+		renderPanelBody();
 
-		worker?.once('done', () => {
-			running = false;
-			globalControlPanel = null;
+		if (state.worker) {
+			// 同步 worker 工作状态到搜索结果面板：
+			// 动态答题器的"清空搜索结果"按钮在工作时隐藏，停止（结束/关闭/暂停）时显示
+			const { setWorkerWorking } = CommonProject.scripts.workResults.methods;
+			setWorkerWorking(true);
+			state.worker.on('stop', () => setWorkerWorking(false));
+			state.worker.on('continuate', () => setWorkerWorking(true));
+			state.worker.once('close', () => setWorkerWorking(false));
+		}
+
+		state.worker?.once('done', () => {
+			state.running = false;
+			state.controlPanel = null;
+			state.paused = false;
 			controlBtn.disabled = true;
+			CommonProject.scripts.workResults.methods.setWorkerWorking(false);
 		});
 	};
+}
+
+/**
+ * 动态答题器提示（一题一题动态作答的作业/考试）：
+ * 常驻提示用户在答题过程中不要手动切换题目，防止答题与搜索结果错乱；
+ * worker 完成（done）或被关闭（close）时自动移除。
+ */
+export function dynamicWorkTips(worker: CommonEventEmitter<WorkerEvents>) {
+	const msg = $message.warn({
+		content: '⚠️ 正在逐题自动答题，过程中请勿手动切换题目，防止答题与搜索结果错乱。',
+		duration: 0
+	});
+	worker.once('done', () => msg?.remove());
+	worker.once('close', () => msg?.remove());
 }
 
 /**
@@ -171,28 +246,31 @@ export function createWorkerControl(options: {
 	workerProvider: () => CommonEventEmitter<WorkerEvents> | undefined;
 	onStart: () => void;
 	onRestart: () => void;
+	/** 暂停状态（外部托管）：面板重建后按钮状态与 worker 实际状态保持一致；不传则为内部状态 */
+	paused?: { value: boolean };
 }) {
-	let stop = false;
 	let stopMessage: MessageElement | undefined;
+	const paused = options.paused ?? { value: false };
 	const startBtn = $ui.button('▶️开始答题');
 	const restartBtn = $ui.button('🔃重新答题');
-	const controlBtn = $ui.button('⏸暂停');
+	const controlBtn = $ui.button(paused.value ? '▶️继续' : '⏸暂停');
 
 	startBtn.onclick = () => {
 		startBtn.remove();
 		options.onStart();
 	};
 	restartBtn.onclick = () => {
-		// 重新答题时，清除暂停提示
+		// 重新答题时，清除暂停提示并重置暂停状态（新 worker 从非暂停开始）
 		stopMessage?.remove();
+		paused.value = false;
 		options.onRestart();
 	};
 	controlBtn.onclick = () => {
-		stop = !stop;
+		paused.value = !paused.value;
 		const worker = options.workerProvider();
-		worker?.emit?.(stop ? 'stop' : 'continuate');
-		controlBtn.value = stop ? '▶️继续' : '⏸️暂停';
-		if (stop) {
+		worker?.emit?.(paused.value ? 'stop' : 'continuate');
+		controlBtn.value = paused.value ? '▶️继续' : '⏸️暂停';
+		if (paused.value) {
 			stopMessage = $message.warn({ duration: 0, content: '暂停中...' });
 		} else {
 			stopMessage?.remove();
@@ -267,6 +345,7 @@ export function simplifyWorkResult(
 ): SimplifyWorkResult[] {
 	const res: SimplifyWorkResult[] = [];
 	let i = 0;
+	console.log('simplifyWorkResult', results);
 	for (const wr of results) {
 		const ques =
 			titleTransform?.(wr.ctx?.elements.title || [], i) ||
@@ -294,6 +373,20 @@ export function simplifyWorkResult(
 	}
 
 	return res;
+}
+
+/**
+ * 动态答题器结果 upsert：检测到题目即在结果面板占位（等待搜索中），
+ * 随后每次状态推进（等待答题中→已答题/失败）原地更新。
+ * 供动态流程（一题一题加载）的 onQuestionDetected 与 onResultsUpdate 共同调用，
+ * 解决全部流程结束后才显示结果、用户对过程无感知的问题。
+ */
+export function updateDynamicResult(
+	current: WorkResult<any>,
+	titleTransform?: (title: (HTMLElement | undefined)[], index: number) => string
+) {
+	const [item] = simplifyWorkResult([current], titleTransform);
+	return CommonProject.scripts.workResults.methods.upsertResult(item);
 }
 
 /**
@@ -343,7 +436,9 @@ export function createCommonAnswerer(options: {
 	answererWrappers: AnswererWrapper[];
 	period?: number;
 }) {
-	const normalize = (v: string | { text: string; images?: string[] } | undefined): { text: string; images?: string[] } => {
+	const normalize = (
+		v: string | { text: string; images?: string[] } | undefined
+	): { text: string; images?: string[] } => {
 		if (v == null) return { text: '' };
 		return typeof v === 'string' ? { text: v } : v;
 	};

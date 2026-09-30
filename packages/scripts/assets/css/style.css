@@ -2211,3 +2211,7 @@ modal-element .modal-cancel-button:hover {
   border-color: #2b67ff;
   color: #2b67ff;
 }
+.work-control-panel {
+  display: flex;
+  margin: 12px 0px;
+}

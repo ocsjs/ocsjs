@@ -170,6 +170,8 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				resolved: false,
 				ctx: ctx
 			});
+			// 题目检测钩子：早于搜题，供结果面板提前展示"等待搜索中"占位
+			await this.opts.onQuestionDetected?.(results[results.length - 1], results);
 		}
 
 		if (options?.enable_debug) {

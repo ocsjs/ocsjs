@@ -22,7 +22,8 @@ import {
 	createCommonAnswerer,
 	extractTextWithImages,
 	removeRedundantWords,
-	simplifyWorkResult
+	simplifyWorkResult,
+	updateDynamicResult
 } from '../utils/work';
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
@@ -447,8 +448,7 @@ export const CXProject = Project.create({
 			async oncomplete() {
 				const isExam = /\/exam\/preview/.test(location.href);
 				commonWork(this, {
-					workerProvider: (opts) => workOrExam(isExam ? 'exam' : 'work', { ...opts, preview_mode: true }),
-					enable_control_panel: true
+					workerProvider: (opts) => workOrExam(isExam ? 'exam' : 'work', { ...opts, preview_mode: true })
 				});
 			}
 		}),
@@ -594,7 +594,7 @@ export const CXProject = Project.create({
 				// 2023/9月 新增
 				['新版考试页面2', 'mooc-ans/exam/test/reVersionTestStartNew']
 			],
-			hideInPanel: true,
+			configs: { notes: workNotes },
 			oncomplete() {
 				if ($gm.unsafeWindow.document.querySelector('.mark_info')?.textContent?.includes('不允许整卷预览')) {
 					$message.warn({
@@ -608,10 +608,10 @@ export const CXProject = Project.create({
 					});
 					const isExam = /\/exam\/test/.test(location.href);
 					const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
-					commonWork(CXProject.scripts.work, {
+					BackgroundProject.scripts.render.methods.pin(this);
+					commonWork(this, {
 						// 因为超星是每个题目一个页面，这里加快开始速度，避免等待，默认5秒，这里加快为默认3秒间隔
 						start_delay_seconds: workOptions.period,
-						enable_control_panel: true,
 						workerProvider: (opts) => workOrExam(isExam ? 'exam' : 'work', { ...opts, preview_mode: false, thread: 1 })
 					});
 					return;
@@ -953,14 +953,20 @@ function workOrExam(
 			return { finish: false };
 		},
 
+		/** 检测到题目（非预览模式：在结果面板提前占位"等待搜索中"，预览模式由 setResults 全量展示无需占位） */
+		onQuestionDetected(current) {
+			if (preview_mode) {
+				return;
+			}
+			updateDynamicResult(current, workOrExamQuestionTitleText);
+		},
+
 		/** 完成答题后 */
 		async onResultsUpdate(current, _, res) {
-			// 非预览模式，直接追加，想要清楚只能手动清空
+			// 非预览模式：逐题更新（等待搜索中→等待答题中→已答题/失败），想要清空只能手动清空
 			if (!preview_mode) {
+				updateDynamicResult(current, workOrExamQuestionTitleText);
 				if (current.result?.finish) {
-					await CommonProject.scripts.workResults.methods.appendResults(
-						simplifyWorkResult(res, workOrExamQuestionTitleText)
-					);
 					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([current], workOrExamQuestionTitleText)
 					);
@@ -980,7 +986,7 @@ function workOrExam(
 
 	if (preview_mode) {
 		worker
-			.doWork()
+			.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug })
 			.then(() => {
 				$message.info({ content: '作业/考试完成，请自行检查后保存或提交。', duration: 0 });
 				worker.emit('done');
@@ -2057,7 +2063,7 @@ const JobRunner = {
 			}
 		});
 
-		const results = await worker.doWork();
+		const results = await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
 
 		const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;
 		$console.info(msg);

@@ -236,6 +236,12 @@ export interface WorkOptions<E extends RawElements> {
 	rootObserver?: RootObserverOptions;
 	/** 当元素被搜索到 */
 	onElementSearched?: (elements: SearchedElements<E, HTMLElement[]>, root: HTMLElement) => void | Promise<void>;
+	/**
+	 * 题目检测到（加入待答队列）时的回调，早于搜题与 onResultsUpdate。
+	 * 可用于在结果面板中提前展示占位（"等待搜索中"状态），
+	 * 解决动态答题器（一题一题加载）全部流程结束后才显示结果、用户无感知的问题。
+	 */
+	onQuestionDetected?: (currentResult: WorkResult<E>, res: WorkResult<E>[]) => void | Promise<void>;
 	/** 监听搜题结果 */
 	onAnswerSearched?: (
 		searchInfo: SearchInformation,

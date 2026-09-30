@@ -7,7 +7,14 @@ import {
 	QuestionTypes
 } from '@ocsjs/core';
 import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 'easy-us';
-import { extractTextWithImages, commonWork, createCommonAnswerer, simplifyWorkResult } from '../utils/work';
+import {
+	extractTextWithImages,
+	commonWork,
+	createCommonAnswerer,
+	dynamicWorkTips,
+	simplifyWorkResult,
+	updateDynamicResult
+} from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
@@ -795,7 +802,6 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
-	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
 	let requestedCount = 0;
 	let resolvedCount = 0;
@@ -911,10 +917,14 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 		 * 因为校内课的考试和作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
+		// 检测到题目即在结果面板占位（等待搜索中），随后状态推进原地更新
+		onQuestionDetected(currentResult) {
+			updateDynamicResult(currentResult, titleTransform);
+		},
 		onResultsUpdate(currentResult) {
+			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
+			updateDynamicResult(currentResult, titleTransform);
 			if (currentResult.resolved) {
-				workResults.push(...simplifyWorkResult([currentResult], titleTransform));
-				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
 				requestedCount++;
 				resolvedCount++;
@@ -955,6 +965,7 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'icve';
 	})();
 
+	dynamicWorkTips(worker);
 	return worker;
 }
 
@@ -984,7 +995,6 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
 	const titleText = (titles: (HTMLElement | undefined)[]) => titleTransform(titles).text;
 
-	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
 	let requestedCount = 0;
 	let resolvedCount = 0;
@@ -1067,10 +1077,14 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 		 * 因为校内课的考试和作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
+		// 检测到题目即在结果面板占位（等待搜索中），随后状态推进原地更新
+		onQuestionDetected(currentResult) {
+			updateDynamicResult(currentResult, titleText);
+		},
 		onResultsUpdate(currentResult) {
+			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
+			updateDynamicResult(currentResult, titleText);
 			if (currentResult.resolved) {
-				workResults.push(...simplifyWorkResult([currentResult], titleText));
-				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
 				requestedCount++;
 				resolvedCount++;
@@ -1111,6 +1125,7 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'icve';
 	})();
 
+	dynamicWorkTips(worker);
 	return worker;
 }
 

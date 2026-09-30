@@ -22,9 +22,11 @@ import {
 import {
 	commonWork,
 	createCommonAnswerer,
+	dynamicWorkTips,
 	extractTextWithImages,
 	removeRedundantWords,
-	simplifyWorkResult
+	simplifyWorkResult,
+	updateDynamicResult
 } from '../utils/work';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
@@ -692,7 +694,7 @@ export const ZHSProject = Project.create({
 		 * 实际的学习逻辑仍由下方被 hideInPanel 的各个学习脚本处理。
 		 */
 		'study-center': new Script({
-			name: '🖥️ 学习设置',
+			name: '🖥️ 自动学习',
 			matches: [
 				['共享课学习页面', 'studyvideoh5.zhihuishu.com'],
 				['新共享课学习页面', 'studyplush5.zhihuishu.com'],
@@ -719,13 +721,13 @@ export const ZHSProject = Project.create({
 			}
 		}),
 		/**
-		 * 智慧树作业考试设置中心。
+		 * 智慧树作业考试中心。
 		 *
 		 * 作为所有作业/考试/掌握度脚本的唯一可见入口，集中展示统一的使用提示与作业考试配置。
 		 * 实际的答题逻辑仍由下方被 hideInPanel 的各个作业考试脚本处理。
 		 */
 		'work-center': new Script({
-			name: '📝 作业考试设置',
+			name: '📝 作业考试',
 			matches: [
 				['共享课作业页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/dohomework'],
 				['共享课考试页面', 'zhihuishu.com/stuExamWeb.html#/webExamList/doexamination'],
@@ -734,7 +736,9 @@ export const ZHSProject = Project.create({
 				['新形态课程-掌握提升页面', 'studentexamcomh5.zhihuishu.com/studentReviewTestOrExam'],
 				['新形态课程-AI助教掌握度', 'fusioncourseh5.zhihuishu.com/exam'],
 				['新形态课程-新AI助教掌握度', 'studywisdomh5.zhihuishu.com/exam'],
+				// ========== 新AI学伴掌握度 ==========
 				['新形态课程-新AI学伴掌握度', 'wisdom-mooc.zhihuishu.com/exam'],
+				['新形态课程-新AI学伴掌握度首页', 'wisdom-mooc.zhihuishu.com/study/analysis'],
 				['新形态课程-考试界面', 'examloop.zhihuishu.com/exam'],
 				['校内课作业页面', 'zhihuishu.com/atHomeworkExam/stu/homeworkQ/exerciseList'],
 				['校内课考试页面', 'zhihuishu.com/atHomeworkExam/stu/examQ/examexercise'],
@@ -749,6 +753,10 @@ export const ZHSProject = Project.create({
 				migrateZhsWorkConfigs();
 				// 置顶设置中心
 				BackgroundProject.scripts.render.methods.pin(this);
+
+				if (location.href.includes('wisdom-mooc.zhihuishu.com/study/analysis')) {
+					return $message.info({ content: '请手动进入掌握度进行自动答题。', duration: 10 });
+				}
 			}
 		}),
 		'gxk-study': new Script({
@@ -1128,7 +1136,7 @@ export const ZHSProject = Project.create({
 
 							setTimeout(() => {
 								$message.info({ content: `开始${isExam ? '考试' : '作业'}` });
-								commonWork(this, {
+								commonWork(ZHSProject.scripts['work-center'], {
 									workerProvider: (opts) => gxkWorkAndExam(workInfo, opts),
 									start_delay_seconds: this.cfg.workDelay ?? 3
 								});
@@ -1451,7 +1459,7 @@ export const ZHSProject = Project.create({
 							$message.warn({ content: '答题完毕之前请勿操作页面！', duration: 0 });
 						}
 
-						commonWork(this, {
+						commonWork(ZHSProject.scripts['work-center'], {
 							workerProvider: (opts) => {
 								if (remote_not_required) {
 									return fusioncourseWork(remotePage, opts);
@@ -1492,7 +1500,7 @@ export const ZHSProject = Project.create({
 							return;
 						}
 
-						commonWork(this, {
+						commonWork(ZHSProject.scripts['work-center'], {
 							workerProvider: (opts) => {
 								return smartExam(undefined, opts);
 							}
@@ -1615,7 +1623,7 @@ export const ZHSProject = Project.create({
 			async oncomplete() {
 				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
 				migrateZhsWorkConfigs();
-				commonWork(this, {
+				commonWork(ZHSProject.scripts['work-center'], {
 					workerProvider: xnkWork
 				});
 			}
@@ -1623,10 +1631,7 @@ export const ZHSProject = Project.create({
 		'wisdom-study': new Script({
 			name: '🖥️ 新智慧学习-学习脚本',
 			hideInPanel: true,
-			matches: [
-				['2025-12月新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index'],
-				['学习提示', 'wisdom-mooc.zhihuishu.com/study/analysis']
-			],
+			matches: [['2025-12月新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index']],
 			namespace: zhsStudyNamespace,
 			configs: {
 				restudy: restudy,
@@ -1639,9 +1644,6 @@ export const ZHSProject = Project.create({
 			async oncomplete() {
 				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
 				migrateZhsStudyConfigs();
-				if (location.href.includes('https://wisdom-mooc.zhihuishu.com/study/analysis')) {
-					return $message.info({ content: '请手动进入掌握度进行自动答题。', duration: 10 });
-				}
 				const processor = new WishdomH5();
 
 				// // 点击显示进度条，否则无法进行倍速，清晰度等操作
@@ -2316,7 +2318,7 @@ export const ZHSProject = Project.create({
 
 				await waitForElement('.q_main');
 
-				commonWork(this, {
+				commonWork(ZHSProject.scripts['work-center'], {
 					workerProvider: (opts) => {
 						return hikeWork(undefined, opts);
 					},
@@ -2347,7 +2349,7 @@ export const ZHSProject = Project.create({
 
 				await waitForElement('.question-item');
 
-				commonWork(this, {
+				commonWork(ZHSProject.scripts['work-center'], {
 					workerProvider: (opts) => {
 						return hikeHomework(undefined, opts);
 					},
@@ -2693,7 +2695,7 @@ function gxkWorkAndExam(
 	});
 
 	worker
-		.doWork()
+		.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug })
 		.then(async (res) => {
 			// 如果被强制关闭，则不进行保存操作
 			if (worker.isClose === true) {
@@ -2759,7 +2761,6 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 			.join(',');
 	};
 
-	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
 	let requestedCount = 0;
 	let resolvedCount = 0;
@@ -2802,10 +2803,14 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 		 * 因为校内课的考试和作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
+		// 检测到题目即在结果面板占位（等待搜索中），随后状态推进原地更新
+		onQuestionDetected(current) {
+			updateDynamicResult(current, titleTransform);
+		},
 		onResultsUpdate(current, _, res) {
+			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
+			updateDynamicResult(current, titleTransform);
 			if (current.result) {
-				workResults.push(...simplifyWorkResult([current], titleTransform));
-				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
 				requestedCount++;
 				resolvedCount++;
@@ -2829,7 +2834,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 
 	(async () => {
 		while (next && worker.isClose === false) {
-			await worker.doWork();
+			await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
 			await $.sleep(1000);
 			next = getBtn();
 			next?.click();
@@ -2842,6 +2847,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-xnk';
 	})();
 
+	dynamicWorkTips(worker);
 	return worker;
 }
 
@@ -2853,11 +2859,6 @@ function smartWork(
 	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
-	$message.warn({
-		content: '⚠️ 答题中请勿进行任何操作，如需暂停答题，请等待全部题目搜索完成并执行自动保存功能后才能操作。',
-		duration: 0,
-		closeable: false
-	});
 
 	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
 	CommonProject.scripts.workResults.methods.init({ dynamic: true });
@@ -2873,7 +2874,6 @@ function smartWork(
 	};
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
-	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
 	let requestedCount = 0;
 	let resolvedCount = 0;
@@ -2951,10 +2951,14 @@ function smartWork(
 		 * 作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
+		// 检测到题目即在结果面板占位（等待搜索中），随后状态推进原地更新
+		onQuestionDetected(current) {
+			updateDynamicResult(current, titleTransform);
+		},
 		onResultsUpdate(current, _, res) {
+			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
+			updateDynamicResult(current, titleTransform);
 			if (current.result) {
-				workResults.push(...simplifyWorkResult([current], titleTransform));
-				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
 				requestedCount++;
 				resolvedCount++;
@@ -3010,6 +3014,7 @@ function smartWork(
 		// 答题完成后，题库选项点击才会同步题目，否则会导致题目错乱
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-smart';
 	})();
+	dynamicWorkTips(worker);
 	return worker;
 }
 
@@ -3018,11 +3023,6 @@ function smartExam(
 	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
-	$message.warn({
-		content: '⚠️ 答题中请勿进行任何操作，如需暂停答题，请等待全部题目搜索完成并执行自动保存功能后才能操作。',
-		duration: 0,
-		closeable: false
-	});
 
 	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
 	CommonProject.scripts.workResults.methods.init({ dynamic: true });
@@ -3038,7 +3038,6 @@ function smartExam(
 	};
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
-	const workResults: SimplifyWorkResult[] = [];
 	let totalQuestionCount = 0;
 	let requestedCount = 0;
 	let resolvedCount = 0;
@@ -3117,10 +3116,14 @@ function smartExam(
 		 * 作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
+		// 检测到题目即在结果面板占位（等待搜索中），随后状态推进原地更新
+		onQuestionDetected(current) {
+			updateDynamicResult(current, titleTransform);
+		},
 		onResultsUpdate(current, _, res) {
+			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
+			updateDynamicResult(current, titleTransform);
 			if (current.result) {
-				workResults.push(...simplifyWorkResult([current], titleTransform));
-				CommonProject.scripts.workResults.methods.setResults(workResults);
 				totalQuestionCount++;
 				requestedCount++;
 				resolvedCount++;
@@ -3179,6 +3182,7 @@ function smartExam(
 		// 答题完成后，题库选项点击才会同步题目，否则会导致题目错乱
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-smart';
 	})();
+	dynamicWorkTips(worker);
 	return worker;
 }
 
@@ -3277,7 +3281,7 @@ function fusioncourseWork(
 	});
 
 	worker
-		.doWork()
+		.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug })
 		.then(async (res) => {
 			// 如果被强制关闭，则不进行保存操作
 			if (worker.isClose === true) {
@@ -3375,10 +3379,13 @@ function hikeWork(
 		 * 作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
+		// 检测到题目即在结果面板占位（等待搜索中），随后状态推进原地更新
+		onQuestionDetected(current) {
+			updateDynamicResult(current, titleTransform);
+		},
 		onResultsUpdate(current, _, res) {
-			if (current.result) {
-				CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
-			}
+			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
+			updateDynamicResult(current, titleTransform);
 
 			if (current.result?.finish) {
 				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
@@ -3421,6 +3428,7 @@ function hikeWork(
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-hike';
 	})();
 
+	dynamicWorkTips(worker);
 	return worker;
 }
 

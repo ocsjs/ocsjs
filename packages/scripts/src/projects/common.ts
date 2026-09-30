@@ -57,8 +57,13 @@ const answererListHandlers = {
 	}
 };
 
+/** worker 工作状态变化监听器（结果面板创建时注册，状态变化时触发重渲染以更新清空按钮显隐） */
+const workerWorkingChangeListeners = new Set<() => void>();
+
 const state = {
 	workResult: {
+		/** 答题 worker 是否正在工作中（动态答题器的"清空搜索结果"按钮在工作时隐藏，结束时显示） */
+		isWorkerWorking: false,
 		/**
 		 * 题目位置同步处理器
 		 */
@@ -1087,6 +1092,16 @@ export const CommonProject = Project.create({
 						this.cfg.resolvedCount = 0;
 					},
 					/**
+					 * 设置答题 worker 工作状态（由 commonWork 在 worker 生命周期事件中调用）。
+					 * 动态答题器的"清空搜索结果"按钮仅在 worker 停止（结束/错误/暂停）时显示，
+					 * 正在搜题时隐藏，避免误清空正在累积的结果。
+					 */
+					setWorkerWorking: (working: boolean) => {
+						state.workResult.isWorkerWorking = working;
+						// 触发所有结果面板重渲染（各面板创建时注册监听）
+						workerWorkingChangeListeners.forEach((listener) => listener());
+					},
+					/**
 					 * 清空搜索结果
 					 */
 					clearResults: () => {
@@ -1103,6 +1118,26 @@ export const CommonProject = Project.create({
 						CommonProject.scripts.workResults.cfg.dynamicResults = true;
 						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
 						data.push(...results);
+						return $store.setTab(TAB_WORK_RESULTS_KEY, data);
+					},
+					/**
+					 * 追加或更新搜索结果（按题目文本匹配，存在则原地更新，不存在则追加）。
+					 * 动态答题器在"检测到题目→搜题→答题"各阶段对同一题目重复调用，
+					 * 实现序号与内容的渐进式状态推进（等待搜索中→等待答题中→已答题/失败）。
+					 * 与 appendResults 一样，调用即视为动态答题模式。
+					 */
+					async upsertResult(result: SimplifyWorkResult) {
+						CommonProject.scripts.workResults.cfg.dynamicResults = true;
+						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
+						// 空题目文本不参与匹配（防止多个空标题占位互相覆盖）
+						const index = result.question
+							? data.findIndex((r: SimplifyWorkResult) => r.question === result.question)
+							: -1;
+						if (index >= 0) {
+							data[index] = result;
+						} else {
+							data.push(result);
+						}
 						return $store.setTab(TAB_WORK_RESULTS_KEY, data);
 					},
 					/**
@@ -1233,8 +1268,9 @@ export const CommonProject = Project.create({
 									behavior: 'auto'
 								});
 
-								/** 清空搜索结果按钮：仅动态答题器（结果逐题累积、不会自动清空）时显示在所有搜索结果的最下方 */
-								if (this.cfg.dynamicResults) {
+								/** 清空搜索结果按钮：仅动态答题器（结果逐题累积、不会自动清空）时显示在所有搜索结果的最下方；
+								 *  且仅在 worker 停止（结束/错误/暂停）时显示，正在搜题时隐藏，避免误清空正在累积的结果 */
+								if (this.cfg.dynamicResults && !state.workResult.isWorkerWorking) {
 									container.append(
 										h('div', { style: { textAlign: 'right', marginTop: '8px' } }, [
 											$ui.tooltip(
@@ -1286,6 +1322,8 @@ export const CommonProject = Project.create({
 						this.onConfigChange('requestedCount', render);
 						this.onConfigChange('resolvedCount', render);
 						$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
+						// worker 工作状态变化时重渲染（控制"清空搜索结果"按钮显隐）
+						workerWorkingChangeListeners.add(render);
 
 						return container;
 					}
