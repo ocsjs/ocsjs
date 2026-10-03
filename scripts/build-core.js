@@ -23,6 +23,7 @@ function cleanOutput() {
 
 async function testResolver() {
 	await execOut('tsx ../tests/resolver.test.ts');
+	await execOut('tsx ../tests/yuketang.directory.test.ts');
 }
 
 async function buildPackages() {
