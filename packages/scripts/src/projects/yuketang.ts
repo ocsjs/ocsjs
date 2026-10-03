@@ -5,6 +5,7 @@ import { restudy, volume } from '../utils/configs';
 import { waitForElement } from '../utils/study';
 import { CommonProject } from './common';
 import { $console } from './background';
+import { expandAiChapterDirectory } from './yuketang.directory';
 
 const state = {
 	study: {
@@ -361,12 +362,14 @@ export const YKTProject = Project.create({
 					state.study.currentMedia && (state.study.currentMedia.playbackRate = curr);
 				});
 
-				// // 展开5次章节，确保所有章节都被展开
-				const max_level = 5;
-				for (let i = 0; i < max_level; i++) {
-					document.querySelectorAll<HTMLElement>('.expand-icon:not(.is-expanded )').forEach((el) => el.click());
-					await $.sleep(100);
-				}
+				const prepareDirectory = async () => {
+					const expanded = await expandAiChapterDirectory();
+					if (!expanded) {
+						$message.error('章节目录未能完整展开，请刷新页面后重试。');
+					}
+					return expanded;
+				};
+				if (!(await prepareDirectory())) return;
 
 				const getJobs = () => Array.from(document.querySelectorAll<HTMLElement>('div.leaf-item'));
 				const getJobName = () =>
@@ -414,6 +417,8 @@ export const YKTProject = Project.create({
 					} catch (e) {
 						$message.error(`当前任务点无法完成，即将跳转下一节（${e}）`);
 					}
+					// 用户可能收起目录，切换前重新展开并等待小节渲染。
+					if (!(await prepareDirectory())) return;
 					const next = getNextJob();
 					if (!next) {
 						return $modal.alert({

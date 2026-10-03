@@ -18,7 +18,7 @@
 		"pub:minor": "npm version minor && pnpm build:core && npm publish",
 		"pub:major": "npm version major && pnpm build:core && npm publish",
 		"changelog:simplify": "gulp -f ./scripts/simplify_changelog.js",
-		"test": "tsx tests/resolver.test.ts"
+		"test": "tsx tests/resolver.test.ts && tsx tests/yuketang.directory.test.ts"
 	},
 	"devDependencies": {
 		"@html-eslint/eslint-plugin": "^0.15.0",
