@@ -583,7 +583,7 @@ function workAndExam(
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleText));
 
 			if (curr.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleText));
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleText));
 			}
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}

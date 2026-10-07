@@ -2677,7 +2677,7 @@ function gxkWorkAndExam(
 			if (curr.result?.finish) {
 				const title = allExamParts[index]?.name;
 				if (title) {
-					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([curr], (_: any, __: number) => title)
 					);
 				}
@@ -2817,7 +2817,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 			}
 
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -2965,7 +2965,7 @@ function smartWork(
 			}
 
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3130,7 +3130,7 @@ function smartExam(
 			}
 
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3272,7 +3272,7 @@ function fusioncourseWork(
 			}
 
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3388,7 +3388,7 @@ function hikeWork(
 			updateDynamicResult(current, titleTransform);
 
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}
@@ -3505,7 +3505,7 @@ function hikeHomework(
 			}
 
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}

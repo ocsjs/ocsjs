@@ -967,7 +967,7 @@ function workOrExam(
 			if (!preview_mode) {
 				updateDynamicResult(current, workOrExamQuestionTitleText);
 				if (current.result?.finish) {
-					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([current], workOrExamQuestionTitleText)
 					);
 				}
@@ -977,7 +977,7 @@ function workOrExam(
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleText));
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], workOrExamQuestionTitleText)
 				);
 			}
@@ -1980,7 +1980,7 @@ const JobRunner = {
 				CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, chapterTestTaskQuestionTitleText));
 
 				if (curr.result?.finish) {
-					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([curr], chapterTestTaskQuestionTitleText)
 					);
 				}

@@ -711,7 +711,7 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
 
 			if (curr.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleTransform));
 			}
 			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}

@@ -1037,7 +1037,7 @@ function createYktAnswerWorker({
 				resolvedCount++;
 			}
 			if (current.result?.finish) {
-				BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 					simplifyWorkResult([current], titleTransform)
 				);
 			}

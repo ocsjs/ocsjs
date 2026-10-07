@@ -930,7 +930,7 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 				resolvedCount++;
 
 				if (currentResult.result?.finish) {
-					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([currentResult], titleTransform)
 					);
 				}
@@ -1090,7 +1090,7 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 				resolvedCount++;
 
 				if (currentResult.result?.finish) {
-					BackgroundProject.scripts.apps.methods.addQuestionCacheFromWorkResult(
+					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
 						simplifyWorkResult([currentResult], titleText)
 					);
 				}

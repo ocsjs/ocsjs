@@ -943,7 +943,7 @@ export const CommonProject = Project.create({
 					suffixSlot: function () {
 						const btn = h('button', { className: 'base-style-button-secondary' }, '⚙️管理缓存');
 						btn.onclick = () => {
-							BackgroundProject.scripts.apps.methods.showQuestionCaches();
+							BackgroundProject.scripts.data.methods.showQuestionCaches();
 						};
 						return btn;
 					}
@@ -1588,7 +1588,7 @@ const createGuide = () => {
 	contactUs.onclick = () => window.open('https://docs.ocsjs.com/docs/about#交流方式', '_blank');
 
 	const changeLog = h('button', { className: 'base-style-button-secondary' }, '📄更新日志');
-	changeLog.onclick = () => BackgroundProject.scripts.apps.methods.showChangelog();
+	changeLog.onclick = () => BackgroundProject.scripts.update.methods.showChangelog();
 
 	const closeGuide = h('button', { className: 'base-style-button-secondary' }, '📄如何关闭脚本？');
 	closeGuide.onclick = () =>
