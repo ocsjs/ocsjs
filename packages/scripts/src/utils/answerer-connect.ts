@@ -89,7 +89,11 @@ export function openAnswererConnect(): Window | null {
  * - 页面关闭/刷新（pagehide）时自动关闭小窗，避免遗留孤立授权页
  * - isAborted 返回 true（如配置弹窗被关闭）时自动关闭小窗并取消等待
  */
-export function waitForAnswererConfig(win: Window, timeoutMs = 10 * 60_000, isAborted?: () => boolean): Promise<AnswererWrapper[]> {
+export function waitForAnswererConfig(
+	win: Window,
+	timeoutMs = 10 * 60_000,
+	isAborted?: () => boolean
+): Promise<AnswererWrapper[]> {
 	if (!provider) return Promise.reject(new Error('未配置题库获取渠道'));
 	const expectedOrigin = new URL(provider.connectUrl).origin;
 
@@ -127,7 +131,7 @@ export function waitForAnswererConfig(win: Window, timeoutMs = 10 * 60_000, isAb
 				return;
 			}
 			try {
-				// 复用标准解析器校验：兼容数组 / JSON 字符串 / 订阅链接
+				// 复用标准解析器校验：兼容数组 / JSON 字符串（已不支持远程订阅链接）
 				const aws = (await AnswerWrapperParser.from(d.config)) as AnswererWrapper[];
 				cleanup();
 				resolve(aws);

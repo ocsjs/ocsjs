@@ -1,8 +1,7 @@
 import { AnswererWrapper } from './interface';
-import { request } from '../utils/request';
 
 /**
- * 解析题库配置 数据来源可以是 url , base64 , json , json-string
+ * 解析题库配置 数据来源可以是 base64 , json , json-string
  */
 export class AnswerWrapperParser {
 	/** 从 json 字符串中解析 */
@@ -55,18 +54,8 @@ export class AnswerWrapperParser {
 		try {
 			return JSON.parse(raw);
 		} catch {
-			throw new Error(`格式错误，必须为：json字符串 或 题库配置链接`);
+			throw new Error(`格式错误，必须为：json字符串`);
 		}
-	}
-
-	/** 从 url 中解析 */
-	static async fromURL(url: string) {
-		const text = await request(url, {
-			responseType: 'text',
-			method: 'get',
-			type: 'fetch'
-		});
-		return this.fromJSONString(text);
 	}
 
 	/** 从 base64 解析 */
@@ -75,15 +64,15 @@ export class AnswerWrapperParser {
 	}
 
 	/**
-	 * 解析题库配置 数据来源可以是 url , base64 , json , json-string
+	 * 解析题库配置 数据来源可以是 base64 , json , json-string
 	 */
-	static from(value: any): AnswererWrapper[] | Promise<AnswererWrapper[]> {
+	static from(value: any): AnswererWrapper[] {
 		if (typeof value === 'string') {
-			if (value.startsWith('http')) {
-				return this.fromURL(value);
-			} else {
-				return this.fromJSONString(value);
+			// 安全考虑：已移除远程链接加载题库配置（fromURL），防止「访问一条链接即注入可执行代码」
+			if (/^\s*https?:\/\//.test(value)) {
+				throw new Error('已不支持从链接加载题库配置，请直接粘贴题库配置内容，或使用「一键获取题库」功能。');
 			}
+			return this.fromJSONString(value);
 		} else {
 			return this.fromObject(value);
 		}
