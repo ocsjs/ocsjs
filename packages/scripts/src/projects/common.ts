@@ -18,6 +18,7 @@ import { SearchInfosElement } from '../elements/search.infos';
 import { dropdownStyle } from '../utils/configs';
 import { buildAnswererEnv, isAnswererWrappersSupportImageOptimize } from '../utils/work';
 import { getAnswererConfigProvider, openAnswererConnect, waitForAnswererConfig } from '../utils/answerer-connect';
+import { confirmRiskyAnswerWrappers } from '../utils/answer-wrapper-security';
 import { initEdgeMinimize } from '../utils/edge-minimize';
 import {
 	createAnswererWrapperSection,
@@ -263,6 +264,13 @@ export const CommonProject = Project.create({
 												'个题库，请删除一些不必要的题库后重新配置！'
 										])
 									});
+									return false;
+								}
+
+								// 安全检测：解析器（handler）代码将在答题时以用户身份执行，
+								// 若存在可疑代码特征（网络请求/读取存储/混淆代码等）需用户确认后才允许保存
+								const confirmed = await confirmRiskyAnswerWrappers(awsResult);
+								if (!confirmed) {
 									return false;
 								}
 
