@@ -220,11 +220,11 @@ export const BackgroundProject = Project.create({
 		}),
 		/** 渲染脚本，窗口渲染主要脚本（从 通用 迁移至 其他） */
 		render: RenderScript,
-		apps: new Script({
-			name: '📱 拓展应用',
+		data: new Script({
+			name: '拓展数据',
+			hideInPanel: true,
 			matches: [['', /.*/]],
-			// namespace 保持 common.apps 不变，避免丢失已存储的题库缓存等配置
-			namespace: 'common.apps',
+			namespace: 'background.data',
 			configs: {
 				notes: {
 					defaultValue: '这里是一些其他的应用或者拓展功能。'
@@ -258,7 +258,7 @@ export const BackgroundProject = Project.create({
 						this.cfg.localQuestionCaches = questionCaches;
 					},
 					addQuestionCacheFromWorkResult(swr: SimplifyWorkResult[]) {
-						BackgroundProject.scripts.apps.methods.addQuestionCache(
+						BackgroundProject.scripts.data.methods.addQuestionCache(
 							...swr
 								.map((r) =>
 									r.searchInfos
@@ -376,114 +376,8 @@ export const BackgroundProject = Project.create({
 								)
 							])
 						});
-					},
-					/**
-					 * 查看更新日志
-					 */
-					async showChangelog() {
-						const changelog = h('div', {
-							className: 'markdown card',
-							innerHTML: '加载中...',
-							style: { maxWidth: '600px' }
-						});
-						$modal.simple({
-							width: 600,
-							content: h('div', [
-								h('div', { className: 'notes card' }, [
-									$ui.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
-								]),
-								changelog
-							])
-						});
-						const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
-							type: 'GM_xmlhttpRequest',
-							responseType: 'text',
-							method: 'get'
-						});
-						changelog.innerHTML = markdown(md);
 					}
 				};
-			},
-			onrender({ panel }) {
-				const btnStyle: Partial<CSSStyleDeclaration> = {
-					padding: '6px 12px',
-					margin: '4px',
-					marginBottom: '8px',
-					boxShadow: '0px 0px 4px #bebebe',
-					borderRadius: '8px',
-					cursor: 'pointer'
-				};
-
-				const exportSetting = $ui.tooltip(
-					h(
-						'div',
-						{
-							innerText: '📤 导出全部设置',
-							style: btnStyle,
-							title: '导出全部页面的设置，包括全局设置，题库配置，学习设置等等。（文件后缀名为：.ocssetting）'
-						},
-						(btn) => {
-							btn.onclick = () => {
-								const setting = Object.create({});
-								for (const key of $store.list()) {
-									const val = $store.get(key);
-									if (val) {
-										Reflect.set(setting, key, val);
-									}
-								}
-								const blob = new Blob([JSON.stringify(setting, null, 2)], { type: 'text/plain' });
-								const url = URL.createObjectURL(blob);
-								const a = h('a', { href: url, download: 'ocs-setting-export.ocssetting' });
-								a.click();
-								URL.revokeObjectURL(url);
-							};
-						}
-					)
-				);
-
-				const importSetting = $ui.tooltip(
-					h(
-						'div',
-						{
-							innerText: '📥 导入全部设置',
-							style: btnStyle,
-							title: '导入并且覆盖当前的全部设置。（文件后缀名为：.ocssetting）'
-						},
-						(btn) => {
-							btn.onclick = () => {
-								const input = h('input', { type: 'file', accept: '.ocssetting' });
-								input.onchange = async () => {
-									const file = input.files?.[0];
-									if (file) {
-										const setting = await file.text();
-										const obj = JSON.parse(setting);
-										for (const key of Object.keys(obj)) {
-											$store.set(key, obj[key]);
-										}
-										$message.success({ content: '设置导入成功，页面即将刷新。', duration: 3 });
-										setTimeout(() => {
-											location.reload();
-										}, 3000);
-									}
-								};
-								input.click();
-							};
-						}
-					)
-				);
-
-				[exportSetting, importSetting].forEach((btn) => {
-					btn.onmouseover = () => {
-						btn.style.boxShadow = '0px 0px 4px #0099ff9c';
-					};
-					btn.onmouseout = () => {
-						btn.style.boxShadow = '0px 0px 4px #bebebe';
-					};
-				});
-
-				const sep = (text: string) => h('div', { className: 'separator', style: { padding: '4px 0px' } }, text);
-
-				panel.body.replaceChildren(h('div', [sep('其他功能'), exportSetting, importSetting]));
 			}
 		}),
 		appConfigSync: new Script({
@@ -732,6 +626,31 @@ export const BackgroundProject = Project.create({
 							method: 'get',
 							type: 'GM_xmlhttpRequest'
 						})) as { 'last-version': string; resource: Record<string, string>; notes: string[] };
+					},
+					/**
+					 * 查看更新日志
+					 */
+					showChangelog: async () => {
+						const changelog = h('div', {
+							className: 'markdown card',
+							innerHTML: '加载中...',
+							style: { maxWidth: '600px' }
+						});
+						$modal.simple({
+							width: 600,
+							content: h('div', [
+								h('div', { className: 'notes card' }, [
+									$ui.notes(['此页面实时更新，遇到问题可以查看最新版本是否修复。'])
+								]),
+								changelog
+							])
+						});
+						const md = await request('https://cdn.ocsjs.com/articles/ocs/changelog.md?t=' + Date.now(), {
+							type: 'GM_xmlhttpRequest',
+							responseType: 'text',
+							method: 'get'
+						});
+						changelog.innerHTML = markdown(md);
 					}
 				};
 			},
@@ -744,7 +663,7 @@ export const BackgroundProject = Project.create({
 				}
 
 				const changeLog = h('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
-				changeLog.onclick = () => BackgroundProject.scripts.apps.methods.showChangelog();
+				changeLog.onclick = () => this.methods.showChangelog();
 				const updatePage = this.startConfig?.updatePage || '';
 				panel.body.replaceChildren(
 					h('div', { className: 'card' }, [
