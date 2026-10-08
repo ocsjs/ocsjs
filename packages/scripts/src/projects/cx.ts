@@ -242,11 +242,6 @@ export const CXProject = Project.create({
 					],
 					defaultValue: 'next' as 'next' | 'job' | 'manually'
 				},
-				autoJumpToUnFinishJob: {
-					label: '自动切换未完成章节',
-					attrs: { type: 'checkbox', title: '在自动学习前寻找未完成章节并跳转（积分课、智慧课程：推荐关闭）' },
-					defaultValue: true
-				},
 				restudy: {
 					label: '复习模式',
 					attrs: { title: '已经完成的视频继续学习', type: 'checkbox' },
@@ -257,6 +252,17 @@ export const CXProject = Project.create({
 					label: '高级设置',
 					attrs: { type: 'checkbox' },
 					defaultValue: false
+				},
+				autoJumpToUnFinishJob: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '自动前往首个任务点',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'进入学习界面后自动前往未完成的任务点，如果关闭则从当前任务点往下学习 （积分课、智慧课程等课程 建议关闭）'
+					},
+					defaultValue: true
 				},
 				forceLearn: {
 					elementClassName: 'config-details',
@@ -589,6 +595,7 @@ export const CXProject = Project.create({
 		}),
 		examRedirect: new Script({
 			name: '考试整卷预览脚本',
+			hideInPanel: true,
 			matches: [
 				['新版考试页面', 'exam-ans/exam/test/reVersionTestStartNew'],
 				// 2023/9月 新增
@@ -1045,7 +1052,6 @@ async function mappingRecognize(doc: Document = document) {
 		return;
 	}
 
-	$message.info('正在识别加密文字（位图特征匹配）');
 	const t = Date.now();
 	try {
 		// 只破解页面实际出现的字符（通常几十个），避免全字表扫描
@@ -1061,7 +1067,7 @@ async function mappingRecognize(doc: Document = document) {
 		}
 		decryptElements(fonts, map);
 		fonts.forEach((el) => el.classList.remove('font-cxsecret')); // 移除字体加密
-		$message.info('识别加密文字完成，耗时 ' + ((Date.now() - t) / 1000).toFixed(1) + ' 秒');
+		$message.info('文字解密完成，耗时 ' + ((Date.now() - t) / 1000).toFixed(1) + ' 秒');
 	} catch (err) {
 		$console.error('加密文字识别失败：', String(err));
 	}

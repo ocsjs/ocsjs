@@ -647,7 +647,7 @@ export const CommonProject = Project.create({
 														btn.style.fontSize = '12px';
 														btn.onclick = () => clearAnswererConfig();
 													}),
-													h('button', '自定义题库', (btn) => {
+													h('button', '手动配置题库', (btn) => {
 														btn.className = 'modal-cancel-button';
 														btn.style.padding = '2px 8px';
 														btn.style.fontSize = '12px';

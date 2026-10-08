@@ -1199,8 +1199,7 @@ export const BackgroundProject = Project.create({
 					ZJYProject.scripts.work,
 					IcveMoocProject.scripts.study,
 					IcveMoocProject.scripts.work,
-					YKTProject.scripts.ai,
-					YKTProject.scripts.v2_study
+					YKTProject.scripts.ai
 				]
 					.map((m) => {
 						const url = window.location.href;
