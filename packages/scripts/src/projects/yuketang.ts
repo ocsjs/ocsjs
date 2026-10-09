@@ -1,4 +1,4 @@
-import { $, $elements, Project, Script, $message, $modal, $el, $$el, h, cors, $ui } from 'easy-us';
+import { $, $elements, Project, Script, $message, $modal, $el, $$el, $ui } from 'easy-us';
 import {
 	OCSWorker,
 	StringUtils,
@@ -14,7 +14,15 @@ import { CommonProject } from './common';
 import { $console, BackgroundProject } from './background';
 import { FontDecryptor, findFontUrls, listFontFaces, watchElements } from '../utils/font-decrypt';
 import type { WatchController } from '../utils/font-decrypt';
-import { createCommonAnswerer, extractTextWithImages, removeRedundantWords, simplifyWorkResult } from '../utils/work';
+import {
+	commonWork,
+	createCommonAnswerer,
+	dynamicWorkTips,
+	extractTextWithImages,
+	removeRedundantWords,
+	simplifyWorkResult,
+	updateDynamicResult
+} from '../utils/work';
 
 import debounce from 'lodash/debounce';
 
@@ -31,39 +39,13 @@ const state = {
 		currentMedia: undefined as HTMLMediaElement | undefined
 	}
 };
-type Leaf = {
-	id: number;
-	chapter_id: number;
-	name: string;
-	/**
-	 * 0-普通章节
-	 * 4-讨论
-	 * 5-期末考试
-	 * 6-作业
-	 * 8-PPT
-	 */
-	leaf_type: 0 | 5;
-	leaf_list?: Leaf[];
-};
-type ChapterList = {
-	fold: boolean;
-	id: number;
-	name: string;
-	section_leaf_list: Leaf[];
-};
-
-const changeCurrentLeafJobName = cors.defineTopFunction((name) => {
-	$elements.currentScriptPanel?.body.replaceChildren(
-		h('div', { className: 'card', style: { marginTop: '12px' } }, ['当前正在学习：' + name])
-	);
-});
 
 export const YKTProject = Project.create({
 	name: '雨课堂',
-	domains: ['yuketang.cn'],
+	domains: ['yuketang.cn', 'gdufemooc.cn'],
 	scripts: {
 		guide: new Script({
-			name: '🖥️ 使用提示',
+			name: '💡 使用提示',
 			matches: [
 				['雨课堂课程列表', '/v2/web/index'],
 				['学习内容界面', '/v2/web/studentLog'],
@@ -102,278 +84,31 @@ export const YKTProject = Project.create({
 				};
 			}
 		}),
-		v2_study: new Script({
-			name: '📚 课程学习',
-			matches: [
-				['课程学习界面', '/v2/web/studentLog'],
-				['课程列表', /pro\/lms\/.*\/.*\/studycontent/],
-				['视频界面', 'v2/web/xcloud/video-student'],
-				['视频讨论界面', /v2\/web\/lms\/.*\/forum/],
-				['PPT界面', /v2\/web\/studentCards\/.*\/ppt/]
-			],
-			namespace: 'yuketang.study.v2',
-			configs: {
-				notes: {
-					defaultValue: $ui.notes([
-						'请点击任意小节，脚本会自动运行，并自动下一节。',
-						'修改音量、倍速后请刷新页面使设置生效。',
-						'⚠️ 章节测试自动答题还在开发中，请耐心等待',
-						'⚠️ 手动搜题可使用官方题库的在线搜题功能： tk.enncy.cn '
-					]).outerHTML
-				},
-				currentLeafIndex: {
-					defaultValue: -1
-				},
-				currentStudyUrl: {
-					defaultValue: ''
-				},
-				goNext: {
-					defaultValue: false
-				},
-				auto: {
-					label: '自动学习',
-					attrs: { type: 'checkbox', title: '自动寻找未完成章节、或者自动下一节学习' },
-					defaultValue: false
-				},
-				restudy: restudy,
-				volume: volume,
-				playbackRate: {
-					label: '视频倍速',
-					tag: 'select',
-					defaultValue: 1,
-					options: [
-						['1', '1 x'],
-						['1.25', '1.25 x'],
-						['1.5', '1.5 x'],
-						['2', '2.0 x']
-					]
-				},
-				discussMode: {
-					label: '讨论任务模式',
-					tag: 'select',
-					defaultValue: 'random' as 'random' | 'first' | 'none',
-					options: [
-						['random', '随机评论'],
-						['first', '截取第一条评论'],
-						['none', '不进行评论']
-					]
-				}
-			},
-			onhistorychange(type, ...args) {
-				if (type === 'push') {
-					this.oncomplete?.();
-				}
-			},
+		ppt: new Script({
+			name: '📚 PPT自动阅读',
+			matches: [['PPT界面', /v2\/web\/studentCards\/.*\/ppt/]],
+			hideInPanel: true,
 			async oncomplete() {
-				// 监听音量
-				this.onConfigChange(
-					'volume',
-					debounce(() => $message.info('音量设置已修改，刷新页面后生效'), 200)
-				);
-
-				// 监听速度
-				this.onConfigChange(
-					'playbackRate',
-					debounce(() => $message.info('倍速设置已修改，刷新页面后生效'), 200)
-				);
-
-				// 获取当前章节名称
-				const getJobName = (leaf: HTMLElement) => leaf.querySelector('.leaf-title')?.textContent || '未知章节';
-				// 跳转到学习界面
-				const gotoStudyUrl = () => {
-					location.href = this.cfg.currentStudyUrl;
-				};
-
-				// ===================================== 首页脚本 ==================================
-				if (
-					document.location.pathname.includes('/v2/web/studentLog') ||
-					document.location.pathname.includes('/studycontent')
-				) {
-					// 自动点击学习内容
-					const tab = await waitForElement(() =>
-						Array.from<HTMLElement>(document.querySelectorAll('.ykt-main-tab [class*=nav-item]')).find((el) =>
-							(el.textContent || '').includes('学习内容')
-						)
-					);
-					console.log(tab);
-					tab?.click();
-					return;
-				}
-
 				// ===================================== PPT ==================================
-				if (document.location.pathname.match(/v2\/web\/studentCards\/.*\/ppt/)) {
-					$message.info('正在学习PPT中，请耐心等待...');
-					for (let item of Array.from<HTMLElement>(document.querySelectorAll('.swiper-container .container')).filter(
-						(el) => !!el.querySelector('.noRead')
-					)) {
-						await $.sleep(1000);
-						item.click();
-					}
-					const title = document.querySelector('.layout-header .progress .title')?.textContent || '';
-					$msg.info(`PPT ${title} 学习完成，即将自动进入下一节`);
-					setTimeout(gotoStudyUrl, 3000);
-					return;
+				$message.info('正在学习PPT中，请耐心等待...');
+				for (let item of Array.from<HTMLElement>(document.querySelectorAll('.swiper-container .container')).filter(
+					(el) => !!el.querySelector('.noRead')
+				)) {
+					await $.sleep(1000);
+					item.click();
 				}
-
-				// ===================================== 视频脚本 ==================================
-
-				if (document.location.pathname.includes('v2/web/xcloud/video-student')) {
-					try {
-						await waitForElement(
-							[
-								// 正常视频
-								'#video-box',
-								// AI学伴视频（会生成一个数字人物口型解说在视频旁）
-								'.digital-human-video-element-selector'
-							].join(',')
-						);
-						await $.sleep(2000);
-						await v2_watch({
-							volume: this.cfg.volume,
-							playbackRate: this.cfg.playbackRate
-						});
-						this.cfg.goNext = true;
-						$message.info('视频学习完成，即将自动进入下一节');
-						setTimeout(gotoStudyUrl, 3000);
-					} catch (e) {
-						$msg.error({ content: String(e), duration: 0 });
-					}
-					return;
-				}
-
-				if (/v2\/web\/lms\/.*\/forum/.test(document.location.pathname)) {
-					$message.info('正在学习视频讨论区，请耐心等待...');
-					const new_discuss_list = await waitForElement('.new_discuss_list');
-					const textarea = (await waitForElement('textarea.el-textarea__inner')) as HTMLTextAreaElement;
-					if (!new_discuss_list || !textarea) {
-						$message.error('讨论区元素加载失败，请刷新界面重试。');
-						return;
-					}
-
-					const discusses = Array.from(new_discuss_list.querySelectorAll('.cont_detail'))
-						.map((el) => el.textContent || '')
-						.filter((text) => text.trim() !== '');
-
-					console.log(discusses);
-
-					if (this.cfg.discussMode === 'random') {
-						const random_discuss = discusses[Math.floor(Math.random() * discusses.length)];
-						textarea.value = random_discuss;
-					} else if (this.cfg.discussMode === 'first') {
-						textarea.value = discusses[0] || '';
-					} else {
-						$message.info('已设置为不进行评论，跳过评论步骤。');
-						return;
-					}
-
-					// 触发输入事件
-					textarea.dispatchEvent(new Event('input', { bubbles: true }));
-
-					const submit_btn = await waitForElement('button.submitComment');
-					submit_btn?.click();
-					this.cfg.goNext = true;
-					$message.success('评论提交成功，即将自动进入下一节');
-					setTimeout(gotoStudyUrl, 3000);
-					return;
-				}
-
-				await waitForElement('.chapter-list');
-				await $.sleep(2000);
-
-				const vue_data = document.querySelector<any>('.study-content__container').__vue__;
-				const chapter_list: ChapterList[] = JSON.parse(JSON.stringify(vue_data.chapter_list || []));
-				const leaf_schedules: Record<string, number> = vue_data.leaf_schedules || [];
-
-				const leaf_list: Leaf[] = [];
-
-				// 扁平化章节列表
-				while (chapter_list.length > 0) {
-					const chapter = chapter_list.shift();
-					if (!chapter) break;
-					while (chapter.section_leaf_list.length > 0) {
-						const leaf = chapter.section_leaf_list.shift();
-						if (!leaf) break;
-
-						if (leaf.leaf_list) {
-							leaf_list.push(...leaf.leaf_list);
-						} else {
-							leaf_list.push(leaf);
-						}
-					}
-				}
-
-				const leafs = Array.from(document.querySelectorAll<HTMLElement>('.leaf-detail'));
-				for (let index = 0; index < leafs.length; index++) {
-					const leaf = leafs[index];
-					leaf.addEventListener('click', () => {
-						// 点击小节时，记录当前小节的索引和学习页面的URL，防止刷新后无法继续学习
-						this.cfg.goNext = false;
-						this.cfg.currentLeafIndex = index;
-						this.cfg.currentStudyUrl = top?.document.location.href || '';
-						const name = getJobName(leaf);
-						changeCurrentLeafJobName(name);
-						$console.log('正在学习：' + name);
-					});
-				}
-
-				// 定位到当前小节
-				const currentLeaf = leafs[this.cfg.currentLeafIndex];
-				if (currentLeaf) {
-					currentLeaf.scrollIntoView({ behavior: 'smooth', block: 'center' });
-					changeCurrentLeafJobName(getJobName(currentLeaf));
-				}
-
-				const isLeafFinished = (leaf_index: number) => {
-					const leaf_id = leaf_list[leaf_index]?.id;
-					if (!leaf_id) return false;
-					const schedule = leaf_schedules[leaf_id];
-					return schedule === 1;
-				};
-
-				const getNext = () => {
-					let index = this.cfg.currentLeafIndex;
-					while (index + 1 < leafs.length) {
-						index++;
-						if (
-							['shipin', 'taolun1' /** 'zuoye' */].some((name) =>
-								leafs[index]?.querySelector(`.iconfont.icon--${name}`)
-							) &&
-							!isLeafFinished(index)
-						) {
-							break;
-						}
-					}
-					return leafs[index];
-				};
-
-				if (this.cfg.auto) {
-					const next = getNext();
-					if (!next) {
-						return $modal.alert({
-							content: '检测到当前课程全部完成，如果还有未完成的视频请刷新重试，或者打开复习模式。'
-						});
-					}
-					if (this.cfg.goNext) {
-						const timeout = setTimeout(() => {
-							next.click();
-							modal?.remove();
-						}, 5000);
-						const modal = $modal.confirm({
-							content: '5秒后即将自动继续学习：' + getJobName(next),
-							cancelButtonText: '取消自动学习',
-							duration: 5,
-							onCancel() {
-								clearTimeout(timeout);
-								$message.warn({ content: '已取消自动进入下一节，后续请手动操作进入。', duration: 0 });
-							}
-						});
-					}
-				}
+				$message.info({ content: 'PPT阅读完毕，请手动切换到下一个任务', duration: 0 });
+				return;
 			}
 		}),
+		/**
+		 * 旧版 v2/web 学习已废弃、目前大部分雨课堂主要为  ai-workspace， 其中存在区别： 部分 ai 课存在 AI学伴（右侧智能体功能）
+		 */
 		ai: new Script({
-			name: '🤖 AI学伴',
+			name: '🖥️ 课程学习',
 			matches: [
+				['学习中心', '/v2/web/index'],
+				['课程列表', '/v2/web/studentLog'],
 				['AI学伴课程界面', '/ai-workspace/lms-graph'],
 				['AI学伴课程界面手机版', '/ai-workspace/lms-graph-mobile']
 			],
@@ -383,7 +118,8 @@ export const YKTProject = Project.create({
 					defaultValue: $ui.notes([
 						'请点击任意小节，脚本会自动运行，并自动下一节。',
 						'修改音量、倍速后请刷新页面使设置生效。',
-						'遇到作业任务点时可自动搜题作答（需在 通用-全局设置 中配置题库）。'
+						'课件/PPT 等任务请手动进入触发自动阅读',
+						['遇到作业任务点时可自动搜题作答', '（需在 通用-全局设置 中配置题库）。']
 					]).outerHTML
 				},
 				restudy: restudy,
@@ -392,10 +128,15 @@ export const YKTProject = Project.create({
 					attrs: { type: 'checkbox', title: '遇到作业任务点时自动搜题作答并按设置提交（需配置题库）' },
 					defaultValue: true
 				},
-				reloadWhenError: {
-					label: '黑屏自动刷新',
-					attrs: { title: '视频黑屏或者检测不到视频时自动刷新页面', type: 'checkbox' },
-					defaultValue: true
+				discussMode: {
+					label: '讨论任务模式',
+					tag: 'select',
+					defaultValue: 'random' as 'random' | 'first' | 'none',
+					options: [
+						['random', '随机采用他人评论'],
+						['first', '采用第一条评论'],
+						['none', '不评论']
+					]
 				},
 				volume: volume,
 				playbackRate: {
@@ -412,13 +153,17 @@ export const YKTProject = Project.create({
 			},
 			async oncomplete() {
 				if (location.href.includes('ai-workspace/lms-graph-mobile')) {
-					await $message.warn('即将切换到电脑版AI课程...');
+					$message.warn('即将切换到电脑版AI课程...');
 					await $.sleep(3000);
 					location.href = location.href.replace('lms-graph-mobile', 'lms-graph');
 					return;
 				}
 
-				await $.sleep(3000);
+				if (location.href.includes('/v2/web/index') || location.href.includes('/v2/web/studentLog')) {
+					BackgroundProject.scripts.render.methods.pin(this);
+					$message.info('请手动进入到任意章节开始自动学习。');
+					return;
+				}
 
 				// 监听音量
 				this.onConfigChange(
@@ -432,28 +177,22 @@ export const YKTProject = Project.create({
 					debounce(() => $message.info('倍速设置已修改，刷新页面后生效'), 200)
 				);
 
-				// // 展开5次章节，确保所有章节都被展开
-				// const max_level = 5;
-				// for (let i = 0; i < max_level; i++) {
-				// 	document.querySelectorAll<HTMLElement>('.expand-icon:not(.is-expanded )').forEach((el) => el.click());
-				// 	await $.sleep(100);
-				// }
-
 				const getJobs = () => Array.from(document.querySelectorAll<HTMLElement>('div.leaf-item'));
 				const getJobName = () =>
 					document.querySelector('.leaf-item.is-active .leaf-item-title')?.textContent || '未知任务点';
+				const getJobTag = (el: HTMLElement) => (el.querySelector('.leaf-item-tag')?.textContent || '').trim();
+
 				const getNextJob = () => {
 					let jobs = getJobs();
+
 					const active_index = jobs.findIndex((job) => job.classList.contains('is-active'));
 
-					// 不是复习模式，过滤掉已经完成的
-					if (!this.cfg.restudy) {
-						jobs = jobs.splice(active_index);
-						jobs = jobs.filter((el) => !el.querySelector('.icon-yuanquangou'));
-						jobs = jobs.filter((el) => !(el.querySelector('.leaf-item-tag')?.textContent || '').includes('自测'));
-					}
-					const new_active_index = jobs.findIndex((job) => job.classList.contains('is-active'));
-					return jobs[new_active_index + 1];
+					return jobs.find((job, i) => {
+						const tag_text = getJobTag(job);
+						const support = ['视频', '作业', '讨论', '图文'].includes(tag_text.trim());
+						const finished = job.querySelector('[class*=yuanquangou]');
+						return i > active_index && support && (this.cfg.restudy || !finished);
+					});
 				};
 
 				try {
@@ -461,20 +200,36 @@ export const YKTProject = Project.create({
 					await waitForElement('.detail-container', {
 						timeout_seconds: 10 * 1000
 					});
-					$message.info('即将开始自动学习');
+					await $.sleep(3000);
 				} catch (e) {
 					$message.error('元素加载失败，请刷新界面重试。');
+				}
+
+				// 现在界面会自动展开，无需手动展开章节，下列代码已废弃
+				// 展开5次章节，确保所有章节都被展开
+				const max_level = 5;
+				for (let i = 0; i < max_level; i++) {
+					document.querySelectorAll<HTMLElement>('.nav-item-title:not(.is-expand )').forEach((el) => el.click());
+					await $.sleep(100);
 				}
 
 				const study = async () => {
 					try {
 						if ($el('.detail-container video')) {
 							$msg.info('即将开始视频学习：' + getJobName());
-							await v2_watch({
+							await watch({
 								volume: this.cfg.volume,
 								playbackRate: this.cfg.playbackRate
 							});
-							$msg.success('视频学习完成');
+							await $.sleep(3000);
+						}
+
+						const forum = $el('.detail-container .lms-graph-forum');
+						if (forum) {
+							$msg.info('即将开始自动讨论：' + getJobName());
+							// 评论模式复用「课程学习」脚本的 discussMode 设置
+							await autoCommentYktForum(forum, this.cfg.discussMode);
+							$msg.success('自动讨论完成');
 							await $.sleep(3000);
 						}
 
@@ -482,13 +237,10 @@ export const YKTProject = Project.create({
 							// 作业任务点：题目在 iframe（#iframeExerciseId -> /v2/web/iframe-exercise）内，
 							// 与主页面同源，可通过 contentDocument 访问
 							if (this.cfg.problemWork) {
-								const workOpts = CommonProject.scripts.settings.methods.getWorkOptions();
 								const exerciseIframe = $el('.detail-container .lms-graph-exercise iframe#iframeExerciseId') as
 									| HTMLIFrameElement
 									| undefined;
-								if (workOpts.answererWrappers.length === 0) {
-									$message.warn('检测到作业任务点，但未配置题库，跳过自动答题。');
-								} else if (!exerciseIframe) {
+								if (!exerciseIframe) {
 									$console.warn('作业任务点结构未识别（缺少 iframe#iframeExerciseId），跳过自动答题。');
 								} else if (!exerciseIframe.contentDocument) {
 									$console.warn('作业 iframe 无法访问（可能跨域），跳过自动答题。');
@@ -503,8 +255,16 @@ export const YKTProject = Project.create({
 									if (!questionRoot) {
 										$console.warn('作业页面加载超时，跳过自动答题。');
 									} else {
-										$message.info('开始自动答题...');
-										await answerYktEmbeddedProblem(workOpts, exerciseIframe.contentDocument);
+										// 题库检查/开始倒计时/控制面板由 commonWork 统一处理
+
+										await new Promise<void>((resolve) => {
+											commonWork(this, {
+												workerProvider: (opts) => {
+													return createYktEmbeddedWorkLoop(opts, exerciseIframe.contentDocument!, () => resolve());
+												}
+											});
+										});
+
 										$message.success('作业任务点答题完成。');
 									}
 								}
@@ -512,6 +272,7 @@ export const YKTProject = Project.create({
 							await $.sleep(3000);
 						}
 					} catch (e) {
+						$console.error(`当前任务点无法完成，即将跳转下一节（${e}）`);
 						$message.error(`当前任务点无法完成，即将跳转下一节（${e}）`);
 					}
 					const next = getNextJob();
@@ -526,12 +287,67 @@ export const YKTProject = Project.create({
 					await $.sleep(3000);
 					study();
 				};
-
 				study();
 			}
 		})
 	}
 });
+
+/**
+ * AI学伴讨论任务点自动评论。
+ * 结构依据样本 .codebuddy/yuketan_work/forum.html：
+ *   评论列表：.forum-content .forum-item .comment-text
+ *   输入框：  .forum-publish textarea.el-textarea__inner
+ *   发送按钮：.prompt-send-btn（div；输入为空时带 .disabled，填充后由 Vue 移除，需等待解除禁用再点击）
+ *   发言状态：.learning-space-control-unit .control-right .f12（已发言则跳过，防止重复评论）
+ * 失败统一抛出错误，由调用方（study 循环）捕获并跳转下一节。
+ */
+async function autoCommentYktForum(forum: HTMLElement, discussMode: 'random' | 'first' | 'none') {
+	// 防止重复评论：检测发言状态（未发言/已发言）
+	const speakStatus = forum.querySelector('.learning-space-control-unit .control-right .f12')?.textContent?.trim();
+	if (speakStatus?.includes('已发言')) {
+		$message.info('当前讨论已发言，跳过评论步骤。');
+		return;
+	}
+
+	if (discussMode === 'none') {
+		$message.info('已设置为不进行评论，跳过评论步骤。');
+		return;
+	}
+
+	// 等待输入框渲染（waitForElement 超时 resolve undefined）
+	const textarea = (await waitForElement(
+		() => forum.querySelector<HTMLTextAreaElement>('.forum-publish textarea.el-textarea__inner'),
+		{ timeout_seconds: 20, check_period_ms: 500 }
+	)) as HTMLTextAreaElement | undefined;
+	if (!textarea) {
+		throw new Error('讨论区输入框加载超时。');
+	}
+
+	const discusses = Array.from(forum.querySelectorAll('.forum-content .forum-item .comment-text'))
+		.map((el) => (el.textContent || '').trim())
+		.filter(Boolean);
+
+	if (discusses.length === 0) {
+		throw new Error('讨论区暂无评论可参考，无法自动评论。');
+	}
+
+	const content = discussMode === 'first' ? discusses[0] : discusses[Math.floor(Math.random() * discusses.length)];
+
+	textarea.value = content;
+	textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+	// 填充后等待发送按钮解除禁用（.disabled 状态下点击无效）
+	const send_btn = await waitForElement(() => forum.querySelector<HTMLElement>('.prompt-send-btn:not(.disabled)'), {
+		timeout_seconds: 10,
+		check_period_ms: 500
+	});
+	if (!send_btn) {
+		throw new Error('讨论区发送按钮未解除禁用，评论提交失败。');
+	}
+	send_btn.click();
+	await $.sleep(1000);
+}
 
 /** 雨课堂加密文字元素选择器（平台统一用此类标记密文） */
 const YKT_ENCRYPTED_SELECTOR = '.xuetangx-com-encrypted-font';
@@ -565,6 +381,7 @@ async function setupYuketangFontDecrypt(doc: Document = document) {
 	// 停止上一次页面（SPA 路由切换）遗留的监听器，避免重复解密
 	fontWatchController?.stop();
 	fontWatchController = undefined;
+	const dec_msg = $message.info({ content: '字体解密中...', duration: 0 });
 
 	// 尝试等待加密文字元素渲染（SPA 异步加载）；超时也不返回——
 	// 监听器会在加密文字后续出现时自动解密（如从其他页面 SPA 跳转进来）
@@ -633,7 +450,6 @@ async function setupYuketangFontDecrypt(doc: Document = document) {
 			markFailed(els);
 			return;
 		}
-		$console.log(`[font-decrypt] 考试字体: ${examFontUrl}`);
 
 		// 字体族匹配不到 @font-face 时，fallback 只允许使用考试字体
 		const resolveFontSource = (family: string) => {
@@ -651,7 +467,6 @@ async function setupYuketangFontDecrypt(doc: Document = document) {
 			group.push(el);
 			groups.set(family, group);
 		}
-
 		for (const [family, groupEls] of groups) {
 			const fontSource = resolveFontSource(family);
 			if (!fontSource) {
@@ -678,14 +493,16 @@ async function setupYuketangFontDecrypt(doc: Document = document) {
 				}
 				if (firstDecrypt) {
 					firstDecrypt = false;
-					$message.info('字体解密完成，切换题目时将自动解密新内容。');
+					if (dec_msg) dec_msg.textContent = '字体解密完成，切换题目时将自动解密新内容。';
 				}
-				$console.log(`[font-decrypt] 字体 ${family} 解密完成（映射表累计 ${decryptor.size} 字）。`);
 			} catch (err) {
 				$console.error(`[font-decrypt] 字体 ${family} 解密失败：`, String(err));
 				markFailed(groupEls);
 			}
 		}
+		setTimeout(() => {
+			dec_msg?.remove();
+		}, 3000);
 	};
 
 	// 当前文档的解密处理器（供主动解密调用）
@@ -763,7 +580,13 @@ function parseYktQuestionType(typeText: string): 'single' | 'multiple' | 'judgem
 	if (typeText.includes('判断')) {
 		return 'judgement';
 	}
-	if (typeText.includes('填空') || typeText.includes('简答') || typeText.includes('问答')) {
+	// 填空/简答/问答/主观题统一按 completion 处理（无选项，直接填充答案）
+	if (
+		typeText.includes('填空') ||
+		typeText.includes('简答') ||
+		typeText.includes('问答') ||
+		typeText.includes('主观')
+	) {
 		return 'completion';
 	}
 	return undefined;
@@ -774,38 +597,37 @@ function currentYktQuestionMarker(doc: Document): string {
 	return doc.querySelector('.container-problem .subject-item .item-type')?.textContent?.replace(/\s+/g, '') ?? '';
 }
 
-/** 按按钮文本查找可用按钮（上一题/下一题/提交） */
-function findYktTextButton(text: string, doc: Document): HTMLButtonElement | undefined {
-	return Array.from(doc.querySelectorAll<HTMLButtonElement>('button')).find(
-		(b) => b.textContent?.trim() === text && !b.disabled && !b.classList.contains('is-disabled')
-	);
-}
-
 /**
- * 处理"批量提交提示"弹窗：
- * 存在已作答但未提交的题目时，点击"提交"或"下一题"会弹出
- * "N 道已作答习题未提交，需要一起提交吗？"（.homework-problem-batch-submit-dialog），
- * 统一选择"仅提交本题"（不触发批量提交，保持逐题提交策略）。
- * 返回是否处理了这个弹窗。
+ * 填充主观题的 UEditor 富文本编辑器。
+ *
+ * 优先使用页面 UEditor API（`UE.getEditor(容器id).setContent`，
+ * 会触发 contentchange 使"提交"按钮解除禁用）；API 不可用时
+ * 直接写入编辑器 iframe 的 body 并派发 input 事件兜底。
  */
-async function handleYktBatchSubmitDialog(doc: Document): Promise<boolean> {
-	const dialog = doc.querySelector('.homework-problem-batch-submit-dialog');
-	// 注意：雨课堂的弹窗（batch-submit/change-guard/blank-submit）常驻 DOM，
-	// 通过 display:none 隐藏，必须检查可见性，否则会误判为弹窗一直存在而误点
-	const wrapper = dialog?.closest('.el-dialog__wrapper');
-	if (!dialog || !wrapper || (wrapper as HTMLElement).offsetParent === null) {
-		return false;
+function fillYktUEditor(iframe: HTMLIFrameElement, answer: string) {
+	// 纯文本答案转义为安全 HTML（按换行分段）
+	const html =
+		'<p>' +
+		answer.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n+/g, '</p><p>') +
+		'</p>';
+	// UEditor 容器 id 形如 ueditor-<rand>（注意与 iframe 的 ueditor_<n> 下划线区分）
+	const containerId = iframe.closest('[id^="ueditor-"]')?.id;
+	const ue = (iframe.ownerDocument.defaultView as any)?.UE;
+	if (containerId && ue) {
+		try {
+			const editor = ue.getEditor(containerId);
+			// ready(fn)：编辑器未初始化完成时会延迟执行
+			editor.ready(() => editor.setContent(html));
+			return;
+		} catch (err) {
+			$console.warn('[answer] UEditor API 填充失败，尝试直接写入：', String(err));
+		}
 	}
-	const btn = Array.from(dialog.querySelectorAll<HTMLElement>('.rain-btn')).find((b) =>
-		b.textContent?.trim().includes('仅提交本题')
-	);
-	if (btn) {
-		btn.click();
-		$console.log('[answer] 检测到批量提交提示弹窗，已选择"仅提交本题"。');
-		// 等弹窗关闭
-		await $.sleep(500);
+	const body = iframe.contentDocument?.body;
+	if (body) {
+		body.innerHTML = html;
+		body.dispatchEvent(new Event('input', { bubbles: true }));
 	}
-	return true;
 }
 
 /**
@@ -815,34 +637,26 @@ async function handleYktBatchSubmitDialog(doc: Document): Promise<boolean> {
  */
 async function submitYktCurrentQuestion(doc: Document, order: string): Promise<boolean> {
 	/** 本题在导航中是否已出现完成标记（提交成功的可靠信号）。
-	 *  注意必须用题号定位：提交成功后平台会自动切到下一题，active 已变化 */
-	const hasStatusMark = () =>
-		!!doc.querySelector(`.problems-aside .subject-item.J_order[data-order="${order}"] .icon-status`);
+	 *  注意必须用题号定位：提交成功后平台会自动切到下一题，active 已变化。
+	 *  选择题等显示 .icon-status 图标；主观题提交后显示"未批改"文本状态（无图标）。 */
+	const hasStatusMark = () => {
+		const item = doc.querySelector(`.problems-aside .subject-item.J_order[data-order="${order}"]`);
+		return (
+			!!item?.querySelector('.icon-status') || !!item?.querySelector('.text-status')?.textContent?.includes('未批改')
+		);
+	};
 	// 实测发现偶发"点击提交但未生效"（按钮恢复可用但无完成标记），需要重试
 	for (let attempt = 0; attempt < 2; attempt++) {
-		const submitBtn = findYktTextButton('提交', doc);
+		// 提交按钮可能会出现额外文本，例如（剩余 x 次 提交）
+		const submitBtn = Array.from(
+			doc.querySelectorAll<HTMLButtonElement>('.problem-box button.el-button--primary')
+		).find((b) => b.textContent?.trim().includes('提交') && !b.disabled && !b.classList.contains('is-disabled'));
 		if (!submitBtn) {
 			// 按钮不可用：已提交成功（按钮变为"已提交"/禁用）或无答案可提交
 			return attempt > 0 ? hasStatusMark() : false;
 		}
 		submitBtn.click();
-		// 处理可能出现的弹窗（批量提交提示 / element-ui 确认框）；
-		// 提交按钮变不可用说明无弹窗直接提交成功，可提前结束等待
-		const confirmStart = Date.now();
-		while (Date.now() - confirmStart < 5000) {
-			if (await handleYktBatchSubmitDialog(doc)) {
-				break;
-			}
-			const confirmBtn = doc.querySelector<HTMLElement>('.el-message-box__btns button.el-button--primary');
-			if (confirmBtn) {
-				confirmBtn.click();
-				break;
-			}
-			if (!findYktTextButton('提交', doc)) {
-				break;
-			}
-			await $.sleep(300);
-		}
+		await $.sleep(1000);
 		// 等待提交完成（以导航状态标记为准），超时进入重试判定
 		const waitStart = Date.now();
 		while (Date.now() - waitStart < 10_000) {
@@ -851,11 +665,8 @@ async function submitYktCurrentQuestion(doc: Document, order: string): Promise<b
 			}
 			await $.sleep(300);
 		}
-		if (attempt === 0) {
-			$console.warn('[answer] 提交后未检测到完成状态，重试一次。');
-		}
 	}
-	$console.error('[answer] 提交重试后仍未检测到完成状态。');
+	$console.error('未检测到完成状态。');
 	return false;
 }
 
@@ -907,6 +718,26 @@ async function waitYktQuestionReady(prevMarker: string | null, doc: Document, ti
  * 流程（参考 zhs.ts 校内学分课 xnkWork 的逐题作答模式）：
  *   确保字体解密启动 -> 等题目渲染+解密 -> 搜题作答 -> 点"下一题" -> 循环
  */
+/** 横线填空题的答案输入框选择器（class 为主，placeholder 兜底） */
+const YKT_BLANK_INPUT_SELECTOR = 'input.blank-item-dynamic, input[placeholder="输入答案"]';
+
+/**
+ * 提取题干文本：横线填空题的答案输入框（placeholder="输入答案"）无文本内容，
+ * 提取时会"消失"导致题库无法识别这是填空题；
+ * 这里先克隆元素并把每个横线输入框替换为 ____ 文本再提取，
+ * 如 "…内容包括：____、____、____、____。"
+ */
+function extractYktTitleText(el: HTMLElement): string {
+	if (!el.querySelector(YKT_BLANK_INPUT_SELECTOR)) {
+		return extractTextWithImages(el).text;
+	}
+	const clone = el.cloneNode(true) as HTMLElement;
+	for (const input of Array.from(clone.querySelectorAll(YKT_BLANK_INPUT_SELECTOR))) {
+		input.replaceWith('____');
+	}
+	return extractTextWithImages(clone).text;
+}
+
 function createYktAnswerWorker({
 	answererWrappers,
 	period,
@@ -921,7 +752,7 @@ function createYktAnswerWorker({
 			.map((t) =>
 				t
 					? removeRedundantWords(
-							StringUtils.of(extractTextWithImages(t).text).nowrap(' ').nospace().toString().trim(),
+							StringUtils.of(extractYktTitleText(t)).nowrap(' ').nospace().toString().trim(),
 							redundanceWords
 					  )
 					: ''
@@ -967,12 +798,27 @@ function createYktAnswerWorker({
 			}
 		},
 		elements: {
-			title: '.problem-body',
+			// 题干：选择题/主观题为 .problem-body；填空题的题干与空格输入框混排在
+			// .item-body 的第一个 div 中（无 .problem-body），取该容器兜底
+			title: (root) => {
+				const pb = $$el('.problem-body', root as HTMLElement);
+				return pb.length ? pb : $$el('.item-body > div', root as HTMLElement).slice(0, 1);
+			},
 			type: '.item-type',
 			options: (root) => {
-				// 选择题为选项 label（element-ui radio/checkbox）；填空/简答无选项，返回输入框
+				// 选择题为选项 label（element-ui radio/checkbox）
 				const labels = $$el('ul[class*="list-unstyled"] li label', root);
-				return labels.length ? labels : $$el('textarea', root);
+				if (labels.length) {
+					return labels;
+				}
+				// 主观题为 UEditor 富文本编辑器（iframe 作为填充目标）；
+				// 填空题为横线输入框（blank-item-dynamic / placeholder="输入答案"）；简答为原生 textarea
+				const editors = $$el('iframe[id^="ueditor_"]', root);
+				if (editors.length) {
+					return editors;
+				}
+				const blanks = $$el(YKT_BLANK_INPUT_SELECTOR, root);
+				return blanks.length ? blanks : $$el('textarea', root);
 			}
 		},
 		thread: thread ?? 1,
@@ -994,7 +840,6 @@ function createYktAnswerWorker({
 			const type = ctx.type ?? defaultWorkTypeResolver(ctx) ?? 'single';
 			const resolver = createDefaultQuestionResolver(ctx, (o: HTMLElement) => optionText(o))[type];
 			if (!resolver) {
-				$console.warn(`[answer] 不支持的题型: ${type}，跳过作答。`);
 				return { finish: false };
 			}
 			return await resolver(
@@ -1012,26 +857,35 @@ function createYktAnswerWorker({
 							await $.sleep(300);
 						}
 					} else if (t === 'completion' && answer.trim()) {
-						const textarea =
-							option?.tagName === 'TEXTAREA'
-								? (option as unknown as HTMLTextAreaElement)
-								: (option?.querySelector('textarea') as HTMLTextAreaElement | null);
-						if (textarea) {
-							textarea.value = answer;
-							// Vue 受控组件必须派发 input 事件才能同步数据
-							textarea.dispatchEvent(new Event('input', { bubbles: true }));
-							await $.sleep(200);
+						if (option?.tagName === 'IFRAME') {
+							// 主观题：UEditor 富文本编辑器
+							fillYktUEditor(option as unknown as HTMLIFrameElement, answer);
+							await $.sleep(300);
+						} else {
+							// 填空题为 input 文本框，简答为 textarea
+							const input =
+								option?.tagName === 'TEXTAREA' || option?.tagName === 'INPUT'
+									? (option as unknown as HTMLInputElement | HTMLTextAreaElement)
+									: (option?.querySelector('textarea,input') as HTMLInputElement | HTMLTextAreaElement | null);
+							if (input) {
+								input.value = answer;
+								// Vue 受控组件必须派发 input 事件才能同步数据
+								input.dispatchEvent(new Event('input', { bubbles: true }));
+								await $.sleep(200);
+							}
 						}
 					}
 				}
 			);
 		},
+		// 检测到题目即在结果面板占位（等待搜索中），随后状态推进原地更新
+		onQuestionDetected(current) {
+			updateDynamicResult(current, titleTransform);
+		},
 		onResultsUpdate(current, _, res) {
-			// 参考 cx.ts L961：逐题追加到搜索结果面板。
-			// 无论是否搜到答案都追加（current.result 在搜题失败时同样存在，
-			// 失败题目会以红色序号显示，便于用户定位补答）
+			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
+			updateDynamicResult(current, titleTransform);
 			if (current.result) {
-				CommonProject.scripts.workResults.methods.appendResults(simplifyWorkResult([current], titleTransform));
 				totalQuestionCount++;
 				requestedCount++;
 				resolvedCount++;
@@ -1061,6 +915,79 @@ function createYktAnswerWorker({
  *                        这里在每次作答前从 doc 实时刷新）
  * @param doc             题目所在的 document（作业在 iframe 内时为 iframe.contentDocument）
  */
+/**
+ * 等待平台风控验证码完成。
+ *
+ * 作业自动答题触发风控时页面出现 #homework-automation-risk-challenge 元素，
+ * 必须由用户手动完成验证，否则无法继续自动答题。
+ * 元素不存在时立即返回；存在则挂起直到用户完成验证（元素消失）。
+ */
+async function waitYktCaptcha(doc: Document): Promise<void> {
+	// 作业在 iframe 内，优先在 doc 中查找；兜底顶层 document
+	const getCaptcha = () => doc.querySelector('#homework-automation-risk-challenge');
+	if (!getCaptcha()) {
+		return;
+	}
+	$console.warn('[answer] 检测到平台风控验证码，等待手动完成...');
+	const message = $message.warn({
+		content: '检测到平台风控验证码，请手动完成验证，完成后将自动继续答题。',
+		duration: 0
+	});
+	CommonProject.scripts.settings.methods.notificationBySetting(
+		'雨课堂脚本：检测到平台风控验证码，请手动完成验证，完成后将自动继续答题。',
+		{ duration: 0 }
+	);
+	await new Promise<void>((resolve) => {
+		const interval = setInterval(() => {
+			if (!getCaptcha()) {
+				clearInterval(interval);
+				resolve();
+			}
+		}, 1000);
+	});
+	message?.remove();
+	$message.success('验证码已完成，继续自动答题。');
+}
+
+/**
+ * 雨课堂的切换序号确认、如果有未保存的题目会出现弹窗，这里等待用户确认
+ * 包括：批量未保存答案的提交、单题未保存答案提交
+ */
+async function waitYktWorkConfirmDialog(doc: Document): Promise<void> {
+	const getDialog = () => {
+		const els = Array.from(
+			doc.querySelectorAll<HTMLElement>('.homework-problem-change-guard-dialog,.homework-problem-batch-submit-dialog')
+		);
+		if (
+			els.some(
+				(e) => e?.parentElement?.classList.contains('el-dialog__wrapper') && e?.parentElement.style.display !== 'none'
+			)
+		) {
+			return true;
+		}
+	};
+	if (!getDialog()) {
+		return;
+	}
+	$console.warn('[answer] 检测到作业存在未保存答案，等待手动确认...');
+	const message = $message.warn({
+		content: '检测到作业存在未保存答案，请手动确认 。',
+		duration: 0
+	});
+	CommonProject.scripts.settings.methods.notificationBySetting('雨课堂脚本：检测到作业存在未保存答案，请手动确认 。', {
+		duration: 0
+	});
+	await new Promise<void>((resolve) => {
+		const interval = setInterval(() => {
+			if (!getDialog()) {
+				clearInterval(interval);
+				resolve();
+			}
+		}, 1000);
+	});
+	message?.remove();
+}
+
 async function runYktAnswerLoop(
 	worker: OCSWorker<any>,
 	questionRootRef: HTMLElement[],
@@ -1074,22 +1001,33 @@ async function runYktAnswerLoop(
 		$console.error('字体解密初始化失败：', String(err));
 	}
 
-	// 左侧导航中的"未完成"题号：无 .icon-status 标记
-	//（success=已提交且正确，danger=已提交但错误——均已提交，不应重复作答，
-	//  否则可能把已提交的正确答案改错）
+	// 左侧导航中的"未完成"题号，满足以下任一条件均视为已完成，不应重复作答
+	//（否则可能把已提交的正确答案改错）：
+	//   1. 含 .icon-status 图标标记（success=已提交且正确，danger=已提交但错误）
+	//   2. 含"未批改"文本状态（.text-status，已作答待批改——无 .icon-status，需按文本排除）
 	const getUnfinishedNavItems = () =>
-		Array.from(doc.querySelectorAll<HTMLElement>('.problems-aside .subject-item.J_order')).filter(
-			(el) => !el.querySelector('.icon-status')
-		);
+		Array.from(doc.querySelectorAll<HTMLElement>('.problems-aside .subject-item.J_order')).filter((el) => {
+			if (el.querySelector('.icon-status')) {
+				return false;
+			}
+			if (el.querySelector('.text-status')?.textContent?.includes('未批改')) {
+				return false;
+			}
+			return true;
+		});
 
-	// 左侧题号总数（导航收起时元素仍在 DOM 中）
-	const total = doc.querySelectorAll('.problems-aside .subject-item.J_order').length || 1;
 	// 已处理的题号（按 data-order 记录，不依赖平台状态刷新，防重复作答）
 	const processedOrders = new Set<string>();
 	const processedMarkers = new Set<string>();
 	let prevMarker: string | null = null;
 	let completedAll = false;
 	while (worker.isClose === false) {
+		// 风控验证码检测：每次切题（点击下一题/题号）后、作答前执行，
+		// 出现 #homework-automation-risk-challenge 时挂起等待用户手动完成验证
+		await waitYktCaptcha(doc);
+		if (worker.isClose) {
+			break;
+		}
 		// 每轮重新计算未完成列表（提交后平台会更新状态标记）
 		const unfinished = getUnfinishedNavItems().filter(
 			(el) => !processedOrders.has(el.getAttribute('data-order') ?? '')
@@ -1104,14 +1042,8 @@ async function runYktAnswerLoop(
 			target = unfinished[0];
 			prevMarker = currentYktQuestionMarker(doc);
 			target.click();
-			// 切题时若存在未提交的已作答题目，平台会弹批量提交提示，统一选"仅提交本题"
-			const dialogWaitStart = Date.now();
-			while (Date.now() - dialogWaitStart < 2000) {
-				if (await handleYktBatchSubmitDialog(doc)) {
-					break;
-				}
-				await $.sleep(200);
-			}
+			await $.sleep(1000);
+			await waitYktWorkConfirmDialog(doc);
 		}
 		await waitYktQuestionReady(prevMarker, doc);
 		const marker = currentYktQuestionMarker(doc);
@@ -1125,7 +1057,6 @@ async function runYktAnswerLoop(
 		}
 		const order = target.getAttribute('data-order') ?? '';
 		processedOrders.add(order);
-		$console.log(`[answer] 开始作答 第${order}题（${processedOrders.size}/${total}）: ${marker || '未知题目'}`);
 		// 刷新题目容器引用（doWork 每次调用都重新读取 root 数组）
 		questionRootRef.splice(
 			0,
@@ -1133,16 +1064,12 @@ async function runYktAnswerLoop(
 			...Array.from(doc.querySelectorAll<HTMLElement>('.container-problem .subject-item'))
 		);
 		if (questionRootRef.length === 0) {
-			$console.warn('[answer] 未找到题目容器，答题结束。');
 			break;
 		}
 		try {
-			const results = await worker.doWork();
+			const results = await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
 			allResults.push(...results);
 			const finished = !!results[0]?.result?.finish;
-			if (!finished) {
-				$console.warn(`[answer] 本题未作答成功（可能搜不到答案）: ${marker}`);
-			}
 			// 平台切换题目不会保存答案，必须每题作答后立即提交
 			if (finished) {
 				const submitted = await submitYktCurrentQuestion(doc, order);
@@ -1150,109 +1077,46 @@ async function runYktAnswerLoop(
 					$console.warn(`[answer] 本题提交失败: ${marker}`);
 				}
 			}
+			await $.sleep(1000);
+			// 防止用户手动选择、脚本点击下一题而不是提交按钮 => 导致的确认弹窗。
+			await waitYktWorkConfirmDialog(doc);
 		} catch (err) {
 			$console.error('[answer] 答题异常，终止作答：', String(err));
 			break;
 		}
 	}
-	$console.log(
-		`[answer] 作答循环结束，共处理 ${processedOrders.size}/${total} 题${
-			completedAll ? '，未完成题目已全部处理' : '，存在未处理题目'
-		}。`
-	);
 	return { results: allResults, completedAll };
 }
 
 /**
- * AI学伴课程中的作业任务点自动答题（学习流程内嵌调用）。
- * 逐题"作答 -> 提交 -> 下一题"（平台切题不保存答案，必须逐题提交），
+ * 创建作业答题 Worker 并驱动"逐题作答 -> 逐题提交 -> 下一题"主循环
+ *（平台切题不保存答案，必须逐题提交）。
  * 全部完成后任务点自动标记完成，学习流程继续下一节。
- *
- * @param doc 作业页面所在的 document（AI学伴课程页的作业在 iframe 内，
- *            传 iframe.contentDocument；独立作业页传 document）
  */
-async function answerYktEmbeddedProblem(opts: CommonWorkOptions, doc: Document) {
+function createYktEmbeddedWorkLoop(opts: CommonWorkOptions, doc: Document, onDone: () => void) {
 	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
 	CommonProject.scripts.workResults.methods.init({ dynamic: true });
 
 	const { worker, questionRootRef } = createYktAnswerWorker(opts);
-	const { results, completedAll } = await runYktAnswerLoop(worker, questionRootRef, doc);
-	worker.emit('done');
+	dynamicWorkTips(worker);
+	(async () => {
+		const { results, completedAll } = await runYktAnswerLoop(worker, questionRootRef, doc);
+		worker.emit('done');
 
-	// 平台切换题目不会保存答案，作答循环中已逐题提交。
-	// 未全部完成时给出醒目提示，由用户手动处理剩余题目
-	const finishCount = results.filter((r) => r.result?.finish).length;
-	if (!completedAll) {
-		$message.warn({
-			content: `题目未全部完成（已作答提交 ${finishCount}/${results.length} 题），请手动检查剩余题目。`,
-			duration: 0
-		});
-		return;
-	}
-	$message.success({ content: `作业完成，全部 ${finishCount} 题已作答并逐题提交。`, duration: 0 });
-}
-
-/**
- * 观看视频
- * @param setting
- * @returns
- */
-async function ai_watch(options: { volume: number; playbackRate: number }) {
-	const set = async () => {
-		// 上面操作会导致元素刷新，这里重新获取视频
-		await $.sleep(1000);
-		const media = (await waitForElement('.detail-container video', {
-			timeout_seconds: 10 * 1000
-		})) as HTMLMediaElement;
-		console.log('media', media);
-		await $.sleep(1000);
-		state.study.currentMedia = media;
-
-		if (media) {
-			// 如果已经播放完了，则重置视频进度
-			media.currentTime = 1;
-			// 音量
-			media.volume = options.volume;
-			media.playbackRate = options.playbackRate;
+		// 平台切换题目不会保存答案，作答循环中已逐题提交。
+		// 未全部完成时给出醒目提示，由用户手动处理剩余题目
+		const finishCount = results.filter((r) => r.result?.finish).length;
+		if (!completedAll) {
+			$message.warn({
+				content: `题目未全部完成（已作答提交 ${finishCount}/${results.length} 题），请手动检查剩余题目。`,
+				duration: 0
+			});
+		} else {
+			$message.success({ content: `作业完成，全部 ${finishCount} 题已作答并逐题提交。` });
 		}
-		return state.study.currentMedia;
-	};
-	$message.info('开始播放');
-	const video = await set();
-
-	if (!video) {
-		throw new Error('video not found!');
-	}
-
-	return new Promise<void>((resolve, reject) => {
-		const videoCheckInterval = setInterval(async () => {
-			// 如果视频元素无法访问，证明已经切换了视频
-			if (video?.isConnected === false) {
-				clearInterval(videoCheckInterval);
-				$message.info({ content: '检测到视频切换中...' });
-				/**
-				 * 元素无法访问证明用户切换视频了
-				 * 所以不往下播放视频，而是重新播放用户当前选中的视频
-				 */
-				resolve();
-			}
-		}, 3000);
-
-		playMedia(() => video?.play());
-
-		video.onpause = async () => {
-			if (!video?.ended) {
-				await $.sleep(1000);
-				video?.play();
-			}
-		};
-
-		video.onended = () => {
-			clearInterval(videoCheckInterval);
-			// 正常切换下一个视频
-			resolve();
-		};
-	});
+		onDone();
+	})();
+	return worker;
 }
 
 /**
@@ -1260,7 +1124,7 @@ async function ai_watch(options: { volume: number; playbackRate: number }) {
  * @param setting
  * @returns
  */
-async function v2_watch(options: { volume: number; playbackRate: number }) {
+async function watch(options: { volume: number; playbackRate: number }) {
 	const set = async () => {
 		await $.sleep(1000);
 
@@ -1318,6 +1182,7 @@ async function v2_watch(options: { volume: number; playbackRate: number }) {
 			};
 			video.onended = () => {
 				clearCheckInterval();
+				$msg.success('视频学习完成');
 				// 正常播放结束
 				resolve();
 			};
@@ -1349,8 +1214,8 @@ async function v2_watch(options: { volume: number; playbackRate: number }) {
 				videoCheckInterval = setInterval(() => {
 					if (currentVideo?.isConnected === false) {
 						clearCheckInterval();
-						$message.info({ content: '检测到视频切换中，重新观看...' });
-						watch();
+						$message.info({ content: '检测到视频切换...' });
+						resolve();
 					}
 				}, 3000);
 			} catch (e) {
