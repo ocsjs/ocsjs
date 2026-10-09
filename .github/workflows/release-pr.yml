@@ -3,7 +3,7 @@ name: Release PR
 on:
   push:
     branches:
-      - "4.0"
+      - "5.0"
 
 permissions:
   contents: write
