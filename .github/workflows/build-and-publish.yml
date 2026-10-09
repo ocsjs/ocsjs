@@ -32,7 +32,8 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          npm install pnpm -g
+          # 锁定 pnpm 版本与本地开发一致，避免新版供应链策略（minimumReleaseAge/构建脚本审批）导致 CI 安装失败
+          npm install pnpm@10.30.3 -g
           pnpm install -w
           cd packages/scripts && pnpm install && cd ../../
           npm run tsc
