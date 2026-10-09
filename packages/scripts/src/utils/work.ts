@@ -10,7 +10,7 @@ import {
 } from '@ocsjs/core';
 import { $ui, $message, MessageElement, Script, h, CommonEventEmitter, cors, $elements } from 'easy-us';
 import { CommonProject } from '../projects/common';
-import { BackgroundProject } from '../projects/background';
+import { $console, BackgroundProject } from '../projects/background';
 import { CommonWorkOptions, workPreCheckMessage } from '.';
 import {
 	buildAnswererEnv,
@@ -77,6 +77,23 @@ export function commonWork(
 	// 置顶当前脚本
 	BackgroundProject.scripts.render.methods.pin(script);
 
+	// 同步 worker 工作状态到搜索结果面板：
+	// 动态答题器的"清空搜索结果"按钮在工作时隐藏，停止（结束/关闭/暂停）时显示
+	const { setWorkerWorking } = CommonProject.scripts.workResults.methods;
+
+	CommonProject.scripts.settings.on('answerer-wrapper-change', async (curr, prev) => {
+		$console.log('answerer-wrapper-change curr.length', curr.length);
+		if (curr.length > 0) {
+			state.checkFailed = false;
+			state.startBtnPressed = false;
+			if (checkMessage instanceof MessageElement) {
+				checkMessage.remove();
+			}
+			await closeAnswerWrapperEmptyWarning();
+			start();
+		}
+	});
+
 	/** 本次调用的可变状态（实例隔离，不与其它 commonWork 调用共享） */
 	const state: CommonWorkState = {
 		worker: undefined,
@@ -134,37 +151,38 @@ export function commonWork(
 
 		return { container, startBtn, restartBtn, controlBtn };
 	};
-	const workResultPanel = () => CommonProject.scripts.workResults.methods.createWorkResultsPanel();
 
 	/** 渲染面板内容（render 事件与 start() 共用，保证两处内容一致） */
 	const renderPanelBody = () => {
-		let gotoSettingsBtnContainer: string | HTMLElement = '';
-		if (state.checkFailed) {
-			const gotoSettingsBtn = $ui.button('👉 前往设置题库配置', {
-				className: 'base-style-button',
-				style: { flex: '1', padding: '4px' }
-			});
-			gotoSettingsBtn.onclick = () => {
-				BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.settings);
-			};
-			gotoSettingsBtnContainer = h('div', { style: { display: 'flex' } }, [gotoSettingsBtn]);
-		}
+		const gotoSettingsBtn = $ui.button('👉 前往设置题库配置', {
+			className: 'base-style-button',
+			style: { flex: '1', padding: '4px' }
+		});
+		gotoSettingsBtn.onclick = () => {
+			BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.settings);
+		};
 
 		// 搜索结果区域复用：仅当被框架重建（detached）后才新建，
 		// 避免 createWorkResultsPanel 每次调用都累积一组 config/store 监听器
 		if (!state.resultPanel?.isConnected) {
-			state.resultPanel = workResultPanel();
+			state.resultPanel = CommonProject.scripts.workResults.methods.createWorkResultsPanel();
 		}
 
 		script.panel?.body?.replaceChildren(
-			h('div', { style: { marginTop: '12px' } }, [
-				h('hr'),
-				gotoSettingsBtnContainer,
-				// 控制面板始终渲染：未开始时为"开始答题"按钮；
-				// start() 后复用 state.controlPanel（暂停 | 重新答题），re-render 不会丢失
-				state.controlPanel || createWorkControlPanel().container,
-				state.resultPanel
-			])
+			h(
+				'div',
+				{ style: { marginTop: '12px' } },
+
+				state.checkFailed
+					? [h('hr'), h('div', { style: { display: 'flex' } }, [gotoSettingsBtn])]
+					: [
+							h('hr'),
+							// 控制面板始终渲染：未开始时为"开始答题"按钮；
+							// start() 后复用 state.controlPanel（暂停 | 重新答题），re-render 不会丢失
+							state.controlPanel || createWorkControlPanel().container,
+							state.resultPanel
+					  ]
+			)
 		);
 	};
 
@@ -173,7 +191,7 @@ export function commonWork(
 	// 也避免同一个 DOM 元素被两个面板互相"偷走"导致状态不同步
 	bindCommonWorkRender(script, renderPanelBody);
 
-	const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
+	let workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
 
 	/**
 	 * 检查题库是否配置，并询问是否开始答题
@@ -193,8 +211,14 @@ export function commonWork(
 		if (state.running) {
 			return;
 		}
+		if (state.checkFailed) {
+			return answerWrapperEmptyWarning(0);
+		}
+		// 重新获取题库配置（防止题库变化事件触发后无法获取到最新题库配置）
+		workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
 		await options.beforeRunning?.();
 		state.running = true;
+		// 运行答题
 		state.worker = options.workerProvider(workOptions);
 
 		if (state.worker) {
@@ -206,9 +230,6 @@ export function commonWork(
 		renderPanelBody();
 
 		if (state.worker) {
-			// 同步 worker 工作状态到搜索结果面板：
-			// 动态答题器的"清空搜索结果"按钮在工作时隐藏，停止（结束/关闭/暂停）时显示
-			const { setWorkerWorking } = CommonProject.scripts.workResults.methods;
 			setWorkerWorking(true);
 			state.worker.on('stop', () => setWorkerWorking(false));
 			state.worker.on('continuate', () => setWorkerWorking(true));
@@ -418,6 +439,7 @@ export const answerWrapperEmptyWarning = cors.defineTopFunction((duration: numbe
 });
 
 export const closeAnswerWrapperEmptyWarning = cors.defineTopFunction(() => {
+	console.log(answererWrapperUnsetMessage);
 	answererWrapperUnsetMessage?.remove();
 	answererWrapperUnsetMessage = undefined;
 });

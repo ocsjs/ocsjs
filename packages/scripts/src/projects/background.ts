@@ -100,8 +100,6 @@ function onDevtoolsOpen(callback: () => void) {
 			trigger();
 			return;
 		}
-		// 方式三：console 对象嗅探（周期性记录，控制台打开时求值触发 getter）
-		console.log(probe);
 	}, 1000);
 }
 

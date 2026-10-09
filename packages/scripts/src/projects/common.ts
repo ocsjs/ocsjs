@@ -2,17 +2,14 @@ import debounce from 'lodash/debounce';
 import {
 	defaultAnswerWrapperHandler,
 	AnswerWrapperParser,
-	request,
 	SimplifyWorkResult,
-	$,
 	WorkUploadType,
 	AnswerWrapperHandlerConfig
 } from '@ocsjs/core';
-import { $message, h, $gm, $store, Project, Script, $modal, $ui, MessageElement } from 'easy-us';
-import type { AnswererWrapper, SearchInformation } from '@ocsjs/core';
+import { $message, h, $gm, $store, Project, Script, $modal, $ui, MessageElement, cors } from 'easy-us';
+import type { AnswererWrapper } from '@ocsjs/core';
 import { CXProject, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '../index';
 import { BackgroundProject } from './background';
-import { markdown } from '../utils/markdown';
 import { enableCopy } from '../utils';
 import { SearchInfosElement } from '../elements/search.infos';
 import { dropdownStyle } from '../utils/configs';
@@ -30,6 +27,10 @@ import {
 } from '../utils/ui';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
+
+const emitAnswererChanged = cors.defineTopFunction((curr: AnswererWrapper[], pre: AnswererWrapper[]) => {
+	CommonProject.scripts.settings.emit('answerer-wrapper-change', curr, pre);
+});
 
 /**
  * 题库启停状态接入（题库卡片组件回调，组件实现见 utils/ui.ts）
@@ -273,6 +274,11 @@ export const CommonProject = Project.create({
 								if (!confirmed) {
 									return false;
 								}
+
+								// 全局跨域提交改动事件
+								emitAnswererChanged(awsResult, CommonProject.scripts.settings.cfg.answererWrappers);
+
+								// ============================ 配置成功 ============================
 
 								CommonProject.scripts.settings.cfg.answererWrappers = awsResult;
 								this.value = '当前有' + awsResult.length + '个可用题库';
@@ -1040,7 +1046,8 @@ export const CommonProject = Project.create({
 				this.onConfigChange('imageOptimize', () => checkImageOptimizeCompatibility());
 				this.onConfigChange('answererWrappers', () => checkImageOptimizeCompatibility());
 			}
-		}),
+		}).withEvents<{ 'answerer-wrapper-change': (curr: AnswererWrapper[], pre: AnswererWrapper[]) => void }>(),
+
 		workResults: new Script({
 			name: '🔎 搜索结果',
 			matches: [['所有页面', /.*/]],

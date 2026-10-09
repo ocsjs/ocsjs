@@ -46,9 +46,7 @@ export const ICourseProject = Project.create({
 
 					for (const key in ICourseProject.scripts) {
 						if (Object.prototype.hasOwnProperty.call(ICourseProject.scripts, key)) {
-							const script = (ICourseProject.scripts as any)[key] as Script<{
-								runAtHash: { defaultValue: string | string[] };
-							}>;
+							const script = (ICourseProject.scripts as any)[key] as Script;
 							const runAtHash = Array.isArray(script.cfg.runAtHash) ? script.cfg.runAtHash : [script.cfg.runAtHash];
 							if (runAtHash.length && runAtHash.some((h) => state.currentUrlHash.includes(h))) {
 								if (state.currentRunningScriptName !== script.name) {
