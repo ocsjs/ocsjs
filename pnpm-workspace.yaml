@@ -1,3 +1,7 @@
 packages:
   - packages/**
   - '!**/dist/**'
+# easy-us 由本仓库作者自维护且频繁同步发布，
+# 排除 pnpm minimumReleaseAge 供应链检查，避免 CI 安装依赖被拦截
+minimumReleaseAgeExclude:
+  - easy-us
