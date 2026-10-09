@@ -61,10 +61,7 @@ function bytesToDataUrl(bytes: Uint8Array): string {
 }
 
 function readUint32BE(bytes: Uint8Array, off: number): number {
-	return (
-		(bytes[off] * 0x1000000) +
-		((bytes[off + 1] << 16) | (bytes[off + 2] << 8) | bytes[off + 3])
-	) >>> 0;
+	return (bytes[off] * 0x1000000 + ((bytes[off + 1] << 16) | (bytes[off + 2] << 8) | bytes[off + 3])) >>> 0;
 }
 
 function concatUint8(arrs: Uint8Array[]): Uint8Array {
@@ -139,8 +136,7 @@ export function getImageSize(dataUrl: string): PngInfo | undefined {
 	const height = readUint32BE(bytes, 20);
 	const bitDepth = bytes[24];
 	const colorType = bytes[25];
-	const channels =
-		colorType === 2 ? 3 : colorType === 6 ? 4 : colorType === 4 ? 2 : colorType === 0 ? 1 : 0;
+	const channels = colorType === 2 ? 3 : colorType === 6 ? 4 : colorType === 4 ? 2 : colorType === 0 ? 1 : 0;
 	if (channels === 0) return undefined;
 	if (bitDepth !== 8) return undefined;
 	return { width, height, bitDepth, colorType, channels };
@@ -182,7 +178,6 @@ function unfilterRow(filter: number, cur: Uint8Array, prev: Uint8Array, bpp: num
 				const c = x >= bpp ? prev[x - bpp] : 0;
 				cur[x] = (cur[x] + paeth(a, b, c)) & 0xff;
 			}
-			return;
 	}
 }
 
@@ -192,12 +187,7 @@ function decodePng(bytes: Uint8Array, info: PngInfo): Uint8Array | undefined {
 	let off = 8;
 	while (off + 8 <= bytes.length) {
 		const len = readUint32BE(bytes, off);
-		const type = String.fromCharCode(
-			bytes[off + 4],
-			bytes[off + 5],
-			bytes[off + 6],
-			bytes[off + 7]
-		);
+		const type = String.fromCharCode(bytes[off + 4], bytes[off + 5], bytes[off + 6], bytes[off + 7]);
 		if (type === 'IDAT') {
 			idatChunks.push(bytes.subarray(off + 8, off + 8 + len));
 		} else if (type === 'IEND') break;
@@ -268,12 +258,7 @@ function makeChunk(type: string, data: Uint8Array): Uint8Array {
 }
 
 /** 编码 PNG（8 位、filter 0） */
-function encodePng(
-	width: number,
-	height: number,
-	channels: number,
-	pixels: Uint8Array
-): Uint8Array | undefined {
+function encodePng(width: number, height: number, channels: number, pixels: Uint8Array): Uint8Array | undefined {
 	const bpp = channels;
 	const stride = width * bpp;
 	const raw = new Uint8Array(height * (1 + stride));
@@ -317,13 +302,7 @@ function upscalePngViaCodec(dataUrl: string, minDim: number): string {
 	const decoded = decodePng(bytes, info);
 	if (!decoded) return dataUrl;
 	const scale = Math.ceil(minDim / Math.min(info.width, info.height));
-	const { pixels, width, height } = resampleNearest(
-		decoded,
-		info.width,
-		info.height,
-		info.channels,
-		scale
-	);
+	const { pixels, width, height } = resampleNearest(decoded, info.width, info.height, info.channels, scale);
 	const encoded = encodePng(width, height, info.channels, pixels);
 	if (!encoded) return dataUrl;
 	return bytesToDataUrl(encoded);
@@ -332,9 +311,9 @@ function upscalePngViaCodec(dataUrl: string, minDim: number): string {
 /** 浏览器路径：canvas 缩放 */
 async function upscalePngViaCanvas(dataUrl: string, minDim: number): Promise<string> {
 	const img = new Image();
-	await new Promise<void>((res, rej) => {
-		img.onload = () => res();
-		img.onerror = () => rej(new Error('图片加载失败'));
+	await new Promise<void>((resolve, reject) => {
+		img.onload = () => resolve();
+		img.onerror = () => reject(new Error('图片加载失败'));
 		img.src = dataUrl;
 	});
 	const w = img.naturalWidth || img.width;

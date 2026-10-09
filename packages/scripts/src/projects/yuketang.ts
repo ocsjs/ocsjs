@@ -91,14 +91,13 @@ export const YKTProject = Project.create({
 			async oncomplete() {
 				// ===================================== PPT ==================================
 				$message.info('正在学习PPT中，请耐心等待...');
-				for (let item of Array.from<HTMLElement>(document.querySelectorAll('.swiper-container .container')).filter(
+				for (const item of Array.from<HTMLElement>(document.querySelectorAll('.swiper-container .container')).filter(
 					(el) => !!el.querySelector('.noRead')
 				)) {
 					await $.sleep(1000);
 					item.click();
 				}
 				$message.info({ content: 'PPT阅读完毕，请手动切换到下一个任务', duration: 0 });
-				return;
 			}
 		}),
 		/**
@@ -183,7 +182,7 @@ export const YKTProject = Project.create({
 				const getJobTag = (el: HTMLElement) => (el.querySelector('.leaf-item-tag')?.textContent || '').trim();
 
 				const getNextJob = () => {
-					let jobs = getJobs();
+					const jobs = getJobs();
 
 					const active_index = jobs.findIndex((job) => job.classList.contains('is-active'));
 
@@ -521,8 +520,8 @@ let decryptChain: Promise<void> = Promise.resolve();
 function enqueueYktDecrypt(els: HTMLElement[]): Promise<void> {
 	const run = decryptChain.then(() => activeDecryptHandler?.(els));
 	decryptChain = run.then(
-		() => void 0,
-		() => void 0
+		() => undefined,
+		() => undefined
 	);
 	return run;
 }
@@ -1002,7 +1001,7 @@ async function runYktAnswerLoop(
 	}
 
 	// 左侧导航中的"未完成"题号，满足以下任一条件均视为已完成，不应重复作答
-	//（否则可能把已提交的正确答案改错）：
+	// （否则可能把已提交的正确答案改错）：
 	//   1. 含 .icon-status 图标标记（success=已提交且正确，danger=已提交但错误）
 	//   2. 含"未批改"文本状态（.text-status，已作答待批改——无 .icon-status，需按文本排除）
 	const getUnfinishedNavItems = () =>

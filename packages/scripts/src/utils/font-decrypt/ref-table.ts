@@ -73,20 +73,20 @@ export function loadRefTable(url: string): Promise<RefTable> {
 				off += (count * gc * gc) / 8;
 				const fine = unpackBits(packed, off, count, gf * gf);
 				return { count, cps, coarse, fine, gc, gf, threshold };
-				});
-				// 无论成功失败都清除超时定时器；失败时清除缓存，
-				// 避免缓存住 rejected Promise 导致后续永远失败（网络恢复后也无法重试）
-				cached = cached
-				.then((table) => {
-					clearTimeout(timer);
-					return table;
-				})
-				.catch((err) => {
-					clearTimeout(timer);
-					refTableCache.delete(url);
-					throw err;
-				});
-				refTableCache.set(url, cached);
-				}
-				return cached;
-				}
+			});
+		// 无论成功失败都清除超时定时器；失败时清除缓存，
+		// 避免缓存住 rejected Promise 导致后续永远失败（网络恢复后也无法重试）
+		cached = cached
+			.then((table) => {
+				clearTimeout(timer);
+				return table;
+			})
+			.catch((err) => {
+				clearTimeout(timer);
+				refTableCache.delete(url);
+				throw err;
+			});
+		refTableCache.set(url, cached);
+	}
+	return cached;
+}

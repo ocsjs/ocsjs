@@ -242,9 +242,7 @@ export async function createImageSuggestion(
 			try {
 				normalized = await upscalePngDataUrl(normalized, MIN_IMAGE_DIMENSION);
 			} catch (e: any) {
-				console.warn(
-					`[imageOptimize] 图片 ${size.width}x${size.height} 放大失败，已跳过：${url}（${e?.message}）`
-				);
+				console.warn(`[imageOptimize] 图片 ${size.width}x${size.height} 放大失败，已跳过：${url}（${e?.message}）`);
 				continue;
 			}
 		}

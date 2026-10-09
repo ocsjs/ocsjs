@@ -25,10 +25,13 @@ export class FontDecryptor {
 	/** 任务队列：所有解密串行执行，避免并发破解/重复破解 */
 	private queue: Promise<void> = Promise.resolve();
 
-	private constructor(
-		private readonly fontSource: string | ArrayBuffer,
-		private readonly config: FontDecryptConfig
-	) {}
+	private readonly fontSource: string | ArrayBuffer;
+	private readonly config: FontDecryptConfig;
+
+	private constructor(fontSource: string | ArrayBuffer, config: FontDecryptConfig) {
+		this.fontSource = fontSource;
+		this.config = config;
+	}
 
 	/**
 	 * 创建解密器并预热特征表（后台提前下载，避免首次解密卡顿）。
@@ -74,7 +77,7 @@ export class FontDecryptor {
 	private enqueue(task: () => Promise<void>): Promise<void> {
 		// 前一个任务失败也不阻塞后续任务
 		const run = this.queue.then(task, task);
-		this.queue = run.catch(() => void 0);
+		this.queue = run.catch(() => undefined);
 		return run;
 	}
 }
@@ -143,14 +146,14 @@ export function watchElements(
 		clearTimeout(timer);
 		timer = window.setTimeout(() => {
 			timer = undefined;
-			void scan();
+			scan();
 		}, debounceMs);
 	};
 
 	const observer = new MutationObserver(schedule);
 	observer.observe(target, { childList: true, subtree: true, characterData: true });
 	// 立即处理已存在的内容
-	void scan();
+	scan();
 
 	return {
 		stop: () => {

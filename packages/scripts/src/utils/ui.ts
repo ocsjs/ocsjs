@@ -150,12 +150,12 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 				r.status === 'success'
 					? `连接成功，HTTP ${r.statusCode}，延迟 ${r.latency}毫秒`
 					: r.status === 'disabled'
-						? '此题库已被停用，点击右侧开关启用'
-						: r.status === 'error'
-							? '连接失败' + (r.error?.message ? `：${r.error.message}` : '')
-							: r.status === 'timeout'
-								? '连接超时（>10秒）'
-								: '题库配置 URL 无法解析';
+					? '此题库已被停用，点击右侧开关启用'
+					: r.status === 'error'
+					? '连接失败' + (r.error?.message ? `：${r.error.message}` : '')
+					: r.status === 'timeout'
+					? '连接超时（>10秒）'
+					: '题库配置 URL 无法解析';
 		};
 		/** 发起延迟探测（列表渲染 / 题库变更 / 重新启用时自动调用） */
 		const startProbe = () => {

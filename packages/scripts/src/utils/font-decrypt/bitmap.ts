@@ -64,11 +64,7 @@ function getRenderCanvas() {
  * 渲染单字并提取特征。
  * 返回 { coarse, fine }（二值 0/1 数组）；空白字形（无墨迹）返回 null。
  */
-function renderGlyph(
-	fontFamily: string,
-	ch: string,
-	table: RefTable
-): { coarse: Uint8Array; fine: Uint8Array } | null {
+function renderGlyph(fontFamily: string, ch: string, table: RefTable): { coarse: Uint8Array; fine: Uint8Array } | null {
 	const { ctx } = getRenderCanvas();
 	ctx.clearRect(0, 0, SQ, SQ);
 	ctx.fillStyle = '#fff';
@@ -115,8 +111,7 @@ function renderGlyph(
 			for (let gx = 0; gx < n; gx++) {
 				const y0 = gy * b;
 				const x0 = gx * b;
-				const sum =
-					ii[(y0 + b) * W + x0 + b] - ii[y0 * W + x0 + b] - ii[(y0 + b) * W + x0] + ii[y0 * W + x0];
+				const sum = ii[(y0 + b) * W + x0 + b] - ii[y0 * W + x0 + b] - ii[(y0 + b) * W + x0] + ii[y0 * W + x0];
 				out[gy * n + gx] = sum / area > table.threshold ? 1 : 0;
 			}
 		}
@@ -255,7 +250,7 @@ export async function crackFont(
 	// 字体 URL 无响应时 load() 可能永不 settle，必须加超时防止无限等待
 	await Promise.race([
 		face.load(),
-		new Promise<never>((_, reject) => setTimeout(() => reject(new Error('[font-decrypt] 字体加载超时')), 15_000))
+		new Promise<never>((resolve, reject) => setTimeout(() => reject(new Error('[font-decrypt] 字体加载超时')), 15_000))
 	]);
 	// 项目 tsconfig 的 DOM lib 版本较旧，缺少 FontFaceSet.add 的类型定义，这里做最小断言
 	(document.fonts as unknown as { add(font: FontFace): void }).add(face);
@@ -355,9 +350,7 @@ export function findFontUrls(doc: Document = document): string[] {
 
 /** 从 @font-face 的 data URI 中提取 base64 字体数据并解码为 ArrayBuffer */
 export function extractFontFromStyle(doc: Document, fontFamilyMarker: string): ArrayBuffer | undefined {
-	const styleEl = Array.from(doc.head.querySelectorAll('style')).find((s) =>
-		s.textContent?.includes(fontFamilyMarker)
-	);
+	const styleEl = Array.from(doc.head.querySelectorAll('style')).find((s) => s.textContent?.includes(fontFamilyMarker));
 	const base64 = styleEl?.textContent?.match(/base64,([\w\W]+?)['")]/)?.[1];
 	if (!base64) {
 		return undefined;
@@ -393,7 +386,7 @@ export function listFontFaces(doc: Document = document): FontFaceInfo[] {
 					const m = /url\(["']?([^"')]+)["']?\)/.exec(rule.style.getPropertyValue('src'));
 					if (family && m) {
 						// data URI 原样保留；相对 URL 以【目标 document 的地址】为基准转为绝对 URL
-						//（iframe 内的相对路径不能用顶层 location 解析）
+						// （iframe 内的相对路径不能用顶层 location 解析）
 						const base = doc.location?.href ?? location.href;
 						faces.push({ family, src: m[1].startsWith('data:') ? m[1] : new URL(m[1], base).href });
 					}

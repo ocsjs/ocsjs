@@ -420,11 +420,11 @@ export const CommonProject = Project.create({
 												const saved = await applyAws(aws, false);
 												if (saved) {
 													// 接收配置后延迟 1 秒，再进入 3 秒关闭倒计时
-													await new Promise((r) => setTimeout(r, 1000));
+													await new Promise((resolve) => setTimeout(resolve, 1000));
 													// 3 秒倒计时提示后自动关闭题库站小窗（浏览器仅允许关闭由脚本 window.open 打开的窗口）
 													for (let i = 3; i > 0; i--) {
 														setConnectStatus(`✅ 题库配置已保存，${i} 秒后自动关闭小窗…`, 'success');
-														await new Promise((r) => setTimeout(r, 1000));
+														await new Promise((resolve) => setTimeout(resolve, 1000));
 													}
 													setConnectStatus('✅ 题库配置已保存，重新答题或刷新界面 即可生效。', 'success');
 													try {
@@ -558,7 +558,7 @@ export const CommonProject = Project.create({
 												}
 
 												try {
-													let awsResult: AnswererWrapper[] = [];
+													const awsResult: AnswererWrapper[] = [];
 													if (select.value === 'TikuAdapter') {
 														if (value.startsWith('http') === false) {
 															$modal.alert({
@@ -823,7 +823,7 @@ export const CommonProject = Project.create({
 						type: 'checkbox',
 						title:
 							'遇到图片题解析图片成 Base64 上传给题库，防止遇到防盗链等问题无法加载。' +
-							'需题库配置支持（POST 方法且引用了 ${images} / ${suggestion_title} / ${suggestion_options} 字段），' +
+							`需题库配置支持（POST 方法且引用了 \${images} / \${suggestion_title} / \${suggestion_options} 字段），` +
 							'否则会提示你去源头更新并重新配置题库。原题 title / options 不会被修改。'
 					},
 					defaultValue: true
@@ -1024,11 +1024,11 @@ export const CommonProject = Project.create({
 							state.setting.imageOptimizeMessage = $message.warn({
 								content: h('div', [
 									'图片题优化已开启，但当前题库配置暂不支持（需 POST 方法并引用 ',
-									h('code', '${images}'),
+									h('code', `\${images}`),
 									' / ',
-									h('code', '${suggestion_title}'),
+									h('code', `\${suggestion_title}`),
 									' / ',
-									h('code', '${suggestion_options}'),
+									h('code', `\${suggestion_options}`),
 									' 字段）。',
 									h('br'),
 									'请前往题库配置源头获取新配置并重新配置题库，否则图片题优化功能无法生效。'
@@ -1600,13 +1600,6 @@ const createGuide = () => {
 	const closeGuide = h('button', { className: 'base-style-button-secondary' }, '📄如何关闭脚本？');
 	closeGuide.onclick = () =>
 		window.open('https://docs.ocsjs.com/docs/script#%E5%85%B3%E9%97%AD%E8%84%9A%E6%9C%AC%E6%95%99%E7%A8%8B', '_blank');
-
-	const cardStyle: Partial<CSSStyleDeclaration> = {
-		border: '1px solid #eee',
-		borderRadius: '4px',
-		padding: '8px',
-		paddingTop: '4px'
-	};
 
 	return h('div', { className: 'user-guide' }, [
 		h('div', [

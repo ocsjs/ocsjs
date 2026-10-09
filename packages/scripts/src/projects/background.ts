@@ -98,7 +98,7 @@ function onDevtoolsOpen(callback: () => void) {
 		const heightDiff = window.outerHeight - window.innerHeight;
 		if (widthDiff > 160 || heightDiff > 160) {
 			trigger();
-			return;
+			
 		}
 	}, 1000);
 }

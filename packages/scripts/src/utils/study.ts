@@ -21,7 +21,7 @@ export async function waitForMedia(options?: {
 
 	const res = await new Promise<HTMLVideoElement | HTMLAudioElement>((resolve, reject) => {
 		// eslint-disable-next-line prefer-const
-		let timeoutId: ReturnType<typeof setTimeout> | undefined = undefined;
+		let timeoutId: ReturnType<typeof setTimeout> | undefined;
 		const interval = setInterval(() => {
 			const video = (options?.root || document).querySelector<HTMLVideoElement | HTMLAudioElement>(
 				`${options?.videoSelector || 'video'},${options?.audioSelector || 'audio'}`

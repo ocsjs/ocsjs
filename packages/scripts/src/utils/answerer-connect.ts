@@ -42,8 +42,10 @@ export function setAnswererConfigProvider(p?: AnswererConfigProvider) {
 	provider = undefined;
 	if (p && p.name && p.connectUrl) {
 		try {
-			new URL(p.connectUrl);
-			provider = p;
+			const url = new URL(p.connectUrl);
+			if (url.protocol === 'https:' || url.protocol === 'http:') {
+				provider = p;
+			}
 		} catch {
 			// connectUrl 非法，忽略
 		}
@@ -137,7 +139,7 @@ export function waitForAnswererConfig(
 				resolve(aws);
 			} catch (err) {
 				cleanup();
-				reject(err as Error);
+				reject(err instanceof Error ? err : new Error(String(err)));
 			}
 		};
 

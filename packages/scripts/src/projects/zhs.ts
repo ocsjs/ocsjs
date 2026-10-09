@@ -1,12 +1,10 @@
 import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement, $store, $gm } from 'easy-us';
-import { RemotePage, SimplifyWorkResult, OCSWorker } from '@ocsjs/core';
+import { RemotePage, OCSWorker } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { definition, volume, restudy } from '../utils/configs';
 import {
 	playbackRate as studyPlaybackRate,
 	reloadWhenError,
-	studyNotes,
-	workNotes,
 	workCenterConfigs,
 	studyCenterConfigs,
 	stopTime,

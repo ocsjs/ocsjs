@@ -38,7 +38,13 @@ export const zhsStudyNamespace = 'zhs.study';
  *   - 校内课：        zhs.xnk.work
  *   - AI 教学空间：    zhs.hike.work / zhs.hike.homework
  */
-const legacyZhsWorkNamespaces = ['zhs.gxk.work', 'zhs.smart.work', 'zhs.xnk.work', 'zhs.hike.work', 'zhs.hike.homework'];
+const legacyZhsWorkNamespaces = [
+	'zhs.gxk.work',
+	'zhs.smart.work',
+	'zhs.xnk.work',
+	'zhs.hike.work',
+	'zhs.hike.homework'
+];
 
 /**
  * 智慧树作业考试脚本统一命名空间。

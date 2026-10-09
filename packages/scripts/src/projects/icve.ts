@@ -1,11 +1,4 @@
-import {
-	$,
-	SimplifyWorkResult,
-	OCSWorker,
-	createDefaultQuestionResolver,
-	splitAnswer,
-	QuestionTypes
-} from '@ocsjs/core';
+import { $, OCSWorker, createDefaultQuestionResolver, splitAnswer, QuestionTypes } from '@ocsjs/core';
 import { $gm, cors, $message, $$el, $modal, $el, Project, Script, $ui, h } from 'easy-us';
 import {
 	extractTextWithImages,

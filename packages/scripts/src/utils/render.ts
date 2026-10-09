@@ -1,4 +1,3 @@
-import { CommonProject } from '../projects/common';
 import { BackgroundProject } from '../projects/background';
 
 export const $render = {

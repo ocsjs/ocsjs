@@ -1,5 +1,4 @@
 import { $elements, h } from 'easy-us';
-import { CommonProject } from '../projects/common';
 import { BackgroundProject } from '../projects/background';
 import { logoSvg } from './ui';
 
