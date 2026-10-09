@@ -30,15 +30,21 @@ import { CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { waitForElement, waitForMedia } from '../utils/study';
 
-// @ts-ignore
-let top: Window = globalThis.top;
-
 /**
  * 超星 font-cxsecret 解密用的参考特征表（FRB2 位打包格式，wght 350/400 字重特征）。
  * 由官方 Source Han Sans Normal 字重离线生成（生成脚本见 .codebuddy/font_analysis/），
  * 与平台加密方式无关，无需随超星改字体而更新。
  */
 const CX_SECRET_REF_TABLE_URL = 'https://cdn.ocsjs.com/resources/font/font_ref_cx.bin';
+
+const HIGHT_PLAYBACK_RATE_WARNS = [
+	'⚠️高倍速、夜间、白天大量运行 等情况\n可能导致学习记录清空/回退',
+	'⚠️超星后台可以看到学习时长，请谨慎设置',
+	'⚠️如已清空/回退，请降低倍速至1-2倍'
+];
+
+// @ts-ignore
+let top: Window = globalThis.top;
 
 try {
 	// @ts-ignore 任务点
@@ -86,6 +92,7 @@ type Job = {
 	attachment: Attachment;
 	func: { (): Promise<void> } | undefined;
 };
+
 export const CXProject = Project.create({
 	name: '超星学习通',
 	domains: [
@@ -214,10 +221,10 @@ export const CXProject = Project.create({
 						['任务点不是顺序执行，如果某一个任务没有动', '请查看是否有其他任务正在学习，耐心等待即可。'],
 						'闯关模式请注意题库如果没完成，需要自己完成才能解锁章节。',
 						'请勿凌晨刷课，部分学校课程可能会清空进度。',
-						['⚠️目前超星倍速风控严重，如果高倍速', '完成后被清空还原，请调到1-2倍速学习！']
+						['⚠️目前超星倍速风控严重，如果高倍速', '被平台清空进度，请调到1-2倍速学习！']
 					]).outerHTML
 				},
-				playbackRate: playbackRate,
+				playbackRate: { ...playbackRate, attrs: { title: HIGHT_PLAYBACK_RATE_WARNS.join('\n') } },
 				volume: volume,
 				videoQuizStrategy: {
 					label: '视频内题目',
@@ -355,12 +362,8 @@ export const CXProject = Project.create({
 					this.onConfigChange('playbackRate', (playbackRate) => {
 						if (playbackRate > 2) {
 							$modal.alert({
-								title: '⚠️高倍速警告',
-								content: $ui.notes([
-									'⚠️高倍速可能导致学习记录清空/回退',
-									'⚠️超星后台可以看到学习时长，请谨慎设置',
-									'⚠️如已清空/回退，请降低倍速至1-2倍'
-								]),
+								title: '⚠️高倍速警告 （倍速 >= 2）',
+								content: $ui.notes(HIGHT_PLAYBACK_RATE_WARNS),
 								maskCloseable: false,
 								confirmButtonText: '我已知晓风险'
 							});
@@ -437,8 +440,7 @@ export const CXProject = Project.create({
 
 					await study({
 						...this.cfg,
-						playbackRate: parseFloat(this.cfg.playbackRate.toString()),
-						workOptions: CommonProject.scripts.settings.methods.getWorkOptions()
+						playbackRate: parseFloat(this.cfg.playbackRate.toString())
 					});
 				}
 			}
@@ -1278,11 +1280,7 @@ function rateHack() {
 /**
  * cx 任务学习
  */
-export async function study(
-	opts: typeof CXProject.scripts.study.cfg & {
-		workOptions: CommonWorkOptions;
-	}
-) {
+export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	await $.sleep(3000);
 
 	const searchedJobs: Job[] = [];
@@ -1466,12 +1464,7 @@ function searchIFrame(root: Document) {
 /**
  * 搜索任务点
  */
-function searchJob(
-	opts: typeof CXProject.scripts.study.cfg & {
-		workOptions: CommonWorkOptions;
-	},
-	searchedJobs: Job[]
-): Job | undefined {
+function searchJob(opts: typeof CXProject.scripts.study.cfg, searchedJobs: Job[]): Job | undefined {
 	const knowCardWin = $gm.unsafeWindow;
 
 	const searchJobElement = (root: HTMLIFrameElement) => {
@@ -1573,14 +1566,15 @@ function searchJob(
 								// / 强制学习
 								(work_type === 'not-job' && CommonProject.scripts.settings.cfg['work-when-no-job'])
 							) {
-								if (opts.workOptions.answererWrappers === undefined || opts.workOptions.answererWrappers.length === 0) {
+								const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
+								if (workOptions.answererWrappers === undefined || workOptions.answererWrappers.length === 0) {
 									answerWrapperEmptyWarning(0);
 								} else {
 									func = () => {
 										const msg = `开始答题 : ` + jobName;
 										$message.info({ content: msg });
 										$console.log(msg);
-										return JobRunner.chapter(root, opts.workOptions);
+										return JobRunner.chapter(root, workOptions);
 									};
 								}
 							}
