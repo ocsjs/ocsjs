@@ -449,15 +449,48 @@ export const CXProject = Project.create({
 			name: '✍️ 作业考试脚本',
 			matches: [
 				['作业页面', '/mooc2/work/dowork'],
-				['考试整卷预览页面', '/mooc2/exam/preview']
+				['考试整卷预览页面', '/mooc2/exam/preview'],
+				['作业完成界面', '/work/view']
 			],
 			namespace: 'cx.new.work',
 			configs: { notes: workNotes },
 			async oncomplete() {
+				if (location.href.includes('/work/view')) {
+					return $message.info('当前作业已提交、自动答题关闭');
+				}
+				if (location.href.includes('/page/quiz/stu/answerQuestion2')) {
+					commonWork({
+						workerProvider: (opts) => mobilelearn(opts)
+					});
+					return;
+				}
+
 				const isExam = /\/exam\/preview/.test(location.href);
-				commonWork(this, {
+				commonWork({
+					mount_script: this,
 					workerProvider: (opts) => workOrExam(isExam ? 'exam' : 'work', { ...opts, preview_mode: true })
 				});
+			}
+		}),
+		mobilelearn: new Script({
+			name: '✍️ 任务列表',
+			matches: [
+				['任务列表首页', '/page/active/stuActiveList'],
+				// 随堂练习域名一般为 mobilelearn.chaoxing.com
+				['随堂练习页面', '/page/quiz/stu/answerQuestion2']
+			],
+			namespace: 'cx.new.mobilelearn',
+			configs: { notes: workNotes },
+			async oncomplete() {
+				if (location.href.includes('/page/quiz/stu/answerQuestion2')) {
+					commonWork({
+						workerProvider: (opts) => mobilelearn(opts)
+					});
+					return;
+				}
+
+				// 子 iframe 移除后无法自动关闭 msg 气泡消息，这里进入任务列表手动触发一次，移除搜题气泡
+				CommonEvents.emitWorkerStateChange('close');
 			}
 		}),
 		autoRead: new Script({
@@ -1020,6 +1053,117 @@ function workOrExam(
 			CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'cx';
 		})();
 	}
+
+	return worker;
+}
+
+/**
+ * 26年新版随堂练习界面，单独界面-从侧边栏任务中进入
+ */
+function mobilelearn(opts: CommonWorkOptions) {
+	$message.info(`开始作业随堂练习`);
+
+	CommonProject.scripts.workResults.methods.init();
+
+	function titleText(el: HTMLElement): string {
+		const clone = el.cloneNode(true) as HTMLElement;
+		return extractTextWithImages(clone).text;
+	}
+
+	const redundanceWords = opts.redundanceWordsText.split('\n').filter(Boolean);
+	const titleTransform = (titles: (HTMLElement | undefined)[]) =>
+		titles
+			.filter((t) => t?.innerText)
+			.map((t) =>
+				t
+					? removeRedundantWords(StringUtils.of(titleText(t)).nowrap(' ').nospace().toString().trim(), redundanceWords)
+					: ''
+			)
+			.join(',');
+
+	// 这里跟章节测试的连线题不一样，章节测试是新版连线题
+	/** 新建答题器 */
+	const worker = new OCSWorker({
+		root: '.question-item',
+		elements: {
+			title: '.question-name .html-content-box',
+			options: '.option-result'
+		},
+		thread: opts.thread ?? 1,
+		answerSeparators: opts.answerSeparators.split(',').map((s) => s.trim()),
+		/** 默认搜题方法构造器 */
+		answerer: createCommonAnswerer({
+			titleTransform: (elements, ctx) => {
+				if (elements.title) {
+					return titleTransform(elements.title);
+				}
+				return '';
+			},
+			answererWrappers: opts.answererWrappers,
+			period: opts.period
+		}),
+
+		work: {
+			type(ctx) {
+				const cl = ctx.root.classList;
+				return cl.contains('single-choice')
+					? 'single'
+					: cl.contains('multiple-choice')
+					? 'multiple'
+					: ctx.elements.options.length === 2
+					? 'judgement'
+					: 'completion';
+			},
+			async handler(type, answer, option, ctx) {
+				// 如果存在已经选择的选项
+				if (type === 'judgement' || type === 'single' || type === 'multiple') {
+					if (!option?.classList.contains('active')) {
+						option.click();
+						await $.sleep(500);
+					}
+				} else if (type === 'completion' && answer.trim()) {
+					const text = option?.querySelector('textarea');
+					const textareaFrame = option?.querySelector('iframe');
+					if (text) {
+						text.value = answer;
+					}
+					if (textareaFrame?.contentDocument) {
+						textareaFrame.contentDocument.body.innerHTML = answer;
+					}
+					if (option?.parentElement?.parentElement) {
+						/** 如果存在保存按钮则点击 */
+						$el('[onclick*=saveQuestion]', option?.parentElement?.parentElement)?.click();
+						await $.sleep(500);
+					}
+				}
+			}
+		},
+
+		/** 检测到题目（非预览模式：在结果面板提前占位"等待搜索中"，预览模式整卷逐项更新无需占位） */
+		onQuestionDetected(current) {
+			updateDynamicResult(current, titleTransform);
+		},
+
+		/** 完成答题后 */
+		async onResultsUpdate(current, index, res) {
+			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
+			await CommonProject.scripts.workResults.methods.fillAll(
+				res.map((r, i) => simplifyWorkResult(r, titleTransform, i))
+			);
+			await CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
+		}
+	});
+
+	worker
+		.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug })
+		.then(() => {
+			$message.info({ content: '随堂练习完成，请自行检查后保存或提交。', duration: 0 });
+			worker.emit('done');
+		})
+		.catch((err) => {
+			console.error(err);
+			$message.error('答题程序发生错误 : ' + err.message);
+		});
 
 	return worker;
 }
