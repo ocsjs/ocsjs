@@ -52,4 +52,7 @@ const infos = GM_info;
 				? 'https://greasyfork.org/zh-CN/scripts/481438'
 				: 'https://scriptcat.org/zh-CN/script-show-page/1398'
 	});
+
+	// 题库页：悬浮窗收成侧边图标，导入成功后弹出题库配置窗。协议见 src/utils/tiku-bridge.ts
+	OCS.mountTikuBridge();
 })();

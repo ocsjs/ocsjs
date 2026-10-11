@@ -14,6 +14,11 @@ const { build: buildStyle } = require('./build-style');
 
 dotenv.config();
 
+// pnpm build:localhost（或 MATCH_LOCALHOST=1）：额外匹配本机，方便在 localhost 上测题库页。正式打包不要带。
+const matchLocalhost = process.env.MATCH_LOCALHOST === '1' || process.argv.includes('--localhost');
+// 透传给 vite build，题库页桥接据此决定是否在本机生效
+process.env.MATCH_LOCALHOST = matchLocalhost ? '1' : '';
+
 const distPath = process.env.BUILD_PATH || '../dist';
 console.log('BUILD_PATH: ', distPath);
 const distResolvedPath = path.resolve(__dirname, distPath);
@@ -63,6 +68,11 @@ async function createUserJs() {
 					.flat()
 			)
 		);
+		// 域名规则是 *://*.域名/*，匹配不到主机名本身。题库页桥接跑这两个站。
+		matchMetadata.push('*://tiku.zerror.cc/*', '*://tk.zerrorai.com/*');
+		if (matchLocalhost) {
+			matchMetadata.push('*://localhost/*', '*://127.0.0.1/*');
+		}
 
 		return {
 			parseRequire: true,
@@ -90,7 +100,7 @@ async function createUserJs() {
 				homepage: 'https://docs.ocsjs.com',
 				source: 'https://github.com/ocsjs/ocsjs',
 				icon: 'https://cdn.ocsjs.com/logo.png',
-				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'zaizhexue.top', 'localhost', '127.0.0.1',
+				connect: ['enncy.cn', 'icodef.com', 'ocsjs.com', 'zaizhexue.top', 'localhost', '127.0.0.1', 'zerror.com',
 					// 智慧树阿里云资源，应用： 图片题资源访问
 					'aliyuncs.com'],
 				match: matchMetadata,
