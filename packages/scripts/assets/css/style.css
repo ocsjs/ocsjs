@@ -1552,6 +1552,21 @@ modal-element .modal-confirm-button:disabled {
   border: 1px solid #789eff;
   color: #789eff;
 }
+.search-infos-num.searching {
+  border: 1px solid rgba(43, 103, 255, 0.4);
+  border-radius: 4px;
+  color: #2b67ff;
+  animation: ocs-searching-pulse 1.2s ease-in-out infinite;
+}
+@keyframes ocs-searching-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 3px 1px rgba(43, 103, 255, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 1px 0px rgba(43, 103, 255, 0.2);
+  }
+}
 .search-infos-num.active {
   background-color: #2b67ff !important;
   color: white;
@@ -1643,6 +1658,7 @@ search-infos-element .error {
 .work-result-list {
   max-height: 400px;
   overflow: auto;
+  padding: 4px 0px;
 }
 .work-result-question-container {
   position: absolute;

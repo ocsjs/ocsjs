@@ -962,7 +962,7 @@ function workOrExam(
 			return { finish: false };
 		},
 
-		/** 检测到题目（非预览模式：在结果面板提前占位"等待搜索中"，预览模式由 setResults 全量展示无需占位） */
+		/** 检测到题目（非预览模式：在结果面板提前占位"等待搜索中"，预览模式整卷逐项更新无需占位） */
 		onQuestionDetected(current) {
 			if (preview_mode) {
 				return;
@@ -971,25 +971,21 @@ function workOrExam(
 		},
 
 		/** 完成答题后 */
-		async onResultsUpdate(current, _, res) {
+		async onResultsUpdate(current, index, res) {
 			// 非预览模式：逐题更新（等待搜索中→等待答题中→已答题/失败），想要清空只能手动清空
 			if (!preview_mode) {
 				updateDynamicResult(current, workOrExamQuestionTitleText);
-				if (current.result?.finish) {
-					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([current], workOrExamQuestionTitleText)
-					);
-				}
 				return;
 			}
 
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, workOrExamQuestionTitleText));
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], workOrExamQuestionTitleText)
-				);
-			}
+			// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
+			CommonProject.scripts.workResults.methods.seed(
+				res.map((r, i) => simplifyWorkResult(r, workOrExamQuestionTitleText, i))
+			);
+			CommonProject.scripts.workResults.methods.update(
+				index,
+				simplifyWorkResult(current, workOrExamQuestionTitleText, index)
+			);
 		}
 	});
 
@@ -1976,15 +1972,15 @@ const JobRunner = {
 			},
 
 			/** 完成答题后 */
-			async onResultsUpdate(curr, _, res) {
-				CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, chapterTestTaskQuestionTitleText));
-
-				if (curr.result?.finish) {
-					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([curr], chapterTestTaskQuestionTitleText)
-					);
-				}
-				CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
+			async onResultsUpdate(curr, index, res) {
+				// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
+				CommonProject.scripts.workResults.methods.seed(
+					res.map((r, i) => simplifyWorkResult(r, chapterTestTaskQuestionTitleText, i))
+				);
+				CommonProject.scripts.workResults.methods.update(
+					index,
+					simplifyWorkResult(curr, chapterTestTaskQuestionTitleText, index)
+				);
 
 				// 没有完成时随机作答
 				if (curr.result?.finish === false && curr.resolved === true) {

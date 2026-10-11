@@ -577,13 +577,10 @@ function workAndExam(
 			});
 		},
 		/** 完成答题后 */
-		onResultsUpdate(curr, _, res) {
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleText));
-
-			if (curr.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(simplifyWorkResult([curr], titleText));
-			}
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
+		onResultsUpdate(curr, index, res) {
+			// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
+			CommonProject.scripts.workResults.methods.seed(res.map((r, i) => simplifyWorkResult(r, titleText, i)));
+			CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleText, index));
 		}
 	});
 

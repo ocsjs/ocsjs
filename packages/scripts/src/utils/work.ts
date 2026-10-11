@@ -355,45 +355,42 @@ export function extractTextWithImages(
 	return { text: parts.join(''), images };
 }
 
-/** 将 {@link WorkResult} 转换成 {@link SimplifyWorkResult} */
+/**
+ * 将 {@link WorkResult} 转换成 {@link SimplifyWorkResult}
+ *
+ * 仅支持单个结果转换；多个结果请使用 `[].map((r) => simplifyWorkResult(r, ...))`
+ *
+ * @param titleTransform 标题处理方法：在答题时使用相同的处理方法，可以使答题结果显示的题目与搜题的题目保持一致
+ * @param index 题目序号（作为 titleTransform 的第二个参数），默认 0
+ */
 export function simplifyWorkResult(
-	results: WorkResult<any>[],
-	/**
-	 * 标题处理方法
-	 * 在答题时使用相同的处理方法，可以使答题结果显示的题目与搜题的题目保持一致
-	 */
-	titleTransform?: (title: (HTMLElement | undefined)[], index: number) => string
-): SimplifyWorkResult[] {
-	const res: SimplifyWorkResult[] = [];
-	let i = 0;
-	console.log('simplifyWorkResult', results);
-	for (const wr of results) {
-		const ques =
-			titleTransform?.(wr.ctx?.elements.title || [], i) ||
-			wr.ctx?.elements.title
-				?.map((e) => e?.innerText.trim())
-				.filter(Boolean)
-				.join('<br>') ||
-			'';
-		res.push({
-			requested: wr.requested,
-			resolved: wr.resolved,
-			error: wr.error,
-			type: wr.ctx?.type,
-			question: ques,
-			finish: wr.result?.finish,
-			searchInfos:
-				wr.ctx?.searchInfos.map((sr) => ({
-					error: sr.error,
-					name: sr.name,
-					homepage: sr.homepage,
-					results: sr.results.map((ans) => [ans.question, ans.answer, ans.extra_data || {}])
-				})) || []
-		});
-		i++;
-	}
-
-	return res;
+	wr: WorkResult<any>,
+	titleTransform?: (title: (HTMLElement | undefined)[], index: number) => string,
+	index = 0
+): SimplifyWorkResult {
+	const question =
+		titleTransform?.(wr.ctx?.elements.title || [], index) ||
+		wr.ctx?.elements.title
+			?.map((e) => e?.innerText.trim())
+			.filter(Boolean)
+			.join('<br>') ||
+		'';
+	return {
+		requested: wr.requested,
+		searching: wr.searching,
+		resolved: wr.resolved,
+		error: wr.error,
+		type: wr.ctx?.type,
+		question,
+		finish: wr.result?.finish,
+		searchInfos:
+			wr.ctx?.searchInfos.map((sr) => ({
+				error: sr.error,
+				name: sr.name,
+				homepage: sr.homepage,
+				results: sr.results.map((ans) => [ans.question, ans.answer, ans.extra_data || {}])
+			})) || []
+	};
 }
 
 /**
@@ -406,8 +403,7 @@ export function updateDynamicResult(
 	current: WorkResult<any>,
 	titleTransform?: (title: (HTMLElement | undefined)[], index: number) => string
 ) {
-	const [item] = simplifyWorkResult([current], titleTransform);
-	return CommonProject.scripts.workResults.methods.upsertResult(item);
+	return CommonProject.scripts.workResults.methods.append(simplifyWorkResult(current, titleTransform));
 }
 
 /**

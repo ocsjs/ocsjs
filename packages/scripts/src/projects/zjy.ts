@@ -707,15 +707,10 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 		},
 
 		/** 完成答题后 */
-		onResultsUpdate(curr, _, res) {
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
-
-			if (curr.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([curr], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
+		onResultsUpdate(curr, index, res) {
+			// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
+			CommonProject.scripts.workResults.methods.seed(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
+			CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleTransform, index));
 		}
 	});
 

@@ -2670,17 +2670,9 @@ function gxkWorkAndExam(
 		},
 		/** 完成答题后 */
 		onResultsUpdate(curr, index, res) {
-			CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleText));
-
-			if (curr.result?.finish) {
-				const title = allExamParts[index]?.name;
-				if (title) {
-					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([curr], (_: any, __: number) => title)
-					);
-				}
-			}
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
+			// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
+			CommonProject.scripts.workResults.methods.seed(res.map((r, i) => simplifyWorkResult(r, titleText, i)));
+			CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleText, index));
 		}
 	});
 
@@ -2759,10 +2751,6 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 			.join(',');
 	};
 
-	let totalQuestionCount = 0;
-	let requestedCount = 0;
-	let resolvedCount = 0;
-
 	const worker = new OCSWorker({
 		// .questionBox 有两个同样的，这里选择具有直接子元素questionContent的div元素，保证题目唯一
 		root: 'div:has(> .questionContent)' /** .questionBox */,
@@ -2808,22 +2796,6 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 		onResultsUpdate(current, _, res) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(current, titleTransform);
-			if (current.result) {
-				totalQuestionCount++;
-				requestedCount++;
-				resolvedCount++;
-			}
-
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkState({
-				totalQuestionCount,
-				requestedCount,
-				resolvedCount
-			});
 		}
 	});
 
@@ -2871,10 +2843,6 @@ function smartWork(
 		};
 	};
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
-
-	let totalQuestionCount = 0;
-	let requestedCount = 0;
-	let resolvedCount = 0;
 
 	const worker = new OCSWorker({
 		root: '.questionContent',
@@ -2956,22 +2924,6 @@ function smartWork(
 		onResultsUpdate(current, _, res) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(current, titleTransform);
-			if (current.result) {
-				totalQuestionCount++;
-				requestedCount++;
-				resolvedCount++;
-			}
-
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkState({
-				totalQuestionCount,
-				requestedCount,
-				resolvedCount
-			});
 		}
 	});
 
@@ -3035,10 +2987,6 @@ function smartExam(
 		};
 	};
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
-
-	let totalQuestionCount = 0;
-	let requestedCount = 0;
-	let resolvedCount = 0;
 
 	const worker = new OCSWorker({
 		root: '.question-area-content',
@@ -3121,22 +3069,6 @@ function smartExam(
 		onResultsUpdate(current, _, res) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(current, titleTransform);
-			if (current.result) {
-				totalQuestionCount++;
-				requestedCount++;
-				resolvedCount++;
-			}
-
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkState({
-				totalQuestionCount,
-				requestedCount,
-				resolvedCount
-			});
 		}
 	});
 
@@ -3208,9 +3140,8 @@ function fusioncourseWork(
 		rootObserver: {
 			enabled: true,
 			onRootLost: () => {
-				// 关闭答题的同时清空搜索结果面板与计数，避免残留过期结果
+				// 关闭答题的同时清空搜索结果面板，避免残留过期结果
 				CommonProject.scripts.workResults.methods.clearResults();
-				CommonProject.scripts.workResults.methods.refreshState();
 			}
 		},
 		elements: {
@@ -3264,17 +3195,12 @@ function fusioncourseWork(
 		 * 作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
-		onResultsUpdate(current, _, res) {
+		onResultsUpdate(current, index, res) {
 			if (current.result) {
-				CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
+				// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
+				CommonProject.scripts.workResults.methods.seed(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
+				CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
 			}
-
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}
 	});
 
@@ -3384,13 +3310,6 @@ function hikeWork(
 		onResultsUpdate(current, _, res) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(current, titleTransform);
-
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}
 	});
 
@@ -3497,17 +3416,12 @@ function hikeHomework(
 		 * 作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
 		 * 所以只能根据自定义的状态进行搜索结果的显示。
 		 */
-		onResultsUpdate(current, _, res) {
+		onResultsUpdate(current, index, res) {
 			if (current.result) {
-				CommonProject.scripts.workResults.methods.setResults(simplifyWorkResult(res, titleTransform));
+				// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
+				CommonProject.scripts.workResults.methods.seed(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
+				CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
 			}
-
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkStateByResults(res);
 		}
 	});
 

@@ -32,6 +32,37 @@ const emitAnswererChanged = cors.defineTopFunction((curr: AnswererWrapper[], pre
 	CommonProject.scripts.settings.emit('answerer-wrapper-change', curr, pre);
 });
 
+const emitWorkerChanged: (result: SimplifyWorkResult) => Promise<void> = cors.defineTopFunction(
+	(result: SimplifyWorkResult) => {
+		CommonProject.scripts.workResults.emit('work-current-result-change', result);
+	}
+);
+
+/**
+ * 从结果数组统计进度（搜索结果信息栏的唯一数据来源）。
+ * 计数一律由结果数组派生，不单独存储，避免与结果数据不同步。
+ */
+const count = (results: SimplifyWorkResult[]) => ({
+	total: results.length,
+	requested: results.filter((r) => r.requested).length,
+	resolved: results.filter((r) => r.resolved).length
+});
+
+/**
+ * 答题完成（finish === true）的结果自动写入题库缓存。
+ * 集成在 update/append 中，调用方无需再单独调用 addQuestionCacheFromWorkResult；
+ * 重复写入由 addQuestionCache 按 题目+答案 去重。
+ * 接入全局设置的题库缓存开关（与 searchAnswerInCaches 读取侧语义一致：仅显式关闭时跳过）。
+ */
+const cacheIfFinished = (result: SimplifyWorkResult) => {
+	if (CommonProject.scripts.settings.cfg.enableQuestionCaches === false) {
+		return;
+	}
+	if (result.finish === true) {
+		BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult([result]);
+	}
+};
+
 /**
  * 题库启停状态接入（题库卡片组件回调，组件实现见 utils/ui.ts）
  * 停用后无法在自动答题中查询题目，恢复入口：通用-全局设置-题库配置
@@ -1057,15 +1088,6 @@ export const CommonProject = Project.create({
 					defaultValue: $ui.notes(['点击题目序号，查看搜索结果', '如果没有搜到，可能是题库没有收录该题目答案'])
 						.outerHTML
 				},
-				totalQuestionCount: {
-					defaultValue: 0
-				},
-				requestedCount: {
-					defaultValue: 0
-				},
-				resolvedCount: {
-					defaultValue: 0
-				},
 				currentResultIndex: {
 					defaultValue: 0
 				},
@@ -1083,28 +1105,61 @@ export const CommonProject = Project.create({
 			methods() {
 				return {
 					/**
-					 * 从搜索结果中计算状态，并更新
+					 * 【全量模式】更新指定序号的结果（仅更新该序号，不触碰其他结果）。
+					 * 用于整卷答题：onResultsUpdate(current, index, res) 时逐项推进，
+					 * 数组长度不足时以空占位结果补齐中间空位（多线程答题结果可能乱序到达）。
 					 */
-					updateWorkStateByResults: (results: { requested: boolean; resolved: boolean }[]) => {
-						this.cfg.totalQuestionCount = results.length;
-						this.cfg.requestedCount = results.filter((result) => result.requested).length;
-						this.cfg.resolvedCount = results.filter((result) => result.resolved).length;
+					update: async (index: number, result: SimplifyWorkResult): Promise<void> => {
+						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
+						const placeholder = {
+							question: '',
+							searchInfos: [],
+							requested: false,
+							resolved: false,
+							type: undefined
+						} as unknown as SimplifyWorkResult;
+						while (data.length < index) {
+							data.push(placeholder);
+						}
+						data[index] = result;
+						await $store.setTab(TAB_WORK_RESULTS_KEY, data);
+						cacheIfFinished(result);
+						emitWorkerChanged(result);
 					},
 					/**
-					 * 更新状态
+					 * 【动态模式】追加结果；若已存在相同 question 的结果则原地更新（占位 → 状态推进）。
+					 * 动态答题器在"检测到题目→搜题→答题"各阶段对同一题目重复调用，
+					 * 实现序号与内容的渐进式状态推进（等待搜索中→等待答题中→已答题/失败）。
+					 * 调用即自动进入动态答题模式。
 					 */
-					updateWorkState: (state: { totalQuestionCount: number; requestedCount: number; resolvedCount: number }) => {
-						this.cfg.totalQuestionCount = state.totalQuestionCount;
-						this.cfg.requestedCount = state.requestedCount;
-						this.cfg.resolvedCount = state.resolvedCount;
-					},
 					/**
-					 * 刷新状态
+					 * 【全量模式】播种全部题目序号：整卷答题时于 onResultsUpdate 调用，
+					 * 使结果面板立即显示全部题目（等待处理中），随后由 update 逐项推进状态
+					 * （包括正在搜题的激活状态）。
+					 * 仅当传入数组比当前存储更长时才写入（按位置保留已有最新状态），重复调用无副作用。
 					 */
-					refreshState: () => {
-						this.cfg.totalQuestionCount = 0;
-						this.cfg.requestedCount = 0;
-						this.cfg.resolvedCount = 0;
+					seed: async (results: SimplifyWorkResult[]): Promise<void> => {
+						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
+						if (results.length > data.length) {
+							const merged = results.map((r, i) => data[i] ?? r);
+							await $store.setTab(TAB_WORK_RESULTS_KEY, merged);
+						}
+					},
+					append: async (result: SimplifyWorkResult): Promise<void> => {
+						CommonProject.scripts.workResults.cfg.dynamicResults = true;
+						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
+						// 空题目文本不参与匹配（防止多个空标题占位互相覆盖）
+						const index = result.question
+							? data.findIndex((r: SimplifyWorkResult) => r.question === result.question)
+							: -1;
+						if (index >= 0) {
+							data[index] = result;
+						} else {
+							data.push(result);
+						}
+						await $store.setTab(TAB_WORK_RESULTS_KEY, data);
+						cacheIfFinished(result);
+						emitWorkerChanged(result);
 					},
 					/**
 					 * 设置答题 worker 工作状态（由 commonWork 在 worker 生命周期事件中调用）。
@@ -1125,38 +1180,8 @@ export const CommonProject = Project.create({
 					getResults(): Promise<SimplifyWorkResult[]> | undefined {
 						return $store.getTab(TAB_WORK_RESULTS_KEY) || undefined;
 					},
-					setResults(results: SimplifyWorkResult[]) {
-						return $store.setTab(TAB_WORK_RESULTS_KEY, results);
-					},
-					async appendResults(results: SimplifyWorkResult[]) {
-						// 追加结果代表当前为动态答题器（结果逐题累积，不会自动清空）
-						CommonProject.scripts.workResults.cfg.dynamicResults = true;
-						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
-						data.push(...results);
-						return $store.setTab(TAB_WORK_RESULTS_KEY, data);
-					},
 					/**
-					 * 追加或更新搜索结果（按题目文本匹配，存在则原地更新，不存在则追加）。
-					 * 动态答题器在"检测到题目→搜题→答题"各阶段对同一题目重复调用，
-					 * 实现序号与内容的渐进式状态推进（等待搜索中→等待答题中→已答题/失败）。
-					 * 与 appendResults 一样，调用即视为动态答题模式。
-					 */
-					async upsertResult(result: SimplifyWorkResult) {
-						CommonProject.scripts.workResults.cfg.dynamicResults = true;
-						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
-						// 空题目文本不参与匹配（防止多个空标题占位互相覆盖）
-						const index = result.question
-							? data.findIndex((r: SimplifyWorkResult) => r.question === result.question)
-							: -1;
-						if (index >= 0) {
-							data[index] = result;
-						} else {
-							data.push(result);
-						}
-						return $store.setTab(TAB_WORK_RESULTS_KEY, data);
-					},
-					/**
-					 * 刷新搜索结果状态，清空搜索结果，置顶搜索结果面板
+					 * 开始新答题前初始化：清空搜索结果并重置内部状态
 					 * @param opts.dynamic 是否为动态答题器（题目动态加载，结果逐题累积），动态答题器会显示手动清空按钮
 					 */
 					init(opts?: {
@@ -1166,9 +1191,8 @@ export const CommonProject = Project.create({
 						CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType =
 							opts?.questionPositionSyncHandlerType;
 						CommonProject.scripts.workResults.cfg.dynamicResults = opts?.dynamic ?? false;
-						// 刷新搜索结果状态
-						CommonProject.scripts.workResults.methods.refreshState();
-						// 清空搜索结果
+						// 清空搜索结果（进度统计由结果数组派生，无需额外重置）。
+						// 注意：此处不能 return 该调用，否则 init 的推断返回类型会依赖 CommonProject 自身形成 TS7022 循环
 						CommonProject.scripts.workResults.methods.clearResults();
 					},
 					/**
@@ -1190,6 +1214,11 @@ export const CommonProject = Project.create({
 
 						/** 给序号设置样式 */
 						const setNumStyle = (result: SimplifyWorkResult, num: HTMLElement, index: number) => {
+							// 正在搜题：序号方块边框显示转圈路径动画（保留序号数字，下一状态渲染时自动恢复）
+							if (result.searching) {
+								num.classList.add('searching');
+							}
+
 							if (result.requested) {
 								num.classList.add('requested');
 							}
@@ -1217,6 +1246,9 @@ export const CommonProject = Project.create({
 								await CommonProject.scripts.workResults.methods.getResults();
 
 							if (results?.length) {
+								// 进度统计：从结果数组派生，与序号状态严格一致
+								const stats = count(results);
+
 								// 如果序号指向的结果为空，则代表已经被清空，则重新让index变成0
 								if (results[this.cfg.currentResultIndex] === undefined) {
 									this.cfg.currentResultIndex = 0;
@@ -1227,8 +1259,8 @@ export const CommonProject = Project.create({
 
 								/** 基础提示信息 */
 								const baseInfos = [
-									`已搜题: ${this.cfg.requestedCount}/${this.cfg.totalQuestionCount}`,
-									`已答题: ${this.cfg.resolvedCount}/${this.cfg.totalQuestionCount}`,
+									`已搜题: ${stats.requested}/${stats.total}`,
+									`已答题: ${stats.resolved}/${stats.total}`,
 									'⚪ 白色序号：等待处理中',
 									'🔵 蓝边序号：已完成搜索',
 									'🔵 蓝色序号：已搜索已答题',
@@ -1334,9 +1366,8 @@ export const CommonProject = Project.create({
 						};
 
 						render();
-						this.onConfigChange('requestedCount', render);
-						this.onConfigChange('resolvedCount', render);
-						$store.addChangeListener(TAB_WORK_RESULTS_KEY, render);
+						// 结果数据变化是唯一的重渲染数据源（update/append/clearResults 均写此 key）
+						$store.addTabChangeListener(TAB_WORK_RESULTS_KEY, render);
 						// worker 工作状态变化时重渲染（控制"清空搜索结果"按钮显隐）
 						workerWorkingChangeListeners.add(render);
 
@@ -1347,7 +1378,7 @@ export const CommonProject = Project.create({
 			onrender({ panel }) {
 				panel.body.replaceChildren(this.methods.createWorkResultsPanel());
 			}
-		}),
+		}).withEvents<{ 'work-current-result-change': (cur: SimplifyWorkResult) => void }>(),
 		onlineSearch: new Script({
 			name: '🌐 在线搜题',
 			matches: [['所有页面', /.*/]],

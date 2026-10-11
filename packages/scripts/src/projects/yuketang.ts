@@ -20,7 +20,6 @@ import {
 	dynamicWorkTips,
 	extractTextWithImages,
 	removeRedundantWords,
-	simplifyWorkResult,
 	updateDynamicResult
 } from '../utils/work';
 
@@ -773,10 +772,6 @@ function createYktAnswerWorker({
 		return extractTextWithImages((textEl as HTMLElement) ?? option).text;
 	};
 
-	let totalQuestionCount = 0;
-	let requestedCount = 0;
-	let resolvedCount = 0;
-
 	// OCSWorker 的 root 传字符串时会在【全局 document】上查询，
 	// 而雨课堂作业在 iframe 内（AI学伴课程页内嵌 iframe-exercise），
 	// 必须传元素数组；doWork 每次调用都会重新读取 root，
@@ -791,9 +786,8 @@ function createYktAnswerWorker({
 		rootObserver: {
 			enabled: true,
 			onRootLost: () => {
-				// 关闭答题的同时清空搜索结果面板与计数，避免残留过期结果
+				// 关闭答题的同时清空搜索结果面板，避免残留过期结果
 				CommonProject.scripts.workResults.methods.clearResults();
-				CommonProject.scripts.workResults.methods.refreshState();
 			}
 		},
 		elements: {
@@ -884,21 +878,6 @@ function createYktAnswerWorker({
 		onResultsUpdate(current, _, res) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(current, titleTransform);
-			if (current.result) {
-				totalQuestionCount++;
-				requestedCount++;
-				resolvedCount++;
-			}
-			if (current.result?.finish) {
-				BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-					simplifyWorkResult([current], titleTransform)
-				);
-			}
-			CommonProject.scripts.workResults.methods.updateWorkState({
-				totalQuestionCount,
-				requestedCount,
-				resolvedCount
-			});
 		}
 	});
 

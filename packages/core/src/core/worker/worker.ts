@@ -178,6 +178,14 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			console.debug('上下文已初始化: ', results);
 		}
 
+		/**
+		 * 元素准备完毕、即将开始答题：先整体回调一次（此时全部为 未搜题/未答题 的初始状态），
+		 * 供结果面板一次性渲染全部题目序号，随后再由搜题/答题线程逐题推进状态。
+		 */
+		if (results.length > 0) {
+			await this.opts.onResultsUpdate?.(results[0], 0, results);
+		}
+
 		/** 请求答案的线程 */
 		const requestThread = async (index: number) => {
 			let error: string | undefined;
@@ -194,6 +202,10 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			if (this.isStop) {
 				await waitForContinuate(() => this.isStop);
 			}
+
+			/** 标记正在搜题并回调（供结果面板为该序号显示转圈等待动画） */
+			result.searching = true;
+			await this.opts.onResultsUpdate?.(result, index, results);
 
 			/** 查找答案 */
 			ctx.searchInfos = [];
@@ -226,6 +238,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 			}
 
 			result.ctx = ctx;
+			result.searching = false;
 			result.requested = true;
 			result.error = error;
 

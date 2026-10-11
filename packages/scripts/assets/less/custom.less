@@ -369,6 +369,24 @@ modal-element {
 		color: lighten(@primary, 15%);
 	}
 
+	&.searching {
+		// 搜题中：细边框 + box-shadow 光晕呼吸（shadow 不占布局空间、不会撑出滚动条）
+		border: 1px solid fade(@primary, 40%);
+		border-radius: 4px;
+		color: @primary;
+		animation: ocs-searching-pulse 1.2s ease-in-out infinite;
+	}
+
+	@keyframes ocs-searching-pulse {
+		0%,
+		100% {
+			box-shadow: 0 0 3px 1px fade(@primary, 55%);
+		}
+		50% {
+			box-shadow: 0 0 1px 0px fade(@primary, 20%);
+		}
+	}
+
 	&.active {
 		background-color: @primary !important;
 		color: white;
@@ -469,6 +487,8 @@ search-infos-element {
 .work-result-list {
 	max-height: 400px;
 	overflow: auto;
+	// 上下留白：防止首尾行序号的边框转圈特效触碰滚动容器边缘而出现滚动条/被裁剪
+	padding: 4px 0px;
 }
 
 .work-result-question-container {

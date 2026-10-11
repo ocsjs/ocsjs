@@ -49,6 +49,8 @@ export interface ResolverResult {
 export interface WorkResult<E extends RawElements> {
 	/** 查题完毕 */
 	requested: boolean;
+	/** 正在搜题中（查题线程已启动但尚未返回，供结果面板显示等待动画） */
+	searching?: boolean;
 	/** 答题完毕 */
 	resolved: boolean;
 	result?: ResolverResult;
@@ -72,6 +74,8 @@ export interface SimplifyWorkResult {
 	finish?: boolean;
 	/** 正在等待 查题 线程处理 */
 	requested: boolean;
+	/** 正在搜题中（供结果面板显示等待动画） */
+	searching?: boolean;
 	/** 正在等待 答题 线程处理 */
 	resolved: boolean;
 	/** 查题信息 */

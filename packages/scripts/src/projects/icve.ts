@@ -5,7 +5,6 @@ import {
 	commonWork,
 	createCommonAnswerer,
 	dynamicWorkTips,
-	simplifyWorkResult,
 	updateDynamicResult
 } from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
@@ -795,10 +794,6 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
-	let totalQuestionCount = 0;
-	let requestedCount = 0;
-	let resolvedCount = 0;
-
 	function getType(options: HTMLElement[]) {
 		const radio_len = options
 			.map((o) => o.querySelector('[type="radio"]'))
@@ -917,22 +912,6 @@ function work({ answererWrappers, period, thread, answerSeparators }: CommonWork
 		onResultsUpdate(currentResult) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(currentResult, titleTransform);
-			if (currentResult.resolved) {
-				totalQuestionCount++;
-				requestedCount++;
-				resolvedCount++;
-
-				if (currentResult.result?.finish) {
-					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([currentResult], titleTransform)
-					);
-				}
-				CommonProject.scripts.workResults.methods.updateWorkState({
-					totalQuestionCount,
-					requestedCount,
-					resolvedCount
-				});
-			}
 		}
 	});
 
@@ -987,10 +966,6 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 	};
 	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
 	const titleText = (titles: (HTMLElement | undefined)[]) => titleTransform(titles).text;
-
-	let totalQuestionCount = 0;
-	let requestedCount = 0;
-	let resolvedCount = 0;
 
 	function getType(options: HTMLElement[]) {
 		const radio_len = options
@@ -1077,22 +1052,6 @@ function aiWork({ answererWrappers, period, thread, answerSeparators }: CommonWo
 		onResultsUpdate(currentResult) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(currentResult, titleText);
-			if (currentResult.resolved) {
-				totalQuestionCount++;
-				requestedCount++;
-				resolvedCount++;
-
-				if (currentResult.result?.finish) {
-					BackgroundProject.scripts.data.methods.addQuestionCacheFromWorkResult(
-						simplifyWorkResult([currentResult], titleText)
-					);
-				}
-				CommonProject.scripts.workResults.methods.updateWorkState({
-					totalQuestionCount,
-					requestedCount,
-					resolvedCount
-				});
-			}
 		}
 	});
 
