@@ -708,8 +708,8 @@ function workOrExam(type: 'work' | 'exam', { answererWrappers, period, thread, a
 
 		/** 完成答题后 */
 		onResultsUpdate(curr, index, res) {
-			// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
-			CommonProject.scripts.workResults.methods.seed(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
+			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
+			CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
 			CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleTransform, index));
 		}
 	});

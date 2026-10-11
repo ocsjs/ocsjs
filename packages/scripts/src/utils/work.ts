@@ -9,7 +9,7 @@ import {
 	$
 } from '@ocsjs/core';
 import { $ui, $message, MessageElement, Script, h, CommonEventEmitter, cors, $elements } from 'easy-us';
-import { CommonProject } from '../projects/common';
+import { CommonEvents, CommonProject } from '../projects/common';
 import { $console, BackgroundProject } from '../projects/background';
 import { CommonWorkOptions, workPreCheckMessage } from '.';
 import {
@@ -77,9 +77,8 @@ export function commonWork(
 	// 置顶当前脚本
 	BackgroundProject.scripts.render.methods.pin(script);
 
-	// 同步 worker 工作状态到搜索结果面板：
-	// 动态答题器的"清空搜索结果"按钮在工作时隐藏，停止（结束/关闭/暂停）时显示
-	const { setWorkerWorking } = CommonProject.scripts.workResults.methods;
+	// worker 工作状态统一通过 CommonEvents.emitWorkerStateChange 广播：
+	// 结果面板按钮显隐与搜题气泡均以该事件为唯一数据源
 
 	CommonProject.scripts.settings.on('answerer-wrapper-change', async (curr, prev) => {
 		$console.log('answerer-wrapper-change curr.length', curr.length);
@@ -230,20 +229,21 @@ export function commonWork(
 		renderPanelBody();
 
 		if (state.worker) {
-			setWorkerWorking(true);
-			state.worker.on('stop', () => setWorkerWorking(false));
-			state.worker.on('continuate', () => setWorkerWorking(true));
-			state.worker.once('close', () => setWorkerWorking(false));
+			const emitState = CommonEvents.emitWorkerStateChange;
+			emitState('start');
+			state.worker.on('stop', () => emitState('stop'));
+			// 恢复答题视为重新开始工作（isWorkerWorking=true，气泡重新显示）
+			state.worker.on('continuate', () => emitState('start'));
+			state.worker.once('close', () => emitState('close'));
+			state.worker.once('done', () => {
+				state.running = false;
+				state.controlPanel = null;
+				state.paused = false;
+				controlBtn.disabled = true;
+				emitState('done');
+			});
 		}
-
-		state.worker?.once('done', () => {
-			state.running = false;
-			state.controlPanel = null;
-			state.paused = false;
-			controlBtn.disabled = true;
-			CommonProject.scripts.workResults.methods.setWorkerWorking(false);
-		});
-	};
+		};
 }
 
 /**

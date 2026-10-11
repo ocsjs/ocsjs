@@ -28,15 +28,24 @@ import {
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
-const emitAnswererChanged = cors.defineTopFunction((curr: AnswererWrapper[], pre: AnswererWrapper[]) => {
-	CommonProject.scripts.settings.emit('answerer-wrapper-change', curr, pre);
-});
-
-const emitWorkerChanged: (result: SimplifyWorkResult) => Promise<void> = cors.defineTopFunction(
-	(result: SimplifyWorkResult) => {
+export const CommonEvents = {
+	emitAnswererChanged: cors.defineTopFunction((curr: AnswererWrapper[], pre: AnswererWrapper[]) => {
+		CommonProject.scripts.settings.emit('answerer-wrapper-change', curr, pre);
+	}),
+	emitWorkerChanged: cors.defineTopFunction((result: SimplifyWorkResult) => {
 		CommonProject.scripts.workResults.emit('work-current-result-change', result);
-	}
-);
+	}),
+	/**
+	 * worker 工作状态变化的唯一入口（commonWork 与各平台脚本在 worker 生命周期中调用）。
+	 * 统一维护 isWorkerWorking（结果面板"清空搜索结果"按钮显隐的数据源）、
+	 * 触发面板重渲染，并广播 work-state-change 事件（如搜题气泡）。
+	 */
+	emitWorkerStateChange: cors.defineTopFunction((workerState: 'done' | 'start' | 'stop' | 'close') => {
+		state.workResult.isWorkerWorking = workerState === 'start';
+		workerWorkingChangeListeners.forEach((listener) => listener());
+		CommonProject.scripts.workResults.emit('work-state-change', workerState);
+	})
+};
 
 /**
  * 从结果数组统计进度（搜索结果信息栏的唯一数据来源）。
@@ -307,7 +316,7 @@ export const CommonProject = Project.create({
 								}
 
 								// 全局跨域提交改动事件
-								emitAnswererChanged(awsResult, CommonProject.scripts.settings.cfg.answererWrappers);
+								CommonEvents.emitAnswererChanged(awsResult, CommonProject.scripts.settings.cfg.answererWrappers);
 
 								// ============================ 配置成功 ============================
 
@@ -1124,7 +1133,7 @@ export const CommonProject = Project.create({
 						data[index] = result;
 						await $store.setTab(TAB_WORK_RESULTS_KEY, data);
 						cacheIfFinished(result);
-						emitWorkerChanged(result);
+						CommonEvents.emitWorkerChanged(result);
 					},
 					/**
 					 * 【动态模式】追加结果；若已存在相同 question 的结果则原地更新（占位 → 状态推进）。
@@ -1133,12 +1142,15 @@ export const CommonProject = Project.create({
 					 * 调用即自动进入动态答题模式。
 					 */
 					/**
-					 * 【全量模式】播种全部题目序号：整卷答题时于 onResultsUpdate 调用，
+					 * 【全量模式】填充全部题目：整卷答题时于 onResultsUpdate 调用，
 					 * 使结果面板立即显示全部题目（等待处理中），随后由 update 逐项推进状态
-					 * （包括正在搜题的激活状态）。
+					 * （等待搜索中→等待答题中→已答题/失败）。
+					 *
+					 * 与 core 的协作：core worker 在搜题线程启动前会触发首次 onResultsUpdate
+					 * （携带全部题目的空状态），本方法的首次有效调用即发生在此时。
 					 * 仅当传入数组比当前存储更长时才写入（按位置保留已有最新状态），重复调用无副作用。
 					 */
-					seed: async (results: SimplifyWorkResult[]): Promise<void> => {
+					fillAll: async (results: SimplifyWorkResult[]): Promise<void> => {
 						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
 						if (results.length > data.length) {
 							const merged = results.map((r, i) => data[i] ?? r);
@@ -1159,17 +1171,7 @@ export const CommonProject = Project.create({
 						}
 						await $store.setTab(TAB_WORK_RESULTS_KEY, data);
 						cacheIfFinished(result);
-						emitWorkerChanged(result);
-					},
-					/**
-					 * 设置答题 worker 工作状态（由 commonWork 在 worker 生命周期事件中调用）。
-					 * 动态答题器的"清空搜索结果"按钮仅在 worker 停止（结束/错误/暂停）时显示，
-					 * 正在搜题时隐藏，避免误清空正在累积的结果。
-					 */
-					setWorkerWorking: (working: boolean) => {
-						state.workResult.isWorkerWorking = working;
-						// 触发所有结果面板重渲染（各面板创建时注册监听）
-						workerWorkingChangeListeners.forEach((listener) => listener());
+						CommonEvents.emitWorkerChanged(result);
 					},
 					/**
 					 * 清空搜索结果
@@ -1377,8 +1379,27 @@ export const CommonProject = Project.create({
 			},
 			onrender({ panel }) {
 				panel.body.replaceChildren(this.methods.createWorkResultsPanel());
+			},
+			oncomplete() {
+				let working_msg: HTMLElement | undefined;
+				CommonProject.scripts.workResults.on('work-state-change', (workerState) => {
+					if (workerState === 'start') {
+						// 防重：continuate 恢复答题会再次触发 start，先移除旧气泡
+						working_msg?.remove();
+						working_msg = $message.info({ content: loadingSpinSvg + ' 正在搜题中...', duration: 0 });
+					} else {
+						working_msg?.remove();
+						working_msg = undefined;
+					}
+				});
+				CommonProject.scripts.workResults.on('work-current-result-change', (cur) => {
+					if (working_msg) working_msg.innerHTML = loadingSpinSvg + ` 正在搜题 ${cur.question}`;
+				});
 			}
-		}).withEvents<{ 'work-current-result-change': (cur: SimplifyWorkResult) => void }>(),
+		}).withEvents<{
+			'work-state-change': (state: 'done' | 'start' | 'stop' | 'close') => void;
+			'work-current-result-change': (cur: SimplifyWorkResult) => void;
+		}>(),
 		onlineSearch: new Script({
 			name: '🌐 在线搜题',
 			matches: [['所有页面', /.*/]],

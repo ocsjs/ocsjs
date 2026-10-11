@@ -14,7 +14,7 @@ import {
 import { crackFont, collectChars, decryptElements, extractFontFromStyle } from '../utils/font-decrypt';
 import { $modal, h, $store, MessageElement, Project, Script, $el, $gm, $$el, $ui, cors, $message } from 'easy-us';
 
-import { CommonProject } from './common';
+import { CommonEvents, CommonProject } from './common';
 import { workNotes, volume, playbackRate, dropdownStyle } from '../utils/configs';
 import {
 	answerWrapperEmptyWarning,
@@ -978,8 +978,8 @@ function workOrExam(
 				return;
 			}
 
-			// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
-			CommonProject.scripts.workResults.methods.seed(
+			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
+			CommonProject.scripts.workResults.methods.fillAll(
 				res.map((r, i) => simplifyWorkResult(r, workOrExamQuestionTitleText, i))
 			);
 			CommonProject.scripts.workResults.methods.update(
@@ -1065,9 +1065,10 @@ async function mappingRecognize(doc: Document = document) {
 		}
 		decryptElements(fonts, map);
 		fonts.forEach((el) => el.classList.remove('font-cxsecret')); // 移除字体加密
-		$message.info('文字解密完成，耗时 ' + ((Date.now() - t) / 1000).toFixed(1) + ' 秒');
+		$console.info('文字解密完成，耗时 ' + ((Date.now() - t) / 1000).toFixed(1) + ' 秒');
 	} catch (err) {
 		$console.error('加密文字识别失败：', String(err));
+		$message.error('加密文字识别失败：' + String(err));
 	}
 }
 
@@ -1567,9 +1568,7 @@ function searchJob(opts: typeof CXProject.scripts.study.cfg, searchedJobs: Job[]
 									answerWrapperEmptyWarning(0);
 								} else {
 									func = () => {
-										const msg = `开始答题 : ` + jobName;
-										$message.info({ content: msg });
-										$console.log(msg);
+										$console.log(`开始答题 : ` + jobName);
 										return JobRunner.chapter(root, workOptions);
 									};
 								}
@@ -1815,9 +1814,10 @@ const JobRunner = {
 			return answerWrapperEmptyWarning(0);
 		}
 
-		$console.info('开始章节测试');
-		const visual_state = BackgroundProject.scripts.render.cfg.visual;
+		// 章节测试未使用 commonWork，这里手动触发状态更新
+		CommonEvents.emitWorkerStateChange('start');
 
+		const visual_state = BackgroundProject.scripts.render.cfg.visual;
 		const frameWindow = frame.contentWindow;
 		const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
@@ -1973,8 +1973,8 @@ const JobRunner = {
 
 			/** 完成答题后 */
 			async onResultsUpdate(curr, index, res) {
-				// 整卷模式：先播种全部题目序号（面板立即显示全部题目），再逐项推进状态
-				CommonProject.scripts.workResults.methods.seed(
+				// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
+				CommonProject.scripts.workResults.methods.fillAll(
 					res.map((r, i) => simplifyWorkResult(r, chapterTestTaskQuestionTitleText, i))
 				);
 				CommonProject.scripts.workResults.methods.update(
@@ -2060,6 +2060,8 @@ const JobRunner = {
 		});
 
 		const results = await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
+		// 章节测试未使用 commonWork，这里手动触发状态更新
+		CommonEvents.emitWorkerStateChange('done');
 
 		const msg = `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`;
 		$console.info(msg);
