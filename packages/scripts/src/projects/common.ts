@@ -1709,6 +1709,8 @@ function createSearchResultAlertElement(result: SimplifyWorkResult) {
 				'❌ ' + err,
 				h('a', { href, target: '_blank', style: { marginLeft: '3px' } }, '解决方法?')
 			]);
+		} else {
+			info = h('div', { className: 'result-info error' }, ['❌ ' + err]);
 		}
 	} else if (result.searchInfos.length === 0) {
 		info = h('div', { className: 'result-info no-answer' }, '❌ 题库没搜索到答案');

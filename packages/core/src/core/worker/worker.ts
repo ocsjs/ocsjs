@@ -198,32 +198,32 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 				return;
 			}
 
-			/** 检查是否暂停中 */
-			if (this.isStop) {
-				await waitForContinuate(() => this.isStop);
-			}
-
-			/** 标记正在搜题并回调（供结果面板为该序号显示转圈等待动画） */
-			result.searching = true;
-			await this.opts.onResultsUpdate?.(result, index, results);
-
-			/** 查找答案 */
-			ctx.searchInfos = [];
-
-			if (options?.enable_debug) {
-				console.groupEnd();
-				console.group(
-					'开始搜题: ',
-					ctx.elements.title
-						?.map((t) => t?.innerText)
-						.filter(Boolean)
-						.join(', ')
-						.slice(0, 20)
-				);
-				console.log('ctx', result.ctx);
-			}
-
 			try {
+				/** 检查是否暂停中 */
+				if (this.isStop) {
+					await waitForContinuate(() => this.isStop);
+				}
+
+				/** 标记正在搜题并回调（供结果面板为该序号显示转圈等待动画） */
+				result.searching = true;
+				await this.opts.onResultsUpdate?.(result, index, results);
+
+				/** 查找答案 */
+				ctx.searchInfos = [];
+
+				if (options?.enable_debug) {
+					console.groupEnd();
+					console.group(
+						'开始搜题: ',
+						ctx.elements.title
+							?.map((t) => t?.innerText)
+							.filter(Boolean)
+							.join(', ')
+							.slice(0, 20)
+					);
+					console.log('ctx', result.ctx);
+				}
+
 				ctx.searchInfos = (await this.opts.answerer(ctx.elements, ctx)) || [];
 
 				// 答案为 undefined 的情况， 需要赋值给一个空字符串，因为可能传回的题目中带有其他提示信息，或者题目里包含答案。
@@ -234,6 +234,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 					});
 				});
 			} catch (err) {
+				console.error('【ERROR】', err);
 				error = String(err);
 			}
 
@@ -317,7 +318,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 							res = await work(result.ctx);
 						}
 					} else {
-						error = '搜索不到答案, 请重新运行, 或者忽略此题。';
+						error = result.error || '搜索不到答案, 请重新运行, 或者忽略此题。';
 					}
 				} catch (err) {
 					error = (err as any)?.message || err;
