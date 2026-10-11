@@ -35,7 +35,8 @@ const YKT_EXAM_REF_TABLE_URL = 'https://cdn.ocsjs.com/resources/font/font_ref_yu
 
 const state = {
 	study: {
-		currentMedia: undefined as HTMLMediaElement | undefined
+		currentMedia: undefined as HTMLMediaElement | undefined,
+		is_ai_watch_mode: false
 	}
 };
 
@@ -48,7 +49,8 @@ export const YKTProject = Project.create({
 			matches: [
 				['雨课堂课程列表', '/v2/web/index'],
 				['学习内容界面', '/v2/web/studentLog'],
-				['长江雨课堂手机版主页', '/m/v2/course/normalcourse/logs']
+				['长江雨课堂手机版主页', '/m/v2/course/normalcourse/logs'],
+				['课堂界面', '/v2/web/student-lesson-report']
 			],
 			namespace: 'yuketang.study.guide',
 			configs: {
@@ -59,7 +61,10 @@ export const YKTProject = Project.create({
 			oncomplete(...args) {
 				// 手机版，点击视频自动检测并跳转电脑版学习
 				if (location.href.includes('/m/v2/course/normalcourse/logs')) {
-					$message.info('请点击任意视频，进入自动学习。');
+					return $message.info('请点击任意视频，进入自动学习。');
+				}
+				if (location.href.includes('/v2/web/student-lesson-report')) {
+					return $message.info('课堂任务不支持学习，请切换到视频、作业等任务。');
 				}
 			}
 		}),
@@ -82,6 +87,12 @@ export const YKTProject = Project.create({
 					return e;
 				};
 			}
+		}),
+		upsupportNote: new Script({
+			name: '不支持提示',
+			matches: [['课堂界面', '/v2/web/student-lesson-report']],
+			hideInPanel: true,
+			oncomplete() {}
 		}),
 		ppt: new Script({
 			name: '📚 PPT自动阅读',
@@ -166,13 +177,25 @@ export const YKTProject = Project.create({
 				// 监听音量
 				this.onConfigChange(
 					'volume',
-					debounce(() => $message.info('音量设置已修改，刷新页面后生效'), 200)
+					debounce((val) => {
+						if (state.study.is_ai_watch_mode) {
+							if (state.study.currentMedia) state.study.currentMedia.volume = val;
+						} else {
+							$message.info('音量设置已修改，刷新页面后生效');
+						}
+					}, 200)
 				);
 
 				// 监听速度
 				this.onConfigChange(
 					'playbackRate',
-					debounce(() => $message.info('倍速设置已修改，刷新页面后生效'), 200)
+					debounce((val) => {
+						if (state.study.is_ai_watch_mode) {
+							if (state.study.currentMedia) state.study.currentMedia.playbackRate = val;
+						} else {
+							$message.info('倍速设置已修改，刷新页面后生效');
+						}
+					}, 200)
 				);
 
 				const getJobs = () => Array.from(document.querySelectorAll<HTMLElement>('div.leaf-item'));
@@ -215,10 +238,20 @@ export const YKTProject = Project.create({
 					try {
 						if ($el('.detail-container video')) {
 							$msg.info('即将开始视频学习：' + getJobName());
-							await watch({
-								volume: this.cfg.volume,
-								playbackRate: this.cfg.playbackRate
-							});
+
+							// AI数字人视频 （自动阅读）
+							if (document.querySelector('.digital-human-video-element-selector')) {
+								await ai_watch({
+									volume: this.cfg.volume,
+									playbackRate: this.cfg.playbackRate
+								});
+							} else {
+								await watch({
+									volume: this.cfg.volume,
+									playbackRate: this.cfg.playbackRate
+								});
+							}
+
 							await $.sleep(3000);
 						}
 
@@ -1106,20 +1139,13 @@ async function watch(options: { volume: number; playbackRate: number }) {
 	const set = async () => {
 		await $.sleep(1000);
 
-		const is_digital_human_video = !!document.querySelector('.digital-human-video-element-selector');
-
-		if (is_digital_human_video) {
-			// 成绩单里面进AI学伴会直接变成V2版本的视频，可能是雨课堂自身的BUG
-			throw new Error('AI学伴视频请在学习内容中进入，不要在成绩单里进入。');
-		} else {
-			// 这里无法通过直接修改数值来修改倍速和音量，需要调用播放器的接口来修改
-			const video_vue_data = document.querySelector<any>('.xtplayer')?.__vue__;
-			if (video_vue_data) {
-				video_vue_data.player.options.speed.value = parseFloat(options.playbackRate.toString());
-				video_vue_data.player.options.volume.value = options.volume;
-				// 应用更改的音量和倍速设置
-				video_vue_data.player.init();
-			}
+		// 这里无法通过直接修改数值来修改倍速和音量，需要调用播放器的接口来修改
+		const video_vue_data = document.querySelector<any>('.xtplayer')?.__vue__;
+		if (video_vue_data) {
+			video_vue_data.player.options.speed.value = parseFloat(options.playbackRate.toString());
+			video_vue_data.player.options.volume.value = options.volume;
+			// 应用更改的音量和倍速设置
+			video_vue_data.player.init();
 		}
 
 		const media = (await waitForElement('video', {
@@ -1203,5 +1229,69 @@ async function watch(options: { volume: number; playbackRate: number }) {
 		};
 
 		watch();
+	});
+}
+
+/**
+ * 观看视频
+ * @param setting
+ * @returns
+ */
+async function ai_watch(options: { volume: number; playbackRate: number }) {
+	const set = async () => {
+		// 上面操作会导致元素刷新，这里重新获取视频
+		await $.sleep(1000);
+		const media = (await waitForElement('.detail-container video', {
+			timeout_seconds: 10 * 1000
+		})) as HTMLMediaElement;
+		console.log('media', media);
+		await $.sleep(1000);
+		state.study.currentMedia = media;
+		state.study.is_ai_watch_mode = true;
+
+		if (media) {
+			// 如果已经播放完了，则重置视频进度
+			media.currentTime = 1;
+			// 音量
+			media.volume = options.volume;
+			media.playbackRate = options.playbackRate;
+		}
+		return state.study.currentMedia;
+	};
+	$message.info('开始播放');
+	const video = await set();
+
+	if (!video) {
+		throw new Error('video not found!');
+	}
+
+	return new Promise<void>((resolve, reject) => {
+		const videoCheckInterval = setInterval(async () => {
+			// 如果视频元素无法访问，证明已经切换了视频
+			if (video?.isConnected === false) {
+				clearInterval(videoCheckInterval);
+				$message.info({ content: '检测到视频切换中...' });
+				/**
+				 * 元素无法访问证明用户切换视频了
+				 * 所以不往下播放视频，而是重新播放用户当前选中的视频
+				 */
+				resolve();
+			}
+		}, 3000);
+
+		playMedia(() => video?.play());
+
+		video.onpause = async () => {
+			if (!video?.ended) {
+				await $.sleep(1000);
+				video?.play();
+			}
+		};
+
+		video.onended = () => {
+			clearInterval(videoCheckInterval);
+			// 正常切换下一个视频
+			resolve();
+		};
 	});
 }
