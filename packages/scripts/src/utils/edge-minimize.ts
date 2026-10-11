@@ -19,9 +19,41 @@ let snapping = false;
 let headerDragging = false;
 /** 拖放高亮区域元素 */
 let dropZone: HTMLElement | undefined;
+/** 本页临时吸附：只改当前页面，不写入全局 visual / 坐标；点击、拖动图标或在本页切换窗口状态后退出 */
+let localSnap = false;
 
 function getContainer(): HTMLElement | undefined {
 	return $elements.root?.querySelector<HTMLElement>('container-element') ?? undefined;
+}
+
+function applyLocalSnap(container: HTMLElement) {
+	const snappedX = Math.max(document.documentElement.clientWidth - ICON_SIZE, 0);
+	container.classList.remove('normal', 'hidden', 'edge-left');
+	container.classList.add('minimize', EDGE_CLASS, 'edge-right');
+	if (container.offsetLeft !== snappedX) {
+		container.style.left = snappedX + 'px';
+	}
+	if (!container.style.top) {
+		container.style.top = '120px';
+	}
+}
+
+/**
+ * 当前页面窗口收成右侧图标，不影响其他页面保存的窗口状态
+ * @param timeout 等待窗口挂载的最长时间（ms）
+ */
+export function snapToEdgeLocally(timeout = 10000) {
+	localSnap = true;
+	const deadline = Date.now() + timeout;
+	const tryApply = () => {
+		const container = getContainer();
+		if (container) {
+			if (localSnap) applyLocalSnap(container);
+		} else if (Date.now() < deadline) {
+			setTimeout(tryApply, 50);
+		}
+	};
+	tryApply();
 }
 
 /**
@@ -33,6 +65,11 @@ export function updateEdgeMode() {
 	const container = getContainer();
 	if (!container || snapping) return;
 	const render = BackgroundProject.scripts.render;
+
+	if (localSnap) {
+		applyLocalSnap(container);
+		return;
+	}
 
 	const clientWidth = document.documentElement.clientWidth;
 	// 以面板中心点判定：避免宽面板仅边缘擦过吸附区就触发吸附
@@ -159,6 +196,7 @@ function enableIconDraggable(icon: HTMLElement, container: HTMLElement) {
 		const onUp = () => {
 			document.removeEventListener('pointermove', onMove);
 			document.removeEventListener('pointerup', onUp);
+			localSnap = false;
 			if (dragging) {
 				// 持久化位置并重新判定（拖回吸附区域则重新吸附）
 				BackgroundProject.scripts.render.methods.setPosition(container.offsetLeft, container.offsetTop);
@@ -224,7 +262,10 @@ export function initEdgeMinimize(retry = 3) {
 	});
 
 	// 状态/位置变化时重新判定（覆盖标题栏按钮、三击重置、moveToEdge）
-	render.onConfigChange('visual', () => updateEdgeMode());
+	render.onConfigChange('visual', (curr, pre, remote) => {
+		if (!remote && curr !== pre) localSnap = false;
+		updateEdgeMode();
+	});
 	render.onConfigChange('x', () => updateEdgeMode());
 	// 视口缩放时右侧吸附需重新对齐
 	window.addEventListener('resize', () => updateEdgeMode());
