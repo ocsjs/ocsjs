@@ -1243,11 +1243,19 @@ export const CommonProject = Project.create({
 						};
 
 						/** 渲染结果面板 */
-						const render = debounce(async () => {
-							const results: SimplifyWorkResult[] | undefined =
+						const render = debounce(async (first: boolean) => {
+							let results: SimplifyWorkResult[] | undefined =
 								await CommonProject.scripts.workResults.methods.getResults();
 
 							if (results?.length) {
+								// 首次渲染移除全部实时状态
+								if (first) {
+									results = results.map((r) => {
+										r.searching = false;
+										return r;
+									});
+								}
+
 								// 进度统计：从结果数组派生，与序号状态严格一致
 								const stats = count(results);
 
@@ -1367,11 +1375,11 @@ export const CommonProject = Project.create({
 							}
 						};
 
-						render();
+						render(true);
 						// 结果数据变化是唯一的重渲染数据源（update/append/clearResults 均写此 key）
 						$store.addTabChangeListener(TAB_WORK_RESULTS_KEY, render);
 						// worker 工作状态变化时重渲染（控制"清空搜索结果"按钮显隐）
-						workerWorkingChangeListeners.add(render);
+						workerWorkingChangeListeners.add(() => render(false));
 
 						return container;
 					}
@@ -1393,7 +1401,9 @@ export const CommonProject = Project.create({
 					}
 				});
 				CommonProject.scripts.workResults.on('work-current-result-change', (cur) => {
-					if (working_msg) working_msg.innerHTML = loadingSpinSvg + ` 正在搜题 ${cur.question}`;
+					if (cur.searching) {
+						if (working_msg) working_msg.innerHTML = loadingSpinSvg + ` 正在搜题 ${cur.question}`;
+					}
 				});
 			}
 		}).withEvents<{
