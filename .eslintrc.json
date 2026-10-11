@@ -34,6 +34,7 @@
 
 	"globals": {
 		"core": "readonly",
-		"scripts": "readonly"
+		"scripts": "readonly",
+		"__OCS_MATCH_LOCALHOST__": "readonly"
 	}
 }

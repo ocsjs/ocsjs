@@ -30,6 +30,7 @@ export {
 	waitForAnswererConfig
 } from './utils/answerer-connect';
 export type { AnswererConfigProvider } from './utils/answerer-connect';
+export { mountTikuBridge } from './utils/tiku-bridge';
 
 export function definedProjects(): Project[] {
 	return [

@@ -6,7 +6,7 @@ import {
 	WorkUploadType,
 	AnswerWrapperHandlerConfig
 } from '@ocsjs/core';
-import { $message, h, $gm, $store, Project, Script, $modal, $ui, MessageElement, cors } from 'easy-us';
+import { $message, h, $gm, $store, Project, Script, $modal, $ui, MessageElement, cors, $elements } from 'easy-us';
 import type { AnswererWrapper } from '@ocsjs/core';
 import { CXProject, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '../index';
 import { BackgroundProject } from './background';
@@ -22,15 +22,55 @@ import {
 	createSteps,
 	createStatusBox,
 	createHero,
-	createAnswererModeDropdown,
-	loadingSpinSvg
+	createCustomAnswererButton,
+	loadingSpinSvg,
+	StatusType
 } from '../utils/ui';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
 
+/** 题库数量上限，超过会降低答题效率 */
+export const MAX_ANSWERER_WRAPPERS = 10;
+
+type AnswererModalMode = 'official' | 'custom';
+type AnswererModalStatus = { text: string; type: StatusType };
+
+/** 题库配置弹窗打开函数，由设置按钮 onload 注册 */
+let openAnswererModalImpl: ((mode: AnswererModalMode, status?: AnswererModalStatus) => void) | undefined;
+
+/**
+ * 弹窗逻辑在设置按钮的 onload 闭包里，onload 只在元素挂载（connectedCallback）时触发。
+ * 设置面板未渲染时，挂一个隐藏的按钮到 shadow root 来注册打开函数。
+ */
+function ensureAnswererModalOpener() {
+	if (openAnswererModalImpl || !$elements.root) return;
+	const script = CommonProject.scripts.settings;
+	const buttonConfig = script.configs?.answererWrappersButton;
+	if (!buttonConfig) return;
+	const elements = $ui.configs(script.namespace, $store, { answererWrappersButton: buttonConfig }, undefined, script);
+	const el = elements.answererWrappersButton;
+	el.style.display = 'none';
+	$elements.root.append(el);
+}
+
+/**
+ * 打开题库配置弹窗，设置面板未渲染时也可调用
+ * @param status 一键获取面板状态框的初始内容
+ */
+export function openAnswererConfigModal(mode: AnswererModalMode = 'official', status?: AnswererModalStatus) {
+	ensureAnswererModalOpener();
+	openAnswererModalImpl?.(mode, status);
+}
+
 const emitAnswererChanged = cors.defineTopFunction((curr: AnswererWrapper[], pre: AnswererWrapper[]) => {
 	CommonProject.scripts.settings.emit('answerer-wrapper-change', curr, pre);
 });
+
+/** 写入题库配置，并通知各页面的答题器重建 */
+export function saveAnswererWrappers(aws: AnswererWrapper[]) {
+	emitAnswererChanged(aws, CommonProject.scripts.settings.cfg.answererWrappers);
+	CommonProject.scripts.settings.cfg.answererWrappers = aws;
+}
 
 /**
  * 题库启停状态接入（题库卡片组件回调，组件实现见 utils/ui.ts）
@@ -168,10 +208,9 @@ export const CommonProject = Project.create({
 					attrs: {
 						type: 'button'
 					},
-					/** 「⋯」更多按钮：悬浮显示下拉框，选择题库配置获取方式（官方题库 / 自定义题库），点击选项直接打开对应弹窗（组件见 utils/ui.ts） */
+					/** 「自定义题库」按钮：直接打开手动配置弹窗。未配置一键获取渠道时主按钮本身就是手动配置，不再重复显示 */
 					suffixSlot() {
-						// 未配置一键获取渠道时不显示「⋯」下拉（主按钮直接使用自定义题库弹窗）
-						return getAnswererConfigProvider() ? createAnswererModeDropdown() : '';
+						return getAnswererConfigProvider() ? createCustomAnswererButton() : '';
 					},
 					onload() {
 						const aws: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
@@ -179,9 +218,10 @@ export const CommonProject = Project.create({
 
 						/**
 						 * 打开题库配置弹窗
-						 * @param mode official（默认）= 一键获取；custom = 手动配置（仅从「⋯」下拉进入）
+						 * @param mode official（默认）= 一键获取；custom = 手动配置（从「自定义题库」按钮进入）
+						 * @param initialStatus 一键获取面板状态框的初始内容
 						 */
-						const openAnswererModal = (mode: 'official' | 'custom') => {
+						const openAnswererModal = (mode: AnswererModalMode, initialStatus?: AnswererModalStatus) => {
 							const aw: any[] = CommonProject.scripts.settings.cfg.answererWrappers || [];
 
 							/** 题库列表容器：打开弹窗 / 题库变更时重新渲染，组件内部自动检测延迟 */
@@ -257,7 +297,7 @@ export const CommonProject = Project.create({
 								}
 
 								// 判断题库是否超过限制（10个），如果超过则提示
-								if (awsResult.length > 10) {
+								if (awsResult.length > MAX_ANSWERER_WRAPPERS) {
 									$modal.alert({
 										content: h('div', [
 											'题库配置过多可能会导致答题效率降低，建议不超过10个题库，目前解析到' +
@@ -275,12 +315,9 @@ export const CommonProject = Project.create({
 									return false;
 								}
 
-								// 全局跨域提交改动事件
-								emitAnswererChanged(awsResult, CommonProject.scripts.settings.cfg.answererWrappers);
-
 								// ============================ 配置成功 ============================
 
-								CommonProject.scripts.settings.cfg.answererWrappers = awsResult;
+								saveAnswererWrappers(awsResult);
 								this.value = '当前有' + awsResult.length + '个可用题库';
 								if (showSuccessModal) {
 									$modal.confirm({
@@ -403,7 +440,7 @@ export const CommonProject = Project.create({
 											const win = openAnswererConnect();
 											if (!win) {
 												setConnectStatus(
-													'⚠️ 弹窗被浏览器拦截，请允许本站弹窗后重试，或点击题库配置旁的「⋯」选择「自定义题库」手动配置。',
+													'⚠️ 弹窗被浏览器拦截，请允许本站弹窗后重试，或点击题库配置旁的「自定义题库」手动配置。',
 													'error'
 												);
 												return;
@@ -617,7 +654,7 @@ export const CommonProject = Project.create({
 								])
 							]);
 
-							/** 弹窗内容与底部：官方题库（主按钮默认）= 一键获取；自定义题库（「⋯」下拉进入）= 手动配置 */
+							/** 弹窗内容与底部：官方题库（主按钮默认）= 一键获取；自定义题库（「自定义题库」按钮进入）= 手动配置 */
 							let modalContent: string | HTMLElement;
 							let modalFooter: HTMLDivElement;
 
@@ -713,6 +750,10 @@ export const CommonProject = Project.create({
 								};
 							}
 
+							if (initialStatus) {
+								setConnectStatus(initialStatus.text, initialStatus.type);
+							}
+
 							// 无题库时进入一键配置弹窗，延迟 1 秒自动开始获取（仍在用户激活窗口期内，window.open 不会被拦截）
 							if (mode === 'official' && aw.length === 0 && connectButton) {
 								setTimeout(() => {
@@ -724,9 +765,10 @@ export const CommonProject = Project.create({
 							}
 						};
 
+						openAnswererModalImpl = openAnswererModal;
 						// 主按钮默认打开一键题库配置；未配置获取渠道时使用自定义题库弹窗
 						this.onclick = () => openAnswererModal(getAnswererConfigProvider() ? 'official' : 'custom');
-						// 暴露给「⋯」下拉框的选项进入对应配置弹窗（自定义题库仅从此处进入）
+						// 暴露给「自定义题库」按钮进入手动配置弹窗
 						(this as any).openAnswererModal = openAnswererModal;
 					}
 				},
@@ -814,6 +856,10 @@ export const CommonProject = Project.create({
 							'同一时间内答题线程工作的数量（例子：三个线程则代表一秒内同时搜索三道题），过多可能导致题库服务器压力过大，请适当调低。'
 					},
 					defaultValue: 1
+				},
+				/** 已关闭过的「图片题优化不支持」提示指纹，同一份题库配置不再重复弹出 */
+				imageOptimizeUnsupportedDismissed: {
+					defaultValue: ''
 				},
 				imageOptimize: {
 					showIf: 'common.settings.advancedSettings',
@@ -1011,7 +1057,17 @@ export const CommonProject = Project.create({
 				// 图片题优化兼容性检测：仅提示，不限制。
 				// 因为上传内容由题库配置占位符决定，原题 title / options 不再被覆盖，
 				// 旧配置不会上传新增字段，所以即便不支持也是安全的，这里只做引导提示。
+				const imageOptimizeSignature = (wrappers: any[]) =>
+					JSON.stringify(
+						wrappers.map((wrapper) => ({
+							name: wrapper?.name,
+							url: wrapper?.url,
+							method: wrapper?.method
+						}))
+					);
 				const checkImageOptimizeCompatibility = () => {
+					// 网课页常有多个 iframe，每个都会跑这段检测。只在顶层提示，避免同一条警告叠出很多个
+					if (self !== top) return;
 					const wrappers = this.cfg.answererWrappers || [];
 					// 题库为空 / 关闭图片题优化：清除提示
 					if (!this.cfg.imageOptimize || wrappers.length === 0) {
@@ -1019,7 +1075,14 @@ export const CommonProject = Project.create({
 						state.setting.imageOptimizeMessage = undefined;
 						return;
 					}
+					const signature = imageOptimizeSignature(wrappers);
 					if (!isAnswererWrappersSupportImageOptimize(wrappers)) {
+						// 这份配置已经关过提示，换题库配置后才会再提示
+						if (this.cfg.imageOptimizeUnsupportedDismissed === signature) {
+							state.setting.imageOptimizeMessage?.remove();
+							state.setting.imageOptimizeMessage = undefined;
+							return;
+						}
 						if (!state.setting.imageOptimizeMessage) {
 							state.setting.imageOptimizeMessage = $message.warn({
 								content: h('div', [
@@ -1033,7 +1096,11 @@ export const CommonProject = Project.create({
 									h('br'),
 									'请前往题库配置源头获取新配置并重新配置题库，否则图片题优化功能无法生效。'
 								]),
-								duration: 0
+								duration: 0,
+								onClose: () => {
+									this.cfg.imageOptimizeUnsupportedDismissed = signature;
+									state.setting.imageOptimizeMessage = undefined;
+								}
 							});
 						}
 					} else {

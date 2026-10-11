@@ -269,90 +269,38 @@ export function createAnswererWrapperSection(
 }
 
 /**
- * 「⋯」题库配置获取方式下拉按钮
- *
- * 悬浮显示下拉框（官方题库 / 自定义题库），点击选项直接打开对应配置弹窗：
- * - 弹窗打开函数由题库配置按钮（answererWrappersButton）的 onload 暴露在 provider 上
- * - 未暴露时兜底触发主按钮点击（默认官方一键获取）
- * - 定位：右对齐「⋯」按钮；面板下方空间不足时自动向上弹出
+ * 题库配置旁的「自定义题库」按钮。
+ * 主按钮仍打开官方一键获取；这个按钮直接打开手动配置弹窗。
+ * 打开函数由题库配置按钮 onload 暴露在 provider 上。
  */
-export function createAnswererModeDropdown(): HTMLElement {
-	const dropdown = h('dropdown-element');
-	// 必须在插入文档前设置，connectedCallback 会根据该值绑定事件
-	// hover 触发：鼠标悬浮「⋯」按钮显示，移开（含点击其他区域）自动隐藏
-	dropdown.trigger = 'hover';
-	dropdown.triggerElement = h(
-		'button',
-		{
-			className: 'base-style-button-secondary',
-			style: { marginLeft: '4px', padding: '4px 12px' }
-		},
-		'⋯'
-	);
-
-	// flex 布局消除 inline-block 行盒的基线空隙，使内容区与按钮底部零间隙衔接
-	dropdown.style.display = 'inline-flex';
-
-	// 下拉框定位：右对齐「⋯」按钮，避免超出面板宽度被 overflow:auto 裁剪并撑出横向滚动条
-	const content = dropdown.content;
-	content.style.top = '100%';
-	content.style.right = '0';
-	content.style.left = 'auto';
-
-	/** 面板下方空间不足时向上弹出，避免撑出面板纵向滚动条 */
-	const refreshPosition = () => {
-		const panel = dropdown.closest('script-panel-element');
-		if (!panel) return;
-		const flipUp =
-			dropdown.triggerElement.getBoundingClientRect().bottom + content.offsetHeight >
-			panel.getBoundingClientRect().bottom;
-		content.style.top = flipUp ? 'auto' : '100%';
-		content.style.bottom = flipUp ? '100%' : 'auto';
-	};
-	// 悬浮展开后重算弹出方向（库在 mouseenter 时添加 show，延迟到下一帧再计算）
-	dropdown.triggerElement.addEventListener('mouseenter', () => {
-		setTimeout(() => {
-			if (content.classList.contains('show')) refreshPosition();
-		});
-	});
-
-	const options: Record<'official' | 'custom', HTMLDivElement> = {
-		official: $ui.tooltip(
-			h(
-				'div',
-				{
-					className: 'dropdown-option',
-					title: '打开官方题库获取弹窗，登录题库网站后自动回填配置，无需手动复制粘贴'
-				},
-				'官方题库'
-			)
-		),
-		custom: $ui.tooltip(
-			h('div', { className: 'dropdown-option', title: '打开手动配置弹窗，手动填写或粘贴题库配置' }, '自定义题库')
+export function createCustomAnswererButton(): HTMLElement {
+	const button = $ui.tooltip(
+		h(
+			'button',
+			{
+				className: 'base-style-button-secondary',
+				style: { marginLeft: '4px', padding: '4px 12px' },
+				title: '打开手动配置弹窗，手动填写或粘贴题库配置'
+			},
+			'自定义题库'
 		)
-	};
-	/** 点击选项直接打开对应配置弹窗（主按钮默认官方一键获取，自定义题库仅从此处进入） */
-	const openAnswererModal = (mode: 'official' | 'custom') => {
-		const configEl = dropdown.closest('config-element') as
+	);
+	button.onclick = () => {
+		const configEl = button.closest('config-element') as
 			| (HTMLElement & {
 					provider?: HTMLElement & {
 						openAnswererModal?: (mode: 'official' | 'custom') => void;
 					};
 			  })
 			| null;
-		// onload 回调的 this 指向 provider，openAnswererModal 暴露在 provider 上
 		const provider = configEl?.provider;
-		// 优先调用暴露的打开函数（可指定模式），兜底触发主按钮点击（默认官方）
 		if (provider?.openAnswererModal) {
-			provider.openAnswererModal(mode);
+			provider.openAnswererModal('custom');
 		} else {
 			provider?.click();
 		}
 	};
-	options.official.onclick = () => openAnswererModal('official');
-	options.custom.onclick = () => openAnswererModal('custom');
-	dropdown.content.append(options.official, options.custom);
-	return dropdown;
+	return button;
 }
 
 /**

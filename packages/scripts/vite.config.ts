@@ -25,6 +25,10 @@ export default defineConfig({
 	esbuild: {
 		charset: 'utf8'
 	},
+	define: {
+		/** 题库页桥接是否在 localhost 生效，见 scripts/build-core.js */
+		__OCS_MATCH_LOCALHOST__: JSON.stringify(process.env.MATCH_LOCALHOST === '1')
+	},
 	build: {
 		/** 取消css代码分离 */
 		cssCodeSplit: false,
