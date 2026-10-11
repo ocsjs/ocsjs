@@ -1585,10 +1585,6 @@ search-infos-element {
   display: block;
   overflow: auto;
 }
-search-infos-element .search-result {
-  margin-bottom: 12px;
-  padding-left: 12px;
-}
 search-infos-element .search-result .question {
   font-weight: bold;
   max-height: 200px;
@@ -1680,7 +1676,7 @@ search-infos-element .error {
 }
 .search-info-title {
   border: 1px solid #e1e1e1;
-  border-radius: 4px;
+  border-radius: 8px;
   padding: 8px 12px;
   margin-bottom: 12px;
   line-height: 20px;
@@ -1689,9 +1685,6 @@ search-infos-element .error {
 .search-info-title .title-content {
   max-height: 200px;
   overflow: auto;
-}
-.search-info-details {
-  margin-left: 4px;
 }
 .alert-info-wrapper {
   margin-bottom: 8px;
@@ -1903,7 +1896,13 @@ modal-element .modal-cancel-button:hover {
   color: white;
 }
 /** ===== 题库配置弹窗组件（src/utils/ui.ts 配套样式） ===== */
-.aw-card {
+/** ===== 通用口风琴卡片（下拉展开/收起列表组件） =====
+ * 结构：.accordion-card > .accordion-card-header（点击整行展开/收起）+ .accordion-card-body
+ * 状态：.expanded 展开（箭头旋转 + 详情区显示），由 JS 切换 class 驱动
+ * 组件工厂：utils/ui.ts 的 createAccordionCard
+ * 使用方：题库配置卡片（aw-card）、搜索结果下拉列表 
+ */
+.accordion-card {
   border: 1px solid #e3e8ee;
   border-radius: 8px;
   background-color: #fff;
@@ -1911,20 +1910,49 @@ modal-element .modal-cancel-button:hover {
   overflow: hidden;
   transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.aw-card:hover {
+.accordion-card:hover {
   border-color: #b6c6dd;
   box-shadow: 0 2px 8px rgba(31, 35, 41, 0.08);
 }
-.aw-card-header {
+.accordion-card-header {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 12px;
+  padding: 8px 12px;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
-.aw-card-header:hover {
+.accordion-card-header:hover {
   background-color: #f5f8fb;
+}
+.accordion-card-spacer {
+  flex: 1;
+}
+.accordion-card-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: #9aa4b2;
+  border-radius: 4px;
+  transition: transform 0.2s ease;
+  transform: rotate(-90deg);
+}
+.accordion-card.expanded .accordion-card-chevron {
+  transform: rotate(0deg);
+}
+.accordion-card-body {
+  display: none;
+  border-top: 1px solid #eef2f7;
+  background-color: #f8fafc;
+  padding: 8px 12px;
+  max-height: 300px;
+  overflow: auto;
+}
+.accordion-card.expanded .accordion-card-body {
+  display: block;
 }
 .aw-card-name {
   font-weight: 600;
@@ -2000,33 +2028,6 @@ modal-element .modal-cancel-button:hover {
 .aw-card-status.latency {
   background-color: #eef2f7;
   color: #5a6b85;
-}
-.aw-card-spacer {
-  flex: 1;
-}
-.aw-card-chevron {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: 20px;
-  height: 20px;
-  color: #9aa4b2;
-  border-radius: 4px;
-  transition: transform 0.2s ease;
-  transform: rotate(-90deg);
-}
-.aw-card.expanded .aw-card-chevron {
-  transform: rotate(0deg);
-}
-.aw-card-body {
-  display: none;
-  border-top: 1px solid #eef2f7;
-  background-color: #f8fafc;
-  padding: 10px 14px;
-}
-.aw-card.expanded .aw-card-body {
-  display: block;
 }
 .aw-card-rows {
   list-style: none;
@@ -2230,4 +2231,8 @@ modal-element .modal-cancel-button:hover {
 .work-control-panel {
   display: flex;
   margin: 12px 0px;
+}
+.text-secondary {
+  color: #606266;
+  font-size: 12px;
 }

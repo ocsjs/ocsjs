@@ -23,6 +23,41 @@ export const logoSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" heigh
 export const loadingSpinSvg = `<svg class="aw-spin" width="14" height="14" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="28" stroke-dashoffset="10" stroke-linecap="round"/></svg>`;
 
 /** 题库启用/停用状态接入（由调用方提供，避免组件与项目状态耦合） */
+/**
+ * 通用口风琴卡片（下拉展开/收起列表组件）
+ *
+ * 结构：头部（点击整行展开/收起）+ 详情区（默认收起），展开状态由 expanded class 驱动，
+ * 样式见 custom.less 的 .accordion-card-*（含详情区超高时内部滚动的 scroll 样式）。
+ *
+ * 使用方：题库配置卡片（createAnswererWrapperList）、搜索结果下拉列表（search.infos.ts）
+ */
+export function createAccordionCard(options: {
+	/** 头部左侧内容 */
+	header: (HTMLElement | string)[];
+	/** 头部右侧内容（位于展开箭头左侧，如开关/标签） */
+	headerTrailing?: (HTMLElement | string)[];
+	/** 详情区内容 */
+	body: (HTMLElement | string)[];
+	/** 默认是否展开 */
+	expanded?: boolean;
+	/** 卡片附加 class */
+	className?: string;
+}): HTMLElement {
+	const card = h('div', {
+		className:
+			'accordion-card' + (options.className ? ' ' + options.className : '') + (options.expanded ? ' expanded' : '')
+	});
+	const header = h('div', { className: 'accordion-card-header' }, [
+		...options.header,
+		h('span', { className: 'accordion-card-spacer' }),
+		...(options.headerTrailing ?? []),
+		h('span', { className: 'accordion-card-chevron', innerHTML: CHEVRON_SVG })
+	]);
+	header.onclick = () => card.classList.toggle('expanded');
+	card.append(header, h('div', { className: 'accordion-card-body' }, options.body));
+	return card;
+}
+
 export interface AnswererListHandlers {
 	/** 判断题库是否已停用 */
 	isDisabled: (name: string) => boolean;
@@ -134,8 +169,6 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 		]);
 
 	return aw.map((item) => {
-		const card = h('div', { className: 'aw-card' + (handlers.isDisabled(item.name) ? ' disabled' : '') });
-
 		/** 状态标签组：状态提示（HTTP 状态码）+ 延迟，分两个标签显示 */
 		const statusEl = h('span', { className: 'aw-card-status-group' }, [
 			h('span', { className: 'aw-card-status probing' }, '检测中…')
@@ -210,36 +243,33 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 		homeLink.onclick = (e) => e.stopPropagation();
 
 		/** 卡片头：主页图标 + 名称 + 域名徽标 + 状态徽标 + 右侧开关 + 箭头，点击整行展开/收起 */
-		const header = h('div', { className: 'aw-card-header' }, [
-			homeLink,
-			h('span', { className: 'aw-card-name' }, item.name),
-			h('span', { className: 'aw-card-badge', title: item.url }, host),
-			statusEl,
-			h('span', { className: 'aw-card-spacer' }),
-			switchWrapper,
-			h('span', { className: 'aw-card-chevron', innerHTML: CHEVRON_SVG })
-		]);
-		header.onclick = () => card.classList.toggle('expanded');
+		const card = createAccordionCard({
+			className: 'aw-card' + (handlers.isDisabled(item.name) ? ' disabled' : ''),
+			header: [
+				homeLink,
+				h('span', { className: 'aw-card-name' }, item.name),
+				h('span', { className: 'aw-card-badge', title: item.url }, host),
+				statusEl
+			],
+			headerTrailing: [switchWrapper],
+			body: [
+				h('ul', { className: 'aw-card-rows' }, [
+					row('名字', item.name),
+					row(
+						'官网',
+						h('span', {
+							innerHTML: `<a target="_blank" href=${item.homepage}>${item.homepage || '无'}</a>`
+						})
+					),
+					row('接口', item.url),
+					row('请求方法', item.method),
+					row('请求类型', item.type),
+					row('请求头', JSON.stringify(item.headers, null, 4) || '无'),
+					row('请求体', JSON.stringify(item.data, null, 4) || '无')
+				])
+			]
+		});
 
-		/** 详情区（默认收起） */
-		const body = h('div', { className: 'aw-card-body' }, [
-			h('ul', { className: 'aw-card-rows' }, [
-				row('名字', item.name),
-				row(
-					'官网',
-					h('span', {
-						innerHTML: `<a target="_blank" href=${item.homepage}>${item.homepage || '无'}</a>`
-					})
-				),
-				row('接口', item.url),
-				row('请求方法', item.method),
-				row('请求类型', item.type),
-				row('请求头', JSON.stringify(item.headers, null, 4) || '无'),
-				row('请求体', JSON.stringify(item.data, null, 4) || '无')
-			])
-		]);
-
-		card.append(header, body);
 		return card;
 	});
 }

@@ -1,6 +1,7 @@
 import { SimplifyWorkResult, splitAnswer, $, QuestionTypes } from '@ocsjs/core';
 import { $ui, h } from 'easy-us';
 import { createQuestionTitleExtra } from '../utils';
+import { createAccordionCard } from '../utils/ui';
 
 /**
  * 判断是否有图片链接，如果有则使用 <img> 标签包裹，但如果已经被 <img> 包裹则不处理
@@ -72,10 +73,21 @@ export class SearchInfosElement extends HTMLElement {
 
 		this.append(
 			...this.infos.map((info) => {
-				return h('details', { open: true, className: 'search-info-details' }, [
-					h('summary', [h('a', { href: info.homepage, innerText: info.name, target: '_blank' })]),
+				// 题库主页链接：点击跳转，不触发卡片展开/收起
+				const homeLink = $ui.tooltip(
+					h('a', { href: info.homepage, innerText: info.name, target: '_blank', title: '点击前往题库官网' })
+				);
+				homeLink.onclick = (e) => e.stopPropagation();
 
-					...(info.error
+				// 口风琴式下拉卡片：点击头部整行展开/收起搜索结果（组件见 utils/ui.ts，默认展开）
+				return createAccordionCard({
+					className: 'search-info-details',
+					expanded: true,
+					header: [
+						homeLink,
+						...(info.error ? [] : [h('span', { className: 'text-secondary' }, ` 共 ${info.results.length} 个结果`)])
+					],
+					body: (info.error
 						? /** 显示错误信息 */
 						  [h('span', { className: 'error' }, [info.error || '网络错误或者未知错误'])]
 						: /** 显示结果列表 */
@@ -130,7 +142,7 @@ export class SearchInfosElement extends HTMLElement {
 							]);
 						})
 					])
-				]);
+				});
 			})
 		);
 
