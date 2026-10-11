@@ -28,7 +28,7 @@ import {
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
-import { waitForElement, waitForMedia } from '../utils/study';
+import { waitForElement, waitForMedia, playMediaWithAbortRetry } from '../utils/study';
 
 /**
  * 超星 font-cxsecret 解密用的参考特征表（FRB2 位打包格式，wght 350/400 字重特征）。
@@ -1740,14 +1740,34 @@ const JobRunner = {
 				}
 			}, 3000);
 
+			// Reuse an in-flight play request so pause events cannot start competing retries.
+			let pendingPlay: Promise<void> | undefined;
+			const requestPlayback = (): Promise<void> => {
+				if (!pendingPlay) {
+					const request = playMediaWithAbortRetry(media);
+					pendingPlay = request;
+					request.then(
+						() => {
+							if (pendingPlay === request) pendingPlay = undefined;
+						},
+						() => {
+							if (pendingPlay === request) pendingPlay = undefined;
+						}
+					);
+				}
+				return pendingPlay;
+			};
+
 			const playFunction = async () => {
 				// 这里先判断，再检测，否则后续添加多个 await 会导致视频启动等待时间过长，导致用户误认为脚本失效
 				if (hasFaceRecognition()) await waitForFaceRecognition();
 				if (hasNewFaceRecognition()) await waitForNewFaceRecognition();
 				if (media.ended === false) {
 					await $.sleep(1000);
-					media.play();
-					media.playbackRate = playbackRate;
+					if (!media.ended) {
+						const started = await playMedia(requestPlayback);
+						if (started) media.playbackRate = playbackRate;
+					}
 				}
 			};
 
@@ -1768,8 +1788,14 @@ const JobRunner = {
 
 			// 使用 setTimeout 解决 The play() request was interrupted by a call to pause() 问题
 			setTimeout(() => {
-				playMedia(() => media.play())
-					.then(() => {
+				playMedia(requestPlayback)
+					.then((started) => {
+						if (!started) {
+							clearInterval(reloadInterval);
+							media.removeEventListener('pause', playFunction);
+							reject(new Error('视频自动播放失败，请尝试手动播放或刷新页面。'));
+							return;
+						}
 						media.playbackRate = playbackRate;
 					})
 					.catch(reject);
