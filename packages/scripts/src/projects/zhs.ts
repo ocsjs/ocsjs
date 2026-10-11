@@ -2669,10 +2669,10 @@ function gxkWorkAndExam(
 			}
 		},
 		/** 完成答题后 */
-		onResultsUpdate(curr, index, res) {
+		async onResultsUpdate(curr, index, res) {
 			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-			CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleText, i)));
-			CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleText, index));
+			await CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleText, i)));
+			await CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleText, index));
 		}
 	});
 
@@ -3191,16 +3191,12 @@ function fusioncourseWork(
 			}
 		},
 
-		/**
-		 * 作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
-		 * 所以只能根据自定义的状态进行搜索结果的显示。
-		 */
-		onResultsUpdate(current, index, res) {
-			if (current.result) {
-				// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-				CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
-				CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
-			}
+		async onResultsUpdate(current, index, res) {
+			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
+			await CommonProject.scripts.workResults.methods.fillAll(
+				res.map((r, i) => simplifyWorkResult(r, titleTransform, i))
+			);
+			await CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
 		}
 	});
 
@@ -3412,16 +3408,10 @@ function hikeHomework(
 			}
 		},
 
-		/**
-		 * 作业都是一题一题做的，不像其他自动答题一样可以获取全部试卷内容。
-		 * 所以只能根据自定义的状态进行搜索结果的显示。
-		 */
 		onResultsUpdate(current, index, res) {
-			if (current.result) {
-				// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-				CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
-				CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
-			}
+			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
+			CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleTransform, i)));
+			CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
 		}
 	});
 

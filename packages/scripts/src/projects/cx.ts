@@ -979,10 +979,10 @@ function workOrExam(
 			}
 
 			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-			CommonProject.scripts.workResults.methods.fillAll(
+			await CommonProject.scripts.workResults.methods.fillAll(
 				res.map((r, i) => simplifyWorkResult(r, workOrExamQuestionTitleText, i))
 			);
-			CommonProject.scripts.workResults.methods.update(
+			await CommonProject.scripts.workResults.methods.update(
 				index,
 				simplifyWorkResult(current, workOrExamQuestionTitleText, index)
 			);
@@ -1974,10 +1974,10 @@ const JobRunner = {
 			/** 完成答题后 */
 			async onResultsUpdate(curr, index, res) {
 				// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-				CommonProject.scripts.workResults.methods.fillAll(
+				await CommonProject.scripts.workResults.methods.fillAll(
 					res.map((r, i) => simplifyWorkResult(r, chapterTestTaskQuestionTitleText, i))
 				);
-				CommonProject.scripts.workResults.methods.update(
+				await CommonProject.scripts.workResults.methods.update(
 					index,
 					simplifyWorkResult(curr, chapterTestTaskQuestionTitleText, index)
 				);

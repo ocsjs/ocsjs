@@ -474,7 +474,7 @@ export function createCommonAnswerer(options: {
 		}
 		const titleImages = titleResult.images;
 
-		return BackgroundProject.scripts.data.methods.searchAnswerInCaches(title, async () => {
+		return await BackgroundProject.scripts.data.methods.searchAnswerInCaches(title, async () => {
 			await $.sleep((options.period ?? 3) * 1000);
 			const optResult = normalize(
 				options.optionsTransform
