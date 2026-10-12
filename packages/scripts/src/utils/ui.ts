@@ -198,13 +198,19 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 		};
 		startProbe();
 
-		/** 启用/停用开关（阻止冒泡，避免触发卡片展开） */
+		/** 启用/停用开关 */
 		const checkbox = h('input', {
 			type: 'checkbox',
 			checked: !handlers.isDisabled(item.name),
 			className: 'base-style-switch'
 		});
-		checkbox.onclick = () => {
+		checkbox.title = '点击停用或者启用题库，停用题库后将无法在自动答题中查询题目';
+		const switchWrapper = $ui.tooltip(checkbox);
+		// 注意：$ui.tooltip 返回同一元素（switchWrapper === checkbox），
+		// onclick 只能赋值一次（分两次赋值后者会覆盖前者，曾导致启停逻辑丢失、刷新后恢复原值）
+		checkbox.onclick = (e) => {
+			// 阻止冒泡，避免触发卡片展开/收起
+			e.stopPropagation();
 			const disabled = !checkbox.checked;
 			card.classList.toggle('disabled', disabled);
 			handlers.onToggle(item.name, disabled);
@@ -215,9 +221,6 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 				startProbe();
 			}
 		};
-		checkbox.title = '点击停用或者启用题库，停用题库后将无法在自动答题中查询题目';
-		const switchWrapper = $ui.tooltip(checkbox);
-		switchWrapper.onclick = (e) => e.stopPropagation();
 
 		/** 接口域名徽标 */
 		const host = (() => {
