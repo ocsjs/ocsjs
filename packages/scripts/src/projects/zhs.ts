@@ -1134,7 +1134,8 @@ export const ZHSProject = Project.create({
 
 							setTimeout(() => {
 								$message.info({ content: `开始${isExam ? '考试' : '作业'}` });
-								commonWork(ZHSProject.scripts['work-center'], {
+								commonWork({
+									mount_script: ZHSProject.scripts['work-center'],
 									workerProvider: (opts) => gxkWorkAndExam(workInfo, opts),
 									start_delay_seconds: this.cfg.workDelay ?? 3
 								});
@@ -1457,7 +1458,8 @@ export const ZHSProject = Project.create({
 							$message.warn({ content: '答题完毕之前请勿操作页面！', duration: 0 });
 						}
 
-						commonWork(ZHSProject.scripts['work-center'], {
+						commonWork({
+							mount_script: ZHSProject.scripts['work-center'],
 							workerProvider: (opts) => {
 								if (remote_not_required) {
 									return fusioncourseWork(remotePage, opts);
@@ -1498,7 +1500,8 @@ export const ZHSProject = Project.create({
 							return;
 						}
 
-						commonWork(ZHSProject.scripts['work-center'], {
+						commonWork({
+							mount_script: ZHSProject.scripts['work-center'],
 							workerProvider: (opts) => {
 								return smartExam(undefined, opts);
 							}
@@ -1621,7 +1624,8 @@ export const ZHSProject = Project.create({
 			async oncomplete() {
 				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
 				migrateZhsWorkConfigs();
-				commonWork(ZHSProject.scripts['work-center'], {
+				commonWork({
+					mount_script: ZHSProject.scripts['work-center'],
 					workerProvider: xnkWork
 				});
 			}
@@ -2316,7 +2320,8 @@ export const ZHSProject = Project.create({
 
 				await waitForElement('.q_main');
 
-				commonWork(ZHSProject.scripts['work-center'], {
+				commonWork({
+					mount_script: ZHSProject.scripts['work-center'],
 					workerProvider: (opts) => {
 						return hikeWork(undefined, opts);
 					},
@@ -2347,7 +2352,8 @@ export const ZHSProject = Project.create({
 
 				await waitForElement('.question-item');
 
-				commonWork(ZHSProject.scripts['work-center'], {
+				commonWork({
+					mount_script: ZHSProject.scripts['work-center'],
 					workerProvider: (opts) => {
 						return hikeHomework(undefined, opts);
 					},

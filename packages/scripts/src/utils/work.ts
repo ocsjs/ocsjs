@@ -11,7 +11,8 @@ import {
 import { $ui, $message, MessageElement, Script, h, CommonEventEmitter, cors, $elements } from 'easy-us';
 import { CommonEvents, CommonProject } from '../projects/common';
 import { $console, BackgroundProject } from '../projects/background';
-import { CommonWorkOptions, workPreCheckMessage } from '.';
+import { CommonWorkOptions } from '.';
+import { createIframeControlSession } from './iframe-control-bar';
 import {
 	buildAnswererEnv,
 	createImageSuggestion,
@@ -63,19 +64,24 @@ function bindCommonWorkRender(script: Script, render: () => void) {
 
 /**
  * 通用作业考试工具方法
+ * 子 iframe 中无法操作 top 层元素，可直接传递 script: undefined
  */
-export function commonWork(
-	script: Script,
-	options: {
-		start_delay_seconds?: number;
-		workerProvider: (opts: CommonWorkOptions) => CommonEventEmitter<WorkerEvents> | undefined;
-		beforeRunning?: () => void | Promise<void>;
-		onRestart?: () => void | Promise<void>;
-		onWorkerCreated?: (worker: CommonEventEmitter<WorkerEvents>) => void | Promise<void>;
-	}
-) {
+export function commonWork(options: {
+	mount_script?: Script;
+	/**
+	 * 子 iframe 操控面板：开启后，若当前运行于子 iframe 中（self !== top），
+	 * worker 创建后会在顶层窗口的 $elements.root 中渲染操控条（暂停/继续 + 重新答题），
+	 * 共享顶层样式；按钮指令经 cors 跨窗口回传子帧执行（见 utils/iframe-control-bar.ts）。
+	 */
+	iframe_control?: boolean;
+	start_delay_seconds?: number;
+	workerProvider: (opts: CommonWorkOptions) => CommonEventEmitter<WorkerEvents> | undefined;
+	beforeRunning?: () => void | Promise<void>;
+	onRestart?: () => void | Promise<void>;
+	onWorkerCreated?: (worker: CommonEventEmitter<WorkerEvents>) => void | Promise<void>;
+}) {
 	// 置顶当前脚本
-	BackgroundProject.scripts.render.methods.pin(script);
+	if (options.mount_script) BackgroundProject.scripts.render.methods.pin(options.mount_script);
 
 	// worker 工作状态统一通过 CommonEvents.emitWorkerStateChange 广播：
 	// 结果面板按钮显隐与搜题气泡均以该事件为唯一数据源
@@ -85,13 +91,11 @@ export function commonWork(
 		if (curr.length > 0) {
 			state.checkFailed = false;
 			state.startBtnPressed = false;
-			if (checkMessage instanceof MessageElement) {
-				checkMessage.remove();
-			}
 			await closeAnswerWrapperEmptyWarning();
 			start();
 		}
 	});
+	let workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
 
 	/** 本次调用的可变状态（实例隔离，不与其它 commonWork 调用共享） */
 	const state: CommonWorkState = {
@@ -104,18 +108,32 @@ export function commonWork(
 		resultPanel: null
 	};
 
+	/** 暂停状态访问器（顶层控制面板与子 iframe 操控会话共享） */
+	const pausedAccessor = {
+		get value() {
+			return state.paused;
+		},
+		set value(v) {
+			state.paused = v;
+		}
+	};
+
+	/**
+	 * 子 iframe 操控会话：封装子帧侧全部逻辑（顶层操控条渲染/指令监听/暂停提示/按钮状态同步）。
+	 * 未开启 iframe_control 或不在子帧时为 undefined，生命周期中可选调用即可，
+	 * 无需在各处重复判断 iframe_control && self !== top
+	 */
+	const iframeControl = createIframeControlSession({
+		enabled: options.iframe_control,
+		workerProvider: () => state.worker,
+		paused: pausedAccessor
+	});
+
 	/** 显示答题控制按钮 */
 	const createWorkControlPanel = () => {
 		const { controlBtn, restartBtn, startBtn } = createWorkerControl({
 			workerProvider: () => state.worker,
-			paused: {
-				get value() {
-					return state.paused;
-				},
-				set value(v) {
-					state.paused = v;
-				}
-			},
+			paused: pausedAccessor,
 			onStart: async () => {
 				state.startBtnPressed = true;
 				if (checkMessage instanceof MessageElement) {
@@ -167,7 +185,7 @@ export function commonWork(
 			state.resultPanel = CommonProject.scripts.workResults.methods.createWorkResultsPanel();
 		}
 
-		script.panel?.body?.replaceChildren(
+		options.mount_script?.panel?.body?.replaceChildren(
 			h(
 				'div',
 				{ style: { marginTop: '12px' } },
@@ -188,22 +206,39 @@ export function commonWork(
 	// 控制区域与搜索结果区域只嵌入当前（学校）脚本面板；
 	// CommonProject 的"搜索结果"脚本面板保持其自身 onrender 的纯结果区，不显示控制按钮，
 	// 也避免同一个 DOM 元素被两个面板互相"偷走"导致状态不同步
-	bindCommonWorkRender(script, renderPanelBody);
+	if (options.mount_script) bindCommonWorkRender(options.mount_script, renderPanelBody);
 
-	let workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
-
-	/**
-	 * 检查题库是否配置，并询问是否开始答题
-	 */
-	let checkMessage = workPreCheckMessage({
-		onrun: () => state.startBtnPressed === false && start(),
-		onclose: (_, closedMsg) => (checkMessage = closedMsg),
-		onNoAnswererWrappers: () => {
+	let checkMessage: MessageElement | Promise<void> | undefined;
+	if (iframeControl) {
+		// 子 iframe 操控模式：$message 经 cors 转发到顶层时无法执行交互回调（取消/倒计时结束），
+		// 不能使用交互式预检；但自动答题必须触发，简化为直接校验题库配置 + 延迟自动开始
+		if (workOptions.answererWrappers.length === 0) {
 			state.checkFailed = true;
-		},
-		...workOptions,
-		start_delay_seconds: options.start_delay_seconds
-	});
+			answerWrapperEmptyWarning(0);
+		} else {
+			const delay = options.start_delay_seconds ?? 5;
+			$message.info(`将在 ${delay} 秒后自动答题`);
+			setTimeout(() => {
+				// 与 workPreCheckMessage 的 onrun 语义一致：已通过其他方式开始时跳过
+				if (state.startBtnPressed === false) {
+					start();
+				}
+			}, delay * 1000);
+		}
+	} else {
+		/**
+		 * 检查题库是否配置，并询问是否开始答题
+		 */
+		checkMessage = workPreCheckMessage({
+			onrun: () => state.startBtnPressed === false && start(),
+			onclose: (_, closedMsg) => (checkMessage = closedMsg),
+			onNoAnswererWrappers: () => {
+				state.checkFailed = true;
+			},
+			...workOptions,
+			start_delay_seconds: options.start_delay_seconds
+		});
+	}
 
 	const start = async () => {
 		// 防重入：运行中重复触发（如连点重新开始）直接忽略
@@ -228,22 +263,29 @@ export function commonWork(
 		// 更新面板为运行态（与 render 事件共用同一渲染逻辑）
 		renderPanelBody();
 
+		// 子 iframe 操控会话：worker 创建后激活（渲染操控条到顶层 $elements.root）
+		iframeControl?.activate();
+
 		if (state.worker) {
 			const emitState = CommonEvents.emitWorkerStateChange;
 			emitState('start');
 			state.worker.on('stop', () => emitState('stop'));
 			// 恢复答题视为重新开始工作（isWorkerWorking=true，气泡重新显示）
 			state.worker.on('continuate', () => emitState('start'));
-			state.worker.once('close', () => emitState('close'));
+			state.worker.once('close', () => {
+				emitState('close');
+				iframeControl?.dispose();
+			});
 			state.worker.once('done', () => {
 				state.running = false;
 				state.controlPanel = null;
 				state.paused = false;
 				controlBtn.disabled = true;
 				emitState('done');
+				iframeControl?.finish();
 			});
 		}
-		};
+	};
 }
 
 /**
@@ -533,4 +575,51 @@ export function createCommonAnswerer(options: {
 			return searchInfos;
 		});
 	};
+}
+
+/** 创建答题预处理信息 */
+function workPreCheckMessage(
+	options: CommonWorkOptions & {
+		start_delay_seconds?: number;
+		onrun: (opts: CommonWorkOptions) => void;
+		/**
+		 * 当没有题库配置时的回调
+		 */
+		onNoAnswererWrappers?: (opts: CommonWorkOptions) => void;
+		/**
+		 * 手动关闭时的回调
+		 */
+		onclose?: (opts: CommonWorkOptions, closedMessage: MessageElement) => void;
+	}
+) {
+	const { onrun, onNoAnswererWrappers, onclose, ...opts } = options;
+
+	if (opts.answererWrappers.length === 0) {
+		onNoAnswererWrappers?.(opts);
+		return answerWrapperEmptyWarning(0);
+	} else {
+		options.start_delay_seconds = options.start_delay_seconds ?? 5;
+		return $message.info({
+			duration: options.start_delay_seconds,
+			content: h('span', [
+				`将在 ${options.start_delay_seconds} 秒后自动答题，`,
+				$ui.preventText({
+					name: '点击取消',
+					delay: options.start_delay_seconds,
+					ondefault: (span) => {
+						onrun(opts);
+					},
+					onprevent(span) {
+						const closedMessage = $message.warn({
+							content: '已关闭此次的自动答题，请手动开启或者忽略此警告。',
+							duration: 0
+						});
+						if (closedMessage) {
+							onclose?.(opts, closedMessage);
+						}
+					}
+				})
+			])
+		});
+	}
 }

@@ -458,12 +458,6 @@ export const CXProject = Project.create({
 				if (location.href.includes('/work/view')) {
 					return $message.info('当前作业已提交、自动答题关闭');
 				}
-				if (location.href.includes('/page/quiz/stu/answerQuestion2')) {
-					commonWork({
-						workerProvider: (opts) => mobilelearn(opts)
-					});
-					return;
-				}
 
 				const isExam = /\/exam\/preview/.test(location.href);
 				commonWork({
@@ -483,7 +477,11 @@ export const CXProject = Project.create({
 			configs: { notes: workNotes },
 			async oncomplete() {
 				if (location.href.includes('/page/quiz/stu/answerQuestion2')) {
+					await waitForElement('.left-question-list');
+					await $.sleep(1000);
+					CORSUtils.pinWorkPanel();
 					commonWork({
+						iframe_control: true,
 						workerProvider: (opts) => mobilelearn(opts)
 					});
 					return;
@@ -651,7 +649,8 @@ export const CXProject = Project.create({
 					const isExam = /\/exam\/test/.test(location.href);
 					const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
 					BackgroundProject.scripts.render.methods.pin(this);
-					commonWork(this, {
+					commonWork({
+						mount_script: this,
 						// 因为超星是每个题目一个页面，这里加快开始速度，避免等待，默认5秒，这里加快为默认3秒间隔
 						start_delay_seconds: workOptions.period,
 						workerProvider: (opts) => workOrExam(isExam ? 'exam' : 'work', { ...opts, preview_mode: false, thread: 1 })

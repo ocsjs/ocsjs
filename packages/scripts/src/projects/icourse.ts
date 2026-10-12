@@ -396,7 +396,8 @@ export const ICourseProject = Project.create({
 					BackgroundProject.scripts.render.methods.normal();
 
 					$msg_and_log('info', '开始答题');
-					commonWork(this, {
+					commonWork({
+						mount_script: this,
 						workerProvider: (opts) => {
 							const worker = workAndExam(remotePage, type, opts);
 							worker.once('close', () => {

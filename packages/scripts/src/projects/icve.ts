@@ -428,7 +428,8 @@ export const IcveMoocProject = Project.create({
 					document.querySelectorAll<HTMLElement>(`.sheet_nums [id*="sheetSeq"]`).item(0)?.click();
 				};
 
-				commonWork(this, {
+				commonWork({
+					mount_script: this,
 					workerProvider: work,
 					beforeRunning: async () => {
 						resetToBegin();
@@ -724,7 +725,8 @@ export const IcveMoocProject = Project.create({
 					document.querySelectorAll<HTMLElement>(`.list-box span`).item(0)?.click();
 				};
 
-				commonWork(this, {
+				commonWork({
+					mount_script: this,
 					workerProvider: aiWork,
 					beforeRunning: async () => {
 						resetToBegin();

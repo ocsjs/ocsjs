@@ -344,7 +344,8 @@ export const ZJYProject = Project.create({
 						if (isWork() || isExam()) {
 							await waitForQuestions();
 
-							commonWork(this, {
+							commonWork({
+								mount_script: this,
 								workerProvider: (opt) => workOrExam(isWork() ? 'work' : 'exam', opt)
 							});
 						}

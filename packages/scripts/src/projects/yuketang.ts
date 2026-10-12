@@ -289,7 +289,8 @@ export const YKTProject = Project.create({
 										// 题库检查/开始倒计时/控制面板由 commonWork 统一处理
 
 										await new Promise<void>((resolve) => {
-											commonWork(this, {
+											commonWork({
+												mount_script: this,
 												workerProvider: (opts) => {
 													return createYktEmbeddedWorkLoop(opts, exerciseIframe.contentDocument!, () => resolve());
 												}
