@@ -183,7 +183,7 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 		 * 供结果面板一次性渲染全部题目序号，随后再由搜题/答题线程逐题推进状态。
 		 */
 		if (results.length > 0) {
-			await this.opts.onResultsUpdate?.(results[0], 0, results);
+			await this.opts.onResultsInit?.(results[0], 0, results);
 		}
 
 		/** 请求答案的线程 */

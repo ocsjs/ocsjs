@@ -577,10 +577,12 @@ function workAndExam(
 				}
 			});
 		},
+		/** 元素准备完毕后回调（仅一次）：填充全部题目，面板立即显示全部题目 */
+		async onResultsInit(_curr, _index, res) {
+			await CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleText, i)));
+		},
 		/** 完成答题后 */
 		async onResultsUpdate(curr, index, res) {
-			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-			await CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleText, i)));
 			await CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleText, index));
 		}
 	});

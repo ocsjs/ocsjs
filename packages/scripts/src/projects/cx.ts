@@ -1002,6 +1002,16 @@ function workOrExam(
 			updateDynamicResult(current, workOrExamQuestionTitleText);
 		},
 
+		/** 元素准备完毕后回调（仅一次）：整卷模式填充全部题目，面板立即显示全部题目 */
+		async onResultsInit(_curr, _index, res) {
+			if (!preview_mode) {
+				return;
+			}
+			await CommonProject.scripts.workResults.methods.fillAll(
+				res.map((r, i) => simplifyWorkResult(r, workOrExamQuestionTitleText, i))
+			);
+		},
+
 		/** 完成答题后 */
 		async onResultsUpdate(current, index, res) {
 			// 非预览模式：逐题更新（等待搜索中→等待答题中→已答题/失败），想要清空只能手动清空
@@ -1010,10 +1020,6 @@ function workOrExam(
 				return;
 			}
 
-			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-			await CommonProject.scripts.workResults.methods.fillAll(
-				res.map((r, i) => simplifyWorkResult(r, workOrExamQuestionTitleText, i))
-			);
 			await CommonProject.scripts.workResults.methods.update(
 				index,
 				simplifyWorkResult(current, workOrExamQuestionTitleText, index)
@@ -1137,18 +1143,15 @@ function mobilelearn(opts: CommonWorkOptions) {
 				}
 			}
 		},
-
-		/** 检测到题目（非预览模式：在结果面板提前占位"等待搜索中"，预览模式整卷逐项更新无需占位） */
-		onQuestionDetected(current) {
-			updateDynamicResult(current, titleTransform);
+		/** 元素准备完毕后回调（仅一次）：填充全部题目，面板立即显示全部题目 */
+		async onResultsInit(_curr, _index, res) {
+			await CommonProject.scripts.workResults.methods.fillAll(
+				res.map((r, i) => simplifyWorkResult(r, titleTransform, i))
+			);
 		},
 
 		/** 完成答题后 */
 		async onResultsUpdate(current, index, res) {
-			// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
-			await CommonProject.scripts.workResults.methods.fillAll(
-				res.map((r, i) => simplifyWorkResult(r, titleTransform, i))
-			);
 			await CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
 		}
 	});
@@ -2114,12 +2117,15 @@ const JobRunner = {
 				return { finish: false };
 			},
 
-			/** 完成答题后 */
-			async onResultsUpdate(curr, index, res) {
-				// 整卷模式：先填充全部题目（面板立即显示全部题目），再逐项推进状态
+			/** 元素准备完毕后回调（仅一次）：填充全部题目，面板立即显示全部题目 */
+			async onResultsInit(_curr, _index, res) {
 				await CommonProject.scripts.workResults.methods.fillAll(
 					res.map((r, i) => simplifyWorkResult(r, chapterTestTaskQuestionTitleText, i))
 				);
+			},
+
+			/** 完成答题后 */
+			async onResultsUpdate(curr, index, res) {
 				await CommonProject.scripts.workResults.methods.update(
 					index,
 					simplifyWorkResult(curr, chapterTestTaskQuestionTitleText, index)

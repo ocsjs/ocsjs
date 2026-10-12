@@ -246,6 +246,12 @@ export interface WorkOptions<E extends RawElements> {
 	 * 解决动态答题器（一题一题加载）全部流程结束后才显示结果、用户无感知的问题。
 	 */
 	onQuestionDetected?: (currentResult: WorkResult<E>, res: WorkResult<E>[]) => void | Promise<void>;
+	/**
+	 * 元素准备完毕、即将开始答题时回调（仅一次，此时全部为 未搜题/未答题 的初始状态）。
+	 * 供结果面板一次性初始化全部题目列表（如 fillAll），
+	 * 与 onResultsUpdate（搜题/答题过程中逐题多次触发）相互独立。
+	 */
+	onResultsInit?: (currentResult: WorkResult<E>, currentIndex: number, res: WorkResult<E>[]) => void | Promise<void>;
 	/** 监听搜题结果 */
 	onAnswerSearched?: (
 		searchInfo: SearchInformation,
