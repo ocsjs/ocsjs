@@ -1,7 +1,6 @@
 import { $, AnswererWrapper, WorkUploadType } from '@ocsjs/core';
-import { $ui, $message, $modal, MessageElement, h } from 'easy-us';
+import { $ui, $message, $modal, h } from 'easy-us';
 import { $console } from '../projects/background';
-import { answerWrapperEmptyWarning } from './work';
 import { MessageAttrs } from 'easy-us/lib/interfaces/custom-window';
 
 export interface CommonWorkOptions {
@@ -12,53 +11,6 @@ export interface CommonWorkOptions {
 	stopSecondWhenFinish: number;
 	redundanceWordsText: string;
 	answerSeparators: string;
-}
-
-/** 创建答题预处理信息 */
-export function workPreCheckMessage(
-	options: CommonWorkOptions & {
-		start_delay_seconds?: number;
-		onrun: (opts: CommonWorkOptions) => void;
-		/**
-		 * 当没有题库配置时的回调
-		 */
-		onNoAnswererWrappers?: (opts: CommonWorkOptions) => void;
-		/**
-		 * 手动关闭时的回调
-		 */
-		onclose?: (opts: CommonWorkOptions, closedMessage: MessageElement) => void;
-	}
-) {
-	const { onrun, onNoAnswererWrappers, onclose, ...opts } = options;
-
-	if (opts.answererWrappers.length === 0) {
-		onNoAnswererWrappers?.(opts);
-		return answerWrapperEmptyWarning(0);
-	} else {
-		options.start_delay_seconds = options.start_delay_seconds ?? 5;
-		return $message.info({
-			duration: options.start_delay_seconds,
-			content: h('span', [
-				`${options.start_delay_seconds}秒后自动答题，`,
-				$ui.preventText({
-					name: '点击取消',
-					delay: options.start_delay_seconds,
-					ondefault: (span) => {
-						onrun(opts);
-					},
-					onprevent(span) {
-						const closedMessage = $message.warn({
-							content: '已关闭此次的自动答题，请手动开启或者忽略此警告。',
-							duration: 0
-						});
-						if (closedMessage) {
-							onclose?.(opts, closedMessage);
-						}
-					}
-				})
-			])
-		});
-	}
 }
 
 /**
