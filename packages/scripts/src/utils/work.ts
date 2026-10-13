@@ -15,6 +15,7 @@ import { CommonWorkOptions } from '.';
 import { createIframeControlSession } from './iframe-control-bar';
 import {
 	buildAnswererEnv,
+	createAnswererWrappersSignature,
 	createImageSuggestion,
 	imageToBase64,
 	ImageSuggestionResult,
@@ -22,7 +23,13 @@ import {
 } from './answerer-env';
 
 // 重新导出，保持对外 API 不变（common.ts / exploration.ts 等仍从本文件导入）
-export { buildAnswererEnv, createImageSuggestion, imageToBase64, isAnswererWrappersSupportImageOptimize };
+export {
+	buildAnswererEnv,
+	createAnswererWrappersSignature,
+	createImageSuggestion,
+	imageToBase64,
+	isAnswererWrappersSupportImageOptimize
+};
 export type { ImageSuggestionResult };
 // extractTextWithImages / ExtractTextOptions 已在下方直接 export
 

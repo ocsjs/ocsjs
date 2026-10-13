@@ -1,3 +1,4 @@
+import { AnswererWrapper } from '@ocsjs/core';
 import { getImageSize, upscalePngDataUrl } from './png-upscaler';
 
 export interface ImageSuggestionResult {
@@ -337,15 +338,71 @@ export async function buildAnswererEnv(params: {
 	return { env, imageUrls };
 }
 
+/** 图片题参数占位符：在题库配置 data 字段中引用即声明了图片题参数（模板字符串转义写法，值为 ${...} 字面量） */
+const IMAGE_OPTIMIZE_PLACEHOLDERS = [`\${images}`, `\${suggestion_title}`, `\${suggestion_options}`] as const;
+
+/** 字段解析器源码中的图片题 env 引用（含解构写法 const { images } = env，排除 titleImages/imagesList 等子串误配） */
+const IMAGE_ENV_REF_PATTERN = /(^|[^\w$])(images|suggestion_title|suggestion_options)(?![\w$])/;
+
 /**
- * 题库配置是否支持图片题优化。
+ * 题库配置是否支持图片题优化（单个配置）。
  *
- * 仅判定请求方法是否为 POST：GET 方法无法安全携带 base64 图片数据。
+ * 判定规则（需同时满足）：
+ * 1. 请求方法为 POST——图片数据（base64 数组）必须随请求体提交，GET 仅拼接 URL 参数无法承载；
+ * 2. 配置中实际引用了图片题参数（仅 POST 而无引用时，图片数据根本不会被上传）：
+ *    - data 字符串字段包含 ${images} / ${suggestion_title} / ${suggestion_options} 占位符；
+ *    - 或 data 字段解析器（handler）源码中引用了 env.images / env.suggestion_title / env.suggestion_options
+ *      （字段解析器接收完整 env，可自由读取图片数据）。
+ *
+ * 说明：POST 请求仅 data 字段值与 data 字段解析器参与占位符解析，
+ * url / headers 不做替换（见 core answer.wrapper.handler.ts），因此只检测这两处。
  *
  * 注意：本函数仅用于**提示**用户更新题库配置，不做任何限制。
  * 因为上传内容由题库配置的占位符决定，而原题 title / options 不再被覆盖，
  * 旧配置（只读 ${title} / ${options}）不会上传新增字段，因此即便返回 false 也是安全的。
  */
-export function isAnswererWrappersSupportImageOptimize(wrappers: any[]): boolean {
-	return wrappers.some((w) => w && String(w.method || 'get').toLowerCase() === 'post');
+export function isAnswererWrapperSupportImageOptimize(wrapper: AnswererWrapper): boolean {
+	if (!wrapper || String(wrapper.method || 'get').toLowerCase() !== 'post') {
+		return false;
+	}
+	for (const value of Object.values(wrapper.data || {})) {
+		if (typeof value === 'string') {
+			if (IMAGE_OPTIMIZE_PLACEHOLDERS.some((placeholder) => value.includes(placeholder))) {
+				return true;
+			}
+		} else if (value && typeof value === 'object' && typeof (value as any).handler === 'string') {
+			if (IMAGE_ENV_REF_PATTERN.test((value as any).handler)) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+/**
+ * 题库配置列表中是否存在支持图片题优化的配置（任一满足即视为支持）。
+ * 判定细节见 isAnswererWrapperSupportImageOptimize。
+ */
+export function isAnswererWrappersSupportImageOptimize(wrappers: AnswererWrapper[]): boolean {
+	return wrappers.some(isAnswererWrapperSupportImageOptimize);
+}
+
+/**
+ * 生成题库配置签名（FNV-1a 32bit 哈希），用于图片题优化警告的"已关闭记录"比对。
+ *
+ * 覆盖配置的全部字段（name/url/method/type/data/headers/handler 等）：
+ * 仅按 name 拼接的旧算法无法感知配置内容变化（用户更新配置后签名不变、警告不再触发），
+ * 全字段哈希使得任何实质配置变化都产生新签名，从而重新触发一次警告。
+ *
+ * 使用哈希而非 JSON 原文：签名仅用于相等比较，
+ * 哈希紧凑且避免在记录中保存完整题库内容（接口地址、解析器代码等）。
+ */
+export function createAnswererWrappersSignature(wrappers: AnswererWrapper[]): string {
+	const content = JSON.stringify(wrappers);
+	let hash = 0x811c9dc5;
+	for (let i = 0; i < content.length; i++) {
+		hash ^= content.charCodeAt(i);
+		hash = Math.imul(hash, 0x01000193);
+	}
+	return (hash >>> 0).toString(16);
 }

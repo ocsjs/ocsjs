@@ -13,7 +13,11 @@ import { BackgroundProject } from './background';
 import { enableCopy } from '../utils';
 import { SearchInfosElement } from '../elements/search.infos';
 import { dropdownStyle } from '../utils/configs';
-import { buildAnswererEnv, isAnswererWrappersSupportImageOptimize } from '../utils/work';
+import {
+	buildAnswererEnv,
+	createAnswererWrappersSignature,
+	isAnswererWrappersSupportImageOptimize
+} from '../utils/work';
 import { getAnswererConfigProvider, openAnswererConnect, waitForAnswererConfig } from '../utils/answerer-connect';
 import { confirmRiskyAnswerWrappers } from '../utils/answer-wrapper-security';
 import { initEdgeMinimize } from '../utils/edge-minimize';
@@ -202,6 +206,15 @@ export const CommonProject = Project.create({
 				disabledAnswererWrapperNames: {
 					defaultValue: [] as string[]
 				},
+				/**
+				 * 图片题优化警告的已关闭记录（题库签名列表，不在面板显示）：
+				 * 用户手动关闭警告后记录当前题库签名，同配置下不再重复弹出，
+				 * 题库配置变化（签名不同）时重新提示
+				 */
+				imageOptimizeWarnRecords: {
+					defaultValue: [] as string[]
+				},
+
 				answererWrappersButton: {
 					label: '题库配置',
 					defaultValue: '点击配置',
@@ -864,7 +877,7 @@ export const CommonProject = Project.create({
 						title:
 							'遇到图片题解析图片成 Base64 上传给题库，防止遇到防盗链等问题无法加载。' +
 							`需题库配置支持（POST 方法且引用了 \${images} / \${suggestion_title} / \${suggestion_options} 字段），` +
-							'否则会提示你去源头更新并重新配置题库。原题 title / options 不会被修改。'
+							'否则需重新配置题库。原题 title / options 不会被修改。'
 					},
 					defaultValue: true
 				},
@@ -1051,34 +1064,48 @@ export const CommonProject = Project.create({
 				// 图片题优化兼容性检测：仅提示，不限制。
 				// 因为上传内容由题库配置占位符决定，原题 title / options 不再被覆盖，
 				// 旧配置不会上传新增字段，所以即便不支持也是安全的，这里只做引导提示。
+				//
+				// 防频繁打扰（警告曾导致界面交互困难）：
+				// 1. 仅顶层窗口检测——oncomplete 在每个 iframe 都会执行，子帧 $message 经 cors
+				//    全部转发到顶层，会造成多条相同警告堆叠；
+				// 2. 配置签名记忆——用户手动关闭后记录当前题库签名到 imageOptimizeWarnRecords，
+				//    同配置下不再弹出，仅当题库配置变化（签名改变）时才重新提示。
 				const checkImageOptimizeCompatibility = () => {
+					if (self !== top) {
+						return;
+					}
 					const wrappers = this.cfg.answererWrappers || [];
-					// 题库为空 / 关闭图片题优化：清除提示
-					if (!this.cfg.imageOptimize || wrappers.length === 0) {
+					// 题库为空 / 关闭图片题优化 / 配置已支持：清除提示
+					if (!this.cfg.imageOptimize || wrappers.length === 0 || isAnswererWrappersSupportImageOptimize(wrappers)) {
 						state.setting.imageOptimizeMessage?.remove();
 						state.setting.imageOptimizeMessage = undefined;
 						return;
 					}
-					if (!isAnswererWrappersSupportImageOptimize(wrappers)) {
-						if (!state.setting.imageOptimizeMessage) {
-							state.setting.imageOptimizeMessage = $message.warn({
-								content: h('div', [
-									'图片题优化已开启，但当前题库配置暂不支持（需 POST 方法并引用 ',
-									h('code', `\${images}`),
-									' / ',
-									h('code', `\${suggestion_title}`),
-									' / ',
-									h('code', `\${suggestion_options}`),
-									' 字段）。',
-									h('br'),
-									'请前往题库配置源头获取新配置并重新配置题库，否则图片题优化功能无法生效。'
-								]),
-								duration: 0
-							});
-						}
-					} else {
-						state.setting.imageOptimizeMessage?.remove();
-						state.setting.imageOptimizeMessage = undefined;
+					// 用户已在此配置下关闭过提示：不再重复打扰
+					// 签名为全字段内容哈希（算法见 answerer-env.ts），任何实质配置变化都会重新触发警告
+					const signature = createAnswererWrappersSignature(wrappers);
+					if (this.cfg.imageOptimizeWarnRecords.includes(signature)) {
+						return;
+					}
+					if (!state.setting.imageOptimizeMessage) {
+						state.setting.imageOptimizeMessage = $message.warn({
+							content: h('div', [
+								'当前题库配置暂不支持图片、公式等题目处理',
+								h('br'),
+								'请前往题库配置源头获取新配置并重新配置题库，否则图片题优化功能无法生效。',
+								h('br'),
+								'题库开发人员请查看： https://docs.ocsjs.com/docs/other/api'
+							]),
+							duration: 0,
+							onClose: () => {
+								// 记录关闭时的题库签名（remove() 清除提示不会触发 onClose，仅用户主动关闭才记录）。
+								// 上限 50 条，防止记录无限增长
+								if (!this.cfg.imageOptimizeWarnRecords.includes(signature)) {
+									this.cfg.imageOptimizeWarnRecords = [...this.cfg.imageOptimizeWarnRecords, signature].slice(-50);
+								}
+								state.setting.imageOptimizeMessage = undefined;
+							}
+						});
 					}
 				};
 
@@ -1135,13 +1162,9 @@ export const CommonProject = Project.create({
 						cacheIfFinished(result);
 						CommonEvents.emitWorkerChanged(result);
 					},
+
 					/**
-					 * 【动态模式】追加结果；若已存在相同 question 的结果则原地更新（占位 → 状态推进）。
-					 * 动态答题器在"检测到题目→搜题→答题"各阶段对同一题目重复调用，
-					 * 实现序号与内容的渐进式状态推进（等待搜索中→等待答题中→已答题/失败）。
-					 * 调用即自动进入动态答题模式。
-					 */
-					/**
+					 * 仅可在 【全量模式】 搜题下使用
 					 * 【全量模式】填充全部题目：整卷答题时于 onResultsUpdate 调用，
 					 * 使结果面板立即显示全部题目（等待处理中），随后由 update 逐项推进状态
 					 * （等待搜索中→等待答题中→已答题/失败）。
@@ -1151,11 +1174,7 @@ export const CommonProject = Project.create({
 					 * 仅当传入数组比当前存储更长时才写入（按位置保留已有最新状态），重复调用无副作用。
 					 */
 					fillAll: async (results: SimplifyWorkResult[]): Promise<void> => {
-						const data = (await $store.getTab(TAB_WORK_RESULTS_KEY)) || [];
-						if (results.length > data.length) {
-							const merged = results.map((r, i) => data[i] ?? r);
-							await $store.setTab(TAB_WORK_RESULTS_KEY, merged);
-						}
+						await $store.setTab(TAB_WORK_RESULTS_KEY, results);
 					},
 					append: async (result: SimplifyWorkResult): Promise<void> => {
 						CommonProject.scripts.workResults.cfg.dynamicResults = true;
