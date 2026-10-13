@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.2.1](https://github.com/ocsjs/ocsjs/compare/5.2.0...5.2.1) (2026-10-13)
+
+
+* 暂时移除一键配置功能 ([1ebf1fd](https://github.com/ocsjs/ocsjs/commit/1ebf1fd33115f0c2b4145a1a090cc6cdb082d855))
+
 ## [5.2.0](https://github.com/ocsjs/ocsjs/compare/5.1.0...5.2.0) (2026-10-13)
 
 
