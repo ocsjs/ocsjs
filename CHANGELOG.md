@@ -1,5 +1,20 @@
 # Changelog
 
+## [5.2.0](https://github.com/ocsjs/ocsjs/compare/5.1.0...5.2.0) (2026-10-13)
+
+
+* 优化搜索结果处理流程和代码、新增搜索等待呼吸特效 ([b2ce2e4](https://github.com/ocsjs/ocsjs/commit/b2ce2e47391abf42b4c5199223cafed70b82cce3))
+* 优化搜索结果界面显示逻辑 ([cc1525b](https://github.com/ocsjs/ocsjs/commit/cc1525b49d06b4a2a909266bc86954800ba01ffc))
+* 修复图片题优化的警告消息重复弹出的问题、修复搜索结果界面全量模式下无法整体显示的问题 ([9ef18ef](https://github.com/ocsjs/ocsjs/commit/9ef18efd30b45086913fd56e699e732e93a2a191))
+* 修复搜索结果更新时忽略异步状态导致的搜索结果状态错乱问题 ([1465e8f](https://github.com/ocsjs/ocsjs/commit/1465e8f6347ceb42c71a3a56f92679e7c29e6942))
+* 修复搜索结果重建状态问题、优化搜题气泡消息状态错乱问题 ([f69a66a](https://github.com/ocsjs/ocsjs/commit/f69a66afdc44c35c46542e185fb18beaa9ce061c))
+* 修复答题器会忽略搜题时代码报错的问题 ([5cbc2ab](https://github.com/ocsjs/ocsjs/commit/5cbc2ab9503a1123913d8504a8f01d2c30c2929b))
+* 修复题库启用按钮无效的BUG ([dc7e41f](https://github.com/ocsjs/ocsjs/commit/dc7e41f3edbd9dad233f0be2ad61e92800ed07bd))
+* 增加搜题时气泡实时显示功能 ([8305c2a](https://github.com/ocsjs/ocsjs/commit/8305c2ae9416398c7108de1ccacb669313322b9e))
+* 新增超星-任务-随堂练习的自动答题适配支持 ([ceb1437](https://github.com/ocsjs/ocsjs/commit/ceb1437cd06511cf54d8caf9a75ea256bd59c78d))
+* 新增跨Iframe操作答题进程功能，增加超星随堂测验答题操作面板 ([015d59b](https://github.com/ocsjs/ocsjs/commit/015d59b35598cc25199c244994aefa225e319a9c))
+* 适配雨课堂AI数字人视频自动学习 ([a3083a5](https://github.com/ocsjs/ocsjs/commit/a3083a5842be05f35561971b22c2062a47cea026))
+
 ## [5.1.0](https://github.com/ocsjs/ocsjs/compare/5.0.0...5.1.0) (2026-10-09)
 
 
