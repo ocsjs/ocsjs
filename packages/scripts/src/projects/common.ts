@@ -18,6 +18,7 @@ import {
 	createAnswererWrappersSignature,
 	isAnswererWrappersSupportImageOptimize
 } from '../utils/work';
+import { IMAGE_URL_REGEX } from '../utils/answerer-env';
 import { getAnswererConfigProvider, openAnswererConnect, waitForAnswererConfig } from '../utils/answerer-connect';
 import { confirmRiskyAnswerWrappers } from '../utils/answer-wrapper-security';
 import { initEdgeMinimize } from '../utils/edge-minimize';
@@ -31,6 +32,29 @@ import {
 } from '../utils/ui';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
+
+/**
+ * 搜题气泡文本处理：将题目中的图片 URL 替换为 [图片N] 占位符。
+ * 图片题 URL 通常极长（几十到上百字符），直接放进消息气泡会撑破宽度且无可读性；
+ * 编号按出现顺序分配，同 URL 复用同一编号（与 createImageSuggestion 的占位符规则保持一致）。
+ * 非图片 URL 不替换，纯文字/公式文本透传。
+ */
+function formatQuestionForMessage(question: string): string {
+	if (!question) return question;
+	// 使用局部实例，避免共享正则（带 g 标志）的 lastIndex 状态互相干扰
+	const re = new RegExp(IMAGE_URL_REGEX.source, IMAGE_URL_REGEX.flags);
+	const placeholderMap = new Map<string, string>();
+	let counter = 0;
+	return question.replace(re, (url) => {
+		let p = placeholderMap.get(url);
+		if (!p) {
+			counter++;
+			p = `[图片${counter}]`;
+			placeholderMap.set(url, p);
+		}
+		return p;
+	});
+}
 
 export const CommonEvents = {
 	emitAnswererChanged: cors.defineTopFunction((curr: AnswererWrapper[], pre: AnswererWrapper[]) => {
@@ -1421,7 +1445,7 @@ export const CommonProject = Project.create({
 				});
 				CommonProject.scripts.workResults.on('work-current-result-change', (cur) => {
 					if (cur.searching) {
-						if (working_msg) working_msg.innerHTML = loadingSpinSvg + ` 正在搜题 ${cur.question}`;
+						if (working_msg) working_msg.innerHTML = loadingSpinSvg + ` 正在搜题 ${formatQuestionForMessage(cur.question)}`;
 					}
 				});
 			}

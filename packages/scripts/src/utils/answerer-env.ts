@@ -183,6 +183,12 @@ function normalizeToPngDataUrl(dataUrl: string): string {
 /** 图片最小边长阈值：低于此值的图片会被题库/模型（如豆包 14px）拒绝，需放大后再提交 */
 const MIN_IMAGE_DIMENSION = 14;
 
+/**
+ * 匹配图片 URL：非贪婪且排除中文/全角字符，避免跨越多个 URL 或中文文本拼成非法 URL
+ * 供 createImageSuggestion 及外部（消息气泡文本压缩等）复用
+ */
+export const IMAGE_URL_REGEX = /https?:\/\/[^\s一-鿿＀-￯]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s一-鿿＀-￯]*)?/gi;
+
 export async function createImageSuggestion(
 	title: string,
 	options?: string,
@@ -191,13 +197,10 @@ export async function createImageSuggestion(
 	/** DOM 调用方可直接传入按文档顺序的选项图片 URL，跳过正则提取 */
 	optionImages?: string[]
 ): Promise<ImageSuggestionResult | undefined> {
-	// 匹配图片 URL：非贪婪且排除中文/全角字符，避免跨越多个 URL 或中文文本拼成非法 URL
-	const imageUrlRegex = /https?:\/\/[^\s一-鿿＀-￯]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s一-鿿＀-￯]*)?/gi;
-
 	// 收集标题和选项中的所有图片 URL，保持顺序
 	// 若调用方提供 images 数组则直接使用（DOM 遍历所得，跳过正则）；否则回退到正则提取（字符串输入场景）
-	const titleUrls = titleImages && titleImages.length ? titleImages.slice() : title.match(imageUrlRegex) || [];
-	const optionUrls = optionImages && optionImages.length ? optionImages.slice() : options?.match(imageUrlRegex) || [];
+	const titleUrls = titleImages && titleImages.length ? titleImages.slice() : title.match(IMAGE_URL_REGEX) || [];
+	const optionUrls = optionImages && optionImages.length ? optionImages.slice() : options?.match(IMAGE_URL_REGEX) || [];
 
 	if (titleUrls.length === 0 && optionUrls.length === 0) return undefined;
 
