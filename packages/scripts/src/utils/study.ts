@@ -44,6 +44,38 @@ export async function waitForMedia(options?: {
 	return res;
 }
 
+/**
+ * Retry a transient AbortError while starting a media element.
+ *
+ * Chaoxing may replace a video source while the next chapter loads. Firefox
+ * then rejects an early play() request even though a later one can succeed.
+ * Other errors (notably NotAllowedError) must reach the normal error handler.
+ */
+export async function playMediaWithAbortRetry(
+	media: HTMLMediaElement,
+	retryDelays: readonly number[] = [700, 1200, 2000, 3500]
+): Promise<void> {
+	for (let attempt = 0; ; attempt++) {
+		try {
+			await media.play();
+			return;
+		} catch (error) {
+			if (
+				!(error && typeof error === 'object' && 'name' in error && error.name === 'AbortError') ||
+				attempt >= retryDelays.length
+			) {
+				throw error;
+			}
+
+			await new Promise<void>((resolve) => setTimeout(resolve, retryDelays[attempt]));
+			// Never restart a removed player or a video that has already finished.
+			if (!media.isConnected || media.ended) throw error;
+			// Another playback attempt may already have succeeded while waiting.
+			if (!media.paused) return;
+		}
+	}
+}
+
 export function waitForElement(
 	selector: string | { (): HTMLElement | undefined | null },
 	opts?: { timeout_seconds?: number; check_period_ms?: number }
