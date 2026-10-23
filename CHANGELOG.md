@@ -1,5 +1,10 @@
 # Changelog
 
+## [5.2.3](https://github.com/ocsjs/ocsjs/compare/5.2.2...5.2.3) (2026-10-23)
+
+
+* 修复 eslint eqeqeq 检查导致的工作流构建失败 ([609d7f5](https://github.com/ocsjs/ocsjs/commit/609d7f5183182cb5ec98371ca5f60ac6601885dc))
+
 ## [5.2.2](https://github.com/ocsjs/ocsjs/compare/5.2.1...5.2.2) (2026-10-23)
 
 
