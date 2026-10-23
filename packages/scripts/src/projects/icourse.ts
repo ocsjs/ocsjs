@@ -995,7 +995,7 @@ function chapter_v2(
 						BackgroundProject.scripts.render.methods.setPosition(100, 200);
 
 						const sumbit = Array.from(document.querySelectorAll('button.bg-primary-600')).find(
-							(e) => (e.textContent || '') == '提交'
+							(e) => (e.textContent || '') === '提交'
 						);
 						if (sumbit) {
 							await rp.click(sumbit);
