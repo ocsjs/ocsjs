@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.2.2](https://github.com/ocsjs/ocsjs/compare/5.2.1...5.2.2) (2026-10-23)
+
+
+* 优化搜索结果元素中图片题的答案显示与相同题目判断 ([d58b081](https://github.com/ocsjs/ocsjs/commit/d58b081d58fc37d32ef69de5c9614febbf25f1e2))
+* 修复智慧树hike-AI智课需要刷新才能运行的问题 ([f56e46d](https://github.com/ocsjs/ocsjs/commit/f56e46d7bd0ce891b266684f0dee8497241a7dae))
+* 修复智慧职教AI优课需要手动刷新才能运行的问题，优化运行逻辑 ([2b2dfa0](https://github.com/ocsjs/ocsjs/commit/2b2dfa011eb15cc068d7f253784df568ed80f149))
+* 增加对新版中国大学MOOC智慧课程界面适配 ([31063f5](https://github.com/ocsjs/ocsjs/commit/31063f51819cd4afa7798f9f7636deccfd9c234a))
+* 搜题气泡中的图片题链接优化为【图片N】占位符显示 ([c8a33f5](https://github.com/ocsjs/ocsjs/commit/c8a33f5388e4173415a52621ff80754ac6376e43))
+
 ## [5.2.1](https://github.com/ocsjs/ocsjs/compare/5.2.0...5.2.1) (2026-10-13)
 
 
