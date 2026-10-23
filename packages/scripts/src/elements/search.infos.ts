@@ -4,27 +4,44 @@ import { createQuestionTitleExtra } from '../utils';
 import { createAccordionCard } from '../utils/ui';
 
 /**
+ * 图片链接正则
+ * 含 query string 与 fragment，避免 URL 被截断（如带 ?response-content-disposition=... 的鉴权链接）
+ * 排除空白/引号/</CJK，避免跨越标签或吞掉相邻中文
+ */
+const IMG_LINK_RE = /https?:\/\/[^"'<\s一-鿿]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s"'<>一-鿿]*)?(?:#[^\s"'<>一-鿿]*)?/g;
+
+/**
  * 判断是否有图片链接，如果有则使用 <img> 标签包裹，但如果已经被 <img> 包裹则不处理
  */
 const transformImgLinkOfQuestion = (question: string) => {
-	// 防止题目中包含 img 标签元素，所以先统一吧 img 标签替换成链接
+	const toImg = (text: string) => text.replace(IMG_LINK_RE, (img) => `<img src="${img}" />`);
+
+	// 纯文本（无 img 标签）直接替换链接：
+	// 走 DOM 序列化会把 & 转义成 &amp;（其中的分号会被答案分隔符 ';' 误切碎 img 标签），
+	// 且会额外引入 <head>/<body> 包裹标签
+	if (!/<img[\s>]/i.test(question)) {
+		return toImg(question);
+	}
+
+	// 防止题目中包含 img 标签元素，所以先统一把 img 标签替换成链接
 	const dom = new DOMParser().parseFromString(question, 'text/html');
 	for (const img of Array.from(dom.querySelectorAll('img'))) {
 		img.replaceWith(img.src);
 	}
 	// 最后将所有图片链接替换成 img 标签
-	// 含 query string 与 fragment，避免 URL 被截断（如带 ?response-content-disposition=... 的鉴权链接）
-	// 排除空白/引号/</CJK，避免跨越标签或吞掉相邻中文
-	return dom.documentElement.innerHTML.replace(
-		/https?:\/\/[^"'<\s一-鿿]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s"'<>一-鿿]*)?(?:#[^\s"'<>一-鿿]*)?/g,
-		(img) => `<img src="${img}" />`
-	);
+	return toImg(dom.documentElement.innerHTML);
 };
 
 /**
  * 移除特殊字符、空格、换行，用于判断题库返回的题目是否和原题完全匹配
+ *
+ * 图片题的题干就是图片 URL，同一张图在不同场景下可能返回 http 或 https 协议，
+ * 但属于同一道题、应折叠去重，因此先统一抹平协议前缀再剔除非字母数字字符。
  */
-const normalizeQuestion = (question: string) => question.replace(/[^\p{L}\p{N}]/gu, '');
+const normalizeQuestion = (question: string) =>
+	question
+		.replace(/https?:\/\//gi, '//')
+		.replace(/[^\p{L}\p{N}]/gu, '');
 
 /**
  * 搜索结果元素
@@ -95,7 +112,9 @@ export class SearchInfosElement extends HTMLElement {
 					).concat([
 						...info.results.map((ans) => {
 							const title = transformImgLinkOfQuestion(ans[0] || this.question || '无');
-							const answer = transformImgLinkOfQuestion(ans[1] || '无');
+							// 先按答案分隔符拆分原始答案，再逐段转换图片：
+							// 反之若先转换，img 标签的 src 中 & 被转义为 &amp;，其分号会被 splitAnswer 的 ';' 分隔符误切
+							const answer = splitAnswer(ans[1] || '无').map((a) => transformImgLinkOfQuestion(a));
 							/** 返回的题目和原题完全匹配时，不再重复显示题目 */
 							const isSameQuestion = normalizeQuestion(ans[0] || '') === normalizeQuestion(this.question || '');
 							const extra_data = JSON.parse(JSON.stringify(ans[2] || {}));
@@ -137,7 +156,7 @@ export class SearchInfosElement extends HTMLElement {
 												)
 										  )
 										: []),
-									...splitAnswer(answer).map((a) => h('code', { innerHTML: a }))
+									...answer.map((a) => h('code', { innerHTML: a }))
 								])
 							]);
 						})

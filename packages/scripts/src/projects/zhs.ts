@@ -46,7 +46,7 @@ const state = {
 };
 
 /**
- * 需要软件辅助的掌握度页面
+ * 不需要软件辅助的掌握度页面
  */
 const remote_not_required_pages = [
 	'fusioncourseh5.zhihuishu.com',
@@ -1446,7 +1446,7 @@ export const ZHSProject = Project.create({
 						remote_not_required ? await waitForElement('.exam-item') : await waitForElement('.questionContent');
 
 						if (remote_not_required) {
-							// 这两个页面不需要软件辅助
+							// 这几个页面不需要软件辅助
 						} else {
 							remotePage = await BackgroundProject.scripts.dev.methods.getRemotePlaywrightCurrentPage();
 							// 检查是否为软件环境
@@ -2140,12 +2140,12 @@ export const ZHSProject = Project.create({
 				volume: volume
 			},
 			oncomplete(...args) {
-				this.onhistorychange?.('push', ...args);
+				this.onhistorychanged?.('pushed', ...args);
 			},
-			async onhistorychange(type) {
+			async onhistorychanged(type) {
 				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
 				migrateZhsStudyConfigs();
-				if (type !== 'push') {
+				if (type !== 'pushed') {
 					return;
 				}
 

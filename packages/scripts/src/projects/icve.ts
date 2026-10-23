@@ -501,8 +501,8 @@ export const IcveMoocProject = Project.create({
 				restudy
 			},
 			// historychange 不知道为什么会触发很多次在 kcnr 课程页面，这里直接 reload，让脚本加载 oncomplete 函数
-			onhistorychange(type) {
-				if (type !== 'replace') {
+			onhistorychanged(type) {
+				if (type !== 'replaced') {
 					return;
 				}
 				if (location.href.includes('kcnr')) {
@@ -637,7 +637,7 @@ export const IcveMoocProject = Project.create({
 						active?.focus();
 						active?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-						if (active?.querySelector('.wc') && !this.cfg.restudy) {
+						if (active?.querySelector('i.wc') && !this.cfg.restudy) {
 							return $msg_and_log('info', '当前任务已完成，即将跳过');
 						}
 
@@ -690,14 +690,11 @@ export const IcveMoocProject = Project.create({
 				};
 
 				const getNext = () => {
-					const list = Array.from(document.querySelectorAll('.panelList .node'));
-					for (let index = 0; index < list.length; index++) {
-						const element = list[index];
-
-						if (element.classList.contains('active')) {
-							return list[index + 1] as HTMLElement | undefined;
-						}
-					}
+					const list = Array.from(document.querySelectorAll<HTMLElement>('.panelList .node'));
+					const current_index = list.findIndex((e) => e.classList.contains('active'));
+					return list.find((el, index) => {
+						return index > current_index && (this.cfg.restudy || el.querySelector('i.wc') === null);
+					});
 				};
 
 				study(study_id);

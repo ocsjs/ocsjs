@@ -37,6 +37,11 @@ export const ICourseProject = Project.create({
 			hideInPanel: true,
 			matches: [['所有页面', 'icourse163.org']],
 			oncomplete() {
+				// 新版智慧慕课不需要这个调度器
+				if (location.pathname.startsWith('/mooc/learn')) {
+					return;
+				}
+
 				setInterval(() => {
 					const hash = new URL(window.location.href).hash;
 					if (state.currentUrlHash !== hash) {
@@ -214,7 +219,6 @@ export const ICourseProject = Project.create({
 
 												worker.once('done', resolve);
 												worker.once('close', resolve);
-												worker.once('stop', resolve);
 											});
 										});
 
@@ -349,6 +353,241 @@ export const ICourseProject = Project.create({
 						}
 					}
 				};
+			}
+		}),
+		study_v2: new Script({
+			name: '🖥️ 智慧慕课',
+			matches: [['新智慧慕课', '/mooc/learn']],
+			namespace: 'icourse.study-v2',
+			configs: {
+				notes: {
+					defaultValue: $ui.notes([
+						'请勿在使用过程中最小化浏览器',
+						'自动讨论默认关闭，如需开启请在下方设置中设置',
+						'作业请完成课程后手动进入'
+					]).outerHTML
+				},
+				playbackRate: playbackRate,
+				volume: volume,
+				readSpeed: {
+					label: 'PPT翻阅速度（秒）',
+					attrs: { type: 'number', step: '1', min: '1', max: '10' },
+					defaultValue: 1
+				},
+				discussionStrategy: {
+					label: '讨论自动回复方式',
+					tag: 'select',
+					defaultValue: 'random' as 'not-reply' | 'random' | 'max-show-up' | 'max-fav' | 'use-newest',
+					options: [
+						['not-reply', '不讨论回复'],
+						['random', '随机抽取评论区的内容进行回复'],
+						['max-show-up', '获取出现最多的评论进行回复'],
+						['max-fav', '获取最多点赞的评论进行回复'],
+						['use-newest', '获取最新的评论进行回复']
+					]
+				},
+				enableChapterTest: {
+					label: '随堂测验自动答题',
+					attrs: {
+						type: 'checkbox',
+						title: '是否开启随堂测验自动答题，默认关闭，测试时只需点击即可完成测验，但这里保留选项防止需要开启。'
+					},
+					defaultValue: false
+				}
+			},
+			methods() {
+				return {
+					main: async () => {
+						// 加载后将 section 元素作为界面标记，如果用户此时切换小节，可以使用 section 元素是否存在进行判断能否运行，如果不存在则停止运行防止多个 onhistorychange 并行代码冲突
+						const section = await waitForElement('section[data-page-state="loaded"]');
+						const canRun = () => section?.isConnected;
+
+						const remotePage = await BackgroundProject.scripts.dev.methods.getRemotePlaywrightCurrentPage();
+						// 检查是否为软件环境
+						if (!remotePage) {
+							return $playwright.showError();
+						}
+
+						// 移动窗口到边缘
+						$render.moveToEdge();
+
+						const getCurrentChapter = () =>
+							document.querySelectorAll('header > div.flex.flex-wrap.items-center.gap-3 button.rounded-\\[8px\\]')[0];
+
+						const getCurrentLesson = () =>
+							document.querySelectorAll('header > div.flex.flex-wrap.items-center.gap-3 button.rounded-\\[8px\\]')[1];
+
+						const getCurrentUnit = () => document.querySelector('.learn-unit-tabs-scroll button[class*=rgba]');
+
+						const study = async () => {
+							await $.sleep(2000);
+
+							BackgroundProject.scripts.render.methods.pin(this);
+
+							const lessonName = getCurrentLesson()?.textContent;
+							const currentUnitItem = getCurrentUnit();
+							const unitName = getCurrentUnit()?.textContent;
+
+							const isJob = (iconName: string) =>
+								!!currentUnitItem?.querySelector(`[data-lesson-type-icon="${iconName}"]`);
+							const isJobFinish = (unit: HTMLElement | Element | null) => !!unit?.querySelector('.lucide-circle-check');
+
+							await (async () => {
+								if (!canRun()) {
+									return;
+								}
+								if (isJobFinish(currentUnitItem)) {
+									return $message.info('当前任务已完成，即将跳转');
+								}
+
+								const jobs = [isJob('video'), isJob('pdf'), isJob('discussion'), isJob('quiz')];
+								const hasJobs = jobs.every((job) => job);
+								const [isVideoJob, isPdfJob, isDiscussionJob, isQuizJob] = jobs;
+								if (hasJobs) {
+									$msg_and_log('info', `正在学习：${lessonName || ''} - ${unitName || ''}`);
+								}
+								if (isVideoJob) {
+									await waitForElement('video, audio');
+									await watchMedia(this.cfg.playbackRate, this.cfg.volume);
+									return $message.info('视频学习完成，准备跳转下一章');
+								}
+
+								if (isPdfJob) {
+									await waitForElement('.pdf-unit-reader');
+									await readPPT_v2(remotePage, this.cfg.readSpeed);
+									return $message.info('PPT完成，准备跳转下一章');
+								}
+
+								if (isDiscussionJob) {
+									await waitForElement('#forum-reply-form');
+									await discussion_v2(remotePage, this.cfg.discussionStrategy);
+									return $message.info('讨论完成，准备跳转下一章');
+								}
+
+								if (isQuizJob) {
+									await waitForElement('.lesson-quiz-question-rich-text');
+									$msg_and_log('info', '开始答题');
+
+									if (this.cfg.enableChapterTest) {
+										await new Promise<void>((resolve) => {
+											commonWork({
+												mount_script: this,
+												workerProvider: (opts) => {
+													const worker = chapter_v2(remotePage, opts);
+
+													worker.once('done', () => {
+														clearInterval(interval);
+														resolve();
+													});
+													worker.once('close', () => {
+														clearInterval(interval);
+														resolve();
+													});
+													const interval = setInterval(() => {
+														if (canRun() === false) {
+															$msg_and_log('warn', '检测到页面切换，无法继续答题，将关闭自动答题。');
+															clearInterval(interval);
+															worker.emit('close');
+														}
+													}, 1000);
+													return worker;
+												},
+												start_delay_seconds: 3
+											});
+										});
+
+										$msg_and_log('info', '测验完成');
+									} else {
+										$msg_and_log(
+											'warn',
+											'随堂测验自动答题功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启），即将跳过。'
+										);
+									}
+
+									return $message.info('答题完成，准备跳转下一章');
+								}
+
+								$message.warn('未找到学习内容，或者此章节不支持自动学习！即将跳过本章节');
+							})();
+
+							await $.sleep(2000);
+
+							if (canRun()) {
+								// 跳转下一章，然后通过URL变化， onhistorychange 会重新执行此 main 函数
+								await gotoNextJob();
+							}
+						};
+
+						async function gotoNextJob() {
+							const list = await next();
+							for (const item of list) {
+								const el = typeof item === 'function' ? item() : item;
+								if (el) {
+									await remotePage?.click(el);
+									await $.sleep(500);
+								}
+							}
+							if (list.length === 0) {
+								$message.success({ content: '所有章节学习完成！', duration: 0 });
+								$console.info('所有章节学习完成！');
+								CommonProject.scripts.settings.methods.notificationBySetting('所有章节学习完成！', {
+									duration: 0,
+									extraTitle: '中国大学MOOC学习脚本'
+								});
+							}
+						}
+
+						async function next() {
+							const nextEl = getCurrentUnit()?.nextElementSibling;
+							// 判断小节
+							if (nextEl) {
+								return [() => nextEl];
+							}
+
+							await remotePage?.click(getCurrentLesson());
+							// 判断章节
+							let nextLesson =
+								getCurrentLesson().nextElementSibling?.querySelector('button.text-primary-700')?.nextElementSibling;
+
+							if (nextLesson) {
+								return [() => nextLesson];
+							}
+							await remotePage?.click(getCurrentChapter());
+							let nextChapter =
+								getCurrentChapter().nextElementSibling?.querySelector('button.text-primary-700')?.nextElementSibling;
+
+							if (nextChapter) {
+								return [
+									// 点击单元
+									() => nextChapter,
+									// 点击展开章节列表
+									() => getCurrentLesson(),
+									// 点击第一个章节
+									() => getCurrentLesson().nextElementSibling?.querySelectorAll('button')[0]
+								];
+							} else {
+								return [];
+							}
+						}
+
+						study();
+					}
+				};
+			},
+			async onhistorychange(type) {
+				if (type === 'push') {
+					this.methods.main();
+				}
+			},
+			async oncomplete() {
+				await $.sleep(1000);
+				// 课件首页
+				if (document.querySelector('[class="course-content-card"]')) {
+					$message.info({ content: '请手动进入视频、作业页面，脚本会自动运行。', duration: 10 });
+					return;
+				} else {
+					this.methods.main();
+				}
 			}
 		}),
 		work: new Script({
@@ -641,6 +880,140 @@ function workAndExam(
 	return worker;
 }
 
+function chapter_v2(
+	rp: RemotePage,
+	{ answererWrappers, redundanceWordsText, upload, stopSecondWhenFinish, answerSeparators }: CommonWorkOptions
+) {
+	const titleTransform = (titles: (HTMLElement | undefined)[]): { text: string; images: string[] } => {
+		const images: string[] = [];
+		const text = removeRedundantWords(
+			titles
+				.filter((t) => t?.innerText || t?.querySelector('img'))
+				.map((t) => {
+					if (t) {
+						// 结构化遍历提取文本与图片 URL（不改造 DOM、不读 innerText/textContent）
+						const extracted = extractTextWithImages(t);
+						images.push(...extracted.images);
+						return extracted.text.replace(/\s+/g, ' ').trim() || '';
+					}
+					return '';
+				})
+				.filter((t) => t.trim() !== '')
+				.join(',')
+				// /\u200B/g 排除不可见的空格
+				.replace(/[\u200A-\u200F]/g, ''),
+			redundanceWordsText.split('\n')
+		);
+		return { text, images };
+	};
+	/** 仅供 simplifyWorkResult 等只需文本的调用方使用 */
+	const titleText = (titles: (HTMLElement | undefined)[]) => titleTransform(titles).text;
+
+	/** 新建答题器 */
+	const worker = new OCSWorker({
+		root: '[data-testid="lesson-quiz-unit"] article',
+		elements: {
+			title: '.lesson-quiz-question-rich-text',
+			options: 'label.cursor-pointer'
+		},
+		thread: 1,
+		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
+		/** 默认搜题方法构造器 */
+		answerer: createCommonAnswerer({
+			titleTransform: (elements: any, _ctx: any) => titleTransform(elements.title),
+			optionsTransform: (elements: any, ctx: any) => {
+				const optResults = ctx.elements.options.map((o: any) => extractTextWithImages(o));
+				return {
+					text: optResults.map((r: { text: string }) => r.text).join('\n'),
+					images: optResults.flatMap((r: { images: string[] }) => r.images)
+				};
+			},
+			answererWrappers,
+			period: 5
+		}),
+		work: {
+			/** 选项文本提供器：替代 innerText，使图片 URL 进入匹配文本 */
+			optionText: (o: HTMLElement) => extractTextWithImages(o).text,
+			/** 自定义处理器 */
+			async handler(type, answer, option) {
+				if (type === 'judgement' || type === 'single' || type === 'multiple') {
+					const input = option.querySelector('input');
+					if (input && !input?.checked) {
+						await $.sleep(1000);
+						await rp.click(option);
+					}
+				} else if (type === 'completion' && answer.trim()) {
+					const textarea = option.querySelector('textarea');
+					const id = textarea?.getAttribute('id')?.toString() || '';
+					if (id && textarea?.value.trim() !== answer.trim()) {
+						await $.sleep(1000);
+						await rp.click('#' + id);
+						await rp.fill('#' + id, answer.trim());
+					}
+				}
+			}
+		},
+		/** 元素准备完毕后回调（仅一次）：填充全部题目，面板立即显示全部题目 */
+		async onResultsInit(_curr, _index, res) {
+			await CommonProject.scripts.workResults.methods.fillAll(res.map((r, i) => simplifyWorkResult(r, titleText, i)));
+		},
+		/** 完成答题后 */
+		async onResultsUpdate(curr, index, res) {
+			await CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(curr, titleText, index));
+		}
+	});
+
+	worker
+		.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug })
+		.then(async (results) => {
+			if (worker.isClose) {
+				return;
+			}
+			$msg_and_log('info', `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
+			await $.sleep(stopSecondWhenFinish * 1000);
+			if (worker.isClose) {
+				return;
+			}
+			// 处理提交
+			await worker.uploadHandler({
+				type: upload,
+				results,
+				async callback(finishedRate, uploadable) {
+					const content = `完成率 ${finishedRate.toFixed(2)}% :  ${
+						uploadable ? '3秒后将自动提交' : '3秒后将自动跳过（没保存按钮）'
+					} `;
+					$console.info(content);
+					$message.success({ content: content, duration: 10 });
+
+					await $.sleep(3000);
+					if (worker.isClose) {
+						return;
+					}
+					if (uploadable) {
+						// 先收起面板防止阻挡，元素无法通过移动脚本面板去点击
+						BackgroundProject.scripts.render.methods.minimize();
+						BackgroundProject.scripts.render.methods.setPosition(100, 200);
+
+						const sumbit = Array.from(document.querySelectorAll('button.bg-primary-600')).find(
+							(e) => (e.textContent || '') == '提交'
+						);
+						if (sumbit) {
+							await rp.click(sumbit);
+						} else {
+							$msg_and_log('warn', '没有找到提交按钮，将跳过提交。');
+						}
+					}
+				}
+			});
+			worker.emit('done');
+		})
+		.catch((err) => {
+			$message.error({ content: '答题程序发生错误 : ' + err.message, duration: 0 });
+		});
+
+	return worker;
+}
+
 async function watchMedia(playbackRate: number, volume: number) {
 	return new Promise<void>((resolve, reject) => {
 		// 部分用户视频加载很慢，这里等待一下
@@ -684,6 +1057,28 @@ async function readPPT(remotePage: RemotePage, readSpeed: number) {
 				await remotePage.click(next);
 			} else {
 				$msg_and_log('error', '未找到PPT的下一页按钮！');
+				return;
+			}
+			await $.sleep(readSpeed * 1000);
+		}
+	}
+}
+
+async function readPPT_v2(remotePage: RemotePage, readSpeed: number) {
+	const reader = document.querySelector('.pdf-unit-renderer');
+	if (reader) {
+		const [start, total] = document
+			.querySelector('.mooc-docs-reader__page-status')
+			?.textContent?.split('/')
+			.map((s) => parseInt(s.trim())) || [0, 0];
+
+		for (let index = start; index < total + 1; index++) {
+			const next = document.querySelector<HTMLElement>('button[aria-label="下一页"]');
+			if (next) {
+				await remotePage.click(next);
+			} else {
+				$msg_and_log('error', '未找到PPT的下一页按钮！');
+				return;
 			}
 			await $.sleep(readSpeed * 1000);
 		}
@@ -714,7 +1109,7 @@ async function discussion(
 	} else if (discussionStrategy === 'max-fav') {
 		const list = Array.from(document.querySelectorAll('.j-reply-all .f-pr'));
 		let max = 0;
-		let maxEl = undefined as Element | undefined;
+		let maxEl = list[0] as Element | undefined;
 		for (const item of list) {
 			const num = parseInt(item.querySelector('.bar .num')?.textContent || '0');
 			if (num > max) {
@@ -740,6 +1135,73 @@ async function discussion(
 		p.innerText = res;
 		await $.sleep(1000);
 		const submit = document.querySelector('.j-reply-add .editbtn');
+		if (submit) {
+			await remotePage.click(submit);
+			$message.info('提交回复成功！');
+		} else {
+			$msg_and_log('error', '获取提交按钮失败！');
+		}
+		await $.sleep(2000);
+	} else {
+		$msg_and_log('error', '获取评论输入框失败！');
+	}
+}
+
+async function discussion_v2(
+	remotePage: RemotePage,
+	discussionStrategy: typeof ICourseProject.scripts.study_v2.cfg.discussionStrategy
+) {
+	if (discussionStrategy === 'not-reply') {
+		return $msg_and_log('warn', '讨论自动回复功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启）。');
+	}
+
+	let res = '';
+	const text_list = Array.from(document.querySelectorAll('article.soft-shell.p-5 > p'));
+	if (discussionStrategy === 'max-show-up') {
+		const mapping = new Map();
+		for (const item of text_list) {
+			mapping.set(item.textContent, (mapping.get(item.textContent) || 0) + 1);
+		}
+		const content = [...mapping.entries()].sort((a, b) => b[1] - a[1])?.[0]?.[0];
+		if (!content) {
+			$msg_and_log('error', '读取出现最多评论失败！');
+		}
+		res = content;
+	} else if (discussionStrategy === 'max-fav') {
+		const discussion_list = Array.from(document.querySelectorAll('article.soft-shell'));
+		let max = 0;
+		let maxEl = discussion_list[0] as Element | undefined;
+		for (const item of discussion_list) {
+			const num = parseInt(item.querySelector('button[aria-label="赞同"]')?.textContent || '0');
+			if (num > max) {
+				max = num;
+				maxEl = item;
+			}
+		}
+		const content = maxEl?.querySelector('p.whitespace-pre-wrap')?.textContent || '';
+		if (!content) {
+			$msg_and_log('error', '读取最多点赞评论失败！');
+		}
+		res = content;
+	} else if (discussionStrategy === 'random') {
+		const content = text_list[Math.floor(Math.random() * text_list.length)].textContent || '';
+		if (!content) {
+			$msg_and_log('error', '读取随机评论失败！');
+		}
+		res = content;
+	} else if (discussionStrategy === 'use-newest') {
+		const content = text_list[0].textContent || '';
+		if (!content) {
+			$msg_and_log('error', '读取最新评论失败！');
+		}
+		res = content;
+	}
+
+	const p = document.querySelector<HTMLDivElement>('.ql-editor p');
+	const submit = document.querySelector('#forum-reply-form button[type="submit"]');
+	if (p && submit) {
+		p.innerText = res;
+		await $.sleep(1000);
 		if (submit) {
 			await remotePage.click(submit);
 			$message.info('提交回复成功！');
