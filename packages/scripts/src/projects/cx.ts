@@ -244,10 +244,10 @@ export const CXProject = Project.create({
 					tag: 'select',
 					options: [
 						['next', '完成后跳转下一节', '完成小节后，自动点击下一节按钮'],
-						['job', '完成后跳转未完成任务点', '如果未找到任务点，则会直接结束脚本运行，目前处于试验阶段。'],
+						['job', '智能模式', '自动寻找任务点完成'],
 						['manually', '完成后暂停，等待手动跳转', '适用于自己手动运行']
 					],
-					defaultValue: 'next' as 'next' | 'job' | 'manually'
+					defaultValue: 'job' as 'next' | 'job' | 'manually'
 				},
 				restudy: {
 					label: '复习模式',
@@ -1475,37 +1475,65 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	// @ts-ignore
 	top._preChapterId = '';
 
-	// 下一章
-	const next = async () => {
-		if (CXAnalyses.isInFinalTab()) {
-			if (await CXAnalyses.isStuckInBreakingMode()) {
-				return $modal.alert({
-					content:
-						'检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致，请手动完成章节测试，然后手动点击下一章。'
-				});
+	// 手动模式
+	if (CXProject.scripts.study.cfg.mode === 'manually') {
+		const msg = '页面任务点已完成，自动跳转已关闭，请手动跳转。';
+		$message.warn({ content: msg, duration: 0 });
+		$console.warn(msg);
+		return;
+	}
+
+	// 闯关模式卡死
+	if (CXAnalyses.isInFinalTab() && (await CXAnalyses.isStuckInBreakingMode())) {
+		return $modal.alert({
+			content:
+				'检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致，请手动完成章节测试，然后手动点击下一章。'
+		});
+	}
+
+	if (CXAnalyses.isInFinalChapter()) {
+		let content = '';
+
+		if (opts.backToFirstWhenFinish) {
+			content = '已经抵达最后一个章节，10秒后返回第一个章节重新开始。';
+			setTimeout(() => {
+				top?.document.querySelector<HTMLElement>('.posCatalog_name')?.click();
+			}, 10 * 1000);
+
+			$message.info({ content, duration: 30 });
+		} else {
+			if (CXAnalyses.isFinishedAllChapters()) {
+				content = '全部任务点已完成！';
+			} else {
+				content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
 			}
+
+			$modal.alert({ content: content });
 		}
 
-		if (CXAnalyses.isInFinalChapter()) {
-			let content = '';
+		CommonProject.scripts.settings.methods.notificationBySetting(content, {
+			duration: 0,
+			extraTitle: '超星学习通学习脚本'
+		});
+		return;
+	}
 
-			if (opts.backToFirstWhenFinish) {
-				content = '已经抵达最后一个章节，10秒后返回第一个章节重新开始。';
-				setTimeout(() => {
-					top?.document.querySelector<HTMLElement>('.posCatalog_name')?.click();
-				}, 10 * 1000);
+	const msg = '页面任务点已完成，即将跳转。';
+	$message.success({ content: msg });
+	$console.info(msg);
+	await $.sleep(3000);
 
-				$message.info({ content, duration: 30 });
-			} else {
-				if (CXAnalyses.isFinishedAllChapters()) {
-					content = '全部任务点已完成！';
-				} else {
-					content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
-				}
-
-				$modal.alert({ content: content });
-			}
-
+	// 智能模式，并且当前已经完成全部小节，则自动跳章节
+	if (CXProject.scripts.study.cfg.mode === 'job' && CXAnalyses.isInFinalTab()) {
+		// 检测当前章节是否完成，如果已经完成则下一章
+		// 如果没有需要完成的章节，则暂停运行
+		// 找到未完成
+		const elements = CXAnalyses.getChapterInfos()
+			.filter((el) => el.unFinishCount > 0 || el.element.parentElement?.classList.contains('posCatalog_active'))
+			.map((el) => el.element.parentElement as HTMLElement);
+		if (elements.length === 0) {
+			const content = '全部任务点已完成！';
+			$modal.alert({ content: content });
 			CommonProject.scripts.settings.methods.notificationBySetting(content, {
 				duration: 0,
 				extraTitle: '超星学习通学习脚本'
@@ -1513,74 +1541,40 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			return;
 		}
 
-		if (CXProject.scripts.study.cfg.mode === 'job') {
-			// 检测当前章节是否完成，如果已经完成则下一章
-			// 如果没有需要完成的章节，则暂停运行
-
-			if (CXAnalyses.isInFinalTab()) {
-				// 找到未完成
-				const elements = CXAnalyses.getChapterInfos()
-					.filter((el) => el.unFinishCount > 0 || el.element.parentElement?.classList.contains('posCatalog_active'))
-					.map((el) => el.element.parentElement as HTMLElement);
-				if (elements.length === 0) {
-					const content = '全部任务点已完成！';
-					$modal.alert({ content: content });
-					CommonProject.scripts.settings.methods.notificationBySetting(content, {
-						duration: 0,
-						extraTitle: '超星学习通学习脚本'
-					});
-					return;
-				}
-
-				let nextChapter = elements[0];
-				// 如果当前章节未完成，则跳转到下一个未完成章节
-				const currentIndex = elements.findIndex((el) => el.classList.contains('posCatalog_active'));
-				if (currentIndex !== -1 && currentIndex + 1 < elements.length) {
-					nextChapter = elements[currentIndex + 1];
-					CXAnalyses.scrollToActiveChapter();
-					setTimeout(() => {
-						nextChapter.querySelector<HTMLElement>('.posCatalog_name')?.click();
-					}, 1000);
-				}
-			}
-		} else if (CXProject.scripts.study.cfg.mode === 'next') {
-			const curCourseId = $el<HTMLInputElement>('#curCourseId', top?.document);
-			const curChapterId = $el<HTMLInputElement>('#curChapterId', top?.document);
-			const curClazzId = $el<HTMLInputElement>('#curClazzId', top?.document);
-			const count = $$el('#prev_tab .prev_ul li', top?.document);
-
-			// 自动下一个小节（点击下一节）
-			if (curChapterId && curCourseId && curClazzId) {
-				// @ts-ignore
-				top._preChapterId = curChapterId.value;
-				CXAnalyses.scrollToActiveChapter();
-				// 等待跳转动画完成
-				await $.sleep(200);
-
-				/**
-				 * count, chapterId, courseId, clazzid, knowledgestr, checkType
-				 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
-				 */
-				// @ts-ignore
-				top?.PCount.next(count.length.toString(), curChapterId.value, curCourseId.value, curClazzId.value, '');
-			} else {
-				$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
-			}
-		} else {
-			$console.warn('未知的跳转模式，请联系作者反馈');
+		let nextChapter = elements[0];
+		// 如果当前章节未完成，则跳转到下一个未完成章节
+		const currentIndex = elements.findIndex((el) => el.classList.contains('posCatalog_active'));
+		if (currentIndex !== -1 && currentIndex + 1 < elements.length) {
+			nextChapter = elements[currentIndex + 1];
+			CXAnalyses.scrollToActiveChapter();
+			setTimeout(() => {
+				nextChapter.querySelector<HTMLElement>('.posCatalog_name')?.click();
+			}, 1000);
 		}
-	};
+	}
 
-	if (CXProject.scripts.study.cfg.mode !== 'manually') {
-		const msg = '页面任务点已完成，即将跳转。';
-		$message.success({ content: msg });
-		$console.info(msg);
-		await $.sleep(5000);
-		next();
+	// 自动下一章（包含自动下一章的算法）
+	const curCourseId = $el<HTMLInputElement>('#curCourseId', top?.document);
+	const curChapterId = $el<HTMLInputElement>('#curChapterId', top?.document);
+	const curClazzId = $el<HTMLInputElement>('#curClazzId', top?.document);
+	const count = $$el('#prev_tab .prev_ul li', top?.document);
+
+	// 自动下一个小节（点击下一节）
+	if (curChapterId && curCourseId && curClazzId) {
+		// @ts-ignore
+		top._preChapterId = curChapterId.value;
+		CXAnalyses.scrollToActiveChapter();
+		// 等待跳转动画完成
+		await $.sleep(200);
+
+		/**
+		 * count, chapterId, courseId, clazzid, knowledgestr, checkType
+		 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
+		 */
+		// @ts-ignore
+		top?.PCount.next(count.length.toString(), curChapterId.value, curCourseId.value, curClazzId.value, '');
 	} else {
-		const msg = '页面任务点已完成，自动跳转已关闭，请手动跳转。';
-		$message.warn({ content: msg, duration: 0 });
-		$console.warn(msg);
+		$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
 	}
 }
 
