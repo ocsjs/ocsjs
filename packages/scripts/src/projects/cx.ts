@@ -1477,6 +1477,38 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 
 	// 下一章
 	const next = async () => {
+		if (CXAnalyses.isInSpecialMode() && CXAnalyses.isInFinalTab()) {
+			// 闯关模式下：自动尝试点击目录中的下一个小节
+			const cur = top?.document.querySelector<HTMLElement>('.posCatalog_active');
+			if (cur) {
+				const all = Array.from(top?.document.querySelectorAll<HTMLElement>('.posCatalog_select') || []);
+				const curIdx = all.indexOf(cur);
+				if (curIdx !== -1 && curIdx + 1 < all.length) {
+					const nextChapter = all[curIdx + 1];
+					const target =
+						nextChapter.querySelector<HTMLElement>('.posCatalog_name') ||
+						nextChapter.querySelector<HTMLElement>('[onclick]') ||
+						nextChapter;
+					$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
+					setTimeout(() => {
+						try {
+							target.click();
+						} catch (e) {
+							console.error(e);
+						}
+					}, 1000);
+
+					// 若跳转未触发（例如超星后端解锁延迟），稍后刷新页面同步关卡状态
+					setTimeout(() => {
+						if (top?.document.querySelector('.posCatalog_active') === cur) {
+							top?.location.reload();
+						}
+					}, 6000);
+					return;
+				}
+			}
+		}
+
 		if (CXAnalyses.isInFinalTab()) {
 			if (await CXAnalyses.isStuckInBreakingMode()) {
 				return $modal.alert({
