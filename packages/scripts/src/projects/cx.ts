@@ -1265,19 +1265,34 @@ const CXAnalyses = {
 	/** 是否处于最后一个章节 */
 	isInFinalChapter() {
 		const doc = top?.document;
-		const leafNodes = Array.from(doc?.querySelectorAll<HTMLElement>('[onclick*="getTeacherAjax"]') || []);
-		if (leafNodes.length > 0) {
-			const lastLeaf = leafNodes.pop();
-			return (
-				lastLeaf?.classList.contains('posCatalog_active') ||
-				lastLeaf?.closest('.posCatalog_active') !== null ||
-				lastLeaf?.closest('.posCatalog_select')?.classList.contains('posCatalog_active') ||
-				false
+		if (!doc) return false;
+		let allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_select'));
+		if (allNodes.length === 0) {
+			allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_level'));
+		}
+		if (allNodes.length === 0) {
+			allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name')).map(
+				(el) => (el.closest('[id^="cur"]') || el.parentElement || el) as HTMLElement
 			);
 		}
-		return Array.from(doc?.querySelectorAll('.posCatalog_select') || [])
-			.pop()
-			?.classList.contains('posCatalog_active');
+		const leafSections = allNodes.filter((node) => {
+			const levelParent = node.closest('.posCatalog_level');
+			if (levelParent) {
+				const sub = levelParent.querySelector('.subCatalog, ul, ol, .posCatalog_ul');
+				if (sub && !sub.contains(node)) {
+					return false;
+				}
+			}
+			return true;
+		});
+		if (leafSections.length > 0) {
+			const lastLeaf = leafSections[leafSections.length - 1];
+			return (
+				lastLeaf.classList.contains('posCatalog_active') ||
+				lastLeaf.querySelector('.posCatalog_active') !== null
+			);
+		}
+		return false;
 	},
 	/** 是否完成全部章节 */
 	isFinishedAllChapters() {
@@ -1500,35 +1515,27 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			const doc = top?.document;
 			if (!doc) return;
 
-			// 过滤出真正可学习的具体小节（叶子节点），坚决排除没有任务点、点击会导致“章节未开放”的一级大章标题
-			const ajaxNodes = Array.from(doc.querySelectorAll<HTMLElement>('[onclick*="getTeacherAjax"]'));
-			let chapters: HTMLElement[] = [];
-			if (ajaxNodes.length > 0) {
-				const raw = ajaxNodes.map(
-					(el) => (el.closest('[id^="cur"]') || el.closest('.posCatalog_select') || el) as HTMLElement
-				);
-				chapters = Array.from(new Set(raw));
-			} else {
-				let allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_select'));
-				if (allNodes.length === 0) {
-					allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_level'));
-				}
-				if (allNodes.length === 0) {
-					allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name')).map(
-						(el) => (el.closest('[id^="cur"]') || el.parentElement || el) as HTMLElement
-					);
-				}
-				chapters = allNodes.filter((node) => {
-					const levelParent = node.closest('.posCatalog_level');
-					if (levelParent) {
-						const sub = levelParent.querySelector('.subCatalog, ul, ol, .posCatalog_ul');
-						if (sub && !sub.contains(node)) {
-							return false;
-						}
-					}
-					return true;
-				});
+			let allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_select'));
+			if (allNodes.length === 0) {
+				allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_level'));
 			}
+			if (allNodes.length === 0) {
+				allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name')).map(
+					(el) => (el.closest('[id^="cur"]') || el.parentElement || el) as HTMLElement
+			);
+			}
+
+			// 严格排除一级大章目录标题（无任务点容器），只保留真正具有学习任务的各级具体小节
+			const chapters = allNodes.filter((node) => {
+				const levelParent = node.closest('.posCatalog_level');
+				if (levelParent) {
+					const sub = levelParent.querySelector('.subCatalog, ul, ol, .posCatalog_ul');
+					if (sub && !sub.contains(node)) {
+						return false;
+					}
+				}
+				return true;
+			});
 
 			let curIdx = chapters.findIndex(
 				(el) => el.classList.contains('posCatalog_active') || el.querySelector('.posCatalog_active') !== null
@@ -1550,7 +1557,7 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 				});
 			}
 
-			// 核心跳转逻辑：定位下一个章节
+			// 核心跳转逻辑：定位下一个具体学习小节
 			if (curIdx !== -1 && curIdx + 1 < chapters.length) {
 				const nextChapter = chapters[curIdx + 1];
 				$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
@@ -1604,7 +1611,25 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 					}
 				} catch (e) {}
 
-				// 兜底保障：若 3 秒内未跳转，直接修改 URL 跳转；若仍停留在当前章，刷新页面让超星同步服务端关卡状态
+				// 同时调用超星原生下一节 API 与原生下一节按钮作为多路保障
+				try {
+					const curCourseId = doc.querySelector<HTMLInputElement>('#curCourseId')?.value;
+					const curChapterIdVal = doc.querySelector<HTMLInputElement>('#curChapterId')?.value || curChapId;
+					const curClazzId = doc.querySelector<HTMLInputElement>('#curClazzId')?.value;
+					const count = doc.querySelectorAll('#prev_tab .prev_ul li');
+					if (curChapterIdVal && curCourseId && curClazzId && typeof (top as any)?.PCount?.next === 'function') {
+						(top as any).PCount.next(count.length.toString(), curChapterIdVal, curCourseId, curClazzId, '');
+					}
+				} catch (e) {}
+
+				try {
+					const nativeNextBtn = doc.querySelector<HTMLElement>(
+						'.jb_btn.jb_btn_next, #prevNextFocusOpNext, .nextChapter, a[onclick*="PCount.next"], .orientationright'
+					);
+					if (nativeNextBtn) nativeNextBtn.click();
+				} catch (e) {}
+
+				// 兜底保障：若 3 秒内未跳转，直接修改 URL 跳转到目标小节；若仍停留在当前章，刷新页面让超星同步服务端关卡状态
 				setTimeout(() => {
 					try {
 						const curNow =
@@ -1622,11 +1647,6 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 					}
 				}, 3000);
 				return;
-			}
-
-			// 只有明确抵达全目录最后一章且章节数 > 1 才提示学完
-			if (curIdx !== -1 && curIdx === chapters.length - 1 && chapters.length > 1) {
-				return $modal.alert({ content: '全课程所有章节已全部学完！' });
 			}
 		}
 
