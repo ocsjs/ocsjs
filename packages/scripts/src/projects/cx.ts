@@ -1489,71 +1489,62 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			const doc = top?.document;
 			if (!doc) return;
 
-			const chapterEls = Array.from(doc.querySelectorAll<HTMLElement>('[onclick*="getTeacherAjax"]'));
-			const activeEl = doc.querySelector<HTMLElement>('.posCatalog_active');
+			let chapters = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_select'));
+			if (chapters.length === 0) {
+				chapters = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_level'));
+			}
+			if (chapters.length === 0) {
+				chapters = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name')).map(
+					(el) => (el.closest('[id^="cur"]') || el.parentElement || el) as HTMLElement
+				);
+			}
+
+			let curIdx = chapters.findIndex(
+				(el) => el.classList.contains('posCatalog_active') || el.querySelector('.posCatalog_active') !== null
+			);
+
 			const curChapId = (
 				doc.querySelector<HTMLInputElement>('#curChapterId')?.value ||
 				new URL(top?.location.href || '').searchParams.get('chapterId') ||
-				activeEl?.getAttribute('id')?.replace(/^cur/, '')
+				doc.querySelector('.posCatalog_active')?.getAttribute('id')?.replace(/^cur/, '')
 			);
 
-			let curIdx = -1;
-			if (activeEl && chapterEls.length > 0) {
-				curIdx = chapterEls.findIndex(
-					(el) =>
-						el === activeEl ||
-						el.contains(activeEl) ||
-						activeEl.contains(el) ||
-						Boolean(el.closest?.('.posCatalog_active')) ||
-						Boolean(el.parentElement?.classList.contains('posCatalog_active'))
+			if (curIdx === -1 && curChapId && chapters.length > 0) {
+				curIdx = chapters.findIndex(
+					(el) => el.id === 'cur' + curChapId || el.querySelector('#cur' + curChapId) !== null
 				);
 			}
-			if (curIdx === -1 && curChapId && chapterEls.length > 0) {
-				curIdx = chapterEls.findIndex((el) => {
-					const onclickStr = el.getAttribute('onclick') || '';
-					return onclickStr.includes(curChapId);
-				});
-			}
 
-			// 核心跳转分支 A：通过 chapterEls 定位下一章节
-			if (curIdx !== -1 && curIdx + 1 < chapterEls.length) {
-				const nextEl = chapterEls[curIdx + 1];
+			// 核心跳转逻辑：定位下一个章节
+			if (curIdx !== -1 && curIdx + 1 < chapters.length) {
+				const nextChapter = chapters[curIdx + 1];
 				$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
 
-				const onclickStr = nextEl.getAttribute('onclick') || '';
-				const match =
-					onclickStr.match(/getTeacherAjax\s*\(\s*['"]?[^,'"]+['"]?\s*,\s*['"]?[^,'"]+['"]?\s*,\s*['"]?([^,'"\)]+)['"]?\s*\)/) ||
-					onclickStr.match(/\(\s*['"]?[^,'"]+['"]?\s*,\s*['"]?[^,'"]+['"]?\s*,\s*['"]?([^,'"\)]+)['"]?\s*\)/);
-				const nextChapId = match && match[1] ? match[1].trim() : '';
-
-				try {
-					nextEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				} catch (e) {}
-
-				try {
-					const title = nextEl.querySelector<HTMLElement>('.posCatalog_name') || nextEl;
-					title.click();
-					nextEl.click();
-				} catch (e) {}
-
-				try {
-					const win = (top as any)?.unsafeWindow || top;
-					if (onclickStr) {
-						win?.eval?.(onclickStr);
-					} else if (typeof win?.getTeacherAjax === 'function') {
-						const courseId =
-							doc.querySelector<HTMLInputElement>('#curCourseId')?.value ||
-							new URL(top?.location.href || '').searchParams.get('courseId');
-						const clazzId =
-							doc.querySelector<HTMLInputElement>('#curClazzId')?.value ||
-							new URL(top?.location.href || '').searchParams.get('clazzid');
-						if (courseId && clazzId && nextChapId) {
-							win.getTeacherAjax(courseId, clazzId, nextChapId);
-						}
+				let nextChapId = '';
+				if (nextChapter.id && nextChapter.id.startsWith('cur')) {
+					nextChapId = nextChapter.id.replace(/^cur/, '');
+				} else {
+					const curChild = nextChapter.querySelector<HTMLElement>('[id^="cur"]');
+					if (curChild && curChild.id) {
+						nextChapId = curChild.id.replace(/^cur/, '');
 					}
+				}
+
+				try {
+					nextChapter.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				} catch (e) {}
 
-				// 兜底保障：若 3.5 秒后仍未跳转，通过修改 URL searchParams 强制载入下一章
+				try {
+					const target =
+						nextChapter.querySelector<HTMLElement>('.posCatalog_name') ||
+						nextChapter.querySelector<HTMLElement>('a') ||
+						nextChapter.querySelector<HTMLElement>('[onclick]') ||
+						nextChapter;
+					target.click();
+					nextChapter.click();
+				} catch (e) {}
+
+				// 兜底保障：若 3 秒内未跳转，直接修改 URL 跳转；若仍停留在当前章，刷新页面让超星同步服务端关卡状态
 				setTimeout(() => {
 					try {
 						const curNow =
@@ -1563,33 +1554,18 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 							const nextUrl = new URL(top?.location.href || '');
 							nextUrl.searchParams.set('chapterId', nextChapId);
 							top!.location.href = nextUrl.toString();
+						} else if (curNow === curChapId) {
+							top!.location.reload();
 						}
 					} catch (e) {
-						console.error('Breaking mode fallback navigation error', e);
+						console.error('Fallback navigation error', e);
 					}
-				}, 3500);
+				}, 3000);
 				return;
 			}
 
-			// 备选跳转分支 B：通过 .posCatalog_name 定位
-			const allNames = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name'));
-			if (activeEl && allNames.length > 1) {
-				const nameIdx = allNames.findIndex((el) => el === activeEl || el.contains(activeEl) || activeEl.contains(el));
-				if (nameIdx !== -1 && nameIdx + 1 < allNames.length) {
-					const nextName = allNames[nameIdx + 1];
-					$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
-					try {
-						nextName.scrollIntoView({ behavior: 'smooth', block: 'center' });
-						nextName.click();
-						const p = nextName.closest<HTMLElement>('[onclick]') || nextName.parentElement;
-						p?.click();
-					} catch (e) {}
-					return;
-				}
-			}
-
-			// 只有明确抵达最后一章且课程有多个章节时才提示全部完成
-			if (curIdx !== -1 && curIdx === chapterEls.length - 1 && chapterEls.length > 1) {
+			// 只有明确抵达全目录最后一章且章节数 > 1 才提示学完
+			if (curIdx !== -1 && curIdx === chapters.length - 1 && chapters.length > 1) {
 				return $modal.alert({ content: '全课程所有章节已全部学完！' });
 			}
 		}
