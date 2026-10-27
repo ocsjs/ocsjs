@@ -1478,6 +1478,14 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	// 下一章
 	const next = async () => {
 		if (CXAnalyses.isInSpecialMode() && CXAnalyses.isInFinalTab()) {
+			// 若多次重试仍无法解锁（如测验未达标、含主观题待批改、达到每日限刷或未到开放时间），弹出提示并停止无限重试
+			if (await CXAnalyses.isStuckInBreakingMode()) {
+				return $modal.alert({
+					content:
+						'检测到当前章节在闯关模式下重试多次仍未解锁。可能是章节测试成绩未达标、含有待教师批改的主观题、或该章节未到开放时间/达到每日上限。请确认当前章节满足解锁条件后手动点击下一章。'
+				});
+			}
+
 			// 闯关模式下：自动尝试点击目录中的下一个小节
 			const cur = top?.document.querySelector<HTMLElement>('.posCatalog_active');
 			if (cur) {
@@ -1498,7 +1506,7 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 						}
 					}, 1000);
 
-					// 若跳转未触发（例如超星后端解锁延迟），稍后刷新页面同步关卡状态
+					// 若跳转未触发（例如超星后端解锁延迟），稍后刷新页面同步关卡状态重试
 					setTimeout(() => {
 						if (top?.document.querySelector('.posCatalog_active') === cur) {
 							top?.location.reload();
