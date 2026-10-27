@@ -1229,24 +1229,23 @@ const CXAnalyses = {
 	/** 是否为闯关模式，并且当前章节卡在最后一个待完成的任务点 */
 	async isStuckInBreakingMode() {
 		if (this.isInSpecialMode()) {
-			const chapter = top?.document.querySelector<HTMLElement>('.posCatalog_active');
-			if (chapter) {
-				const id = chapter.getAttribute('id');
-				if (id) {
-					// 超星好像会重绘组件，导致无法绑定属性到元素中，所以这里使用页面全局变量存储
-					const counter = (await $store.getTab('chapter_counter')) || Object.create({});
-					let count = Reflect.get(counter, id);
-					count = count ? count + 1 : 1;
-					Reflect.set(counter, id, count);
+			const curChapId =
+				top?.document.querySelector<HTMLInputElement>('#curChapterId')?.value ||
+				new URL(top?.location.href || '').searchParams.get('chapterId') ||
+				top?.document.querySelector<HTMLElement>('.posCatalog_active')?.getAttribute('id')?.replace(/^cur/, '');
+			if (curChapId) {
+				const counter = (await $store.getTab('chapter_counter')) || Object.create({});
+				let count = Reflect.get(counter, curChapId);
+				count = count ? count + 1 : 1;
+				Reflect.set(counter, curChapId, count);
 
-					let res = false;
-					if (count >= 3) {
-						Reflect.set(counter, id, 1);
-						res = true;
-					}
-					await $store.setTab('chapter_counter', counter);
-					return res;
+				let res = false;
+				if (count >= 4) {
+					Reflect.set(counter, curChapId, 1);
+					res = true;
 				}
+				await $store.setTab('chapter_counter', counter);
+				return res;
 			}
 		}
 		return false;
@@ -1486,43 +1485,109 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 				});
 			}
 
-			// 闯关模式下：自动尝试点击目录中的下一个小节
-			const cur = top?.document.querySelector<HTMLElement>('.posCatalog_active');
-			if (cur) {
-				const all = Array.from(top?.document.querySelectorAll<HTMLElement>('.posCatalog_select') || []);
-				const curIdx = all.indexOf(cur);
-				if (curIdx !== -1 && curIdx + 1 < all.length) {
-					const nextChapter = all[curIdx + 1];
-					const target =
-						nextChapter.querySelector<HTMLElement>('.posCatalog_name') ||
-						nextChapter.querySelector<HTMLElement>('[onclick]') ||
-						nextChapter;
-					$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
-					setTimeout(() => {
-						try {
-							target.click();
-						} catch (e) {
-							console.error(e);
-						}
-					}, 1000);
+			// 闯关模式下：自动定位并进入下一个小节
+			const infos = CXAnalyses.getChapterInfos();
+			const activeEl = top?.document.querySelector<HTMLElement>('.posCatalog_active');
+			const curChapId = (
+				top?.document.querySelector<HTMLInputElement>('#curChapterId')?.value ||
+				new URL(top?.location.href || '').searchParams.get('chapterId') ||
+				activeEl?.getAttribute('id')?.replace(/^cur/, '')
+			);
 
-					// 若跳转未触发（例如超星后端解锁延迟），稍后刷新页面同步关卡状态重试
-					setTimeout(() => {
-						if (top?.document.querySelector('.posCatalog_active') === cur) {
-							top?.location.reload();
-						}
-					}, 6000);
-					return;
-				}
+			let curIdx = -1;
+			if (curChapId && infos.length > 0) {
+				curIdx = infos.findIndex((info) => info.chapterId === curChapId);
 			}
-		}
+			if (curIdx === -1 && activeEl && infos.length > 0) {
+				curIdx = infos.findIndex(
+					(info) =>
+						info.element === activeEl ||
+						info.element.contains(activeEl) ||
+						activeEl.contains(info.element) ||
+						info.element.classList.contains('posCatalog_active') ||
+						Boolean(info.element.parentElement?.classList.contains('posCatalog_active')) ||
+						Boolean(info.element.closest?.('.posCatalog_active'))
+				);
+			}
 
-		if (CXAnalyses.isInFinalTab()) {
-			if (await CXAnalyses.isStuckInBreakingMode()) {
-				return $modal.alert({
-					content:
-						'检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致，请手动完成章节测试，然后手动点击下一章。'
-				});
+			const allSelects = Array.from(top?.document.querySelectorAll<HTMLElement>('.posCatalog_select') || []);
+			let selectIdx = -1;
+			if (activeEl && allSelects.length > 0) {
+				selectIdx = allSelects.findIndex((el) => el === activeEl || el.contains(activeEl) || activeEl.contains(el));
+			}
+
+			// 若已是全课程最后一章
+			if ((curIdx !== -1 && curIdx === infos.length - 1) || (selectIdx !== -1 && selectIdx === allSelects.length - 1)) {
+				return $modal.alert({ content: '全课程所有章节已全部学完！' });
+			}
+
+			// 核心跳转分支 A：通过 getChapterInfos 定位下一章节
+			if (curIdx !== -1 && curIdx + 1 < infos.length) {
+				const nextInfo = infos[curIdx + 1];
+				$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
+
+				try {
+					nextInfo.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				} catch (e) {}
+
+				try {
+					const titleEl = nextInfo.element.querySelector<HTMLElement>('.posCatalog_name') || nextInfo.element;
+					titleEl.click();
+					nextInfo.element.click();
+				} catch (e) {}
+
+				try {
+					const win = (top as any)?.unsafeWindow || top;
+					const onclickStr = nextInfo.element.getAttribute('onclick');
+					if (onclickStr) {
+						win?.eval?.(onclickStr);
+					} else if (typeof win?.getTeacherAjax === 'function') {
+						const courseId =
+							top?.document.querySelector<HTMLInputElement>('#curCourseId')?.value ||
+							new URL(top?.location.href || '').searchParams.get('courseId');
+						const clazzId =
+							top?.document.querySelector<HTMLInputElement>('#curClazzId')?.value ||
+							new URL(top?.location.href || '').searchParams.get('clazzid');
+						if (courseId && clazzId && nextInfo.chapterId) {
+							win.getTeacherAjax(courseId, clazzId, nextInfo.chapterId);
+						}
+					}
+				} catch (e) {}
+
+				// 兜底保障：若 3.5 秒后仍未跳转，通过修改 URL searchParams 强制载入下一章
+				setTimeout(() => {
+					try {
+						const curNow =
+							top?.document.querySelector<HTMLInputElement>('#curChapterId')?.value ||
+							new URL(top?.location.href || '').searchParams.get('chapterId');
+						if (curNow !== nextInfo.chapterId && nextInfo.chapterId) {
+							const nextUrl = new URL(top?.location.href || '');
+							nextUrl.searchParams.set('chapterId', nextInfo.chapterId);
+							top!.location.href = nextUrl.toString();
+						}
+					} catch (e) {
+						console.error('Breaking mode fallback navigation error', e);
+					}
+				}, 3500);
+				return;
+			}
+
+			// 备用跳转分支 B：通过 .posCatalog_select 定位下一章节
+			if (selectIdx !== -1 && selectIdx + 1 < allSelects.length) {
+				const nextChapter = allSelects[selectIdx + 1];
+				const target =
+					nextChapter.querySelector<HTMLElement>('.posCatalog_name') ||
+					nextChapter.querySelector<HTMLElement>('[onclick]') ||
+					nextChapter;
+				$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
+				setTimeout(() => {
+					try {
+						target.click();
+					} catch (e) {
+						console.error(e);
+					}
+				}, 1000);
+				return;
 			}
 		}
 
