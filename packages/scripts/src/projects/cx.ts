@@ -2302,36 +2302,106 @@ const JobRunner = {
 		await $.sleep(stopSecondWhenFinish * 1000);
 
 		// 处理提交
+		const doSubmit = async () => {
+			$message.info({ content: '正在提交章节测验...', duration: 5 });
+			try {
+				if (typeof (frameWindow as any)?.btnBlueSubmit === 'function') {
+					(frameWindow as any).btnBlueSubmit();
+				}
+			} catch (e) {}
+
+			try {
+				const btn = frameWindow!.document.querySelector<HTMLElement>(
+					'.btnBlue_submit, [onclick*="btnBlueSubmit"], a.btnBlue, #btnBlueSubmit'
+				);
+				if (btn) btn.click();
+			} catch (e) {}
+
+			try {
+				const s = frameWindow!.document.createElement('script');
+				s.textContent = `
+					try {
+						if (typeof btnBlueSubmit === 'function') btnBlueSubmit();
+						else {
+							const b = document.querySelector('.btnBlue_submit, [onclick*="btnBlueSubmit"], a.btnBlue');
+							if (b) (b as any).click();
+						}
+					} catch(e) {}
+				`;
+				(frameWindow!.document.body || frameWindow!.document.documentElement).appendChild(s);
+				s.remove();
+			} catch (e) {}
+
+			await $.sleep(2500);
+
+			try {
+				if (typeof (frameWindow as any)?.submitCheckTimes === 'function') {
+					(frameWindow as any).submitCheckTimes();
+				}
+			} catch (e) {}
+
+			try {
+				const confirmBtn =
+					frameWindow!.document.querySelector<HTMLElement>(
+						'.popDiv .btnBlue, [onclick*="submitCheckTimes"], a.pop_sure, .popDiv a.btn'
+					) ||
+					top?.document.querySelector<HTMLElement>(
+						'#workpop .btnBlue, #workpop [onclick*="submitCheckTimes"], #workpop a.pop_sure'
+					);
+				if (confirmBtn) confirmBtn.click();
+			} catch (e) {}
+
+			try {
+				const s2 = frameWindow!.document.createElement('script');
+				s2.textContent = `
+					try {
+						if (typeof submitCheckTimes === 'function') submitCheckTimes();
+						else if (typeof form1submit === 'function') form1submit();
+						const b = document.querySelector('.popDiv .btnBlue, [onclick*="submitCheckTimes"], a.pop_sure');
+						if (b) (b as any).click();
+					} catch(e) {}
+				`;
+				(frameWindow!.document.body || frameWindow!.document.documentElement).appendChild(s2);
+				s2.remove();
+			} catch (e) {}
+
+			try {
+				// @ts-ignore
+				if (typeof top?.$ === 'function') {
+					// @ts-ignore
+					top.$('#workpop').hide();
+				}
+			} catch (e) {}
+
+			$message.success({ content: '测验已提交！正在等待超星系统评分与解锁下一章...', duration: 6 });
+			await $.sleep(6000);
+		};
+
 		await worker.uploadHandler({
 			type: upload,
 			results,
 			async callback(finishedRate, uploadable) {
-				const msg = `完成率 ${finishedRate.toFixed(2)}% :  ${uploadable ? '3秒后将自动提交' : '3秒后将自动保存'} `;
+				const isBreaking = CXAnalyses.isInSpecialMode();
+				const shouldSubmit = uploadable || isBreaking;
+				const msg = `完成率 ${finishedRate.toFixed(2)}% :  ${shouldSubmit ? '3秒后自动提交' : '3秒后自动保存'} `;
 				$console.info(msg);
 				$message.success({ content: msg, duration: 3 });
 
 				await $.sleep(3000);
 
-				if (uploadable) {
-					// @ts-ignore 提交
-					frameWindow.btnBlueSubmit();
-
-					await $.sleep(3000);
-					/** 确定按钮 */
-					// @ts-ignore 确定
-					frameWindow.submitCheckTimes();
-					// @ts-ignore 2024/4 更新后上方函数无法关闭弹窗，需要手动关闭确定弹窗
-					top.$('#workpop').hide();
+				if (shouldSubmit) {
+					await doSubmit();
 				} else {
-					// @ts-ignore 禁止弹窗
-					frameWindow.alert = () => {};
-					// @ts-ignore 暂时保存
-					frameWindow.noSubmit();
+					try {
+						// @ts-ignore 禁止弹窗
+						frameWindow.alert = () => {};
+						// @ts-ignore 暂不提交
+						frameWindow.noSubmit();
+					} catch (e) {}
 				}
 			}
 		});
 
-		// 还原尺寸状态
 		if (visual_state === 'minimize' && BackgroundProject.scripts.render.cfg.visual !== 'minimize') {
 			CORSUtils.panelMinimize();
 		}
