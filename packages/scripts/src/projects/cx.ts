@@ -1486,70 +1486,69 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			}
 
 			// 闯关模式下：自动定位并进入下一个小节
-			const infos = CXAnalyses.getChapterInfos();
-			const activeEl = top?.document.querySelector<HTMLElement>('.posCatalog_active');
+			const doc = top?.document;
+			if (!doc) return;
+
+			const chapterEls = Array.from(doc.querySelectorAll<HTMLElement>('[onclick*="getTeacherAjax"]'));
+			const activeEl = doc.querySelector<HTMLElement>('.posCatalog_active');
 			const curChapId = (
-				top?.document.querySelector<HTMLInputElement>('#curChapterId')?.value ||
+				doc.querySelector<HTMLInputElement>('#curChapterId')?.value ||
 				new URL(top?.location.href || '').searchParams.get('chapterId') ||
 				activeEl?.getAttribute('id')?.replace(/^cur/, '')
 			);
 
 			let curIdx = -1;
-			if (curChapId && infos.length > 0) {
-				curIdx = infos.findIndex((info) => info.chapterId === curChapId);
-			}
-			if (curIdx === -1 && activeEl && infos.length > 0) {
-				curIdx = infos.findIndex(
-					(info) =>
-						info.element === activeEl ||
-						info.element.contains(activeEl) ||
-						activeEl.contains(info.element) ||
-						info.element.classList.contains('posCatalog_active') ||
-						Boolean(info.element.parentElement?.classList.contains('posCatalog_active')) ||
-						Boolean(info.element.closest?.('.posCatalog_active'))
+			if (activeEl && chapterEls.length > 0) {
+				curIdx = chapterEls.findIndex(
+					(el) =>
+						el === activeEl ||
+						el.contains(activeEl) ||
+						activeEl.contains(el) ||
+						Boolean(el.closest?.('.posCatalog_active')) ||
+						Boolean(el.parentElement?.classList.contains('posCatalog_active'))
 				);
 			}
-
-			const allSelects = Array.from(top?.document.querySelectorAll<HTMLElement>('.posCatalog_select') || []);
-			let selectIdx = -1;
-			if (activeEl && allSelects.length > 0) {
-				selectIdx = allSelects.findIndex((el) => el === activeEl || el.contains(activeEl) || activeEl.contains(el));
+			if (curIdx === -1 && curChapId && chapterEls.length > 0) {
+				curIdx = chapterEls.findIndex((el) => {
+					const onclickStr = el.getAttribute('onclick') || '';
+					return onclickStr.includes(curChapId);
+				});
 			}
 
-			// 若已是全课程最后一章
-			if ((curIdx !== -1 && curIdx === infos.length - 1) || (selectIdx !== -1 && selectIdx === allSelects.length - 1)) {
-				return $modal.alert({ content: '全课程所有章节已全部学完！' });
-			}
-
-			// 核心跳转分支 A：通过 getChapterInfos 定位下一章节
-			if (curIdx !== -1 && curIdx + 1 < infos.length) {
-				const nextInfo = infos[curIdx + 1];
+			// 核心跳转分支 A：通过 chapterEls 定位下一章节
+			if (curIdx !== -1 && curIdx + 1 < chapterEls.length) {
+				const nextEl = chapterEls[curIdx + 1];
 				$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
 
+				const onclickStr = nextEl.getAttribute('onclick') || '';
+				const match =
+					onclickStr.match(/getTeacherAjax\s*\(\s*['"]?[^,'"]+['"]?\s*,\s*['"]?[^,'"]+['"]?\s*,\s*['"]?([^,'"\)]+)['"]?\s*\)/) ||
+					onclickStr.match(/\(\s*['"]?[^,'"]+['"]?\s*,\s*['"]?[^,'"]+['"]?\s*,\s*['"]?([^,'"\)]+)['"]?\s*\)/);
+				const nextChapId = match && match[1] ? match[1].trim() : '';
+
 				try {
-					nextInfo.element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					nextEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				} catch (e) {}
 
 				try {
-					const titleEl = nextInfo.element.querySelector<HTMLElement>('.posCatalog_name') || nextInfo.element;
-					titleEl.click();
-					nextInfo.element.click();
+					const title = nextEl.querySelector<HTMLElement>('.posCatalog_name') || nextEl;
+					title.click();
+					nextEl.click();
 				} catch (e) {}
 
 				try {
 					const win = (top as any)?.unsafeWindow || top;
-					const onclickStr = nextInfo.element.getAttribute('onclick');
 					if (onclickStr) {
 						win?.eval?.(onclickStr);
 					} else if (typeof win?.getTeacherAjax === 'function') {
 						const courseId =
-							top?.document.querySelector<HTMLInputElement>('#curCourseId')?.value ||
+							doc.querySelector<HTMLInputElement>('#curCourseId')?.value ||
 							new URL(top?.location.href || '').searchParams.get('courseId');
 						const clazzId =
-							top?.document.querySelector<HTMLInputElement>('#curClazzId')?.value ||
+							doc.querySelector<HTMLInputElement>('#curClazzId')?.value ||
 							new URL(top?.location.href || '').searchParams.get('clazzid');
-						if (courseId && clazzId && nextInfo.chapterId) {
-							win.getTeacherAjax(courseId, clazzId, nextInfo.chapterId);
+						if (courseId && clazzId && nextChapId) {
+							win.getTeacherAjax(courseId, clazzId, nextChapId);
 						}
 					}
 				} catch (e) {}
@@ -1558,11 +1557,11 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 				setTimeout(() => {
 					try {
 						const curNow =
-							top?.document.querySelector<HTMLInputElement>('#curChapterId')?.value ||
+							doc.querySelector<HTMLInputElement>('#curChapterId')?.value ||
 							new URL(top?.location.href || '').searchParams.get('chapterId');
-						if (curNow !== nextInfo.chapterId && nextInfo.chapterId) {
+						if (nextChapId && curNow !== nextChapId) {
 							const nextUrl = new URL(top?.location.href || '');
-							nextUrl.searchParams.set('chapterId', nextInfo.chapterId);
+							nextUrl.searchParams.set('chapterId', nextChapId);
 							top!.location.href = nextUrl.toString();
 						}
 					} catch (e) {
@@ -1572,22 +1571,26 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 				return;
 			}
 
-			// 备用跳转分支 B：通过 .posCatalog_select 定位下一章节
-			if (selectIdx !== -1 && selectIdx + 1 < allSelects.length) {
-				const nextChapter = allSelects[selectIdx + 1];
-				const target =
-					nextChapter.querySelector<HTMLElement>('.posCatalog_name') ||
-					nextChapter.querySelector<HTMLElement>('[onclick]') ||
-					nextChapter;
-				$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
-				setTimeout(() => {
+			// 备选跳转分支 B：通过 .posCatalog_name 定位
+			const allNames = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name'));
+			if (activeEl && allNames.length > 1) {
+				const nameIdx = allNames.findIndex((el) => el === activeEl || el.contains(activeEl) || activeEl.contains(el));
+				if (nameIdx !== -1 && nameIdx + 1 < allNames.length) {
+					const nextName = allNames[nameIdx + 1];
+					$message.info({ content: '闯关模式：正在尝试自动进入下一章节...', duration: 5 });
 					try {
-						target.click();
-					} catch (e) {
-						console.error(e);
-					}
-				}, 1000);
-				return;
+						nextName.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						nextName.click();
+						const p = nextName.closest<HTMLElement>('[onclick]') || nextName.parentElement;
+						p?.click();
+					} catch (e) {}
+					return;
+				}
+			}
+
+			// 只有明确抵达最后一章且课程有多个章节时才提示全部完成
+			if (curIdx !== -1 && curIdx === chapterEls.length - 1 && chapterEls.length > 1) {
+				return $modal.alert({ content: '全课程所有章节已全部学完！' });
 			}
 		}
 
