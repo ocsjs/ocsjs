@@ -1264,7 +1264,18 @@ const CXAnalyses = {
 	},
 	/** 是否处于最后一个章节 */
 	isInFinalChapter() {
-		return Array.from(top?.document.querySelectorAll('.posCatalog_select') || [])
+		const doc = top?.document;
+		const leafNodes = Array.from(doc?.querySelectorAll<HTMLElement>('[onclick*="getTeacherAjax"]') || []);
+		if (leafNodes.length > 0) {
+			const lastLeaf = leafNodes.pop();
+			return (
+				lastLeaf?.classList.contains('posCatalog_active') ||
+				lastLeaf?.closest('.posCatalog_active') !== null ||
+				lastLeaf?.closest('.posCatalog_select')?.classList.contains('posCatalog_active') ||
+				false
+			);
+		}
+		return Array.from(doc?.querySelectorAll('.posCatalog_select') || [])
 			.pop()
 			?.classList.contains('posCatalog_active');
 	},
@@ -1489,14 +1500,34 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			const doc = top?.document;
 			if (!doc) return;
 
-			let chapters = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_select'));
-			if (chapters.length === 0) {
-				chapters = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_level'));
-			}
-			if (chapters.length === 0) {
-				chapters = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name')).map(
-					(el) => (el.closest('[id^="cur"]') || el.parentElement || el) as HTMLElement
+			// 过滤出真正可学习的具体小节（叶子节点），坚决排除没有任务点、点击会导致“章节未开放”的一级大章标题
+			const ajaxNodes = Array.from(doc.querySelectorAll<HTMLElement>('[onclick*="getTeacherAjax"]'));
+			let chapters: HTMLElement[] = [];
+			if (ajaxNodes.length > 0) {
+				const raw = ajaxNodes.map(
+					(el) => (el.closest('[id^="cur"]') || el.closest('.posCatalog_select') || el) as HTMLElement
 				);
+				chapters = Array.from(new Set(raw));
+			} else {
+				let allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_select'));
+				if (allNodes.length === 0) {
+					allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_level'));
+				}
+				if (allNodes.length === 0) {
+					allNodes = Array.from(doc.querySelectorAll<HTMLElement>('.posCatalog_name')).map(
+						(el) => (el.closest('[id^="cur"]') || el.parentElement || el) as HTMLElement
+					);
+				}
+				chapters = allNodes.filter((node) => {
+					const levelParent = node.closest('.posCatalog_level');
+					if (levelParent) {
+						const sub = levelParent.querySelector('.subCatalog, ul, ol, .posCatalog_ul');
+						if (sub && !sub.contains(node)) {
+							return false;
+						}
+					}
+					return true;
+				});
 			}
 
 			let curIdx = chapters.findIndex(
@@ -1510,9 +1541,13 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			);
 
 			if (curIdx === -1 && curChapId && chapters.length > 0) {
-				curIdx = chapters.findIndex(
-					(el) => el.id === 'cur' + curChapId || el.querySelector('#cur' + curChapId) !== null
-				);
+				curIdx = chapters.findIndex((el) => {
+					if (el.id === 'cur' + curChapId || el.id === curChapId) return true;
+					if (el.querySelector('#cur' + curChapId) !== null) return true;
+					const oc = el.getAttribute('onclick') || el.querySelector('[onclick]')?.getAttribute('onclick') || '';
+					if (oc.includes(curChapId)) return true;
+					return false;
+				});
 			}
 
 			// 核心跳转逻辑：定位下一个章节
@@ -1529,6 +1564,28 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 						nextChapId = curChild.id.replace(/^cur/, '');
 					}
 				}
+				if (!nextChapId) {
+					const oc =
+						nextChapter.getAttribute('onclick') ||
+						nextChapter.querySelector('[onclick*="getTeacherAjax"]')?.getAttribute('onclick') ||
+						'';
+					const m = oc.match(/\('(.*?)','(.*?)','(.*?)'\)/);
+					if (m && m[3]) nextChapId = m[3];
+				}
+
+				// 若下一小节所在的大章处于折叠状态，先点击展开大章
+				try {
+					const parentLevel = nextChapter.closest('.posCatalog_level');
+					if (parentLevel) {
+						const folderTitle = parentLevel.querySelector<HTMLElement>(
+							'.posCatalog_name, .level_title, .posCatalog_title'
+						);
+						const sub = parentLevel.querySelector<HTMLElement>('.subCatalog, ul, ol, .posCatalog_ul');
+						if (folderTitle && sub && (sub.style.display === 'none' || !sub.clientHeight)) {
+							folderTitle.click();
+						}
+					}
+				} catch (e) {}
 
 				try {
 					nextChapter.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -1536,12 +1593,15 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 
 				try {
 					const target =
+						nextChapter.querySelector<HTMLElement>('[onclick*="getTeacherAjax"]') ||
 						nextChapter.querySelector<HTMLElement>('.posCatalog_name') ||
 						nextChapter.querySelector<HTMLElement>('a') ||
 						nextChapter.querySelector<HTMLElement>('[onclick]') ||
 						nextChapter;
 					target.click();
-					nextChapter.click();
+					if (target !== nextChapter) {
+						nextChapter.click();
+					}
 				} catch (e) {}
 
 				// 兜底保障：若 3 秒内未跳转，直接修改 URL 跳转；若仍停留在当前章，刷新页面让超星同步服务端关卡状态
@@ -2304,6 +2364,28 @@ const JobRunner = {
 		// 处理提交
 		const doSubmit = async () => {
 			$message.info({ content: '正在提交章节测验...', duration: 5 });
+
+			// 1. 劫持沙盒环境与原生 window 的 confirm 和 alert 为 true，避免“有题目未作答确认提交”弹窗阻断自动化流程
+			try {
+				// @ts-ignore
+				frameWindow.alert = () => true;
+				// @ts-ignore
+				frameWindow.confirm = () => true;
+			} catch (e) {}
+
+			try {
+				const s0 = frameWindow!.document.createElement('script');
+				s0.textContent = `
+					try {
+						window.alert = function() { return true; };
+						window.confirm = function() { return true; };
+					} catch(e) {}
+				`;
+				(frameWindow!.document.body || frameWindow!.document.documentElement).appendChild(s0);
+				s0.remove();
+			} catch (e) {}
+
+			// 2. 第一阶段提交触发
 			try {
 				if (typeof (frameWindow as any)?.btnBlueSubmit === 'function') {
 					(frameWindow as any).btnBlueSubmit();
@@ -2334,19 +2416,23 @@ const JobRunner = {
 
 			await $.sleep(2500);
 
+			// 3. 第二阶段确认提交与直接表单提交
 			try {
 				if (typeof (frameWindow as any)?.submitCheckTimes === 'function') {
 					(frameWindow as any).submitCheckTimes();
+				}
+				if (typeof (frameWindow as any)?.form1submit === 'function') {
+					(frameWindow as any).form1submit();
 				}
 			} catch (e) {}
 
 			try {
 				const confirmBtn =
 					frameWindow!.document.querySelector<HTMLElement>(
-						'.popDiv .btnBlue, [onclick*="submitCheckTimes"], a.pop_sure, .popDiv a.btn'
+						'.popDiv .btnBlue, [onclick*="submitCheckTimes"], [onclick*="form1submit"], a.pop_sure, .popDiv a.btn'
 					) ||
 					top?.document.querySelector<HTMLElement>(
-						'#workpop .btnBlue, #workpop [onclick*="submitCheckTimes"], #workpop a.pop_sure'
+						'#workpop .btnBlue, #workpop [onclick*="submitCheckTimes"], #workpop [onclick*="form1submit"], #workpop a.pop_sure'
 					);
 				if (confirmBtn) confirmBtn.click();
 			} catch (e) {}
@@ -2356,9 +2442,11 @@ const JobRunner = {
 				s2.textContent = `
 					try {
 						if (typeof submitCheckTimes === 'function') submitCheckTimes();
-						else if (typeof form1submit === 'function') form1submit();
-						const b = document.querySelector('.popDiv .btnBlue, [onclick*="submitCheckTimes"], a.pop_sure');
+						if (typeof form1submit === 'function') form1submit();
+						const b = document.querySelector('.popDiv .btnBlue, [onclick*="submitCheckTimes"], [onclick*="form1submit"], a.pop_sure');
 						if (b) (b as any).click();
+						const f = document.querySelector('#form1, form[name="form1"]');
+						if (f && typeof (f as any).submit === 'function') (f as any).submit();
 					} catch(e) {}
 				`;
 				(frameWindow!.document.body || frameWindow!.document.documentElement).appendChild(s2);
@@ -2377,30 +2465,35 @@ const JobRunner = {
 			await $.sleep(6000);
 		};
 
-		await worker.uploadHandler({
-			type: upload,
-			results,
-			async callback(finishedRate, uploadable) {
-				const isBreaking = CXAnalyses.isInSpecialMode();
-				const shouldSubmit = uploadable || isBreaking;
-				const msg = `完成率 ${finishedRate.toFixed(2)}% :  ${shouldSubmit ? '3秒后自动提交' : '3秒后自动保存'} `;
-				$console.info(msg);
-				$message.success({ content: msg, duration: 3 });
+		const isBreaking = CXAnalyses.isInSpecialMode();
+		if (isBreaking && upload === 'nomove') {
+			$console.info('闯关模式检测到未开启提交，正在强制执行提交以解锁下一章');
+			await doSubmit();
+		} else {
+			await worker.uploadHandler({
+				type: upload,
+				results,
+				async callback(finishedRate, uploadable) {
+					const shouldSubmit = uploadable || isBreaking;
+					const msg = `完成率 ${finishedRate.toFixed(2)}% :  ${shouldSubmit ? '3秒后自动提交' : '3秒后自动保存'} `;
+					$console.info(msg);
+					$message.success({ content: msg, duration: 3 });
 
-				await $.sleep(3000);
+					await $.sleep(3000);
 
-				if (shouldSubmit) {
-					await doSubmit();
-				} else {
-					try {
-						// @ts-ignore 禁止弹窗
-						frameWindow.alert = () => {};
-						// @ts-ignore 暂不提交
-						frameWindow.noSubmit();
-					} catch (e) {}
+					if (shouldSubmit) {
+						await doSubmit();
+					} else {
+						try {
+							// @ts-ignore 禁止弹窗
+							frameWindow.alert = () => {};
+							// @ts-ignore 暂不提交
+							frameWindow.noSubmit();
+						} catch (e) {}
+					}
 				}
-			}
-		});
+			});
+		}
 
 		if (visual_state === 'minimize' && BackgroundProject.scripts.render.cfg.visual !== 'minimize') {
 			CORSUtils.panelMinimize();
