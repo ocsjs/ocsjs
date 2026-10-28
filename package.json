@@ -19,6 +19,7 @@
 		"pub:major": "npm version major && pnpm build:core && npm publish",
 		"changelog:simplify": "gulp -f ./scripts/simplify_changelog.js",
 		"test": "tsx tests/resolver.test.ts",
+		"test:cx-chapter": "tsx --import ./tests/setup-browser-env.ts tests/cx-chapter.test.ts",
 		"test:eus": "pnpm -C A:/VSCode/code/eus build && pnpm -C packages/core link A:/VSCode/code/eus && pnpm -C packages/scripts link A:/VSCode/code/eus && npm run build",
 		"test:eus:reset": "pnpm install -w && cd packages/scripts && pnpm install",
 		"test:answerer": "tsx --import ./tests/setup-browser-env.ts tests/answerer.test.ts",

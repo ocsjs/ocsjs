@@ -29,6 +29,7 @@ import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { waitForElement, waitForMedia } from '../utils/study';
+import { getChapterRetryState } from '../utils/cx-chapter';
 
 /**
  * 超星 font-cxsecret 解密用的参考特征表（FRB2 位打包格式，wght 350/400 字重特征）。
@@ -1222,34 +1223,12 @@ async function mappingRecognize(doc: Document = document) {
  * cx分析工具
  */
 const CXAnalyses = {
-	/** 是否处于闯关模式或者解锁模式 */
-	isInSpecialMode() {
-		return Array.from(top?.document.querySelectorAll('.catalog_points_sa,.catalog_points_er') || []).length !== 0;
-	},
-	/** 是否为闯关模式，并且当前章节卡在最后一个待完成的任务点 */
+	/** 是否在闯关或解锁模式下连续进入同一未完成章节，且任务点状态没有变化 */
 	async isStuckInBreakingMode() {
-		if (this.isInSpecialMode()) {
-			const chapter = top?.document.querySelector<HTMLElement>('.posCatalog_active');
-			if (chapter) {
-				const id = chapter.getAttribute('id');
-				if (id) {
-					// 超星好像会重绘组件，导致无法绑定属性到元素中，所以这里使用页面全局变量存储
-					const counter = (await $store.getTab('chapter_counter')) || Object.create({});
-					let count = Reflect.get(counter, id);
-					count = count ? count + 1 : 1;
-					Reflect.set(counter, id, count);
-
-					let res = false;
-					if (count >= 3) {
-						Reflect.set(counter, id, 1);
-						res = true;
-					}
-					await $store.setTab('chapter_counter', counter);
-					return res;
-				}
-			}
-		}
-		return false;
+		// 页面会重绘章节元素，使用标签页存储保留最近一次检测状态。
+		const state = getChapterRetryState(top?.document, await $store.getTab('cx_chapter_retry'));
+		await $store.setTab('cx_chapter_retry', state || null);
+		return state?.count === 3;
 	},
 	/**
 	 * 是否处于最后一小节
@@ -1481,7 +1460,7 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			if (await CXAnalyses.isStuckInBreakingMode()) {
 				return $modal.alert({
 					content:
-						'检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致，请手动完成章节测试，然后手动点击下一章。'
+						'检测到当前章节连续多次进入，且页面任务点状态没有变化。请确认章节测试已提交并达到课程要求；若已完成，请等待完成状态更新后手动点击下一章。'
 				});
 			}
 		}
