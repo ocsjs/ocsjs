@@ -1,5 +1,15 @@
 # Changelog
 
+## [5.2.4](https://github.com/ocsjs/ocsjs/compare/5.2.3...5.2.4) (2026-10-30)
+
+
+* waitFor 超时改为抛出异常，审查并适配全部调用点 ([adedede](https://github.com/ocsjs/ocsjs/commit/adededeb54fb056b5d4b6a0f85d0ee9836205598))
+* 优化超星自动下一章的算法 ([8995a79](https://github.com/ocsjs/ocsjs/commit/8995a7940c98335b562d6679b07915fde98d423d))
+* 优化题库在electron中连接失败等错误显示 ([29b645c](https://github.com/ocsjs/ocsjs/commit/29b645c144fa50e41360d273292f3613f4cb3df0))
+* 修复超星字体解密时序问题，特征表增加持久化缓存与条件请求校验 ([feee3a9](https://github.com/ocsjs/ocsjs/commit/feee3a98cbdf352969a343430f05e8b17b3c8298))
+* 适配最新智慧树AI教学中心视频学习 ([025d006](https://github.com/ocsjs/ocsjs/commit/025d006367117434d3df85dfbc281cb620e1900d))
+* 适配雨课堂最新的latex公式题目 ([aace5ec](https://github.com/ocsjs/ocsjs/commit/aace5ecfce3c396a2f4f6dfd3aa3c6bd2307e64c))
+
 ## [5.2.3](https://github.com/ocsjs/ocsjs/compare/5.2.2...5.2.3) (2026-10-23)
 
 
