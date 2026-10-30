@@ -26,10 +26,10 @@ import {
 	simplifyWorkResult,
 	updateDynamicResult
 } from '../utils/work';
-import { CommonWorkOptions, playMedia } from '../utils';
+import { $msg, CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { $console, BackgroundProject } from './background';
-import { waitForMedia, waitForElement } from '../utils/study';
+import { waitForMedia, waitForElement, waitFor } from '../utils/study';
 import { $playwright } from '../utils/app';
 import { $render } from '../utils/render';
 
@@ -64,7 +64,7 @@ const gxk_read_notes = [
 /**
  * 2024 下半年智慧树更新至两个版本，其中一个改进了部分UI，所以这里使用两个处理器 StudyVideoH5,FusionCourseH5 对不同UI进行处理
  */
-interface ZHSProcessor {
+interface ZHSProcessor extends VideoProcessor {
 	remotePage: RemotePage | undefined | void;
 	init?(): void;
 	getCourseName(): string;
@@ -73,6 +73,8 @@ interface ZHSProcessor {
 	getNext(opts: { next: boolean; restudy: boolean }): HTMLElement | undefined;
 	hideDialog(): void;
 	handleTestDialog(remotePage?: RemotePage): void | Promise<void>;
+}
+interface VideoProcessor {
 	switchPlaybackRate(rate: number, remotePage?: RemotePage): void | Promise<void>;
 	switchLine(definition: 'line1bq' | 'line1gq', remotePage?: RemotePage): void | Promise<void>;
 }
@@ -95,7 +97,7 @@ class StudyVideoH5 implements ZHSProcessor {
 		return root.querySelector('.catalogue_title')?.textContent || '未知章节';
 	}
 
-	getNext(opts: { next: boolean; restudy: boolean }) {
+	getNext(opts: { next: boolean; restudy: boolean }): HTMLElement | undefined {
 		let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
 		// 如果不是复习模式，则排除掉已经完成的任务
 		if (!opts.restudy) {
@@ -604,24 +606,10 @@ class HikeV2 extends StudyVideoH5 implements ZHSProcessor {
 		let jobs = Array.from(document.querySelectorAll<HTMLElement>('.el-tree-node')).filter(
 			(e) => e.querySelector('.el-tree-node__children')?.children.length === 0
 		);
-		console.log(jobs);
-		// 如果不是复习模式，则排除掉已经完成的任务
-		if (!opts.restudy) {
-			jobs = jobs.filter((el) => {
-				if (el.querySelector('label.success')) {
-					return false;
-				}
-				return true;
-			});
-		}
-
-		for (let i = 0; i < jobs.length; i++) {
-			const item = jobs[i];
-			if (item.classList.contains('.is-current')) {
-				return jobs[i + (opts.next ? 1 : 0)];
-			}
-		}
-		return jobs[0];
+		const current_index = jobs.findIndex((job) => job.classList.contains('is-current'));
+		return jobs.find((job, i) => {
+			return i > current_index && (opts.restudy ? true : !job.querySelector('label.success'));
+		});
 	}
 
 	hideDialog() {
@@ -638,7 +626,7 @@ export const ZHSProject = Project.create({
 	domains: [
 		'zhihuishu.com',
 		// 2025下半学期新系统: AI智慧课程
-		'hike-teaching-center.polymas.com'
+		'polymas.com'
 	],
 	scripts: {
 		guide: new Script({
@@ -2163,11 +2151,12 @@ export const ZHSProject = Project.create({
 				const next = async () => {
 					// 打开章节列表
 					document.querySelector('.drawer-panel')?.classList.add('active');
+					await $.sleep(1000);
 
 					const nextJob = processor.getNext({ next: true, restudy: this.cfg.restudy });
 					if (nextJob) {
 						nextJob.scrollIntoView({ behavior: 'smooth', block: 'center' });
-						await $.sleep(200);
+						await $.sleep(1000);
 						nextJob.click();
 						await $.sleep(3000);
 						doJob();
@@ -2191,7 +2180,7 @@ export const ZHSProject = Project.create({
 				await waitForLoad();
 				await $.sleep(3000);
 
-				$message.success({ content: '即将开始自动学习！' });
+				$msg.info('即将开始自动学习：' + processor.getChapterName());
 
 				const reload = async (e: any) => {
 					$console.error(e);
@@ -2226,78 +2215,138 @@ export const ZHSProject = Project.create({
 				const doJob = async () => {
 					await waitForCaptcha();
 
-					if (!document.querySelector('.video-js')) {
+					const [isTopVideoJob, isIframeVideoJob] = [
+						document.querySelector('.video-js'),
+						document.querySelector('#previewIframe')
+					];
+
+					if (!isTopVideoJob && !isIframeVideoJob) {
 						$message.warn('当前章节不支持学习，即将跳转下一节');
 						await $.sleep(3000);
 						await next();
 						return;
 					}
 
-					const set = async () => {
-						// 上面操作会导致元素刷新，这里重新获取视频
+					if (isIframeVideoJob) {
 						try {
-							await $.sleep(1000);
-							const media = await waitForMedia({ timeout: 5 * 1000, filter: (m) => m.src.length !== 0 });
-							await $.sleep(1000);
-							state.study.currentMedia = media;
-							if (media) {
-								// 如果已经播放完了，则重置视频进度
-								media.currentTime = 1;
-								// 音量
-								media.volume = this.cfg.volume;
-							}
-							return state.study.currentMedia;
+							const duration = await waitFor(() => $store.get('hikev2_polymas_video_duration'), {
+								timeout_seconds: 1000 * 10,
+								timeout_message: '等待视频时长信息超时'
+							});
+							await waitFor(() => $store.get('hikev2_polymas_video') === 'end', {
+								timeout_seconds: parseFloat(duration || '3') * 1000,
+								timeout_message: '等待视频播放完成超时'
+							});
 						} catch (e) {
-							reload(e);
+							// waitFor 超时现在会抛异常：播放状态信号可能丢失，不能直接卡住，提示后继续跳转下一节
+							$message.warn('视频播放状态等待超时，直接跳转下一节（' + String(e) + '）');
 						}
-					};
-
-					$message.info('开始播放');
-					await waitForCaptcha();
-					const video = await set();
-					if (!video) {
-						return;
-					}
-					const video_src = video.src;
-
-					// 如果视频元素无法访问，证明已经切换了视频
-					const videoCheckInterval = setInterval(async () => {
-						if (!video?.isConnected || video.src !== video_src) {
-							clearInterval(videoCheckInterval);
-							$message.info({ content: '检测到视频切换中...' });
-							/**
-							 * 元素无法访问证明用户切换视频了
-							 * 所以不往下播放视频，而是重新播放用户当前选中的视频
-							 */
-							doJob();
-						}
-					}, 3000);
-
-					playMedia(() => video?.play()).then(() => {
-						const cn = processor.getChapterName();
-						$message.info({ content: '正在学习：' + cn });
-						$console.log('正在学习：' + cn);
-					});
-
-					video.onpause = async () => {
-						if (!video?.isConnected) return;
-						if (!video?.ended && state.study.stop === false) {
-							await $.sleep(1000);
-							video?.play();
-						}
-					};
-
-					video.onended = async () => {
-						if (!video?.isConnected) return;
 						$message.info('即将自动跳转下一节');
-						$console.info('即将自动跳转下一节');
-						clearInterval(videoCheckInterval);
 						await $.sleep(3000);
 						await next();
-					};
+					} else if (isTopVideoJob) {
+						const set = async () => {
+							// 上面操作会导致元素刷新，这里重新获取视频
+							try {
+								await $.sleep(1000);
+								const media = await waitForMedia({
+									timeout: 5 * 1000,
+									filter: (m) => m.src.length !== 0
+								});
+								await $.sleep(1000);
+								state.study.currentMedia = media;
+								if (media) {
+									// 如果已经播放完了，则重置视频进度
+									media.currentTime = 1;
+									// 音量
+									media.volume = this.cfg.volume;
+								}
+								return state.study.currentMedia;
+							} catch (e) {
+								reload(e);
+							}
+						};
+
+						$message.info('开始播放');
+						await waitForCaptcha();
+						const video = await set();
+						if (!video) {
+							return;
+						}
+						const video_src = video.src;
+
+						// 如果视频元素无法访问，证明已经切换了视频
+						const videoCheckInterval = setInterval(async () => {
+							if (!video?.isConnected || video.src !== video_src) {
+								clearInterval(videoCheckInterval);
+								$message.info({ content: '检测到视频切换中...' });
+								/**
+								 * 元素无法访问证明用户切换视频了
+								 * 所以不往下播放视频，而是重新播放用户当前选中的视频
+								 */
+								doJob();
+							}
+						}, 3000);
+
+						playMedia(() => video?.play()).then(() => {
+							const cn = processor.getChapterName();
+							$message.info({ content: '正在学习：' + cn });
+							$console.log('正在学习：' + cn);
+						});
+
+						video.onpause = async () => {
+							if (!video?.isConnected) return;
+							if (!video?.ended && state.study.stop === false) {
+								await $.sleep(1000);
+								video?.play();
+							}
+						};
+
+						video.onended = async () => {
+							if (!video?.isConnected) return;
+							$message.info('即将自动跳转下一节');
+							clearInterval(videoCheckInterval);
+							await $.sleep(3000);
+							await next();
+						};
+					}
 				};
 
 				doJob();
+			}
+		}),
+		hike_polymas_video: new Script({
+			name: 'AI教学中心视频脚本',
+			hideInPanel: true,
+			matches: [['AI教学中心视频', '/resource/online/preview']],
+			async oncomplete(...args) {
+				$store.set('hikev2_polymas_video', '');
+				$store.set('hikev2_polymas_video_duration', '');
+				waitForMedia()
+					.then((media) => {
+						watch(
+							{
+								switchLine() {},
+								switchPlaybackRate() {}
+							},
+							{ ...ZHSProject.scripts.hike_v2.cfg, playbackRate: 1 },
+							{
+								reload() {
+									location.reload();
+								},
+								onplay() {
+									$store.set('hikev2_polymas_video_duration', media.duration.toString());
+								},
+								onended() {
+									$store.set('hikev2_polymas_video', 'end');
+									$store.set('hikev2_polymas_video_duration', '');
+								}
+							}
+						);
+					})
+					.catch((e) => {
+						$store.set('hike_polymas_video', 'end');
+					});
 			}
 		}),
 		'hike-work': new Script({
@@ -2370,10 +2419,11 @@ export const ZHSProject = Project.create({
  * @returns
  */
 async function watch(
-	processor: ZHSProcessor,
+	processor: VideoProcessor,
 	options: { reloadWhenError: boolean; volume: number; playbackRate: number; definition?: 'line1bq' | 'line1gq' },
 	actions: {
-		onended: (opts: { next: boolean }) => void;
+		onended?: (opts: { next: boolean }) => void;
+		onplay?: () => void;
 		reload: () => void;
 	}
 ) {
@@ -2403,7 +2453,7 @@ async function watch(
 			const msg = '视频加载失败，即将跳过。';
 			$message.error(msg);
 			$console.log(msg);
-			actions.onended({ next: true });
+			actions.onended?.({ next: true });
 		}
 	};
 
@@ -2464,11 +2514,13 @@ async function watch(
 			 * 元素无法访问证明用户切换视频了
 			 * 所以不往下播放视频，而是重新播放用户当前选中的视频
 			 */
-			actions.onended({ next: false });
+			actions.onended?.({ next: false });
 		}
 	}, 3000);
 
-	playMedia(() => video?.play());
+	playMedia(() => video?.play()).then(() => {
+		actions.onplay?.();
+	});
 
 	video.onpause = async () => {
 		if (!video?.ended && state.study.stop === false) {
@@ -2481,7 +2533,7 @@ async function watch(
 	video.onended = () => {
 		clearInterval(videoCheckInterval);
 		// 正常切换下一个视频
-		actions.onended({ next: true });
+		actions.onended?.({ next: true });
 	};
 }
 

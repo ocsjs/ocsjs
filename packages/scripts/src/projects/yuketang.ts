@@ -277,12 +277,12 @@ export const YKTProject = Project.create({
 									$console.warn('作业 iframe 无法访问（可能跨域），跳过自动答题。');
 								} else {
 									$message.info('检测到作业任务点，等待作业页面加载...');
-									// 等 iframe 内题目区域渲染（waitForElement 超时单位：秒，超时时 resolve undefined）
+									// 等 iframe 内题目区域渲染；waitFor 超时现在会抛异常，这里吞掉并视为加载失败，跳过自动答题
 									const questionRoot = await waitForElement(
 										() =>
 											exerciseIframe.contentDocument?.querySelector<HTMLElement>('.container-problem .subject-item'),
 										{ timeout_seconds: 20, check_period_ms: 200 }
-									);
+									).catch(() => undefined);
 									if (!questionRoot) {
 										$console.warn('作业页面加载超时，跳过自动答题。');
 									} else {
@@ -347,14 +347,11 @@ async function autoCommentYktForum(forum: HTMLElement, discussMode: 'random' | '
 		return;
 	}
 
-	// 等待输入框渲染（waitForElement 超时 resolve undefined）
+	// 等待输入框渲染（waitFor 超时抛出异常，信息由 timeout_message 指定）
 	const textarea = (await waitForElement(
 		() => forum.querySelector<HTMLTextAreaElement>('.forum-publish textarea.el-textarea__inner'),
-		{ timeout_seconds: 20, check_period_ms: 500 }
-	)) as HTMLTextAreaElement | undefined;
-	if (!textarea) {
-		throw new Error('讨论区输入框加载超时。');
-	}
+		{ timeout_seconds: 20, check_period_ms: 500, timeout_message: '讨论区输入框加载超时。' }
+	)) as HTMLTextAreaElement;
 
 	const discusses = Array.from(forum.querySelectorAll('.forum-content .forum-item .comment-text'))
 		.map((el) => (el.textContent || '').trim())
@@ -370,13 +367,12 @@ async function autoCommentYktForum(forum: HTMLElement, discussMode: 'random' | '
 	textarea.dispatchEvent(new Event('input', { bubbles: true }));
 
 	// 填充后等待发送按钮解除禁用（.disabled 状态下点击无效）
-	const send_btn = await waitForElement(() => forum.querySelector<HTMLElement>('.prompt-send-btn:not(.disabled)'), {
+	// waitFor resolve 时已保证元素存在（超时走 reject），此处断言为非空
+	const send_btn = (await waitForElement(() => forum.querySelector<HTMLElement>('.prompt-send-btn:not(.disabled)'), {
 		timeout_seconds: 10,
-		check_period_ms: 500
-	});
-	if (!send_btn) {
-		throw new Error('讨论区发送按钮未解除禁用，评论提交失败。');
-	}
+		check_period_ms: 500,
+		timeout_message: '讨论区发送按钮未解除禁用，评论提交失败。'
+	})) as HTMLElement;
 	send_btn.click();
 	await $.sleep(1000);
 }
@@ -754,16 +750,32 @@ async function waitYktQuestionReady(prevMarker: string | null, doc: Document, ti
 const YKT_BLANK_INPUT_SELECTOR = 'input.blank-item-dynamic, input[placeholder="输入答案"]';
 
 /**
+ * 克隆题目元素用于文本提取，并将新版公式图片还原为 LaTeX 文本。
+ *
+ * 雨课堂新版公式题为 <img class="kfformula" src="data:image/png;base64,...">，
+ * LaTeX 源码保存在 data-latex 属性（data-slatex 为反斜杠双写的转义版，仅作兜底）。
+ * 若直接提取 img src，会向题干/选项注入大段 base64 文本导致搜题失败；
+ * 这里在克隆体上将公式图片替换为 $...$ 包裹的 LaTeX 文本（不破坏页面显示），
+ * 普通图片仍走 extractTextWithImages 的 URL 提取逻辑。
+ */
+function cloneYktForTextExtract(el: HTMLElement): HTMLElement {
+	const clone = el.cloneNode(true) as HTMLElement;
+	for (const img of Array.from(clone.querySelectorAll('img.kfformula'))) {
+		const latex =
+			img.getAttribute('data-latex') || (img.getAttribute('data-slatex') || '').replace(/\\\\/g, '\\');
+		img.replaceWith(latex.trim() ? ` $${latex}$ ` : ' [公式] ');
+	}
+	return clone;
+}
+
+/**
  * 提取题干文本：横线填空题的答案输入框（placeholder="输入答案"）无文本内容，
  * 提取时会"消失"导致题库无法识别这是填空题；
  * 这里先克隆元素并把每个横线输入框替换为 ____ 文本再提取，
  * 如 "…内容包括：____、____、____、____。"
  */
 function extractYktTitleText(el: HTMLElement): string {
-	if (!el.querySelector(YKT_BLANK_INPUT_SELECTOR)) {
-		return extractTextWithImages(el).text;
-	}
-	const clone = el.cloneNode(true) as HTMLElement;
+	const clone = cloneYktForTextExtract(el);
 	for (const input of Array.from(clone.querySelectorAll(YKT_BLANK_INPUT_SELECTOR))) {
 		input.replaceWith('____');
 	}
@@ -803,7 +815,8 @@ function createYktAnswerWorker({
 			return '错';
 		}
 		const textEl = option.querySelector('.radioText, .checkboxText');
-		return extractTextWithImages((textEl as HTMLElement) ?? option).text;
+		// 经克隆提取：选项中的 kfformula 公式图片同样还原为 LaTeX 文本
+		return extractTextWithImages(cloneYktForTextExtract((textEl as HTMLElement) ?? option)).text;
 	};
 
 	// OCSWorker 的 root 传字符串时会在【全局 document】上查询，
@@ -1150,15 +1163,14 @@ async function watch(options: { volume: number; playbackRate: number }) {
 		}
 
 		const media = (await waitForElement('video', {
-			timeout_seconds: 10 * 1000
-		})) as HTMLMediaElement | undefined;
+			timeout_seconds: 10 * 1000,
+			timeout_message: '视频元素加载超时'
+		})) as HTMLMediaElement;
 		console.log('media', media);
 		await $.sleep(1000);
-		if (media) {
-			state.study.currentMedia = media;
-			// 重置视频进度
-			media.currentTime = 1;
-		}
+		state.study.currentMedia = media;
+		// 重置视频进度
+		media.currentTime = 1;
 		return media;
 	};
 	$message.info('开始播放');
@@ -1243,20 +1255,19 @@ async function ai_watch(options: { volume: number; playbackRate: number }) {
 		// 上面操作会导致元素刷新，这里重新获取视频
 		await $.sleep(1000);
 		const media = (await waitForElement('.detail-container video', {
-			timeout_seconds: 10 * 1000
+			timeout_seconds: 10 * 1000,
+			timeout_message: 'AI数字人视频元素加载超时'
 		})) as HTMLMediaElement;
 		console.log('media', media);
 		await $.sleep(1000);
 		state.study.currentMedia = media;
 		state.study.is_ai_watch_mode = true;
 
-		if (media) {
-			// 如果已经播放完了，则重置视频进度
-			media.currentTime = 1;
-			// 音量
-			media.volume = options.volume;
-			media.playbackRate = options.playbackRate;
-		}
+		// 如果已经播放完了，则重置视频进度
+		media.currentTime = 1;
+		// 音量
+		media.volume = options.volume;
+		media.playbackRate = options.playbackRate;
 		return state.study.currentMedia;
 	};
 	$message.info('开始播放');

@@ -98,7 +98,6 @@ function onDevtoolsOpen(callback: () => void) {
 		const heightDiff = window.outerHeight - window.innerHeight;
 		if (widthDiff > 160 || heightDiff > 160) {
 			trigger();
-			
 		}
 	}, 1000);
 }
@@ -461,10 +460,25 @@ export const BackgroundProject = Project.create({
 					}
 					this.cfg.sync_status = 'unconnect';
 					try {
+						// M-1：数据接口已加入 auth-token 校验（桌面端安全加固），同步前先取令牌。
+						// 与 RemotePlaywright 同一发放口（GM_xhr 不受页面 CSP 限制）；
+						// 取不到时令牌为空字符串，后续请求失败会按原有容错进入 unconnect。
+						let authToken = '';
+						try {
+							authToken = await request('http://localhost:15319/get-actions-key', {
+								type: 'GM_xmlhttpRequest',
+								method: 'get',
+								responseType: 'text'
+							});
+						} catch {
+							// 桌面端未启动或旧版本无此接口：忽略，按原流程降级
+						}
+						const authHeaders = { 'auth-token': authToken };
 						const res = await request('http://localhost:15319/browser', {
 							type: 'GM_xmlhttpRequest',
 							method: 'get',
-							responseType: 'json'
+							responseType: 'json',
+							headers: authHeaders
 						});
 						if (!res) {
 							this.cfg.sync_status = 'unconnect';
@@ -473,7 +487,8 @@ export const BackgroundProject = Project.create({
 						const open_sync = await request('http://localhost:15319/is-browser-config-sync', {
 							type: 'GM_xmlhttpRequest',
 							method: 'get',
-							responseType: 'text'
+							responseType: 'text',
+							headers: authHeaders
 						});
 
 						if (open_sync !== 'true') {
