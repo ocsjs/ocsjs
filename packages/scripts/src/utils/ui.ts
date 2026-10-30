@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { h, $ui } from 'easy-us';
+import { h, $ui, $gm } from 'easy-us';
 import { request, $ } from '@ocsjs/core';
 import type { AnswererWrapper } from '@ocsjs/core';
 
@@ -161,6 +161,13 @@ function formatProbeLatency(r: AnswererProbeResult): string | undefined {
  * - 展开/收起、停用半透明等交互通过 class（expanded / disabled）驱动，样式见 custom.less
  */
 export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: AnswererListHandlers): HTMLElement[] {
+	/**
+	 * 是否可探测题库状态：探测依赖 GM_xmlhttpRequest 跨域通道（probeAnswerer），
+	 * 仅油猴环境具备；Electron 软件 / 纯浏览器等普通环境渲染时（custom element 配置界面）
+	 * 不发起探测、不渲染状态徽标，仅展示题库列表信息。
+	 */
+	const canProbe = $gm.isInGMContext();
+
 	/** 对齐的键值行：标签列固定宽度，值自动换行 */
 	const row = (label: string, value: string | HTMLElement) =>
 		h('li', { className: 'aw-card-row' }, [
@@ -169,11 +176,14 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 		]);
 
 	return aw.map((item) => {
-		/** 状态标签组：状态提示（HTTP 状态码）+ 延迟，分两个标签显示 */
-		const statusEl = h('span', { className: 'aw-card-status-group' }, [
-			h('span', { className: 'aw-card-status probing' }, '检测中…')
-		]);
+		/** 状态标签组：状态提示（HTTP 状态码）+ 延迟，分两个标签显示（非 GM 环境不创建） */
+		const statusEl = canProbe
+			? h('span', { className: 'aw-card-status-group' }, [
+					h('span', { className: 'aw-card-status probing' }, '检测中…')
+			  ])
+			: undefined;
 		const renderStatus = (r: AnswererProbeResult) => {
+			if (!statusEl) return;
 			const latencyText = formatProbeLatency(r);
 			statusEl.replaceChildren(
 				h('span', { className: 'aw-card-status ' + r.status }, formatProbeStatus(r)),
@@ -190,8 +200,9 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 					? '连接超时（>10秒）'
 					: '题库配置 URL 无法解析';
 		};
-		/** 发起延迟探测（列表渲染 / 题库变更 / 重新启用时自动调用） */
+		/** 发起延迟探测（列表渲染 / 题库变更 / 重新启用时自动调用；非 GM 环境为空操作） */
 		const startProbe = () => {
+			if (!statusEl) return;
 			statusEl.replaceChildren(h('span', { className: 'aw-card-status probing' }, '检测中…'));
 			statusEl.title = '正在检测题库连接状态';
 			probeAnswerer(item, handlers.isDisabled(item.name)).then(renderStatus);
@@ -252,7 +263,7 @@ export function createAnswererWrapperList(aw: AnswererWrapper[], handlers: Answe
 				homeLink,
 				h('span', { className: 'aw-card-name' }, item.name),
 				h('span', { className: 'aw-card-badge', title: item.url }, host),
-				statusEl
+				...(statusEl ? [statusEl] : [])
 			],
 			headerTrailing: [switchWrapper],
 			body: [
