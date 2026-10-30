@@ -459,6 +459,9 @@ export const CXProject = Project.create({
 					return $message.info('当前作业已提交、自动答题关闭');
 				}
 
+				// 先等待字体解密完成，否则第一题会以密文搜题导致乱码
+				await ensureCxFontDecrypted();
+
 				const isExam = /\/exam\/preview/.test(location.href);
 				commonWork({
 					mount_script: this,
@@ -635,7 +638,7 @@ export const CXProject = Project.create({
 				['新版考试页面2', 'mooc-ans/exam/test/reVersionTestStartNew']
 			],
 			configs: { notes: workNotes },
-			oncomplete() {
+			async oncomplete() {
 				if ($gm.unsafeWindow.document.querySelector('.mark_info')?.textContent?.includes('不允许整卷预览')) {
 					$message.warn({
 						content: $ui.notes([
@@ -649,6 +652,8 @@ export const CXProject = Project.create({
 					const isExam = /\/exam\/test/.test(location.href);
 					const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
 					BackgroundProject.scripts.render.methods.pin(this);
+					// 先等待字体解密完成，否则第一题会以密文搜题导致乱码
+					await ensureCxFontDecrypted();
 					commonWork({
 						mount_script: this,
 						// 因为超星是每个题目一个页面，这里加快开始速度，避免等待，默认5秒，这里加快为默认3秒间隔
@@ -782,7 +787,7 @@ export const CXProject = Project.create({
 				['作业', '/mooc2/work/dowork']
 			],
 			async oncomplete() {
-				await mappingRecognize();
+				await ensureCxFontDecrypted();
 			}
 		}),
 		// 积分课提示
@@ -1184,6 +1189,21 @@ function mobilelearn(opts: CommonWorkOptions) {
  * @see 算法详解见 utils/font-decrypt/bitmap.ts 文件头注释
  * @see 参考 https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
  */
+/**
+ * 字体解密任务（幂等共享）。
+ *
+ * 解密脚本（cxSecretFontRecognize）与答题脚本（作业/考试）独立并发启动，
+ * 解密需拉取特征表并逐字破解、耗时数秒；若答题先开始，第一题会以密文搜题导致乱码。
+ * 因此答题流程启动前统一 await 本任务，保证搜题时 DOM 已是明文。
+ */
+let cxFontDecryptJob: Promise<void> | undefined;
+function ensureCxFontDecrypted(doc: Document = document): Promise<void> {
+	if (!cxFontDecryptJob) {
+		cxFontDecryptJob = mappingRecognize(doc);
+	}
+	return cxFontDecryptJob;
+}
+
 async function mappingRecognize(doc: Document = document) {
 	// 从 @font-face 的 data URI 中提取加密字体
 	const fontBuffer = extractFontFromStyle(doc, 'font-cxsecret');
