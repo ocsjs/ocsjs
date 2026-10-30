@@ -2230,19 +2230,20 @@ export const ZHSProject = Project.create({
 					if (isIframeVideoJob) {
 						try {
 							const duration = await waitFor(() => $store.get('hikev2_polymas_video_duration'), {
-								timeout_seconds: 1000 * 10
+								timeout_seconds: 1000 * 10,
+								timeout_message: '等待视频时长信息超时'
 							});
-							if (duration) {
-								await waitFor(() => $store.get('hikev2_polymas_video') === 'end', {
-									timeout_seconds: parseFloat(duration || '3') * 1000
-								});
-								$message.info('即将自动跳转下一节');
-								await $.sleep(3000);
-								await next();
-							}
+							await waitFor(() => $store.get('hikev2_polymas_video') === 'end', {
+								timeout_seconds: parseFloat(duration || '3') * 1000,
+								timeout_message: '等待视频播放完成超时'
+							});
 						} catch (e) {
-							$message.error(String(e));
+							// waitFor 超时现在会抛异常：播放状态信号可能丢失，不能直接卡住，提示后继续跳转下一节
+							$message.warn('视频播放状态等待超时，直接跳转下一节（' + String(e) + '）');
 						}
+						$message.info('即将自动跳转下一节');
+						await $.sleep(3000);
+						await next();
 					} else if (isTopVideoJob) {
 						const set = async () => {
 							// 上面操作会导致元素刷新，这里重新获取视频

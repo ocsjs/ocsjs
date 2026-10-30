@@ -44,33 +44,70 @@ export async function waitForMedia(options?: {
 	return res;
 }
 
+/**
+ * 等待元素出现；设置 timeout_seconds 后超时抛出异常（可用 timeout_message 自定义错误信息）
+ */
 export function waitForElement(
 	selector: string | { (): HTMLElement | undefined | null },
-	opts?: { timeout_seconds?: number; check_period_ms?: number }
+	opts?: { timeout_seconds?: number; check_period_ms?: number; timeout_message?: string }
 ) {
 	return waitFor(() => {
 		return typeof selector === 'function' ? selector() : document.querySelector<HTMLElement>(selector);
 	}, opts);
 }
 
-export function waitFor<T>(predicate: () => T, opts?: { timeout_seconds?: number; check_period_ms?: number }) {
-	return new Promise<T>((resolve, reject) => {
-		let timeout: any;
-		const interval = setInterval(() => {
-			const result = predicate();
-			if (result) {
-				clearInterval(interval);
-				timeout && clearTimeout(timeout);
-				resolve(result);
-			}
-		}, opts?.check_period_ms || 1000);
+/**
+ * 异步等待，超时抛出异常
+ * @param predicate 轮询函数，返回真值时 resolve 该值
+ * @param opts.timeout_seconds 超时时间（秒），不传则永不超时
+ * @param opts.check_period_ms 轮询间隔（毫秒），默认 1000
+ * @param opts.timeout_message 超时时抛出的错误信息（建议提供，便于定位是哪个等待超时）
+ */
+export function waitFor<T>(
+	predicate: () => Promise<T> | T,
+	opts?: { timeout_seconds?: number; check_period_ms?: number; timeout_message?: string }
+): Promise<T> {
+	const { timeout_seconds, check_period_ms = 1000, timeout_message } = opts ?? {};
 
-		// 超时跳过
-		if (opts?.timeout_seconds) {
-			timeout = setTimeout(() => {
-				clearInterval(interval);
-				resolve(undefined as any);
-			}, (opts?.timeout_seconds || 10) * 1000);
+	return new Promise<T>((resolve, reject) => {
+		let intervalId: ReturnType<typeof setInterval> | undefined;
+		let timeoutId: ReturnType<typeof setTimeout> | undefined;
+		let isRunning = false;
+		let finished = false;
+
+		const cleanup = () => {
+			finished = true;
+			if (intervalId) clearInterval(intervalId);
+			if (timeoutId) clearTimeout(timeoutId);
+		};
+
+		async function poll() {
+			if (isRunning || finished) return;
+			isRunning = true;
+			try {
+				const result = await predicate();
+				if (finished) return;
+				if (result) {
+					cleanup();
+					resolve(result);
+				}
+			} catch (err) {
+				cleanup();
+				reject(err);
+				return;
+			} finally {
+				isRunning = false;
+			}
+		}
+
+		intervalId = setInterval(poll, check_period_ms);
+		poll();
+
+		if (timeout_seconds != null) {
+			timeoutId = setTimeout(() => {
+				cleanup();
+				reject(new Error(timeout_message ?? `waitFor timeout ${timeout_seconds}s`));
+			}, timeout_seconds * 1000);
 		}
 	});
 }

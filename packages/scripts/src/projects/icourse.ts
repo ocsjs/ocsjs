@@ -1221,10 +1221,11 @@ async function discussion_v2(
 async function networkIdleRequire(rp: RemotePage, cb: () => void | Promise<void>) {
 	await cb();
 	// ux-modal  ux-modal-fadeIn
+	// 探测式等待：弹窗不出现是正常情况，waitFor 超时现在会抛异常，这里吞掉并视为无弹窗
 	const modal = await waitFor(() => document.querySelector('.ux-modal_content_content'), {
 		check_period_ms: 200,
 		timeout_seconds: 1
-	});
+	}).catch(() => undefined);
 	if (modal) {
 		const msg = $message.warn('答题速度过快导致并发限制、3秒后再继续答题。');
 		await rp.click('.ux-modal-btn');
