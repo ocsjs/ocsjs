@@ -52,7 +52,8 @@ interface RefTableCacheRecord {
 let cachePromise: Promise<Cache | undefined> | undefined;
 function openCache(): Promise<Cache | undefined> {
 	if (!cachePromise) {
-		cachePromise = typeof caches === 'undefined' ? Promise.resolve(undefined) : caches.open(CACHE_NAME).catch(() => undefined);
+		cachePromise =
+			typeof caches === 'undefined' ? Promise.resolve(undefined) : caches.open(CACHE_NAME).catch(() => undefined);
 	}
 	return cachePromise;
 }

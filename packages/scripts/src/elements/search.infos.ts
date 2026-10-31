@@ -8,7 +8,8 @@ import { createAccordionCard } from '../utils/ui';
  * 含 query string 与 fragment，避免 URL 被截断（如带 ?response-content-disposition=... 的鉴权链接）
  * 排除空白/引号/</CJK，避免跨越标签或吞掉相邻中文
  */
-const IMG_LINK_RE = /https?:\/\/[^"'<\s一-鿿]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s"'<>一-鿿]*)?(?:#[^\s"'<>一-鿿]*)?/g;
+const IMG_LINK_RE =
+	/https?:\/\/[^"'<\s一-鿿]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s"'<>一-鿿]*)?(?:#[^\s"'<>一-鿿]*)?/g;
 
 /**
  * 判断是否有图片链接，如果有则使用 <img> 标签包裹，但如果已经被 <img> 包裹则不处理
@@ -38,10 +39,7 @@ const transformImgLinkOfQuestion = (question: string) => {
  * 图片题的题干就是图片 URL，同一张图在不同场景下可能返回 http 或 https 协议，
  * 但属于同一道题、应折叠去重，因此先统一抹平协议前缀再剔除非字母数字字符。
  */
-const normalizeQuestion = (question: string) =>
-	question
-		.replace(/https?:\/\//gi, '//')
-		.replace(/[^\p{L}\p{N}]/gu, '');
+const normalizeQuestion = (question: string) => question.replace(/https?:\/\//gi, '//').replace(/[^\p{L}\p{N}]/gu, '');
 
 /**
  * 搜索结果元素

@@ -1445,7 +1445,8 @@ export const CommonProject = Project.create({
 				});
 				CommonProject.scripts.workResults.on('work-current-result-change', (cur) => {
 					if (cur.searching) {
-						if (working_msg) working_msg.innerHTML = loadingSpinSvg + ` 正在搜题 ${formatQuestionForMessage(cur.question)}`;
+						if (working_msg)
+							working_msg.innerHTML = loadingSpinSvg + ` 正在搜题 ${formatQuestionForMessage(cur.question)}`;
 					}
 				});
 			}
