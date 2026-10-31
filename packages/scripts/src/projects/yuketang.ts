@@ -761,8 +761,7 @@ const YKT_BLANK_INPUT_SELECTOR = 'input.blank-item-dynamic, input[placeholder="�
 function cloneYktForTextExtract(el: HTMLElement): HTMLElement {
 	const clone = el.cloneNode(true) as HTMLElement;
 	for (const img of Array.from(clone.querySelectorAll('img.kfformula'))) {
-		const latex =
-			img.getAttribute('data-latex') || (img.getAttribute('data-slatex') || '').replace(/\\\\/g, '\\');
+		const latex = img.getAttribute('data-latex') || (img.getAttribute('data-slatex') || '').replace(/\\\\/g, '\\');
 		img.replaceWith(latex.trim() ? ` $${latex}$ ` : ' [公式] ');
 	}
 	return clone;

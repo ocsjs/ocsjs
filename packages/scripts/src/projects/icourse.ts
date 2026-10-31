@@ -546,14 +546,14 @@ export const ICourseProject = Project.create({
 
 							await remotePage?.click(getCurrentLesson());
 							// 判断章节
-							let nextLesson =
+							const nextLesson =
 								getCurrentLesson().nextElementSibling?.querySelector('button.text-primary-700')?.nextElementSibling;
 
 							if (nextLesson) {
 								return [() => nextLesson];
 							}
 							await remotePage?.click(getCurrentChapter());
-							let nextChapter =
+							const nextChapter =
 								getCurrentChapter().nextElementSibling?.querySelector('button.text-primary-700')?.nextElementSibling;
 
 							if (nextChapter) {
@@ -584,7 +584,6 @@ export const ICourseProject = Project.create({
 				// 课件首页
 				if (document.querySelector('[class="course-content-card"]')) {
 					$message.info({ content: '请手动进入视频、作业页面，脚本会自动运行。', duration: 10 });
-					return;
 				} else {
 					this.methods.main();
 				}

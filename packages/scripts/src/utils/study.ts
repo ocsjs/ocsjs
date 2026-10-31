@@ -70,14 +70,16 @@ export function waitFor<T>(
 	const { timeout_seconds, check_period_ms = 1000, timeout_message } = opts ?? {};
 
 	return new Promise<T>((resolve, reject) => {
-		let intervalId: ReturnType<typeof setInterval> | undefined;
 		let timeoutId: ReturnType<typeof setTimeout> | undefined;
 		let isRunning = false;
 		let finished = false;
 
+		// setInterval 回调与 poll 内的 await 均为异步执行，此处 cleanup 必定已完成初始化
+		const intervalId = setInterval(poll, check_period_ms);
+
 		const cleanup = () => {
 			finished = true;
-			if (intervalId) clearInterval(intervalId);
+			clearInterval(intervalId);
 			if (timeoutId) clearTimeout(timeoutId);
 		};
 
@@ -100,7 +102,6 @@ export function waitFor<T>(
 			}
 		}
 
-		intervalId = setInterval(poll, check_period_ms);
 		poll();
 
 		if (timeout_seconds != null) {
