@@ -769,7 +769,6 @@ export const BackgroundProject = Project.create({
 					for (const script of devScripts) {
 						script.showPanel();
 					}
-					$message.info({ content: '检测到开发者工具已打开，已显示 开发者调试/请求记录 面板。', duration: 5 });
 				});
 			},
 			configs: {
@@ -1206,6 +1205,7 @@ export const BackgroundProject = Project.create({
 					CXProject.scripts.autoRead,
 					ZHSProject.scripts['study-center'],
 					ZHSProject.scripts['work-center'],
+					ICourseProject.scripts.study_v2,
 					[ICourseProject.scripts.dispatcher, ICourseProject.scripts.study],
 					ICourseProject.scripts.work,
 					[ZJYProject.scripts.dispatcher, ZJYProject.scripts.study],
