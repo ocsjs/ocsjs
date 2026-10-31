@@ -12,19 +12,24 @@
 	},
 	"changelog-sections": [
 		{
-			"type": "feat"
+			"type": "feat",
+			"section": "✨ 新功能"
 		},
 		{
-			"type": "fix"
+			"type": "fix",
+			"section": "🐛 问题修复"
 		},
 		{
-			"type": "perf"
+			"type": "perf",
+			"section": "⚡ 优化改进"
 		},
 		{
-			"type": "docs"
+			"type": "docs",
+			"section": "📝 文档"
 		},
 		{
-			"type": "refactor"
+			"type": "refactor",
+			"section": "♻️ 代码重构"
 		},
 		{
 			"type": "chore",

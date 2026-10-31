@@ -1,0 +1,6 @@
+# 推送前预检测：与 GitHub Actions 构建流程（pnpm tsc）一致，
+# 防止格式/ESLint/类型错误进入远端导致 CI 失败返工。
+# 这里使用只校验不写入的 lint:check（避免 hook 静默修改已提交代码）。
+# 需要跳过时使用：git push --no-verify
+echo "🔍 push 前预检测：prettier + eslint + tsc ..."
+pnpm check

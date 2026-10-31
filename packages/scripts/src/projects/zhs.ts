@@ -64,6 +64,10 @@ const gxk_read_notes = [
 /**
  * 2024 下半年智慧树更新至两个版本，其中一个改进了部分UI，所以这里使用两个处理器 StudyVideoH5,FusionCourseH5 对不同UI进行处理
  */
+interface VideoProcessor {
+	switchPlaybackRate(rate: number, remotePage?: RemotePage): void | Promise<void>;
+	switchLine(definition: 'line1bq' | 'line1gq', remotePage?: RemotePage): void | Promise<void>;
+}
 interface ZHSProcessor extends VideoProcessor {
 	remotePage: RemotePage | undefined | void;
 	init?(): void;
@@ -73,10 +77,6 @@ interface ZHSProcessor extends VideoProcessor {
 	getNext(opts: { next: boolean; restudy: boolean }): HTMLElement | undefined;
 	hideDialog(): void;
 	handleTestDialog(remotePage?: RemotePage): void | Promise<void>;
-}
-interface VideoProcessor {
-	switchPlaybackRate(rate: number, remotePage?: RemotePage): void | Promise<void>;
-	switchLine(definition: 'line1bq' | 'line1gq', remotePage?: RemotePage): void | Promise<void>;
 }
 
 class StudyVideoH5 implements ZHSProcessor {
@@ -603,7 +603,7 @@ class HikeV2 extends StudyVideoH5 implements ZHSProcessor {
 	}
 
 	getNext(opts: { next: boolean; restudy: boolean }) {
-		let jobs = Array.from(document.querySelectorAll<HTMLElement>('.el-tree-node')).filter(
+		const jobs = Array.from(document.querySelectorAll<HTMLElement>('.el-tree-node')).filter(
 			(e) => e.querySelector('.el-tree-node__children')?.children.length === 0
 		);
 		const current_index = jobs.findIndex((job) => job.classList.contains('is-current'));

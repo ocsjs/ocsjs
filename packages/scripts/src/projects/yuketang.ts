@@ -416,11 +416,21 @@ async function setupYuketangFontDecrypt(doc: Document = document) {
 	// 注意：不能用 waitForElement——它写死全局 document，而加密文字可能在
 	// iframe 的 document 里（会白等整个超时）。这里按 doc 短轮询，即时命中。
 	const waitStart = Date.now();
+	// 正文已渲染且连续多次轮询均无密文：本题无加密文字（如纯公式题），提前放行，
+	// 迟到的密文仍由下方 watchElements 监听器兜底解密
+	let noCipherStable = 0;
 	while (!doc.querySelector(YKT_ENCRYPTED_SELECTOR) && Date.now() - waitStart < 3000) {
+		const bodyRendered = !!doc.querySelector('.container-problem .problem-body, .exam-body, .subject-item');
+		noCipherStable = bodyRendered ? noCipherStable + 1 : 0;
+		if (noCipherStable >= 3) {
+			$console.log('题目已渲染且未检测到加密文字，跳过初始解密等待。');
+			break;
+		}
 		await $.sleep(200);
 	}
 	if (!doc.querySelector(YKT_ENCRYPTED_SELECTOR)) {
 		$console.log('暂未检测到加密文字，将持续监听页面变化。');
+		dec_msg?.remove();
 	}
 
 	let firstDecrypt = true;
@@ -701,7 +711,8 @@ async function submitYktCurrentQuestion(doc: Document, order: string): Promise<b
 /**
  * 等待当前题目"可用"。就绪条件（需连续两次满足，防 Vue 分批渲染与解密竞态）：
  *   1. 题目标识已渲染（切题后 marker 变化）
- *   2. 正文 .problem-body 有非空文本（防止"题号先渲染、正文经 XHR 后到"时读到空/密文）
+ *   2. 正文 .problem-body 有非空文本或图片（防止"题号先渲染、正文经 XHR 后到"时读到空/密文；
+ *      纯公式题题干只有 img.kfformula，无文本）
  *   3. 无残留密文/解密中的元素（解密通过 decryptYktNow 主动触发，不依赖监听器时序）
  * 超时后放行（降级处理）。
  */
@@ -720,7 +731,10 @@ async function waitYktQuestionReady(prevMarker: string | null, doc: Document, ti
 	while (Date.now() - start < timeoutMs) {
 		// 主动解密当前密文并等待完成（幂等；无密文时立即返回）
 		await decryptYktNow(doc);
-		const hasContent = !!doc.querySelector('.container-problem .problem-body')?.textContent?.trim();
+		// 纯公式/图片题题干没有文本（仅 img.kfformula 等），图片也算有效内容，
+		// 否则会一直误判"正文未渲染"而等待到超时
+		const body = doc.querySelector('.container-problem .problem-body');
+		const hasContent = !!body?.textContent?.trim() || !!body?.querySelector('img');
 		const hasCipher = !!doc.querySelector(
 			`.container-problem ${YKT_ENCRYPTED_SELECTOR}, .container-problem .xuetangx-com-font-decrypting`
 		);
@@ -761,8 +775,7 @@ const YKT_BLANK_INPUT_SELECTOR = 'input.blank-item-dynamic, input[placeholder="�
 function cloneYktForTextExtract(el: HTMLElement): HTMLElement {
 	const clone = el.cloneNode(true) as HTMLElement;
 	for (const img of Array.from(clone.querySelectorAll('img.kfformula'))) {
-		const latex =
-			img.getAttribute('data-latex') || (img.getAttribute('data-slatex') || '').replace(/\\\\/g, '\\');
+		const latex = img.getAttribute('data-latex') || (img.getAttribute('data-slatex') || '').replace(/\\\\/g, '\\');
 		img.replaceWith(latex.trim() ? ` $${latex}$ ` : ' [公式] ');
 	}
 	return clone;
@@ -792,7 +805,8 @@ function createYktAnswerWorker({
 	const redundanceWords = redundanceWordsText.split('\n').filter(Boolean);
 	const titleTransform = (titles: (HTMLElement | undefined)[]) =>
 		titles
-			.filter((t) => t?.innerText)
+			// 纯公式/图片题干 innerText 为空但仍是有效题目（公式会提取为 LaTeX 文本），不能过滤
+			.filter((t) => !!t && (!!t.textContent?.trim() || !!t.querySelector('img')))
 			.map((t) =>
 				t
 					? removeRedundantWords(
@@ -1134,7 +1148,7 @@ function createYktEmbeddedWorkLoop(opts: CommonWorkOptions, doc: Document, onDon
 		if (!completedAll) {
 			$message.warn({
 				content: `题目未全部完成（已作答提交 ${finishCount}/${results.length} 题），请手动检查剩余题目。`,
-				duration: 0
+				duration: 60
 			});
 		} else {
 			$message.success({ content: `作业完成，全部 ${finishCount} 题已作答并逐题提交。` });
