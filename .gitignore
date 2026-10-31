@@ -147,5 +147,8 @@ dist/
 # 测试生成的图片输出
 tests/image/
 
-# 开发工具 
+# 开发工具
 .codebuddy/
+
+# husky 生成的钩子包装脚本（prepare 时自动重建）
+.husky/_
