@@ -1,4 +1,3 @@
-import { $store } from 'easy-us';
 import type { RefTable } from './types';
 
 /**
@@ -36,8 +35,8 @@ const refTableCache = new Map<string, Promise<RefTable>>();
  */
 const REVALIDATE_WITH_VALIDATOR_MS = 60 * 60 * 1000;
 const REVALIDATE_NO_VALIDATOR_MS = 7 * 24 * 60 * 60 * 1000;
-/** 缓存格式版本：存储结构变化时递增使旧缓存整体失效 */
-const REF_TABLE_CACHE_VERSION = 'v1';
+/** CacheStorage 名称（递增版本号可使旧缓存整体失效） */
+const CACHE_NAME = 'ocs-font-decrypt-ref-table-v1';
 
 interface RefTableCacheRecord {
 	/** 上次回源校验时间 */
@@ -46,62 +45,81 @@ interface RefTableCacheRecord {
 	etag?: string;
 	/** 下载时响应的 Last-Modified（ETag 缺失时的备选验证器） */
 	lastModified?: string;
-	/** base64 编码的 FRB2 二进制 */
-	data: string;
+	/** FRB2 二进制 */
+	data: ArrayBuffer;
 }
 
-const storeKey = (url: string) => `ocs.font-decrypt.ref-table.${REF_TABLE_CACHE_VERSION}:${url}`;
-
-function bufToBase64(buf: ArrayBuffer): string {
-	const bytes = new Uint8Array(buf);
-	let bin = '';
-	const CHUNK = 0x8000;
-	for (let i = 0; i < bytes.length; i += CHUNK) {
-		bin += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
+let cachePromise: Promise<Cache | undefined> | undefined;
+function openCache(): Promise<Cache | undefined> {
+	if (!cachePromise) {
+		cachePromise = typeof caches === 'undefined' ? Promise.resolve(undefined) : caches.open(CACHE_NAME).catch(() => undefined);
 	}
-	return btoa(bin);
-}
-
-function base64ToBuf(b64: string): ArrayBuffer {
-	const bin = atob(b64);
-	const bytes = new Uint8Array(bin.length);
-	for (let i = 0; i < bin.length; i++) {
-		bytes[i] = bin.charCodeAt(i);
-	}
-	return bytes.buffer;
+	return cachePromise;
 }
 
 /**
- * 读取持久化缓存记录（GM 存储，跨域名/跨会话生效）。
- * 不过滤时间（过期记录仍用于条件请求与 stale 兜底）；损坏或非预期格式时清除并返回 undefined
+ * 读取持久化缓存记录（CacheStorage：异步读写，不阻塞主线程）。
+ *
+ * 不使用 GM 存储（$store）的原因：Tampermonkey/Violentmonkey 的 GM_setValue 是
+ * "全量 parse → 修改 → 全量 stringify" 的同步实现，项目中日志/配置等高频写操作会
+ * 连带上 MB 级的字体缓存一起序列化，导致页面卡顿甚至卡死。
  */
-function readPersistedRecord(url: string): RefTableCacheRecord | undefined {
+async function readPersistedRecord(url: string): Promise<RefTableCacheRecord | undefined> {
+	const cache = await openCache();
+	if (!cache) return undefined;
 	try {
-		const record = $store.get(storeKey(url)) as RefTableCacheRecord | undefined;
-		if (!record || typeof record.data !== 'string' || typeof record.updatedAt !== 'number') {
-			return undefined;
-		}
-		return record;
+		const res = await cache.match(url);
+		if (!res) return undefined;
+		const updatedAt = Number(res.headers.get('x-ocs-updated-at') || 0);
+		if (!updatedAt) return undefined;
+		const data = await res.arrayBuffer();
+		return {
+			updatedAt,
+			etag: res.headers.get('etag') ?? undefined,
+			lastModified: res.headers.get('last-modified') ?? undefined,
+			data
+		};
 	} catch {
-		$store.delete(storeKey(url));
 		return undefined;
 	}
 }
 
-/** 写入持久化缓存；存储失败（容量等）不影响主流程 */
-function persist(url: string, buf: ArrayBuffer, etag?: string, lastModified?: string): void {
+/** 构造缓存 Response（校验时间与验证器放在响应头中，body 为原始二进制） */
+function buildCachedResponse(record: RefTableCacheRecord): Response {
+	const headers = new Headers({ 'x-ocs-updated-at': String(record.updatedAt) });
+	if (record.etag) headers.set('etag', record.etag);
+	if (record.lastModified) headers.set('last-modified', record.lastModified);
+	return new Response(record.data, { headers });
+}
+
+/** 写入持久化缓存；失败（容量/被清除等）不影响主流程 */
+async function persist(url: string, buf: ArrayBuffer, etag?: string, lastModified?: string): Promise<void> {
+	const cache = await openCache();
+	if (!cache) return;
 	try {
-		const record: RefTableCacheRecord = { updatedAt: Date.now(), etag, lastModified, data: bufToBase64(buf) };
-		$store.set(storeKey(url), record);
+		await cache.put(url, buildCachedResponse({ updatedAt: Date.now(), etag, lastModified, data: buf }));
 	} catch {
 		// 忽略
 	}
 }
 
 /** 304 未变更时仅刷新校验时间，内容不变 */
-function touchPersisted(url: string, record: RefTableCacheRecord): void {
+async function touchPersisted(url: string, record: RefTableCacheRecord): Promise<void> {
+	const cache = await openCache();
+	if (!cache) return;
 	try {
-		$store.set(storeKey(url), { ...record, updatedAt: Date.now() });
+		await cache.put(url, buildCachedResponse({ ...record, updatedAt: Date.now() }));
+	} catch {
+		// 忽略
+	}
+}
+
+/** 删除持久化缓存（缓存内容损坏时调用） */
+async function deletePersisted(url: string): Promise<void> {
+	const cache = await openCache();
+	if (!cache) return;
+	try {
+		await cache.delete(url);
 	} catch {
 		// 忽略
 	}
@@ -150,17 +168,17 @@ function parseRefTable(buf: ArrayBuffer): RefTable {
 
 /**
  * 实际加载逻辑：
- * 1. 持久化缓存（GM 存储，跨域名/跨会话）新鲜期内直接使用，零网络请求
+ * 1. 持久化缓存（CacheStorage，异步不阻塞主线程）新鲜期内直接使用，零网络请求
  * 2. 过期后回源校验：带 If-None-Match / If-Modified-Since 条件请求头，
  *    服务端未变更返回 304（几乎零流量）继续用缓存；已变更返回 200 替换缓存
  * 3. 网络失败时回退本地缓存（stale-if-error），仍无则抛错
  */
 async function fetchAndParseRefTable(url: string): Promise<RefTable> {
-	const record = readPersistedRecord(url);
+	const record = await readPersistedRecord(url);
 	const hasValidator = !!(record?.etag || record?.lastModified);
 	const interval = hasValidator ? REVALIDATE_WITH_VALIDATOR_MS : REVALIDATE_NO_VALIDATOR_MS;
 
-	const parseRecord = (r: RefTableCacheRecord): RefTable => parseRefTable(base64ToBuf(r.data));
+	const parseRecord = (r: RefTableCacheRecord): RefTable => parseRefTable(r.data);
 
 	// 1. 缓存新鲜：零网络
 	if (record && Date.now() - record.updatedAt <= interval) {
@@ -169,7 +187,7 @@ async function fetchAndParseRefTable(url: string): Promise<RefTable> {
 			return parseRecord(record);
 		} catch {
 			// 缓存内容损坏，清除后走网络
-			$store.delete(storeKey(url));
+			await deletePersisted(url);
 		}
 	}
 
@@ -188,7 +206,7 @@ async function fetchAndParseRefTable(url: string): Promise<RefTable> {
 		// 304：服务端文件未变更，仅刷新校验时间，继续用本地缓存
 		if (res.status === 304 && record) {
 			console.debug('[font-decrypt] 特征表服务端未变更（304），沿用本地缓存：', url);
-			touchPersisted(url, record);
+			await touchPersisted(url, record);
 			return parseRecord(record);
 		}
 		if (!res.ok) {
@@ -196,7 +214,7 @@ async function fetchAndParseRefTable(url: string): Promise<RefTable> {
 		}
 		const buf = await res.arrayBuffer();
 		const table = parseRefTable(buf);
-		persist(url, buf, res.headers.get('etag') ?? undefined, res.headers.get('last-modified') ?? undefined);
+		await persist(url, buf, res.headers.get('etag') ?? undefined, res.headers.get('last-modified') ?? undefined);
 		console.debug('[font-decrypt] 特征表已从网络加载并缓存：', url);
 		return table;
 	} catch (err) {
@@ -206,7 +224,7 @@ async function fetchAndParseRefTable(url: string): Promise<RefTable> {
 				console.warn('[font-decrypt] 特征表网络加载失败，回退使用本地缓存：', url);
 				return parseRecord(record);
 			} catch {
-				$store.delete(storeKey(url));
+				await deletePersisted(url);
 			}
 		}
 		throw err;
@@ -218,7 +236,7 @@ async function fetchAndParseRefTable(url: string): Promise<RefTable> {
 /**
  * 加载参考特征表（同一 URL 只加载一次；失败后清除缓存允许下次重试）
  *
- * 缓存层级：内存（页面级） -> GM 持久化（跨域名/跨会话） -> CDN（条件请求校验）
+ * 缓存层级：内存（页面级） -> CacheStorage（跨会话，异步不阻塞主线程） -> CDN（条件请求校验）
  * 服务端更新文件后无需发版：校验间隔到期自动发现新版本，见 REVALIDATE_* 常量说明
  */
 export function loadRefTable(url: string): Promise<RefTable> {
