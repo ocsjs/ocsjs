@@ -1,5 +1,14 @@
 # Changelog
 
+## [5.2.5](https://github.com/ocsjs/ocsjs/compare/5.2.4...5.2.5) (2026-10-31)
+
+
+### 🐛 问题修复
+
+* 修复 GitHub Actions 构建报错（eslint 规则与 prettier 格式） ([812bb3e](https://github.com/ocsjs/ocsjs/commit/812bb3e330da59db501d6aa0bc52e6eff378bcf5))
+* 修复 release-please changelog 缺少 feat/fix 等分段 ([0140810](https://github.com/ocsjs/ocsjs/commit/0140810c2e41455c6ef52b706cf0461f0fa7fcef))
+* 修复雨课堂仅公式题目下为空的问题、移除开发者工具提示 ([57204be](https://github.com/ocsjs/ocsjs/commit/57204be238339161d071e900051758322ade5117))
+
 ## [5.2.4](https://github.com/ocsjs/ocsjs/compare/5.2.3...5.2.4) (2026-10-30)
 
 
