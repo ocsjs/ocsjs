@@ -1,7 +1,6 @@
 import { $, AnswererWrapper, WorkUploadType } from '@ocsjs/core';
 import { $ui, $message, $modal, MessageElement, h } from 'easy-us';
 import { $console } from '../projects/background';
-import { answerWrapperEmptyWarning } from './work';
 import { MessageAttrs } from 'easy-us/lib/interfaces/custom-window';
 
 export interface CommonWorkOptions {
@@ -12,6 +11,10 @@ export interface CommonWorkOptions {
 	stopSecondWhenFinish: number;
 	redundanceWordsText: string;
 	answerSeparators: string;
+	/** 题库搜不到答案时随机作答（选择/判断题），默认开启 */
+	randomWhenNoResult?: boolean;
+	/** 题库搜不到答案时优先检索课程内容作答，默认开启 */
+	courseContextSearch?: boolean;
 }
 
 /** 创建答题预处理信息 */
@@ -32,8 +35,10 @@ export function workPreCheckMessage(
 	const { onrun, onNoAnswererWrappers, onclose, ...opts } = options;
 
 	if (opts.answererWrappers.length === 0) {
+		// 未配置题库也能答题：走课程内容检索/随机作答兜底（onEmptySearchInfos）
 		onNoAnswererWrappers?.(opts);
-		return answerWrapperEmptyWarning(0);
+		$message.warn({ content: '未配置题库，将使用课程内容检索与随机作答兜底。', duration: 5 });
+		onrun(opts);
 	} else {
 		options.start_delay_seconds = options.start_delay_seconds ?? 5;
 		return $message.info({

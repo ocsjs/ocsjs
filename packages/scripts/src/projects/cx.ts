@@ -30,6 +30,28 @@ import Typr from 'typr.js';
 import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { waitForElement, waitForMedia } from '../utils/study';
+import {
+	CourseContext,
+	fetchJobPassed,
+	fetchCourseChaptersOnline,
+	getCourseChapters,
+	fetchChapterCardNums,
+	fetchCardHtml
+} from './cx-context';
+import { extractMArg, computeUnfinishedJobs, toUnfinishedJob } from '../utils/cx-card';
+import type { UnfinishedJob } from '../utils/cx-card';
+import { CXAutoStudy } from './cx-auto-study';
+import {
+	buildSearchInfo,
+	CONTEXT_SOURCE_NAME,
+	judgementByNegation,
+	pickOptionsAboveThreshold
+} from '../utils/fallback-core';
+import { scoreCandidate, pickMostSimilarOption, pickMostSimilarOptions } from '../utils/text-match';
+import { webSearchPick } from './web-search';
+import { startPlaybackHumanizer, humanSleep } from '../utils/human';
+import { pickLowestSource, qualityRankOf } from '../utils/video-quality';
+import { pageInvoke } from '../utils/page-bridge';
 
 // @ts-ignore
 let top: Window = globalThis.top;
@@ -294,6 +316,13 @@ export const CXProject = Project.create({
 					attrs: { type: 'checkbox', title: '开启：PPT/书籍自动翻阅' },
 					defaultValue: true
 				},
+				enableDocument: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '文档自动阅读',
+					attrs: { type: 'checkbox', title: '开启：PDF/文档任务点自动滚动阅读到底部，完成后自动继续' },
+					defaultValue: true
+				},
 				enableChapterTest: {
 					elementClassName: 'config-details',
 					showIf: 'cx.new.study.enables',
@@ -307,32 +336,84 @@ export const CXProject = Project.create({
 					label: '链接任务自动完成',
 					attrs: { type: 'checkbox', title: '开启：链接任务自动完成' },
 					defaultValue: true
+				},
+				waitMediaPassed: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '视频完成后校验任务点',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'视频播放结束后，以页面显示的任务点完成状态为准，未完成会自动补刷末尾一小段（最多3次），确认完成后才进入下一任务点。'
+					},
+					defaultValue: true
+				},
+				humanSimulate: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '拟人化学习',
+					attrs: {
+						type: 'checkbox',
+						title: '播放时倍速随机抖动、偶尔短暂暂停、随机鼠标活动，模拟真人学习习惯，降低行为检测风险。'
+					},
+					defaultValue: true
+				},
+				autoLowestQuality: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '自动最低清晰度',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'播放器初始化时只保留最低清晰度（流畅）的视频源，刷课流量可降低 50% 以上；任务点完成判定由服务端按播放时长计算，与清晰度无关。'
+					},
+					defaultValue: true
+				},
+				verifyChapterFinished: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '章节任务点完成校验',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'当前章节全部任务点运行完毕后，以卡片数据为准逐个复核，未完成的自动跳回对应节点补刷（最多 3 轮），全部确认完成后才进入下一章。'
+					},
+					defaultValue: true
+				},
+				verifyCourseFinished: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '课程完成后在线校验',
+					attrs: {
+						type: 'checkbox',
+						title:
+							'宣布「全部任务点已完成」之前，在线重新拉取章节树统计未完成数（绕过页面滞后计数）；仍有未完成时自动跳转到第一个未完成章节继续刷课（最多 2 轮）。'
+					},
+					defaultValue: true
 				}
 			},
+
 			onrender({ panel }) {
 				if (!CommonProject.scripts.settings.cfg.answererWrappers?.length) {
 					answerWrapperEmptyWarning(10);
 				}
 
-				// 高倍速警告
+				// 高倍速提示：所有倍速均可正常选择使用，仅对 >2x 做一次不阻断的风险提示
 				this.offConfigChange(state.study.playbackRateWarningListenerId);
+				let rateWarned = -1;
 				state.study.playbackRateWarningListenerId =
 					this.onConfigChange('playbackRate', (playbackRate) => {
-						if (playbackRate > 2) {
-							$modal.alert({
-								title: '⚠️高倍速警告',
-								content: $ui.notes([
-									'⚠️高倍速可能导致学习记录清空/回退',
-									'⚠️超星后台可以看到学习时长，请谨慎设置',
-									'⚠️如已清空/回退，请降低倍速至1-2倍'
-								]),
-								maskCloseable: false,
-								confirmButtonText: '我已知晓风险'
+						const rate = parseFloat(String(playbackRate));
+						// 同一倍速只提示一次，且不阻断操作（自动消失，可手动关闭）
+						if (rate > 2 && rate !== rateWarned) {
+							rateWarned = rate;
+							$message.warn({
+								content: '当前 ' + rate + 'x 倍速：超星可能清空/回退高倍速产生的学习记录，如遇异常请降回 1-2x。',
+								duration: 8000
 							});
 						}
 					}) || 0;
 			},
-			// 这里不使用 oncompelete ，如果某个资源一直在加载中，就会导致 oncomplete 一直无法触发，导致脚本无法运行，所以改为 onactive 只要匹配上就会触发
 			async onactive() {
 				/** iframe 跨域问题， 必须在 iframe 中执行 ， 所以脱离学习脚本运行。 */
 				if (/\/readsvr\/book\/mooc/.test(location.href)) {
@@ -406,6 +487,41 @@ export const CXProject = Project.create({
 						workOptions: CommonProject.scripts.settings.methods.getWorkOptions()
 					});
 				}
+			}
+		}),
+		autoStudy: new Script({
+			name: '🎓 自动刷课',
+			namespace: 'cx.new.auto-study',
+			matches: [
+				['新版课程列表页', 'mooc2-ans.chaoxing.com/visit/interaction'],
+				['学习通课程列表', 'chaoxing.com/space/index'],
+				['新版个人首页', 'chaoxing.com/base'],
+				['课表页', 'kb.chaoxing.com/res/pc/curriculum'],
+				['课程首页', /mooc2-ans\.chaoxing\.com\/mooc2-ans\/mycourse\/stu\?/],
+				['章节树页', '/mycourse/studentcourse']
+			],
+			configs: {
+				notes: {
+					defaultValue: $ui.notes([
+						'在任意页面点「扫描课程」即可直接扫描（不跳转），扫描结果自动记录，下次打开直接可用；',
+						'勾选课程后点「开始刷课」自动逐课程学习，学习中可随时点「结束」停止自动跳转。',
+						'进入课程后的学习过程由「课程学习」脚本自动完成。'
+					]).outerHTML
+				}
+			},
+			async oncomplete() {
+				const log = (...args: any[]) => $console.log(...args);
+				if (location.href.includes('/mycourse/studentcourse')) {
+					await CXAutoStudy.onStudentCourse(log);
+				} else if (location.href.includes('/mycourse/stu?')) {
+					await CXAutoStudy.onCourseHome(log);
+				} else {
+					// 课程列表页/个人首页：置顶面板（扫描由用户在面板里手动触发，不自动扫）
+					CommonProject.scripts.render.methods.pin(CXProject.scripts.autoStudy);
+				}
+			},
+			onrender({ panel }) {
+				CXAutoStudy.renderInto(panel.body, (...args: any[]) => $console.log(...args));
 			}
 		}),
 		work: new Script({
@@ -606,60 +722,96 @@ export const CXProject = Project.create({
 			matches: [['所有页面', /.*/]],
 			methods() {
 				return {
-					/** 解除输入框无法复制粘贴 */
+					/** 解除输入框无法复制粘贴（UE 编辑器位于页面世界，经桥接安装点击监听） */
 					hackEditorPaste() {
-						try {
-							const instants = $gm.unsafeWindow?.UE?.instants || [];
-							for (const key in instants) {
-								const ue = instants[key];
-
-								/**
-								 * 新建一个文本框给用户编辑，然后同步到超星编辑器，防止http下浏览器无法读取剪贴板
-								 */
-
-								// eslint-disable-next-line no-proto
-								if (ue?.textarea) {
-									ue.body.addEventListener('click', async () => {
-										// http 下无法读取剪贴板，通过弹窗让用户输入然后同步到编辑器
-										if (CXProject.scripts.study.cfg.showTextareaWhenEdit) {
-											const defaultText = h('span', { innerHTML: ue.textarea.value }).textContent;
-											$modal.prompt({
-												content:
-													'请在此文本框进行编辑，防止超星无法复制粘贴。(如需关闭请前往设置: 课程学习-编辑时显示自定义编辑框)',
-												width: 800,
-												inputDefaultValue: defaultText || '',
-												modalInputType: 'textarea',
-												onConfirm: (val = '') => {
-													ue.setContent(
-														val
-															.split('\n')
-															.map((line) => `<p>${line}</p>`)
-															.join('')
-													);
-												}
-											});
+						(async () => {
+							try {
+								const count = await pageInvoke<number>(
+									`() => {
+										var instants = (window.UE && window.UE.instants) || [];
+										var n = 0;
+										for (var key in instants) {
+											var ue = instants[key];
+											if (ue && ue.textarea && ue.body) {
+												n++;
+												ue.body.addEventListener('click', function () {
+													try {
+														document.dispatchEvent(
+														new CustomEvent('ocs-ue-edit', {
+														detail: { id: key, html: ue.textarea ? ue.textarea.value : '' }
+														}
+														));
+													} catch (e) {}
+												});
+											}
+											try {
+											if (window.editorPaste) ue.removeListener('beforepaste', window.editorPaste);
+											} catch (e) {}
+											try {
+											if (window.myEditor_paste) ue.removeListener('beforepaste', window.myEditor_paste);
+											} catch (e) {}
 										}
-									});
-
-									if ($gm.unsafeWindow.editorPaste) {
-										ue.removeListener('beforepaste', $gm.unsafeWindow.editorPaste);
-									}
-									if ($gm.unsafeWindow.myEditor_paste) {
-										ue.removeListener('beforepaste', $gm.unsafeWindow.myEditor_paste);
-									}
+										return n;
+									}`,
+									[],
+									8000
+								);
+								if (count && count > 0) {
+									$console.log('已解除输入框无法复制粘贴限制');
 								}
+							} catch (e) {
+								/* UE 未加载等情况忽略 */
 							}
-						} catch {}
+						})();
 					}
 				};
 			},
 			oncomplete() {
+				// 编辑内容跨世界回写：隔离世界弹窗编辑 → MAIN 世界 UE 实例 setContent
+				window.addEventListener('ocs-ue-edit', (ev: any) => {
+					const d = ev.detail || {};
+					if (!CXProject.scripts.study.cfg.showTextareaWhenEdit) return;
+					const defaultText = h('span', { innerHTML: d.html || '' }).textContent;
+					$modal.prompt({
+						content:
+							'请在此文本框进行编辑，防止超星无法复制粘贴。(如需关闭请前往设置: 课程学习-编辑时显示自定义编辑框)',
+						width: 800,
+						inputDefaultValue: defaultText || '',
+						modalInputType: 'textarea',
+						onConfirm: (val = '') => {
+							pageInvoke(
+								`(id, content) => {
+									var ue = window.UE && window.UE.instants && window.UE.instants[id];
+									if (ue && ue.setContent) ue.setContent(content);
+									return true;
+								}`,
+								[
+									d.id,
+									val
+										.split('\n')
+										.map((line) => `<p>${line}</p>`)
+										.join('')
+								]
+							).catch(() => undefined);
+						}
+					});
+				});
 				const hackInterval = setInterval(() => {
-					if (typeof $gm.unsafeWindow.UE !== 'undefined') {
-						clearInterval(hackInterval);
-						this.methods.hackEditorPaste();
-						console.log('已解除输入框无法复制粘贴限制');
-					}
+					(async () => {
+						try {
+							const ready = await pageInvoke<boolean>(
+								"() => typeof window.UE !== 'undefined' && !!window.UE.instants",
+								[],
+								5000
+							);
+							if (ready) {
+								clearInterval(hackInterval);
+								this.methods.hackEditorPaste();
+							}
+						} catch (e) {
+							clearInterval(hackInterval);
+						}
+					})();
 				}, 500);
 			}
 		}),
@@ -746,6 +898,8 @@ function workOrExam(
 		thread,
 		redundanceWordsText,
 		answerSeparators,
+		courseContextSearch,
+		randomWhenNoResult,
 		preview_mode
 	}: CommonWorkOptions & {
 		// 整卷预览模式
@@ -832,6 +986,8 @@ function workOrExam(
 					const type = (typeInput ? getQuestionType(parseInt(typeInput.value)) : undefined) || 'unknown';
 					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
 						await $.sleep((period ?? 3) * 1000);
+						// 未配置题库时返回空结果，由 onEmptySearchInfos 兜底（课程内容检索/随机作答）
+						if (!answererWrappers?.length) return [] as any;
 						return defaultAnswerWrapperHandler(answererWrappers, {
 							type,
 							title,
@@ -848,6 +1004,20 @@ function workOrExam(
 				throw new Error('题目为空，请查看题目是否为空，或者忽略此题');
 			}
 		},
+
+		/** 题库无结果兜底：课程内容检索 → 随机选择 */
+		onEmptySearchInfos: (ctx) =>
+			handleEmptySearchInfos(ctx, {
+				courseContextSearch,
+				randomWhenNoResult,
+				titleTransform: workOrExamQuestionTitleTransform,
+				getTypeValue: (c: any) =>
+					parseInt(
+						(c.elements.type as HTMLElement[])
+							.find((t) => t.getAttribute('name')?.match(/type\d+/))
+							?.getAttribute('value') || '-1'
+					)
+			}),
 
 		work: async (ctx) => {
 			const { elements, searchInfos } = ctx;
@@ -1194,91 +1364,121 @@ const CXAnalyses = {
 };
 
 /**
- * 屏蔽倍速限制
+ * 屏蔽倍速限制（MAIN 世界注入版）
+ *
+ * MV3 下脚本运行在隔离世界，无法直接访问页面的 videojs/Ext 全局，
+ * 这里把整个 hack 体作为页面世界代码执行；videojs/Ext 未就绪时轮询重试。
  */
+const RATE_HACK_MAIN_CODE = `(autoLowest, rankSrc, pickSrc) => {
+	if (typeof window.videojs === 'undefined' || typeof window.Ext === 'undefined') return 'not-ready';
+	if (window.__ocsRateHacked) return 'already';
+	window.__ocsRateHacked = true;
+	var qualityRankOf = eval('(' + rankSrc + ')');
+	var pickLowestSource = eval('(' + pickSrc + ')');
+	var _origin = window.videojs.getPlugin('seekBarControl');
+	var plugin = window.videojs.extend(window.videojs.getPlugin('plugin'), {
+		constructor: function (videoExt, data) {
+			var _sendLog = data.sendLog;
+			var dragCount = 0;
+			data.sendLog = function () {
+				if (arguments[1] === 'drag') {
+					dragCount++;
+					// 开始播放的时候偶尔会卡顿，导致一直触发 drag 事件（超星的BUG）
+					// 这里如果卡顿太多，尝试暂停视频，然后等待视频自动开始。
+					if (dragCount > 100) {
+						dragCount = 0;
+						var v = document.querySelector('video');
+						if (v) v.pause();
+					}
+				} else {
+					_sendLog.apply(data, arguments);
+				}
+			};
+			_origin.apply(_origin.prototype, [videoExt, data]);
+		}
+	});
+	window.videojs.registerPlugin('seekBarControl', plugin);
+	window.Ext.define('ans.VideoJs', {
+		override: 'ans.VideoJs',
+		constructor: function (data) {
+			this.addEvents(['seekstart']);
+			this.mixins.observable.constructor.call(this, data);
+			/**
+			 * 自动最低清晰度（省流量）：
+			 * video 元素是流式下载，只下载播放到的片段，码率越低流量越少；
+			 * 任务点完成由服务端按播放时长判定，与清晰度无关。
+			 * 在播放器初始化前把视频源过滤到最低清晰度一档（与清晰度切换同机制，不重建播放器）。
+			 */
+			var videoOptions = this.params2VideoOpt(data.params);
+			if (autoLowest && videoOptions && Array.isArray(videoOptions.sources) && videoOptions.sources.length > 1) {
+				var lowest = pickLowestSource(videoOptions.sources);
+				if (lowest) {
+					videoOptions.sources = [lowest];
+					try {
+						var res = lowest.res || lowest.label || lowest.name;
+						if (res) window.Ext.setCookie('resolution', String(res));
+					} catch (e) { /* cookie 写入失败不影响播放 */ }
+					console.log('[ocs] 已切换至最低清晰度：' + (lowest.res || lowest.label || lowest.name || '未知'));
+				}
+			}
+			var vjs = window.videojs(data.videojs, videoOptions, function () {});
+			window.Ext.fly(data.videojs).on('contextmenu', function (f) { f.preventDefault(); });
+			window.Ext.fly(data.videojs).on('keydown', function (f) {
+				if (f.keyCode === 32 || f.keyCode === 37 || f.keyCode === 39 || f.keyCode === 107) { f.preventDefault(); }
+			});
+			// 保存清晰度设置
+			if (vjs.videoJsResolutionSwitcher) {
+				vjs.on('resolutionchange', function () {
+					var cr = vjs.currentResolution();
+					var re = cr.sources ? cr.sources[0].res : false;
+					window.Ext.setCookie('resolution', re);
+				});
+			}
+			// 保存公网设置
+			if (vjs.videoJsPlayLine) {
+				vjs.on('playlinechange', function () {
+					var cp = vjs.currentPlayline();
+					window.Ext.setCookie('net', cp.net);
+				});
+			}
+			// 下面连着一个倍速限制方法，这里直接不写，实现可以倍速
+		}
+	});
+	return 'ok';
+}`;
+
 function rateHack() {
 	state.study.hacked = false;
-	let dragCount = 0;
-	try {
-		hack();
-		window.document.addEventListener('readystatechange', hack);
-		window.addEventListener('load', hack);
-	} catch (e) {
-		console.error(e);
-	}
-
-	function hack() {
-		const videojs = $gm.unsafeWindow.videojs;
-		const Ext = $gm.unsafeWindow.Ext;
-
-		if (typeof videojs !== 'undefined' && typeof Ext !== 'undefined') {
-			if (state.study.hacked) {
-				return;
+	const run = async () => {
+		if (state.study.hacked) return;
+		try {
+			const res = await pageInvoke<string>(
+				RATE_HACK_MAIN_CODE,
+				[
+					CXProject.scripts.study.cfg.autoLowestQuality !== false,
+					qualityRankOf.toString(),
+					pickLowestSource.toString()
+				],
+				10000
+			);
+			if (res === 'ok') {
+				state.study.hacked = true;
+				$console.log('已解除超星倍速限制');
 			}
-			state.study.hacked = true;
-
-			const _origin = videojs.getPlugin('seekBarControl');
-			const plugin = videojs.extend(videojs.getPlugin('plugin'), {
-				constructor: function (videoExt: any, data: any) {
-					const _sendLog = data.sendLog;
-					data.sendLog = (...args: any[]) => {
-						if (args[1] === 'drag') {
-							dragCount++;
-							// 开始播放的时候偶尔会卡顿，导致一直触发 drag 事件（超星的BUG）
-							// 这里如果卡顿太多，尝试暂停视频，然后等待视频自动开始。
-							if (dragCount > 100) {
-								dragCount = 0;
-								$el('video')?.pause();
-							}
-						} else {
-							_sendLog.apply(data, args);
-						}
-					};
-
-					_origin.apply(_origin.prototype, [videoExt, data]);
-				}
-			});
-
-			videojs.registerPlugin('seekBarControl', plugin);
-
-			// 重写超星视频插件
-			Ext.define('ans.VideoJs', {
-				override: 'ans.VideoJs',
-				constructor: function (data: any) {
-					this.addEvents(['seekstart']);
-					this.mixins.observable.constructor.call(this, data);
-					const vjs = videojs(data.videojs, this.params2VideoOpt(data.params), function () {});
-					Ext.fly(data.videojs).on('contextmenu', function (f: any) {
-						f.preventDefault();
-					});
-					Ext.fly(data.videojs).on('keydown', function (f: any) {
-						if (f.keyCode === 32 || f.keyCode === 37 || f.keyCode === 39 || f.keyCode === 107) {
-							f.preventDefault();
-						}
-					});
-
-					// 保存清晰度设置
-					if (vjs.videoJsResolutionSwitcher) {
-						vjs.on('resolutionchange', function () {
-							const cr = vjs.currentResolution();
-							const re = cr.sources ? cr.sources[0].res : false;
-							Ext.setCookie('resolution', re);
-						});
-					}
-
-					// 保存公网设置
-					if (vjs.videoJsPlayLine) {
-						vjs.on('playlinechange', function () {
-							const cp = vjs.currentPlayline();
-							Ext.setCookie('net', cp.net);
-						});
-					}
-
-					// 下面连着一个倍速限制方法，这里直接不写，实现可以倍速
-				}
-			});
+			// not-ready：videojs/Ext 未加载，等待下一次重试；already：已安装过
+		} catch (e) {
+			/* 忽略，等待重试 */
 		}
-	}
+	};
+	run();
+	const poll = setInterval(() => {
+		if (state.study.hacked) {
+			clearInterval(poll);
+			return;
+		}
+		run();
+	}, 1500);
+	setTimeout(() => clearInterval(poll), 60 * 1000);
 }
 
 /**
@@ -1295,21 +1495,47 @@ export async function study(
 
 	let searching = true;
 
+	// 章节任务点补刷状态：卡片页重载后重入时读取，命中 force 的任务点无视旧完成标志强制重跑
+	const forceState = await readRebrushState();
+	if (forceState && forceState.chapterId !== getCurrentChapterId()) {
+		// 章节已切换，补刷状态过期
+		await writeRebrushState(undefined);
+	}
+
 	let attachmentCount: number = $gm.unsafeWindow.attachments?.length || 0;
+	if (forceState && forceState.chapterId === getCurrentChapterId()) {
+		// 补刷重入：以补刷目标卡片为准
+		const forceNums = Object.keys(forceState.jobs).map(Number);
+		if (forceNums.length) {
+			attachmentCount = forceNums.length;
+		}
+	}
 
 	const wait_timeout = 3 + attachmentCount * 2;
+
+	/**
+	 * 文档类任务点（ananas 播放器）的 panView 视图挂载较晚，慢网时超过 10 秒，
+	 * 存在文档时把搜索窗口放宽到 30 秒，否则文档任务点会被整段跳过。
+	 */
+	const search_cap = (() => {
+		try {
+			return $gm.unsafeWindow.document.querySelector('iframe[src*="/ananas/modules/"]') ? 30 : 10;
+		} catch (e) {
+			return 10;
+		}
+	})();
 
 	/** 考虑到网速级慢的同学，所以10秒后如果还没有任务点才停止 */
 	setTimeout(() => {
 		searching = false;
-	}, Math.min(wait_timeout, 10) * 1000);
+	}, Math.min(wait_timeout, search_cap) * 1000);
 
 	/**
 	 * 递归运行任务点，一旦有新的任务点被检测到直接开始
 	 * 如果10秒内既没有任务点，也暂停了搜索，则当前则没有任务点
 	 */
 	const runJobs = async () => {
-		const job = searchJob(opts, searchedJobs);
+		const job = searchJob(opts, searchedJobs, getForceJobIds(forceState));
 		// 如果存在任务点
 		if (job && job.func) {
 			try {
@@ -1337,6 +1563,13 @@ export async function study(
 
 	await runJobs();
 
+	// 章节任务点完成校验：以卡片数据为准逐个复核，未完成的跳回对应节点补刷（最多 3 轮）。
+	// 触发补刷时卡片页即将重新加载，脚本重入后继续，这里直接返回不再执行跳转。
+	if (CXProject.scripts.study.cfg.verifyChapterFinished !== false) {
+		const reentered = await verifyChapterAndRebrush(opts);
+		if (reentered) return;
+	}
+
 	// @ts-ignore
 	top._preChapterId = '';
 
@@ -1362,14 +1595,29 @@ export async function study(
 
 				$message.info({ content, duration: 30 });
 			} else {
-				if (CXAnalyses.isFinishedAllChapters()) {
+				// 课程级完成校验：页面树计数可能滞后，在线重新统计全课程未完成任务点
+				const verify =
+					CXProject.scripts.study.cfg.verifyCourseFinished !== false
+						? await verifyCourseReallyFinished()
+						: { finished: CXAnalyses.isFinishedAllChapters(), pending: 0, firstUnfinished: undefined };
+				if (verify.finished) {
+					// 自动刷课模式：接管完成流程（自动进入下一门课程或结束）
+					await clearCourseRound();
+					if (await CXAutoStudy.onCourseFinished((...args: any[]) => $console.log(...args))) {
+						return;
+					}
 					content = '全部任务点已完成！';
 				} else {
-					content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
+					// 仍有未完成：跳转第一个未完成章节继续刷课（防死循环：最多 2 轮）
+					const redirected = await redirectCourseToUnfinished(verify, (...args: any[]) => $console.log(...args));
+					if (redirected) {
+						return;
+					}
+					content = `课程并未全部完成（还有 ${verify.pending} 个任务点），多次补刷后仍未完成，请手动检查未完成的章节。`;
 				}
-
-				$modal.alert({ content: content });
 			}
+
+			$modal.alert({ content: content });
 
 			CommonProject.scripts.settings.methods.notificationBySetting(content, {
 				duration: 0,
@@ -1388,8 +1636,31 @@ export async function study(
 					.filter((el) => el.unFinishCount > 0 || el.element.parentElement?.classList.contains('posCatalog_active'))
 					.map((el) => el.element.parentElement as HTMLElement);
 				if (elements.length === 0) {
-					const content = '全部任务点已完成！';
-					$modal.alert({ content: content });
+					// 课程级完成校验（同「下一章」模式）：在线确认后再宣布完成
+					const verify =
+						CXProject.scripts.study.cfg.verifyCourseFinished !== false
+							? await verifyCourseReallyFinished()
+							: { finished: true, pending: 0, firstUnfinished: undefined };
+					if (verify.finished) {
+						await clearCourseRound();
+						// 自动刷课模式：接管完成流程（自动进入下一门课程或结束）
+						if (await CXAutoStudy.onCourseFinished((...args: any[]) => $console.log(...args))) {
+							return;
+						}
+						const content = '全部任务点已完成！';
+						$modal.alert({ content: content });
+						CommonProject.scripts.settings.methods.notificationBySetting(content, {
+							duration: 0,
+							extraTitle: '超星学习通学习脚本'
+						});
+						return;
+					}
+					const redirected = await redirectCourseToUnfinished(verify, (...args: any[]) => $console.log(...args));
+					if (redirected) {
+						return;
+					}
+					const content = `课程并未全部完成（还有 ${verify.pending} 个任务点），多次补刷后仍未完成，请手动检查未完成的章节。`;
+					$modal.alert({ content });
 					CommonProject.scripts.settings.methods.notificationBySetting(content, {
 						duration: 0,
 						extraTitle: '超星学习通学习脚本'
@@ -1425,9 +1696,21 @@ export async function study(
 				/**
 				 * count, chapterId, courseId, clazzid, knowledgestr, checkType
 				 * checkType 就是询问当前章节还有任务点未完成，是否完成，这里直接不传，默认下一章
+				 * MV3：PCount 是顶层页面的页面世界全局，经桥接调用
 				 */
-				// @ts-ignore
-				top?.PCount.next(count.length.toString(), curChapterId.value, curCourseId.value, curClazzId.value, '');
+				await pageInvoke(
+					`(a, b, c, d, e) => {
+						try {
+							if (window.top && window.top.PCount && typeof window.top.PCount.next === 'function') {
+								window.top.PCount.next(a, b, c, d, e);
+								return true;
+							}
+							return 'no-pcount';
+						} catch (err) { return 'err:' + err; }
+					}`,
+					[count.length.toString(), curChapterId.value, curCourseId.value, curClazzId.value, ''],
+					10000
+				).catch((err) => $console.warn('跳转下一章失败：' + String(err)));
 			} else {
 				$console.warn('参数错误，无法跳转下一章，请尝试手动切换。');
 			}
@@ -1471,12 +1754,14 @@ function searchIFrame(root: Document) {
 
 /**
  * 搜索任务点
+ * @param forceJobIds 补刷模式：命中的任务点无视旧完成标志强制重跑
  */
 function searchJob(
 	opts: typeof CXProject.scripts.study.cfg & {
 		workOptions: CommonWorkOptions;
 	},
-	searchedJobs: Job[]
+	searchedJobs: Job[],
+	forceJobIds?: Set<string>
 ): Job | undefined {
 	const knowCardWin = $gm.unsafeWindow;
 
@@ -1488,7 +1773,8 @@ function searchJob(
 				read: '#img.imglook',
 				pptWithAudio: '.swiper-container',
 				hyperlink: '#hyperlink',
-				timereader: 'iframe[name="bookifame"][src*="timing"]'
+				timereader: 'iframe[name="bookifame"][src*="timing"]',
+				documentJob: 'iframe[src*="screen/file"]'
 			},
 			root.contentWindow!.document
 		);
@@ -1497,9 +1783,9 @@ function searchJob(
 	const search = (root: HTMLIFrameElement): Job | undefined => {
 		const win = root.contentWindow;
 
-		const { videojs, read, chapterTest, hyperlink, pptWithAudio, timereader } = searchJobElement(root);
+		const { videojs, read, chapterTest, hyperlink, pptWithAudio, timereader, documentJob } = searchJobElement(root);
 
-		if (win && (videojs || read || chapterTest || hyperlink || pptWithAudio || timereader)) {
+		if (win && (videojs || read || chapterTest || hyperlink || pptWithAudio || timereader || documentJob)) {
 			// 获取任务点数据字符串
 			const frame_data_str =
 				win.frameElement?.getAttribute('data') ||
@@ -1521,6 +1807,9 @@ function searchJob(
 				return String(attachment_jobid) === String(target_jobid);
 			});
 
+			// 补刷模式：该任务点被列入强制重跑清单（卡片页重载后 attachment 标志可能滞后）
+			const forced = forceJobIds ? forceJobIds.has(String(target_jobid)) : false;
+
 			// 任务点去重
 			if (attachment && searchedJobs.find((job) => job.mid === attachment.property.mid) === undefined) {
 				const { name, title, bookname, author } = attachment.property;
@@ -1539,6 +1828,8 @@ function searchJob(
 						if (
 							// 未完成
 							work_type === 'job' ||
+							// 补刷强制重跑
+							forced ||
 							// 重复学习
 							(work_type === 'finished' && opts.restudy) ||
 							// 强制学习
@@ -1547,7 +1838,9 @@ function searchJob(
 							func = () => {
 								const msg =
 									`即将${
-										work_type === 'finished' && opts.restudy
+										forced
+											? '补刷'
+											: work_type === 'finished' && opts.restudy
 											? '重新'
 											: work_type === 'not-job' && opts.forceLearn
 											? '强制'
@@ -1555,7 +1848,7 @@ function searchJob(
 									}播放 : ` + jobName;
 								$message.info({ content: msg });
 								$console.log(msg);
-								return JobRunner.media(opts, win.document);
+								return JobRunner.media(opts, win.document, attachment);
 							};
 						}
 					}
@@ -1576,19 +1869,23 @@ function searchJob(
 							if (
 								// 未完成
 								work_type === 'job' ||
+								// 补刷强制重跑（保存未提交的章节测试会自动重做；已提交的因 status=complete 在上方被跳过）
+								forced ||
 								// / 强制学习
 								(work_type === 'not-job' && CommonProject.scripts.settings.cfg['work-when-no-job'])
 							) {
 								if (opts.workOptions.answererWrappers === undefined || opts.workOptions.answererWrappers.length === 0) {
-									answerWrapperEmptyWarning(0);
-								} else {
-									func = () => {
-										const msg = `开始答题 : ` + jobName;
-										$message.info({ content: msg });
-										$console.log(msg);
-										return JobRunner.chapter(root, opts.workOptions);
-									};
+									// 无题库：不再拦截，启动章节任务并走答题三级兜底（联网搜索 → 课程内容检索 → 选项匹配）
+									const msg = `未配置题库，将使用联网搜索兜底答题 : ` + jobName;
+									$message.info({ content: msg });
+									$console.log(msg);
 								}
+								func = () => {
+									const msg = `开始答题 : ` + jobName;
+									$message.info({ content: msg });
+									$console.log(msg);
+									return JobRunner.chapter(root, opts.workOptions);
+								};
 							}
 							if (work_type === 'not-job' && CommonProject.scripts.settings.cfg['work-when-no-job'] === false) {
 								const msg = `当前作业 ${jobName} 不是任务点，但待完成，如需开启自动答题请前往：通用-全局设置，开启强制答题。`;
@@ -1603,7 +1900,7 @@ function searchJob(
 						$message.warn({ content: msg, duration: 10 });
 						$console.warn(msg);
 					} else {
-						if (attachment.job) {
+						if (attachment.job || forced) {
 							func = () => {
 								const msg = `正在学习 : ` + jobName;
 								$message.info({ content: msg });
@@ -1624,12 +1921,37 @@ function searchJob(
 						$message.warn({ content: msg, duration: 10 });
 						$console.warn(msg);
 					} else {
-						if (attachment.job) {
+						if (attachment.job || forced) {
 							func = () => {
 								const msg = `正在完成链接阅读任务 : ` + jobName;
 								$message.info({ content: msg });
 								$console.log(msg);
 								return JobRunner.hyperlink(hyperlink);
+							};
+						}
+					}
+				} else if (documentJob) {
+					// 文档类任务点（ananas 文档查看器，如 PDF），完成条件为阅读到底部
+					if (!CXProject.scripts.study.cfg.enableDocument) {
+						const msg = `文档自动阅读功能已被关闭（在上方菜单栏，超星学习通-课程学习中开启）。${jobName} 即将跳过`;
+						$message.warn({ content: msg, duration: 10 });
+						$console.warn(msg);
+					} else {
+						if (
+							// 未完成
+							work_type === 'job' ||
+							// 补刷强制重跑
+							forced ||
+							// 重复学习
+							(work_type === 'finished' && opts.restudy) ||
+							// 强制学习
+							(work_type === 'not-job' && opts.forceLearn)
+						) {
+							func = () => {
+								const msg = `正在阅读文档 : ` + jobName;
+								$message.info({ content: msg });
+								$console.log(msg);
+								return JobRunner.document(win);
 							};
 						}
 					}
@@ -1677,6 +1999,62 @@ export function fixedVideoProgress() {
  */
 const JobRunner = {
 	/**
+	 * 阅读文档（ananas 文档查看器：knowledge → ananas → screen/file 三层 iframe，同源可达）。
+	 * 完成条件为滚动到底部，查看器随滚动上报阅读进度。拟人节奏滚动，到底后停留等待上报。
+	 */
+	async document(win: Window) {
+		const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+		// 等待文档查看器出现并渲染出可滚动内容（大文档/慢网时加载较久，上限 3 分钟）
+		let fileFrame: HTMLIFrameElement | null = null;
+		for (let i = 0; i < 90; i++) {
+			fileFrame = win.document.querySelector<HTMLIFrameElement>('iframe[src*="screen/file"]');
+			const ready =
+				fileFrame &&
+				fileFrame.contentDocument &&
+				fileFrame.contentDocument.documentElement.scrollHeight > fileFrame.contentDocument.documentElement.clientHeight;
+			if (ready) break;
+			await sleep(2000);
+		}
+		if (!fileFrame || !fileFrame.contentDocument) {
+			$console.warn('未找到文档查看器，跳过文档阅读');
+			return;
+		}
+		const fileWin = fileFrame.contentWindow!;
+		const scroller = fileWin.document.documentElement;
+		const maxScroll = () => scroller.scrollHeight - scroller.clientHeight;
+		let lastTop = -1;
+		let lastMax = -1;
+		let stableCount = 0;
+		for (let i = 0; i < 150; i++) {
+			const max = maxScroll();
+			if (max <= 0) break;
+			const top = Math.round(scroller.scrollTop);
+			// 到底（留 5px 容差）
+			if (top >= max - 5) break;
+			if (top === lastTop && max === lastMax) {
+				stableCount++;
+				// 连续多次无法继续滚动（内容未加载或已到底），放弃
+				if (stableCount >= 8) break;
+			} else {
+				stableCount = 0;
+			}
+			lastTop = top;
+			lastMax = max;
+			// 瞬时步进（等价滚轮翻页），配合随机间隔模拟阅读节奏；smooth 动画会滞后 scrollTop 采样导致误判卡住
+			scroller.scrollBy({ top: Math.max(150, Math.round(scroller.clientHeight * (0.45 + Math.random() * 0.3))) });
+			await sleep(2000 + Math.random() * 2500);
+		}
+		// 到底后停留，等待阅读器上报阅读进度
+		await sleep(15000);
+		const viewer = fileWin as unknown as { page?: number; totalPage?: number };
+		if (typeof viewer.totalPage === 'number' && viewer.totalPage > 0) {
+			$console.log(`文档已阅读到底（${viewer.page || '?'}/${viewer.totalPage} 页）`);
+		} else {
+			$console.log('文档已阅读到底');
+		}
+	},
+
+	/**
 	 * 播放视频和音频
 	 */
 	async media(
@@ -1684,10 +2062,14 @@ const JobRunner = {
 			playbackRate: number;
 			volume: number;
 			videoQuizStrategy: VideoQuizStrategy;
+			waitMediaPassed?: boolean;
+			humanSimulate?: boolean;
 		},
-		doc: Document
+		doc: Document,
+		attachment?: Attachment
 	) {
 		const { playbackRate = 1, volume = 0 } = setting;
+		const jobid = attachment?.jobid || attachment?.property?._jobid;
 
 		const media = await waitForMedia({ root: doc });
 
@@ -1738,6 +2120,23 @@ const JobRunner = {
 		 * 视频播放
 		 */
 		return new Promise<void>((resolve, reject) => {
+			/** 拟人暂停进行中（此时不触发自动续播） */
+			let humanPausing = false;
+			/** 拟人化播放：倍速抖动、随机暂停、鼠标活动 */
+			const stopHumanizer =
+				setting.humanSimulate === false
+					? undefined
+					: startPlaybackHumanizer(media, doc, {
+							baseRate: playbackRate,
+							onBeforePause: () => {
+								humanPausing = true;
+								return true;
+							},
+							onAfterResume: () => {
+								humanPausing = false;
+							}
+					  });
+
 			// 检测视频
 			const reloadInterval = setInterval(() => {
 				const errorDiv = doc.querySelector<HTMLElement>('.vjs-modal-dialog-content');
@@ -1748,11 +2147,14 @@ const JobRunner = {
 				) {
 					$console.error('检测到视频加载失败，即将跳过视频。');
 					$message.error('检测到视频加载失败，即将跳过视频。');
+					stopHumanizer?.();
 					setTimeout(resolve, 3000);
 				}
 			}, 3000);
 
 			const playFunction = async () => {
+				// 拟人暂停期间不自动续播
+				if (humanPausing) return;
 				// 这里先判断，再检测，否则后续添加多个 await 会导致视频启动等待时间过长，导致用户误认为脚本失效
 				if (hasFaceRecognition()) await waitForFaceRecognition();
 				if (hasNewFaceRecognition()) await waitForNewFaceRecognition();
@@ -1765,15 +2167,174 @@ const JobRunner = {
 
 			media.addEventListener('pause', playFunction);
 
-			media.addEventListener('ended', () => {
+			/** 播放中完成检测：任务点被服务端判定完成后立即停播并进入下一节 */
+			let completionWatcher: ReturnType<typeof setInterval> | null = null;
+			/** 播放中服务端状态轮询（兜底通道，60 秒一次） */
+			let serverCheckTimer: ReturnType<typeof setInterval> | null = null;
+
+			media.addEventListener('ended', async () => {
 				media.removeEventListener('pause', playFunction);
+				stopHumanizer?.();
 				$console.log('视频播放完毕');
 				clearInterval(reloadInterval);
+				if (completionWatcher) clearInterval(completionWatcher);
+				if (serverCheckTimer) clearInterval(serverCheckTimer);
+
+				/**
+				 * 任务点完成校验：以页面显示的任务点状态为准，
+				 * 未完成则自动补刷末尾一小段（最多3次），确认完成后才继续。
+				 */
+				if (setting.waitMediaPassed !== false && jobid) {
+					const passed = await JobRunner.waitJobPassed(media, doc, String(jobid), playbackRate);
+					if (!passed) {
+						$console.warn('任务点完成状态仍未确认（已自动补刷3次），继续执行后续任务。');
+					}
+				}
 				resolve();
 			});
 
 			$console.log('视频开始播放');
 			media.volume = volume;
+
+			/**
+			 * 播放中完成检测（应对课程把完成点设为 90% 等不满 100% 的场景）：
+			 *  - 通道0（实时、零请求）：劫持播放器自己的上报响应，服务端返回 isPassed:true 立即停播
+			 *  - 通道1（页面显示，零请求）：当前章节待完成任务点数下降或出现完成图标
+			 *  - 通道2（服务端状态，60 秒一次）：fetchJobPassed 重新拉卡片页判定
+			 * 任一通道命中立即停播并进入下一节，不再傻等视频播完。
+			 */
+			if (setting.waitMediaPassed !== false) {
+				/** finishEarly 的前向引用（通道0 劫持代码先于其定义执行） */
+				let finishEarlyRef: ((reason: string) => void) | null = null;
+				/**
+				 * 通道0（实时、零请求）：劫持播放器自己的上报响应。
+				 * 实测服务端在 playingTime 跨过课程完成比例（如 90%）时，
+				 * 上报响应即返回 {"isPassed":true}，而视频并未播完——
+				 * 这是「页面已显示完成但脚本还在等 ended」的根因，此处实时感知。
+				 * MV3：播放器 XHR 位于页面世界，需经桥接在所属 iframe 的 MAIN 世界安装钩子，
+				 * 命中后通过事件回传隔离世界。
+				 */
+				try {
+					const frameEl = (doc.defaultView?.frameElement || null) as HTMLIFrameElement | null;
+					if (frameEl) {
+						frameEl.id = frameEl.id || 'ocs-media-frame-' + Date.now();
+						// 事件回传：MAIN 世界命中 isPassed → 隔离世界 finishEarly
+						const onReportPassed = () => finishEarlyRef?.('任务点已完成（服务端上报响应 isPassed=true）');
+						window.addEventListener('ocs-report-passed', onReportPassed);
+						media.addEventListener('ended', () => window.removeEventListener('ocs-report-passed', onReportPassed), {
+							once: true
+						});
+						pageInvoke(
+							`(fid) => {
+								var f = document.getElementById(fid);
+								var w = f && f.contentWindow;
+								if (!w || !w.XMLHttpRequest) return false;
+								var X = w.XMLHttpRequest;
+								if (X.__ocsReportHooked) return true;
+								X.__ocsReportHooked = true;
+								var origOpen = X.prototype.open;
+								X.prototype.open = function (method, url) {
+									try {
+									this.__ocsIsReport = typeof url === 'string' && url.indexOf('/multimedia/log/') !== -1;
+									} catch (e) {}
+									return origOpen.apply(this, arguments);
+								};
+								var origSend = X.prototype.send;
+								X.prototype.send = function () {
+									var xhr = this;
+									try {
+										if (xhr.__ocsIsReport) {
+											xhr.addEventListener('load', function () {
+												try {
+													var text = xhr.responseText || '';
+													if (/"isPassed"\\s*:\\s*true/.test(text)) {
+														document.dispatchEvent(new CustomEvent('ocs-report-passed'));
+													}
+												} catch (e) {}
+											});
+										}
+									} catch (e) {}
+									return origSend.apply(this, arguments);
+								};
+								return true;
+							}`,
+							[frameEl.id],
+							8000
+						).catch(() => undefined);
+					}
+				} catch (e) {
+					/* 劫持失败不影响其他通道 */
+				}
+
+				const readTreeState = (): { remaining: number | null; completed: boolean } => {
+					try {
+						const d = top?.document;
+						if (!d) return { remaining: null, completed: false };
+						const active = d.querySelector('.posCatalog_active') || d.querySelector('.posCatalog_select');
+						if (!active) return { remaining: null, completed: false };
+						// 未完成任务点数：新版 .catalog_points_yi、老版 .orangeNew（与扫描解析同规则）
+						const m = (active.innerHTML || '').match(
+							/class=["'][^"']*(?:catalog_points_yi|orangeNew)[^"']*["'][^>]*>\s*(\d+)\s*</
+						);
+						if (m) return { remaining: parseInt(m[1], 10), completed: !!active.querySelector('.icon_Completed') };
+						// 兜底：文本里的「N个待完成任务点」
+						const t = (active.textContent || '').match(/(\d+)\s*个待完成任务点/);
+						if (t) return { remaining: parseInt(t[1], 10), completed: !!active.querySelector('.icon_Completed') };
+						return { remaining: 0, completed: !!active.querySelector('.icon_Completed') };
+					} catch (e) {
+						return { remaining: null, completed: false };
+					}
+				};
+				const initialTree = readTreeState();
+				const initialRemaining = initialTree.remaining;
+				const initialCompleted = initialTree.completed;
+				let finished = false;
+				const finishEarly = (reason: string) => {
+					if (finished) return;
+					finished = true;
+					$console.log(reason + '，停止播放并进入下一节。');
+					if (completionWatcher) clearInterval(completionWatcher);
+					completionWatcher = null;
+					if (serverCheckTimer) clearInterval(serverCheckTimer);
+					serverCheckTimer = null;
+					stopHumanizer?.();
+					clearInterval(reloadInterval);
+					media.removeEventListener('pause', playFunction);
+					try {
+						media.pause();
+					} catch (e) {
+						/* ignore */
+					}
+					resolve();
+				};
+				// 通道0 的劫持回调指向 finishEarly
+				finishEarlyRef = finishEarly;
+				if (initialRemaining !== null && initialRemaining > 0) {
+					completionWatcher = setInterval(() => {
+						if (finished) return;
+						const now = readTreeState();
+						// 章节完成图标出现（此前没有）= 本节任务点全部完成
+						if (now.completed && !initialCompleted) {
+							finishEarly('任务点已完成（页面显示章节完成）');
+							return;
+						}
+						// 待完成任务点数下降 = 本任务点已完成
+						if (now.remaining !== null && now.remaining < (initialRemaining as number)) {
+							finishEarly('任务点已完成（页面显示剩余 ' + initialRemaining + '→' + now.remaining + '）');
+						}
+					}, 5000);
+				}
+				if (jobid) {
+					const cardUrl = doc.location.href;
+					serverCheckTimer = setInterval(async () => {
+						if (finished) return;
+						const passed = await fetchJobPassed(cardUrl, String(jobid));
+						if (passed === true) {
+							finishEarly('任务点已完成（服务端状态确认）');
+						}
+					}, 60000);
+				}
+			}
 
 			// 重置视频进度
 			media.currentTime = 0;
@@ -1784,9 +2345,67 @@ const JobRunner = {
 					.then(() => {
 						media.playbackRate = playbackRate;
 					})
-					.catch(reject);
+					.catch((err) => {
+						stopHumanizer?.();
+						reject(err);
+					});
 			}, 200);
 		});
+	},
+	/**
+	 * 等待并校验任务点完成状态（以卡片数据/页面显示为准）。
+	 * 未完成则自动补刷末尾 20~40 秒，每轮最多等待 60 秒，最多补刷 3 次。
+	 */
+	async waitJobPassed(
+		media: HTMLVideoElement | HTMLAudioElement,
+		doc: Document,
+		jobid: string,
+		playbackRate: number
+	): Promise<boolean> {
+		const cardUrl = doc.location.href;
+		const waitEnded = (timeoutMs: number) =>
+			new Promise<void>((resolve) => {
+				const timer = setTimeout(() => resolve(), timeoutMs);
+				media.addEventListener(
+					'ended',
+					() => {
+						clearTimeout(timer);
+						resolve();
+					},
+					{ once: true }
+				);
+			});
+
+		for (let attempt = 0; attempt <= 3; attempt++) {
+			// 本轮是否拿到过明确状态（true/false）；全程 undefined 说明网络受限无法校验
+			let verifiable = false;
+			for (let i = 0; i < 12; i++) {
+				await $.sleep(5000);
+				const passed = await fetchJobPassed(cardUrl, jobid);
+				if (passed === true) {
+					$console.log('任务点已显示完成。');
+					return true;
+				}
+				if (passed === false) verifiable = true;
+			}
+			if (attempt === 3) break;
+			// 整轮都无法校验时补刷没有意义，直接继续后续任务（下次扫描会再次确认）
+			if (!verifiable) {
+				$console.warn('任务点完成状态无法校验（网络受限），继续执行后续任务。');
+				return false;
+			}
+			const backSeconds = Math.min(20 + Math.random() * 20, (media.duration || 60) * 0.5);
+			$console.warn('任务点未完成，自动补刷末尾 ' + Math.round(backSeconds) + ' 秒（第 ' + (attempt + 1) + '/3 次）');
+			try {
+				media.currentTime = Math.max(0, (media.duration || 0) - backSeconds);
+				media.playbackRate = playbackRate;
+				await playMedia(() => media.play());
+				await waitEnded((backSeconds / Math.max(playbackRate, 0.5)) * 1000 + 30000);
+			} catch (e) {
+				$console.error('补刷播放失败（第 ' + (attempt + 1) + ' 次），稍后重试', e);
+			}
+		}
+		return false;
 	},
 	/**
 	 * 阅读，PPT
@@ -1824,11 +2443,14 @@ const JobRunner = {
 			thread,
 			stopSecondWhenFinish,
 			redundanceWordsText,
-			answerSeparators
+			answerSeparators,
+			courseContextSearch,
+			randomWhenNoResult
 		}: CommonWorkOptions
 	) {
 		if (answererWrappers === undefined || answererWrappers.length === 0) {
-			return answerWrapperEmptyWarning(0);
+			// 未配置题库也继续：搜题返回空 → 走课程内容检索/随机兜底
+			$console.warn('未配置题库，将使用课程内容检索与随机作答兜底。');
 		}
 
 		$console.info('开始章节测试');
@@ -1895,6 +2517,8 @@ const JobRunner = {
 
 					return CommonProject.scripts.apps.methods.searchAnswerInCaches(title, async () => {
 						await $.sleep((period ?? 3) * 1000);
+						// 未配置题库时返回空结果，由 onEmptySearchInfos 兜底（课程内容检索/随机作答）
+						if (!answererWrappers?.length) return [] as any;
 						return defaultAnswerWrapperHandler(answererWrappers, {
 							type,
 							title,
@@ -1909,6 +2533,18 @@ const JobRunner = {
 				}
 			},
 
+			/** 题库无结果兜底：课程内容检索 → 随机选择 */
+			onEmptySearchInfos: (ctx) =>
+				handleEmptySearchInfos(ctx, {
+					courseContextSearch,
+					randomWhenNoResult,
+					titleTransform: chapterTestTaskQuestionTitleTransform,
+					getTypeValue: (c: any) => {
+						const typeInput = c.elements.type[0] as HTMLInputElement;
+						return typeInput ? parseInt(typeInput.value) : undefined;
+					}
+				}),
+
 			work: async (ctx) => {
 				const { elements, searchInfos } = ctx;
 				const typeInput = elements.type[0] as HTMLInputElement;
@@ -1917,7 +2553,7 @@ const JobRunner = {
 				if (type && (type === 'completion' || type === 'multiple' || type === 'judgement' || type === 'single')) {
 					const resolver = createDefaultQuestionResolver(ctx)[type];
 
-					const handler: DefaultWork<any>['handler'] = (type, answer, option, ctx) => {
+					const handler: DefaultWork<any>['handler'] = async (type, answer, option, ctx) => {
 						if (type === 'judgement' || type === 'single' || type === 'multiple') {
 							// 检查是否已经选择
 							const checked =
@@ -1927,6 +2563,7 @@ const JobRunner = {
 							if (checked) {
 								// 跳过
 							} else {
+								await humanSleep(150, 700);
 								option?.click();
 							}
 						} else if (type === 'completion' && answer.trim()) {
@@ -2096,20 +2733,43 @@ const JobRunner = {
 				await $.sleep(3000);
 
 				if (uploadable) {
-					// @ts-ignore 提交
-					frameWindow.btnBlueSubmit();
+					// MV3：页面函数需经 MAIN 世界桥接调用（frameWindow 为隔离世界引用，取不到页面全局）
+					frame.id = frame.id || 'ocs-work-frame-' + Date.now();
+					await pageInvoke(
+						`(fid) => {
+						var f = document.getElementById(fid);
+						var w = f && f.contentWindow;
+						if (w && typeof w.btnBlueSubmit === 'function') w.btnBlueSubmit();
+						return true;
+					}`,
+						[frame.id]
+					);
 
 					await $.sleep(3000);
 					/** 确定按钮 */
-					// @ts-ignore 确定
-					frameWindow.submitCheckTimes();
-					// @ts-ignore 2024/4 更新后上方函数无法关闭弹窗，需要手动关闭确定弹窗
-					top.$('#workpop').hide();
+					await pageInvoke(
+						`(fid) => {
+						var f = document.getElementById(fid);
+						var w = f && f.contentWindow;
+						if (w && typeof w.submitCheckTimes === 'function') w.submitCheckTimes();
+						try { if (window.top && window.top.$) window.top.$('#workpop').hide(); } catch (e) {}
+						return true;
+					}`,
+						[frame.id]
+					);
 				} else {
-					// @ts-ignore 禁止弹窗
-					frameWindow.alert = () => {};
-					// @ts-ignore 暂时保存
-					frameWindow.noSubmit();
+					await pageInvoke(
+						`(fid) => {
+						var f = document.getElementById(fid);
+						var w = f && f.contentWindow;
+						if (w) {
+							try { w.alert = function () {}; } catch (e) {}
+							if (typeof w.noSubmit === 'function') w.noSubmit();
+						}
+						return true;
+					}`,
+						[frame.id]
+					);
 				}
 			}
 		});
@@ -2172,6 +2832,420 @@ const JobRunner = {
  * 14 完形填空
  * 15 阅读理解
  */
+/**
+ * 题库搜不到答案时的兜底处理：
+ * 优先用课程全部章节的文本内容检索推断答案（选择/填空题），
+ * 仍无结果则随机选择（单选/多选/判断），保证所有题目都有作答。
+ *
+ * 通过向 ctx.searchInfos 追加「伪搜题结果」复用既有解析/点击流程。
+ */
+async function handleEmptySearchInfos(
+	ctx: any,
+	opts: {
+		courseContextSearch?: boolean;
+		randomWhenNoResult?: boolean;
+		titleTransform: (titles: (HTMLElement | undefined)[]) => string;
+		getTypeValue: (ctx: any) => number | undefined;
+	}
+) {
+	try {
+		const typeVal = opts.getTypeValue(ctx);
+		const qType = typeVal !== undefined && typeVal >= 0 ? getQuestionType(typeVal) : undefined;
+		const type =
+			qType && ['single', 'multiple', 'judgement', 'completion'].includes(qType)
+				? (qType as 'single' | 'multiple' | 'judgement' | 'completion')
+				: undefined;
+		if (!type) return;
+
+		const question = opts.titleTransform(ctx.elements.title || []);
+		if (!question) return;
+		const optionTexts = ((ctx.elements.options || []) as HTMLElement[]).map((o) =>
+			optimizationElementWithImage(o, true).innerText.trim()
+		);
+		const separator = ((ctx.answerSeparators as string[] | undefined)?.[0] || '#').trim() || '#';
+
+		let contextAnswer: string | undefined;
+		// 1) 免费网络搜索（Bing）优先
+		try {
+			const webPick = await webSearchPick(question, optionTexts, type);
+			if (webPick?.answer) contextAnswer = webPick.answer;
+		} catch (e) {
+			/* 网络搜索失败则继续走课程内容 */
+		}
+		// 2) 课程内容检索
+		// 判断题选项是「对/错」单词，语料覆盖度无意义，只走随机兜底
+		if (!contextAnswer && opts.courseContextSearch !== false && type !== 'judgement') {
+			try {
+				const defaults: any = ($gm.unsafeWindow as any)?.mArg?.defaults || {};
+				const params = new URLSearchParams((top?.location || location).search);
+				const courseId = String(defaults.courseid || params.get('courseId') || params.get('courseid') || '');
+				const clazzid = String(defaults.clazzId || params.get('clazzid') || params.get('clazzId') || '');
+				const cpi = String(defaults.cpi || params.get('cpi') || '');
+				if (courseId && clazzid) {
+					// 优先在线全量章节（不受页面树懒加载影响），失败回退当前页面 DOM
+					let chapters = await fetchCourseChaptersOnline(courseId, clazzid, cpi).catch(() => [] as any[]);
+					if (!chapters.length && top?.document) {
+						chapters = getCourseChapters(top.document);
+					}
+					if (chapters.length) {
+						await CourseContext.ensure(courseId, clazzid, cpi, chapters, (m: any) => $console.log(m));
+						if (type === 'completion') {
+							contextAnswer = CourseContext.pickSentence(question)?.answer;
+						} else if (type === 'single') {
+							contextAnswer = CourseContext.pickOption(question, optionTexts)?.answer;
+						} else if (type === 'multiple') {
+							const scores = optionTexts.map((t) => scoreCandidate(question, t, CourseContext.passages));
+							const picked = pickOptionsAboveThreshold(optionTexts, scores);
+							if (picked.length) contextAnswer = picked.join(separator);
+						}
+					}
+				}
+			} catch (e) {
+				console.error('课程内容检索失败', e);
+			}
+		}
+
+		// 3) 全部改为匹配度答题，不使用随机：
+		//    - 单选/判断：选匹配度最高的选项
+		//    - 多选：匹配度高于阈值的选项（至少取最高的一项）
+		//    - 填空：取网络/课程语料中最相似的文句；无匹配则留空标记
+		let answer: string | undefined;
+		let source = CONTEXT_SOURCE_NAME;
+		if (type === 'judgement') {
+			// 判断题：否定词启发式（确定性匹配）
+			answer = judgementByNegation(question);
+			source = '判断题匹配';
+		} else if (contextAnswer) {
+			answer = contextAnswer;
+			source = CONTEXT_SOURCE_NAME;
+		} else if (type === 'single') {
+			// 始终选匹配度最高的选项（即使低于阈值也不随机）
+			const match = pickMostSimilarOption(question, optionTexts, 0);
+			if (match) {
+				answer = match.option;
+				source = '选项匹配';
+			}
+		} else if (type === 'multiple') {
+			const matches = pickMostSimilarOptions(question, optionTexts);
+			// 高于阈值的一起选；没有则取最高的一项
+			const picked = matches.filter((m) => m.score >= 0.3).map((m) => m.option);
+			const final = picked.length ? picked : matches.slice(0, 1).map((m) => m.option);
+			if (final.length) {
+				answer = final.join(separator);
+				source = '选项匹配';
+			}
+		}
+		// completion：contextAnswer 为空则留空（不随机）
+		if (!answer) return;
+		const name = source;
+		ctx.searchInfos.push(buildSearchInfo(name, question, answer) as any);
+		$console.log('兜底作答（' + name + '）：' + question.slice(0, 30) + ' → ' + answer.slice(0, 50));
+	} catch (e) {
+		console.error('无结果兜底异常', e);
+	}
+}
+
+// ============================ 完成校验与补刷（4.15.4 新增） ============================
+
+/** 补刷状态（tab 存储，卡片页重载后重入时使用） */
+interface RebrushState {
+	/** 章节 knowledgeid */
+	chapterId: string;
+	/** 已进行的补刷轮数 */
+	round: number;
+	/** 卡片序号 → 需强制重跑的任务点摘要 */
+	jobs: Record<string, UnfinishedJob[]>;
+	ts: number;
+}
+
+const REBRUSH_KEY = 'cx_verify_rebrush';
+const COURSE_ROUND_KEY = 'cx_verify_course_round';
+const MAX_REBRUSH_ROUNDS = 3;
+const MAX_COURSE_ROUNDS = 2;
+
+/** 当前卡片页的章节 id（knowledgeid） */
+function getCurrentChapterId(): string {
+	try {
+		return new URLSearchParams(window.location.search).get('knowledgeid') || '';
+	} catch (e) {
+		return '';
+	}
+}
+
+/** 当前页面的课程上下文（卡片页与 studentstudy 页的 URL 参数均带 courseid/clazzid/cpi） */
+function getCourseContextOfTopPage(): { courseId: string; clazzid: string; cpi: string } {
+	try {
+		const p = new URLSearchParams(
+			(top?.location && !isCrossOrigin(top) ? top.location.search : window.location.search) || window.location.search
+		);
+		const courseId = p.get('courseId') || p.get('courseid') || '';
+		const clazzid = p.get('clazzId') || p.get('clazzid') || '';
+		const cpi = p.get('cpi') || '';
+		return { courseId, clazzid, cpi };
+	} catch (e) {
+		return { courseId: '', clazzid: '', cpi: '' };
+	}
+}
+
+/** top 是否跨域（跨域时访问 top.location 会抛异常） */
+function isCrossOrigin(w: Window): boolean {
+	try {
+		String(w.location.href);
+		return false;
+	} catch (e) {
+		return true;
+	}
+}
+
+async function readRebrushState(): Promise<RebrushState | undefined> {
+	try {
+		const s = (await $store.getTab(REBRUSH_KEY)) as RebrushState | undefined;
+		if (s && typeof s === 'object' && s.chapterId) return s;
+	} catch (e) {
+		/* ignore */
+	}
+	return undefined;
+}
+
+async function writeRebrushState(state: RebrushState | undefined): Promise<void> {
+	try {
+		await $store.setTab(REBRUSH_KEY, state || 0);
+	} catch (e) {
+		/* ignore */
+	}
+}
+
+function getForceJobIds(state: RebrushState | undefined): Set<string> | undefined {
+	if (!state) return undefined;
+	const ids = new Set<string>();
+	for (const num of Object.keys(state.jobs || {})) {
+		for (const id of state.jobs[num] || []) ids.add(String(id));
+	}
+	return ids.size ? ids : undefined;
+}
+
+/**
+ * 拉取整个章节全部卡片，逐卡解析未完成任务点。
+ * 返回 Map<卡片序号, 未完成任务点摘要[]>；返回 undefined 表示触发反爬或链路不可用（放弃本轮）。
+ * 反爬规避：同源请求 + 串行 + 250~500ms 拟人延迟，与页面正常浏览节奏一致。
+ */
+async function collectChapterUnfinishedByCard(
+	courseId: string,
+	clazzid: string,
+	cpi: string,
+	chapterId: string,
+	log: (...msg: any[]) => void
+): Promise<Map<number, UnfinishedJob[]> | undefined> {
+	const result = new Map<number, UnfinishedJob[]>();
+	try {
+		const nums = await fetchChapterCardNums(courseId, clazzid, chapterId, cpi);
+		for (const num of nums) {
+			await new Promise((resolve) => setTimeout(resolve, 250 + Math.random() * 250));
+			const html = await fetchCardHtml(courseId, clazzid, chapterId, num, cpi);
+			if (html.includes('antispiderShowVerify') || html.includes('操作异常，请输入图片中的验证码')) {
+				log('⚠️ 章节校验触发反爬验证码，本轮校验中止（可在完成验证后重试）');
+				return undefined;
+			}
+			const mArg = extractMArg(html);
+			const unfinished = computeUnfinishedJobs(mArg).map(toUnfinishedJob);
+			if (unfinished.length) result.set(num, unfinished);
+		}
+		return result;
+	} catch (e) {
+		log('章节任务点校验失败：' + String(e).slice(0, 80));
+		return undefined;
+	}
+}
+
+/**
+ * 章节任务点完成校验：以卡片 mArg 数据为准逐个复核（与页面显示同源）。
+ * 有未完成 → 把未完成任务点按卡片写入补刷状态、点击对应卡片 tab 重载卡片页
+ * （脚本重入 study() 时命中 force 强制重跑）；轮数上限 MAX_REBRUSH_ROUNDS。
+ * @returns true 表示已触发补刷跳转（调用方应立即返回，等待重入）
+ */
+async function verifyChapterAndRebrush(
+	opts: typeof CXProject.scripts.study.cfg & { workOptions: CommonWorkOptions }
+): Promise<boolean> {
+	const chapterId = getCurrentChapterId();
+	if (!chapterId) return false;
+	const log = (...msg: any[]) => $console.log(...msg);
+	const prev = await readRebrushState();
+	const round = prev && prev.chapterId === chapterId ? prev.round : 0;
+
+	const ctx = getCourseContextOfTopPage();
+	if (!ctx.courseId || !ctx.clazzid) return false;
+
+	const byCard = await collectChapterUnfinishedByCard(ctx.courseId, ctx.clazzid, ctx.cpi, chapterId, log);
+	if (!byCard) return false; // 反爬/失败：放行走原有流程
+
+	if (byCard.size === 0) {
+		if (round > 0) {
+			log('✅ 章节任务点已全部确认完成（补刷 ' + round + ' 轮后通过校验）');
+		}
+		await writeRebrushState(undefined);
+		return false;
+	}
+
+	const total = Array.from(byCard.values()).reduce((s, list) => s + list.length, 0);
+	if (round >= MAX_REBRUSH_ROUNDS) {
+		const names = Array.from(byCard.values())
+			.flat()
+			.map((j) => j.name + '(' + j.jobid + ')')
+			.slice(0, 8)
+			.join('、');
+		log(`⚠️ 章节任务点补刷 ${round} 轮后仍有 ${total} 个未完成：` + names + '，已停止补刷，请手动检查。');
+		CommonProject.scripts.settings.methods.notificationBySetting(
+			`超星章节任务点补刷 ${round} 轮后仍有 ${total} 个未完成，请手动检查：${names}`,
+			{ duration: 0, extraTitle: '超星学习通学习脚本' }
+		);
+		await writeRebrushState(undefined);
+		return false;
+	}
+
+	// 写入补刷状态并点击第一个含未完成任务的卡片 tab，卡片页重载后脚本重入强制重跑
+	const firstCard = Math.min(...byCard.keys());
+	await writeRebrushState({ chapterId, round: round + 1, jobs: Object.fromEntries(byCard), ts: Date.now() });
+	const names = Array.from(byCard.values())
+		.flat()
+		.map((j) => j.name)
+		.slice(0, 5)
+		.join('、');
+	log(
+		`🔍 章节校验：发现 ${total} 个未完成任务点（${names}），第 ${
+			round + 1
+		}/${MAX_REBRUSH_ROUNDS} 轮补刷，正在跳回对应节点...`
+	);
+	$message.warn({ content: `章节校验发现 ${total} 个未完成任务点，正在自动补刷（第 ${round + 1} 轮）`, duration: 8 });
+	// 卡片序号与 fetchChapterCardNums 的编号规则一致（含 cardid 的 li 在全部 li 中的下标）
+	const tabs = Array.from(top?.document?.querySelectorAll<HTMLElement>('#prev_tab .prev_ul li, .prev_ul li') || []);
+	const tab = tabs[firstCard];
+	if (tab) {
+		tab.click();
+		return true;
+	}
+	// 找不到卡片 tab（非整卷预览等场景）：清状态放行
+	log('未找到卡片切换按钮，跳过本轮补刷');
+	await writeRebrushState(undefined);
+	return false;
+}
+
+/**
+ * 课程级完成校验：在线拉取全量章节树统计未完成任务点（绕过页面 DOM 计数滞后）。
+ */
+async function verifyCourseReallyFinished(): Promise<{
+	finished: boolean;
+	pending: number;
+	firstUnfinished?: { chapterId: string; name: string; pending: number };
+}> {
+	const ctx = getCourseContextOfTopPage();
+	if (!ctx.courseId || !ctx.clazzid) {
+		// 拿不到课程参数：退回页面树判定
+		return { finished: CXAnalyses.isFinishedAllChapters(), pending: 0 };
+	}
+	try {
+		const chapters = await fetchCourseChaptersOnline(ctx.courseId, ctx.clazzid, ctx.cpi);
+		if (!chapters.length) {
+			return { finished: CXAnalyses.isFinishedAllChapters(), pending: 0 };
+		}
+		const total = chapters.reduce((s, c) => s + (c.pending || 0), 0);
+		const first = chapters.find((c) => (c.pending || 0) > 0);
+		$console.log(
+			'课程完成校验（在线章节树）：共 ' +
+				chapters.length +
+				' 章，未完成任务点 ' +
+				total +
+				' 个' +
+				(first ? '，第一个未完成章节：' + first.name : '')
+		);
+		return {
+			finished: total === 0,
+			pending: total,
+			firstUnfinished: first ? { chapterId: first.kid, name: first.name, pending: first.pending } : undefined
+		};
+	} catch (e) {
+		$console.warn('课程完成校验失败，回退页面树判定：' + String(e).slice(0, 80));
+		return { finished: CXAnalyses.isFinishedAllChapters(), pending: 0 };
+	}
+}
+
+/** 课程级补刷轮数（tab 存储，30 分钟 TTL 防陈旧） */
+async function readCourseRound(): Promise<number> {
+	try {
+		const s = (await $store.getTab(COURSE_ROUND_KEY)) as { round: number; ts: number } | undefined;
+		if (s && Date.now() - s.ts < 30 * 60 * 1000) return s.round;
+	} catch (e) {
+		/* ignore */
+	}
+	return 0;
+}
+
+async function bumpCourseRound(): Promise<number> {
+	const round = (await readCourseRound()) + 1;
+	try {
+		await $store.setTab(COURSE_ROUND_KEY, { round, ts: Date.now() });
+	} catch (e) {
+		/* ignore */
+	}
+	return round;
+}
+
+async function clearCourseRound(): Promise<void> {
+	try {
+		await $store.setTab(COURSE_ROUND_KEY, 0);
+	} catch (e) {
+		/* ignore */
+	}
+}
+
+/**
+ * 跳转到第一个未完成章节继续刷课。
+ * @returns true 表示已发起跳转（调用方应立即返回等待重入）；false 表示超过轮数上限不再跳转
+ */
+async function redirectCourseToUnfinished(
+	verify: { pending: number; firstUnfinished?: { chapterId: string; name: string; pending: number } },
+	log: (...msg: any[]) => void
+): Promise<boolean> {
+	if (!verify.firstUnfinished) return false;
+	const round = await bumpCourseRound();
+	if (round > MAX_COURSE_ROUNDS) {
+		log(
+			`⚠️ 课程级补刷已达 ${MAX_COURSE_ROUNDS} 轮上限，仍有 ${verify.pending} 个未完成任务点（${verify.firstUnfinished.name}），停止自动跳转。`
+		);
+		CommonProject.scripts.settings.methods.notificationBySetting(
+			`超星课程自动补刷 ${MAX_COURSE_ROUNDS} 轮后仍有 ${verify.pending} 个未完成任务点（${verify.firstUnfinished.name}），请手动检查。`,
+			{ duration: 0, extraTitle: '超星学习通学习脚本' }
+		);
+		await clearCourseRound();
+		return false;
+	}
+	const ctx = getCourseContextOfTopPage();
+	const msg =
+		`检测到课程并未全部完成：还有 ${verify.pending} 个任务点` +
+		`（${verify.firstUnfinished.name} 剩 ${verify.firstUnfinished.pending}），` +
+		`正在跳转继续刷课（第 ${round}/${MAX_COURSE_ROUNDS} 轮）...`;
+	$message.warn({ content: msg, duration: 10 });
+	log(msg);
+	try {
+		// 复用 studyDispatcher 同款跳转：顶层页面的 getTeacherAjax 加载指定章节
+		await pageInvoke(
+			`(cid, clz, ch) => {
+				var w = window.top || window;
+				if (typeof w.getTeacherAjax === 'function') {
+					w.getTeacherAjax(cid, clz, ch);
+					return true;
+				}
+				return 'no-getTeacherAjax';
+			}`,
+			[ctx.courseId, ctx.clazzid, verify.firstUnfinished.chapterId],
+			10000
+		);
+		return true;
+	} catch (e) {
+		log('跳转未完成章节失败：' + String(e).slice(0, 80));
+		return false;
+	}
+}
+
 function getQuestionType(
 	val: number
 ): 'single' | 'multiple' | 'judgement' | 'completion' | 'line' | 'fill' | 'reader' | undefined {

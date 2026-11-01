@@ -1,4 +1,4 @@
-import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement, $store, $gm } from 'easy-us';
+import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement, $store } from 'easy-us';
 import { RemotePage, SimplifyWorkResult, OCSWorker, defaultAnswerWrapperHandler } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { workNotes, definition, volume, restudy } from '../utils/configs';
@@ -11,6 +11,7 @@ import {
 } from '../utils/work';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { $console, BackgroundProject } from './background';
+import { pageInvoke } from '../utils/page-bridge';
 import { waitForMedia, waitForElement } from '../utils/study';
 import { $playwright } from '../utils/app';
 import { $render } from '../utils/render';
@@ -1276,14 +1277,22 @@ export const ZHSProject = Project.create({
 
 										await $.sleep(1000);
 
-										const _open = $gm.unsafeWindow.open;
-										$gm.unsafeWindow.open = () => null;
+										// MV3：页面世界的 window.open 需经桥接临时禁用再还原
+										pageInvoke(
+											`() => {
+												if (!window.__ocsOrigOpen) window.__ocsOrigOpen = window.open;
+												window.open = function () { return null; };
+												return true;
+											`
+										).catch(() => undefined);
 										nextJobTitle.click();
 
 										const msg = '链接任务完成，即将自动下一节！';
 										$message.info(msg);
 										setTimeout(async () => {
-											$gm.unsafeWindow.open = _open;
+											pageInvoke(
+												`() => { if (window.__ocsOrigOpen) window.open = window.__ocsOrigOpen; return true; }`
+											).catch(() => undefined);
 											// 直接下一个
 											await next();
 										}, 3000);

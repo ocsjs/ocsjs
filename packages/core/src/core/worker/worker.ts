@@ -209,6 +209,17 @@ export class OCSWorker<E extends RawElements = RawElements> extends CommonEventE
 					// 超时错误
 				}
 
+				/** 题库无结果时的兜底（随机作答/课程内容检索），由脚本侧注入 */
+				const hasAnyAnswer =
+					result.ctx && result.ctx.searchInfos.some((info) => info.results.some((r) => r.answer && r.answer.trim()));
+				if (result.ctx && !hasAnyAnswer && this.opts.onEmptySearchInfos) {
+					try {
+						await this.opts.onEmptySearchInfos(result.ctx);
+					} catch (err) {
+						console.error('无结果兜底处理异常', err);
+					}
+				}
+
 				try {
 					if (result.ctx && result.ctx.searchInfos.length !== 0) {
 						/** 开始处理 */

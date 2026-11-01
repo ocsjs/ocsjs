@@ -2,21 +2,20 @@
 /// <reference path="./global.d.ts" />
 
 // 环境检测
+// 注意：不能用 Reflect.get(globalThis, api) —— Tampermonkey 5.3+（MV3 userScripts API 模式）
+// 将 GM API 以作用域级绑定注入，globalThis 上取不到，会误判为不支持。
 if (
-	[
-		'GM_getTab',
-		'GM_saveTab',
-		'GM_setValue',
-		'GM_getValue',
-		'unsafeWindow',
-		'GM_listValues',
-		'GM_deleteValue',
-		'GM_notification',
-		'GM_xmlhttpRequest',
-		'GM_getResourceText',
-		'GM_addValueChangeListener',
-		'GM_removeValueChangeListener'
-	].some((api) => typeof Reflect.get(globalThis, api) === 'undefined')
+	typeof GM_getTab === 'undefined' ||
+	typeof GM_saveTab === 'undefined' ||
+	typeof GM_setValue === 'undefined' ||
+	typeof GM_getValue === 'undefined' ||
+	typeof GM_listValues === 'undefined' ||
+	typeof GM_deleteValue === 'undefined' ||
+	typeof GM_notification === 'undefined' ||
+	typeof GM_xmlhttpRequest === 'undefined' ||
+	typeof GM_getResourceText === 'undefined' ||
+	typeof GM_addValueChangeListener === 'undefined' ||
+	typeof GM_removeValueChangeListener === 'undefined'
 ) {
 	const open = confirm(
 		`OCS网课脚本不支持当前的脚本管理器（${GM_info.scriptHandler}）。` +
