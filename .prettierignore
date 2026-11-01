@@ -7,3 +7,4 @@ pnpm-lock.yaml
 public
 stats.html
 .md
+packages/scripts/assets/css/style.css
