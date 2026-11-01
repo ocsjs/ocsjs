@@ -502,6 +502,12 @@ export function createCommonAnswerer(options: {
 	optionsTransform?: (elements: any, ctx: WorkContext<any>) => string | { text: string; images?: string[] };
 	answererWrappers: AnswererWrapper[];
 	period?: number;
+	/**
+	 * 每次搜题前的前置钩子（在提取题目前执行）。
+	 * 用于超星字体解密等场景：题目文本提取依赖前置处理（解密 DOM 替换）完成，
+	 * 否则第一题会以密文搜题导致乱码。
+	 */
+	beforeSearch?: (ctx: WorkContext<any>) => Promise<void> | void;
 }) {
 	const normalize = (
 		v: string | { text: string; images?: string[] } | undefined
@@ -516,6 +522,8 @@ export function createCommonAnswerer(options: {
 	let imageConvertFailWarned = false;
 
 	return async (elements: any, ctx: WorkContext<any>): Promise<SearchInformation[]> => {
+		// 搜题前置钩子（如等待字体解密完成），必须在提取题目前执行
+		await options.beforeSearch?.(ctx);
 		const titleResult = normalize(options.titleTransform(elements, ctx));
 		const title = titleResult.text;
 		if (!title) {

@@ -11,7 +11,7 @@ import {
 	domSearchAll,
 	SearchInformation
 } from '@ocsjs/core';
-import { crackFont, collectChars, decryptElements, extractFontFromStyle } from '../utils/font-decrypt';
+import { crackFont, collectChars, decryptElements, extractFontFromStyle, loadRefTable } from '../utils/font-decrypt';
 import { $modal, h, $store, MessageElement, Project, Script, $el, $gm, $$el, $ui, cors, $message } from 'easy-us';
 
 import { CommonEvents, CommonProject } from './common';
@@ -786,6 +786,10 @@ export const CXProject = Project.create({
 				['考试整卷预览', '/mooc2/exam/preview'],
 				['作业', '/mooc2/work/dowork']
 			],
+			onstart() {
+				// 页面加载即预下载特征表到缓存（不等 DOM 渲染），破解时无需等待网络
+				loadRefTable(CX_SECRET_REF_TABLE_URL).catch(() => undefined);
+			},
 			async oncomplete() {
 				await ensureCxFontDecrypted();
 			}
@@ -904,6 +908,8 @@ function workOrExam(
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
+			// 每次搜题前确保字体解密完成（第一题乱码防护）
+			beforeSearch: () => ensureCxFontDecrypted(),
 			titleTransform: (elements, ctx) => {
 				if (elements.title) {
 					return workOrExamQuestionTitleTransform(elements.title);
@@ -1103,6 +1109,8 @@ function mobilelearn(opts: CommonWorkOptions) {
 		answerSeparators: opts.answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
+			// 每次搜题前确保字体解密完成（第一题乱码防护）
+			beforeSearch: () => ensureCxFontDecrypted(),
 			titleTransform: (elements, ctx) => {
 				if (elements.title) {
 					return titleTransform(elements.title);
@@ -1190,25 +1198,70 @@ function mobilelearn(opts: CommonWorkOptions) {
  * @see 参考 https://bbs.tampermonkey.net.cn/thread-2303-1-1.html
  */
 /**
- * 字体解密任务（幂等共享）。
+ * 字体解密（首破 + 增量模式）
  *
  * 解密脚本（cxSecretFontRecognize）与答题脚本（作业/考试）独立并发启动，
  * 解密需拉取特征表并逐字破解、耗时数秒；若答题先开始，第一题会以密文搜题导致乱码。
- * 因此答题流程启动前统一 await 本任务，保证搜题时 DOM 已是明文。
+ * 因此所有搜题路径（含入口启动与 createCommonAnswerer 的 beforeSearch 钩子）
+ * 统一经 ensureCxFontDecrypted 守卫：搜题时 DOM 必是明文。
+ *
+ * 完整破解只跑一次并缓存映射表；题目后渲染/页面重绘产生的加密元素，
+ * 复用映射表增量解密（纯文本替换，毫秒级）。
  */
-let cxFontDecryptJob: Promise<void> | undefined;
-function ensureCxFontDecrypted(doc: Document = document): Promise<void> {
-	if (!cxFontDecryptJob) {
-		cxFontDecryptJob = mappingRecognize(doc);
+let cxFontMap: Record<string, string> | undefined;
+let cxFontCrackJob: Promise<Record<string, string> | undefined> | undefined;
+/** 破解已失败过（不再重试，避免每次搜题重复耗时破解） */
+let cxFontCrackFailed = false;
+
+/** 完整破解（幂等，只跑一次）：提取加密字体并破解当前出现的密文字符 */
+function crackCxFontOnce(doc: Document): Promise<Record<string, string> | undefined> {
+	if (!cxFontCrackJob) {
+		cxFontCrackJob = (async () => {
+			// 从 @font-face 的 data URI 中提取加密字体
+			const fontBuffer = extractFontFromStyle(doc, 'font-cxsecret');
+			if (!fontBuffer) {
+				$console.log('未检测到加密文字。');
+				return undefined;
+			}
+			const fonts = CXAnalyses.getSecretFont(doc);
+			if (fonts.length === 0) {
+				return undefined;
+			}
+
+			const t = Date.now();
+			try {
+				// 只破解页面实际出现的字符（通常几十个），避免全字表扫描
+				const { map, details } = await crackFont(fontBuffer, collectChars(fonts), {
+					refTableUrl: CX_SECRET_REF_TABLE_URL,
+					onProgress: (done, total) => console.log(`加密文字识别中 ${done}/${total}`)
+				});
+				const lowMargin = details.filter((d) => d.margin < 0.3);
+				if (lowMargin.length > 0) {
+					const msg = `有 ${lowMargin.length} 个字符识别置信度较低，可能存在误差`;
+					$console.warn(msg);
+					console.log(msg, lowMargin);
+				}
+				$console.info('文字解密完成，耗时 ' + ((Date.now() - t) / 1000).toFixed(1) + ' 秒');
+				return map;
+			} catch (err) {
+				cxFontCrackFailed = true;
+				$console.error('加密文字识别失败：', String(err));
+				$message.error('加密文字识别失败：' + String(err));
+				return undefined;
+			}
+		})();
 	}
-	return cxFontDecryptJob;
+	return cxFontCrackJob;
 }
 
-async function mappingRecognize(doc: Document = document) {
-	// 从 @font-face 的 data URI 中提取加密字体
-	const fontBuffer = extractFontFromStyle(doc, 'font-cxsecret');
-	if (!fontBuffer) {
-		$console.log('未检测到加密文字。');
+/**
+ * 字体解密守卫（幂等增量）：
+ * - 页面无加密元素：立即放行（不缓存否定结论，覆盖题目后渲染场景）
+ * - 已有映射表：增量解密新渲染的加密元素（毫秒级）
+ * - 首次发现加密元素：等待完整破解（秒级）
+ */
+async function ensureCxFontDecrypted(doc: Document = document): Promise<void> {
+	if (cxFontCrackFailed) {
 		return;
 	}
 	const fonts = CXAnalyses.getSecretFont(doc);
@@ -1216,26 +1269,18 @@ async function mappingRecognize(doc: Document = document) {
 		return;
 	}
 
-	const t = Date.now();
-	try {
-		// 只破解页面实际出现的字符（通常几十个），避免全字表扫描
-		const { map, details } = await crackFont(fontBuffer, collectChars(fonts), {
-			refTableUrl: CX_SECRET_REF_TABLE_URL,
-			onProgress: (done, total) => console.log(`加密文字识别中 ${done}/${total}`)
-		});
-		const lowMargin = details.filter((d) => d.margin < 0.3);
-		if (lowMargin.length > 0) {
-			const msg = `有 ${lowMargin.length} 个字符识别置信度较低，可能存在误差`;
-			$console.warn(msg);
-			console.log(msg, lowMargin);
+	if (!cxFontMap) {
+		cxFontMap = await crackCxFontOnce(doc);
+		if (!cxFontMap) {
+			// 字体/题目尚未渲染完成：清空任务允许下次搜题重试（破解失败已由 cxFontCrackFailed 拦截）
+			cxFontCrackJob = undefined;
+			return;
 		}
-		decryptElements(fonts, map);
-		fonts.forEach((el) => el.classList.remove('font-cxsecret')); // 移除字体加密
-		$console.info('文字解密完成，耗时 ' + ((Date.now() - t) / 1000).toFixed(1) + ' 秒');
-	} catch (err) {
-		$console.error('加密文字识别失败：', String(err));
-		$message.error('加密文字识别失败：' + String(err));
 	}
+
+	// 增量应用映射表并移除加密标记（移除后 getSecretFont 不再选中，天然幂等）
+	decryptElements(fonts, cxFontMap);
+	fonts.forEach((el) => el.classList.remove('font-cxsecret'));
 }
 
 /**
@@ -2044,6 +2089,8 @@ const JobRunner = {
 			answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 			/** 默认搜题方法构造器 */
 			answerer: createCommonAnswerer({
+				// 每次搜题前确保字体解密完成（第一题乱码防护）
+				beforeSearch: () => ensureCxFontDecrypted(),
 				titleTransform: (elements, ctx) => chapterTestTaskQuestionTitleTransform(elements.title),
 				optionsTransform: (elements, ctx) => {
 					const typeInput = elements.type?.[0] as HTMLInputElement;
