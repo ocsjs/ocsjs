@@ -2816,7 +2816,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 		root: 'div:has(> .questionContent)' /** .questionBox */,
 		elements: {
 			title: '.questionContent',
-			options: '.optionUl label',
+			options: '.optionUl label, .questiontextarea, .ShortAnswer-textarea',
 			questionTit: '.questionTit'
 		},
 		thread: thread ?? 1,
@@ -2828,6 +2828,18 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 			period
 		}),
 		work: {
+			type(ctx) {
+				const type = ctx.elements.questionTit[0]?.textContent || '';
+				return type.includes('单选')
+					? 'single'
+					: type.includes('多选')
+					? 'multiple'
+					: type.includes('判断')
+					? 'judgement'
+					: type.includes('填空') || type.includes('问答') || type.includes('名词解释')
+					? 'completion'
+					: undefined;
+			},
 			/** 自定义处理器 */
 			async handler(type, answer, option, ctx) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
@@ -2836,10 +2848,17 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 						await $.sleep(200);
 					}
 				} else if (type === 'completion' && answer.trim()) {
-					const text = option.querySelector('textarea');
+					const text =
+						option.tagName === 'TEXTAREA' ? (option as HTMLTextAreaElement) : option.querySelector('textarea');
 					if (text) {
+						text.focus();
+						await $.sleep(100);
 						text.value = answer;
-						await $.sleep(200);
+						await $.sleep(100);
+						text.dispatchEvent(new Event('input', { bubbles: true }));
+						await $.sleep(100);
+						text.blur();
+						await $.sleep(100);
 					}
 				}
 			}
