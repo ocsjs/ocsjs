@@ -93,7 +93,6 @@ async function createUserJs() {
 					'GM_saveTab',
 					'GM_setValue',
 					'GM_getValue',
-					'unsafeWindow',
 					'GM_listValues',
 					'GM_deleteValue',
 					'GM_notification',

@@ -7,6 +7,21 @@ import { IcveMoocProject } from './projects/icve';
 import { ZJYProject } from './projects/zjy';
 import { ICourseProject } from './projects/icourse';
 import { YKTProject } from './projects/yuketang';
+import { getUnsafeWindowProxy } from './utils/page-bridge';
+
+/**
+ * MV3 兼容：Tampermonkey 5.3+ 在 Chromium 138+ 使用 userScripts API 注入，
+ * @grant GM_* 与 @grant unsafeWindow 组合会被拒绝注入，因此脚本不再申请 unsafeWindow。
+ * 在 USER_SCRIPT（隔离）世界中以 MAIN 世界桥接代理补位；
+ * 在旧油猴沙箱 / Node 构建环境中 unsafeWindow 已存在，此 polyfill 不生效。
+ */
+if (typeof (globalThis as any).unsafeWindow === 'undefined') {
+	try {
+		(globalThis as any).unsafeWindow = getUnsafeWindowProxy();
+	} catch (e) {
+		/* 非 DOM 环境忽略 */
+	}
+}
 
 /** 导出所有的 OCS 核心模块 */
 export * from '@ocsjs/core';

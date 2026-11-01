@@ -18,6 +18,7 @@ import semver_valid from 'semver/functions/valid';
 import { CommonProject } from './common';
 import { CXProject, definedProjects, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '..';
 import { RenderScript } from '../render';
+import { pageInvoke } from '../utils/page-bridge';
 import { SearchInfosElement } from '../elements/search.infos';
 import { $render } from '../utils/render';
 
@@ -525,7 +526,9 @@ export const BackgroundProject = Project.create({
 			onrender({ panel }) {
 				const injectBtn = h('button', { className: 'base-style-button' }, '点击注入全局变量');
 				injectBtn.addEventListener('click', () => {
-					$gm.unsafeWindow.OCS_CONTEXT = self;
+					pageInvoke('(w) => { try { window.OCS_CONTEXT = w; } catch (e) {} return true; }', [self]).catch(
+						() => undefined
+					);
 				});
 
 				const showTabDataBtn = h('button', { className: 'base-style-button' }, '显示Tab存储');
