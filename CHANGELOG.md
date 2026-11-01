@@ -1,5 +1,13 @@
 # Changelog
 
+## [5.2.6](https://github.com/ocsjs/ocsjs/compare/5.2.5...5.2.6) (2026-11-01)
+
+
+### 🐛 问题修复
+
+* 修复超星第一题繁体乱码，字体解密改为预载+每次搜题前守卫+增量解密 ([fdab3c9](https://github.com/ocsjs/ocsjs/commit/fdab3c9e5fcab5b40053a54d37ad93b81bb5d427))
+* 紧急修复easy-us更新导致的脚本卡死问题 ([10eb0bd](https://github.com/ocsjs/ocsjs/commit/10eb0bdc4d765ae339fab92e12b84960f5699fe2))
+
 ## [5.2.5](https://github.com/ocsjs/ocsjs/compare/5.2.4...5.2.5) (2026-10-31)
 
 
