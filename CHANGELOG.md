@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.2.7](https://github.com/ocsjs/ocsjs/compare/5.2.6...5.2.7) (2026-11-01)
+
+
+### ⚡ 优化改进
+
+* 适配智慧树校内翻转课的填空题、问答题等 ([e27255d](https://github.com/ocsjs/ocsjs/commit/e27255d66946b8d31355c7bd2e62b605e2062b15))
+
 ## [5.2.6](https://github.com/ocsjs/ocsjs/compare/5.2.5...5.2.6) (2026-11-01)
 
 
