@@ -120,6 +120,68 @@ export const skipStudyTimeWarnDialog: Config = {
  * 各 key 虽然也会在被隐藏的运行脚本中声明，但因同属 `zhs.study` 命名空间，存储值完全一致，
  * 用户只需在设置中心修改一次即可。
  */
+/** 新形态课程-学习脚本独有：学习模式（仅新形态课程学习页面生效） */
+export const smartStudyMode: Config = {
+	label: '新形态课程-学习模式',
+	tag: 'select',
+	attrs: {
+		title:
+			'智慧树新形态AI课程学习模式。仅在新形态课程学习页面生效：\nsmartcoursestudent.zhihuishu.com \n及其新域名 ai-smart-course-student-pro.zhihuishu.com。可选择视频+自动写掌握度、仅自动写掌握度（跳过视频），或仅观看视频。'
+	},
+	defaultValue: 'video_and_mastery' as 'video_and_mastery' | 'mastery_only' | 'video_only',
+	options: [
+		['video_and_mastery', '视频 + 自动写掌握度（推荐）'],
+		['mastery_only', '仅自动写掌握度（跳过视频）'],
+		['video_only', '仅观看视频（原版默认）']
+	]
+};
+
+/** 新形态课程-学习脚本独有：目标掌握度百分比 */
+export const targetMasteryScore: Config = {
+	label: '新形态课程-目标掌握度(%)',
+	attrs: {
+		type: 'number',
+		min: '10',
+		max: '100',
+		step: '5',
+		title: '当小节掌握度低于此百分比时，自动点击“去提升”进行掌握度刷题'
+	},
+	defaultValue: 80
+};
+
+/** 新形态课程-学习脚本独有：单节最大掌握度刷题次数 */
+export const maxMasteryAttempts: Config = {
+	label: '新形态课程-单节最大刷题次数',
+	attrs: {
+		type: 'number',
+		min: '1',
+		max: '10',
+		step: '1',
+		title: '单个小节最多自动刷几次掌握度，防止题库准确率不足时无限循环'
+	},
+	defaultValue: 2
+};
+
+/** 新形态课程-掌握度答题：自动提交并继续下一节 */
+export const autoSubmitMastery: Config = {
+	label: '新形态课程-掌握度自动交卷并继续',
+	attrs: {
+		type: 'checkbox',
+		title: '在掌握度提升页面（foAiRun=1&point=1）答完题后自动点击交卷，并在结算页自动返回继续下一节'
+	},
+	defaultValue: true
+};
+
+/** 新形态课程-掌握度答题：未搜到题时自动兜底作答 */
+export const autoFillUnansweredMastery: Config = {
+	label: '新形态课程-掌握度未搜到题时保底作答',
+	attrs: {
+		type: 'checkbox',
+		title: '智慧树掌握度要求所有题目必须作答才能交卷；开启后若题库未搜到答案将自动选择保底选项以确保顺利交卷'
+	},
+	defaultValue: true
+};
+
 export const studyCenterConfigs: Record<string, Config> = {
 	notes: studyNotes,
 	playbackRate,
@@ -129,6 +191,9 @@ export const studyCenterConfigs: Record<string, Config> = {
 	reloadWhenError,
 	stopTime: { ...stopTime, separator: '平台相关高级选项（仅在对应学习页生效）' },
 	switchMode,
+	smartStudyMode,
+	targetMasteryScore,
+	maxMasteryAttempts,
 	skipStudyTimeWarnDialog
 };
 
@@ -139,5 +204,7 @@ export const studyCenterConfigs: Record<string, Config> = {
 export const workCenterConfigs: Record<string, Config> = {
 	notes: workNotes,
 	workDelay,
-	readNotes
+	readNotes,
+	autoSubmitMastery,
+	autoFillUnansweredMastery
 };

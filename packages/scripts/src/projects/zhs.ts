@@ -9,6 +9,11 @@ import {
 	studyCenterConfigs,
 	stopTime,
 	switchMode,
+	smartStudyMode,
+	targetMasteryScore,
+	maxMasteryAttempts,
+	autoSubmitMastery,
+	autoFillUnansweredMastery,
 	skipStudyTimeWarnDialog
 } from '../utils/zhs.configs';
 import {
@@ -690,6 +695,10 @@ export const ZHSProject = Project.create({
 				['新形态课程新域名学习页面', 'ai-smart-course-student-pro.zhihuishu.com/learnPage'],
 				['新形态课程首页', 'smartcoursestudent.zhihuishu.com/singleCourse'],
 				['新形态课程新域名课程首页', 'ai-smart-course-student-pro.zhihuishu.com/singleCourse'],
+				['新形态课程掌握度记录页', 'smartcoursestudent.zhihuishu.com/masteryHistory'],
+				['新形态课程新域名掌握度记录页', 'ai-smart-course-student-pro.zhihuishu.com/masteryHistory'],
+				['新形态课程掌握度报告页', 'smartcoursestudent.zhihuishu.com/point'],
+				['新形态课程新域名掌握度报告页', 'ai-smart-course-student-pro.zhihuishu.com/point'],
 				['校内课学习页面', 'zhihuishu.com/aidedteaching/sourceLearning'],
 				['新智慧学习页面', 'wisdom-mooc.zhihuishu.com/study/index'],
 				['AI教学空间学习首页', 'hike-teaching-center.polymas.com/stu-hike/agent-course-hike/ai-course-center'],
@@ -699,6 +708,36 @@ export const ZHSProject = Project.create({
 			],
 			namespace: zhsStudyNamespace,
 			configs: studyCenterConfigs,
+			onrender({ panel }) {
+				if (
+					location.href.includes('smartcoursestudent.zhihuishu.com') ||
+					location.href.includes('ai-smart-course-student-pro.zhihuishu.com')
+				) {
+					panel.body.replaceChildren(
+						h('hr'),
+						$ui.button('🎯 立即刷当前节掌握度', {}, (btn) => {
+							btn.style.marginRight = '8px';
+							btn.onclick = () => {
+								const actionBtn = document.querySelector<HTMLElement>(
+									'button.simplified-mastery__action, .simplified-mastery__action, .improve-btn'
+								);
+								if (actionBtn) {
+									$message.info({ content: '正在进入掌握度提升...' });
+									actionBtn.click();
+								} else {
+									$message.warn({ content: '当前页面未找到“去提升”按钮，请确认处于小节学习页或提升记录页。' });
+								}
+							};
+						}),
+						$ui.button('🔄 重置掌握度记录', {}, (btn) => {
+							btn.onclick = () => {
+								localStorage.removeItem('ocs_zhs_mastery_records_v1');
+								$message.success({ content: '已重置各小节掌握度尝试次数记录！' });
+							};
+						})
+					);
+				}
+			},
 			oncomplete() {
 				// 迁移旧命名空间配置
 				migrateZhsStudyConfigs();
@@ -1153,11 +1192,18 @@ export const ZHSProject = Project.create({
 				['新形态课程学习页面', 'smartcoursestudent.zhihuishu.com/learnPage'],
 				['新形态课程新域名学习页面', 'ai-smart-course-student-pro.zhihuishu.com/learnPage'],
 				['新形态课程首页', 'smartcoursestudent.zhihuishu.com/singleCourse'],
-				['新形态课程新域名课程首页', 'ai-smart-course-student-pro.zhihuishu.com/singleCourse']
+				['新形态课程新域名课程首页', 'ai-smart-course-student-pro.zhihuishu.com/singleCourse'],
+				['新形态课程掌握度记录页', 'smartcoursestudent.zhihuishu.com/masteryHistory'],
+				['新形态课程新域名掌握度记录页', 'ai-smart-course-student-pro.zhihuishu.com/masteryHistory'],
+				['新形态课程掌握度报告页', 'smartcoursestudent.zhihuishu.com/point'],
+				['新形态课程新域名掌握度报告页', 'ai-smart-course-student-pro.zhihuishu.com/point']
 			],
 			namespace: zhsStudyNamespace,
 			configs: {
 				switchMode,
+				smartStudyMode,
+				targetMasteryScore,
+				maxMasteryAttempts,
 				restudy: restudy,
 				volume: volume,
 				definition: definition,
@@ -1168,98 +1214,290 @@ export const ZHSProject = Project.create({
 				migrateZhsStudyConfigs();
 				this.methods.start();
 			},
-			onhistorychange(type, ...args) {
-				if (type === 'push') {
+			onhistorychange(type) {
+				if (type === 'push' || type === 'replace') {
 					this.methods.start();
 				}
 			},
 			methods() {
+				let startLock = false;
 				return {
 					start: async () => {
+						if (startLock) return;
+						startLock = true;
+						setTimeout(() => {
+							startLock = false;
+						}, 1500);
+
+						const storageKey = 'ocs_zhs_mastery_records_v1';
+						const getMasteryRecords = (): Record<string, { attempts: number; score: number }> => {
+							try {
+								return JSON.parse(localStorage.getItem(storageKey) || '{}');
+							} catch {
+								return {};
+							}
+						};
+						const saveMasteryRecord = (nodeId: string, data: { attempts?: number; score?: number }) => {
+							if (!nodeId) return;
+							const records = getMasteryRecords();
+							const prev = records[nodeId] || { attempts: 0, score: 0 };
+							records[nodeId] = {
+								attempts: data.attempts ?? prev.attempts,
+								score: data.score ?? prev.score
+							};
+							localStorage.setItem(storageKey, JSON.stringify(records));
+						};
+						const parseNodeUidFromUrl = (url = location.href) => {
+							const learnMatch = url.match(/\/learnPage\/[^/]+\/([^/?#]+)\/[^/?#]+/);
+							if (learnMatch) return learnMatch[1];
+							const historyMatch = url.match(/\/masteryHistory\/[^/]+\/[^/]+\/([^/?#]+)/);
+							if (historyMatch) return historyMatch[1];
+							const pointMatch = url.match(/\/point\/[^/]+\/[^/]+\/[^/]+\/([^/?#]+)\/[^/?#]+/);
+							if (pointMatch) return pointMatch[1];
+							return '';
+						};
+
+						// 1. 课程概览首页：自动进入第一个章节学习页
 						if (location.href.includes('singleCourse')) {
-							$message.info({ content: '请点击任意章节开始进行自动学习', duration: 60 });
+							$message.info({ content: '检测到新形态课程首页，3秒后自动进入章节开始学习/刷掌握度...', duration: 5 });
+							await $.sleep(3000);
+							if (!location.href.includes('singleCourse')) return;
+							const firstNode = document.querySelector<HTMLElement>(
+								'.section-item-collapse-info, .leaf-node, .knowledge-node-item, .chapter-node, [class*="node-title"]'
+							);
+							if (firstNode) {
+								firstNode.click();
+							} else {
+								$message.info({ content: '请点击任意章节开始进行自动学习', duration: 60 });
+							}
 							return;
 						}
-						const processor = new StudyVideoH5();
 
+						// 2. 掌握度提升记录页（/masteryHistory/:courseId/:classId/:nodeUid）
+						if (location.href.includes('/masteryHistory/')) {
+							const mode = this.cfg.smartStudyMode || 'video_and_mastery';
+							if (mode === 'video_only') {
+								return;
+							}
+							$message.info({ content: '已进入掌握度提升记录页，正在自动点击“去提升”...', duration: 5 });
+							for (let i = 0; i < 20; i++) {
+								await $.sleep(500);
+								const improveBtn = document.querySelector<HTMLElement>(
+									'.improve-btn, button.improve-btn, .header-right .el-button--primary'
+								);
+								if (improveBtn) {
+									const nodeUid = parseNodeUidFromUrl();
+									if (nodeUid) {
+										const records = getMasteryRecords();
+										const prev = records[nodeUid] || { attempts: 0, score: 0 };
+										saveMasteryRecord(nodeUid, { attempts: (prev.attempts || 0) + 1 });
+									}
+									await $.sleep(500);
+									improveBtn.click();
+									return;
+								}
+							}
+							$message.warn({ content: '未找到“去提升”按钮，正在返回学习页...' });
+							const backBtn = document.querySelector<HTMLElement>('.back-btn');
+							if (backBtn) backBtn.click();
+							else history.back();
+							return;
+						}
+
+						// 3. 掌握度作答结算报告页（/point/:courseId/:examPaperId/:examTestId/:nodeUid/:classId）
+						if (location.href.includes('/point/')) {
+							$message.info({ content: '掌握度答题已完成，正在读取掌握度得分并准备返回学习页...', duration: 5 });
+							await $.sleep(3500);
+							const nodeUid = parseNodeUidFromUrl();
+							const pointMatch = location.href.match(/\/point\/([^/]+)\/[^/]+\/[^/]+\/([^/?#]+)\/([^/?#]+)/);
+							const scoreEl = document.querySelector<HTMLElement>(
+								'.score-num, .mastery-score, .rate-num, [class*="score"], [class*="percent"]'
+							);
+							const scoreMatch = (scoreEl?.textContent || document.body.innerText || '').match(/(\d{1,3})\s*%/);
+							if (nodeUid && scoreMatch) {
+								saveMasteryRecord(nodeUid, { score: parseInt(scoreMatch[1], 10) });
+							}
+							if (nodeUid) {
+								sessionStorage.setItem('ocs_just_finished_mastery_node', nodeUid);
+							}
+							if (pointMatch) {
+								const [, courseId, nUid, classId] = pointMatch;
+								location.href = `${location.origin}/learnPage/${courseId}/${nUid}/${classId}`;
+								return;
+							}
+							const backIcon = document.querySelector<HTMLElement>('.back-icon, .back-btn');
+							if (backIcon) {
+								backIcon.click();
+							} else {
+								history.back();
+							}
+							return;
+						}
+
+						// 4. 具体学习页面（/learnPage/:courseId/:nodeUid/:classId）
+						const processor = new StudyVideoH5();
 						const getInfos = () => Array.from(document.querySelectorAll<HTMLElement>('.section-item-collapse-info'));
 						const getChapterName = () =>
 							(document.querySelector('.point-title-text')?.textContent || '未知章节') +
 							'-' +
 							(document.querySelector('[class*="card-container"].active .video-title')?.textContent || '未知小节');
 
-						// 需点击的任务点，其他是是外部链接或者未知任务点
+						// 需点击的任务点，其他是外部链接或者未知任务点
 						const include_jobs = ['video', 'book', /** 一般是PPT */ 'other', /** 一般是文档 */ 'text'];
 
-						const getNextJob = () => {
-							const cards = Array.from(document.querySelectorAll('[class*="card-container"]'));
+						const getCurrentMasteryInfo = () => {
+							const percentEl = document.querySelector<HTMLElement>('.simplified-mastery__percent');
+							const actionBtn = document.querySelector<HTMLElement>('button.simplified-mastery__action');
+							if (!actionBtn) return undefined;
+							const m = (percentEl?.textContent || '').match(/(\d+)/);
+							const score = m ? parseInt(m[1], 10) : 0;
+							return { score, actionBtn };
+						};
 
-							// 如果没有正在选中的章节，证明第一个就是外链模式，此时默认点击第一个
-							if (cards.some((card) => card.classList.contains('active')) === false) {
-								return cards[0];
+						const shouldDoMasteryForCurrentNode = () => {
+							const mode = this.cfg.smartStudyMode || 'video_and_mastery';
+							if (mode === 'video_only') return false;
+							const masteryInfo = getCurrentMasteryInfo();
+							if (!masteryInfo) return false;
+							const targetScore = Number(this.cfg.targetMasteryScore ?? 80);
+							const maxAttempts = Number(this.cfg.maxMasteryAttempts ?? 2);
+							const nodeUid = parseNodeUidFromUrl();
+							const records = getMasteryRecords();
+							const rec = (nodeUid && records[nodeUid]) || { attempts: 0, score: 0 };
+							if (nodeUid && masteryInfo.score > (rec.score || 0)) {
+								saveMasteryRecord(nodeUid, { score: masteryInfo.score });
+							}
+							if (masteryInfo.score >= targetScore) {
+								return false;
+							}
+							if (rec.attempts >= maxAttempts) {
+								$console.log(
+									`当前小节掌握度(${masteryInfo.score}%)已尝试 ${rec.attempts} 次（达上限 ${maxAttempts} 次），跳过继续刷题。`
+								);
+								return false;
+							}
+							return true;
+						};
+
+						const tryEnterMastery = async () => {
+							if (!shouldDoMasteryForCurrentNode()) return false;
+							const masteryInfo = getCurrentMasteryInfo();
+							if (!masteryInfo) return false;
+							const targetScore = Number(this.cfg.targetMasteryScore ?? 80);
+							const nodeUid = parseNodeUidFromUrl();
+							const records = getMasteryRecords();
+							const attempts = ((nodeUid && records[nodeUid]?.attempts) || 0) + 1;
+							const msg = `当前小节掌握度 ${masteryInfo.score}% < 目标 ${targetScore}%，开始第 ${attempts} 次提升掌握度...`;
+							$message.info({ content: msg, duration: 5 });
+							$console.log(msg);
+							await $.sleep(1500);
+							masteryInfo.actionBtn.click();
+							return true;
+						};
+
+						const isCardFinished = (card: Element | undefined) => {
+							if (!card) return false;
+							if (card.querySelector('.finished-icon')?.textContent?.includes('已完成')) return true;
+							const pText = card.querySelector('.progress-num, .video-progress')?.textContent?.trim();
+							if (pText === '100%') return true;
+							return false;
+						};
+
+						const getNextJob = (includeCurrent = false) => {
+							if ((this.cfg.smartStudyMode || 'video_and_mastery') === 'mastery_only') {
+								return undefined;
+							}
+							const cards = Array.from(document.querySelectorAll('[class*="card-container"]'));
+							if (!cards.length) return undefined;
+
+							let activeIndex = cards.findIndex((c) => c.classList.contains('active'));
+							if (activeIndex === -1) {
+								activeIndex = 0;
+								includeCurrent = true;
 							}
 
-							let target_el;
-							const start_index = cards.findIndex((c) => c.classList.contains('active')) || 0;
-							for (let index = start_index + 1; index < cards.length; index++) {
+							const startIndex = includeCurrent ? activeIndex : activeIndex + 1;
+							for (let index = startIndex; index < cards.length; index++) {
 								const card = cards[index];
-
 								if (this.cfg.restudy) {
-									target_el = card;
-									break;
-								} else {
-									if (card.querySelector('.finished-icon')?.textContent?.includes('已完成')) {
-										continue;
-									}
-									target_el = card;
-									break;
+									return card;
+								}
+								if (isCardFinished(card)) {
+									continue;
+								}
+								return card;
+							}
+							return undefined;
+						};
+
+						const isSectionCompleted = (info: HTMLElement, idx: number) => {
+							const mode = this.cfg.smartStudyMode || 'video_and_mastery';
+							const text = info.querySelector('.collapse-info-progress .progress-text')?.textContent || '';
+							let videoDone = true;
+							if (text.includes('/')) {
+								const [progress, total] = text
+									.replace('必学', '')
+									.trim()
+									.split('/')
+									.map((s) => parseInt(s, 10));
+								if (!isNaN(progress) && !isNaN(total)) {
+									videoDone = progress >= total;
+								}
+							} else {
+								const checkedImg = info.querySelector('.checked-img');
+								const progressWrap = info.querySelector('.collapse-info-progress');
+								if (progressWrap) {
+									videoDone = !!checkedImg;
 								}
 							}
-							return target_el;
+							if (mode === 'video_only') {
+								return videoDone;
+							}
+							const titleKey = (info.querySelector('.info-text')?.textContent || '').trim() || `idx_${idx}`;
+							const records = getMasteryRecords();
+							const rec = records[titleKey];
+							const targetScore = Number(this.cfg.targetMasteryScore ?? 80);
+							const maxAttempts = Number(this.cfg.maxMasteryAttempts ?? 2);
+							if (rec && (rec.score >= targetScore || rec.attempts >= maxAttempts)) {
+								return mode === 'mastery_only' ? true : videoDone;
+							}
+							return false;
 						};
+
 						const getNext = () => {
 							const infos = getInfos();
+							if (!infos.length) return undefined;
 
-							const works: { info: HTMLElement; progress: number; total: number }[] = [];
+							const activeIdx = infos.findIndex((info) => info.classList.contains('active'));
+							const mode = this.cfg.smartStudyMode || 'video_and_mastery';
 
-							for (let index = 0; index < infos.length; index++) {
+							if (activeIdx !== -1) {
+								const activeTitleKey =
+									(infos[activeIdx].querySelector('.info-text')?.textContent || '').trim() || `idx_${activeIdx}`;
+								const nodeUid = parseNodeUidFromUrl();
+								const records = getMasteryRecords();
+								const mInfo = getCurrentMasteryInfo();
+								const currentScore = mInfo ? mInfo.score : records[nodeUid]?.score || 0;
+								const currentAttempts = records[nodeUid]?.attempts || 0;
+								saveMasteryRecord(activeTitleKey, {
+									score: currentScore,
+									attempts: Math.max(currentAttempts, currentScore >= Number(this.cfg.targetMasteryScore ?? 80) ? 1 : 0)
+								});
+							}
+
+							for (let index = (activeIdx === -1 ? -1 : activeIdx) + 1; index < infos.length; index++) {
 								const info = infos[index];
-								const text = info.querySelector('.collapse-info-progress .progress-text')?.textContent || '';
-
-								if (this.cfg.switchMode === 'all') {
-									works.push({
-										info,
-										progress: 0,
-										total: 1
-									});
+								if (this.cfg.switchMode === 'all' || mode !== 'video_only') {
+									if (!isSectionCompleted(info, index) || this.cfg.restudy) {
+										return info;
+									}
 								} else {
-									const [progress, total] = text
-										.replace('必学', '')
-										.trim()
-										.split('/')
-										.map((s) => parseInt(s));
-									if (progress < total) {
-										works.push({ progress, total, info });
+									if (!isSectionCompleted(info, index)) {
+										return info;
 									}
 								}
 							}
-							let start = false;
-							for (let index = 0; index < works.length; index++) {
-								const work = works[index];
-								if (start) {
-									if (work.progress < work.total) {
-										return works[index].info;
-									}
-								}
-								if (work.info.classList.contains('active')) {
-									if (this.cfg.switchMode === 'all') {
-										return works[index + 1].info;
-									} else {
-										start = true;
-									}
-								}
-							}
-							return works[0]?.info;
+							return undefined;
 						};
 
 						// 监听音量
@@ -1280,56 +1518,89 @@ export const ZHSProject = Project.create({
 							processor.switchLine(curr);
 						});
 
-						const doWork = async () => {
-							await $.sleep(5 * 1000);
+						const advanceSectionOrMastery = async () => {
+							if (await tryEnterMastery()) {
+								return;
+							}
+							const nextEl = getNext();
+							if (nextEl) {
+								const nextTitle = nextEl.querySelector('.info-text')?.textContent?.trim() || '下一章节';
+								$message.info({ content: `即将切换到下一节：${nextTitle}` });
+								$console.log(`即将切换到下一节：${nextTitle}`);
+								nextEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+								await $.sleep(800);
+								nextEl.click();
+								await $.sleep(3500);
+								await doWork(true);
+							} else {
+								finishAlert();
+							}
+						};
+
+						const doWork = async (isInitialEntry = false) => {
+							await $.sleep(3500);
+
+							const mode = this.cfg.smartStudyMode || 'video_and_mastery';
+							const justFinishedNode = sessionStorage.getItem('ocs_just_finished_mastery_node');
+							const currentNodeUid = parseNodeUidFromUrl();
+
+							if (mode === 'mastery_only') {
+								await advanceSectionOrMastery();
+								return;
+							}
+
+							if (justFinishedNode && justFinishedNode === currentNodeUid) {
+								sessionStorage.removeItem('ocs_just_finished_mastery_node');
+								await advanceSectionOrMastery();
+								return;
+							}
 
 							const next = async () => {
-								const nextJob = getNextJob();
+								const nextJob = getNextJob(false);
 
 								if (nextJob) {
 									const nextJobTitle = nextJob.querySelector('.common-text') as HTMLElement;
 
 									if (include_jobs.some((job) => nextJob.querySelector('.icon-box')?.classList.contains(job))) {
-										nextJobTitle.click();
-										await doWork();
-									}
-									// 链接任务
-									else {
-										/**
-										 * 链接任务点不会自动取消 active 样式，导致无法获取下一个任务点
-										 * 这里手动移除 active 样式，避免影响获取下一个任务点
-										 */
+										nextJobTitle?.click();
+										await doWork(false);
+									} else {
 										document
 											.querySelectorAll('[class*="card-container"].active')
 											.forEach((el) => el.classList.remove('active'));
-
-										// 链接任务点不会自动附加 active 样式，这里手动添加
 										nextJob?.classList.add('active');
-
 										await $.sleep(1000);
 
 										const _open = $gm.unsafeWindow.open;
 										$gm.unsafeWindow.open = () => null;
-										nextJobTitle.click();
+										nextJobTitle?.click();
 
 										const msg = '链接任务完成，即将自动下一节！';
 										$message.info(msg);
 										setTimeout(async () => {
 											$gm.unsafeWindow.open = _open;
-											// 直接下一个
 											await next();
 										}, 3000);
 									}
 									return;
 								}
 
-								const nextEl = getNext();
-								if (nextEl) {
-									nextEl.click();
-								} else {
-									finishAlert();
-								}
+								await advanceSectionOrMastery();
 							};
+
+							if (isInitialEntry) {
+								const firstUnfinishedJob = getNextJob(true);
+								if (!firstUnfinishedJob) {
+									$message.info({ content: '当前小节视频已完成，检查掌握度或切换下一节...' });
+									await advanceSectionOrMastery();
+									return;
+								}
+								if (!firstUnfinishedJob.classList.contains('active')) {
+									const jobTitle = firstUnfinishedJob.querySelector('.common-text') as HTMLElement;
+									jobTitle?.click();
+									await $.sleep(2500);
+								}
+							}
 
 							try {
 								const wrapper = document.querySelector<HTMLElement>('.video-player-wrapper');
@@ -1341,30 +1612,25 @@ export const ZHSProject = Project.create({
 									filter: (m) => m.src.length !== 0
 								});
 							} catch {
-								const msg = '未找到学习视频，即将自动下一节！';
+								const msg = '未找到学习视频，即将自动处理掌握度或下一节！';
 								$message.warn(msg);
 								$console.warn(msg);
-								await $.sleep(3000);
+								await $.sleep(2000);
 								await next();
 								return;
 							}
 
 							const set = async () => {
-								// 上面操作会导致元素刷新，这里重新获取视频
 								try {
-									// 设置清晰度
 									await processor.switchLine(this.cfg.definition || 'line1bq');
 									await $.sleep(1000);
-									// 设置播放速度
 									await processor.switchPlaybackRate(this.cfg.playbackRate);
 									await $.sleep(1000);
 									const media = await waitForMedia({ timeout: 5 * 1000, filter: (m) => m.src.length !== 0 });
 									await $.sleep(1000);
 									state.study.currentMedia = media;
 									if (media) {
-										// 如果已经播放完了，则重置视频进度
 										media.currentTime = 1;
-										// 音量
 										media.volume = this.cfg.volume;
 									}
 									return state.study.currentMedia;
@@ -1393,14 +1659,13 @@ export const ZHSProject = Project.create({
 							};
 
 							video.onended = async () => {
-								$message.info({ content: '即将自动跳转下一节' });
+								$message.info({ content: '视频播放完毕，即将检查掌握度或跳转下一节' });
 								await $.sleep(3000);
-
 								await next();
 							};
 						};
 
-						doWork();
+						doWork(true);
 					}
 				};
 			}
@@ -1421,7 +1686,9 @@ export const ZHSProject = Project.create({
 					label: '作业答题开始时间延迟（秒）',
 					defaultValue: 3,
 					attrs: { type: 'number', min: 1, step: 1, max: 10 }
-				}
+				},
+				autoSubmitMastery,
+				autoFillUnansweredMastery
 			},
 			methods() {
 				return {
@@ -1452,7 +1719,10 @@ export const ZHSProject = Project.create({
 								if (remote_not_required) {
 									return fusioncourseWork(remotePage, opts);
 								} else {
-									return smartWork(remotePage, opts);
+									return smartWork(remotePage, opts, {
+										autoSubmitMastery: this.cfg.autoSubmitMastery ?? true,
+										autoFillUnansweredMastery: this.cfg.autoFillUnansweredMastery ?? true
+									});
 								}
 							},
 							start_delay_seconds: this.cfg.workDelay ?? 3
@@ -1463,7 +1733,7 @@ export const ZHSProject = Project.create({
 			oncomplete() {
 				this.methods.start();
 			},
-			onhistorychanged(type, ...args) {
+			onhistorychanged(type) {
 				if (type === 'pushed') {
 					this.methods.start();
 				}
@@ -2886,9 +3156,11 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
  */
 function smartWork(
 	remotePage: RemotePage | undefined,
-	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
+	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions,
+	masteryOpts?: { autoSubmitMastery?: boolean; autoFillUnansweredMastery?: boolean }
 ) {
-	$message.info({ content: '开始作业' });
+	const isMasteryPage = /[?&]point=1\b/.test(location.href) || /[?&]foAiRun=1\b/.test(location.href);
+	$message.info({ content: isMasteryPage ? '开始自动答掌握度测试' : '开始作业' });
 
 	// 一题一题动态作答，结果逐题累积，标记为动态答题器以显示手动清空按钮
 	CommonProject.scripts.workResults.methods.init({ dynamic: true });
@@ -2904,11 +3176,81 @@ function smartWork(
 	};
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => titleTransformWithImages(titles).text;
 
+	const fillInputOrTextarea = async (opt: HTMLInputElement | HTMLTextAreaElement, val: string) => {
+		if (!opt || !val) return;
+		if (remotePage) {
+			await remotePage.click(opt);
+			opt.value = '';
+			await remotePage['keyboard.type'](val, { delay: 20 });
+		} else {
+			opt.focus();
+			opt.value = val;
+		}
+		opt.dispatchEvent(new Event('input', { bubbles: true }));
+		opt.dispatchEvent(new Event('change', { bubbles: true }));
+		opt.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true, key: ' ' }));
+		await $.sleep(200);
+	};
+
+	const isCurrentQuestionAnswered = () => {
+		const root = document.querySelector('.questionContent');
+		if (!root) return false;
+		if (root.querySelector('.radio-view i.checkedIcon, .checkbox-views .el-checkbox__input.is-checked')) {
+			return true;
+		}
+		const inputs = Array.from(
+			root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+				'.fillAnswer input, .fillAnswer textarea, .input-view input, .input-view textarea'
+			)
+		);
+		if (inputs.length > 0 && inputs.every((inp) => inp.value && inp.value.trim().length > 0)) {
+			return true;
+		}
+		return false;
+	};
+
+	const ensureQuestionAnsweredFallback = async () => {
+		if (isCurrentQuestionAnswered()) return;
+		const root = document.querySelector<HTMLElement>('.questionContent');
+		if (!root) return;
+		const typeText = root.querySelector('.questionName .letterSortNum')?.textContent || '';
+		$message.warn({ content: '当前掌握度题目未搜到答案，正在执行保底作答以确保可交卷...' });
+
+		if (typeText.includes('单选') || typeText.includes('判断')) {
+			const firstOpt = root.querySelector<HTMLElement>('.radio-view li.clearfix i.iconfont:not(.checkedIcon)');
+			if (firstOpt) {
+				if (remotePage) await remotePage.click(firstOpt);
+				else firstOpt.click();
+				await $.sleep(200);
+			}
+		} else if (typeText.includes('多选')) {
+			const checkOpts = Array.from(
+				root.querySelectorAll<HTMLElement>('.checkbox-views .el-checkbox__input:not(.is-checked)')
+			).slice(0, 2);
+			for (const opt of checkOpts) {
+				if (remotePage) await remotePage.click(opt);
+				else opt.click();
+				await $.sleep(200);
+			}
+		} else {
+			const inputs = Array.from(
+				root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+					'.fillAnswer input, .fillAnswer textarea, .input-view input, .input-view textarea'
+				)
+			);
+			for (const inp of inputs) {
+				if (!inp.value || !inp.value.trim()) {
+					await fillInputOrTextarea(inp, '略');
+				}
+			}
+		}
+	};
+
 	const worker = new OCSWorker({
 		root: '.questionContent',
 		elements: {
 			title: '.questionName .centent-pre',
-			options: '.radio-view li.clearfix, .checkbox-views label.el-checkbox, .fillAnswer'
+			options: '.radio-view li.clearfix, .checkbox-views label.el-checkbox, .fillAnswer, .input-view li.clearfix'
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
@@ -2937,14 +3279,14 @@ function smartWork(
 					return 'multiple';
 				} else if (type?.includes('判断题')) {
 					return 'judgement';
-				} else if (type?.includes('填空')) {
+				} else if (type?.includes('填空') || type?.includes('简答') || type?.includes('问答') || type?.includes('名词解释')) {
 					return 'completion';
 				} else {
 					return undefined;
 				}
 			},
 			/** 自定义处理器 */
-			async handler(type, answer, option, ctx) {
+			async handler(type, answer, option) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
 					const opt = option.querySelector<HTMLElement>(
 						'.el-checkbox__input:not(.is-checked),i.iconfont:not(.checkedIcon)'
@@ -2959,16 +3301,9 @@ function smartWork(
 						await $.sleep(200);
 					}
 				} else if (type === 'completion') {
-					const opt = option.querySelector<HTMLInputElement>('input');
+					const opt = option.querySelector<HTMLInputElement | HTMLTextAreaElement>('input, textarea');
 					if (opt && answer.trim()) {
-						if (remotePage) {
-							await remotePage.click(opt);
-							opt.value = '';
-							await remotePage['keyboard.type'](answer, { delay: Math.floor(Math.random() * 100) });
-						} else {
-							opt.value = answer;
-						}
-						await $.sleep(200);
+						await fillInputOrTextarea(opt, answer.trim());
 					}
 				}
 			}
@@ -2981,7 +3316,7 @@ function smartWork(
 		onQuestionDetected(current) {
 			updateDynamicResult(current, titleTransform);
 		},
-		onResultsUpdate(current, _, res) {
+		onResultsUpdate(current) {
 			// 逐题更新搜索结果面板（等待搜索中→等待答题中→已答题/失败）
 			updateDynamicResult(current, titleTransform);
 		}
@@ -3001,6 +3336,9 @@ function smartWork(
 		let count = 0;
 		while (worker.isClose === false) {
 			await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
+			if (isMasteryPage && (masteryOpts?.autoFillUnansweredMastery ?? true)) {
+				await ensureQuestionAnsweredFallback();
+			}
 			next = getNextBtn();
 			if (!next) {
 				break;
@@ -3014,15 +3352,37 @@ function smartWork(
 			count++;
 		}
 
-		$message.info({
-			content: '作业/考试完成，请自行检查后保存或提交。',
-			duration:
-				// 题目过多则不自动关闭
-				count > 10 ? 0 : 30
-		});
 		worker.emit('done');
 		// 答题完成后，题库选项点击才会同步题目，否则会导致题目错乱
 		CommonProject.scripts.workResults.cfg.questionPositionSyncHandlerType = 'zhs-smart';
+
+		if (isMasteryPage && (masteryOpts?.autoSubmitMastery ?? true)) {
+			$message.success({ content: '掌握度题目已全部作答完毕，2秒后自动提交试卷...', duration: 5 });
+			await $.sleep(2000);
+			const submitBtn = document.querySelector<HTMLElement>('.reviewDone');
+			if (submitBtn) {
+				if (remotePage) await remotePage.click(submitBtn);
+				else submitBtn.click();
+				for (let i = 0; i < 6; i++) {
+					await $.sleep(600);
+					const confirmBtn = document.querySelector<HTMLElement>(
+						'.el-message-box__wrapper:not([style*="display: none"]) .el-message-box__btns .el-button--primary, .el-dialog__wrapper:not([style*="display: none"]) .el-dialog__footer .el-button--primary'
+					);
+					if (confirmBtn) {
+						if (remotePage) await remotePage.click(confirmBtn);
+						else confirmBtn.click();
+						break;
+					}
+				}
+			}
+		} else {
+			$message.info({
+				content: '作业/考试完成，请自行检查后保存或提交。',
+				duration:
+					// 题目过多则不自动关闭
+					count > 10 ? 0 : 30
+			});
+		}
 	})();
 	dynamicWorkTips(worker);
 	return worker;
