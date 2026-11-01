@@ -216,6 +216,12 @@ export interface WorkOptions<E extends RawElements> {
 	) => void | Promise<void>;
 	/** 监听答题结果 */
 	onResultsUpdate?: (currentResult: WorkResult<E>, currentIndex: number, res: WorkResult<E>[]) => void | Promise<void>;
+	/**
+	 * 题库搜索无结果时的兜底钩子。
+	 * 可向 ctx.searchInfos 追加伪搜题结果（随机/课程内容检索），
+	 * 之后仍会走正常解析流程；不追加则保持原有「忽略此题」行为。
+	 */
+	onEmptySearchInfos?: (ctx: WorkContext<E>) => void | Promise<void>;
 }
 
 export interface CustomWorkOptions {

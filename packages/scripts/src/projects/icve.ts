@@ -14,6 +14,7 @@ import { CommonWorkOptions, playMedia } from '../utils';
 import { CommonProject } from './common';
 
 import { $console, BackgroundProject } from './background';
+import { pageInvoke } from '../utils/page-bridge';
 import { waitForElement, waitForMedia } from '../utils/study';
 
 const state = {
@@ -145,16 +146,21 @@ export const IcveMoocProject = Project.create({
 								try {
 									console.log(document.hasFocus());
 									window.focus();
-									// @ts-ignore
-									$gm.unsafeWindow.jwplayer().onComplete(async () => {
-										$console.log('视频/音频播放完成。');
-										await $.sleep(3000);
-										resolve();
-									});
+									// MV3：jwplayer 实例位于页面世界，经桥接注册完成回调与播放控制
+									pageInvoke(
+										`() => new Promise((resolve) => {
+											try {
+												window.jwplayer().onComplete(function () { setTimeout(resolve, 3000); });
+											} catch (e) { resolve(0); }
+										})`,
+										[],
+										24 * 60 * 60 * 1000
+									)
+										.then(() => resolve())
+										.catch(() => resolve());
 
 									const play = () => {
-										$gm.unsafeWindow.jwplayer().play();
-										$gm.unsafeWindow.jwplayer().play();
+										pageInvoke(`() => { try { window.jwplayer().play(); } catch (e) {} }`).catch(() => undefined);
 										media.playbackRate = parseFloat(this.cfg.playbackRate.toString());
 									};
 
@@ -336,12 +342,24 @@ export const IcveMoocProject = Project.create({
 
 								await new Promise<void>((resolve, reject) => {
 									try {
-										// @ts-ignore
-										win.jwplayer().onComplete(async () => {
-											$console.log('视频/音频播放完成。');
-											await $.sleep(3000);
-											resolve();
-										});
+										// MV3：jwplayer 位于内层 iframe 的页面世界，经桥接注册完成回调
+										iframe.id = iframe.id || 'ocs-icve-media-frame-' + Date.now();
+										pageInvoke(
+											`(fid) => new Promise((resolve) => {
+												try {
+													var outer = document.querySelector('#mainContent');
+													var f = outer && outer.contentDocument ? outer.contentDocument.getElementById(fid) : null;
+													var w = f && f.contentWindow;
+													if (w && typeof w.jwplayer === 'function') {
+														w.jwplayer().onComplete(function () { setTimeout(resolve, 3000); });
+													} else { resolve(0); }
+												} catch (e) { resolve(0); }
+											})`,
+											[iframe.id],
+											24 * 60 * 60 * 1000
+										)
+											.then(() => resolve())
+											.catch(() => resolve());
 
 										media.addEventListener('pause', async () => {
 											if (!media.ended) {

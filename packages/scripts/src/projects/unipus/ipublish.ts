@@ -233,7 +233,7 @@ export const UnipusIpublishScript = new Script({
 			}
 		}
 		loadVtt();
-		$gm.unsafeWindow.loadVtt = loadVtt;
+		(window as any).loadVtt = loadVtt;
 	},
 	onrender(elements) {
 		const translateBtn = h(

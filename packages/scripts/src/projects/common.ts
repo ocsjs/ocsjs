@@ -15,6 +15,7 @@ import { markdown } from '../utils/markdown';
 import { enableCopy } from '../utils';
 import { SearchInfosElement } from '../elements/search.infos';
 import { RenderScript } from '../render';
+import { pageInvoke } from '../utils/page-bridge';
 import { dropdownStyle } from '../utils/configs';
 
 const TAB_WORK_RESULTS_KEY = 'common.work-results.results';
@@ -640,6 +641,23 @@ export const CommonProject = Project.create({
 					label: '题库缓存功能',
 					defaultValue: true,
 					attrs: { type: 'checkbox', title: '详情请前往 通用-其他应用-题库拓展查看。' }
+				},
+				courseContextSearch: {
+					label: '无答案时检索课程内容',
+					defaultValue: true,
+					attrs: {
+						type: 'checkbox',
+						title:
+							'题库搜不到答案时，先检索本课程全部章节的文本内容（讲义/文档/书籍等）推断答案，首次构建语料库需要几分钟，结果缓存24小时。'
+					}
+				},
+				randomWhenNoResult: {
+					label: '无答案时随机作答',
+					defaultValue: true,
+					attrs: {
+						type: 'checkbox',
+						title: '题库与课程内容都搜不到答案时，单选/多选/判断题随机选择，保证所有题目都有作答。'
+					}
 				}
 			},
 			methods() {
@@ -1350,16 +1368,39 @@ export const CommonProject = Project.create({
 			hideInPanel: true,
 			priority: 1,
 			onstart() {
-				function disableDialog(msg: string) {
+				const disableDialogMsg = (origin: string, message: string) => {
 					$modal.alert({
-						profile: '弹窗来自：' + location.origin,
-						content: msg
+						profile: '弹窗来自：' + origin,
+						content: message
 					});
-				}
+				};
 
 				try {
-					$gm.unsafeWindow.alert = disableDialog;
-					window.alert = disableDialog;
+					// MV3：页面世界的 alert 经桥接覆盖，事件回传隔离世界弹窗
+					pageInvoke(
+						`() => {
+							if (window.__ocsAlertHooked) return true;
+							window.__ocsAlertHooked = true;
+							window.alert = function (m) {
+								try {
+									window.dispatchEvent(
+									new CustomEvent('ocs-page-alert', {
+									detail: { origin: location.origin, message: String(m) }
+									}
+									));
+								} catch (e) {}
+								return false;
+							};
+							return true;
+						}`
+					).catch(() => undefined);
+					window.addEventListener('ocs-page-alert', (ev: any) => {
+						disableDialogMsg(ev.detail?.origin || location.origin, ev.detail?.message || '');
+					});
+					window.alert = (m?: any) => {
+						disableDialogMsg(location.origin, String(m));
+						return false;
+					};
 				} catch (e) {
 					console.error(e);
 				}
@@ -1794,6 +1835,29 @@ const createGuide = () => {
 	};
 
 	return h('div', { className: 'user-guide' }, [
+		h(
+			'div',
+			{
+				className: 'card',
+				style: {
+					border: '1px solid #e6a23c',
+					background: '#fdf6ec',
+					borderRadius: '4px',
+					padding: '8px',
+					marginBottom: '12px',
+					fontSize: '12px',
+					lineHeight: '1.8'
+				}
+			},
+			[
+				h('div', { style: { fontWeight: 'bold', color: '#e6a23c' } }, '🏷️ zogice 增强版'),
+				h('div', { className: 'secondary' }, [
+					'本版本基于 ',
+					h('b', 'OCS 官方 4.15.3'),
+					' 二次开发（版本 4.15.4-zogice），新增：任务点完成校验与自动补刷、自动刷课（扫描记录永久保存）、无题库答题三级兜底、拟人化操作、自动最低清晰度。'
+				])
+			]
+		),
 		h('div', { style: cardStyle }, [
 			h('div', { style: { marginBottom: '4px', fontWeight: 'bold' } }, [
 				'✨兼容的网课平台：',
