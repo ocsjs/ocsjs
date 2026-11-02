@@ -1,5 +1,18 @@
 # Changelog
 
+## [5.2.7](https://github.com/ocsjs/ocsjs/compare/5.2.6...5.2.7) (2026-11-02)
+
+
+### 🐛 问题修复
+
+* 修复超星答题时解密时序错误导致出现乱码字的问题 ([5f02865](https://github.com/ocsjs/ocsjs/commit/5f02865aa495418ca6b144938c67497d515e0d12))
+* 修复部分环境下中国大学MOOC无法运行的问题 ([00710f1](https://github.com/ocsjs/ocsjs/commit/00710f148ae21ee388549f4f55681d9bd2a47479))
+
+
+### ⚡ 优化改进
+
+* 适配智慧树校内翻转课的填空题、问答题等 ([e27255d](https://github.com/ocsjs/ocsjs/commit/e27255d66946b8d31355c7bd2e62b605e2062b15))
+
 ## [5.2.6](https://github.com/ocsjs/ocsjs/compare/5.2.5...5.2.6) (2026-11-01)
 
 
