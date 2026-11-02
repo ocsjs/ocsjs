@@ -482,6 +482,8 @@ export const CXProject = Project.create({
 				if (location.href.includes('/page/quiz/stu/answerQuestion2')) {
 					await waitForElement('.left-question-list');
 					await $.sleep(1000);
+					// 先等待字体解密完成，否则第一题会以密文搜题导致乱码
+					await ensureCxFontDecrypted();
 					CORSUtils.pinWorkPanel();
 					commonWork({
 						iframe_control: true,
@@ -908,8 +910,6 @@ function workOrExam(
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
-			// 每次搜题前确保字体解密完成（第一题乱码防护）
-			beforeSearch: () => ensureCxFontDecrypted(),
 			titleTransform: (elements, ctx) => {
 				if (elements.title) {
 					return workOrExamQuestionTitleTransform(elements.title);
@@ -1055,6 +1055,8 @@ function workOrExam(
 
 		(async () => {
 			while (next && worker.isClose === false) {
+				// 逐题切换后新渲染的加密文字需增量解密（映射表已缓存，毫秒级）
+				await ensureCxFontDecrypted();
 				await worker.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug });
 				$message.info({ content: '已完成，即将下一题', duration: 0 });
 				await $.sleep(3000);
@@ -1109,8 +1111,6 @@ function mobilelearn(opts: CommonWorkOptions) {
 		answerSeparators: opts.answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
-			// 每次搜题前确保字体解密完成（第一题乱码防护）
-			beforeSearch: () => ensureCxFontDecrypted(),
 			titleTransform: (elements, ctx) => {
 				if (elements.title) {
 					return titleTransform(elements.title);
@@ -1200,10 +1200,10 @@ function mobilelearn(opts: CommonWorkOptions) {
 /**
  * 字体解密（首破 + 增量模式）
  *
- * 解密脚本（cxSecretFontRecognize）与答题脚本（作业/考试）独立并发启动，
  * 解密需拉取特征表并逐字破解、耗时数秒；若答题先开始，第一题会以密文搜题导致乱码。
- * 因此所有搜题路径（含入口启动与 createCommonAnswerer 的 beforeSearch 钩子）
- * 统一经 ensureCxFontDecrypted 守卫：搜题时 DOM 必是明文。
+ * 因此所有答题路径统一在入口等待：创建 OCSWorker / 获取题目元素 / 广播开始状态之前
+ * await ensureCxFontDecrypted，保证后续取题时 DOM 必是明文。
+ * 注意章节测试在 iframe 中，必须传入 iframe 的 document，否则外层文档无加密元素会立即放行。
  *
  * 完整破解只跑一次并缓存映射表；题目后渲染/页面重绘产生的加密元素，
  * 复用映射表增量解密（纯文本替换，毫秒级）。
@@ -2019,11 +2019,16 @@ const JobRunner = {
 			return answerWrapperEmptyWarning(0);
 		}
 
+		const visual_state = BackgroundProject.scripts.render.cfg.visual;
+		const frameWindow = frame.contentWindow;
+
+		// 章节测试题目位于 iframe 文档内，加密文字元素也在其中；
+		// 必须先等待该文档字体解密完成，再广播状态/获取题目元素，否则第一题会以密文搜题导致乱码
+		await ensureCxFontDecrypted(frameWindow!.document);
+
 		// 章节测试未使用 commonWork，这里手动触发状态更新
 		CommonEvents.emitWorkerStateChange('start');
 
-		const visual_state = BackgroundProject.scripts.render.cfg.visual;
-		const frameWindow = frame.contentWindow;
 		const { TiMu } = domSearchAll({ TiMu: '.TiMu' }, frameWindow!.document);
 
 		// 最大化面板
@@ -2089,8 +2094,6 @@ const JobRunner = {
 			answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 			/** 默认搜题方法构造器 */
 			answerer: createCommonAnswerer({
-				// 每次搜题前确保字体解密完成（第一题乱码防护）
-				beforeSearch: () => ensureCxFontDecrypted(),
 				titleTransform: (elements, ctx) => chapterTestTaskQuestionTitleTransform(elements.title),
 				optionsTransform: (elements, ctx) => {
 					const typeInput = elements.type?.[0] as HTMLInputElement;
