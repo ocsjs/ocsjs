@@ -397,10 +397,12 @@ export const ICourseProject = Project.create({
 			},
 			methods() {
 				return {
+					waitForV2PageLoaded: () => waitForElement('[data-page-state="loaded"]'),
 					main: async () => {
 						// 加载后将 section 元素作为界面标记，如果用户此时切换小节，可以使用 section 元素是否存在进行判断能否运行，如果不存在则停止运行防止多个 onhistorychange 并行代码冲突
-						const section = await waitForElement('section[data-page-state="loaded"]');
+						const section = await waitForElement('.learn-courseware-panel');
 						const canRun = () => section?.isConnected;
+						$message.info('正在自动学习中...');
 
 						const remotePage = await BackgroundProject.scripts.dev.methods.getRemotePlaywrightCurrentPage();
 						// 检查是否为软件环境
@@ -575,17 +577,27 @@ export const ICourseProject = Project.create({
 				};
 			},
 			async onhistorychange(type) {
+				// 等待界面加载
+				await this.methods.waitForV2PageLoaded();
 				if (type === 'push') {
-					this.methods.main();
+					if (document.querySelector('[class="course-content-card"]')) {
+						return $message.info({ content: '请手动进入视频、作业页面，脚本会自动运行。', duration: 10 });
+					}
+					if (document.querySelector('.learn-courseware-panel')) {
+						return this.methods.main();
+					}
 				}
 			},
 			async oncomplete() {
-				await $.sleep(1000);
+				// 等待界面加载
+				await this.methods.waitForV2PageLoaded();
 				// 课件首页
 				if (document.querySelector('[class="course-content-card"]')) {
-					$message.info({ content: '请手动进入视频、作业页面，脚本会自动运行。', duration: 10 });
-				} else {
-					this.methods.main();
+					return $message.info({ content: '请手动进入视频、作业页面，脚本会自动运行。', duration: 10 });
+				}
+
+				if (document.querySelector('.learn-courseware-panel')) {
+					return this.methods.main();
 				}
 			}
 		}),

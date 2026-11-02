@@ -45,7 +45,22 @@ export async function waitForMedia(options?: {
 }
 
 /**
- * 等待元素出现；设置 timeout_seconds 后超时抛出异常（可用 timeout_message 自定义错误信息）
+ * 等待元素出现。
+ *
+ * 【超时抛错】设置 `timeout_seconds` 后，超时将 reject 抛出 Error（可用 `timeout_message` 自定义错误信息）；
+ * 不传 `timeout_seconds` 则永不超时、永不 reject（无限等待）。
+ * resolve 时保证元素存在（非空）。
+ *
+ * 调用方处理建议：
+ * - 元素必须存在才能继续：直接 `await`，异常向上抛由外层统一处理（建议配 `timeout_message` 说明等待目标）
+ * - 元素缺失是正常情况（探测式等待）：`await waitForElement(...).catch(() => undefined)` 后判空
+ *
+ * @param selector 选择器或返回元素的函数
+ * @param opts.timeout_seconds 超时时间（秒），不传则永不超时
+ * @param opts.check_period_ms 轮询间隔（毫秒），默认 1000
+ * @param opts.timeout_message 超时时抛出的错误信息（建议提供，便于定位是哪个等待超时）
+ * @throws {Error} 超时（仅当设置了 `timeout_seconds`）：内容为 `timeout_message` 或 `waitFor timeout {N}s`
+ * @throws selector 为函数时其内部抛出的异常（轮询中 predicate 报错会立即 reject）
  */
 export function waitForElement(
 	selector: string | { (): HTMLElement | undefined | null },
@@ -57,11 +72,22 @@ export function waitForElement(
 }
 
 /**
- * 异步等待，超时抛出异常
+ * 异步等待条件成立。
+ *
+ * 【超时抛错】设置 `timeout_seconds` 后，超时将 reject 抛出 Error（可用 `timeout_message` 自定义错误信息）；
+ * 不传 `timeout_seconds` 则永不超时、永不 reject（无限等待）。
+ * resolve 仅在 predicate 返回真值时触发。
+ *
+ * 调用方处理建议：
+ * - 条件必须成立才能继续：直接 `await`，异常向上抛由外层统一处理（建议配 `timeout_message`）
+ * - 条件不成立是正常情况（探测式等待）：`await waitFor(...).catch(() => undefined)` 后判空
+ *
  * @param predicate 轮询函数，返回真值时 resolve 该值
  * @param opts.timeout_seconds 超时时间（秒），不传则永不超时
  * @param opts.check_period_ms 轮询间隔（毫秒），默认 1000
  * @param opts.timeout_message 超时时抛出的错误信息（建议提供，便于定位是哪个等待超时）
+ * @throws {Error} 超时（仅当设置了 `timeout_seconds`）：内容为 `timeout_message` 或 `waitFor timeout {N}s`
+ * @throws predicate 自身抛出的异常（轮询中 predicate 报错会立即 reject）
  */
 export function waitFor<T>(
 	predicate: () => Promise<T> | T,
