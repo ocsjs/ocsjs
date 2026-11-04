@@ -3448,7 +3448,8 @@ function hikeHomework(
 		root: '.question-item',
 		elements: {
 			type: '.title-box,.combination-title',
-			title: '.qeustion-content , .combination-content ',
+			// 具体查询到 markdown-latex-container 类元素，防止 question-content 出现 understand-box 等问号图标，导致搜题出现图片题
+			title: '.qeustion-content .markdown-latex-container, .combination-content ',
 			options: '.option-item, .vditor-content'
 		},
 		thread: thread ?? 1,
