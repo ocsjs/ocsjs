@@ -26,7 +26,7 @@ import {
 	updateDynamicResult
 } from '../utils/work';
 import { $console, BackgroundProject } from './background';
-import { CommonWorkOptions, playMedia } from '../utils';
+import { $msgwc, CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { waitForElement, waitForMedia } from '../utils/study';
 

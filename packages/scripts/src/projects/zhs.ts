@@ -26,7 +26,7 @@ import {
 	simplifyWorkResult,
 	updateDynamicResult
 } from '../utils/work';
-import { $msg, CommonWorkOptions, playMedia } from '../utils';
+import { $msgwc, CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { $console, BackgroundProject } from './background';
 import { waitForMedia, waitForElement, waitFor } from '../utils/study';
@@ -2180,7 +2180,7 @@ export const ZHSProject = Project.create({
 				await waitForLoad();
 				await $.sleep(3000);
 
-				$msg.info('即将开始自动学习：' + processor.getChapterName());
+				$msgwc.info('即将开始自动学习：' + processor.getChapterName());
 
 				const reload = async (e: any) => {
 					$console.error(e);

@@ -6,7 +6,7 @@ import {
 	defaultWorkTypeResolver,
 	WorkResult
 } from '@ocsjs/core';
-import { $msg, playMedia, CommonWorkOptions } from '../utils';
+import { $msgwc, playMedia, CommonWorkOptions } from '../utils';
 import { createSteps } from '../utils/ui';
 import { restudy, volume } from '../utils/configs';
 import { waitForElement } from '../utils/study';
@@ -237,7 +237,7 @@ export const YKTProject = Project.create({
 				const study = async () => {
 					try {
 						if ($el('.detail-container video')) {
-							$msg.info('即将开始视频学习：' + getJobName());
+							$msgwc.info('即将开始视频学习：' + getJobName());
 
 							// AI数字人视频 （自动阅读）
 							if (document.querySelector('.digital-human-video-element-selector')) {
@@ -257,10 +257,10 @@ export const YKTProject = Project.create({
 
 						const forum = $el('.detail-container .lms-graph-forum');
 						if (forum) {
-							$msg.info('即将开始自动讨论：' + getJobName());
+							$msgwc.info('即将开始自动讨论：' + getJobName());
 							// 评论模式复用「课程学习」脚本的 discussMode 设置
 							await autoCommentYktForum(forum, this.cfg.discussMode);
-							$msg.success('自动讨论完成');
+							$msgwc.success('自动讨论完成');
 							await $.sleep(3000);
 						}
 
@@ -1213,7 +1213,7 @@ async function watch(options: { volume: number; playbackRate: number }) {
 			};
 			video.onended = () => {
 				clearCheckInterval();
-				$msg.success('视频学习完成');
+				$msgwc.success('视频学习完成');
 				// 正常播放结束
 				resolve();
 			};
