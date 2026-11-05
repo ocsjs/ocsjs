@@ -1556,7 +1556,8 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 		});
 	}
 
-	if (CXAnalyses.isInFinalChapter()) {
+	// 全部小节、章节便利完成判断
+	if (CXAnalyses.isInFinalChapter() && CXAnalyses.isInFinalTab()) {
 		let content = '';
 
 		if (opts.backToFirstWhenFinish) {
@@ -1564,18 +1565,16 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			setTimeout(() => {
 				top?.document.querySelector<HTMLElement>('.posCatalog_name')?.click();
 			}, 10 * 1000);
-
-			$message.info({ content, duration: 30 });
 		} else {
 			if (CXAnalyses.isFinishedAllChapters()) {
 				content = '全部任务点已完成！';
 			} else {
 				content = '已经抵达最后一个章节！但仍然有任务点未完成，请手动切换至未完成的章节。';
+				$modal.alert({ content: content });
 			}
-
-			$modal.alert({ content: content });
 		}
 
+		$msgwc.info({ content, duration: 30 });
 		CommonProject.scripts.settings.methods.notificationBySetting(content, {
 			duration: 0,
 			extraTitle: '超星学习通学习脚本'
@@ -1583,7 +1582,7 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 		return;
 	}
 
-	const msg = '页面任务点已完成，即将跳转。';
+	const msg = '页面任务点已完成，即将跳转。' + `(${CXProject.scripts.study.cfg.mode})`;
 	$message.success({ content: msg });
 	$console.info(msg);
 	await $.sleep(3000);
@@ -1592,11 +1591,15 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	if (CXProject.scripts.study.cfg.mode === 'job' && CXAnalyses.isInFinalTab()) {
 		// 检测当前章节是否完成，如果已经完成则下一章
 		// 如果没有需要完成的章节，则暂停运行
-		// 找到未完成
-		const elements = CXAnalyses.getChapterInfos()
-			.filter((el) => el.unFinishCount > 0 || el.element.parentElement?.classList.contains('posCatalog_active'))
-			.map((el) => el.element.parentElement as HTMLElement);
-		if (elements.length === 0) {
+		const chapters = CXAnalyses.getChapterInfos();
+		const currentIndex = chapters.findIndex((info) =>
+			info.element.parentElement?.classList.contains('posCatalog_active')
+		);
+		const next_chapter = chapters.find((info, index) => {
+			return index > currentIndex && info.unFinishCount > 0;
+		});
+
+		if (!next_chapter) {
 			const content = '全部任务点已完成！';
 			$modal.alert({ content: content });
 			CommonProject.scripts.settings.methods.notificationBySetting(content, {
@@ -1606,16 +1609,11 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 			return;
 		}
 
-		let nextChapter = elements[0];
-		// 如果当前章节未完成，则跳转到下一个未完成章节
-		const currentIndex = elements.findIndex((el) => el.classList.contains('posCatalog_active'));
-		if (currentIndex !== -1 && currentIndex + 1 < elements.length) {
-			nextChapter = elements[currentIndex + 1];
+		next_chapter?.element?.click();
+		setTimeout(() => {
 			CXAnalyses.scrollToActiveChapter();
-			setTimeout(() => {
-				nextChapter.querySelector<HTMLElement>('.posCatalog_name')?.click();
-			}, 1000);
-		}
+		}, 1000);
+		return;
 	}
 
 	// 自动下一章（包含自动下一章的算法）
