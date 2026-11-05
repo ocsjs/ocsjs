@@ -162,6 +162,12 @@ const state = {
 			'zhs-hike': (index: number) => {
 				document.querySelectorAll<HTMLElement>('.q_main_right .card_ul .card_li').item(index)?.click();
 			},
+			'zhs-hike-answer-training': (index: number) => {
+				document
+					.querySelectorAll<HTMLElement>('.base-question-component')
+					.item(index)
+					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			},
 			icve: (index: number) => {
 				document.querySelectorAll<HTMLElement>(`.sheet_nums [id*="sheetSeq"]`).item(index)?.click();
 			},

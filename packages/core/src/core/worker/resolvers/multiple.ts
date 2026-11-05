@@ -1,5 +1,11 @@
 import { splitAnswer, resolvePlainAnswer } from '../utils';
-import { removeRedundant, answerNormalizedMatch, answerSimilarWithGap, normalizeString } from '../../utils/string';
+import {
+	removeRedundant,
+	answerNormalizedMatch,
+	answerSimilarWithGap,
+	normalizeString,
+	disambiguateBySign
+} from '../../utils/string';
 import { findBestMatch } from 'string-similarity';
 import { StringUtils } from '../../../utils/string';
 
@@ -76,6 +82,17 @@ export function resolveMultiple(
 				normalizedGroup.ratings.push(rating);
 				normalizedGroup.similarSum += rating;
 				normalizedGroup.similarCount += 1;
+			}
+		}
+		// 符号并列消歧：公式选项仅差正负号（-x 与 x、-2 与 2）时，
+		// 常规归一化后完全相同会并列命中，先用保留符号的严格匹配收敛候选
+		if (normalizedGroup.options.length > 1) {
+			const signStrict = disambiguateBySign(answers, normalizedGroup.options);
+			if (signStrict.length) {
+				const keepIndices = signStrict.map((opt) => normalizedGroup.options.indexOf(opt));
+				normalizedGroup.options = signStrict;
+				normalizedGroup.answers = keepIndices.map((idx) => normalizedGroup.answers[idx]);
+				normalizedGroup.ratings = keepIndices.map((idx) => normalizedGroup.ratings[idx]);
 			}
 		}
 		// 归一化匹配结果也需要消歧
