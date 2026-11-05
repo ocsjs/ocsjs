@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.3.1](https://github.com/ocsjs/ocsjs/compare/5.3.0...5.3.1) (2026-11-05)
+
+
+### 🐛 问题修复
+
+* 修复预检查未生效的BUG ([38c0061](https://github.com/ocsjs/ocsjs/commit/38c0061d2fb0e9890484d62d832bec440e84ddbd))
+
 ## [5.3.0](https://github.com/ocsjs/ocsjs/compare/5.2.7...5.3.0) (2026-11-05)
 
 
