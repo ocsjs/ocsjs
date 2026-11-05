@@ -1,5 +1,24 @@
 # Changelog
 
+## [5.3.0](https://github.com/ocsjs/ocsjs/compare/5.2.7...5.3.0) (2026-11-05)
+
+
+### ✨ 新功能
+
+* 增加智慧树-AI教学中心-随堂测验自动答题功能、以及公式题优化 ([1e12ac0](https://github.com/ocsjs/ocsjs/commit/1e12ac0e56bbe5d9966395cd902503438b77c6fe))
+
+
+### 🐛 问题修复
+
+* 修复智慧树AI教学中心-搜题出现无意义的图片 ([079da15](https://github.com/ocsjs/ocsjs/commit/079da157f91d11157d5510c014206bc1a00b8565))
+* 修复超星智能跳转模式无法生效的问题 ([73d81c6](https://github.com/ocsjs/ocsjs/commit/73d81c63015ee2c25a8cf0c4df5878b2592c1b51))
+
+
+### ⚡ 优化改进
+
+* 将 $msg api 更名为 $msgwc ([d0bd342](https://github.com/ocsjs/ocsjs/commit/d0bd34294f4b525bbde5e1c98f26db1d75449c0b))
+* 将 $msg api 更名为 $msgwc ([769a3fc](https://github.com/ocsjs/ocsjs/commit/769a3fce363fd54d2d40c74c26bc88594eedfa53))
+
 ## [5.2.7](https://github.com/ocsjs/ocsjs/compare/5.2.6...5.2.7) (2026-11-02)
 
 
