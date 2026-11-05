@@ -2411,7 +2411,7 @@ export const ZHSProject = Project.create({
 						items.at(0)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 						await $.sleep(items.length * 100);
 						return Array.from(document.querySelectorAll('.question-item')).every(
-							(e) => e.textContent.includes('公式加载中') === false
+							(e) => !e.textContent?.includes('公式加载中')
 						);
 					},
 					{ timeout_seconds: 60 * 3, timeout_message: '界面公式加载失败，请刷新界面尝试' }
