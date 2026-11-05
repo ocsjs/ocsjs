@@ -29,6 +29,7 @@ import { $console, BackgroundProject } from './background';
 import { CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { waitForElement, waitForMedia } from '../utils/study';
+import { installChaoxingMouseoutGuard } from '../utils/cx-mouseout';
 
 /**
  * 超星 font-cxsecret 解密用的参考特征表（FRB2 位打包格式，wght 350/400 字重特征）。
@@ -132,6 +133,10 @@ export const CXProject = Project.create({
 			matches: [['所有页面', /.*/]],
 			hideInPanel: true,
 			onstart() {
+				installChaoxingMouseoutGuard(
+					$gm.unsafeWindow,
+					() => CXProject.scripts.study.cfg.keepPlayingOnMouseout === true
+				);
 				/**
 				 * 于 4.9.20 后更新，出现顶层套壳页面跨域 :
 				 * top : zjelib.cn <body>
@@ -258,6 +263,16 @@ export const CXProject = Project.create({
 					...dropdownStyle,
 					label: '高级设置',
 					attrs: { type: 'checkbox' },
+					defaultValue: false
+				},
+				keepPlayingOnMouseout: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '鼠标移出网页时保持播放',
+					attrs: {
+						type: 'checkbox',
+						title: '仅拦截超星学习页面中移出当前文档的 mouseout 事件；不处理窗口失焦、标签页隐藏等其他暂停原因。'
+					},
 					defaultValue: false
 				},
 				autoJumpToUnFinishJob: {
