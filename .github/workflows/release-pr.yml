@@ -11,6 +11,12 @@ permissions:
 
 jobs:
   release-pr:
+    # 发布 PR 合并产生的 push 不再触发本工作流：
+    # 此时 tag/release 刚由 release-tag 工作流创建，release-please 可能无法锚定到
+    # 最新版本，回退为全量历史扫描并生成包含全部历史条目的幽灵发布 PR（如 #376 的 5.4.0）。
+    # 下一次真实提交推送时会重新生成正确的发布 PR，跳过此处不影响发版流程。
+    # if 字段本身就是表达式上下文，无需 ${{ }} 包裹；整体加双引号防止内部 ': ' 被 YAML 误判为映射
+    if: "startsWith(github.event.head_commit.message, 'chore(5.0): release') == false"
     runs-on: ubuntu-latest
     steps:
       - uses: googleapis/release-please-action@v4
