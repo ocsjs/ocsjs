@@ -345,7 +345,6 @@ export const YKTProject = Project.create({
 					mount_script: this,
 					workerProvider: (opts) => examination(opts)
 				});
-				return;
 			},
 			async oncomplete() {
 				this.onhistorychanged?.('pushed');
@@ -1444,7 +1443,7 @@ function examination(opts: CommonWorkOptions) {
 				}
 				return { finish: false };
 			} else if (type === 'completion') {
-				const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text)['completion'];
+				const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text).completion;
 				return await resolver(searchInfos, elements.textareas as HTMLElement[], async (type, answer, option) => {
 					if (option?.tagName === 'IFRAME') {
 						// 主观题：UEditor 富文本编辑器
