@@ -4,11 +4,13 @@ import {
 	StringUtils,
 	createDefaultQuestionResolver,
 	defaultWorkTypeResolver,
-	WorkResult
+	WorkResult,
+	resolveJudgement,
+	QuestionTypes
 } from '@ocsjs/core';
 import { $msg, playMedia, CommonWorkOptions } from '../utils';
 import { createSteps } from '../utils/ui';
-import { restudy, volume } from '../utils/configs';
+import { restudy, volume, workNotes } from '../utils/configs';
 import { waitForElement } from '../utils/study';
 import { CommonProject } from './common';
 import { $console, BackgroundProject } from './background';
@@ -20,6 +22,7 @@ import {
 	dynamicWorkTips,
 	extractTextWithImages,
 	removeRedundantWords,
+	simplifyWorkResult,
 	updateDynamicResult
 } from '../utils/work';
 
@@ -42,7 +45,12 @@ const state = {
 
 export const YKTProject = Project.create({
 	name: '雨课堂',
-	domains: ['yuketang.cn', 'gdufemooc.cn'],
+	domains: [
+		'yuketang.cn',
+		// 雨课堂考试域名
+		'xuetangx.com',
+		'gdufemooc.cn'
+	],
 	scripts: {
 		guide: new Script({
 			name: '💡 使用提示',
@@ -320,6 +328,27 @@ export const YKTProject = Project.create({
 					study();
 				};
 				study();
+			}
+		}),
+		exam: new Script({
+			name: '自动考试',
+			matches: [['考试界面', 'examination.xuetangx.com/exam/']],
+			namespace: 'yuketang.study.exam',
+			configs: {
+				notes: workNotes
+			},
+			async onhistorychanged(type, ...args) {
+				if (type !== 'pushed') return;
+
+				await waitForElement('.exam-main--content .subject-item');
+				commonWork({
+					mount_script: this,
+					workerProvider: (opts) => examination(opts)
+				});
+				return;
+			},
+			async oncomplete() {
+				this.onhistorychanged?.('pushed');
 			}
 		})
 	}
@@ -1320,4 +1349,147 @@ async function ai_watch(options: { volume: number; playbackRate: number }) {
 			resolve();
 		};
 	});
+}
+
+/**
+ * 26年新版随堂练习界面，单独界面-从侧边栏任务中进入
+ */
+function examination(opts: CommonWorkOptions) {
+	$message.info(`开始考试`);
+	CommonProject.scripts.workResults.methods.init();
+
+	const redundanceWords = opts.redundanceWordsText.split('\n').filter(Boolean);
+	const titleTransform = (titles: (HTMLElement | undefined)[]) =>
+		titles
+			.filter((t) => t?.innerText)
+			.map((t) =>
+				t
+					? removeRedundantWords(
+							StringUtils.of(extractYktTitleText(t)).nowrap(' ').nospace().toString().trim(),
+							redundanceWords
+					  )
+					: ''
+			)
+			.join(',');
+
+	// 这里跟章节测试的连线题不一样，章节测试是新版连线题
+	/** 新建答题器 */
+	const worker = new OCSWorker({
+		root: '.exam-main--content .subject-item',
+		elements: {
+			title: '.clearfix.exam-font .custom_ueditor_cn_body',
+			options: 'ul.list-unstyled li .custom_ueditor_cn_body',
+			textareas: (root) => {
+				// 主观题为 UEditor 富文本编辑器（iframe 作为填充目标）；
+				// 填空题为横线输入框（blank-item-dynamic / placeholder="输入答案"）；简答为原生 textarea
+				const editors = $$el('iframe[id^="ueditor_"]', root);
+				if (editors.length) {
+					return editors;
+				}
+				const blanks = $$el(YKT_BLANK_INPUT_SELECTOR, root);
+				return blanks.length ? blanks : $$el('textarea', root);
+			}
+		},
+		thread: opts.thread ?? 1,
+		answerSeparators: opts.answerSeparators.split(',').map((s) => s.trim()),
+		/** 默认搜题方法构造器 */
+		answerer: createCommonAnswerer({
+			titleTransform: (elements, ctx) => {
+				if (elements.title) {
+					return titleTransform(elements.title);
+				}
+				return '';
+			},
+			answererWrappers: opts.answererWrappers,
+			period: opts.period
+		}),
+
+		work: async (ctx) => {
+			const { elements, searchInfos } = ctx;
+
+			// 在非预览模式下会出现多个干扰项 type，这里提取正确的
+
+			const type: QuestionTypes = (() => {
+				const cl = ctx?.root?.querySelector('.item-type')?.textContent?.trim() || '';
+				return cl.includes('单选题')
+					? 'single'
+					: cl.includes('多选题')
+					? 'multiple'
+					: cl.includes('判断题')
+					? 'judgement'
+					: cl.includes('填空题')
+					? 'completion'
+					: undefined;
+			})();
+
+			// 通用单选多选题
+			if (type && (type === 'multiple' || type === 'single')) {
+				const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text)[type];
+				return await resolver(searchInfos, elements.options as HTMLElement[], async (type, answer, option) => {
+					if (!option?.querySelector('.el-icon-check')) {
+						option.click();
+						await $.sleep(500);
+					}
+				});
+			}
+			// 判断题处理
+			else if (type && type === 'judgement') {
+				const answersGroup = searchInfos.map((info) => info.results.map((res) => res.answer));
+				const optionTexts = ['对', '错'];
+				const result = resolveJudgement(answersGroup, optionTexts);
+				if (result.finish && result.option) {
+					const index = optionTexts.indexOf(result.option);
+					ctx.elements.options[index]?.click();
+					return { finish: true };
+				}
+				return { finish: false };
+			} else if (type === 'completion') {
+				const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text)['completion'];
+				return await resolver(searchInfos, elements.textareas as HTMLElement[], async (type, answer, option) => {
+					if (option?.tagName === 'IFRAME') {
+						// 主观题：UEditor 富文本编辑器
+						fillYktUEditor(option as unknown as HTMLIFrameElement, answer);
+						await $.sleep(300);
+					} else {
+						// 填空题为 input 文本框，简答为 textarea
+						const input =
+							option?.tagName === 'TEXTAREA' || option?.tagName === 'INPUT'
+								? (option as unknown as HTMLInputElement | HTMLTextAreaElement)
+								: (option?.querySelector('textarea,input') as HTMLInputElement | HTMLTextAreaElement | null);
+						if (input) {
+							input.value = answer;
+							// Vue 受控组件必须派发 input 事件才能同步数据
+							input.dispatchEvent(new Event('input', { bubbles: true }));
+							await $.sleep(200);
+						}
+					}
+				});
+			}
+			return { finish: false };
+		},
+		/** 元素准备完毕后回调（仅一次）：填充全部题目，面板立即显示全部题目 */
+		async onResultsInit(_curr, _index, res) {
+			await CommonProject.scripts.workResults.methods.fillAll(
+				res.map((r, i) => simplifyWorkResult(r, titleTransform, i))
+			);
+		},
+
+		/** 完成答题后 */
+		async onResultsUpdate(current, index, res) {
+			await CommonProject.scripts.workResults.methods.update(index, simplifyWorkResult(current, titleTransform, index));
+		}
+	});
+
+	worker
+		.doWork({ enable_debug: BackgroundProject.scripts.dev.cfg.enable_answerer_debug })
+		.then(() => {
+			$message.info({ content: '随堂练习完成，请自行检查后保存或提交。', duration: 0 });
+			worker.emit('done');
+		})
+		.catch((err) => {
+			console.error(err);
+			$message.error('答题程序发生错误 : ' + err.message);
+		});
+
+	return worker;
 }
