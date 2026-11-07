@@ -833,16 +833,20 @@ export const BackgroundProject = Project.create({
 													modal?.remove();
 												};
 											}),
-											h('button', { className: 'base-style-button', innerText: '前往更新' }, (btn) => {
-												btn.onclick = () => {
-													if (updatePage) {
-														window.open(updatePage, '_blank');
-														modal?.remove();
-													} else {
-														$message.error({ content: '无法前往更新页面，更新链接为空' });
-													}
-												};
-											})
+											h(
+												'button',
+												{ className: 'base-style-button', style: { marginLeft: '4px' }, innerText: '前往更新' },
+												(btn) => {
+													btn.onclick = () => {
+														if (updatePage) {
+															window.open(updatePage, '_blank');
+															modal?.remove();
+														} else {
+															$message.error({ content: '无法前往更新页面，更新链接为空' });
+														}
+													};
+												}
+											)
 										])
 									});
 								}
