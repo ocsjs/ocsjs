@@ -2394,7 +2394,12 @@ export const ZHSProject = Project.create({
 					attrs: { type: 'number', min: 1, step: 1, max: 10 }
 				}
 			},
-			async oncomplete() {
+			oncomplete() {
+				this.onhistorychanged?.('pushed');
+			},
+			async onhistorychanged(type) {
+				$message.info('onhistorychange ' + type);
+				if (type !== 'pushed') return;
 				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
 				migrateZhsWorkConfigs();
 
