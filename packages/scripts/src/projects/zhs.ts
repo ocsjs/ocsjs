@@ -26,7 +26,7 @@ import {
 	simplifyWorkResult,
 	updateDynamicResult
 } from '../utils/work';
-import { $msg, CommonWorkOptions, playMedia } from '../utils';
+import { $msgwc, CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { $console, BackgroundProject } from './background';
 import { waitForMedia, waitForElement, waitFor } from '../utils/study';
@@ -2180,7 +2180,7 @@ export const ZHSProject = Project.create({
 				await waitForLoad();
 				await $.sleep(3000);
 
-				$msg.info('即将开始自动学习：' + processor.getChapterName());
+				$msgwc.info('即将开始自动学习：' + processor.getChapterName());
 
 				const reload = async (e: any) => {
 					$console.error(e);
@@ -2381,7 +2381,8 @@ export const ZHSProject = Project.create({
 		'hike-homework': new Script({
 			matches: [
 				['AI教学中心-题目作业', '/stu/answer-homework'],
-				['AI教学中心-作业任务页面', '/stu-exam/answer-exam']
+				['AI教学中心-作业任务页面', '/stu-exam/answer-exam'],
+				['AI教学中心-随堂练习', /exam-hub\/.+\/stu\/answer-training/]
 			],
 			name: '✍️ 教学空间-AI智慧课程-题目作业脚本',
 			hideInPanel: true,
@@ -2393,13 +2394,36 @@ export const ZHSProject = Project.create({
 					attrs: { type: 'number', min: 1, step: 1, max: 10 }
 				}
 			},
-			async oncomplete() {
+			oncomplete() {
+				this.onhistorychanged?.('pushed');
+			},
+			async onhistorychanged(type) {
+				$message.info('onhistorychange ' + type);
+				if (type !== 'pushed') return;
 				// 迁移旧命名空间下的用户配置到统一的 zhs.work 命名空间（幂等，可安全重复调用）
 				migrateZhsWorkConfigs();
-				// 检查是否为软件环境
-				BackgroundProject.scripts.render.methods.pin(this);
 
+				BackgroundProject.scripts.render.methods.pin(this);
+				const msg = $message.info({ duration: 0, content: '等待界面加载中...' });
 				await waitForElement('.question-item');
+				// 等待公式加载完毕
+				await waitFor(
+					async () => {
+						await $.sleep(1000);
+						const items = Array.from(document.querySelectorAll('.question-item'));
+						items.at(-1)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						await $.sleep(items.length * 100);
+						items.at(0)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+						await $.sleep(items.length * 100);
+						return Array.from(document.querySelectorAll('.question-item')).every(
+							(e) => !e.textContent?.includes('公式加载中')
+						);
+					},
+					{ timeout_seconds: 60 * 3, timeout_message: '界面公式加载失败，请刷新界面尝试' }
+				);
+				await $.sleep(1000);
+				$message.success('界面加载完毕');
+				msg?.remove();
 
 				commonWork({
 					mount_script: ZHSProject.scripts['work-center'],
@@ -2816,7 +2840,7 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 		root: 'div:has(> .questionContent)' /** .questionBox */,
 		elements: {
 			title: '.questionContent',
-			options: '.optionUl label',
+			options: '.optionUl label, .questiontextarea, .ShortAnswer-textarea',
 			questionTit: '.questionTit'
 		},
 		thread: thread ?? 1,
@@ -2828,6 +2852,18 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 			period
 		}),
 		work: {
+			type(ctx) {
+				const type = ctx.elements.questionTit[0]?.textContent || '';
+				return type.includes('单选')
+					? 'single'
+					: type.includes('多选')
+					? 'multiple'
+					: type.includes('判断')
+					? 'judgement'
+					: type.includes('填空') || type.includes('问答') || type.includes('名词解释')
+					? 'completion'
+					: undefined;
+			},
 			/** 自定义处理器 */
 			async handler(type, answer, option, ctx) {
 				if (type === 'judgement' || type === 'single' || type === 'multiple') {
@@ -2836,10 +2872,17 @@ function xnkWork({ answererWrappers, period, thread, answerSeparators }: CommonW
 						await $.sleep(200);
 					}
 				} else if (type === 'completion' && answer.trim()) {
-					const text = option.querySelector('textarea');
+					const text =
+						option.tagName === 'TEXTAREA' ? (option as HTMLTextAreaElement) : option.querySelector('textarea');
 					if (text) {
+						text.focus();
+						await $.sleep(100);
 						text.value = answer;
-						await $.sleep(200);
+						await $.sleep(100);
+						text.dispatchEvent(new Event('input', { bubbles: true }));
+						await $.sleep(100);
+						text.blur();
+						await $.sleep(100);
 					}
 				}
 			}
@@ -3187,10 +3230,21 @@ function fusioncourseWork(
 	});
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return titles
-			.filter((t) => t?.innerText)
-			.map((t) => (t ? extractTextWithImages(t).text : ''))
-			.join(',');
+		return (
+			titles
+				.filter((t) => !!t && (!!t.textContent?.trim() || !!t.querySelector('img,mjx-container')))
+				.map((t) => {
+					// 题干真实内容在 .quest-title 内（<p class="option-name"> 因内含 div 被浏览器提前闭合为空标签），
+					// 克隆后移除题号再提取，避免污染搜题文本
+					const clone = t!.cloneNode(true) as HTMLElement;
+					clone.querySelector('.option-index')?.remove();
+					return extractTextWithImages(clone).text;
+				})
+				// 折叠 math-block 公式与块级元素引入的换行噪声，提升搜题命中率
+				.map((text) => text.replace(/\s+/g, ' ').trim())
+				.filter(Boolean)
+				.join(',')
+		);
 	};
 
 	const worker = new OCSWorker({
@@ -3206,7 +3260,8 @@ function fusioncourseWork(
 		},
 		elements: {
 			type: '.quest-type',
-			title: '.quest-title .option-name',
+			// .option-name 的 p 标签被浏览器提前闭合为空标签，题干真实内容直接在 .quest-title 内
+			title: '.quest-title',
 			options: 'label'
 		},
 		thread: thread ?? 1,
@@ -3214,10 +3269,18 @@ function fusioncourseWork(
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
 			titleTransform: (elements) => titleTransform(elements.title),
+			// 选项含 MathJax 公式（innerText 为空），需结构化线性化后参与搜题
+			optionsTransform: (elements) =>
+				(elements.options ?? [])
+					.filter(Boolean)
+					.map((o: HTMLElement) => extractTextWithImages(o).text.replace(/\s+/g, ' ').trim())
+					.join('\n'),
 			answererWrappers,
 			period
 		}),
 		work: {
+			// 作答匹配同样取线性化文本（公式选项 innerText 为空，无法匹配答案）
+			optionText: (o) => extractTextWithImages(o).text.replace(/\s+/g, ' ').trim(),
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;
 				if (type?.includes('单选题')) {
@@ -3413,34 +3476,54 @@ function hikeHomework(
 	{ answererWrappers, period, thread, answerSeparators }: CommonWorkOptions
 ) {
 	$message.info({ content: '开始作业' });
+	CommonProject.scripts.workResults.methods.init({
+		questionPositionSyncHandlerType: 'zhs-hike-answer-training'
+	});
 
 	// CommonProject.scripts.workResults.methods.init({
 	// 	questionPositionSyncHandlerType: 'zhs-hike'
 	// });
 
 	const titleTransform = (titles: (HTMLElement | undefined)[]) => {
-		return titles
-			.filter((t) => t?.innerText)
-			.map((t) => (t ? extractTextWithImages(t).text : ''))
-			.join(',');
+		return (
+			titles
+				// 纯公式题干 innerText 为空（mjx-container 为 SVG 渲染），不能过滤，
+				// 公式会由 extractTextWithImages 线性化为纯文本参与搜题
+				.filter((t) => !!t && (!!t.textContent?.trim() || !!t.querySelector('img,mjx-container')))
+				.map((t) => (t ? extractTextWithImages(t).text.replace(/\s+/g, ' ').trim() : ''))
+				.filter(Boolean)
+				.join(',')
+		);
 	};
 
 	const worker = new OCSWorker({
-		root: '.question-item',
+		// hide随堂测验：点击选项后会立刻判题并出具参考答案
+		// 过滤掉已经包含参考答案（存在参考答案即为答题完毕） 的题目
+		root: '.question-item:not(:has(.stu-score-show))',
 		elements: {
 			type: '.title-box,.combination-title',
-			title: '.qeustion-content , .combination-content ',
-			options: '.option-item, .vditor-content'
+			// 具体查询到 markdown-latex-container 类元素，防止 question-content 出现 understand-box 等问号图标，导致搜题出现图片题
+			title: '.qeustion-content .markdown-latex-container, .combination-content ',
+			// 具体查询到 markdown-latex-container 类元素，防止 option-content 出现 lou 等漏题图标，导致搜题出现图片题
+			options: '.option-item .markdown-latex-container, .vditor-content'
 		},
 		thread: thread ?? 1,
 		answerSeparators: answerSeparators.split(',').map((s) => s.trim()),
 		/** 默认搜题方法构造器 */
 		answerer: createCommonAnswerer({
 			titleTransform: (elements) => titleTransform(elements.title),
+			// 选项含 MathJax 公式（innerText 为空），需结构化线性化后参与搜题
+			optionsTransform: (elements) =>
+				(elements.options ?? [])
+					.filter(Boolean)
+					.map((o: HTMLElement) => extractTextWithImages(o).text.replace(/\s+/g, ' ').trim())
+					.join('\n'),
 			answererWrappers,
 			period
 		}),
 		work: {
+			// 作答匹配同样取线性化文本（公式选项 innerText 为空，无法匹配答案）
+			optionText: (o) => extractTextWithImages(o).text.replace(/\s+/g, ' ').trim(),
 			type(ctx) {
 				const type = ctx.elements.type[0].textContent;
 				if (type?.includes('单选')) {

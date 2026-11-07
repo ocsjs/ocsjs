@@ -1,5 +1,5 @@
 import { splitAnswer, resolvePlainAnswer } from '../utils';
-import { removeRedundant, answerNormalizedMatch, answerSimilar } from '../../utils/string';
+import { removeRedundant, answerNormalizedMatch, answerSimilar, disambiguateBySign } from '../../utils/string';
 import { StringUtils } from '../../../utils/string';
 
 /** 单选题匹配结果 */
@@ -31,7 +31,11 @@ export function resolveSingle(answers: string[], options: string[], separators?:
 	// ========== 阶段1: 归一化精确匹配 ==========
 	const normalizedResult = answerNormalizedMatch(allAnswer, optionStrings);
 	if (normalizedResult.length) {
-		const index = optionStrings.findIndex((opt) => opt === normalizedResult[0]);
+		// 并列命中消歧：多个选项忽略正负号后完全相同（如公式选项 -x 与 x、-2 与 2），
+		// 直接取第一个会选错符号，用保留符号的严格归一化二次筛选
+		const candidates = normalizedResult.length > 1 ? disambiguateBySign(allAnswer, normalizedResult) : normalizedResult;
+		const finalResult = candidates.length ? candidates : normalizedResult;
+		const index = optionStrings.findIndex((opt) => opt === finalResult[0]);
 		if (index !== -1) {
 			return { finish: true, option: options[index] };
 		}
@@ -50,9 +54,18 @@ export function resolveSingle(answers: string[], options: string[], separators?:
 	});
 
 	if (bestIndex !== -1 && bestRating > 0.6) {
+		let bestOption = options[bestIndex];
+		// 最高分并列（忽略符号后完全相同的公式选项）：符号敏感消歧
+		const tied = options.filter((_, i) => ratings[i].rating === bestRating);
+		if (tied.length > 1) {
+			const strict = disambiguateBySign(allAnswer, tied);
+			if (strict.length) {
+				bestOption = strict[0];
+			}
+		}
 		return {
 			finish: true,
-			option: options[bestIndex],
+			option: bestOption,
 			ratings: ratings.map((r) => r.rating)
 		};
 	}

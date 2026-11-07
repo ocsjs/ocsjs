@@ -171,8 +171,10 @@ export function createQuestionTitleExtra(question: string, ...left: HTMLElement[
 	space.style.textAlign = 'right';
 	return h('div', { style: { textAlign: 'right' } }, [space]);
 }
-
-function msg(type: keyof typeof $message, attrs: MessageAttrs) {
+/**
+ * message and console
+ */
+function msgwc(type: keyof typeof $message, attrs: MessageAttrs) {
 	$message[type](attrs);
 	if (type === 'success') {
 		type = 'info';
@@ -189,14 +191,16 @@ function msg(type: keyof typeof $message, attrs: MessageAttrs) {
 	}
 	$console[type](content);
 }
-
-export const $msg = {
+/**
+ * message and console
+ */
+export const $msgwc = {
 	/**  输出气泡消息以及日志记录  */
-	info: (attrs: MessageAttrs) => msg('info', attrs),
+	info: (attrs: MessageAttrs) => msgwc('info', attrs),
 	/**  输出气泡消息以及日志记录  */
-	warn: (attrs: MessageAttrs) => msg('warn', attrs),
+	warn: (attrs: MessageAttrs) => msgwc('warn', attrs),
 	/**  输出气泡消息以及日志记录  */
-	error: (attrs: MessageAttrs) => msg('error', attrs),
+	error: (attrs: MessageAttrs) => msgwc('error', attrs),
 	/**  输出气泡消息以及日志记录  */
-	success: (attrs: MessageAttrs) => msg('success', attrs)
+	success: (attrs: MessageAttrs) => msgwc('success', attrs)
 };

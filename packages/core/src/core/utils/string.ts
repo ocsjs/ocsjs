@@ -98,6 +98,46 @@ export function answerSimilar(answers: string[], options: string[]): Rating[] {
 	return similar;
 }
 
+/**
+ * 保留正负号的 {@link clearString}（`-`、`−`、`+` 不参与剔除）。
+ * 普通 clearString 会丢弃符号，公式/数值选项只差正负号时（-x 与 x、-2 与 2）将无法区分。
+ */
+export function clearStringKeepSign(str: string) {
+	return clearString(str, '\\-', '\\+', '−');
+}
+
+/**
+ * 保留符号的归一化：同 {@link normalizeString}，但保留正负号（各类横线统一为 `-`）。
+ */
+export function normalizeStringKeepSign(str: string): string {
+	return clearStringKeepSign(
+		str
+			.replace(/[−–—]/g, '-') // 各类横线统一为 ASCII 负号
+			.replace(/[，。！？；：""''、（）【】《》\s]/g, '')
+			.replace(/[,.\-!?;:'"()[\]<>]/g, (m) => (m === '-' ? m : ''))
+			.replace(/[ａ-ｚＡ-Ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+			.replace(/％/g, '%')
+	);
+}
+
+/**
+ * 符号敏感并列消歧。
+ *
+ * 典型场景：公式选项仅差正负号（-x 与 x、-2 与 2），常规归一化（clearString 丢弃符号）
+ * 后完全相同，匹配阶段产生并列命中，直接取第一个会选错符号。
+ * 这里用保留正负号的归一化做严格匹配，仅在能收敛候选数量时返回筛选结果，
+ * 否则返回空数组（调用方保持原兜底逻辑）。
+ */
+export function disambiguateBySign(answers: string[], options: string[]): string[] {
+	if (options.length <= 1) return options;
+	const _answers = answers.map((a) => normalizeStringKeepSign(removeRedundant(a)));
+	const strict = options.filter((opt) => {
+		const no = normalizeStringKeepSign(removeRedundant(opt));
+		return _answers.some((na) => na === no);
+	});
+	return strict.length > 0 && strict.length < options.length ? strict : [];
+}
+
 /** 带领先度的相似度评分 */
 export interface MatchRating extends Rating {
 	/** 最高分选项与次高分选项的相似度差距（领先度），仅最高分选项有值，其余为 0 */
@@ -162,17 +202,54 @@ export function answerExactMatch(answers: string[], options: string[]): string[]
 }
 
 /**
+ * 轻量 LaTeX 线性化：把题库答案/题目选项中的 LaTeX 公式转为纯文本，
+ * 与 extractMathJaxText（MathJax SVG 线性化，见 scripts 侧 work.ts）的产出风格对齐，
+ * 使 `\frac{6}{7}` 与 `(6)/(7)` 经 clearString 归一化后完全一致。
+ *
+ * 只处理包含反斜杠命令的字符串，纯文本原样返回（零副作用）。
+ */
+export function linearizeLatex(str: string): string {
+	if (!str.includes('\\')) {
+		return str;
+	}
+	let s = str;
+	// \frac{a}{b} → (a)/(b)（\dfrac/\tfrac 同；循环处理嵌套分数）
+	let prev = '';
+	while (prev !== s) {
+		prev = s;
+		s = s.replace(/\\[dt]?frac\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g, '($1)/($2)');
+	}
+	return (
+		s
+			.replace(/\\sqrt\s*\[([^\]]*)\]\s*\{([^{}]*)\}/g, '√[$1]($2)')
+			.replace(/\\sqrt\s*\{([^{}]*)\}/g, '√($1)')
+			.replace(/\\times|\\cdot/g, '*')
+			.replace(/\\div/g, '/')
+			.replace(/\\(left|right|displaystyle|limits)\b ?/g, '')
+			// \, \; \! \  等间距命令
+			.replace(/\\[,;!\s]/g, '')
+			.replace(/\\(?:mathrm|mathbf|mathit|mathbb|mathcal|boldsymbol|text|operatorname)\s*\{([^{}]*)\}/g, '$1')
+			// 其余命令去反斜杠：\sin→sin、\alpha→alpha、\infty→infty
+			.replace(/\\([A-Za-z]+)/g, '$1')
+			// 上/下标与分组花括号对归一化无意义，全部去除
+			.replace(/[{}]/g, '')
+	);
+}
+
+/**
  * 删除题目选项中开头的冗余字符串
  *
  * 两条规则依次执行：
  * 1. `A.` / `A、` / `A)` 等带分隔符的选项标签：字母 + 分隔符 + 内容
  * 2. `A选项` / `C男女平等` 等字母直接紧跟中文的标签：字母 + 中文内容
  *    （仅当字母后紧跟中文时剥离，故 "TCP协议"、"CPU" 等字母串不被误删）
+ *
+ * 前置 LaTeX 线性化：含公式的答案/选项先转纯文本再剥离标签，
+ * 保证 `\frac{6}{7}` 与 `(6)/(7)` 归一化一致。
  */
 export function removeRedundant(str: string) {
 	return (
-		str
-			?.trim()
+		linearizeLatex(str?.trim() || '')
 			.replace(/^[A-Z]{1}[^A-Za-z0-9⺀-鿿]+([A-Za-z0-9⺀-鿿]+)/, '$1')
 			.replace(/^[A-Z]{1}([⺀-鿿][A-Za-z0-9⺀-鿿]*)/, '$1') || ''
 	);

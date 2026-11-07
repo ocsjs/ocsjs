@@ -20,7 +20,7 @@ if (
 ) {
 	const open = confirm(
 		`OCS网课脚本不支持当前的脚本管理器（${GM_info.scriptHandler}）。` +
-		'请前往 https://docs.ocsjs.com/docs/script 下载指定的脚本管理器，例如 “Scriptcat 脚本猫” 或者 “Tampermonkey 油猴”'
+			'请前往 https://docs.ocsjs.com/docs/script 下载指定的脚本管理器，例如 “Scriptcat 脚本猫” 或者 “Tampermonkey 油猴”'
 	);
 
 	if (open) {
@@ -31,13 +31,6 @@ if (
 
 const { start, definedProjects, CommonProject, RenderScript, logoSvg } = OCS;
 
-// 预设题库配置一键获取渠道（题库站登录后 postMessage 自动回填，无需手动复制粘贴）
-// 对接文档：docs/题库配置一键获取对接文档.md（言溪题库，协议 v1）；未配置时不显示一键获取入口，手动配置功能不受影响
-OCS.setAnswererConfigProvider({
-	name: '言溪题库',
-	connectUrl: 'https://tk.enncy.cn/ocs/connect'
-});
-
 const infos = GM_info;
 
 (function () {
@@ -47,6 +40,7 @@ const infos = GM_info;
 
 	// 运行脚本
 	start({
+		OCS_TYPE: 'main',
 		projects: projects,
 		renderConfig: {
 			renderScript: RenderScript,

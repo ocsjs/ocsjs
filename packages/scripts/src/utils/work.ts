@@ -351,6 +351,79 @@ export function createWorkerControl(options: {
 }
 
 /**
+ * MathJax 特殊符号归一化表（NFKC 不覆盖的数学符号 → ASCII/去除）。
+ * 见 .codebuddy/plans/zhs-mathjax-formula-plan.md 附录实测。
+ */
+const MATH_SYMBOL_MAP: Record<string, string> = {
+	'′': "'",
+	'″': "''",
+	'⁡': '',
+	'−': '-',
+	'⋅': '*',
+	'×': '*',
+	'÷': '/'
+};
+const MATH_SYMBOL_RE = new RegExp(`[${Object.keys(MATH_SYMBOL_MAP).join('')}]`, 'g');
+
+/**
+ * 将 MathJax v3 SVG 公式（mjx-container）线性化为纯文本。
+ *
+ * 原理：SVG 输出保留了 MathML 结构镜像（`g[data-mml-node]`），
+ * 每个字形为 `path[data-c="Unicode码位hex"]`（部分配置下为 `use[data-c]`）。
+ * 产出形如 `H^{'}(x)=f(k(x))-f(h(x))`、`∫_{a}^{x}f(t)dt`，供题库文本模糊匹配。
+ * 未知节点退化为子节点顺序拼接（fail-open）。
+ */
+export function extractMathJaxText(container: Element): string {
+	const math = container.querySelector('g[data-mml-node="math"]');
+	return math ? mmlNodeText(math) : '';
+}
+
+function mmlNodeText(node: Element): string {
+	const type = node.getAttribute('data-mml-node');
+	const kids = Array.from(node.children).filter((c) => c.hasAttribute('data-mml-node'));
+	const at = (i: number) => (kids[i] ? mmlNodeText(kids[i]) : '');
+
+	switch (type) {
+		case 'mi':
+		case 'mo':
+		case 'mn':
+		case 'mtext': {
+			const chars: string[] = [];
+			node.querySelectorAll('path[data-c],use[data-c]').forEach((p) => {
+				chars.push(String.fromCodePoint(parseInt(p.getAttribute('data-c') || '0', 16)));
+			});
+			return chars
+				.join('')
+				.normalize('NFKC')
+				.replace(MATH_SYMBOL_RE, (c) => MATH_SYMBOL_MAP[c] ?? c);
+		}
+		case 'msup':
+			return `${at(0)}^{${at(1)}}`;
+		case 'msub':
+			return `${at(0)}_{${at(1)}}`;
+		case 'msubsup':
+			return `${at(0)}_{${at(1)}}^{${at(2)}}`;
+		case 'mfrac':
+			return `(${at(0)})/(${at(1)})`;
+		case 'msqrt':
+			return `√(${kids.map(mmlNodeText).join('')})`;
+		case 'mroot':
+			return `√[${at(1)}](${at(0)})`;
+		case 'munder':
+			return `${at(0)}_{${at(1)}}`;
+		case 'mover':
+			return `${at(0)}^{${at(1)}}`;
+		case 'munderover':
+			return `${at(0)}_{${at(1)}}^{${at(2)}}`;
+		case 'mspace':
+			return ' ';
+		default:
+			// math / mrow / mstyle / 未知节点：顺序拼接
+			return kids.map(mmlNodeText).join('');
+	}
+}
+
+/**
  * 结构化 DOM 遍历：提取文本与图片 URL。
  *
  * 替代旧的 `optimizationElementWithImage(...).innerText` 链路：
@@ -359,6 +432,7 @@ export function createWorkerControl(options: {
  * - `images` 额外返回按文档顺序的 URL 数组，供 createImageSuggestion 跳过正则。
  * - 跳过 `display:none` 的元素（模拟 innerText 对非渲染节点的跳过）。
  * - 对 detached 元素（如 zhs 由 JSON HTML 构建的 div）同样适用。
+ * - MathJax 公式（mjx-container）线性化为纯文本（见 {@link extractMathJaxText}）。
  */
 export interface ExtractTextOptions {
 	/** 仅收集满足条件的 img（如 zhs 选项需排除按钮图片） */
@@ -385,6 +459,12 @@ export function extractTextWithImages(
 				parts.push(` ${url} `);
 				images.push(url);
 			}
+			return;
+		}
+		// MathJax v3 SVG 公式（zhs 等平台公式题的新渲染方式）：线性化为纯文本，不再递归内部 SVG
+		if (el.tagName === 'MJX-CONTAINER') {
+			const formula = extractMathJaxText(el);
+			if (formula) parts.push(` ${formula} `);
 			return;
 		}
 		if (el.tagName === 'BR') {

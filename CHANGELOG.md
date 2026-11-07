@@ -1,5 +1,111 @@
 # Changelog
 
+## [5.3.1](https://github.com/ocsjs/ocsjs/compare/5.3.0...5.3.1) (2026-11-05)
+
+
+### 🐛 问题修复
+
+* 修复预检查未生效的BUG ([38c0061](https://github.com/ocsjs/ocsjs/commit/38c0061d2fb0e9890484d62d832bec440e84ddbd))
+
+## [5.3.0](https://github.com/ocsjs/ocsjs/compare/5.2.7...5.3.0) (2026-11-05)
+
+
+### ✨ 新功能
+
+* 增加智慧树-AI教学中心-随堂测验自动答题功能、以及公式题优化 ([1e12ac0](https://github.com/ocsjs/ocsjs/commit/1e12ac0e56bbe5d9966395cd902503438b77c6fe))
+
+
+### 🐛 问题修复
+
+* 修复智慧树AI教学中心-搜题出现无意义的图片 ([079da15](https://github.com/ocsjs/ocsjs/commit/079da157f91d11157d5510c014206bc1a00b8565))
+* 修复超星智能跳转模式无法生效的问题 ([73d81c6](https://github.com/ocsjs/ocsjs/commit/73d81c63015ee2c25a8cf0c4df5878b2592c1b51))
+
+
+### ⚡ 优化改进
+
+* 将 $msg api 更名为 $msgwc ([d0bd342](https://github.com/ocsjs/ocsjs/commit/d0bd34294f4b525bbde5e1c98f26db1d75449c0b))
+* 将 $msg api 更名为 $msgwc ([769a3fc](https://github.com/ocsjs/ocsjs/commit/769a3fce363fd54d2d40c74c26bc88594eedfa53))
+
+## [5.2.7](https://github.com/ocsjs/ocsjs/compare/5.2.6...5.2.7) (2026-11-02)
+
+
+### 🐛 问题修复
+
+* 修复超星答题时解密时序错误导致出现乱码字的问题 ([5f02865](https://github.com/ocsjs/ocsjs/commit/5f02865aa495418ca6b144938c67497d515e0d12))
+* 修复部分环境下中国大学MOOC无法运行的问题 ([00710f1](https://github.com/ocsjs/ocsjs/commit/00710f148ae21ee388549f4f55681d9bd2a47479))
+
+
+### ⚡ 优化改进
+
+* 适配智慧树校内翻转课的填空题、问答题等 ([e27255d](https://github.com/ocsjs/ocsjs/commit/e27255d66946b8d31355c7bd2e62b605e2062b15))
+
+## [5.2.6](https://github.com/ocsjs/ocsjs/compare/5.2.5...5.2.6) (2026-11-01)
+
+
+### 🐛 问题修复
+
+* 修复超星第一题繁体乱码，字体解密改为预载+每次搜题前守卫+增量解密 ([fdab3c9](https://github.com/ocsjs/ocsjs/commit/fdab3c9e5fcab5b40053a54d37ad93b81bb5d427))
+* 紧急修复easy-us更新导致的脚本卡死问题 ([10eb0bd](https://github.com/ocsjs/ocsjs/commit/10eb0bdc4d765ae339fab92e12b84960f5699fe2))
+
+## [5.2.5](https://github.com/ocsjs/ocsjs/compare/5.2.4...5.2.5) (2026-10-31)
+
+
+### 🐛 问题修复
+
+* 修复 GitHub Actions 构建报错（eslint 规则与 prettier 格式） ([812bb3e](https://github.com/ocsjs/ocsjs/commit/812bb3e330da59db501d6aa0bc52e6eff378bcf5))
+* 修复 release-please changelog 缺少 feat/fix 等分段 ([0140810](https://github.com/ocsjs/ocsjs/commit/0140810c2e41455c6ef52b706cf0461f0fa7fcef))
+* 修复雨课堂仅公式题目下为空的问题、移除开发者工具提示 ([57204be](https://github.com/ocsjs/ocsjs/commit/57204be238339161d071e900051758322ade5117))
+
+
+### ⚡ 优化改进
+
+* 字体特征表持久化缓存迁移至 CacheStorage ([3ad329a](https://github.com/ocsjs/ocsjs/commit/3ad329ab87dd7819bb0f4677a674a43fa638637e))
+* 题库缓存与日志的 GM 存储写入优化，开发者面板增加存储占用排查 ([a894a32](https://github.com/ocsjs/ocsjs/commit/a894a329da92010c3032883f7774cffd057a25fa))
+
+## [5.2.4](https://github.com/ocsjs/ocsjs/compare/5.2.3...5.2.4) (2026-10-30)
+
+
+* waitFor 超时改为抛出异常，审查并适配全部调用点 ([adedede](https://github.com/ocsjs/ocsjs/commit/adededeb54fb056b5d4b6a0f85d0ee9836205598))
+* 优化超星自动下一章的算法 ([8995a79](https://github.com/ocsjs/ocsjs/commit/8995a7940c98335b562d6679b07915fde98d423d))
+* 优化题库在electron中连接失败等错误显示 ([29b645c](https://github.com/ocsjs/ocsjs/commit/29b645c144fa50e41360d273292f3613f4cb3df0))
+* 修复超星字体解密时序问题，特征表增加持久化缓存与条件请求校验 ([feee3a9](https://github.com/ocsjs/ocsjs/commit/feee3a98cbdf352969a343430f05e8b17b3c8298))
+* 适配最新智慧树AI教学中心视频学习 ([025d006](https://github.com/ocsjs/ocsjs/commit/025d006367117434d3df85dfbc281cb620e1900d))
+* 适配雨课堂最新的latex公式题目 ([aace5ec](https://github.com/ocsjs/ocsjs/commit/aace5ecfce3c396a2f4f6dfd3aa3c6bd2307e64c))
+
+## [5.2.3](https://github.com/ocsjs/ocsjs/compare/5.2.2...5.2.3) (2026-10-23)
+
+
+* 修复 eslint eqeqeq 检查导致的工作流构建失败 ([609d7f5](https://github.com/ocsjs/ocsjs/commit/609d7f5183182cb5ec98371ca5f60ac6601885dc))
+
+## [5.2.2](https://github.com/ocsjs/ocsjs/compare/5.2.1...5.2.2) (2026-10-23)
+
+
+* 优化搜索结果元素中图片题的答案显示与相同题目判断 ([d58b081](https://github.com/ocsjs/ocsjs/commit/d58b081d58fc37d32ef69de5c9614febbf25f1e2))
+* 修复智慧树hike-AI智课需要刷新才能运行的问题 ([f56e46d](https://github.com/ocsjs/ocsjs/commit/f56e46d7bd0ce891b266684f0dee8497241a7dae))
+* 修复智慧职教AI优课需要手动刷新才能运行的问题，优化运行逻辑 ([2b2dfa0](https://github.com/ocsjs/ocsjs/commit/2b2dfa011eb15cc068d7f253784df568ed80f149))
+* 增加对新版中国大学MOOC智慧课程界面适配 ([31063f5](https://github.com/ocsjs/ocsjs/commit/31063f51819cd4afa7798f9f7636deccfd9c234a))
+* 搜题气泡中的图片题链接优化为【图片N】占位符显示 ([c8a33f5](https://github.com/ocsjs/ocsjs/commit/c8a33f5388e4173415a52621ff80754ac6376e43))
+
+## [5.2.1](https://github.com/ocsjs/ocsjs/compare/5.2.0...5.2.1) (2026-10-13)
+
+
+* 暂时移除一键配置功能 ([1ebf1fd](https://github.com/ocsjs/ocsjs/commit/1ebf1fd33115f0c2b4145a1a090cc6cdb082d855))
+
+## [5.2.0](https://github.com/ocsjs/ocsjs/compare/5.1.0...5.2.0) (2026-10-13)
+
+
+* 优化搜索结果处理流程和代码、新增搜索等待呼吸特效 ([b2ce2e4](https://github.com/ocsjs/ocsjs/commit/b2ce2e47391abf42b4c5199223cafed70b82cce3))
+* 优化搜索结果界面显示逻辑 ([cc1525b](https://github.com/ocsjs/ocsjs/commit/cc1525b49d06b4a2a909266bc86954800ba01ffc))
+* 修复图片题优化的警告消息重复弹出的问题、修复搜索结果界面全量模式下无法整体显示的问题 ([9ef18ef](https://github.com/ocsjs/ocsjs/commit/9ef18efd30b45086913fd56e699e732e93a2a191))
+* 修复搜索结果更新时忽略异步状态导致的搜索结果状态错乱问题 ([1465e8f](https://github.com/ocsjs/ocsjs/commit/1465e8f6347ceb42c71a3a56f92679e7c29e6942))
+* 修复搜索结果重建状态问题、优化搜题气泡消息状态错乱问题 ([f69a66a](https://github.com/ocsjs/ocsjs/commit/f69a66afdc44c35c46542e185fb18beaa9ce061c))
+* 修复答题器会忽略搜题时代码报错的问题 ([5cbc2ab](https://github.com/ocsjs/ocsjs/commit/5cbc2ab9503a1123913d8504a8f01d2c30c2929b))
+* 修复题库启用按钮无效的BUG ([dc7e41f](https://github.com/ocsjs/ocsjs/commit/dc7e41f3edbd9dad233f0be2ad61e92800ed07bd))
+* 增加搜题时气泡实时显示功能 ([8305c2a](https://github.com/ocsjs/ocsjs/commit/8305c2ae9416398c7108de1ccacb669313322b9e))
+* 新增超星-任务-随堂练习的自动答题适配支持 ([ceb1437](https://github.com/ocsjs/ocsjs/commit/ceb1437cd06511cf54d8caf9a75ea256bd59c78d))
+* 新增跨Iframe操作答题进程功能，增加超星随堂测验答题操作面板 ([015d59b](https://github.com/ocsjs/ocsjs/commit/015d59b35598cc25199c244994aefa225e319a9c))
+* 适配雨课堂AI数字人视频自动学习 ([a3083a5](https://github.com/ocsjs/ocsjs/commit/a3083a5842be05f35561971b22c2062a47cea026))
+
 ## [5.1.0](https://github.com/ocsjs/ocsjs/compare/5.0.0...5.1.0) (2026-10-09)
 
 
