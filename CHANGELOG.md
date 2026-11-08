@@ -1,5 +1,29 @@
 # Changelog
 
+## [5.4.0](https://github.com/ocsjs/ocsjs/compare/5.3.1...5.4.0) (2026-11-08)
+
+
+### ✨ 新功能
+
+* 新增雨课堂自动考试功能 ([dccaaaa](https://github.com/ocsjs/ocsjs/commit/dccaaaa86d0585b6d6fa48897cc55529be7877ef))
+
+
+### 🐛 问题修复
+
+* 修复智慧树AI教学中心随堂练习无法运行的问题 ([578e95c](https://github.com/ocsjs/ocsjs/commit/578e95c94b71c22329bcae729005b8a34e05f9c0))
+
+
+### ⚡ 优化改进
+
+* 优化更新弹窗的按钮间隔 ([dc7367a](https://github.com/ocsjs/ocsjs/commit/dc7367a7c241105ff6392368d8bbd2c93bf68cf3))
+* 合并中国大学新旧两个配置界面。 增加视频、倍速配置的实时应用 ([1e57dd3](https://github.com/ocsjs/ocsjs/commit/1e57dd37daa679e6fecc298941252835a93c84d2))
+* 增加脚本识别类型、 优化主脚本的脚本配置提示 ([1e6f2bd](https://github.com/ocsjs/ocsjs/commit/1e6f2bd4fb560bdee39adc738f0a0daa7dfa23b7))
+
+
+### 📝 文档
+
+* README logo 改为仓库内相对路径，修复 GitHub camo 代理裂图问题 ([840741d](https://github.com/ocsjs/ocsjs/commit/840741d496335283b24df0a44dbf8001b63a1fb0))
+
 ## [5.3.1](https://github.com/ocsjs/ocsjs/compare/5.3.0...5.3.1) (2026-11-05)
 
 
