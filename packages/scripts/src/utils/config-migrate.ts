@@ -54,12 +54,28 @@ const legacyZhsWorkNamespaces = [
 export const zhsWorkNamespace = 'zhs.work';
 
 /**
+ * 中国大学MOOC学习脚本旧版命名空间。
+ *
+ * 历史版本中，旧版学习脚本（icourse.study-v1）与新版智慧慕课（icourse.study-v2）
+ * 使用独立的命名空间，倍速/音量/讨论策略等配置需要在两个脚本中重复设置。
+ */
+const legacyIcourseStudyNamespaces = ['icourse.study-v1', 'icourse.study-v2'];
+
+/**
+ * 中国大学MOOC学习脚本统一命名空间。
+ *
+ * 旧版学习脚本与新版智慧慕课共用同一命名空间后，任意脚本中修改的配置都会在两个脚本中生效，
+ * 只需设置一次。两个脚本按页面互斥运行（/learn、/spoc/learn 与 /mooc/learn），不会互相干扰。
+ */
+export const icourseStudyNamespace = 'icourse.study';
+
+/**
  * 将源命名空间下的 key 迁移到目标命名空间。
  * - 仅迁移真实存在于存储中的 key（不会写入默认值）。
  * - 若目标 key 已存在则保留目标值，避免覆盖用户新设置。
  * - 迁移完成后删除旧 key，因此幂等可重复调用。
  */
-function migrateNamespace(sourceNamespaces: string[], targetNamespace: string) {
+export function migrateNamespace(sourceNamespaces: string[], targetNamespace: string) {
 	for (const ns of sourceNamespaces) {
 		for (const key of $store.list()) {
 			if (!key.startsWith(ns + '.')) continue;
@@ -91,4 +107,13 @@ export function migrateZhsStudyConfigs() {
  */
 export function migrateZhsWorkConfigs() {
 	migrateNamespace(legacyZhsWorkNamespaces, zhsWorkNamespace);
+}
+
+/**
+ * 将旧命名空间下已存在的中国大学MOOC学习配置迁移到统一的 `icourse.study` 命名空间。
+ *
+ * 说明：与智慧树迁移相同，幂等可重复调用。
+ */
+export function migrateIcourseStudyConfigs() {
+	migrateNamespace(legacyIcourseStudyNamespaces, icourseStudyNamespace);
 }
