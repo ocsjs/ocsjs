@@ -14,13 +14,7 @@ import { $console, BackgroundProject } from './background';
 import { $playwright } from '../utils/app';
 import { waitForElement, waitForMedia, waitFor } from '../utils/study';
 import { playbackRate, volume } from '../utils/configs';
-import {
-	studyNotes,
-	readSpeed,
-	discussionStrategy,
-	enableChapterTest,
-	icourseStudyCenterConfigs
-} from '../utils/icourse.configs';
+import { readSpeed, discussionStrategy, enableChapterTest, icourseStudyCenterConfigs } from '../utils/icourse.configs';
 import { migrateIcourseStudyConfigs, icourseStudyNamespace } from '../utils/config-migrate';
 import { $render } from '../utils/render';
 
