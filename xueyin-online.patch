@@ -1,0 +1,269 @@
+diff --git a/packages/scripts/src/projects/cx.ts b/packages/scripts/src/projects/cx.ts
+--- a/packages/scripts/src/projects/cx.ts
++++ b/packages/scripts/src/projects/cx.ts
+@@ -27,6 +27,7 @@
+ } from '../utils/work';
+ import { $console, BackgroundProject } from './background';
+ import { $msgwc, CommonWorkOptions, playMedia } from '../utils';
++import { cxPath, isCxNodeDetailPage, isMoocAnsPath, withCxPrefix } from '../utils/cx-platform';
+ import { createSteps } from '../utils/ui';
+ import { waitForElement, waitForMedia } from '../utils/study';
+ 
+@@ -99,7 +100,7 @@
+ 		'chaoxing.com',
+ 		'edu.cn',
+ 		'org.cn',
++		// 学银在线（与学习通共用同一套 mooc-ans 逻辑，仅页面地址多了 mooc-ans 前缀）
+-		// 学银在线
+ 		'xueyinonline.com',
+ 		/** 其他域名 */
+ 		'hnsyu.net',
+@@ -211,7 +212,9 @@
+ 			name: '🖥️ 课程学习',
+ 			namespace: 'cx.new.study',
+ 			matches: [
++				['任务点页面', cxPath('/knowledge/cards')],
++				// 学银在线的任务点页走 nodedetailcontroller（路径无 zt 前缀），结构与 knowledge/cards 一致
++				['学银节点任务点页面', /\/[^/]*nodedetailcontroller\/visitnodedetail/],
+-				['任务点页面', '/knowledge/cards'],
+ 				['阅读任务点', '/readsvr/book/mooc']
+ 				// 旧版浏览器好像不能识别二级 iframe ， 所以不能使用 'work/doHomeWorkNew' 以及其他二级 iframe 来触发路由
+ 			],
+@@ -424,7 +427,7 @@
+ 				}
+ 
+ 				// 主要处理
++				if (/\/knowledge\/cards/.test(location.href) || isCxNodeDetailPage()) {
+-				if (/\/knowledge\/cards/.test(location.href)) {
+ 					const updateMediaState = () => {
+ 						// @ts-ignore
+ 						if (top.currentMedia) {
+@@ -448,8 +451,8 @@
+ 		work: new Script({
+ 			name: '✍️ 作业考试脚本',
+ 			matches: [
++				['作业页面', cxPath('/mooc2/work/dowork')],
++				['考试整卷预览页面', cxPath('/mooc2/exam/preview')],
+-				['作业页面', '/mooc2/work/dowork'],
+-				['考试整卷预览页面', '/mooc2/exam/preview'],
+ 				['作业完成界面', '/work/view']
+ 			],
+ 			namespace: 'cx.new.work',
+@@ -499,7 +502,8 @@
+ 		autoRead: new Script({
+ 			name: '🖥️ 自动阅读',
+ 			matches: [
++				// 学银在线的节点阅读页为 /nodedetailcontroller/visitnodedetail（无 zt 前缀）
++				['阅读页面', /^.*\/(?:zt)?nodedetailcontroller\/visitnodedetail/],
+-				['阅读页面', '/ztnodedetailcontroller/visitnodedetail'],
+ 				['课程目录', /chaoxing.com\/course\/\d+\.html/],
+ 				['课程目录', /chaoxing.com\/mooc-ans\/course\/\d+\.html/],
+ 				['积分课阅读课程目录', '/mooc-ans/zt/portal']
+@@ -521,7 +525,7 @@
+ 				$message.info('请手动点击任意章节开始自动阅读');
+ 
+ 				// 自动进入章节功能，如果不是阅读页面则自动进入
++				if (isCxNodeDetailPage() === false) {
+-				if (location.href.includes('/ztnodedetailcontroller/visitnodedetail') === false) {
+ 					startAtFirst();
+ 					return;
+ 				}
+@@ -538,7 +542,8 @@
+ 				setTimeout(() => {
+ 					clearInterval(interval);
+ 					// 下一页
++					// 学习通：`.nodeItem.r i`；学银在线节点页：`#right.prev_next`（下一节按钮）
++					const next = $el('.nodeItem.r i') || getXueyinNextNodeButton();
+-					const next = $el('.nodeItem.r i');
+ 					if (next) {
+ 						next.click();
+ 					} else {
+@@ -555,10 +560,26 @@
+ 
+ 				// 点击第一个章节
+ 				function startAtFirst() {
++					/**
++					 * 两种目录结构：
++					 * - 学习通：`.course_section .chapterText`
++					 * - 学银在线的节点目录（#chapterListUl）：章节项为 `.cursorC`，点击触发 `linkUrl(...)`
++					 */
+ 					const texts = $$el('.course_section .chapterText');
+ 					if (texts.length) {
+ 						texts[0].click();
++						return;
+ 					}
++					const first = $el<HTMLElement>('#chapterListUl .cursorC');
++					if (first) {
++						first.click();
++						return;
++					}
++					// 兜底：从内联 onclick="linkUrl('courseId=..&knowledgeId=..', 'id')" 直接取第一个未完成的知识点
++					const node = $el<HTMLElement>('[onclick*="linkUrl("]');
++					if (node) {
++						node.click();
++					}
+ 				}
+ 			}
+ 		}),
+@@ -611,8 +632,14 @@
+ 						experience.click();
+ 					} else {
+ 						const newUrl = new URL(window.location.href);
++						/**
++						 * 部分站点（如学银在线）把新版学习页挂在 `mooc-ans` 前缀下，
++						 * 直接改写成根路径 `/mycourse/studentstudy` 会 404，必须保留原前缀。
++						 */
++						if (newUrl.pathname.includes('/mycourse/studentstudy') && !isMoocAnsPath(newUrl.href)) {
++							newUrl.pathname = newUrl.pathname
++								.replace(/^.*\/mycourse\/studentstudy/, '/mycourse/studentstudy')
++								.replace(/^\/mycourse\/studentstudy/, withCxPrefix('/mycourse/studentstudy'));
+-						if (window.location.href.includes('mooc-ans/mycourse/studentstudy')) {
+-							newUrl.pathname = '/mycourse/studentstudy';
+ 						}
+ 						const params = newUrl.searchParams;
+ 						let changed = false;
+@@ -741,18 +768,18 @@
+ 		}),
+ 		studyDispatcher: new Script({
+ 			name: '课程学习调度器',
++			matches: [['课程学习页面', cxPath('/mycourse/studentstudy')]],
+-			matches: [['课程学习页面', '/mycourse/studentstudy']],
+ 			namespace: 'cx.new.study-dispatcher',
+ 			hideInPanel: true,
+ 			async oncomplete() {
+ 				let chapters = await CXAnalyses.waitForChapterInfos();
+ 
++				const url = new URL(window.location.href);
++				/** 切换新版（注意：必须用 URL 逐项改写，直接 replace 字符串会丢失 pathname 与学银的 mooc-ans 前缀） */
++				if (url.searchParams.get('mooc2') === null) {
++					url.searchParams.set('mooc2', '1');
++					url.pathname = withCxPrefix(url.pathname);
++					window.location.replace(url.toString());
+-				const params = new URLSearchParams(window.location.href);
+-				const mooc = params.get('mooc2');
+-				/** 切换新版 */
+-				if (mooc === null) {
+-					params.set('mooc2', '1');
+-					window.location.replace(decodeURIComponent(params.toString()));
+ 					return;
+ 				}
+ 
+@@ -785,8 +812,8 @@
+ 			hideInPanel: true,
+ 			matches: [
+ 				['题目页面', 'work/doHomeWorkNew'],
++				['考试整卷预览', cxPath('/mooc2/exam/preview')],
++				['作业', cxPath('/mooc2/work/dowork')]
+-				['考试整卷预览', '/mooc2/exam/preview'],
+-				['作业', '/mooc2/work/dowork']
+ 			],
+ 			onstart() {
+ 				// 页面加载即预下载特征表到缓存（不等 DOM 渲染），破解时无需等待网络
+@@ -1548,6 +1575,45 @@
+ 		return;
+ 	}
+ 
++	/**
++	 * 学银在线节点页（nodedetailcontroller）的跳转。
++	 *
++	 * 该页面没有 `getTeacherAjax` 章节列表，也没有 `#prev_tab` / `#right` 的下一节按钮，
++	 * 因此走不到下面基于 CXAnalyses.getChapterInfos() 的跳转分支，
++	 * 会在 next_chapter 找不到时误报「全部任务点已完成！」。
++	 * 实际导航入口是左侧目录里的 `linkUrl(...)`，这里按当前 knowledgeId 定位后点击下一项。
++	 */
++	if (isCxNodeDetailPage()) {
++		const curKid = new URLSearchParams(location.search).get('knowledgeId');
++		const nodes = Array.from(
++			document.querySelectorAll<HTMLElement>('#chapterListUl .cursorC, #chapterListUl [onclick*=linkUrl]')
++		);
++		let idx = -1;
++		for (let i = 0; i < nodes.length; i++) {
++			const oc = nodes[i].getAttribute('onclick') || '';
++			const matched = oc.match(/knowledgeId=(\d+)/);
++			if (matched && curKid && matched[1] === curKid) {
++				idx = i;
++				break;
++			}
++		}
++		const nextNode = idx >= 0 ? nodes[idx + 1] : nodes[0];
++		if (nextNode) {
++			$console.info('即将前往下一节：' + (nextNode.innerText || '').trim());
++			$message.info({ content: '当前节点已完成，即将前往下一节', duration: 10 });
++			await $.sleep(2000);
++			nextNode.click();
++		} else {
++			const content = '本课程所有节点已完成！';
++			$modal.alert({ content });
++			CommonProject.scripts.settings.methods.notificationBySetting(content, {
++				duration: 0,
++				extraTitle: '超星学习通学习脚本'
++			});
++		}
++		return;
++	}
++
+ 	// 闯关模式卡死
+ 	if (CXAnalyses.isInFinalTab() && (await CXAnalyses.isStuckInBreakingMode())) {
+ 		return $modal.alert({
+@@ -1641,6 +1707,21 @@
+ 	}
+ }
+ 
++/**
++ * 学银在线节点阅读页的「下一节」按钮。
++ *
++ * 页面结构：`<div class="jb_btn prev_next next" id="right" onclick="linkUrl('knowledgeId=…')">下一节</div>`
++ * 到达最后一个节点时该元素不存在，据此判定阅读完成。
++ */
++function getXueyinNextNodeButton(): HTMLElement | undefined {
++	const btn = $el<HTMLElement>('#right.prev_next, .prev_next.next');
++	if (!btn) {
++		return undefined;
++	}
++	// 仅当按钮本身带有跳转动作时才认为是有效的下一节入口
++	return btn.getAttribute('onclick')?.includes('linkUrl') ? btn : undefined;
++}
++
+ function searchIFrame(root: Document) {
+ 	let list = Array.from(root.querySelectorAll('iframe'));
+ 	const result: HTMLIFrameElement[] = [];
+@@ -1695,17 +1776,35 @@
+ 				'{}';
+ 			const frame_data = JSON.parse(frame_data_str);
+ 			const target_jobid = frame_data.jobid || frame_data._jobid;
++			const target_objectid = frame_data.objectid;
++			if (!target_jobid && !target_objectid) {
+-			if (!target_jobid) {
+ 				return;
+ 			}
+ 
+ 			// 获取任务点数据
++			/**
++			 * 学银在线（mooc-ans）页面的 `window.attachments` 由页内 searchAttachResource() 生成，
++			 * 每项只有 `property.objectid`，没有 jobid / mid / name，也没有 job 标记；
++			 * 而 iframe 的 `data` 属性里这些信息是完整的。
++			 * 因此这里补充 objectid 兜底匹配，并在命中时把缺失字段从 frame_data 回填，
++			 * 否则任务点会被判定为 "not-job" 而全部跳过（表现为"全部任务点已完成"）。
++			 */
+ 			const attachment: Attachment | undefined = (knowCardWin.attachments as any[]).find((attachment) => {
+ 				const attachment_jobid = attachment.jobid || attachment.property._jobid;
++				if (target_jobid && attachment_jobid && String(attachment_jobid) === String(target_jobid)) {
++					return true;
++				}
++				const attachment_objectid = attachment.property.objectid;
++				if (target_objectid && attachment_objectid && String(attachment_objectid) === String(target_objectid)) {
++					if (!attachment.property.mid && frame_data.mid) attachment.property.mid = frame_data.mid;
++					if (!attachment.property.name && frame_data.name) attachment.property.name = frame_data.name;
++					if (frame_data.jobid || frame_data._jobid) {
++						attachment.job = true;
++						attachment.property._jobid = frame_data._jobid || frame_data.jobid;
++					}
++					return true;
+-				if (!attachment_jobid) {
+-					return false;
+ 				}
++				return false;
+-				return String(attachment_jobid) === String(target_jobid);
+ 			});
+ 
+ 			// 任务点去重
