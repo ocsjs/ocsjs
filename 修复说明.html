@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>OCS 学银在线适配修复说明</title>
+<style>
+  :root { --fg:#1f2328; --muted:#59636e; --line:#d1d9e0; --bg:#fff; --code:#f6f8fa; --accent:#0969da; --ok:#1a7f37; --bad:#cf222e; }
+  * { box-sizing:border-box; }
+  body { margin:0; padding:48px 24px; font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:var(--fg); background:var(--bg); }
+  main { max-width:880px; margin:0 auto; }
+  h1 { font-size:28px; margin:0 0 8px; letter-spacing:-.3px; }
+  .sub { color:var(--muted); margin:0 0 32px; font-size:15px; }
+  h2 { font-size:20px; margin:40px 0 12px; padding-bottom:8px; border-bottom:1px solid var(--line); }
+  h3 { font-size:16px; margin:24px 0 8px; }
+  p, li { color:var(--fg); }
+  code { background:var(--code); padding:.15em .4em; border-radius:4px; font:.88em/1.5 ui-monospace,SFMono-Regular,Consolas,monospace; }
+  pre { background:var(--code); padding:14px 16px; border-radius:6px; overflow-x:auto; font:13px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace; border:1px solid var(--line); }
+  pre code { background:none; padding:0; }
+  table { border-collapse:collapse; width:100%; margin:16px 0; font-size:14.5px; }
+  th, td { text-align:left; padding:9px 12px; border:1px solid var(--line); vertical-align:top; }
+  th { background:var(--code); font-weight:600; }
+  .tag { display:inline-block; padding:1px 8px; border-radius:999px; font-size:12px; font-weight:600; }
+  .tag.add { background:#dafbe1; color:var(--ok); }
+  .tag.fix { background:#ffebe9; color:var(--bad); }
+  .note { border-left:3px solid var(--accent); background:#f6f9ff; padding:12px 16px; margin:16px 0; border-radius:0 6px 6px 0; }
+  .note strong { color:var(--accent); }
+  ol li, ul li { margin:6px 0; }
+  .file { color:var(--muted); font-size:13px; margin-top:-6px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>OCS 学银在线（xueyinonline.com）适配修复</h1>
+<p class="sub">基于 ocsjs 5.4.0 · 补丁版本 5.4.0-xueyin.6 · 面向开发者</p>
+
+<div class="note">
+<strong>一句话总结</strong><br>
+学银在线后台复用超星 <code>mooc-ans</code> 那套逻辑，但有两处关键差异导致脚本完全不可用：
+<b>①</b> 页面路径多一层 <code>/mooc-ans</code> 前缀，脚本的 <code>matches</code> 全部硬编码根路径 → 匹配不上；
+<b>②</b> 节点页 <code>window.attachments</code> 只有 <code>objectid</code> 没有 <code>jobid</code>，而 <code>searchJob()</code> 用 <code>jobid</code> 反查 → 所有任务点被跳过。
+本补丁修复上述两点，并补上节点页特有的跳转逻辑。
+</div>
+
+<h2>改动文件</h2>
+<table>
+<tr><th>文件</th><th>类型</th><th>说明</th></tr>
+<tr>
+  <td><code>packages/scripts/src/utils/cx-platform.ts</code></td>
+  <td><span class="tag add">新增</span></td>
+  <td>超星系平台路径差异适配工具（<code>cxPath</code> / <code>withCxPrefix</code> / <code>isCxNodeDetailPage</code>）</td>
+</tr>
+<tr>
+  <td><code>packages/scripts/src/projects/cx.ts</code></td>
+  <td><span class="tag fix">修改</span></td>
+  <td>6 处修改，见下节</td>
+</tr>
+</table>
+<p class="file">构建产物：<code>OCS 网课助手.user.js</code>（已内联，可直接安装验证）</p>
+
+<h2>cx.ts 的 6 处修改</h2>
+
+<h3>1. <code>study.matches</code> 增加节点页 <span class="tag add">新增</span></h3>
+<pre><code>matches: [
+    ['任务点页面', cxPath('/knowledge/cards')],
+    // 学银在线的任务点页走 nodedetailcontroller（路径无 zt 前缀），结构与 knowledge/cards 一致
+    ['学银节点任务点页面', /\/[^/]*nodedetailcontroller\/visitnodedetail/],
+    ['阅读任务点', '/readsvr/book/mooc']
+],</code></pre>
+<p>学银的视频任务点不在 <code>/knowledge/cards</code>，而是在 <code>/nodedetailcontroller/visitnodedetail</code>（学习通对应路径是 <code>/ztnodedetailcontroller/...</code>，带 <code>zt</code> 前缀）。</p>
+
+<h3>2. <code>study.onactive</code> 放开路径判断</h3>
+<pre><code>// 改前
+if (/\/knowledge\/cards/.test(location.href)) {
+// 改后
+if (/\/knowledge\/cards/.test(location.href) || isCxNodeDetailPage()) {</code></pre>
+
+<h3>3. <code>searchJob()</code> 附件匹配增加 objectid 兜底 <span class="tag fix">关键修复</span></h3>
+<p><b>这是"刷不了课"的根因。</b>学银页面的 <code>window.attachments</code> 由页内 <code>searchAttachResource()</code> 生成，结构被简化了：</p>
+<pre><code>// 学银实际数据
+attachments = [{ property: { objectid: 'aa96f68...' } }, ...]   // 无 jobid / mid / name / job
+
+// 而 iframe 的 data 属性里信息是完整的
+&lt;iframe class="ans-attach-online ans-insertvideo-online"
+        jobid="1583562200854187"
+        data='{"objectid":"aa96f68...","jobid":"1583562200854187","mid":"...","name":"..."}'&gt;</code></pre>
+<p>原逻辑只按 <code>jobid</code> 反查 <code>attachments</code>，必然全部失败；且即使匹配到，<code>attachment.job</code> 缺失会让 <code>work_type</code> 判定为 <code>"not-job"</code> 而跳过。修复：</p>
+<pre><code>const target_objectid = frame_data.objectid;
+
+const attachment = knowCardWin.attachments.find((attachment) => {
+    const attachment_jobid = attachment.jobid || attachment.property._jobid;
+    if (target_jobid && attachment_jobid && String(attachment_jobid) === String(target_jobid)) {
+        return true;
+    }
+    const attachment_objectid = attachment.property.objectid;
+    if (target_objectid && attachment_objectid && String(attachment_objectid) === String(target_objectid)) {
+        // 用 iframe 的 data 回填 attachments 缺失的字段
+        if (!attachment.property.mid && frame_data.mid) attachment.property.mid = frame_data.mid;
+        if (!attachment.property.name && frame_data.name) attachment.property.name = frame_data.name;
+        if (frame_data.jobid || frame_data._jobid) {
+            attachment.job = true;                                    // 关键：标记为任务点
+            attachment.property._jobid = frame_data._jobid || frame_data.jobid;
+        }
+        return true;
+    }
+    return false;
+});</code></pre>
+<div class="note">
+<strong>实测对比</strong>（学银节点页，4 个任务点：2 视频 + 2 PDF）<br>
+原逻辑：<code>0/4</code> 匹配成功 → 全部跳过 → 误报「全部任务点已完成」<br>
+修复后：<code>4/4</code> 匹配成功 → 视频正常播放
+</div>
+
+<h3>4. 节点页跳转分支 <span class="tag add">新增</span></h3>
+<p>学银节点页<b>没有</b> <code>getTeacherAjax</code> 章节列表、也没有 <code>#prev_tab</code> / <code>#right</code> 下一节按钮，因此走不到原有的 <code>CXAnalyses.getChapterInfos()</code> 跳转分支，会在 <code>next_chapter</code> 找不到时误报完成。实际导航入口是左侧目录的 <code>linkUrl(...)</code>：</p>
+<pre><code>if (isCxNodeDetailPage()) {
+    const curKid = new URLSearchParams(location.search).get('knowledgeId');
+    const nodes = Array.from(
+        document.querySelectorAll('#chapterListUl .cursorC, #chapterListUl [onclick*=linkUrl]')
+    );
+    let idx = -1;
+    for (let i = 0; i < nodes.length; i++) {
+        const matched = (nodes[i].getAttribute('onclick') || '').match(/knowledgeId=(\d+)/);
+        if (matched && curKid && matched[1] === curKid) { idx = i; break; }
+    }
+    const nextNode = idx >= 0 ? nodes[idx + 1] : nodes[0];
+    if (nextNode) {
+        await $.sleep(2000);
+        nextNode.click();
+    } else {
+        // 本课程所有节点已完成
+    }
+    return;
+}</code></pre>
+
+<h3>5. <code>versionRedirect</code> 不再把学银改写去 404</h3>
+<p>原代码遇到 <code>mooc-ans/mycourse/studentstudy</code> 会主动改写成根路径 <code>/mycourse/studentstudy</code>，而该路径在学银实测返回 <b>404</b>：</p>
+<pre><code>// 改前
+if (window.location.href.includes('mooc-ans/mycourse/studentstudy')) {
+    newUrl.pathname = '/mycourse/studentstudy';
+}
+// 改后：按域名/前缀判断，学银保留 mooc-ans
+if (newUrl.pathname.includes('/mycourse/studentstudy') && !isMoocAnsPath(newUrl.href)) {
+    newUrl.pathname = withCxPrefix(newUrl.pathname);
+}</code></pre>
+
+<h3>6. <code>studyDispatcher</code> 的 URL 重写丢失 pathname</h3>
+<pre><code>// 改前：URLSearchParams(整个 href) 会把 pathname 当参数名吞掉
+const params = new URLSearchParams(window.location.href);
+params.set('mooc2', '1');
+window.location.replace(decodeURIComponent(params.toString()));
+
+// 改后：用 URL 逐项改写
+const url = new URL(window.location.href);
+if (url.searchParams.get('mooc2') === null) {
+    url.searchParams.set('mooc2', '1');
+    url.pathname = withCxPrefix(url.pathname);
+    window.location.replace(url.toString());
+}</code></pre>
+
+<h2>cx-platform.ts（新增工具）</h2>
+<table>
+<tr><th>导出</th><th>作用</th></tr>
+<tr><td><code>MOOC_ANS_PREFIX</code></td><td><code>'/mooc-ans'</code> 常量</td></tr>
+<tr><td><code>cxPath(path)</code></td><td>生成「根路径 + mooc-ans 前缀」双匹配正则：<code>cxPath('/knowledge/cards')</code> → <code>/(?:\/mooc-ans)?\/knowledge\/cards/</code></td></tr>
+<tr><td><code>isMoocAnsPath(url)</code></td><td>当前 URL 是否带 <code>/mooc-ans/</code> 前缀</td></tr>
+<tr><td><code>withCxPrefix(path)</code></td><td>需要时补上前缀，用于 location 跳转</td></tr>
+<tr><td><code>isCxNodeDetailPage(url)</code></td><td>是否为节点阅读页（兼容 <code>zt</code> / 无 <code>zt</code> 两种）</td></tr>
+</table>
+
+<h2>其他相关 <code>matches</code> 调整</h2>
+<p>以下脚本的路径匹配统一改用 <code>cxPath()</code>，使学习通与学银共用同一套规则：</p>
+<ul>
+<li><code>work</code>：<code>/mooc2/work/dowork</code>、<code>/mooc2/exam/preview</code></li>
+<li><code>studyDispatcher</code>：<code>/mycourse/studentstudy</code></li>
+<li><code>autoRead</code>：阅读页放宽为 <code>/\/[^/]*nodedetailcontroller\/visitnodedetail/</code>；并在节点任务点页避让（交给 <code>study</code>）</li>
+<li><code>cxSecretFontRecognize</code>：作业 / 考试预览两条</li>
+</ul>
+
+<h2>验证方式</h2>
+<ol>
+<li>构建后安装 <code>OCS 网课助手.user.js</code>（ScriptCat / Tampermonkey）</li>
+<li>打开任一学银节点页，例如：
+<pre><code>https://mooc1.xueyinonline.com/nodedetailcontroller/visitnodedetail?courseId=...&amp;knowledgeId=...</code></pre></li>
+<li>预期：OCS 面板出现 → 视频自动播放 → 播完后提示「当前节点已完成，即将前往下一节」并跳转</li>
+</ol>
+
+<div class="note">
+<strong>调试技巧</strong><br>
+若需确认匹配是否生效，可在控制台执行：
+<pre><code>OCS.CXProject.scripts.study.matches
+// 或直接在页面执行任务点比对
+[...document.querySelectorAll('.ans-attach-online')].map(f =&gt; {
+  const d = JSON.parse(f.getAttribute('data') || '{}');
+  const a = (window.attachments || []).find(x =&gt;
+    String(x.property.objectid) === String(d.objectid));
+  return { name: d.name, matched: !!a };
+});</code></pre>
+</div>
+
+<h2>已知限制</h2>
+<ul>
+<li>学银首页已改为 Vue SPA（<code>/xueyinonline-ans-vue/</code>），但课程内容页仍是超星 <code>mooc-ans</code> 老架构，本补丁只针对后者</li>
+<li>节点页的 <code>#right</code>「下一节」按钮在部分布局下不存在，跳转统一走左侧目录的 <code>linkUrl</code></li>
+<li>未改动任何学习通原生逻辑，<code>cxPath()</code> 对无前缀路径保持完全兼容</li>
+</ul>
+
+</main>
+</body>
+</html>

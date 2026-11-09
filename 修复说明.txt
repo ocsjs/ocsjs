@@ -1,0 +1,225 @@
+OCS 学银在线（xueyinonline.com）适配修复
+================================================================
+基于 ocsjs 5.4.0 · 补丁版本 5.4.0-xueyin.6 · 面向开发者
+
+
+【一句话总结】
+----------------------------------------------------------------
+学银在线后台复用超星 mooc-ans 那套逻辑，但有两处关键差异导致脚本完全不可用：
+
+  ① 页面路径多一层 /mooc-ans 前缀，脚本 matches 全部硬编码根路径 → 匹配不上
+  ② 节点页 window.attachments 只有 objectid 没有 jobid，而 searchJob() 用
+     jobid 反查 → 所有任务点被跳过
+
+本补丁修复上述两点，并补上节点页特有的跳转逻辑。
+
+
+【改动文件】
+----------------------------------------------------------------
+新增  packages/scripts/src/utils/cx-platform.ts
+      超星系平台路径差异适配工具
+
+修改  packages/scripts/src/projects/cx.ts
+      6 处修改，见下
+
+产物  OCS 网课助手.user.js
+      已构建版本，可直接安装验证
+
+
+【cx.ts 的 6 处修改】
+----------------------------------------------------------------
+
+1) study.matches 增加节点页
+   ------------------------------------------------------------
+   matches: [
+       ['任务点页面', cxPath('/knowledge/cards')],
+       // 学银在线的任务点页走 nodedetailcontroller（路径无 zt 前缀）
+       ['学银节点任务点页面', /\/[^/]*nodedetailcontroller\/visitnodedetail/],
+       ['阅读任务点', '/readsvr/book/mooc']
+   ],
+
+   说明：学银的视频任务点不在 /knowledge/cards，而是在
+   /nodedetailcontroller/visitnodedetail
+   （学习通对应路径是 /ztnodedetailcontroller/... ，带 zt 前缀）
+
+
+2) study.onactive 放开路径判断
+   ------------------------------------------------------------
+   改前：if (/\/knowledge\/cards/.test(location.href)) {
+   改后：if (/\/knowledge\/cards/.test(location.href) || isCxNodeDetailPage()) {
+
+
+3) searchJob() 附件匹配增加 objectid 兜底      ★ 关键修复
+   ------------------------------------------------------------
+   这是"刷不了课"的根因。
+
+   学银页面的 window.attachments 由页内 searchAttachResource() 生成，
+   结构被简化了：
+
+     attachments = [{ property: { objectid: 'aa96f68...' } }, ...]
+     // 无 jobid / mid / name / job
+
+   而 iframe 的 data 属性里信息是完整的：
+
+     <iframe class="ans-attach-online ans-insertvideo-online"
+             jobid="1583562200854187"
+             data='{"objectid":"aa96f68...","jobid":"1583562200854187",
+                    "mid":"...","name":"..."}'>
+
+   原逻辑只按 jobid 反查 attachments，必然全部失败；
+   且即使匹配到，attachment.job 缺失会让 work_type 判定为 "not-job" 而跳过。
+
+   修复代码：
+
+     const target_objectid = frame_data.objectid;
+
+     const attachment = knowCardWin.attachments.find((attachment) => {
+         const attachment_jobid = attachment.jobid || attachment.property._jobid;
+         if (target_jobid && attachment_jobid &&
+             String(attachment_jobid) === String(target_jobid)) {
+             return true;
+         }
+         const attachment_objectid = attachment.property.objectid;
+         if (target_objectid && attachment_objectid &&
+             String(attachment_objectid) === String(target_objectid)) {
+             // 用 iframe 的 data 回填 attachments 缺失的字段
+             if (!attachment.property.mid && frame_data.mid)
+                 attachment.property.mid = frame_data.mid;
+             if (!attachment.property.name && frame_data.name)
+                 attachment.property.name = frame_data.name;
+             if (frame_data.jobid || frame_data._jobid) {
+                 attachment.job = true;              // 关键：标记为任务点
+                 attachment.property._jobid = frame_data._jobid || frame_data.jobid;
+             }
+             return true;
+         }
+         return false;
+     });
+
+   实测对比（学银节点页，4 个任务点：2 视频 + 2 PDF）
+     原逻辑：0/4 匹配成功 → 全部跳过 → 误报「全部任务点已完成」
+     修复后：4/4 匹配成功 → 视频正常播放
+
+
+4) 节点页跳转分支
+   ------------------------------------------------------------
+   学银节点页没有 getTeacherAjax 章节列表、也没有 #prev_tab / #right
+   下一节按钮，因此走不到原有的 CXAnalyses.getChapterInfos() 跳转分支，
+   会在 next_chapter 找不到时误报完成。
+
+   实际导航入口是左侧目录的 linkUrl(...)：
+
+     if (isCxNodeDetailPage()) {
+         const curKid = new URLSearchParams(location.search).get('knowledgeId');
+         const nodes = Array.from(document.querySelectorAll(
+             '#chapterListUl .cursorC, #chapterListUl [onclick*=linkUrl]'
+         ));
+         let idx = -1;
+         for (let i = 0; i < nodes.length; i++) {
+             const matched = (nodes[i].getAttribute('onclick') || '')
+                 .match(/knowledgeId=(\d+)/);
+             if (matched && curKid && matched[1] === curKid) { idx = i; break; }
+         }
+         const nextNode = idx >= 0 ? nodes[idx + 1] : nodes[0];
+         if (nextNode) {
+             await $.sleep(2000);
+             nextNode.click();
+         } else {
+             // 本课程所有节点已完成
+         }
+         return;
+     }
+
+
+5) versionRedirect 不再把学银改写去 404
+   ------------------------------------------------------------
+   原代码遇到 mooc-ans/mycourse/studentstudy 会主动改写成根路径
+   /mycourse/studentstudy，而该路径在学银实测返回 404。
+
+   改前：
+     if (window.location.href.includes('mooc-ans/mycourse/studentstudy')) {
+         newUrl.pathname = '/mycourse/studentstudy';
+     }
+
+   改后：
+     if (newUrl.pathname.includes('/mycourse/studentstudy') &&
+         !isMoocAnsPath(newUrl.href)) {
+         newUrl.pathname = withCxPrefix(newUrl.pathname);
+     }
+
+
+6) studyDispatcher 的 URL 重写丢失 pathname
+   ------------------------------------------------------------
+   改前：URLSearchParams(整个 href) 会把 pathname 当参数名吞掉
+     const params = new URLSearchParams(window.location.href);
+     params.set('mooc2', '1');
+     window.location.replace(decodeURIComponent(params.toString()));
+
+   改后：用 URL 逐项改写
+     const url = new URL(window.location.href);
+     if (url.searchParams.get('mooc2') === null) {
+         url.searchParams.set('mooc2', '1');
+         url.pathname = withCxPrefix(url.pathname);
+         window.location.replace(url.toString());
+     }
+
+
+【cx-platform.ts（新增工具）】
+----------------------------------------------------------------
+MOOC_ANS_PREFIX          '/mooc-ans' 常量
+
+cxPath(path)             生成「根路径 + mooc-ans 前缀」双匹配正则
+                         cxPath('/knowledge/cards')
+                         → /(?:\/mooc-ans)?\/knowledge\/cards/
+
+isMoocAnsPath(url)       当前 URL 是否带 /mooc-ans/ 前缀
+
+withCxPrefix(path)       需要时补上前缀，用于 location 跳转
+
+isCxNodeDetailPage(url)  是否为节点阅读页（兼容 zt / 无 zt 两种）
+
+
+【其他相关 matches 调整】
+----------------------------------------------------------------
+以下脚本的路径匹配统一改用 cxPath()，使学习通与学银共用同一套规则：
+
+  work                   /mooc2/work/dowork、/mooc2/exam/preview
+  studyDispatcher        /mycourse/studentstudy
+  autoRead               阅读页放宽为 /\/[^/]*nodedetailcontroller\/visitnodedetail/
+                         并在节点任务点页避让（交给 study）
+  cxSecretFontRecognize  作业 / 考试预览两条
+
+
+【验证方式】
+----------------------------------------------------------------
+1. 构建后安装 OCS 网课助手.user.js（ScriptCat / Tampermonkey）
+2. 打开任一学银节点页，例如：
+   https://mooc1.xueyinonline.com/nodedetailcontroller/visitnodedetail
+     ?courseId=...&knowledgeId=...
+3. 预期：OCS 面板出现 → 视频自动播放 → 播完后提示
+   「当前节点已完成，即将前往下一节」并跳转
+
+
+【调试技巧】
+----------------------------------------------------------------
+若需确认匹配是否生效，可在控制台执行：
+
+  OCS.CXProject.scripts.study.matches
+
+或直接在页面执行任务点比对：
+
+  [...document.querySelectorAll('.ans-attach-online')].map(f => {
+    const d = JSON.parse(f.getAttribute('data') || '{}');
+    const a = (window.attachments || []).find(x =>
+      String(x.property.objectid) === String(d.objectid));
+    return { name: d.name, matched: !!a };
+  });
+
+
+【已知限制】
+----------------------------------------------------------------
+· 学银首页已改为 Vue SPA（/xueyinonline-ans-vue/），但课程内容页仍是
+  超星 mooc-ans 老架构，本补丁只针对后者
+· 节点页的 #right「下一节」按钮在部分布局下不存在，跳转统一走左侧目录
+  的 linkUrl
+· 未改动任何学习通原生逻辑，cxPath() 对无前缀路径保持完全兼容
