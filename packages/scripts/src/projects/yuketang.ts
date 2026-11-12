@@ -48,6 +48,12 @@ const state = {
 	study: {
 		currentMedia: undefined as HTMLMediaElement | undefined,
 		is_ai_watch_mode: false
+	},
+	courseware: {
+		/** 驱动是否在运行，防止 history 变化时重入 */
+		running: false,
+		/** 上次处理的课件标识，避免同一课件重复运行 */
+		lastDeckId: ''
 	}
 };
 
@@ -161,12 +167,30 @@ export const YKTProject = Project.create({
 				}
 			},
 			async oncomplete() {
+				state.courseware.lastDeckId = coursewareIdFromUrl();
 				await runStudentCardsCourseware({
 					volume: this.cfg.volume,
 					playbackRate: Number(this.cfg.playbackRate) || 1,
 					problemWork: this.cfg.problemWork,
 					readInterval: Number(this.cfg.readInterval) || 1500
 				});
+			},
+			/**
+			 * 雨课堂是 SPA，课件之间切换走 history 而不重新加载页面，oncomplete 只触发一次。
+			 * 这里监听路由变化：课件标识变了才重新运行，同一课件不重复触发。
+			 */
+			onhistorychanged() {
+				const id = coursewareIdFromUrl();
+				if (!id || id === state.courseware.lastDeckId) return;
+				state.courseware.lastDeckId = id;
+				setTimeout(() => {
+					runStudentCardsCourseware({
+						volume: this.cfg.volume,
+						playbackRate: Number(this.cfg.playbackRate) || 1,
+						problemWork: this.cfg.problemWork,
+						readInterval: Number(this.cfg.readInterval) || 1500
+					});
+				}, 1500);
 			}
 		}),
 		/**
@@ -1300,6 +1324,12 @@ function coursewareSlideKind(slide: any, domKind?: string): 'graphic' | 'video' 
 	return 'graphic';
 }
 
+/** 从 URL 取课件标识（studentCards/{courseId}/{classId}/{deckId}），非课件页返回空串 */
+function coursewareIdFromUrl(): string {
+	const match = location.pathname.match(/\/v2\/web\/studentCards\/([^/]+)\/([^/]+)\/([^/]+)/);
+	return match ? match.slice(1, 4).join('/') : '';
+}
+
 /**
  * studentCards 课件自动完成主驱动（用户只需打开课件）。
  *
@@ -1310,6 +1340,20 @@ function coursewareSlideKind(slide: any, domKind?: string): 'graphic' | 'video' 
  * Vue 字段缺失（平台改版 / 无 `__vue__`）时，用 DOM 分析结果兜底判定页类型与完成状态。
  */
 async function runStudentCardsCourseware(options: CoursewareOptions) {
+	// 防重入：oncomplete 与 onhistorychanged 可能同时触发
+	if (state.courseware.running) {
+		$console.warn('[courseware] 上一次课件任务仍在运行，忽略本次触发');
+		return;
+	}
+	state.courseware.running = true;
+	try {
+		await runStudentCardsCoursewareInner(options);
+	} finally {
+		state.courseware.running = false;
+	}
+}
+
+async function runStudentCardsCoursewareInner(options: CoursewareOptions) {
 	$message.info({ content: '正在自动完成课件（打开后无需操作）...', duration: 5 });
 
 	const vm = (await waitForElement(() => getCoursewareVm(), { timeout_seconds: 30, check_period_ms: 500 }).catch(
