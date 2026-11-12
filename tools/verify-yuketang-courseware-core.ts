@@ -1,17 +1,16 @@
 /**
  * 纯逻辑核心的可执行自测（Mock DOM，不依赖浏览器/框架）。
  *
- * 运行（Node 22，自带类型擦除）：
- *   node --experimental-strip-types tools/verify-yuketang-courseware-core.ts
+ * 运行：
+ *   pnpm test                                        # 与 tests/resolver.test.ts 一起跑
+ *   npx tsx tools/verify-yuketang-courseware-core.ts  # 单独跑
  *
- * 目的：在没有登录态、没有浏览器的情况下，验证「读状态 → 决策」的流程逻辑正确：
- * 能识别 图文页 / 视频页 / 习题页 / 混合课件，并按预期给出下一步动作。
+ * 目的：在没有登录态、没有浏览器的情况下，验证「未读目标收集」与「课件逐页分类」的正确性。
+ * 这两个函数是 yuketang.ts 中真实调用的：前者用于 AI 学伴图文任务点，
+ * 后者在 Vue 实例字段缺失时用于兜底判定页类型与完成状态。
  */
 import {
-	readDeckState,
-	decideDeckStep,
 	collectUnreadTargets,
-	deckStateSignature,
 	analyzeStudentCardsDeck,
 	describeStudentCardsDeck,
 	DEFAULT_DECK_SELECTORS
@@ -74,73 +73,22 @@ function check(name: string, cond: boolean, detail?: unknown) {
 	}
 }
 
-function scenarioGraphicUnread() {
-	console.log('\n[1] 图文页：存在未读幻灯片');
+function scenarioUnreadFlags() {
+	console.log('\n[1] 新版页面：span.flag.noRead 收集全部未读页');
 	const f1 = new MockEl({ classes: ['flag', 'noRead'] });
 	const f2 = new MockEl({ classes: ['flag', 'noRead'] });
-	const page = new MockEl({ text: '(3页)' });
 	const root = new MockRoot({
 		'span.flag.noRead': [f1, f2],
 		'.flag.noRead': [f1, f2],
-		'.noRead': [f1, f2],
-		'.ppt_page': [page]
+		'.noRead': [f1, f2]
 	});
-	const state = readDeckState(root);
-	check('未读数量=2', state.unreadCount === 2, state.unreadCount);
-	check('总页数=3', state.totalPages === 3, state.totalPages);
-	check('决策=read-slides', decideDeckStep(state) === 'read-slides', decideDeckStep(state));
-	check('去重后目标=2', collectUnreadTargets(root).length === 2);
-}
-
-function scenarioGraphicDone() {
-	console.log('\n[2] 图文页：已读完毕');
-	const root = new MockRoot({ '.ppt_page': [new MockEl({ text: '(3页)' })] });
-	const state = readDeckState(root);
-	check('未读数量=0', state.unreadCount === 0, state.unreadCount);
-	check('决策=done', decideDeckStep(state) === 'done', decideDeckStep(state));
-}
-
-function scenarioPptClosed() {
-	console.log('\n[3] 课件未打开：需要点开查看器');
-	const root = new MockRoot({ '.ppt_img_box': [new MockEl()] });
-	const state = readDeckState(root);
-	check('存在打开按钮', state.hasPptOpenButton === true);
-	check('尚无课件内容', state.hasDeckContent === false);
-	check('决策=open-deck', decideDeckStep(state) === 'open-deck', decideDeckStep(state));
-}
-
-function scenarioVideo() {
-	console.log('\n[4] 视频页：存在 video');
-	const root = new MockRoot({ video: [new MockEl()] });
-	const state = readDeckState(root);
-	check('检测到视频', state.hasVideo === true);
-	check('决策=watch-video', decideDeckStep(state) === 'watch-video', decideDeckStep(state));
-}
-
-function scenarioExercise() {
-	console.log('\n[5] 习题页：课件内习题 iframe');
-	const root = new MockRoot({
-		'.exercises_total': [new MockEl({ text: '共2题' })],
-		'iframe#iframeExerciseId': [new MockEl()]
-	});
-	const state = readDeckState(root);
-	check('习题总数=2', state.exerciseTotal === 2, state.exerciseTotal);
-	check('检测到习题框', state.hasExerciseFrame === true);
-	check('决策=solve-exercise', decideDeckStep(state) === 'solve-exercise', decideDeckStep(state));
-}
-
-function scenarioMixedPriority() {
-	console.log('\n[6] 混合课件：视频 + 未读幻灯片，视频优先');
-	const root = new MockRoot({
-		video: [new MockEl()],
-		'span.flag.noRead': [new MockEl({ classes: ['flag', 'noRead'] })]
-	});
-	const state = readDeckState(root);
-	check('决策=watch-video（视频优先）', decideDeckStep(state) === 'watch-video', decideDeckStep(state));
+	const targets = collectUnreadTargets(root);
+	check('目标数量=2', targets.length === 2, targets.length);
+	check('顺序与 DOM 一致', targets[0] === f1 && targets[1] === f2, targets.length);
 }
 
 function scenarioLegacyContainer() {
-	console.log('\n[7] 老版本：容器内含 .noRead（点击容器）');
+	console.log('\n[2] 老版本：容器内含 .noRead（点击容器）');
 	const inner = new MockEl({ classes: ['noRead'] });
 	const container = new MockEl({ q: { '.noRead': [inner], '.flag.noRead': [inner] } });
 	const root = new MockRoot({ '.swiper-container .container': [container] });
@@ -150,80 +98,20 @@ function scenarioLegacyContainer() {
 }
 
 function scenarioDedup() {
-	console.log('\n[8] 去重：同一元素被多个选择器命中');
+	console.log('\n[3] 去重：同一元素被多个选择器命中');
 	const f1 = new MockEl({ classes: ['flag', 'noRead'] });
 	const root = new MockRoot({ 'span.flag.noRead': [f1], '.noRead': [f1], '.flag.noRead': [f1] });
-	check('未读数量=1', readDeckState(root).unreadCount === 1, readDeckState(root).unreadCount);
+	check('目标数量=1', collectUnreadTargets(root).length === 1, collectUnreadTargets(root).length);
 }
 
-function scenarioSignature() {
-	console.log('\n[9] 状态签名：不同状态签名不同');
-	const a = readDeckState(new MockRoot({ '.ppt_page': [new MockEl({ text: '(3页)' })] }));
-	const b = readDeckState(new MockRoot({ video: [new MockEl()] }));
-	check('签名不同', deckStateSignature(a) !== deckStateSignature(b));
-	check('空状态签名含 u:0', deckStateSignature(a).includes('u:0'));
-}
-
-/**
- * 模拟驱动主循环（与 yuketang.ts 中 runStudentCardsCourseware 的动作语义一致），
- * 用可变 Mock 验证：混合课件（视频 + 2 张未读幻灯片 + 1 道习题）能按序推进并终止。
- */
-function scenarioMixedFlow() {
-	console.log('\n[10] 混合课件端到端流程模拟');
-	const registry: Record<string, MockEl[]> = {};
-
-	const removeFrom = (key: string, el: MockEl) => {
-		registry[key] = (registry[key] ?? []).filter((x) => x !== el);
-	};
-
-	const video = new MockEl({ onClick: () => (registry['video'] = []) });
-	const slide1 = new MockEl({ classes: ['flag', 'noRead'] });
-	const slide2 = new MockEl({ classes: ['flag', 'noRead'] });
-	const exercise = new MockEl({ onClick: () => (registry['iframe#iframeExerciseId'] = []) });
-
-	slide1.onClick = () => {
-		removeFrom('span.flag.noRead', slide1);
-		removeFrom('.noRead', slide1);
-	};
-	slide2.onClick = () => {
-		removeFrom('span.flag.noRead', slide2);
-		removeFrom('.noRead', slide2);
-		// 读完最后一页后，课件才暴露习题
-		registry['iframe#iframeExerciseId'] = [exercise];
-	};
-
-	registry['video'] = [video];
-	registry['span.flag.noRead'] = [slide1, slide2];
-	registry['.noRead'] = [slide1, slide2];
-	const root = new MockRoot(registry);
-
-	const actions: string[] = [];
-	for (let i = 0; i < 30; i++) {
-		const state = readDeckState(root);
-		const action = decideDeckStep(state);
-		actions.push(action);
-		if (action === 'done') break;
-		if (action === 'watch-video') {
-			(root.querySelector('video') as MockEl | null)?.click();
-		} else if (action === 'read-slides') {
-			for (const t of state.unreadTargets) (t as MockEl).click();
-		} else if (action === 'solve-exercise') {
-			(root.querySelector('iframe#iframeExerciseId') as MockEl | null)?.click();
-		}
-	}
-
-	check(
-		'动作序列=视频→翻页→习题→完成',
-		actions.join('>') === 'watch-video>read-slides>solve-exercise>done',
-		actions.join('>')
-	);
-	check('两个幻灯片都被点击', slide1.clicked === 1 && slide2.clicked === 1, `${slide1.clicked},${slide2.clicked}`);
-	check('视频被播放', video.clicked === 1, video.clicked);
-	check('习题被作答', exercise.clicked === 1, exercise.clicked);
+function scenarioEmpty() {
+	console.log('\n[4] 空页面：没有未读标记');
+	const targets = collectUnreadTargets(new MockRoot({}));
+	check('目标数量=0', targets.length === 0, targets.length);
 }
 
 function scenarioStudentCardsDeck() {
-	console.log('\n[11] 真实 studentCards 逐页分类（图文/视频/习题/混合）');
+	console.log('\n[5] 真实 studentCards 逐页分类（图文/视频/习题/混合）');
 	const vb = new MockEl();
 	const layer = new MockEl();
 	const s1 = new MockEl({ classes: ['swiper-slide', 'swiper-slide-active'] });
@@ -267,16 +155,10 @@ function scenarioStudentCardsDeck() {
 }
 
 function main() {
-	scenarioGraphicUnread();
-	scenarioGraphicDone();
-	scenarioPptClosed();
-	scenarioVideo();
-	scenarioExercise();
-	scenarioMixedPriority();
+	scenarioUnreadFlags();
 	scenarioLegacyContainer();
 	scenarioDedup();
-	scenarioSignature();
-	scenarioMixedFlow();
+	scenarioEmpty();
 	scenarioStudentCardsDeck();
 
 	console.log(`\n==== ${failures === 0 ? '全部通过' : failures + ' 项失败'} ====`);

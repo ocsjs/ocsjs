@@ -13,7 +13,12 @@ import { $msgwc, playMedia, CommonWorkOptions } from '../utils';
 import { createSteps } from '../utils/ui';
 import { restudy, volume, workNotes } from '../utils/configs';
 import { waitForElement } from '../utils/study';
-import { DEFAULT_DECK_SELECTORS, collectUnreadTargets } from './yuketang-courseware-core';
+import {
+	DEFAULT_DECK_SELECTORS,
+	analyzeStudentCardsDeck,
+	collectUnreadTargets,
+	describeStudentCardsDeck
+} from './yuketang-courseware-core';
 import { CommonProject } from './common';
 import { $console, BackgroundProject } from './background';
 import { FontDecryptor, findFontUrls, listFontFaces, watchElements } from '../utils/font-decrypt';
@@ -129,13 +134,24 @@ export const YKTProject = Project.create({
 				problemWork: {
 					label: '习题自动作答',
 					attrs: { type: 'checkbox', title: '课件内出现习题时自动搜题作答（需配置题库）' },
-					defaultValue: true
+					defaultValue: false
+				},
+				readInterval: {
+					label: '图文停留时长',
+					tag: 'select',
+					options: [
+						['1000', '1 秒'],
+						['1500', '1.5 秒'],
+						['3000', '3 秒'],
+						['5000', '5 秒']
+					],
+					defaultValue: '1500'
 				},
 				volume: volume,
 				playbackRate: {
 					label: '视频倍速',
 					tag: 'select',
-					defaultValue: 1,
+					defaultValue: '1',
 					options: [
 						['1', '1 x'],
 						['1.25', '1.25 x'],
@@ -145,10 +161,11 @@ export const YKTProject = Project.create({
 				}
 			},
 			async oncomplete() {
-				await runStudentCardsCourseware(this, {
+				await runStudentCardsCourseware({
 					volume: this.cfg.volume,
-					playbackRate: this.cfg.playbackRate,
-					problemWork: this.cfg.problemWork
+					playbackRate: Number(this.cfg.playbackRate) || 1,
+					problemWork: this.cfg.problemWork,
+					readInterval: Number(this.cfg.readInterval) || 1500
 				});
 			}
 		}),
@@ -352,9 +369,16 @@ export const YKTProject = Project.create({
 						if (detail) {
 							let round = 0;
 							let readAny = false;
+							// 未读数量不再下降说明点击无效，直接退出，避免跑满 30 轮空转
+							let lastUnread = Infinity;
 							while (round++ < 30) {
 								const targets = collectUnreadTargets(detail as any, DEFAULT_DECK_SELECTORS);
 								if (targets.length === 0) break;
+								if (targets.length >= lastUnread) {
+									$console.warn(`[yuketang] 图文未读数量未下降（${targets.length}），停止重试`);
+									break;
+								}
+								lastUnread = targets.length;
 								if (!readAny) {
 									$msgwc.info('即将开始图文阅读：' + getJobName());
 									readAny = true;
@@ -1267,10 +1291,12 @@ function getCoursewareBase(): any {
 	return el ? (el as any).__vue__ : undefined;
 }
 
-/** 判断某页类型：习题（含习题优先）/ 视频 / 图文 */
-function coursewareSlideKind(slide: any): 'graphic' | 'video' | 'exercise' {
+/** 判断某页类型：优先读 Vue 字段，字段缺失时用 DOM 分类兜底；混合页按习题处理 */
+function coursewareSlideKind(slide: any, domKind?: string): 'graphic' | 'video' | 'exercise' {
 	if (slide && slide.Problem) return 'exercise';
 	if (slide && (typeof slide.noWatch === 'boolean' || slide.hasMedia)) return 'video';
+	if (domKind === 'video') return 'video';
+	if (domKind === 'exercise' || domKind === 'mixed') return 'exercise';
 	return 'graphic';
 }
 
@@ -1280,8 +1306,10 @@ function coursewareSlideKind(slide: any): 'graphic' | 'video' | 'exercise' {
  * 实测（2026-11）：页面为 Vue + Swiper，`allSlides` 每页含 `noRead`（未读）、`noWatch/hasMedia`（视频）、
  * `Problem`（习题）。平台规则：图文页停留≥1s；视频页需真实观看≥90%（按 getVideoWatchProgress 的 watch_length
  * 累计真实播放时长）；习题页需完成作答（此处调用 OCS 题库）。逐页切换并处理，直到全部完成。
+ *
+ * Vue 字段缺失（平台改版 / 无 `__vue__`）时，用 DOM 分析结果兜底判定页类型与完成状态。
  */
-async function runStudentCardsCourseware(script: Script, options: CoursewareOptions) {
+async function runStudentCardsCourseware(options: CoursewareOptions) {
 	$message.info({ content: '正在自动完成课件（打开后无需操作）...', duration: 5 });
 
 	const vm = (await waitForElement(() => getCoursewareVm(), { timeout_seconds: 30, check_period_ms: 500 }).catch(
@@ -1291,8 +1319,19 @@ async function runStudentCardsCourseware(script: Script, options: CoursewareOpti
 		$message.warn('未检测到课件组件，请确认已进入课件页面。');
 		return;
 	}
+
+	/** 当前页是否已完成：Vue 字段优先，缺失时回退 DOM 未读标记 */
+	const isPageDone = (idx: number) => {
+		const cur = getCoursewareVm();
+		const slide = cur && cur.allSlides ? cur.allSlides[idx] : undefined;
+		if (slide && typeof slide.noRead === 'boolean') return slide.noRead === false;
+		const page = analyzeStudentCardsDeck(document as any).pages[idx];
+		return !!page && !page.unread;
+	};
+
 	const slides = (vm.allSlides || []) as any[];
 	$msgwc.info(`共 ${slides.length} 页，开始自动完成`);
+	$console.log(`[courseware] ${describeStudentCardsDeck(analyzeStudentCardsDeck(document as any))}`);
 
 	for (let i = 0; i < slides.length; i++) {
 		if (!getCoursewareVm()) {
@@ -1301,11 +1340,12 @@ async function runStudentCardsCourseware(script: Script, options: CoursewareOpti
 		}
 		const slide = slides[i];
 		// 已完成页直接跳过，避免重复播放已完成视频
-		if (slide && slide.noRead === false) {
+		if (isPageDone(i)) {
 			$console.log(`[courseware] 第${i + 1}页已完成，跳过`);
 			continue;
 		}
-		const kind = coursewareSlideKind(slide);
+		const domPage = analyzeStudentCardsDeck(document as any).pages[i];
+		const kind = coursewareSlideKind(slide, domPage && domPage.kind);
 		const pageName = `第${i + 1}页(${kind === 'graphic' ? '图文' : kind === 'video' ? '视频' : '习题'})`;
 
 		try {
@@ -1321,14 +1361,19 @@ async function runStudentCardsCourseware(script: Script, options: CoursewareOpti
 
 			if (kind === 'graphic') {
 				$msgwc.info(`${pageName} 阅读中...`);
-				await $.sleep(Math.max(1500, options.readInterval ?? 1500));
+				await $.sleep(Math.max(1000, options.readInterval ?? 1500));
 			} else if (kind === 'video') {
 				$msgwc.info(`${pageName} 播放视频（需看满 90%，请保持页面打开，可长时间挂机）...`);
 				await watchCoursewareVideo(i, options);
 			} else {
 				if (options.problemWork) {
 					$msgwc.info(`${pageName} 调用 OCS 题库作答中...`);
-					await solveCoursewareProblem(i, options);
+					const done = await solveCoursewareProblem(i);
+					if (!done && getCoursewareVm()) {
+						$msgwc.warn(`${pageName} 未确认完成，重试一次`);
+						await $.sleep(1000);
+						await solveCoursewareProblem(i);
+					}
 				} else {
 					$msgwc.info(`${pageName} 已跳过（未开启习题自动作答）`);
 				}
@@ -1337,8 +1382,7 @@ async function runStudentCardsCourseware(script: Script, options: CoursewareOpti
 			// 等待该页 noRead 清除（完成信号），最多 20s
 			const start = Date.now();
 			while (Date.now() - start < 20000) {
-				const cur = getCoursewareVm();
-				if (!cur || cur.allSlides[i].noRead === false) break;
+				if (!getCoursewareVm() || isPageDone(i)) break;
 				await $.sleep(1000);
 			}
 		} catch (e) {
@@ -1372,11 +1416,24 @@ async function watchCoursewareVideo(idx: number, options: CoursewareOptions) {
 	}
 
 	const rate = Math.min(2, Math.max(1, Number(options.playbackRate) || 1));
+	const volume = Math.min(1, Math.max(0, Number(options.volume) || 0));
 	const applyRate = () => {
 		try {
 			const cmp = Array.from(document.querySelectorAll<HTMLElement>('.audioCmp')).find((e) => (e as any).__vue__);
 			const player = cmp && (cmp as any).__vue__.player;
-			if (player && player.options && player.options.speed) player.options.speed.value = rate;
+			if (player && player.options) {
+				// 与同文件 watch() 一致：改 speed/volume 后必须调用 player.init() 才生效
+				let changed = false;
+				if (player.options.speed && player.options.speed.value !== rate) {
+					player.options.speed.value = rate;
+					changed = true;
+				}
+				if (player.options.volume && player.options.volume.value !== volume) {
+					player.options.volume.value = volume;
+					changed = true;
+				}
+				if (changed && typeof player.init === 'function') player.init();
+			}
 			if (video.playbackRate !== rate) video.playbackRate = rate;
 		} catch {
 			// 忽略
@@ -1439,7 +1496,7 @@ async function watchCoursewareVideo(idx: number, options: CoursewareOptions) {
  * 把整页封面作为题干图片、各选项图片作为选项图片，交给 OCS 的题库管线（支持图片题优化/OCR），
  * 题库返回选项字母后点击对应 `div.problembullet[data-label]` 并点提交。
  */
-async function solveCoursewareProblem(idx: number, options: CoursewareOptions): Promise<boolean> {
+async function solveCoursewareProblem(idx: number): Promise<boolean> {
 	const vm = getCoursewareVm();
 	const slide = vm && vm.allSlides ? vm.allSlides[idx] : undefined;
 	const problem = slide && slide.Problem;

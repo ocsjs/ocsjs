@@ -5,8 +5,10 @@
  * - 本文件【零依赖】：不 import 任何框架/工具库，只依赖 DOM 类型，因此既能在
  *   脚本运行时（浏览器）使用，也能用 Node 的类型擦除（--experimental-strip-types）
  *   直接跑单元验证（见 tools/verify-yuketang-courseware-core.ts）。
- * - 只做「读状态 + 决策」，不产生副作用（不点击、不 sleep）。真正的点击/播放/答题
+ * - 只做「读取 + 归类」，不产生副作用（不点击、不 sleep）。真正的点击/播放/答题
  *   由 yuketang.ts 中的驱动执行，便于把易变的 DOM 细节收敛在这里、把流程控制留在驱动里。
+ * - 两个调用方：AI 学伴的图文任务点用 collectUnreadTargets；studentCards 课件驱动用
+ *   analyzeStudentCardsDeck，在 Vue 实例字段缺失时兜底判定每页类型与未读状态。
  *
  * 覆盖三种页面 + 混合课件：
  * - 图文页（graphic）：课件为 PPT/幻灯片，存在未读标记（noRead），逐页点开即完成。
@@ -34,72 +36,25 @@ export interface DeckRoot {
 }
 
 /**
- * 选择器集合。
+ * 未读标记选择器集合。
  *
  * 默认值来自实测证据：
- * - 「雨课堂-自动看PPT-Pro」用户脚本（studentCards 页面）使用 `.ppt_img_box` 打开课件、
- *   `span.flag.noRead` 表示未读页、`.ppt_page` 形如 “(N页)”、`.exercises_total` 形如 “共N题”。
- * - OCS 现有 ppt 脚本（packages/scripts/src/projects/yuketang.ts）使用
+ * - studentCards 页面使用 `span.flag.noRead` 表示未读页。
+ * - OCS 原有 ppt 脚本（packages/scripts/src/projects/yuketang.ts）使用
  *   `.swiper-container .container` 且内部含 `.noRead` 表示未读页。
- * 多套选择器按「从新到旧」排列，运行时取第一个命中的，从而兼容不同版本的雨课堂前端。
+ * 多套选择器按「从新到旧」排列，运行时全部收集，从而兼容不同版本的雨课堂前端。
  */
 export interface DeckSelectors {
-	/** 打开课件查看器的按钮（老版本需要先点一下缩略图） */
-	pptOpen: string[];
 	/** 未读幻灯片标记（点击后变为已读） */
 	slideFlags: string[];
 	/** 兼容老版本：以“容器内含 .noRead”表示未读页 */
 	slideContainers: string[];
-	/** 页码信息文本，如 “(12页)” */
-	pageInfo: string[];
-	/** 习题总数信息文本，如 “共5题” */
-	exerciseTotal: string[];
-	/** 课件内的视频元素 */
-	video: string[];
-	/** 课件内的习题 iframe */
-	exerciseFrame: string[];
-	/** 课件查看器的关闭按钮 */
-	closeButtons: string[];
 }
 
 export const DEFAULT_DECK_SELECTORS: DeckSelectors = {
-	pptOpen: ['.ppt_img_box'],
 	slideFlags: ['span.flag.noRead', '.flag.noRead', '.noRead'],
-	slideContainers: ['.swiper-container .container'],
-	pageInfo: ['.ppt_page'],
-	exerciseTotal: ['.exercises_total'],
-	video: ['video'],
-	exerciseFrame: [
-		'iframe#iframeExerciseId',
-		'.lms-graph-exercise iframe',
-		'iframe.exercise-iframe',
-		'iframe[src*="exercise"]'
-	],
-	closeButtons: ['.el-button.el-button--default', '.close']
+	slideContainers: ['.swiper-container .container']
 };
-
-/** 课件当前状态快照（只读） */
-export interface DeckState {
-	/** 是否需要先点击打开课件查看器 */
-	hasPptOpenButton: boolean;
-	/** 是否已经检测到课件内容（查看器已打开 / 有幻灯片 / 有页码） */
-	hasDeckContent: boolean;
-	/** 未读幻灯片可点击目标（按点击优先级排序，已去重） */
-	unreadTargets: DeckElement[];
-	/** 未读数量 */
-	unreadCount: number;
-	/** 总页数（解析自页码文本，解析失败为 null） */
-	totalPages: number | null;
-	/** 习题总数（解析自习题文本，解析失败为 null） */
-	exerciseTotal: number | null;
-	/** 是否存在视频 */
-	hasVideo: boolean;
-	/** 是否存在习题 iframe */
-	hasExerciseFrame: boolean;
-}
-
-/** 单步决策结果 */
-export type DeckAction = 'open-deck' | 'watch-video' | 'read-slides' | 'solve-exercise' | 'done';
 
 function safeQuery(root: DeckElement | DeckRoot, selector: string): DeckElement | null {
 	try {
@@ -124,15 +79,6 @@ function safeQueryAll(root: DeckElement | DeckRoot, selector: string): DeckEleme
 	}
 }
 
-/** 取多套选择器中第一个命中的元素 */
-function firstOf(root: DeckElement | DeckRoot, selectors: string[]): DeckElement | null {
-	for (const selector of selectors) {
-		const el = safeQuery(root, selector);
-		if (el) return el;
-	}
-	return null;
-}
-
 /** 取多套选择器命中的全部元素并去重（保持顺序） */
 function allOf(root: DeckRoot, selectors: string[]): DeckElement[] {
 	const out: DeckElement[] = [];
@@ -146,16 +92,6 @@ function allOf(root: DeckRoot, selectors: string[]): DeckElement[] {
 		}
 	}
 	return out;
-}
-
-/** 从某元素的文本里按正则解析一个整数，解析失败返回 null */
-function parseCount(root: DeckElement | DeckRoot, selectors: string[], pattern: RegExp): number | null {
-	const el = firstOf(root, selectors);
-	const text = el?.textContent ?? '';
-	const match = text.match(pattern);
-	if (!match) return null;
-	const value = parseInt(match[1], 10);
-	return Number.isFinite(value) ? value : null;
 }
 
 /**
@@ -193,78 +129,6 @@ export function collectUnreadTargets(root: DeckRoot, selectors: DeckSelectors = 
 	}
 
 	return targets;
-}
-
-/** 读取课件当前状态 */
-export function readDeckState(root: DeckRoot, selectors: DeckSelectors = DEFAULT_DECK_SELECTORS): DeckState {
-	const unreadTargets = collectUnreadTargets(root, selectors);
-	const totalPages = parseCount(root, selectors.pageInfo, /(\d+)\s*页/);
-	const exerciseTotal = parseCount(root, selectors.exerciseTotal, /共\s*(\d+)\s*题/);
-	const hasVideo = !!firstOf(root, selectors.video);
-	const hasExerciseFrame = !!firstOf(root, selectors.exerciseFrame);
-	const hasPptOpenButton = !!firstOf(root, selectors.pptOpen);
-
-	// 已打开查看器 / 已出现幻灯片 / 有页码 —— 任一成立即认为课件内容已呈现
-	const swiperPresent = !!firstOf(root, ['.swiper-container', '.swiper-container .container']);
-	const hasDeckContent =
-		swiperPresent || totalPages !== null || unreadTargets.length > 0 || (exerciseTotal !== null && exerciseTotal > 0);
-
-	return {
-		hasPptOpenButton,
-		hasDeckContent,
-		unreadTargets,
-		unreadCount: unreadTargets.length,
-		totalPages,
-		exerciseTotal,
-		hasVideo,
-		hasExerciseFrame
-	};
-}
-
-/**
- * 根据状态决定下一步动作。
- *
- * 优先级说明：
- * - 视频优先：若当前是视频页/课件中出现视频，先把视频看完（视频通常不依赖幻灯片翻页）。
- * - 未读幻灯片：逐页阅读。
- * - 习题：幻灯片读完后若出现习题 iframe，交给答题器。
- * - 打开查看器：仅在“存在打开按钮但还没有任何课件内容”时触发。
- * - 其余视为完成。
- *
- * 注意：习题若不满足作答条件（无题库/非习题结构），驱动应把 `solve-exercise` 当作“跳过”，
- * 否则 `done` 永远不会到达。该“是否已处理过习题”的状态由驱动维护，不属于纯核心。
- */
-export function decideDeckStep(state: DeckState): DeckAction {
-	if (state.hasVideo) return 'watch-video';
-	if (state.unreadCount > 0) return 'read-slides';
-	if (state.hasExerciseFrame) return 'solve-exercise';
-	if (state.hasPptOpenButton && !state.hasDeckContent) return 'open-deck';
-	return 'done';
-}
-
-/** 生成可用于“是否推进”比较的状态签名（忽略元素引用，只比对数量与类型） */
-export function deckStateSignature(state: DeckState): string {
-	return [
-		state.hasVideo ? 'v' : '-',
-		state.hasExerciseFrame ? 'e' : '-',
-		state.hasPptOpenButton ? 'b' : '-',
-		state.hasDeckContent ? 'c' : '-',
-		`u:${state.unreadCount}`,
-		`p:${state.totalPages ?? '?'}`,
-		`x:${state.exerciseTotal ?? '?'}`
-	].join('|');
-}
-
-/** 生成便于日志/调试的可读状态描述 */
-export function describeDeckState(state: DeckState): string {
-	return [
-		`未读=${state.unreadCount}`,
-		`总页数=${state.totalPages ?? '未知'}`,
-		`习题=${state.exerciseTotal ?? '未知'}`,
-		`视频=${state.hasVideo ? '有' : '无'}`,
-		`习题框=${state.hasExerciseFrame ? '有' : '无'}`,
-		`课件内容=${state.hasDeckContent ? '已呈现' : '未呈现'}`
-	].join('，');
 }
 
 /* ============================================================================
