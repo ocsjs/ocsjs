@@ -4,6 +4,7 @@ import {
 	StringUtils,
 	createDefaultQuestionResolver,
 	defaultWorkTypeResolver,
+	defaultAnswerWrapperHandler,
 	WorkResult,
 	resolveJudgement,
 	QuestionTypes
@@ -12,12 +13,14 @@ import { $msgwc, playMedia, CommonWorkOptions } from '../utils';
 import { createSteps } from '../utils/ui';
 import { restudy, volume, workNotes } from '../utils/configs';
 import { waitForElement } from '../utils/study';
+import { DEFAULT_DECK_SELECTORS, collectUnreadTargets } from './yuketang-courseware-core';
 import { CommonProject } from './common';
 import { $console, BackgroundProject } from './background';
 import { FontDecryptor, findFontUrls, listFontFaces, watchElements } from '../utils/font-decrypt';
 import type { WatchController } from '../utils/font-decrypt';
 import {
 	commonWork,
+	buildAnswererEnv,
 	createCommonAnswerer,
 	dynamicWorkTips,
 	extractTextWithImages,
@@ -102,20 +105,51 @@ export const YKTProject = Project.create({
 			hideInPanel: true,
 			oncomplete() {}
 		}),
-		ppt: new Script({
-			name: '📚 PPT自动阅读',
-			matches: [['PPT界面', /v2\/web\/studentCards\/.*\/ppt/]],
-			hideInPanel: true,
-			async oncomplete() {
-				// ===================================== PPT ==================================
-				$message.info('正在学习PPT中，请耐心等待...');
-				for (const item of Array.from<HTMLElement>(document.querySelectorAll('.swiper-container .container')).filter(
-					(el) => !!el.querySelector('.noRead')
-				)) {
-					await $.sleep(1000);
-					item.click();
+		/**
+		 * studentCards 课件自动完成：覆盖图文页（PPT/幻灯片）、视频页、习题页及混合课件。
+		 * 原「PPT自动阅读」脚本能力有限（仅点击 .noRead 后即提示手动切换），这里升级为
+		 * 状态驱动的主循环：读状态 -> 决策 -> 执行（翻页/播视频/答题）-> 再读状态，直到完成。
+		 */
+		courseware: new Script({
+			name: '📚 课件自动完成',
+			matches: [
+				['PPT/图文课件', /v2\/web\/studentCards\/.*\/ppt/],
+				['视频课件', /v2\/web\/studentCards\/.*\/video/],
+				['课件页面', /v2\/web\/studentCards\//]
+			],
+			namespace: 'yuketang.study.courseware',
+			configs: {
+				notes: {
+					defaultValue: $ui.notes([
+						'自动完成当前课件：图文逐页阅读、视频播放至结束、习题自动作答（需配置题库）。',
+						'混合课件会按「视频 → 图文 → 习题」顺序自动推进。',
+						'如果页面结构有变化导致未识别，脚本会停止并给出提示，请反馈页面结构。'
+					]).outerHTML
+				},
+				problemWork: {
+					label: '习题自动作答',
+					attrs: { type: 'checkbox', title: '课件内出现习题时自动搜题作答（需配置题库）' },
+					defaultValue: true
+				},
+				volume: volume,
+				playbackRate: {
+					label: '视频倍速',
+					tag: 'select',
+					defaultValue: 1,
+					options: [
+						['1', '1 x'],
+						['1.25', '1.25 x'],
+						['1.5', '1.5 x'],
+						['2.0', '2.0 x']
+					]
 				}
-				$message.info({ content: 'PPT阅读完毕，请手动切换到下一个任务', duration: 0 });
+			},
+			async oncomplete() {
+				await runStudentCardsCourseware(this, {
+					volume: this.cfg.volume,
+					playbackRate: this.cfg.playbackRate,
+					problemWork: this.cfg.problemWork
+				});
 			}
 		}),
 		/**
@@ -310,6 +344,31 @@ export const YKTProject = Project.create({
 								}
 							}
 							await $.sleep(3000);
+						}
+
+						// 图文任务点：若详情区存在“未读”标记，自动逐页阅读。
+						// 无标记则完全跳过（不影响视频/讨论/作业流程，避免误操作）。
+						const detail = $el('.detail-container');
+						if (detail) {
+							let round = 0;
+							let readAny = false;
+							while (round++ < 30) {
+								const targets = collectUnreadTargets(detail as any, DEFAULT_DECK_SELECTORS);
+								if (targets.length === 0) break;
+								if (!readAny) {
+									$msgwc.info('即将开始图文阅读：' + getJobName());
+									readAny = true;
+								}
+								for (const target of targets) {
+									(target as any)?.click?.();
+									await $.sleep(800);
+								}
+								await $.sleep(500);
+							}
+							if (readAny) {
+								$msgwc.success('图文阅读完成');
+								await $.sleep(2000);
+							}
 						}
 					} catch (e) {
 						$console.error(`当前任务点无法完成，即将跳转下一节（${e}）`);
@@ -1184,6 +1243,266 @@ function createYktEmbeddedWorkLoop(opts: CommonWorkOptions, doc: Document, onDon
 		onDone();
 	})();
 	return worker;
+}
+
+/** 课件自动完成驱动配置 */
+interface CoursewareOptions {
+	volume: number;
+	playbackRate: number;
+	/** 是否对课件内习题自动作答（调用 OCS 题库） */
+	problemWork: boolean;
+	/** 图文页停留时长（毫秒），平台规则 ≥1s */
+	readInterval?: number;
+}
+
+/** 获取 studentCards 课件根组件（页面 Vue 实例，userscript 与页面同上下文可访问 __vue__） */
+function getCoursewareVm(): any {
+	const el = document.querySelector('.studentCoursewarePPT__component');
+	return el ? (el as any).__vue__ : undefined;
+}
+
+/** 获取 basePPT 子组件（负责翻页、播放器、计时上报） */
+function getCoursewareBase(): any {
+	const el = document.querySelector('.basePPT__component');
+	return el ? (el as any).__vue__ : undefined;
+}
+
+/** 判断某页类型：习题（含习题优先）/ 视频 / 图文 */
+function coursewareSlideKind(slide: any): 'graphic' | 'video' | 'exercise' {
+	if (slide && slide.Problem) return 'exercise';
+	if (slide && (typeof slide.noWatch === 'boolean' || slide.hasMedia)) return 'video';
+	return 'graphic';
+}
+
+/**
+ * studentCards 课件自动完成主驱动（用户只需打开课件）。
+ *
+ * 实测（2026-11）：页面为 Vue + Swiper，`allSlides` 每页含 `noRead`（未读）、`noWatch/hasMedia`（视频）、
+ * `Problem`（习题）。平台规则：图文页停留≥1s；视频页需真实观看≥90%（按 getVideoWatchProgress 的 watch_length
+ * 累计真实播放时长）；习题页需完成作答（此处调用 OCS 题库）。逐页切换并处理，直到全部完成。
+ */
+async function runStudentCardsCourseware(script: Script, options: CoursewareOptions) {
+	$message.info({ content: '正在自动完成课件（打开后无需操作）...', duration: 5 });
+
+	const vm = (await waitForElement(() => getCoursewareVm(), { timeout_seconds: 30, check_period_ms: 500 }).catch(
+		() => undefined
+	)) as any;
+	if (!vm) {
+		$message.warn('未检测到课件组件，请确认已进入课件页面。');
+		return;
+	}
+	const slides = (vm.allSlides || []) as any[];
+	$msgwc.info(`共 ${slides.length} 页，开始自动完成`);
+
+	for (let i = 0; i < slides.length; i++) {
+		if (!getCoursewareVm()) {
+			$console.warn('[courseware] 课件已关闭，停止自动完成。');
+			break;
+		}
+		const slide = slides[i];
+		// 已完成页直接跳过，避免重复播放已完成视频
+		if (slide && slide.noRead === false) {
+			$console.log(`[courseware] 第${i + 1}页已完成，跳过`);
+			continue;
+		}
+		const kind = coursewareSlideKind(slide);
+		const pageName = `第${i + 1}页(${kind === 'graphic' ? '图文' : kind === 'video' ? '视频' : '习题'})`;
+
+		try {
+			// 切到该页（会触发平台计时/上报）
+			const base = getCoursewareBase();
+			if (base && typeof base.thumbSwiperClick === 'function') {
+				base.thumbSwiperClick(i);
+			} else {
+				const swiper = (document.querySelector('.pptSwiper') as any)?.swiper;
+				swiper && swiper.slideTo(i);
+			}
+			await $.sleep(1200);
+
+			if (kind === 'graphic') {
+				$msgwc.info(`${pageName} 阅读中...`);
+				await $.sleep(Math.max(1500, options.readInterval ?? 1500));
+			} else if (kind === 'video') {
+				$msgwc.info(`${pageName} 播放视频（需看满 90%，请保持页面打开，可长时间挂机）...`);
+				await watchCoursewareVideo(i, options);
+			} else {
+				if (options.problemWork) {
+					$msgwc.info(`${pageName} 调用 OCS 题库作答中...`);
+					await solveCoursewareProblem(i, options);
+				} else {
+					$msgwc.info(`${pageName} 已跳过（未开启习题自动作答）`);
+				}
+			}
+
+			// 等待该页 noRead 清除（完成信号），最多 20s
+			const start = Date.now();
+			while (Date.now() - start < 20000) {
+				const cur = getCoursewareVm();
+				if (!cur || cur.allSlides[i].noRead === false) break;
+				await $.sleep(1000);
+			}
+		} catch (e) {
+			$console.error(`[courseware] ${pageName} 处理失败：${e}`);
+		}
+	}
+
+	$message.success({ content: '课件自动完成结束（若仍有未完成，请刷新重试或检查题库/网络）。', duration: 0 });
+}
+
+/**
+ * 播放课件内视频直到观看达到 90%。
+ * 使用页面播放器（video.xt_video_player）+ getVideoWatchProgress() 的真实 watch_length 判定；
+ * 尝试把播放器倍速调到 options.playbackRate（平台最高 2x），以缩短挂机时间。
+ */
+async function watchCoursewareVideo(idx: number, options: CoursewareOptions) {
+	const slideEl = document.querySelectorAll<HTMLElement>('.pptSwiper .swiper-slide')[idx];
+	const box = slideEl?.querySelector<HTMLElement>('.video-box');
+	box?.click();
+
+	const video = (await waitForElement(
+		() =>
+			Array.from(document.querySelectorAll<HTMLVideoElement>('video.xt_video_player'))
+				.filter((v) => v.offsetParent !== null)
+				.pop(),
+		{ timeout_seconds: 20, check_period_ms: 500 }
+	).catch(() => undefined)) as HTMLVideoElement | undefined;
+	if (!video) {
+		$console.warn('[courseware] 视频元素未加载，跳过。');
+		return;
+	}
+
+	const rate = Math.min(2, Math.max(1, Number(options.playbackRate) || 1));
+	const applyRate = () => {
+		try {
+			const cmp = Array.from(document.querySelectorAll<HTMLElement>('.audioCmp')).find((e) => (e as any).__vue__);
+			const player = cmp && (cmp as any).__vue__.player;
+			if (player && player.options && player.options.speed) player.options.speed.value = rate;
+			if (video.playbackRate !== rate) video.playbackRate = rate;
+		} catch {
+			// 忽略
+		}
+	};
+
+	applyRate();
+	try {
+		await video.play();
+	} catch {
+		$console.warn('[courseware] 自动播放被拦截，请手动点击一次页面。');
+	}
+
+	const deadline = Date.now() + 90 * 60 * 1000; // 单页最多 90 分钟安全上限
+	let lastLog = 0;
+	while (Date.now() < deadline) {
+		await $.sleep(5000);
+		if (!getCoursewareVm()) return;
+		applyRate();
+
+		const cur = getCoursewareVm();
+		if (cur && cur.allSlides[idx] && cur.allSlides[idx].noRead === false) {
+			$msgwc.success('视频已完成（≥90%）');
+			return;
+		}
+		if (video.ended) {
+			$msgwc.info('视频播放结束');
+			return;
+		}
+		// 读取真实观看进度
+		try {
+			const cmp = Array.from(document.querySelectorAll<HTMLElement>('.audioCmp')).find((e) => (e as any).__vue__);
+			const vm = cmp && (cmp as any).__vue__;
+			const wp = vm && vm.getVideoWatchProgress ? await vm.getVideoWatchProgress() : null;
+			if (wp) {
+				// 返回结构：{ message, code, data: { "slideIndex:videoId": { rate, watch_length, video_length } } }
+				const bag = (wp as any).data || wp;
+				const key = Object.keys(bag).find((k) => /^\d+:/.test(k));
+				const rec = key ? (bag as any)[key] : null;
+				if (rec && typeof rec.rate === 'number') {
+					if (Date.now() - lastLog > 15000) {
+						lastLog = Date.now();
+						$console.log(`[courseware] 视频观看进度 ${(rec.rate * 100).toFixed(1)}%`);
+					}
+					if (rec.rate >= 0.9) {
+						$msgwc.success('视频观看已达 90%');
+						return;
+					}
+				}
+			}
+		} catch {
+			// 忽略
+		}
+	}
+	$console.warn('[courseware] 视频等待超时。');
+}
+
+/**
+ * 用 OCS 题库对当前页的图片型习题作答（选项为 A/B/C/D 图片）。
+ * 把整页封面作为题干图片、各选项图片作为选项图片，交给 OCS 的题库管线（支持图片题优化/OCR），
+ * 题库返回选项字母后点击对应 `div.problembullet[data-label]` 并点提交。
+ */
+async function solveCoursewareProblem(idx: number, options: CoursewareOptions): Promise<boolean> {
+	const vm = getCoursewareVm();
+	const slide = vm && vm.allSlides ? vm.allSlides[idx] : undefined;
+	const problem = slide && slide.Problem;
+	if (!problem) return false;
+
+	const workOptions = CommonProject.scripts.settings.methods.getWorkOptions();
+	if (!workOptions.answererWrappers || workOptions.answererWrappers.length === 0) {
+		$console.warn('[courseware] 未配置题库，无法自动答题。');
+		return false;
+	}
+
+	const slideEl = document.querySelectorAll<HTMLElement>('.pptSwiper .swiper-slide')[idx];
+	const bullets = Array.from(slideEl.querySelectorAll<HTMLElement>('.problembullet[data-label]'));
+	const cover = problem.Result && problem.Result.cover;
+	// 题面与选项都在整页图片里，选项只是 A/B/C/D 标签：把整页图作为题干图片交给 OCS 题库（AI/OCR）识别
+	const optionText = bullets.map((b) => b.getAttribute('data-label')).join('\n');
+
+	let answer = '';
+	try {
+		const { env } = await buildAnswererEnv({
+			type: 'single',
+			title: '',
+			options: optionText,
+			titleImages: cover ? [cover] : [],
+			optionsImages: [],
+			enableImageOptimize: CommonProject.scripts.settings.cfg.imageOptimize
+		});
+		const infos = await defaultAnswerWrapperHandler(workOptions.answererWrappers, env);
+		const first = infos && infos[0] && infos[0].results && infos[0].results[0];
+		answer = first ? String(first.answer || '') : '';
+	} catch (e) {
+		$console.warn('[courseware] 题库请求失败：' + e);
+		return false;
+	}
+
+	const letters = (answer.toUpperCase().match(/[A-D]/g) || []).filter((x, i, a) => a.indexOf(x) === i);
+	if (letters.length === 0) {
+		$console.warn('[courseware] 题库未返回可识别的选项字母：' + answer);
+		return false;
+	}
+	for (const letter of letters) {
+		const bullet = bullets.find((b) => b.getAttribute('data-label') === letter);
+		if (bullet && !bullet.classList.contains('chosen')) {
+			bullet.click();
+			await $.sleep(300);
+		}
+	}
+	const submit = slideEl.querySelector<HTMLElement>('.quizImg.submitButton');
+	if (submit) {
+		submit.click();
+		await $.sleep(2000);
+	}
+
+	const start = Date.now();
+	while (Date.now() - start < 15000) {
+		const cur = getCoursewareVm();
+		if (cur && cur.allSlides[idx] && cur.allSlides[idx].noRead === false) {
+			$msgwc.success('习题已完成');
+			return true;
+		}
+		await $.sleep(1000);
+	}
+	return false;
 }
 
 /**
