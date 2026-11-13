@@ -182,6 +182,12 @@ const state = {
 					.querySelectorAll<HTMLElement>('.u-questionItem,[class*=questionBody]')
 					.item(index)
 					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			},
+			yuketang_exam: (index: number) => {
+				document
+					.querySelectorAll<HTMLElement>('.exercise-item')
+					.item(index)
+					?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			}
 		}
 	},

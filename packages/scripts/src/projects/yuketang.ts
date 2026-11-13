@@ -1355,7 +1355,9 @@ async function ai_watch(options: { volume: number; playbackRate: number }) {
  */
 function examination(opts: CommonWorkOptions) {
 	$message.info(`开始考试`);
-	CommonProject.scripts.workResults.methods.init();
+	CommonProject.scripts.workResults.methods.init({
+		questionPositionSyncHandlerType: 'yuketang_exam'
+	});
 
 	const redundanceWords = opts.redundanceWordsText.split('\n').filter(Boolean);
 	const titleTransform = (titles: (HTMLElement | undefined)[]) =>
@@ -1425,8 +1427,9 @@ function examination(opts: CommonWorkOptions) {
 			if (type && (type === 'multiple' || type === 'single')) {
 				const resolver = createDefaultQuestionResolver(ctx, (o) => extractTextWithImages(o).text)[type];
 				return await resolver(searchInfos, elements.options as HTMLElement[], async (type, answer, option) => {
-					if (!option?.querySelector('.el-icon-check')) {
-						option.click();
+					const label = option.querySelector('label');
+					if (!label?.classList.contains('is-checked') || !option.querySelector('.el-icon-check')) {
+						label?.click();
 						await $.sleep(500);
 					}
 				});
