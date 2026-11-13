@@ -1376,8 +1376,8 @@ function examination(opts: CommonWorkOptions) {
 	const worker = new OCSWorker({
 		root: '.exam-main--content .subject-item',
 		elements: {
-			title: '.clearfix.exam-font .custom_ueditor_cn_body',
-			options: 'ul.list-unstyled li .custom_ueditor_cn_body',
+			title: ['h3', 'h4', 'h5', 'h6'].map((h) => `${h.trim()}.clearfix.exam-font`).join(','),
+			options: 'ul.list-unstyled li',
 			textareas: (root) => {
 				// 主观题为 UEditor 富文本编辑器（iframe 作为填充目标）；
 				// 填空题为横线输入框（blank-item-dynamic / placeholder="输入答案"）；简答为原生 textarea
