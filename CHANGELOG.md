@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.4.1](https://github.com/ocsjs/ocsjs/compare/5.4.0...5.4.1) (2026-11-13)
+
+
+### 🐛 问题修复
+
+* 修复雨课堂考试题目无法正确读取的问题 ([649a73e](https://github.com/ocsjs/ocsjs/commit/649a73e83a87334a13693b733917466e44f9e00f))
+
 ## [5.4.0](https://github.com/ocsjs/ocsjs/compare/5.3.1...5.4.0) (2026-11-08)
 
 
