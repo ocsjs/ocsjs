@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.4.2](https://github.com/ocsjs/ocsjs/compare/5.4.1...5.4.2) (2026-11-13)
+
+
+### 🐛 问题修复
+
+* 修复雨课堂无法自动选择选项问题、适配题目自动滚动查看功能 ([02d7cdc](https://github.com/ocsjs/ocsjs/commit/02d7cdcc86c0e8e916a4db50f8b5e8061850a341))
+
 ## [5.4.1](https://github.com/ocsjs/ocsjs/compare/5.4.0...5.4.1) (2026-11-13)
 
 
