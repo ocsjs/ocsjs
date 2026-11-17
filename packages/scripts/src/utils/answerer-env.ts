@@ -58,6 +58,31 @@ const IMAGE_BASE64_CACHE_MAX = 200;
 const imageBase64Cache = new Map<string, string>();
 
 /**
+ * 单张图片转换超时（毫秒）。
+ * 图片加载 / GM 请求不回调（防盗链、网络挂起、跨域授权弹窗未处理）时，
+ * 转换 Promise 永远不会结束，createImageSuggestion 的 Promise.all 会一直等待，
+ * 导致整个搜题流程卡住。超时后按单图失败处理，由调用方跳过该图继续搜题。
+ */
+const IMAGE_CONVERT_TIMEOUT_MS = 8000;
+
+/** 给转换 Promise 加超时；底层请求无法中断，但不会阻塞调用方 */
+function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promise<T> {
+	return new Promise((resolve, reject) => {
+		const timer = setTimeout(() => reject(new Error(message)), ms);
+		promise.then(
+			(value) => {
+				clearTimeout(timer);
+				resolve(value);
+			},
+			(error) => {
+				clearTimeout(timer);
+				reject(error);
+			}
+		);
+	});
+}
+
+/**
  * 将图片转换为 base64 字符串
  * 支持传入 URL 字符串或 HTMLImageElement
  * 优先使用 Canvas 方式（浏览器已携带认证信息加载图片，可绕过防盗链）
@@ -88,7 +113,7 @@ export function imageToBase64(source: string | HTMLImageElement): Promise<string
 
 /** 实际的图片转 base64 实现（不经过缓存，由 {@link imageToBase64} 调用） */
 function convertImageToBase64(source: string | HTMLImageElement): Promise<string> {
-	return new Promise((resolve, reject) => {
+	const task = new Promise<string>((resolve, reject) => {
 		// 如果是 HTMLImageElement，直接用 Canvas 绘制转换
 		if (typeof HTMLImageElement !== 'undefined' && source instanceof HTMLImageElement) {
 			// 已经是 data URL，直接返回
@@ -147,6 +172,7 @@ function convertImageToBase64(source: string | HTMLImageElement): Promise<string
 		};
 		img.src = url;
 	});
+	return withTimeout(task, IMAGE_CONVERT_TIMEOUT_MS, '图片转换超时');
 }
 
 /** GM_xmlhttpRequest 回退方案，忽略跨域限制 */
@@ -160,6 +186,7 @@ function gmXmlHttpRequestFallback(url: string, resolve: (value: string) => void,
 		url,
 		method: 'GET',
 		responseType: 'blob',
+		timeout: IMAGE_CONVERT_TIMEOUT_MS,
 		onload: (response) => {
 			const blob = response.response as Blob;
 			const reader = new FileReader();
@@ -167,7 +194,8 @@ function gmXmlHttpRequestFallback(url: string, resolve: (value: string) => void,
 			reader.onerror = reject;
 			reader.readAsDataURL(blob);
 		},
-		onerror: reject
+		onerror: reject,
+		ontimeout: () => reject(new Error('图片下载超时'))
 	});
 }
 
