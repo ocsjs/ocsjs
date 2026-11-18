@@ -14,8 +14,7 @@ import {
 	h,
 	$,
 	MessageElement,
-	$menu,
-	cors
+	$menu
 } from 'easy-us';
 import semver_gt from 'semver/functions/gt';
 import semver_valid from 'semver/functions/valid';
@@ -68,42 +67,47 @@ const QUESTION_CACHE_TOTAL_MAX_BYTES = 1024 * 1024;
 const byteLengthOf = (text: string) => new TextEncoder().encode(text).length;
 
 /**
- * 题库缓存（内存态，页面关闭后自动清除）。
- * 此前持久化在 GM 存储（background.data.localQuestionCaches），大存储会放大每次
- * GM_setValue 的全量序列化耗时，故改为纯内存；历史遗留键在 data 脚本 onstart 中清理。
+ * 题库缓存的 tab 域存储键。
  *
- * 【多 iframe 共享】缓存本体仅存于顶层帧内存，iframe 内通过 cors 顶层函数读写
- * （不使用 tab 存储：setTab 会对大数组做全量序列化，写放大严重）。
+ * 存储介质选型（见 .codebuddy/plans/easy-us-tab-store-optimization.md）：
+ * - tab 域存储：刷新/同 tab 导航保留、跨 iframe 原生共享、扩展侧不可被页面枚举；
+ *   tab 关闭/浏览器重启失效（会话级持久化）
+ * - 不使用 GM 主存储：大对象会让每次 GM_setValue 全量序列化（写放大）
+ * - 不使用 easy-us change-handle（1.1.3 已 token 化，但缓存为纯按需读，直接 notify:false 跳过通知）
+ * - 非 GM 环境自动降级为内存 tab（MemoryStoreProvider）
+ *
+ * 【并发说明】写路径为 getTab → 合并 → setTab 的整 tab 读改写，多 frame 并发可能
+ * 丢失个别缓存条目；缓存是机会性数据，丢失仅意味着下次重新搜题，可接受。
  */
-const localQuestionCaches: QuestionCache[] = [];
+const QUESTION_CACHE_TAB_KEY = 'background.data.question-caches';
 
-/** 向缓存追加条目（含条数/总量限制，仅在顶层帧执行） */
-function addToLocalQuestionCaches(items: QuestionCache[]) {
+/** 合并新条目到缓存数组（去重 + 200 条截断 + 1MB 总量尾剔除，原地修改） */
+function mergeQuestionCaches(caches: QuestionCache[], items: QuestionCache[]) {
 	for (const item of items) {
 		// 去重
-		if (localQuestionCaches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
-			localQuestionCaches.unshift(item);
+		if (caches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
+			caches.unshift(item);
 		}
 	}
 
 	// 限制数量
-	localQuestionCaches.splice(200);
+	caches.splice(200);
 
 	// 限制总字节数：从尾部（最旧）剔除直至达标
 	let totalBytes = 0;
-	for (let i = 0; i < localQuestionCaches.length; i++) {
-		totalBytes += byteLengthOf(localQuestionCaches[i].title) + byteLengthOf(localQuestionCaches[i].answer);
+	for (let i = 0; i < caches.length; i++) {
+		totalBytes += byteLengthOf(caches[i].title) + byteLengthOf(caches[i].answer);
 		if (totalBytes > QUESTION_CACHE_TOTAL_MAX_BYTES) {
-			localQuestionCaches.splice(i);
+			caches.splice(i);
 			break;
 		}
 	}
 }
 
-/** 在缓存中查找匹配答案（仅在顶层帧执行） */
-function findInLocalQuestionCaches(title: string): SearchInformation[] {
+/** 在缓存数组中查找匹配答案 */
+function findInQuestionCaches(caches: QuestionCache[], title: string): SearchInformation[] {
 	const results: SearchInformation[] = [];
-	for (const cache of localQuestionCaches) {
+	for (const cache of caches) {
 		if (cache.title.trim() === title.trim()) {
 			results.push({
 				name: cache.from,
@@ -114,28 +118,6 @@ function findInLocalQuestionCaches(title: string): SearchInformation[] {
 	}
 	return results;
 }
-
-/**
- * 题库缓存的跨 frame 读写代理。
- * 顶层帧调用时直接执行本地函数；iframe 调用时经 cors 事件路由到顶层帧执行。
- */
-const questionCacheTopStore = {
-	add: cors.defineTopFunction((items: QuestionCache[]) => {
-		addToLocalQuestionCaches(items);
-	}),
-	// 返回值经 GM 事件传输，defineTopFunction 类型约束仅允许原始类型，故序列化为 JSON 字符串
-	search: cors.defineTopFunction((title: string) => {
-		return JSON.stringify(findInLocalQuestionCaches(title));
-	}),
-	/** 读取全部缓存（管理弹窗用） */
-	list: cors.defineTopFunction(() => {
-		return JSON.stringify(localQuestionCaches);
-	}),
-	/** 清空缓存（管理弹窗用） */
-	clear: cors.defineTopFunction(() => {
-		localQuestionCaches.length = 0;
-	})
-};
 
 /**
  * 监听网页开发者工具打开事件（仅触发一次，多种方式组合检测）。
@@ -320,20 +302,21 @@ export const BackgroundProject = Project.create({
 				}
 			},
 			onstart() {
-				// 清理历史遗留的持久化题库缓存键（题库缓存已改为内存态，不再使用 GM 存储）
+				// 清理历史遗留的主存储题库缓存键（题库缓存已迁移至 tab 域存储，不使用 GM 主存储）
 				$store.delete('background.data.localQuestionCaches');
 			},
 			methods() {
 				return {
 					/**
-					 * 添加题库缓存
+					 * 添加题库缓存（tab 域存储，跨 frame 原生共享）
 					 *
-					 * 三层限制控制内存占用：
-					 * 1. 单条 64KB：超过直接跳过（在发送前过滤，避免大条目跨 frame 传输）
+					 * 三层限制控制体量：
+					 * 1. 单条 64KB：超过直接跳过
 					 * 2. 条数 200：超出截断
 					 * 3. 总量 1MB：从尾部（最旧）剔除直至达标
 					 *
-					 * 多 iframe 场景：iframe 内经 cors 路由到顶层帧写入（缓存本体仅存于顶层帧内存）。
+					 * notify:false：缓存为纯按需读数据，跳过跨 frame 变更通知（easy-us 1.1.3+），
+					 * 避免每条缓存写入都向主存储产生通知开销。
 					 */
 					addQuestionCache: async (...questionCacheItems: QuestionCache[]) => {
 						// 单条大小限制
@@ -344,12 +327,9 @@ export const BackgroundProject = Project.create({
 							return;
 						}
 
-						// cors.defineTopFunction 在非 GM 环境为空操作（noop），降级为本地写入
-						if ($gm.isInGMContext() === false) {
-							addToLocalQuestionCaches(items);
-						} else {
-							await questionCacheTopStore.add(items);
-						}
+						const caches: QuestionCache[] = (await $store.getTab(QUESTION_CACHE_TAB_KEY)) || [];
+						mergeQuestionCaches(caches, items);
+						await $store.setTab(QUESTION_CACHE_TAB_KEY, caches, { notify: false });
 					},
 					addQuestionCacheFromWorkResult(swr: SimplifyWorkResult[]) {
 						BackgroundProject.scripts.data.methods.addQuestionCache(
@@ -385,12 +365,9 @@ export const BackgroundProject = Project.create({
 							return await whenSearchEmpty();
 						}
 
-						// cors.defineTopFunction 在非 GM 环境为空操作（noop），降级为本地查询；
-						// iframe 内调用经 cors 路由到顶层帧查询（缓存本体仅存于顶层帧内存）
-						const results: SearchInformation[] =
-							$gm.isInGMContext() === false
-								? findInLocalQuestionCaches(title)
-								: JSON.parse(((await questionCacheTopStore.search(title)) as string) || '[]');
+						// tab 域存储：任意 frame 直接读取，无需 cors 路由
+						const caches: QuestionCache[] = (await $store.getTab(QUESTION_CACHE_TAB_KEY)) || [];
+						const results = findInQuestionCaches(caches, title);
 
 						if (results.length === 0) {
 							return await whenSearchEmpty();
@@ -401,11 +378,8 @@ export const BackgroundProject = Project.create({
 					 * 展示题库缓存管理弹窗
 					 */
 					showQuestionCaches: async () => {
-						// 经 cors 读取顶层帧缓存：iframe 中打开管理弹窗时本地数组为空，必须路由到顶层
-						const questionCaches: QuestionCache[] =
-							$gm.isInGMContext() === false
-								? localQuestionCaches.map((c) => ({ ...c }))
-								: JSON.parse(((await questionCacheTopStore.list()) as string) || '[]');
+						// tab 域存储：任意 frame 直接读取
+						const questionCaches: QuestionCache[] = (await $store.getTab(QUESTION_CACHE_TAB_KEY)) || [];
 
 						const list = questionCaches.map((c) =>
 							h(
@@ -454,12 +428,8 @@ export const BackgroundProject = Project.create({
 											countEl,
 											$ui.button('清空题库缓存', {}, (btn) => {
 												btn.onclick = async () => {
-													// 经 cors 清空顶层帧缓存
-													if ($gm.isInGMContext() === false) {
-														localQuestionCaches.length = 0;
-													} else {
-														await questionCacheTopStore.clear();
-													}
+													// tab 域存储：任意 frame 直接清空（同样跳过变更通知）
+													await $store.setTab(QUESTION_CACHE_TAB_KEY, [], { notify: false });
 													countEl.innerText = '当前缓存数量：0';
 													list.forEach((el) => el.remove());
 												};
