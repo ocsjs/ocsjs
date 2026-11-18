@@ -273,25 +273,28 @@ export const BackgroundProject = Project.create({
 				};
 
 				const { div, logs } = showLogs();
-				/** 已渲染的最后一条日志对象（按引用比对；日志写入为 2s 防抖批量，一次变更可能包含多条新日志，需全部追加） */
-				let lastRenderedLog = this.cfg.logs[this.cfg.logs.length - 1];
 
 				this.offConfigChange(state.console.listenerIds.logs);
 				state.console.listenerIds.logs = this.onConfigChange('logs', (logs) => {
-					const startIndex = lastRenderedLog ? logs.lastIndexOf(lastRenderedLog) + 1 : 0;
-					lastRenderedLog = logs[logs.length - 1];
-					let lastLogEl: HTMLElement | undefined;
-					for (const log of logs.slice(startIndex)) {
-						lastLogEl = createLog(log);
-						div.append(lastLogEl);
+					// 全量重渲染：变更值是 GM 事件回传的反序列化数组（对象引用已变），
+					// 按引用定位增量不可靠（曾导致每次变更都追加整个日志列表，10 条变 20 条）。
+					// 日志上限 50 条且写入已 2s 防抖，全量重建成本可忽略。
+					const wasScrollBottom = isScrollBottom(div);
+					const scrollTop = div.scrollTop;
+					if (logs.length) {
+						div.replaceChildren(...logs.map((log) => createLog(log)));
+					} else {
+						div.replaceChildren(h('div', { style: { textAlign: 'center' } }, '暂无任何日志'));
 					}
-					if (lastLogEl) {
-						setTimeout(() => {
-							if (isScrollBottom(div)) {
-								lastLogEl?.scrollIntoView();
-							}
-						}, 10);
-					}
+					setTimeout(() => {
+						if (wasScrollBottom) {
+							// 原本在底部：保持跟随最新日志
+							div.lastElementChild?.scrollIntoView();
+						} else {
+							// 用户正在翻历史：保持原滚动位置
+							div.scrollTop = scrollTop;
+						}
+					}, 10);
 				});
 
 				const show = () => {
