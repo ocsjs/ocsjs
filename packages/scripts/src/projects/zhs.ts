@@ -1205,29 +1205,21 @@ export const ZHSProject = Project.create({
 
 						const getNextJob = () => {
 							const cards = Array.from(document.querySelectorAll('[class*="card-container"]'));
-
-							// 如果没有正在选中的章节，证明第一个就是外链模式，此时默认点击第一个
-							if (cards.some((card) => card.classList.contains('active')) === false) {
-								return cards[0];
-							}
-
-							let target_el;
-							const start_index = cards.findIndex((c) => c.classList.contains('active')) || 0;
-							for (let index = start_index + 1; index < cards.length; index++) {
-								const card = cards[index];
-
-								if (this.cfg.restudy) {
-									target_el = card;
-									break;
-								} else {
-									if (card.querySelector('.finished-icon')?.textContent?.includes('已完成')) {
-										continue;
+							const activeIndex = cards.findIndex((card) => card.classList.contains('active'));
+							return cards.slice(activeIndex + 1).find((card) => {
+								if (this.cfg.switchMode === 'job') {
+									const section = card.closest('.resources-section');
+									if (section?.querySelector('.resources-detail-title')?.textContent?.includes('选学')) {
+										return false;
 									}
-									target_el = card;
-									break;
 								}
-							}
-							return target_el;
+								// 没有选中项时从首个符合模式的资源开始（外链资源可能没有 active）。
+								return (
+									activeIndex === -1 ||
+									this.cfg.restudy ||
+									!card.querySelector('.finished-icon')?.textContent?.includes('已完成')
+								);
+							});
 						};
 						const getNext = () => {
 							const infos = getInfos();
