@@ -646,8 +646,6 @@ export const ZHSProject = Project.create({
 			oncomplete() {
 				// 置顶
 				BackgroundProject.scripts.render.methods.pin(this);
-				// 检测学习/视频界面分辨率，过小则提示用户自动调整缩放
-				ensureWideViewport();
 			},
 			onrender({ panel }) {
 				// 仅在油猴环境中显示设置跳转按钮（桌面软件等环境的脚本设置在其他平台/界面中显示）
@@ -704,6 +702,11 @@ export const ZHSProject = Project.create({
 				migrateZhsStudyConfigs();
 				// 置顶设置中心，作为用户主要交互入口
 				BackgroundProject.scripts.render.methods.pin(this);
+
+				// 检测学习/视频界面分辨率，过小则提示用户自动调整缩放
+				if (location.origin.includes('studyvideoh5.zhihuishu.com')) {
+					adjustViewportScale();
+				}
 			}
 		}),
 		/**
@@ -3622,51 +3625,24 @@ function autoStop(stopTime: string) {
 	}
 }
 
-/** 学习/视频界面所需的最小分辨率（宽 x 高） */
-const MIN_VIEWPORT_WIDTH = 1280;
-const MIN_VIEWPORT_HEIGHT = 720;
-
-/**
- * 检测智慧树学习/视频界面的分辨率，如果低于 1280x720，
- * 则弹窗提示用户，点击确定后自动调整缩放以达到最小要求。
- *
- * 说明：分辨率过小会导致页面元素重叠/遮挡，影响学习、播放等自动点击功能。
- */
-function ensureWideViewport() {
-	const { innerWidth: width, innerHeight: height } = window;
-	if (width >= MIN_VIEWPORT_WIDTH && height >= MIN_VIEWPORT_HEIGHT) {
-		return;
-	}
-	$modal.confirm({
-		title: '界面分辨率提示',
-		content: h('div', {}, [
-			'当前界面分辨率过小，可能影响学习、播放等自动点击功能，点击确定自动调整界面尺寸。',
-			h('div', { style: { fontSize: '12px', color: '#999', marginTop: '8px' } }, '如需恢复请刷新界面')
-		]),
-		confirmButtonText: '确定',
-		cancelButtonText: '暂不调整',
-		onConfirm: () => {
-			adjustViewportScale(width, height);
-		}
-	});
-}
-
 /**
  * 通过 html 的 zoom 缩放样式，把界面调整到满足 1280x720 最小分辨率要求。
  * 缩放比例取宽、高两个方向所需缩放中的较大值，确保两个方向都满足最小要求。
  */
-function adjustViewportScale(width: number, height: number) {
+function adjustViewportScale() {
+	/** 学习/视频界面所需的最小分辨率（宽 x 高） */
+	const MIN_VIEWPORT_WIDTH = 1280;
+	const MIN_VIEWPORT_HEIGHT = 720;
+
+	const { innerWidth: width, innerHeight: height } = window;
+
 	const scale = Math.min(1, Math.min(width / MIN_VIEWPORT_WIDTH, height / MIN_VIEWPORT_HEIGHT));
 	if (scale >= 1) {
 		return;
 	}
-	const styleId = 'ocs-viewport-scale-style';
-	let style = document.getElementById(styleId) as HTMLStyleElement | null;
-	if (style === null) {
-		style = document.createElement('style');
-		style.id = styleId;
-		document.head.append(style);
-	}
+
+	const style = document.createElement('style');
+	document.head.append(style);
 	style.innerText = `html { zoom: ${scale}; }`;
 	$message.success({
 		duration: 5,
