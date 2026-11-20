@@ -1349,7 +1349,7 @@ export const BackgroundProject = Project.create({
 
 				if (currentStudyScript) {
 					// 注册当前学习脚本的快捷菜单
-					await $menu('🖥️', { scriptPanelLink: currentStudyScript });
+					await $menu(currentStudyScript.name || '🖥️', { scriptPanelLink: currentStudyScript });
 					// 置顶面板
 					BackgroundProject.scripts.render.methods.pin(currentStudyScript);
 				}
