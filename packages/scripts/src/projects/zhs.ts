@@ -67,6 +67,7 @@ const gxk_read_notes = [
 interface VideoProcessor {
 	switchPlaybackRate(rate: number, remotePage?: RemotePage): void | Promise<void>;
 	switchLine(definition: 'line1bq' | 'line1gq', remotePage?: RemotePage): void | Promise<void>;
+	waitForDialogClosed(): Promise<any>;
 }
 interface ZHSProcessor extends VideoProcessor {
 	remotePage: RemotePage | undefined | void;
@@ -75,18 +76,26 @@ interface ZHSProcessor extends VideoProcessor {
 	getChapterName(root: HTMLElement): string;
 	hasJob(): boolean;
 	getNext(opts: { next: boolean; restudy: boolean }): HTMLElement | undefined;
-	hideDialog(): void;
+	hideDialog(): void | Promise<any>;
 	handleTestDialog(remotePage?: RemotePage): void | Promise<void>;
+	waitForDialogClosed(): Promise<any>;
 }
 
 class StudyVideoH5 implements ZHSProcessor {
 	remotePage: RemotePage | undefined = undefined;
+	dialogHandling: boolean = false;
 	async init() {
 		this.remotePage = await BackgroundProject.scripts.dev.methods.getRemotePlaywrightCurrentPage();
 		// 检查是否为软件环境
 		if (!this.remotePage) {
 			throw $playwright.showError();
 		}
+	}
+
+	async waitForDialogClosed() {
+		return await waitFor(() => this.dialogHandling === false, { timeout_seconds: 60 }).catch((e) =>
+			$msgwc.error('弹窗处理超时：' + String(e))
+		);
 	}
 
 	getCourseName() {
@@ -115,6 +124,12 @@ class StudyVideoH5 implements ZHSProcessor {
 	}
 
 	async switchPlaybackRate(rate: number) {
+		try {
+			await waitForElement('.speedList', { timeout_seconds: 3 });
+		} catch {
+			$msgwc.warn('找不到切换按钮、倍速切换功能将跳过');
+			return;
+		}
 		const controlsBar = $el('.controlsBar');
 		const sl = $el('.speedList');
 		if (controlsBar && sl) {
@@ -136,6 +151,12 @@ class StudyVideoH5 implements ZHSProcessor {
 	}
 
 	async switchLine(definition: 'line1bq' | 'line1gq') {
+		try {
+			await waitForElement('.definiLines', { timeout_seconds: 3 });
+		} catch {
+			$msgwc.warn('找不到切换按钮、倍速切换功能将跳过');
+			return;
+		}
 		const controlsBar = $el('.controlsBar');
 		const dl = $el('.definiLines');
 
@@ -159,55 +180,79 @@ class StudyVideoH5 implements ZHSProcessor {
 		return $$el('.clearfix.video')?.length > 0;
 	}
 
-	hideDialog() {
-		/** 隐藏通知弹窗 */
-		$$el('.el-dialog__wrapper').forEach((dialog) => {
-			dialog.remove();
-		});
+	async hideDialog() {
+		this.dialogHandling = true;
+		await waitForElement('.el-dialog__wrapper', { timeout_seconds: 3 })
+			.then(() => {
+				/** 隐藏通知弹窗 */
+				$$el('.el-dialog__wrapper').forEach((dialog) => {
+					dialog.remove();
+				});
+			})
+			.catch(() => {})
+			.finally(() => {
+				this.dialogHandling = false;
+			});
 	}
 
 	async handleTestDialog() {
-		const items = $$el('#playTopic-dialog .el-pager .number');
-		if (items.length) {
-			for (const item of items) {
-				if (item.classList.contains('active') === false) {
-					item.click();
-					await $.sleep(500);
-				}
+		this.dialogHandling = true;
+		const selector = '#playTopic-dialog .el-pager .number';
+		await waitForElement(() => document.querySelector<HTMLElement>(selector))
+			.then(async () => {
+				const items = Array.from(document.querySelectorAll<HTMLElement>('#playTopic-dialog .el-pager .number'));
+				if (items.length) {
+					this.dialogHandling = true;
+					try {
+						for (const item of items) {
+							if (item.classList.contains('active') === false) {
+								item.click();
+								await $.sleep(500);
+							}
 
-				const options = $$el('#playTopic-dialog ul .topic-item');
-				if (options.length !== 0) {
-					await waitForCaptcha();
-					// 最小化脚本窗口
-					$render.moveToEdge();
-					// 随机选
-					const random = Math.floor(Math.random() * options.length);
-					await $.sleep(1000);
-					// nth-child 从1开始
-					const btn_selector = `#playTopic-dialog .topic .radio ul > li:nth-child(${random + 1})`;
-					if (this.remotePage) {
-						await this.remotePage.click(btn_selector);
-					} else {
-						$el(btn_selector)?.click();
+							const options = $$el('#playTopic-dialog ul .topic-item');
+							if (options.length !== 0) {
+								await waitForCaptcha();
+								// 最小化脚本窗口
+								$render.moveToEdge();
+								// 随机选
+								const random = Math.floor(Math.random() * options.length);
+								await $.sleep(1000);
+								// nth-child 从1开始
+								const btn_selector = `#playTopic-dialog .topic .radio ul > li:nth-child(${random + 1})`;
+								if (this.remotePage) {
+									await this.remotePage.click(btn_selector);
+								} else {
+									$el(btn_selector)?.click();
+								}
+
+								await $.sleep(1000);
+							}
+						}
+						await $.sleep(1000);
+						// 关闭弹窗
+						const close_btn_selector = '#playTopic-dialog .close-btn,#playTopic-dialog .btn';
+						if (this.remotePage) {
+							await this.remotePage.click(close_btn_selector);
+						} else {
+							$el(close_btn_selector)?.click();
+						}
+					} catch (e) {
+						$msgwc.error('处理弹窗测验时报错：' + String(e));
+					} finally {
+						this.dialogHandling = false;
 					}
-
-					await $.sleep(1000);
 				}
-			}
-			await $.sleep(1000);
-			// 关闭弹窗
-			const close_btn_selector = '#playTopic-dialog .close-btn,#playTopic-dialog .btn';
-			if (this.remotePage) {
-				await this.remotePage.click(close_btn_selector);
-			} else {
-				$el(close_btn_selector)?.click();
-			}
-		}
+			})
+			.catch((err) => {})
+			.finally(() => {
+				this.dialogHandling = false;
+			});
 
 		/**
-		 * 每过三秒递归检测是否有弹窗
+		 * 递归检测是否有弹窗
 		 */
-		await $.sleep(3000);
+		await $.sleep(1000);
 		await this.handleTestDialog();
 	}
 }
@@ -359,18 +404,11 @@ class StudyPlusH5 extends StudyVideoH5 implements ZHSProcessor {
 		return videoItems[0];
 	}
 
-	hideDialog() {
-		/** 隐藏通知弹窗 */
-		$$el('.el-overlay,.el-dialog').forEach((dialog) => {
-			dialog.style.display = 'none';
-		});
-	}
-
 	async handleTestDialog(remotePage?: RemotePage) {
 		const question_box = $el('.ai-test-question-wrapper');
 		const done = $el('.ai-test-question-wrapper .done');
 		if (question_box) {
-			$message.info('正在关闭弹窗测验...');
+			$message.info('正在关闭弹窗测验...（随机选择，不接入题库）');
 			const close_btn = $el('.close-box', question_box);
 			if (done) {
 				if (close_btn) {
@@ -476,67 +514,80 @@ class WishdomH5 extends StudyVideoH5 implements ZHSProcessor {
 		return jobs[0];
 	}
 
-	hideDialog() {
-		/** 隐藏通知弹窗 */
-		$$el('.el-overlay,.el-dialog').forEach((dialog) => {
-			dialog.style.display = 'none';
-		});
-	}
-
 	async handleTestDialog(remotePage?: RemotePage) {
-		const question_box = $el('.ai-class-exercise-dialog');
-		if (question_box) {
-			const options = $$el('.ques-list .item .option');
-			$message.info('正在关闭弹窗测验...');
-			if (options.length !== 0) {
-				await waitForCaptcha();
-				// 最小化脚本窗口
-				BackgroundProject.scripts.render.methods.minimize();
-				BackgroundProject.scripts.render.methods.setPosition(100, 200);
-				// 随机选
-				const random = Math.floor(Math.random() * options.length);
+		this.dialogHandling = true;
+		await waitForElement(() => document.querySelector<HTMLElement>('.ai-class-exercise-dialog, .el-dialog'))
+			.then(async () => {
+				const close = async () => {
+					const close_btn = $el('.ai-class-exercise-dialog .header-icon');
+					if (close_btn) {
+						if (remotePage) {
+							await remotePage.hover('.ai-class-exercise-dialog .header-icon');
+							await remotePage.click('.ai-class-exercise-dialog .header-icon');
+						} else {
+							close_btn.click();
+						}
+					}
+				};
+
+				// 已经提交的弹窗不回答，直接关闭
+				if (document.querySelector('.ai-class-exercise-dialog button.is-finish')) {
+					await close();
+					return;
+				}
+
+				const options = $$el('.ques-list .item .option');
+				if (options.length === 0) {
+					await close();
+					return;
+				}
+
+				$message.info('正在关闭弹窗测验...（随机选择，不接入题库）');
+				if (options.length !== 0) {
+					await waitForCaptcha();
+					// 最小化脚本窗口
+					BackgroundProject.scripts.render.methods.minimize();
+					BackgroundProject.scripts.render.methods.setPosition(100, 200);
+					// 随机选
+					const random = Math.floor(Math.random() * options.length);
+					await $.sleep(1000);
+					if (remotePage) {
+						await remotePage.click(options[random]);
+					} else {
+						options[random].click();
+					}
+
+					await $.sleep(1000);
+				}
 				await $.sleep(1000);
-				if (remotePage) {
-					await remotePage.click(options[random]);
-				} else {
-					options[random].click();
+
+				const submit_btn = $el('.ai-class-exercise-dialog .el-dialog__footer .el-button.btn');
+				if (submit_btn) {
+					if (remotePage) {
+						await remotePage.hover('.ai-class-exercise-dialog .el-dialog__footer .el-button.btn');
+						await remotePage.click('.ai-class-exercise-dialog .el-dialog__footer .el-button.btn');
+					} else {
+						submit_btn.click();
+					}
 				}
 
-				await $.sleep(1000);
-			}
-			await $.sleep(1000);
+				await close();
 
-			const submit_btn = $el('.ai-class-exercise-dialog .el-dialog__footer .el-button.btn');
-			if (submit_btn) {
-				if (remotePage) {
-					await remotePage.hover('.ai-class-exercise-dialog .el-dialog__footer .el-button.btn');
-					await remotePage.click('.ai-class-exercise-dialog .el-dialog__footer .el-button.btn');
-				} else {
-					submit_btn.click();
-				}
-			}
-
-			const close_btn = $el('.ai-class-exercise-dialog .header-icon');
-			if (close_btn) {
-				if (remotePage) {
-					await remotePage.hover('.ai-class-exercise-dialog .header-icon');
-					await remotePage.click('.ai-class-exercise-dialog .header-icon');
-				} else {
-					close_btn.click();
-				}
-			}
-
-			// 如果无法关闭弹窗，后续版本只能强制删除
-			// await $.sleep(1000);
-			// document.querySelector('.components-box.has-compoent')?.remove();
-			// document.querySelector('.transparent-mask')?.remove();
-			$message.info('弹窗测验已关闭');
-		}
+				// 如果无法关闭弹窗，后续版本只能强制删除
+				// await $.sleep(1000);
+				// document.querySelector('.components-box.has-compoent')?.remove();
+				// document.querySelector('.transparent-mask')?.remove();
+				$message.info('弹窗测验已关闭');
+			})
+			.catch(() => {})
+			.finally(() => {
+				this.dialogHandling = false;
+			});
 
 		/**
-		 * 每过三秒递归检测是否有弹窗
+		 *  递归检测是否有弹窗
 		 */
-		await $.sleep(3000);
+		await $.sleep(1000);
 		await this.handleTestDialog(remotePage);
 	}
 }
@@ -580,13 +631,6 @@ class Hike extends StudyVideoH5 implements ZHSProcessor {
 		}
 		return jobs[0];
 	}
-
-	hideDialog() {
-		/** 隐藏通知弹窗 */
-		$$el('.el-overlay,.el-dialog').forEach((dialog) => {
-			dialog.style.display = 'none';
-		});
-	}
 }
 
 class HikeV2 extends StudyVideoH5 implements ZHSProcessor {
@@ -609,13 +653,6 @@ class HikeV2 extends StudyVideoH5 implements ZHSProcessor {
 		const current_index = jobs.findIndex((job) => job.classList.contains('is-current'));
 		return jobs.find((job, i) => {
 			return i > current_index && (opts.restudy ? true : !job.querySelector('label.success'));
-		});
-	}
-
-	hideDialog() {
-		/** 隐藏通知弹窗 */
-		$$el('.el-overlay,.el-dialog').forEach((dialog) => {
-			dialog.style.display = 'none';
 		});
 	}
 }
@@ -1765,7 +1802,7 @@ export const ZHSProject = Project.create({
 							if (document.querySelector('.video-play')) {
 								resolve();
 							} else {
-								setTimeout(check, 3000);
+								setTimeout(check, 1000);
 							}
 						};
 						check();
@@ -1773,12 +1810,10 @@ export const ZHSProject = Project.create({
 				};
 
 				await waitForLoad();
-
-				await $.sleep(3000);
+				await $.sleep(1000);
 				closeMasteryLevelDialog();
 				// 自动隐藏弹窗
-				processor.hideDialog();
-
+				await processor.hideDialog();
 				// 初始化处理器
 				await processor.init();
 				// 自动过弹窗测验
@@ -1787,7 +1822,7 @@ export const ZHSProject = Project.create({
 				setInterval(() => {
 					// 定时显示进度条，防止消失
 					fixProcessBar();
-				}, 1000);
+				}, 200);
 
 				$message.success({ content: '即将开始自动学习！' });
 
@@ -1823,6 +1858,9 @@ export const ZHSProject = Project.create({
 
 				const doWork = async () => {
 					await waitForCaptcha();
+					await processor.waitForDialogClosed();
+					// 自动隐藏弹窗
+					await processor.hideDialog();
 
 					const set = async () => {
 						// 上面操作会导致元素刷新，这里重新获取视频
@@ -1864,6 +1902,9 @@ export const ZHSProject = Project.create({
 					}
 
 					await waitForCaptcha();
+					await processor.waitForDialogClosed();
+					// 自动隐藏弹窗
+					await processor.hideDialog();
 					const video = await set();
 					if (!video) {
 						return;
@@ -2330,7 +2371,8 @@ export const ZHSProject = Project.create({
 						watch(
 							{
 								switchLine() {},
-								switchPlaybackRate() {}
+								switchPlaybackRate() {},
+								async waitForDialogClosed() {}
 							},
 							{ ...ZHSProject.scripts.hike_v2.cfg, playbackRate: 1 },
 							{
