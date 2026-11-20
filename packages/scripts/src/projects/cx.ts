@@ -1542,7 +1542,7 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 
 	// 手动模式
 	if (CXProject.scripts.study.cfg.mode === 'manually') {
-		const msg = '页面任务点已完成，自动跳转已关闭，请手动跳转。';
+		const msg = '页面任务点已完成，自动跳转功能已在设置关闭，请手动切换下一页。';
 		$message.warn({ content: msg, duration: 0 });
 		$console.warn(msg);
 		return;
