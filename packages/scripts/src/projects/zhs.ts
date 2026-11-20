@@ -740,13 +740,57 @@ export const ZHSProject = Project.create({
 			],
 			namespace: zhsStudyNamespace,
 			configs: studyCenterConfigs,
+			onrender({ panel }) {
+				//  （仅共享课显示）
+				if ($gm.isInGMContext() && location.origin.includes('studyvideoh5.zhihuishu.com')) {
+					panel.body.replaceChildren(
+						h('hr'),
+						$ui.button('⏰检测是否需要规律学习', {}, (btn) => {
+							btn.style.marginRight = '12px';
+							btn.onclick = () => {
+								const href = document.querySelector('[href*=stuLearnReportNew]')?.getAttribute('href') || '';
+								if (href) {
+									$modal.alert({
+										title: '规律学习检测',
+										content: `自动检测功能已失效，<a href="${href}"> -> 点击此处 <- </a> 前往成绩分析页面，点击 <b>"学习习惯"</b> 即可查看习惯分详情。`
+									});
+								} else {
+									$modal.alert({
+										title: '提示',
+										content: '自动检测功能已失效，请自行前往成绩分析页面，点击学习习惯即可查看习惯分详情。'
+									});
+								}
+							};
+						}),
+						$ui.button('📘查看学习记录', {}, (btn) => {
+							btn.onclick = () => {
+								$modal.alert({
+									title: '学习记录',
+									content: $ui.notes(
+										ZHSProject.scripts['gxk-study'].cfg.studyRecord.map((r) => {
+											const date = new Date(r.date);
+											return [
+												`${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date
+													.getDate()
+													.toString()
+													.padStart(2, '0')}`,
+												$ui.notes(r.courses.map((course) => `${course.name} - ${optimizeSecond(course.time)}`))
+											];
+										})
+									)
+								});
+							};
+						})
+					);
+				}
+			},
 			oncomplete() {
 				// 迁移旧命名空间配置
 				migrateZhsStudyConfigs();
 				// 置顶设置中心，作为用户主要交互入口
 				BackgroundProject.scripts.render.methods.pin(this);
 
-				// 检测学习/视频界面分辨率，过小则提示用户自动调整缩放
+				//  （仅共享课显示）检测学习/视频界面分辨率，过小则提示用户自动调整缩放
 				if (location.origin.includes('studyvideoh5.zhihuishu.com')) {
 					adjustViewportScale();
 				}
@@ -865,47 +909,6 @@ export const ZHSProject = Project.create({
 						this.cfg.studyRecord = records;
 					}
 				};
-			},
-			onrender({ panel }) {
-				panel.body.replaceChildren(
-					h('hr'),
-					$ui.button('⏰检测是否需要规律学习', {}, (btn) => {
-						btn.style.marginRight = '12px';
-						btn.onclick = () => {
-							const href = document.querySelector('[href*=stuLearnReportNew]')?.getAttribute('href') || '';
-							if (href) {
-								$modal.alert({
-									title: '规律学习检测',
-									content: `自动检测功能已失效，<a href="${href}"> -> 点击此处 <- </a> 前往成绩分析页面，点击 <b>"学习习惯"</b> 即可查看习惯分详情。`
-								});
-							} else {
-								$modal.alert({
-									title: '提示',
-									content: '自动检测功能已失效，请自行前往成绩分析页面，点击学习习惯即可查看习惯分详情。'
-								});
-							}
-						};
-					}),
-					$ui.button('📘查看学习记录', {}, (btn) => {
-						btn.onclick = () => {
-							$modal.alert({
-								title: '学习记录',
-								content: $ui.notes(
-									this.cfg.studyRecord.map((r) => {
-										const date = new Date(r.date);
-										return [
-											`${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date
-												.getDate()
-												.toString()
-												.padStart(2, '0')}`,
-											$ui.notes(r.courses.map((course) => `${course.name} - ${optimizeSecond(course.time)}`))
-										];
-									})
-								)
-							});
-						};
-					})
-				);
 			},
 			onactive() {
 				// 重置时间
