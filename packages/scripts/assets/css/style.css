@@ -1652,7 +1652,7 @@ search-infos-element .error {
   padding-left: 12px;
 }
 .work-result-list {
-  max-height: 400px;
+  max-height: 110px;
   overflow: auto;
   padding: 4px 0px;
 }
