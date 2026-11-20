@@ -299,7 +299,7 @@ export class RemotePlaywright {
  * 所以在页面内用 fixed 元素标注某个点时，需要将 rect 坐标除以 zoom 换算回布局坐标，否则标注位置会产生偏移。
  */
 function getPageZoomScale(): number {
-	const zoom = parseFloat(getComputedStyle(document.documentElement).zoom || '1');
+	const zoom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('zoom') || '1');
 	return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
 }
 

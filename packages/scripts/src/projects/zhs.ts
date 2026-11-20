@@ -32,6 +32,7 @@ import { $console, BackgroundProject } from './background';
 import { waitForMedia, waitForElement, waitFor } from '../utils/study';
 import { $playwright } from '../utils/app';
 import { $render } from '../utils/render';
+import { isNumber } from 'lodash';
 
 const state = {
 	study: {
@@ -42,7 +43,8 @@ const state = {
 		currentMedia: undefined as HTMLMediaElement | undefined,
 		stopInterval: 0 as any,
 		stopMessage: undefined as MessageElement | undefined
-	}
+	},
+	loading_msg: undefined as MessageElement | undefined
 };
 
 /**
@@ -75,7 +77,9 @@ interface ZHSProcessor extends VideoProcessor {
 	getCourseName(): string;
 	getChapterName(root: HTMLElement): string;
 	hasJob(): boolean;
-	getNext(opts: { next: boolean; restudy: boolean }): HTMLElement | undefined;
+	getNext(opts: { restudy: boolean }): HTMLElement | undefined;
+	// 获取当前的任务切换元素，点击后可开始当前的任务运行
+	getCurrentHandel(): HTMLElement | undefined;
 	hideDialog(): void | Promise<any>;
 	handleTestDialog(remotePage?: RemotePage): void | Promise<void>;
 	waitForDialogClosed(): Promise<any>;
@@ -106,21 +110,22 @@ class StudyVideoH5 implements ZHSProcessor {
 		return root.querySelector('.catalogue_title')?.textContent || '未知章节';
 	}
 
-	getNext(opts: { next: boolean; restudy: boolean }): HTMLElement | undefined {
+	getNext(opts: { restudy: boolean }) {
 		let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
-		// 如果不是复习模式，则排除掉已经完成的任务
-		if (!opts.restudy) {
-			videoItems = videoItems.filter((el) => el.querySelector('.time_icofinish') === null);
-		}
+		const current_index = videoItems.findIndex((item) => item.classList.contains('current_play'));
+		return videoItems.find((item, index) => {
+			const is_finish = !!item.querySelector('.time_icofinish');
+			return (
+				index > current_index &&
+				// 找到从当前节点的下一个任务，并且满足： 开启复习模式 或者 未完成
+				(opts.restudy || !is_finish)
+			);
+		});
+	}
 
-		for (let i = 0; i < videoItems.length; i++) {
-			const item = videoItems[i];
-			if (item.classList.contains('current_play')) {
-				return videoItems[i + (opts.next ? 1 : 0)];
-			}
-		}
-
-		return videoItems[0];
+	getCurrentHandel() {
+		let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
+		return videoItems.find((item) => item.classList.contains('current_play'));
 	}
 
 	async switchPlaybackRate(rate: number) {
@@ -279,7 +284,7 @@ class FusionCourseH5 extends StudyVideoH5 implements ZHSProcessor {
 		return super.getChapterName(root);
 	}
 
-	getNext(opts: { next: boolean; restudy: boolean }) {
+	getNext(opts: { restudy: boolean }) {
 		// AI 助教课有两种进度模式，一个是百分百，一个是必学项目进度条
 		const is_resource_box_mode = !!document.querySelector('.resource-box');
 		if (is_resource_box_mode) {
@@ -352,11 +357,11 @@ class FusionCourseH5 extends StudyVideoH5 implements ZHSProcessor {
 
 			if (is_resource_box_mode) {
 				if (item.classList.contains('activeNode')) {
-					return videoItems[i + (opts.next ? 1 : 0)];
+					return videoItems[i + 1];
 				}
 			} else {
 				if (item.classList.contains('current_play')) {
-					return videoItems[i + (opts.next ? 1 : 0)];
+					return videoItems[i + 1];
 				}
 			}
 		}
@@ -380,7 +385,7 @@ class StudyPlusH5 extends StudyVideoH5 implements ZHSProcessor {
 		return $$el('.child-main')?.length > 0;
 	}
 
-	getNext(opts: { next: boolean; restudy: boolean }) {
+	getNext(opts: { restudy: boolean }) {
 		let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.child-main')).filter((el) =>
 			el.parentElement?.querySelector('.child-time')
 		);
@@ -398,7 +403,7 @@ class StudyPlusH5 extends StudyVideoH5 implements ZHSProcessor {
 		for (let i = 0; i < videoItems.length; i++) {
 			const item = videoItems[i];
 			if (item.classList.contains('current')) {
-				return videoItems[i + (opts.next ? 1 : 0)];
+				return videoItems[i + 1];
 			}
 		}
 		return videoItems[0];
@@ -480,7 +485,7 @@ class WishdomH5 extends StudyVideoH5 implements ZHSProcessor {
 		return $$el('.chapter-content .chapter-content-second')?.length > 0;
 	}
 
-	getNext(opts: { next: boolean; restudy: boolean }) {
+	getNext(opts: { restudy: boolean }) {
 		let jobs = Array.from(document.querySelectorAll<HTMLElement>('.chapter-content .chapter-item'));
 
 		jobs = jobs
@@ -508,7 +513,7 @@ class WishdomH5 extends StudyVideoH5 implements ZHSProcessor {
 		for (let i = 0; i < jobs.length; i++) {
 			const item = jobs[i];
 			if (item.classList.contains('current')) {
-				return jobs[i + (opts.next ? 1 : 0)];
+				return jobs[i + 1];
 			}
 		}
 		return jobs[0];
@@ -608,7 +613,7 @@ class Hike extends StudyVideoH5 implements ZHSProcessor {
 		return document.querySelectorAll('.source-icon')?.length > 0;
 	}
 
-	getNext(opts: { next: boolean; restudy: boolean }) {
+	getNext(opts: { restudy: boolean }) {
 		let jobs = Array.from(document.querySelectorAll<HTMLElement>('.source-icon')).map(
 			(el) => el.parentElement?.parentElement as HTMLElement
 		);
@@ -626,7 +631,7 @@ class Hike extends StudyVideoH5 implements ZHSProcessor {
 		for (let i = 0; i < jobs.length; i++) {
 			const item = jobs[i];
 			if (item.querySelector('.active-file')) {
-				return jobs[i + (opts.next ? 1 : 0)];
+				return jobs[i + 1];
 			}
 		}
 		return jobs[0];
@@ -646,13 +651,14 @@ class HikeV2 extends StudyVideoH5 implements ZHSProcessor {
 		return document.querySelectorAll('.el-tree-node')?.length > 0;
 	}
 
-	getNext(opts: { next: boolean; restudy: boolean }) {
+	getNext(opts: { restudy: boolean }) {
 		const jobs = Array.from(document.querySelectorAll<HTMLElement>('.el-tree-node')).filter(
 			(e) => e.querySelector('.el-tree-node__children')?.children.length === 0
 		);
 		const current_index = jobs.findIndex((job) => job.classList.contains('is-current'));
 		return jobs.find((job, i) => {
-			return i > current_index && (opts.restudy ? true : !job.querySelector('label.success'));
+			const is_finish = job.querySelector('label.success');
+			return i > current_index && (opts.restudy || is_finish);
 		});
 	}
 }
@@ -814,11 +820,11 @@ export const ZHSProject = Project.create({
 				},
 				stopTime,
 				restudy: restudy,
-				reloadWhenError,
 				volume: volume,
 				definition: definition,
 				playbackRate: studyPlaybackRate
 			},
+
 			methods() {
 				return {
 					/**
@@ -908,8 +914,11 @@ export const ZHSProject = Project.create({
 					// 转换为数字
 					this.cfg.playbackRate = parseFloat(this.cfg.playbackRate.toString());
 				}
+
+				state.loading_msg = $message.info({ content: '等待视频加载中...，如果加载卡顿请刷新界面。', duration: 60 });
 			},
 			async oncomplete() {
+				state.loading_msg?.remove();
 				// 迁移旧命名空间下的用户配置到统一的 zhs.study 命名空间（幂等，可安全重复调用）
 				migrateZhsStudyConfigs();
 
@@ -1010,61 +1019,92 @@ export const ZHSProject = Project.create({
 
 				const remotePage = processor.remotePage;
 
-				const study = async (opts: { next: boolean }) => {
+				const study = async () => {
+					// 适配AI助教课程PPT跳过
+					if (type === 'AI课程' && document.querySelector('.preview-warp .doc-box,.preview-warp .ppt-box')) {
+						$message.info({ content: '检测到PPT资源，即将跳过...' });
+						await $.sleep(2000);
+						return;
+					}
+
+					const media = await waitForMedia({ timeout: 30 * 1000 });
+					media.pause();
+
+					const current_handle = processor.getCurrentHandel();
+					// 获取当前视频进度
+					const percent = parseInt(current_handle?.querySelector('.progress-num')?.textContent.split('%')[0] || '');
+
+					const is_finish = !!current_handle?.querySelector('.time_icofinish');
+
+					if (is_finish || (isNumber(percent) && percent >= 100)) {
+						const { next } = await new Promise<{ next: boolean }>((finish_resolve) => {
+							const timeout = setTimeout(() => {
+								modal?.remove();
+								finish_resolve({ next: true });
+							}, 5 * 1000);
+							const modal = $modal.confirm({
+								content: '当前视频已播放完毕，重新播放还是智能跳转下一节？',
+								cancelButtonText: '重新播放',
+								confirmButtonText: '自动跳转（5s）',
+								onClose: () => finish_resolve({ next: true }),
+								onConfirm: () => finish_resolve({ next: true }),
+								onCancel() {
+									clearTimeout(timeout);
+									// 如果已经播放完了，则重置视频进度
+									media.currentTime = 1;
+									finish_resolve({ next: false });
+								}
+							});
+						});
+						if (next) {
+							return;
+						}
+					}
+
+					await watch(
+						processor,
+						{
+							volume: this.cfg.volume,
+							playbackRate: this.cfg.playbackRate,
+							definition: this.cfg.definition,
+							targetVideoTime: isNumber(percent) ? media.duration * ((percent - 1) / 100) : undefined
+						},
+						{
+							onreplay() {
+								study();
+							}
+						}
+					);
+				};
+				// 当页面初始化时无需切换下一个视频，直接播放当前的。
+
+				const loop = async () => {
 					if (state.study.stop === false) {
-						const item = processor.getNext({ next: opts.next, restudy: this.cfg.restudy });
+						const item = processor.getNext({ restudy: this.cfg.restudy });
 						if (item) {
-							const msg = '即将学习：' + processor.getChapterName(item);
-							$message.info({ content: msg });
-							$console.log(msg);
-							await $.sleep(3000);
-							// 最小化脚本窗口
-							$render.moveToEdge();
-							// 点击侧边栏任务
-							if (remotePage) {
-								if (type === '新共享课') {
-									await remotePage.click('.title-box');
-									await $.sleep(200);
-								}
-								await remotePage.click(item);
-								await $.sleep(1000);
-								// 两次点击修复黑屏问题
-								await remotePage.click(item);
-								await $.sleep(1000);
-							} else {
-								item.click();
-							}
+							try {
+								$msgwc.info('即将学习：' + processor.getChapterName(item));
 
-							// 适配AI助教课程PPT跳过
-							if (type === 'AI课程' && document.querySelector('.preview-warp .doc-box,.preview-warp .ppt-box')) {
-								$message.info({ content: '检测到PPT资源，即将跳过...' });
-								await $.sleep(2000);
-								study({ next: true });
-								return;
-							}
-
-							watch(
-								processor,
-								{
-									reloadWhenError: this.cfg.reloadWhenError,
-									volume: this.cfg.volume,
-									playbackRate: this.cfg.playbackRate,
-									definition: this.cfg.definition
-								},
-								{
-									reload() {
-										// 旧共享课页面点击右侧栏就能重新加载
-										if (type === '共享课') {
-											study({ next: false });
-										} else {
-											location.reload();
-										}
-									},
-									onended({ next }) {
-										study({ next });
+								await $.sleep(3000);
+								// 最小化脚本窗口
+								$render.moveToEdge();
+								// 点击侧边栏任务
+								if (remotePage) {
+									if (type === '新共享课') {
+										await remotePage.click('.title-box');
+										await $.sleep(200);
 									}
+									await remotePage.click(item);
+									await $.sleep(1000);
+								} else {
+									item.click();
 								}
-							);
+
+								await study();
+								await loop();
+							} catch (e) {
+								$msgwc.error(String(e));
+							}
 						} else {
 							finishAlert();
 						}
@@ -1077,8 +1117,14 @@ export const ZHSProject = Project.create({
 						});
 					}
 				};
-				// 当页面初始化时无需切换下一个视频，直接播放当前的。
-				study({ next: false });
+
+				setTimeout(() => {
+					study()
+						.then(() => {
+							loop();
+						})
+						.catch((err) => $msgwc.error(String(err)));
+				}, 3000);
 			}
 		}),
 		'gxk-work': new Script({
@@ -1719,7 +1765,7 @@ export const ZHSProject = Project.create({
 					document.querySelectorAll<HTMLElement>('.el-collapse-item__wrap').forEach((e) => (e.style.display = ''));
 					await $.sleep(200);
 
-					const nextJob = processor.getNext({ next: true, restudy: this.cfg.restudy });
+					const nextJob = processor.getNext({ restudy: this.cfg.restudy });
 					if (nextJob) {
 						if (!this.cfg.skipStudyTimeWarnDialog && hasStudyTimeWarnDialog()) {
 							$message.warn({
@@ -2000,7 +2046,7 @@ export const ZHSProject = Project.create({
 				const getChapterName = () => document.querySelector('.active-file')?.textContent?.trim() || '未知章节';
 
 				const next = async () => {
-					const nextJob = processor.getNext({ next: true, restudy: this.cfg.restudy });
+					const nextJob = processor.getNext({ restudy: this.cfg.restudy });
 					if (nextJob) {
 						nextJob.click();
 						await $.sleep(3000);
@@ -2197,7 +2243,7 @@ export const ZHSProject = Project.create({
 					document.querySelector('.drawer-panel')?.classList.add('active');
 					await $.sleep(1000);
 
-					const nextJob = processor.getNext({ next: true, restudy: this.cfg.restudy });
+					const nextJob = processor.getNext({ restudy: this.cfg.restudy });
 					if (nextJob) {
 						nextJob.scrollIntoView({ behavior: 'smooth', block: 'center' });
 						await $.sleep(1000);
@@ -2376,18 +2422,16 @@ export const ZHSProject = Project.create({
 							},
 							{ ...ZHSProject.scripts.hike_v2.cfg, playbackRate: 1 },
 							{
-								reload() {
-									location.reload();
-								},
 								onplay() {
 									$store.set('hikev2_polymas_video_duration', media.duration.toString());
 								},
-								onended() {
-									$store.set('hikev2_polymas_video', 'end');
-									$store.set('hikev2_polymas_video_duration', '');
+								onreplay() {
+									location.reload();
 								}
 							}
-						);
+						).catch((e) => $msgwc.error(String(e)));
+						$store.set('hikev2_polymas_video', 'end');
+						$store.set('hikev2_polymas_video_duration', '');
 					})
 					.catch((e) => {
 						$store.set('hike_polymas_video', 'end');
@@ -2487,123 +2531,82 @@ export const ZHSProject = Project.create({
  * @param setting
  * @returns
  */
-async function watch(
+function watch(
 	processor: VideoProcessor,
-	options: { reloadWhenError: boolean; volume: number; playbackRate: number; definition?: 'line1bq' | 'line1gq' },
+	options: { volume: number; playbackRate: number; definition?: 'line1bq' | 'line1gq'; targetVideoTime?: number },
 	actions: {
-		onended?: (opts: { next: boolean }) => void;
 		onplay?: () => void;
-		reload: () => void;
+		onreplay?: () => void;
 	}
 ) {
-	const reload = async (e: any) => {
-		$console.error(e);
-		if (options.reloadWhenError) {
-			const msg = '视频加载失败，即将刷新页面。';
-			const reload_count = await $store.getTab('reload-count');
-			if (reload_count && reload_count > 3) {
-				const msg = '视频加载失败导致重新加载页面次数超过3次，请尝试关闭页面重新打开，或者检查网络连接！';
-				await $store.setTab('reload-count', 0);
-				$message.error({ content: msg, duration: 0 });
-				$console.log(msg);
-				CommonProject.scripts.settings.methods.notificationBySetting(msg, {
-					duration: 0,
-					extraTitle: '知道智慧树学习脚本'
-				});
-				return;
-			}
-			await $store.setTab('reload-count', (reload_count ?? 0) + 1);
-			$message.error(msg);
-			$console.log(msg);
-			setTimeout(() => {
-				actions.reload();
-			}, 5000);
-		} else {
-			const msg = '视频加载失败，即将跳过。';
-			$message.error(msg);
-			$console.log(msg);
-			actions.onended?.({ next: true });
-		}
-	};
+	return new Promise<void>(async (resolve) => {
+		$message.info('开始播放');
 
-	const set = async () => {
-		// 上面操作会导致元素刷新，这里重新获取视频
+		let media: HTMLMediaElement;
+
 		try {
+			// 部分用户视频加载很慢，这里等待一下 30 秒超时
+			media = await waitForMedia({ timeout: 10 * 1000 });
+			// =========== 设置清晰度 ===========
 			await $.sleep(1000);
 			fixProcessBar();
-			// 设置清晰度
 			await processor.switchLine(options.definition || 'line1bq');
+			// =========== 设置播放速度 ===========
 			await $.sleep(1000);
 			fixProcessBar();
-			// 设置播放速度
 			await processor.switchPlaybackRate(options.playbackRate);
+			// =========== 重新获取视频 ===========
 			await $.sleep(1000);
-			const media = await waitForMedia({ timeout: 10 * 1000 });
+			media = await waitForMedia({ timeout: 30 * 1000 });
 			await $.sleep(1000);
 			state.study.currentMedia = media;
+			media.volume = options.volume;
 
-			if (media) {
-				// 如果已经播放完了，则重置视频进度
-				media.currentTime = 1;
-				// 音量
-				media.volume = options.volume;
-			}
-			return state.study.currentMedia;
+			// 同步视频进度
+			media.currentTime = options.targetVideoTime || 0;
 		} catch (e) {
-			return await reload(e);
+			$msgwc.error('视频加载失败，即将跳过：' + String(e));
+			resolve();
+			return;
 		}
-	};
 
-	$message.info('开始播放');
+		if (!media) {
+			$msgwc.error('视频加载失败，即将跳过');
+			resolve();
+			return;
+		}
 
-	// 部分用户视频加载很慢，这里等待一下
-	try {
-		const media = await waitForMedia({ timeout: 10 * 1000 });
-		media.volume = options.volume;
-		// 如果已经播放完了，则重置视频进度
-		media.pause();
-		// 固定进度条便于下方点击音量等按钮
-		fixProcessBar();
-	} catch (e) {
-		return await reload(e);
-	}
-	await $.sleep(1000);
+		const videoCheckInterval = setInterval(async () => {
+			// 如果视频元素无法访问，证明已经切换了视频
+			if (media?.isConnected === false) {
+				clearInterval(videoCheckInterval);
+				$message.info({ content: '检测到视频切换中...' });
+				/**
+				 * 元素无法访问证明用户切换视频了
+				 * 所以不往下播放视频，而是重新播放用户当前选中的视频
+				 */
+				actions.onreplay?.();
+			}
+		}, 3000);
 
-	const video = await set();
-	if (!video) {
-		return await reload('视频加载失败');
-	}
+		playMedia(() => media?.play()).then(() => {
+			actions.onplay?.();
+		});
 
-	const videoCheckInterval = setInterval(async () => {
-		// 如果视频元素无法访问，证明已经切换了视频
-		if (video?.isConnected === false) {
+		media.onpause = async () => {
+			if (!media?.ended && state.study.stop === false) {
+				await waitForCaptcha();
+				await $.sleep(1000);
+				media?.play();
+			}
+		};
+
+		media.onended = () => {
 			clearInterval(videoCheckInterval);
-			$message.info({ content: '检测到视频切换中...' });
-			/**
-			 * 元素无法访问证明用户切换视频了
-			 * 所以不往下播放视频，而是重新播放用户当前选中的视频
-			 */
-			actions.onended?.({ next: false });
-		}
-	}, 3000);
-
-	playMedia(() => video?.play()).then(() => {
-		actions.onplay?.();
+			// 正常切换下一个视频
+			resolve();
+		};
 	});
-
-	video.onpause = async () => {
-		if (!video?.ended && state.study.stop === false) {
-			await waitForCaptcha();
-			await $.sleep(1000);
-			video?.play();
-		}
-	};
-
-	video.onended = () => {
-		clearInterval(videoCheckInterval);
-		// 正常切换下一个视频
-		actions.onended?.({ next: true });
-	};
 }
 
 /**
