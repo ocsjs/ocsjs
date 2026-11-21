@@ -349,6 +349,17 @@ export const CXProject = Project.create({
 					label: '链接任务自动完成',
 					attrs: { type: 'checkbox', title: '开启：链接任务自动完成' },
 					defaultValue: true
+				},
+				jobSearchTimeOut: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '任务加载等待时长',
+					attrs: {
+						type: 'number',
+						title: '（单位：秒）， 不填写默认智能判断、如果网络较慢可自定义等待时长，例如30s/60s',
+						placeholder: '根据任务数量智能判断'
+					},
+					defaultValue: undefined as undefined | number
 				}
 			},
 			onrender({ panel }) {
@@ -1500,9 +1511,12 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	const wait_timeout = 3 + attachmentCount * 2;
 
 	/** 考虑到网速级慢的同学，所以10秒后如果还没有任务点才停止 */
-	setTimeout(() => {
-		searching = false;
-	}, Math.min(wait_timeout, 10) * 1000);
+	setTimeout(
+		() => {
+			searching = false;
+		},
+		opts.jobSearchTimeOut ? parseInt(opts.jobSearchTimeOut.toFixed(0)) * 1000 : Math.min(wait_timeout, 10) * 1000
+	);
 
 	/**
 	 * 递归运行任务点，一旦有新的任务点被检测到直接开始
