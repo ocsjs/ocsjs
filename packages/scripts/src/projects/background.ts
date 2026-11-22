@@ -25,11 +25,6 @@ import { SearchInfosElement } from '../elements/search.infos';
 import { $render } from '../utils/render';
 
 const state = {
-	console: {
-		listenerIds: {
-			logs: 0 as StoreListenerType
-		}
-	},
 	app: {
 		listenerIds: {
 			sync: 0 as StoreListenerType,
@@ -187,7 +182,7 @@ export const BackgroundProject = Project.create({
 					defaultValue: [] as { type: LogType; content: string; time: number; stack: string }[]
 				}
 			},
-			onrender({ panel }) {
+			methods() {
 				const getTypeDesc = (type: LogType) =>
 					type === 'info'
 						? '信息'
@@ -229,64 +224,37 @@ export const BackgroundProject = Project.create({
 					return item;
 				};
 
-				const showLogs = () => {
-					const div = h('div', { className: 'card console' });
+				return {
+					renderLogs: () => {
+						if (this.panel) {
+							const div = h('div', { className: 'card console' });
 
-					const logs = this.cfg.logs.map((log) => createLog(log));
-					if (logs.length) {
-						div.replaceChildren(...logs);
-					} else {
-						div.replaceChildren(
-							h('div', '暂无任何日志', (div) => {
-								div.style.textAlign = 'center';
-							})
-						);
-					}
+							const logs = this.cfg.logs.map((log) => createLog(log));
+							if (logs.length) {
+								div.replaceChildren(...logs);
+							} else {
+								div.replaceChildren(
+									h('div', '暂无任何日志', (div) => {
+										div.style.textAlign = 'center';
+									})
+								);
+							}
 
-					return { div, logs };
-				};
-
-				/**
-				 * 判断滚动条是否滚到底部
-				 */
-				const isScrollBottom = (div: HTMLElement) => {
-					const { scrollHeight, scrollTop, clientHeight } = div;
-					return scrollTop + clientHeight + 50 > scrollHeight;
-				};
-
-				const { div, logs } = showLogs();
-
-				this.offConfigChange(state.console.listenerIds.logs);
-				state.console.listenerIds.logs = this.onConfigChange('logs', (logs) => {
-					// 全量重渲染：变更值是 GM 事件回传的反序列化数组（对象引用已变），
-					// 按引用定位增量不可靠（曾导致每次变更都追加整个日志列表，10 条变 20 条）。
-					// 日志上限 50 条且写入已 2s 防抖，全量重建成本可忽略。
-					const wasScrollBottom = isScrollBottom(div);
-					const scrollTop = div.scrollTop;
-					if (logs.length) {
-						div.replaceChildren(...logs.map((log) => createLog(log)));
-					} else {
-						div.replaceChildren(h('div', { style: { textAlign: 'center' } }, '暂无任何日志'));
-					}
-					setTimeout(() => {
-						if (wasScrollBottom) {
-							// 原本在底部：保持跟随最新日志
-							div.lastElementChild?.scrollIntoView();
-						} else {
-							// 用户正在翻历史：保持原滚动位置
-							div.scrollTop = scrollTop;
+							this.panel?.body.replaceChildren(div);
+							setTimeout(() => {
+								logs[logs.length - 1]?.scrollIntoView();
+							}, 10);
 						}
-					}, 10);
-				});
-
-				const show = () => {
-					panel.body.replaceChildren(div);
-					setTimeout(() => {
-						logs[logs.length - 1]?.scrollIntoView();
-					}, 10);
+					}
 				};
-
-				show();
+			},
+			oncomplete() {
+				this.onConfigChange('logs', (logs) => {
+					this.methods.renderLogs();
+				});
+			},
+			onrender() {
+				this.methods.renderLogs();
 			}
 		}),
 		/** 渲染脚本，窗口渲染主要脚本（从 通用 迁移至 其他） */
@@ -1316,6 +1284,7 @@ export const BackgroundProject = Project.create({
 					[CXProject.scripts.studyDispatcher, CXProject.scripts.study],
 					CXProject.scripts.work,
 					CXProject.scripts.autoRead,
+					CXProject.scripts.jfk,
 					ZHSProject.scripts['study-center'],
 					ZHSProject.scripts['work-center'],
 					ICourseProject.scripts['study-center'],
