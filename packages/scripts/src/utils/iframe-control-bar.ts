@@ -2,6 +2,35 @@ import { $elements, $ui, $message, MessageElement, CommonEventEmitter, cors, h }
 import { WorkerEvents } from '@ocsjs/core';
 import { logoSvg } from './ui';
 
+/** 答题运行期间允许在面板隐藏时暂停或继续。 */
+export function bindPauseShortcut(toggle: () => void) {
+	const listener = (event: KeyboardEvent) => {
+		if (
+			event.code !== 'KeyP' ||
+			!event.altKey ||
+			!event.shiftKey ||
+			event.ctrlKey ||
+			event.metaKey ||
+			event.repeat ||
+			event.isComposing ||
+			event.defaultPrevented
+		) {
+			return;
+		}
+		if (
+			event.composedPath().some(
+				(el) => el instanceof HTMLElement && (el.isContentEditable || el.matches('input, textarea, select'))
+			)
+		) {
+			return;
+		}
+		event.preventDefault();
+		toggle();
+	};
+	window.addEventListener('keydown', listener);
+	return () => window.removeEventListener('keydown', listener);
+}
+
 /**
  * 子 iframe 操控指令事件名（顶层操控条按钮 → 子帧执行）。
  * 注意 cors 为单消费者语义（队列 list.pop()）：仅当前答题子帧注册监听，
@@ -17,6 +46,7 @@ export type IframeControlAction = 'stop' | 'continuate' | 'reload';
  */
 let controlBar: HTMLElement | undefined;
 let pauseBtn: HTMLInputElement | undefined;
+let unbindPauseShortcut: (() => void) | undefined;
 let reloadBtn: HTMLInputElement | undefined;
 
 /** 构建操控条（在顶层窗口执行，$elements.root 内共享脚本样式表，可直接使用 base-style-button 等样式） */
@@ -43,7 +73,7 @@ function buildControlBar(): HTMLElement {
 		h('div', { className: 'tip-content' }, [
 			h('div', { style: { fontWeight: 'bold', marginBottom: '4px' } }, 'OCS 答题操作面板'),
 			h('div', '当前页面由 OCS 网课助手自动答题中，可进行以下操作：'),
-			h('div', '⏸暂停/▶️继续：暂停或恢复自动答题'),
+			h('div', '⏸暂停/▶️继续（Alt+Shift+P）：暂停或恢复自动答题'),
 			h('div', '🔃重新答题：刷新页面，重新开始自动答题')
 		])
 	]);
@@ -107,10 +137,18 @@ export const IframeControlBar = {
 			pauseBtn.dataset.paused = String(barState.paused);
 			pauseBtn.value = barState.paused ? '▶️继续' : '⏸️暂停';
 			pauseBtn.disabled = barState.done;
+			if (barState.done) {
+				unbindPauseShortcut?.();
+				unbindPauseShortcut = undefined;
+			} else {
+				unbindPauseShortcut ??= bindPauseShortcut(() => pauseBtn?.click());
+			}
 		}
 	}),
 	/** 移除操控条（worker 关闭时调用） */
 	remove: cors.defineTopFunction(() => {
+		unbindPauseShortcut?.();
+		unbindPauseShortcut = undefined;
 		controlBar?.remove();
 		controlBar = undefined;
 		pauseBtn = undefined;

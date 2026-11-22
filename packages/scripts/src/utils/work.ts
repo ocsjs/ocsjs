@@ -12,7 +12,7 @@ import { $ui, $message, MessageElement, Script, h, CommonEventEmitter, cors, $el
 import { CommonEvents, CommonProject } from '../projects/common';
 import { $console, BackgroundProject } from '../projects/background';
 import { CommonWorkOptions } from '.';
-import { createIframeControlSession } from './iframe-control-bar';
+import { bindPauseShortcut, createIframeControlSession, IFRAME_CONTROL_EVENT } from './iframe-control-bar';
 import {
 	buildAnswererEnv,
 	createAnswererWrappersSignature,
@@ -274,16 +274,26 @@ export function commonWork(options: {
 		iframeControl?.activate();
 
 		if (state.worker) {
+			controlBtn.title = '暂停或继续答题（Alt+Shift+P）';
+			const unbindPauseShortcut = bindPauseShortcut(() => {
+				if (iframeControl) {
+					cors.emit(IFRAME_CONTROL_EVENT, [state.paused ? 'continuate' : 'stop']);
+				} else {
+					controlBtn.click();
+				}
+			});
 			const emitState = CommonEvents.emitWorkerStateChange;
 			emitState('start');
 			state.worker.on('stop', () => emitState('stop'));
 			// 恢复答题视为重新开始工作（isWorkerWorking=true，气泡重新显示）
 			state.worker.on('continuate', () => emitState('start'));
 			state.worker.once('close', () => {
+				unbindPauseShortcut();
 				emitState('close');
 				iframeControl?.dispose();
 			});
 			state.worker.once('done', () => {
+				unbindPauseShortcut();
 				state.running = false;
 				state.controlPanel = null;
 				state.paused = false;
