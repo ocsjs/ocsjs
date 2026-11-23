@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.1](https://github.com/ocsjs/ocsjs/compare/5.6.0...5.6.1) (2026-11-23)
+
+
+### 🐛 问题修复
+
+* 移除zhs.ts的lodash整体引入问题 ([679cf8f](https://github.com/ocsjs/ocsjs/commit/679cf8f3515ef5dbc59a4260e5dda5924a620a48))
+
 ## [5.6.0](https://github.com/ocsjs/ocsjs/compare/5.5.0...5.6.0) (2026-11-23)
 
 
