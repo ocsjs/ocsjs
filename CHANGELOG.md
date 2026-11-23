@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.0](https://github.com/ocsjs/ocsjs/compare/5.5.0...5.6.0) (2026-11-23)
+
+
+### ✨ 新功能
+
+* pre-push 预检测增加锁文件一致性校验与拦截失败原生弹窗通知 ([80ea364](https://github.com/ocsjs/ocsjs/commit/80ea364df73a559c9ad4d49f5b1ae97c566ab71e))
+
 ## [5.5.0](https://github.com/ocsjs/ocsjs/compare/5.4.2...5.5.0) (2026-11-23)
 
 
