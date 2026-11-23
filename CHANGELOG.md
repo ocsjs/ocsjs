@@ -1,5 +1,40 @@
 # Changelog
 
+## [5.5.0](https://github.com/ocsjs/ocsjs/compare/5.4.2...5.5.0) (2026-11-23)
+
+
+### ✨ 新功能
+
+* 增加超星任务加载等待时长设置 ([446cd74](https://github.com/ocsjs/ocsjs/commit/446cd744360a8b8ccb09726c48b8ab1c6c7e006a))
+* 增加超星积分课自动连续学习功能、并且增加弹窗拦截解决引导功能 ([0c4eaf2](https://github.com/ocsjs/ocsjs/commit/0c4eaf208bf4db3eea09f902eb4da25f95c10cca))
+* 新增软件配置同步分支功能，用户可自行修改配置出现同步冲突才会显示合并提示，并移除配置锁定样式。 ([01b7c6a](https://github.com/ocsjs/ocsjs/commit/01b7c6a8439bcd7c537a9460c58acc8fe5fd9bda))
+
+
+### 🐛 问题修复
+
+* 修复共享课学习记录和检测规律学习按钮丢失问题 ([84342dc](https://github.com/ocsjs/ocsjs/commit/84342dcf3f1dee1c643c5ccbfc1a72f6562ef56a))
+* 修复搜索结果面板中大写扩展名（如 .PNG）图片链接无法解析显示的问题 ([0f8c300](https://github.com/ocsjs/ocsjs/commit/0f8c300698dc0f774f68e34f6f389853b44ade65))
+* 修复日志系统重复渲染的问题 ([d25c02d](https://github.com/ocsjs/ocsjs/commit/d25c02dec4e83e8744d9227d34ea1e2ae12eb3a4))
+* 修复点击全局设置按钮后无法最大化展示的问题 ([bb428f7](https://github.com/ocsjs/ocsjs/commit/bb428f7e9c502d6f8730a57d294a05869aadeae3))
+* 修复纯字符选项无法匹配的问题 ([4c4e44f](https://github.com/ocsjs/ocsjs/commit/4c4e44f05c4dbb2b0ced05850fd75ca811a2744b))
+* 修复自动界面缩放后点击特效偏离问题，优化智慧树自动缩放功能 ([99b758b](https://github.com/ocsjs/ocsjs/commit/99b758b91069fcc2173df1b71e05e7800305979f))
+* 修复题库返回答案以空格分隔时填空题与多选题无法作答的问题 ([0620747](https://github.com/ocsjs/ocsjs/commit/0620747af867f73fb1681dc66b7110a2868c2fb1))
+
+
+### ⚡ 优化改进
+
+* 优化提交率和模式切换文案提示 ([1462974](https://github.com/ocsjs/ocsjs/commit/14629742aba389ba52a531b9a286790fca1e4a96))
+* 优化日志显示系统 ([8661260](https://github.com/ocsjs/ocsjs/commit/8661260ceeda6f4b5a163fde2b0adeb7a1dd9a54))
+* 优化智慧树-智慧课程-弹窗关闭问题、 以及倍速和清晰度切换卡顿问题 ([f7c4e52](https://github.com/ocsjs/ocsjs/commit/f7c4e5262807afbafaaebe72925b366201baa378))
+* 优化智慧职教视频检测、优化日志API ([a2625cb](https://github.com/ocsjs/ocsjs/commit/a2625cb75951afc25c07b5e90101882155ca50c5))
+* 优化裸字母+换行的题目选项冗余字符串 ([df02360](https://github.com/ocsjs/ocsjs/commit/df023603eadb9c943d88afe5b672559deee6adc9))
+* 将题库缓存重新移动到TAB API域下，防止刷新界面后缓存消失 ([980a1d6](https://github.com/ocsjs/ocsjs/commit/980a1d66f0ed687657a1e561570b06655b45b3f0))
+* 缩小搜索结果高度显示 ([0210ed6](https://github.com/ocsjs/ocsjs/commit/0210ed6548ad25c75bdd8711f9af569b86fd6ce6))
+* 菜单注册时显示当前主要运行脚本名 ([7bc254e](https://github.com/ocsjs/ocsjs/commit/7bc254ee51267d6844827c30bbef12aceba28aee))
+* 适配职教云-资源库-知识点讲解视频类型任务点 ([2672d65](https://github.com/ocsjs/ocsjs/commit/2672d650090d6141fc93404f8e70706c360b81e2))
+* 适配雨课堂考试中的多选题和判断题 ([3473b2b](https://github.com/ocsjs/ocsjs/commit/3473b2bf561e6596f7ed5dd87d852762882f845c))
+* 重构优化智慧树共享课的逻辑代码 ([c1ddb9f](https://github.com/ocsjs/ocsjs/commit/c1ddb9fa6ed334dfb13da7a079de38d33597ac2a))
+
 ## [5.4.2](https://github.com/ocsjs/ocsjs/compare/5.4.1...5.4.2) (2026-11-13)
 
 
