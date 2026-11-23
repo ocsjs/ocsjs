@@ -7,6 +7,7 @@
  * pnpm test -- --filter 消歧
  * pnpm test -- --filter 判断
  * pnpm test -- --filter 填空
+ * pnpm test -- --filter 空格
  *
  * 用例维护：编辑 tests/cases.json 即可，无需改本文件
  */
@@ -16,7 +17,7 @@ import { resolveMultiple, disambiguateSimilarOptions } from '../packages/core/sr
 import { resolveJudgement } from '../packages/core/src/core/worker/resolvers/judgement';
 import { resolveCompletion } from '../packages/core/src/core/worker/resolvers/completion';
 import { answerSimilar, removeRedundant } from '../packages/core/src/core/utils/string';
-import { splitAnswer } from '../packages/core/src/core/worker/utils';
+import { splitAnswer, splitAnswerBySpaceSafely } from '../packages/core/src/core/worker/utils';
 import _cases from './cases.json';
 const cases = _cases as Cases;
 
@@ -36,12 +37,19 @@ interface CompletionCase {
 	expect: string[];
 }
 
+/** 空格兜底分割用例（expect 为空数组表示函数应返回 undefined） */
+interface SpaceFallbackCase {
+	a: string;
+	expect: string[];
+}
+
 interface Cases {
 	single: OptionCase[];
 	multiple: OptionCase[];
 	disambiguation: OptionCase[];
 	judgement: OptionCase[];
 	completion: CompletionCase[];
+	spaceFallback: SpaceFallbackCase[];
 }
 
 // ========== 工具 ==========
@@ -178,6 +186,18 @@ if (section('填空题')) {
 		);
 		const actual = r.finish ? r.answers ?? [] : [];
 		okStrArr(actual, c.expect, fmtBlankCtx(c));
+	}
+}
+
+// ========== 空格兜底分割 ==========
+//
+// splitAnswerBySpaceSafely 直接单测：
+// 仅当分段语言一致（全中文/全英文，不混杂）且字数差别不大时才返回分割结果，否则返回 undefined（用 expect: [] 表示）
+
+if (section('空格兜底')) {
+	for (const c of cases.spaceFallback) {
+		const actual = splitAnswerBySpaceSafely(c.a) ?? [];
+		okStrArr(actual, c.expect, `答案=${JSON.stringify(c.a)}`);
 	}
 }
 

@@ -1399,6 +1399,54 @@
 				3,
 				4
 			]
+		},
+		{
+			"a": "苹果 香蕉 橙子",
+			"opts": [
+				"苹果味",
+				"香蕉味",
+				"橙子味",
+				"西瓜味"
+			],
+			"expect": [
+				1,
+				2,
+				3
+			]
+		},
+		{
+			"a": "dog cat bird",
+			"opts": [
+				"dogs",
+				"cats",
+				"birds",
+				"fish"
+			],
+			"expect": [
+				1,
+				2,
+				3
+			]
+		},
+		{
+			"a": "苹果 banana 橙子",
+			"opts": [
+				"苹果味",
+				"香蕉味",
+				"橙子味",
+				"其他"
+			],
+			"expect": []
+		},
+		{
+			"a": "red green blue chartreuse",
+			"opts": [
+				"reds",
+				"greens",
+				"blues",
+				"yellows"
+			],
+			"expect": []
 		}
 	],
 	"disambiguation": [
@@ -2002,6 +2050,153 @@
 			"expect": [
 				"int a = 1; int b = 2; printf(\"%d\", a + b);"
 			]
+		},
+		{
+			"a": "北京 上海 广州",
+			"blanks": 3,
+			"expect": [
+				"北京",
+				"上海",
+				"广州"
+			]
+		},
+		{
+			"a": "apple banana orange",
+			"blanks": 3,
+			"expect": [
+				"apple",
+				"banana",
+				"orange"
+			]
+		},
+		{
+			"a": "北京  上海   广州",
+			"blanks": 3,
+			"expect": [
+				"北京",
+				"上海",
+				"广州"
+			]
+		},
+		{
+			"a": "北京 shanghai 广州",
+			"blanks": 3,
+			"expect": []
+		},
+		{
+			"a": "深度学习deep 机器学习",
+			"blanks": 2,
+			"expect": []
+		},
+		{
+			"a": "短 这是一个非常非常长的答案",
+			"blanks": 2,
+			"expect": []
+		},
+		{
+			"a": "答案1 答案2 答案3",
+			"blanks": 2,
+			"expect": []
+		},
+		{
+			"a": "the quick brown fox jumps over the lazy dog",
+			"blanks": 1,
+			"expect": [
+				"the quick brown fox jumps over the lazy dog"
+			]
+		},
+		{
+			"a": "水的化学式是 H2O 由氢氧两种元素组成",
+			"blanks": 1,
+			"expect": [
+				"水的化学式是 H2O 由氢氧两种元素组成"
+			]
+		},
+		{
+			"a": "machine learning is fun",
+			"blanks": 2,
+			"expect": []
+		},
+		{
+			"a": "in god we trust",
+			"blanks": 2,
+			"expect": []
+		},
+		{
+			"a": "中国特色社会主义 是 全体人民共同奋斗的事业",
+			"blanks": 3,
+			"expect": []
+		},
+		{
+			"a": "我爱 machine learning",
+			"blanks": 2,
+			"expect": []
+		}
+	],
+	"spaceFallback": [
+		{
+			"a": "答案1 答案2 答案3",
+			"expect": [
+				"答案1",
+				"答案2",
+				"答案3"
+			]
+		},
+		{
+			"a": "apple banana orange",
+			"expect": [
+				"apple",
+				"banana",
+				"orange"
+			]
+		},
+		{
+			"a": "北京  上海   广州",
+			"expect": [
+				"北京",
+				"上海",
+				"广州"
+			]
+		},
+		{
+			"a": "答案1 answer2 答案3",
+			"expect": []
+		},
+		{
+			"a": "机器学习 深度学习 hello world",
+			"expect": []
+		},
+		{
+			"a": "深度学习deep 机器学习",
+			"expect": []
+		},
+		{
+			"a": "短 这是一个非常非常长的答案",
+			"expect": []
+		},
+		{
+			"a": "this is a long english sentence",
+			"expect": []
+		},
+		{
+			"a": "唯一答案",
+			"expect": []
+		},
+		{
+			"a": "machine learning is fun",
+			"expect": []
+		},
+		{
+			"a": "a journey of a thousand miles",
+			"expect": []
+		},
+		{
+			"a": "中国特色社会主义 是 全体人民共同奋斗的事业",
+			"expect": []
+		},
+		{
+			"a": "我爱 machine learning",
+			"expect": []
 		}
 	]
 }
