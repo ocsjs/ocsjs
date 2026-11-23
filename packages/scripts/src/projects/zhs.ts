@@ -32,7 +32,6 @@ import { $console, BackgroundProject } from './background';
 import { waitForMedia, waitForElement, waitFor } from '../utils/study';
 import { $playwright } from '../utils/app';
 import { $render } from '../utils/render';
-import { isNumber } from 'lodash';
 
 const state = {
 	study: {
@@ -1039,7 +1038,7 @@ export const ZHSProject = Project.create({
 
 					const is_finish = !!current_handle?.querySelector('.time_icofinish');
 
-					if (is_finish || (isNumber(percent) && percent >= 100)) {
+					if (is_finish || (Number.isFinite(percent) && percent >= 100)) {
 						const { next } = await new Promise<{ next: boolean }>((resolve) => {
 							const timeout = setTimeout(() => {
 								modal?.remove();
@@ -1070,7 +1069,7 @@ export const ZHSProject = Project.create({
 							volume: this.cfg.volume,
 							playbackRate: this.cfg.playbackRate,
 							definition: this.cfg.definition,
-							targetVideoTime: isNumber(percent) ? media.duration * ((percent - 1) / 100) : undefined
+							targetVideoTime: Number.isFinite(percent) ? media.duration * ((percent - 1) / 100) : undefined
 						},
 						{
 							onreplay() {
