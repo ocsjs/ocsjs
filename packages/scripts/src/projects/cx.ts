@@ -691,7 +691,7 @@ export const CXProject = Project.create({
 									ue.body.addEventListener('click', async () => {
 										// http 下无法读取剪贴板，通过弹窗让用户输入然后同步到编辑器
 										if (CXProject.scripts.study.cfg.showTextareaWhenEdit) {
-											const defaultText = h('span', { innerHTML: ue.textarea.value }).textContent;
+											const defaultText = ue.body.innerText;
 											$modal.prompt({
 												content:
 													'请在此文本框进行编辑，防止超星无法复制粘贴。(如需关闭请前往设置: 课程学习-编辑时显示自定义编辑框)',
@@ -699,12 +699,9 @@ export const CXProject = Project.create({
 												inputDefaultValue: defaultText || '',
 												modalInputType: 'textarea',
 												onConfirm: (val = '') => {
-													ue.setContent(
-														val
-															.split('\n')
-															.map((line) => `<p>${line}</p>`)
-															.join('')
-													);
+													const paragraph = document.createElement('p');
+													paragraph.innerText = val;
+													ue.setContent(paragraph.outerHTML);
 												}
 											});
 										}
