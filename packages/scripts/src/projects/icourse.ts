@@ -191,7 +191,7 @@ export const ICourseProject = Project.create({
 							const currentUnitItem = document.querySelector('.j-unitslist  li.current');
 							const unitName = currentUnitItem?.querySelector('.unit-name')?.textContent;
 
-							$msgwc.info( `正在学习：${lessonName || ''} - ${unitName || ''}`);
+							$msgwc.info(`正在学习：${lessonName || ''} - ${unitName || ''}`);
 
 							const isJob = (iconName: string) => currentUnitItem?.querySelector(`[class*=${iconName}]`);
 
@@ -224,9 +224,7 @@ export const ICourseProject = Project.create({
 
 										$msgwc.info('测验完成');
 									} else {
-										$msgwc.warn(
-											'随堂测验自动答题功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启），即将跳过。'
-										);
+										$msgwc.warn('随堂测验自动答题功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启），即将跳过。');
 									}
 								} else {
 									$msgwc.info('随堂测验已完成，即将跳过。');
@@ -422,7 +420,7 @@ export const ICourseProject = Project.create({
 								const hasJobs = jobs.every((job) => job);
 								const [isVideoJob, isPdfJob, isDiscussionJob, isQuizJob] = jobs;
 								if (hasJobs) {
-									$msgwc.info( `正在学习：${lessonName || ''} - ${unitName || ''}`);
+									$msgwc.info(`正在学习：${lessonName || ''} - ${unitName || ''}`);
 								}
 								if (isVideoJob) {
 									await waitForElement('video, audio');
@@ -476,9 +474,7 @@ export const ICourseProject = Project.create({
 
 										$msgwc.info('测验完成');
 									} else {
-										$msgwc.warn(
-											'随堂测验自动答题功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启），即将跳过。'
-										);
+										$msgwc.warn('随堂测验自动答题功能已关闭（上方菜单栏-中国大学MOOC-学习脚本中开启），即将跳过。');
 									}
 
 									return $message.info('答题完成，准备跳转下一章');
@@ -821,7 +817,7 @@ function workAndExam(
 				return;
 			}
 			if (type === 'chapter-test') {
-				$msgwc.info( `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
+				$msgwc.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
 				await $.sleep(stopSecondWhenFinish * 1000);
 				if (worker.isClose) {
 					return;
@@ -957,7 +953,7 @@ function chapter_v2(
 			if (worker.isClose) {
 				return;
 			}
-			$msgwc.info( `答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
+			$msgwc.info(`答题完成，将等待 ${stopSecondWhenFinish} 秒后进行保存或提交。`);
 			await $.sleep(stopSecondWhenFinish * 1000);
 			if (worker.isClose) {
 				return;

@@ -111,7 +111,7 @@ class StudyVideoH5 implements ZHSProcessor {
 	}
 
 	getNext(opts: { restudy: boolean }) {
-		let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
+		const videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
 		const current_index = videoItems.findIndex((item) => item.classList.contains('current_play'));
 		return videoItems.find((item, index) => {
 			const is_finish = !!item.querySelector('.time_icofinish');
@@ -124,7 +124,7 @@ class StudyVideoH5 implements ZHSProcessor {
 	}
 
 	getCurrentHandel() {
-		let videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
+		const videoItems = Array.from(document.querySelectorAll<HTMLElement>('.clearfix.video'));
 		return videoItems.find((item) => item.classList.contains('current_play'));
 	}
 
@@ -249,7 +249,7 @@ class StudyVideoH5 implements ZHSProcessor {
 					}
 				}
 			})
-			.catch((err) => {})
+			.catch(() => {})
 			.finally(() => {
 				this.dialogHandling = false;
 			});
@@ -1040,22 +1040,22 @@ export const ZHSProject = Project.create({
 					const is_finish = !!current_handle?.querySelector('.time_icofinish');
 
 					if (is_finish || (isNumber(percent) && percent >= 100)) {
-						const { next } = await new Promise<{ next: boolean }>((finish_resolve) => {
+						const { next } = await new Promise<{ next: boolean }>((resolve) => {
 							const timeout = setTimeout(() => {
 								modal?.remove();
-								finish_resolve({ next: true });
+								resolve({ next: true });
 							}, 5 * 1000);
 							const modal = $modal.confirm({
 								content: '当前视频已播放完毕，重新播放还是智能跳转下一节？',
 								cancelButtonText: '重新播放',
 								confirmButtonText: '自动跳转（5s）',
-								onClose: () => finish_resolve({ next: true }),
-								onConfirm: () => finish_resolve({ next: true }),
+								onClose: () => resolve({ next: true }),
+								onConfirm: () => resolve({ next: true }),
 								onCancel() {
 									clearTimeout(timeout);
 									// 如果已经播放完了，则重置视频进度
 									media.currentTime = 1;
-									finish_resolve({ next: false });
+									resolve({ next: false });
 								}
 							});
 						});
@@ -2542,73 +2542,76 @@ function watch(
 		onreplay?: () => void;
 	}
 ) {
-	return new Promise<void>(async (resolve) => {
-		$message.info('开始播放');
+	return new Promise<void>((resolve) => {
+		// eslint 禁止 async 的 Promise executor，这里改为立即执行的异步函数
+		(async () => {
+			$message.info('开始播放');
 
-		let media: HTMLMediaElement;
+			let media: HTMLMediaElement;
 
-		try {
-			// 部分用户视频加载很慢，这里等待一下 30 秒超时
-			media = await waitForMedia({ timeout: 10 * 1000 });
-			// =========== 设置清晰度 ===========
-			await $.sleep(1000);
-			fixProcessBar();
-			await processor.switchLine(options.definition || 'line1bq');
-			// =========== 设置播放速度 ===========
-			await $.sleep(1000);
-			fixProcessBar();
-			await processor.switchPlaybackRate(options.playbackRate);
-			// =========== 重新获取视频 ===========
-			await $.sleep(1000);
-			media = await waitForMedia({ timeout: 30 * 1000 });
-			await $.sleep(1000);
-			state.study.currentMedia = media;
-			media.volume = options.volume;
-
-			// 同步视频进度
-			media.currentTime = options.targetVideoTime || 0;
-		} catch (e) {
-			$msgwc.error('视频加载失败，即将跳过：' + String(e));
-			resolve();
-			return;
-		}
-
-		if (!media) {
-			$msgwc.error('视频加载失败，即将跳过');
-			resolve();
-			return;
-		}
-
-		const videoCheckInterval = setInterval(async () => {
-			// 如果视频元素无法访问，证明已经切换了视频
-			if (media?.isConnected === false) {
-				clearInterval(videoCheckInterval);
-				$message.info({ content: '检测到视频切换中...' });
-				/**
-				 * 元素无法访问证明用户切换视频了
-				 * 所以不往下播放视频，而是重新播放用户当前选中的视频
-				 */
-				actions.onreplay?.();
-			}
-		}, 3000);
-
-		playMedia(() => media?.play()).then(() => {
-			actions.onplay?.();
-		});
-
-		media.onpause = async () => {
-			if (!media?.ended && state.study.stop === false) {
-				await waitForCaptcha();
+			try {
+				// 部分用户视频加载很慢，这里等待一下 30 秒超时
+				media = await waitForMedia({ timeout: 10 * 1000 });
+				// =========== 设置清晰度 ===========
 				await $.sleep(1000);
-				media?.play();
-			}
-		};
+				fixProcessBar();
+				await processor.switchLine(options.definition || 'line1bq');
+				// =========== 设置播放速度 ===========
+				await $.sleep(1000);
+				fixProcessBar();
+				await processor.switchPlaybackRate(options.playbackRate);
+				// =========== 重新获取视频 ===========
+				await $.sleep(1000);
+				media = await waitForMedia({ timeout: 30 * 1000 });
+				await $.sleep(1000);
+				state.study.currentMedia = media;
+				media.volume = options.volume;
 
-		media.onended = () => {
-			clearInterval(videoCheckInterval);
-			// 正常切换下一个视频
-			resolve();
-		};
+				// 同步视频进度
+				media.currentTime = options.targetVideoTime || 0;
+			} catch (e) {
+				$msgwc.error('视频加载失败，即将跳过：' + String(e));
+				resolve();
+				return;
+			}
+
+			if (!media) {
+				$msgwc.error('视频加载失败，即将跳过');
+				resolve();
+				return;
+			}
+
+			const videoCheckInterval = setInterval(async () => {
+				// 如果视频元素无法访问，证明已经切换了视频
+				if (media?.isConnected === false) {
+					clearInterval(videoCheckInterval);
+					$message.info({ content: '检测到视频切换中...' });
+					/**
+					 * 元素无法访问证明用户切换视频了
+					 * 所以不往下播放视频，而是重新播放用户当前选中的视频
+					 */
+					actions.onreplay?.();
+				}
+			}, 3000);
+
+			playMedia(() => media?.play()).then(() => {
+				actions.onplay?.();
+			});
+
+			media.onpause = async () => {
+				if (!media?.ended && state.study.stop === false) {
+					await waitForCaptcha();
+					await $.sleep(1000);
+					media?.play();
+				}
+			};
+
+			media.onended = () => {
+				clearInterval(videoCheckInterval);
+				// 正常切换下一个视频
+				resolve();
+			};
+		})();
 	});
 }
 

@@ -542,7 +542,7 @@ export function showPopupBlockedGuide(options: PopupBlockedGuideOptions): Promis
 	const promise = new Promise<PopupBlockedGuideResult>((resolve) => {
 		currentGuide = { options, resolve, promise: undefined as any };
 
-			/** 从 openArgs[0] 解析站点名，解析失败时退化为当前站点 */
+		/** 从 openArgs[0] 解析站点名，解析失败时退化为当前站点 */
 		const resolveSiteName = () => {
 			try {
 				return new URL(String(options.openArgs[0]), location.href).hostname || location.hostname;

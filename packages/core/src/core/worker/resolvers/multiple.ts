@@ -102,13 +102,8 @@ export function resolveMultiple(
 				}
 			}
 			// 归一化匹配结果也需要消歧
-			const normalizedDisambiguated = disambiguateSimilarOptions(
-				normalizedGroup.options,
-				normalizedGroup.ratings
-			);
-			const normalizedKeptIndices = normalizedDisambiguated.map((opt) =>
-				normalizedGroup.options.indexOf(opt)
-			);
+			const normalizedDisambiguated = disambiguateSimilarOptions(normalizedGroup.options, normalizedGroup.ratings);
+			const normalizedKeptIndices = normalizedDisambiguated.map((opt) => normalizedGroup.options.indexOf(opt));
 			normalizedGroup.options = normalizedDisambiguated;
 			normalizedGroup.answers = normalizedKeptIndices.map((idx) => normalizedGroup.answers[idx]);
 			normalizedGroup.ratings = normalizedKeptIndices.map((idx) => normalizedGroup.ratings[idx]);
