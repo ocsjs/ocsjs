@@ -1035,7 +1035,7 @@ export const ZHSProject = Project.create({
 
 					const current_handle = processor.getCurrentHandel();
 					// 获取当前视频进度
-					const percent = parseInt(current_handle?.querySelector('.progress-num')?.textContent.split('%')[0] || '');
+					const percent = parseInt(current_handle?.querySelector('.progress-num')?.textContent?.split('%')[0] || '');
 
 					const is_finish = !!current_handle?.querySelector('.time_icofinish');
 

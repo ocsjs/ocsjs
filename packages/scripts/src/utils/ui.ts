@@ -1,5 +1,5 @@
 /* eslint-disable max-len */
-import { h, $ui, $gm } from 'easy-us';
+import { h, $ui, $gm, $modal, $message } from 'easy-us';
 import { request, $ } from '@ocsjs/core';
 import type { AnswererWrapper } from '@ocsjs/core';
 
@@ -452,4 +452,234 @@ export function createHero(opts: HeroOptions): HTMLElement {
 		h('div', { className: 'aw-connect-hero-subtitle' }, opts.subtitle),
 		...(opts.extra ? [h('div', { className: 'aw-connect-hero-extra' }, [opts.extra])] : [])
 	]);
+}
+
+/* -------------------------------------------------------------------------- */
+/*                            弹窗被拦截引导组件                               */
+/* -------------------------------------------------------------------------- */
+
+/** 弹窗引导组件输入参数 */
+export interface PopupBlockedGuideOptions {
+	/**
+	 * 被拦截的 window.open 原始参数，用户点击 “重新打开” 时原样传递重试。
+	 * 组件显示期间再次调用 showPopupBlockedGuide 会用新参数替换旧参数。
+	 */
+	openArgs: any[];
+	/**
+	 * 实际执行打开的函数，默认使用当前页面 window.open。
+	 * 劫持了 unsafeWindow.open 的场景（如超星积分课）需注入 unsafeWindow 上的原始 open。
+	 */
+	opener?: (...args: any[]) => Window | null;
+	/** 引导文案中提示 “始终允许 xx 显示弹出式窗口” 的站点名，默认取 openArgs[0] 的 hostname，取不到则为 location.hostname */
+	siteName?: string;
+	/** 允许弹窗的操作演示图（GIF）地址；传 null 则不显示图片 */
+	guideImage?: string | null;
+	/** 弹窗标题 */
+	title?: string;
+	/** 确认（重试）按钮文案 */
+	confirmText?: string;
+	/** 取消按钮文案 */
+	cancelText?: string;
+}
+
+/** 引导弹窗关闭时返回的用户操作结果 */
+export interface PopupBlockedGuideResult {
+	/**
+	 * retry-success：用户点击 “重新打开” 且窗口成功打开（win 为新窗口对象）
+	 * cancel：用户点击取消（或弹窗以其他方式关闭），win 为 null
+	 * 注意：重试仍被拦截时弹窗保持打开并提示错误，不产生结果，等待用户再次操作
+	 */
+	action: 'retry-success' | 'cancel';
+	/** 重试成功时的窗口对象 */
+	win: Window | null;
+}
+
+/**
+ * 判断 window.open 的返回值是否被浏览器拦截：
+ * 返回 null（Chrome 等），或返回一个已被立即关闭的窗口（部分浏览器、站点传 noopener 时）
+ */
+export function isPopupBlocked(win: Window | null): boolean {
+	return win === null || win.closed;
+}
+
+/**
+ * 重试打开窗口（必须在真实用户手势事件中调用，浏览器处于用户激活状态才能绕过拦截）。
+ * 仍被拦截时弹出错误提示并返回 null，由调用方决定后续处理。
+ */
+export function retryOpenWindow(options: Pick<PopupBlockedGuideOptions, 'openArgs' | 'opener'>): Window | null {
+	const opener = options.opener ?? ((...args: any[]) => window.open(...args));
+	const win = opener(...options.openArgs);
+	if (isPopupBlocked(win)) {
+		$message.error({ content: '弹窗仍被拦截，请在浏览器地址栏允许本站弹窗后重试。' });
+		return null;
+	}
+	return win;
+}
+
+/** 当前正在显示的引导弹窗（同一时间只显示一个，重复调用时更新重试参数并复用同一个 Promise） */
+let currentGuide:
+	| {
+			options: PopupBlockedGuideOptions;
+			resolve: (result: PopupBlockedGuideResult) => void;
+			promise: Promise<PopupBlockedGuideResult>;
+	  }
+	| undefined;
+
+/**
+ * 显示 “弹窗被浏览器拦截” 引导弹窗，返回用户操作结果的 Promise：
+ * - 引导用户前往地址栏允许本站弹窗（配 GIF 操作演示），或点击 “重新打开” 手动重试
+ * - 重试成功：弹窗关闭，Promise  resolve { action: 'retry-success', win }
+ * - 重试仍被拦截：弹窗保持打开并提示错误，等待用户允许弹窗后再次点击
+ * - 用户取消：Promise resolve { action: 'cancel', win: null }
+ * - 弹窗显示期间重复调用：不重复弹窗，仅更新重试参数，并返回同一个 Promise
+ */
+export function showPopupBlockedGuide(options: PopupBlockedGuideOptions): Promise<PopupBlockedGuideResult> {
+	if (currentGuide) {
+		currentGuide.options = options;
+		return currentGuide.promise;
+	}
+
+	const promise = new Promise<PopupBlockedGuideResult>((resolve) => {
+		currentGuide = { options, resolve, promise: undefined as any };
+
+			/** 从 openArgs[0] 解析站点名，解析失败时退化为当前站点 */
+		const resolveSiteName = () => {
+			try {
+				return new URL(String(options.openArgs[0]), location.href).hostname || location.hostname;
+			} catch {
+				return location.hostname;
+			}
+		};
+
+		const {
+			siteName = resolveSiteName(),
+			guideImage = 'https://cdn.ocsjs.com/public/images/cx_jfk_dialog_enable_guide.gif',
+			title = '⚠️ 弹窗被拦截',
+			confirmText = '重新打开',
+			cancelText = '取消'
+		} = options;
+
+		/** 是否已通过 onConfirm/onCancel 产生结果（onClose 兜底用） */
+		let settled = false;
+		const settle = (result: PopupBlockedGuideResult) => {
+			settled = true;
+			resolve(result);
+		};
+
+		$modal.confirm({
+			title,
+			width: 560,
+			maskCloseable: false,
+			content: h('div', [
+				$ui.notes([
+					'浏览器拦截了新窗口，脚本无法自动打开页面。',
+					[
+						'请点击地址栏右侧的 “弹出式窗口已拦截” 图标，',
+						`选择 “始终允许 ${siteName} 显示弹出式窗口和重定向” ，之后刷新页面即可全自动运行。`
+					],
+					`或者点击下方 “${confirmText}” 按钮，手动打开本次窗口（用户真实点击不受拦截限制）。`
+				]),
+				...(guideImage
+					? [
+							h('img', {
+								src: guideImage,
+								title: '允许弹窗操作演示',
+								style: {
+									width: '100%',
+									marginTop: '8px',
+									border: '1px solid #e4e7ed',
+									borderRadius: '4px'
+								}
+							})
+					  ]
+					: [])
+			]),
+			confirmButtonText: confirmText,
+			cancelButtonText: cancelText,
+			onConfirm: () => {
+				const win = retryOpenWindow(currentGuide!.options);
+				if (win) {
+					settle({ action: 'retry-success', win });
+					// 返回 true 关闭弹窗
+					return true;
+				}
+				// 重试仍被拦截：不关闭弹窗，等待用户允许弹窗后重试
+				return false;
+			},
+			onCancel: () => {
+				settle({ action: 'cancel', win: null });
+			},
+			onClose: () => {
+				currentGuide = undefined;
+				// 兜底：弹窗以其他方式关闭时按取消处理
+				if (!settled) {
+					settle({ action: 'cancel', win: null });
+				}
+			}
+		});
+	});
+
+	currentGuide!.promise = promise;
+	return promise;
+}
+
+/** 主动探测弹窗权限的输入参数 */
+export interface PopupPermissionProbeOptions {
+	/**
+	 * 实际执行打开的函数，默认使用当前页面 window.open。
+	 * 需要探测 unsafeWindow.open（站点 hook 场景）时由调用方注入。
+	 */
+	opener?: (...args: any[]) => Window | null;
+	/** 探测前等待的毫秒数（如等待页面加载完成后再探测），默认 0 立即探测 */
+	delay?: number;
+	/** 探测被拦截时透传给 showPopupBlockedGuide 的引导弹窗配置（openArgs/opener 由探测函数接管） */
+	guide?: Partial<Omit<PopupBlockedGuideOptions, 'openArgs' | 'opener'>>;
+	/** 用户在引导弹窗中点击取消时的回调 */
+	onCancel?: () => void;
+}
+
+/**
+ * 主动探测浏览器是否允许脚本打开弹窗：
+ * 1. （可选延迟后）以 about:blank 小窗口试开弹窗
+ * 2. 未被拦截：立即关闭探测窗口，resolve true
+ * 3. 被拦截：自动弹出 showPopupBlockedGuide 引导弹窗，
+ *    用户点击 “重新打开” 重试成功后关闭探测窗口并 resolve true；用户取消则 resolve false
+ *
+ * 注意：若当前已有引导弹窗显示，将复用该弹窗（重试参数会被探测参数替换），
+ * 因此本函数适合在 “没有真实打开目标” 的场景做纯权限检测；
+ * 有真实目标时建议直接打开目标窗口并用 isPopupBlocked 判断，被拦截再走引导（见超星积分课实现）。
+ */
+export async function probePopupPermission(options: PopupPermissionProbeOptions = {}): Promise<boolean> {
+	const opener = options.opener ?? ((...args: any[]) => window.open(...args));
+	const openArgs = ['about:blank', '_blank', 'width=400,height=300'];
+
+	if (options.delay && options.delay > 0) {
+		await $.sleep(options.delay);
+	}
+
+	const closeProbeWin = (win: Window | null) => {
+		try {
+			win?.close();
+		} catch {
+			// 忽略关闭异常（窗口可能已被用户手动关闭）
+		}
+	};
+
+	const win = opener(...openArgs);
+	if (!isPopupBlocked(win)) {
+		closeProbeWin(win);
+		return true;
+	}
+
+	const result = await showPopupBlockedGuide({
+		openArgs,
+		opener,
+		...options.guide
+	});
+	if (result.action === 'retry-success') {
+		closeProbeWin(result.win);
+		return true;
+	}
+	options.onCancel?.();
+	return false;
 }
