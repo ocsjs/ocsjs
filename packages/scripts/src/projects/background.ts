@@ -18,6 +18,7 @@ import {
 } from 'easy-us';
 import semver_gt from 'semver/functions/gt';
 import semver_valid from 'semver/functions/valid';
+import md5 from 'md5';
 import { CommonProject } from './common';
 import { CXProject, definedProjects, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '..';
 import { RenderScript } from '../render';
@@ -33,6 +34,52 @@ const state = {
 		}
 	}
 };
+
+/** 将配置键解析为可读名称（脚本名 - 配置项 label），解析失败返回原始键 */
+function resolveConfigLabel(key: string): string {
+	for (const project of definedProjects()) {
+		for (const scriptKey in project.scripts) {
+			if (Object.prototype.hasOwnProperty.call(project.scripts, scriptKey)) {
+				const script = project.scripts[scriptKey];
+				for (const ck in script.configs) {
+					if (
+						Object.prototype.hasOwnProperty.call(script.configs, ck) &&
+						$.namespaceKey(script.namespace, ck) === key
+					) {
+						const label = script.configs[ck].label;
+						return label ? `${script.name} - ${label}` : key;
+					}
+				}
+			}
+		}
+	}
+	return key;
+}
+
+/** 格式化配置值用于差异展示（布尔值翻译为 开/关，题库配置翻译为 数量+名称列表，截断超长内容） */
+function formatConfigValue(value: any): string {
+	if (value === undefined) {
+		return '（未设置）';
+	}
+	if (value === true) {
+		return '开';
+	}
+	if (value === false) {
+		return '关';
+	}
+	// 题库配置（AnswererWrapper[]）适配显示：题库数量 + 题库名称列表
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return '无题库';
+		}
+		if (value.every((item) => item && typeof item === 'object' && 'name' in item && 'url' in item)) {
+			const names = value.map((item) => item.name).join('、');
+			return `${value.length} 个题库（${names.length > 60 ? names.slice(0, 60) + '...' : names}）`;
+		}
+	}
+	const text = typeof value === 'string' ? value : JSON.stringify(value);
+	return text.length > 60 ? text.slice(0, 60) + '...' : text;
+}
 
 export type LogType = 'log' | 'info' | 'debug' | 'warn' | 'error';
 
@@ -439,7 +486,19 @@ export const BackgroundProject = Project.create({
 					]).outerHTML
 				},
 				sync_status: {
-					defaultValue: 'unconnect' as 'not_playwright_environment' | 'unconnect' | 'not_open_sync' | 'synced'
+					defaultValue: 'unconnect' as
+						| 'not_playwright_environment'
+						| 'unconnect'
+						| 'not_open_sync'
+						| 'synced'
+						| 'branch'
+				},
+				/**
+				 * 上次同步（或已处理）的软件配置版本指纹（md5）。
+				 * 用于检测软件中的配置是否发生变更：一致则不再强制合并，保留用户在脚本侧的分支修改。
+				 */
+				syncMd5: {
+					defaultValue: ''
 				},
 				closeSync: {
 					defaultValue: false,
@@ -451,10 +510,6 @@ export const BackgroundProject = Project.create({
 			},
 
 			onrender({ panel }) {
-				// 同步面板不会被锁定
-				panel.lockWrapper.remove();
-				panel.configsContainer.classList.remove('lock');
-
 				const update = () => {
 					if (this.cfg.closeSync) {
 						const tip = h('div', { className: 'notes card' }, ['已关闭同步。']);
@@ -470,6 +525,11 @@ export const BackgroundProject = Project.create({
 						panel.body.replaceChildren(h('hr'), tip);
 					} else if (this.cfg.sync_status === 'not_open_sync') {
 						const tip = h('div', { className: 'notes card' }, ['桌面端软件未开启配置同步功能']);
+						panel.body.replaceChildren(h('hr'), tip);
+					} else if (this.cfg.sync_status === 'branch') {
+						const tip = h('div', { className: 'notes card' }, [
+							'软件配置与上次同步一致，已保留本地分支修改（您在脚本侧的修改不会被覆盖）。'
+						]);
 						panel.body.replaceChildren(h('hr'), tip);
 					} else if (this.cfg.sync_status === 'empty_config') {
 						const tip = h('div', { className: 'notes card' }, ['已成功连接到软件，但配置为空。']);
@@ -589,6 +649,126 @@ export const BackgroundProject = Project.create({
 							}
 						}
 
+						/**
+						 * 计算当前软件配置的版本指纹（在排除规则之后计算，非同步字段的变更不会触发冲突）。
+						 * 与上次同步的指纹一致说明软件中的配置未变更，此时不再强制合并，保留用户的分支修改。
+						 */
+						const currentMd5 = md5(JSON.stringify(res));
+						const lastMd5 = (this.cfg.syncMd5 as string) || '';
+
+						if (lastMd5) {
+							if (currentMd5 === lastMd5) {
+								// 软件配置未变更：不再强制合并，允许用户在脚本侧的分支修改
+								this.cfg.sync_status = 'branch';
+								return;
+							}
+
+							// 计算同步配置与当前配置的差异项，便于用户直观判断是否需要同步
+							const configDiffs = [] as { label: string; local: string; remote: string }[];
+							for (const key in res) {
+								if (Object.prototype.hasOwnProperty.call(res, key)) {
+									// notes 内容随脚本版本变化，不作为差异项展示
+									if (key.endsWith('.notes')) {
+										continue;
+									}
+									const localValue = $store.get(key);
+									if (JSON.stringify(localValue) !== JSON.stringify(res[key])) {
+										configDiffs.push({
+											label: resolveConfigLabel(key),
+											local: formatConfigValue(localValue),
+											remote: formatConfigValue(res[key])
+										});
+									}
+								}
+							}
+
+							// 软件配置已变更：弹窗询问是否执行同步（默认保留分支修改，10s 倒计时自动关闭）
+							const shouldSync = await new Promise<boolean>((resolve) => {
+								let settled = false;
+								let countdown = 10;
+								const finish = (sync: boolean) => {
+									if (settled) {
+										return;
+									}
+									settled = true;
+									clearInterval(timer);
+									modal?.remove();
+									resolve(sync);
+								};
+								const keepButton = h('button', { className: 'base-style-button-secondary' }, (btn) => {
+									btn.onclick = () => finish(false);
+								});
+								keepButton.innerText = `保留我的修改 (${countdown}s)`;
+								const syncButton = h(
+									'button',
+									{ className: 'base-style-button', style: { marginLeft: '4px' }, innerText: '执行同步' },
+									(btn) => {
+										btn.onclick = () => finish(true);
+									}
+								);
+								const timer = setInterval(() => {
+									countdown--;
+									if (countdown <= 0) {
+										finish(false);
+									} else {
+										keepButton.innerText = `保留我的修改 (${countdown}s)`;
+									}
+								}, 1000);
+								const modal = $modal.confirm({
+									title: '配置同步冲突',
+									maskCloseable: false,
+									width: 600,
+									content: h('div', [
+										$ui.notes([
+											'检测到桌面软件中的 OCS 配置已更新，与当前脚本中的设置不一致：',
+											[h('b', '「执行同步」'), '：使用软件中的配置覆盖当前脚本设置；'],
+											[h('b', '「保留我的修改」'), '：保留当前脚本中的分支修改（默认，倒计时结束后自动选择）。']
+										]),
+										configDiffs.length
+											? h('div', { style: { marginTop: '8px' } }, [
+													h(
+														'div',
+														{ style: { fontWeight: 'bold', marginBottom: '4px' } },
+														`不一致的配置项（${configDiffs.length}）：`
+													),
+													h(
+														'div',
+														{ style: { maxHeight: '200px', overflow: 'auto', fontSize: '12px' } },
+														configDiffs.map((d) =>
+															h(
+																'div',
+																{
+																	style: {
+																		padding: '4px 8px',
+																		marginBottom: '4px',
+																		background: '#f5f5f5',
+																		borderRadius: '4px'
+																	}
+																},
+																[
+																	h('span', { style: { fontWeight: 'bold' } }, d.label + '：'),
+																	h('code', { style: { color: '#67c23a' } }, d.local),
+																	h('span', { style: { margin: '0 4px', color: '#909399' } }, '→'),
+																	h('code', { style: { color: '#e6a23c' } }, d.remote)
+																]
+															)
+														)
+													)
+											  ])
+											: h('div')
+									]),
+									footer: h('div', [keepButton, syncButton])
+								});
+							});
+
+							if (!shouldSync) {
+								// 记录已处理的版本指纹，避免每次页面加载重复弹窗；保留分支修改
+								this.cfg.syncMd5 = currentMd5;
+								this.cfg.sync_status = 'branch';
+								return;
+							}
+						}
+
 						// 同步所有的配置
 						for (const key in res) {
 							if (Object.prototype.hasOwnProperty.call(res, key)) {
@@ -596,52 +776,11 @@ export const BackgroundProject = Project.create({
 							}
 						}
 
-						// 锁定面板
-						for (const project of definedProjects()) {
-							// 排除后台脚本的锁定
-							if (project.name === BackgroundProject.name) {
-								continue;
-							}
-							for (const key in project.scripts) {
-								if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
-									const script = project.scripts[key];
-									const originalRender = script.onrender;
-									// 重新定义渲染函数。在渲染后添加锁定面板的代码
-									script.onrender = ({ panel, header }) => {
-										originalRender?.({ panel, header });
-										if (panel.configsContainer.children.length) {
-											panel.configsContainer.classList.add('lock');
-											panel.lockWrapper.style.width = (panel.configsContainer.clientWidth ?? panel.clientWidth) + 'px';
-											panel.lockWrapper.style.height =
-												(panel.configsContainer.clientHeight ?? panel.clientHeight) + 'px';
-											panel.configsContainer.prepend(panel.lockWrapper);
+						// 配置分支功能（syncMd5 指纹比对）已替代面板锁定：
+						// 软件配置未变更时跳过合并即可保留脚本侧修改，无需再锁定面板防止误改。
 
-											panel.lockWrapper.title =
-												'🚫已同步OCS桌面版软件配置，如需修改请在桌面版软件的左侧栏设置-通用设置-OCS配置，中进行修改。\n\n或者前往脚本悬浮窗:后台-软件配置同步 关闭配置同步功能。\n\n可双击强制修改，并关闭同步配置';
-											panel.lockWrapper = $ui.tooltip(panel.lockWrapper);
-											panel.lockWrapper.addEventListener('dblclick', () => {
-												panel.configsContainer.classList.remove('lock');
-												panel.lockWrapper.remove();
-												script.onrender = originalRender;
-												$message.warn({
-													content: '已解除配置同步，可正常修改配置。想开启同步请前往：后台-软件配置同步',
-													duration: 10
-												});
-												this.cfg.closeSync = true;
-												if (script.panel && script.header) {
-													script.onrender?.({ panel: script.panel, header: script.header });
-												}
-											});
-										}
-									};
-									// 重新执行渲染
-									if (script.panel && script.header) {
-										script.onrender({ panel: script.panel, header: script.header });
-									}
-								}
-							}
-						}
-
+						// 记录本次同步的配置版本指纹，用于下次检测软件配置是否变更
+						this.cfg.syncMd5 = currentMd5;
 						this.cfg.sync_status = 'synced';
 					} catch (e) {
 						console.error(e);
