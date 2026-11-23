@@ -292,7 +292,11 @@ export const CommonProject = Project.create({
 								'textarea',
 								{
 									className: 'modal-input',
-									style: { minHeight: '250px', width: 'calc(100% - 20px)', maxWidth: '100%' },
+									style: {
+										minHeight: document.documentElement.clientHeight < 800 ? '120px' : '240px',
+										width: 'calc(100% - 20px)',
+										maxWidth: '100%'
+									},
 									placeholder: aw.length ? '重新输入题库配置' : '输入你的题库配置...，不会请看上方填写教程'
 								},
 								aw.length === 0 ? '' : JSON.stringify(aw, null, 4)
