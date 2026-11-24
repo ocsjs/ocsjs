@@ -53,7 +53,8 @@ export const IcveMoocProject = Project.create({
 		'course.icve.com.cn',
 		// 智慧职教套壳
 		'courshare.cn',
-		'webtrn.cn'
+		'webtrn.cn',
+		'windf.cn'
 	],
 	scripts: {
 		guide: new Script({
@@ -448,7 +449,8 @@ export const IcveMoocProject = Project.create({
 			matches: [
 				['课程页面', 'ai.icve.com.cn/app/coursedetails-excellent'],
 				['课程页面', 'ai.icve.com.cn/app/my-excellent-home'],
-				['学习页面', 'ai.icve.com.cn/excellent-study']
+				['学习页面', 'ai.icve.com.cn/excellent-study'],
+				['学习页面2', 'ai.icve.com.cn/moocCourse/excellent-study']
 			],
 			configs: {
 				notes: {
