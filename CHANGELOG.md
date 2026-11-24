@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.6.2](https://github.com/ocsjs/ocsjs/compare/5.6.1...5.6.2) (2026-11-24)
+
+
+### 🐛 问题修复
+
+* 修复上个版本智慧树复习模式失效问题 ([731c83b](https://github.com/ocsjs/ocsjs/commit/731c83bf1fec50ec483aeb52bc291fc63f92a231))
+* 修复边缘图标拖动不显示提示的问题 ([8afedcd](https://github.com/ocsjs/ocsjs/commit/8afedcd7689d63d87a659d27611f95104607e669))
+
+
+### ⚡ 优化改进
+
+* 增加智慧职教套壳域名支持windf.cn， 增加智慧职教新AI课程URL适配 ([d793073](https://github.com/ocsjs/ocsjs/commit/d793073aec6b268c7daa61f95f5fce25981dc0af))
+* 增加软件配置同步排除项：_notes_expanded_ ([9cfabef](https://github.com/ocsjs/ocsjs/commit/9cfabefaafd7ede0dd500889f0daac9a0bd80cac))
+
 ## [5.6.1](https://github.com/ocsjs/ocsjs/compare/5.6.0...5.6.1) (2026-11-23)
 
 
