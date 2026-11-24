@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.3](https://github.com/ocsjs/ocsjs/compare/5.6.2...5.6.3) (2026-11-24)
+
+
+### 🐛 问题修复
+
+* 升级 easy-us 至 1.1.4，修复边缘吸附模式下 tooltip 气泡无法显示 ([b8cdaff](https://github.com/ocsjs/ocsjs/commit/b8cdaff879265104be01bc8dc4147debb62046f9))
+
 ## [5.6.2](https://github.com/ocsjs/ocsjs/compare/5.6.1...5.6.2) (2026-11-24)
 
 
