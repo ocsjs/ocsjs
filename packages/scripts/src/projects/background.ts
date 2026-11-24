@@ -667,8 +667,8 @@ export const BackgroundProject = Project.create({
 							const configDiffs = [] as { label: string; local: string; remote: string }[];
 							for (const key in res) {
 								if (Object.prototype.hasOwnProperty.call(res, key)) {
-									// notes 内容随脚本版本变化，不作为差异项展示
-									if (key.endsWith('.notes')) {
+									// notes 内容/伸缩随脚本版本变化，不作为差异项展示
+									if (key.endsWith('.notes') || key.includes('_notes_expanded_')) {
 										continue;
 									}
 									const localValue = $store.get(key);
