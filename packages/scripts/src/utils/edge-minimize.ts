@@ -1,4 +1,4 @@
-import { $elements, h } from 'easy-us';
+import { $elements, h, $ui } from 'easy-us';
 import { BackgroundProject } from '../projects/background';
 import { logoSvg } from './ui';
 
@@ -52,10 +52,10 @@ export function updateEdgeMode() {
 		container.classList.add(EDGE_CLASS);
 		container.classList.remove(...SIDE_CLASSES);
 		container.classList.add(`edge-${side}`);
-		// 吸附后头部被隐藏，悬停其上的 tooltip 气泡不会触发 mouseleave 而残留显示，手动隐藏
-		if ($elements.tooltipContainer) {
-			$elements.tooltipContainer.style.display = 'none';
-		}
+		// 吸附后头部被隐藏，悬停其上的 tooltip 气泡不会触发 mouseleave 而残留显示，强制隐藏。
+		// 注意：不能写 style.display='none'——内联样式不会还原，会永久压住 .show 类显隐，
+		// 导致此后所有 $ui.tooltip（含 edgeIcon）都无法显示；须走库提供的清理流程。
+		$ui.hideTooltip();
 		if (container.offsetLeft !== snappedX) {
 			// 吸附到边缘并持久化位置（刷新后重新判定可自动恢复），附带过渡动画
 			snapping = true;
@@ -194,11 +194,13 @@ export function initEdgeMinimize(retry = 3) {
 	const render = BackgroundProject.scripts.render;
 
 	// 图标元素：edge 模式下替代 header 显示，支持点击还原与拖拽
-	const edgeIcon = h('div', {
-		className: 'edge-minimize-icon',
-		innerHTML: logoSvg,
-		title: '点击展开窗口，或沿边缘拖动'
-	});
+	const edgeIcon = $ui.tooltip(
+		h('div', {
+			className: 'edge-minimize-icon',
+			innerHTML: logoSvg,
+			title: '点击展开窗口，或沿边缘拖动'
+		})
+	);
 	container.append(edgeIcon);
 	enableIconDraggable(edgeIcon, container);
 
