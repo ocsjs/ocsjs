@@ -1038,28 +1038,30 @@ export const ZHSProject = Project.create({
 
 					const is_finish = !!current_handle?.querySelector('.time_icofinish');
 
-					if (is_finish || (Number.isFinite(percent) && percent >= 100)) {
-						const { next } = await new Promise<{ next: boolean }>((resolve) => {
-							const timeout = setTimeout(() => {
-								modal?.remove();
-								resolve({ next: true });
-							}, 5 * 1000);
-							const modal = $modal.confirm({
-								content: '当前视频已播放完毕，重新播放还是智能跳转下一节？',
-								cancelButtonText: '重新播放',
-								confirmButtonText: '自动跳转（5s）',
-								onClose: () => resolve({ next: true }),
-								onConfirm: () => resolve({ next: true }),
-								onCancel() {
-									clearTimeout(timeout);
-									// 如果已经播放完了，则重置视频进度
-									media.currentTime = 1;
-									resolve({ next: false });
-								}
+					if (!this.cfg.restudy) {
+						if (is_finish || (Number.isFinite(percent) && percent >= 100)) {
+							const { next } = await new Promise<{ next: boolean }>((resolve) => {
+								const timeout = setTimeout(() => {
+									modal?.remove();
+									resolve({ next: true });
+								}, 5 * 1000);
+								const modal = $modal.confirm({
+									content: '当前视频已播放完毕，重新播放还是智能跳转下一节？',
+									cancelButtonText: '重新播放',
+									confirmButtonText: '自动跳转（5s）',
+									onClose: () => resolve({ next: true }),
+									onConfirm: () => resolve({ next: true }),
+									onCancel() {
+										clearTimeout(timeout);
+										// 如果已经播放完了，则重置视频进度
+										media.currentTime = 1;
+										resolve({ next: false });
+									}
+								});
 							});
-						});
-						if (next) {
-							return;
+							if (next) {
+								return;
+							}
 						}
 					}
 
