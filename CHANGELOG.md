@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.4](https://github.com/ocsjs/ocsjs/compare/5.6.3...5.6.4) (2026-11-25)
+
+
+### ⚡ 优化改进
+
+* 优化超星闯关模式提示、以及智能模式下闯关模式无法切换的BUG ([65b7491](https://github.com/ocsjs/ocsjs/commit/65b74911b1b5036334a3455cf83096c37827b887))
+
 ## [5.6.3](https://github.com/ocsjs/ocsjs/compare/5.6.2...5.6.3) (2026-11-24)
 
 
