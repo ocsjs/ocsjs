@@ -1156,6 +1156,9 @@ async function watch(options: { volume: number; playbackRate: number }) {
 		await $.sleep(1000);
 		if (media) {
 			state.study.currentMedia = media;
+			// 部分普通视频没有暴露播放器实例，或初始化后仍使用默认倍速。
+			const rate = Number(options.playbackRate);
+			if (media.playbackRate !== rate) media.playbackRate = rate;
 			// 重置视频进度
 			media.currentTime = 1;
 		}
