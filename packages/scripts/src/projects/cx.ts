@@ -40,7 +40,7 @@ const CX_SECRET_REF_TABLE_URL = 'https://cdn.ocsjs.com/resources/font/font_ref_c
 const HIGHT_PLAYBACK_RATE_WARNS = [
 	'⚠️高倍速、夜间、白天大量运行 等情况\n可能导致学习记录清空/回退',
 	'⚠️超星后台可以看到学习时长，请谨慎设置',
-	'⚠️如已清空/回退，请降低倍速至1-2倍'
+	'⚠️如已清空/回退，请降低倍速至1倍'
 ];
 
 // @ts-ignore
@@ -183,18 +183,6 @@ export const CXProject = Project.create({
 				}
 			},
 			oncomplete() {
-				$modal.alert({
-					content: $ui.notes([
-						'⚠️检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致。',
-
-						'解决方法：',
-						'1.👉 手动完成章节测试，然后手动点击下一章',
-						'2.🌐 题库方面： 尽量开启带有AI搜题功能的题库',
-						'3.⚙️ 设置推荐：',
-						$ui.notes([' 全局设置-提交率：60%', ' 全局设置-随机答题：开启', ' 全局设置-随机填空：开启'])
-					])
-				});
-
 				if (['mycourse/studentstudy'].some((path) => location.href.includes(path))) {
 					$message.success('已进入学习页面，请等待自动运行...');
 					return;
@@ -390,9 +378,9 @@ export const CXProject = Project.create({
 				this.offConfigChange(state.study.playbackRateWarningListenerId);
 				state.study.playbackRateWarningListenerId =
 					this.onConfigChange('playbackRate', (playbackRate) => {
-						if (playbackRate > 2) {
+						if (playbackRate > 1) {
 							$modal.alert({
-								title: '⚠️高倍速警告 （倍速 >= 2）',
+								title: '⚠️高倍速警告 （倍速 > 1）',
 								content: $ui.notes(HIGHT_PLAYBACK_RATE_WARNS),
 								maskCloseable: false,
 								confirmButtonText: '我已知晓风险'
@@ -1891,9 +1879,23 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 
 	// 闯关模式卡死
 	if (CXAnalyses.isInFinalTab() && (await CXAnalyses.isStuckInBreakingMode())) {
-		return $modal.alert({
-			content:
-				'检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致，请手动完成章节测试，然后手动点击下一章。'
+		return $modal.confirm({
+			content: $ui.notes([
+				'⚠️检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致。',
+				'解决方法：',
+				'1.👉 手动完成章节测试，然后手动点击下一章',
+				'2.🌐 题库方面： 尽量开启带有AI搜题功能的题库',
+				'3.⚙️ 设置推荐：',
+				$ui.notes([' 全局设置-提交率：强制提交', ' 全局设置-随机答题：开启', ' 全局设置-随机填空：开启'])
+			]),
+			maskCloseable: true,
+			cancelButtonText: '我自己设置',
+			confirmButtonText: '自动应用推荐的设置',
+			onConfirm() {
+				CommonProject.scripts.settings.cfg.upload = 'force';
+				CommonProject.scripts.settings.cfg['randomWork-choice'] = true;
+				CommonProject.scripts.settings.cfg['randomWork-complete'] = true;
+			}
 		});
 	}
 
