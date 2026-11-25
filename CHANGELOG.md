@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.6](https://github.com/ocsjs/ocsjs/compare/5.6.5...5.6.6) (2026-11-25)
+
+
+### ⚡ 优化改进
+
+* 更新题库配置教程样式 ([038ff9f](https://github.com/ocsjs/ocsjs/commit/038ff9f3e1b20ef12dbe812f17660c7cd86b564f))
+
 ## [5.6.5](https://github.com/ocsjs/ocsjs/compare/5.6.4...5.6.5) (2026-11-25)
 
 
