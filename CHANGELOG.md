@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.5](https://github.com/ocsjs/ocsjs/compare/5.6.4...5.6.5) (2026-11-25)
+
+
+### ⚡ 优化改进
+
+* 将高倍速警告阈值设置为1，优化闯关模式警告和自动设置功能 ([856dc7f](https://github.com/ocsjs/ocsjs/commit/856dc7f92fe8ef612bf2c9fad24df61fb17285d3))
+
 ## [5.6.4](https://github.com/ocsjs/ocsjs/compare/5.6.3...5.6.4) (2026-11-25)
 
 
