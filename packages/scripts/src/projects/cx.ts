@@ -183,6 +183,18 @@ export const CXProject = Project.create({
 				}
 			},
 			oncomplete() {
+				$modal.alert({
+					content: $ui.notes([
+						'⚠️检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致。',
+
+						'解决方法：',
+						'1.👉 手动完成章节测试，然后手动点击下一章',
+						'2.🌐 题库方面： 尽量开启带有AI搜题功能的题库',
+						'3.⚙️ 设置推荐：',
+						$ui.notes([' 全局设置-提交率：60%', ' 全局设置-随机答题：开启', ' 全局设置-随机填空：开启'])
+					])
+				});
+
 				if (['mycourse/studentstudy'].some((path) => location.href.includes(path))) {
 					$message.success('已进入学习页面，请等待自动运行...');
 					return;
@@ -1917,7 +1929,12 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	await $.sleep(3000);
 
 	// 智能模式，并且当前已经完成全部小节，则自动跳章节
-	if (CXProject.scripts.study.cfg.mode === 'job' && CXAnalyses.isInFinalTab()) {
+	if (
+		CXProject.scripts.study.cfg.mode === 'job' &&
+		CXAnalyses.isInFinalTab() &&
+		// 闯关模式下无法使用智能模式
+		CXAnalyses.isInSpecialMode() === false
+	) {
 		// 检测当前章节是否完成，如果已经完成则下一章
 		// 如果没有需要完成的章节，则暂停运行
 		const chapters = CXAnalyses.getChapterInfos();
