@@ -1116,6 +1116,110 @@ modal-element .modal-cancel-button:hover {
 	}
 }
 
+/** ===== 题库配置获取方式卡片（代码配置弹窗顶部，左右并排，3D 按钮式立体层次） ===== */
+
+.aw-method-cards {
+	display: flex;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+/**
+ * 单个方式卡片：整卡可点击。
+ * 3D 层次 = 顶部渐变高光（受光面）+ 底部实色边（按钮厚度）+ 环境投影（悬浮感）；
+ * hover 上浮加厚底边，active 下压变薄底边，模拟物理按压。
+ */
+.aw-method-card {
+	flex: 1;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 12px 14px;
+	background: linear-gradient(180deg, #ffffff 0%, #f1f4f8 100%);
+	border: 1px solid #dfe5ec;
+	border-radius: 10px;
+	cursor: pointer;
+	user-select: none;
+	box-shadow: 0 3px 0 #d3dae3, 0 6px 12px rgba(31, 35, 41, 0.06);
+	transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.15s ease, background 0.15s ease;
+
+	&:hover {
+		transform: translateY(-2px);
+		border-color: lighten(@primary, 20%);
+		box-shadow: 0 5px 0 #d3dae3, 0 12px 20px rgba(31, 35, 41, 0.1);
+
+		.aw-method-card-title {
+			color: @primary;
+		}
+	}
+
+	&:active {
+		transform: translateY(1px);
+		box-shadow: 0 1px 0 #d3dae3, 0 3px 6px rgba(31, 35, 41, 0.08);
+	}
+
+	// 方式一：主色填充 CTA 卡片（白字，底边为深色主色）
+	&.primary {
+		background: linear-gradient(180deg, lighten(@primary, 8%) 0%, @primary 100%);
+		border-color: @primary;
+		box-shadow: 0 3px 0 darken(@primary, 14%), 0 6px 14px fade(@primary, 30%);
+
+		.aw-method-card-title {
+			color: #fff;
+		}
+
+		.aw-method-card-desc {
+			color: fade(#fff, 78%);
+		}
+
+		&:hover {
+			background: linear-gradient(180deg, lighten(@primary, 14%) 0%, lighten(@primary, 3%) 100%);
+			border-color: lighten(@primary, 3%);
+			box-shadow: 0 5px 0 darken(@primary, 14%), 0 12px 22px fade(@primary, 38%);
+
+			.aw-method-card-title {
+				color: #fff;
+			}
+		}
+
+		&:active {
+			transform: translateY(1px);
+			box-shadow: 0 1px 0 darken(@primary, 14%), 0 3px 6px fade(@primary, 25%);
+		}
+	}
+}
+
+.aw-method-card-icon {
+	font-size: 22px;
+	flex: none;
+	// 图标立体投影，贴合卡片 3D 风格
+	filter: drop-shadow(0 1px 1px rgba(31, 35, 41, 0.25));
+}
+
+.aw-method-card-body {
+	min-width: 0;
+}
+
+.aw-method-card-title {
+	font-size: 13px;
+	font-weight: 600;
+	line-height: 18px;
+	transition: color 0.15s ease;
+}
+
+.aw-method-card-desc {
+	font-size: 12px;
+	color: #969696;
+	line-height: 16px;
+	margin-top: 2px;
+	word-break: break-all;
+}
+
+// 描述中的链接文本：主色蓝链接样式（纯展示，点击由整卡承载，不嵌套 <a> 避免开两个标签页）
+.aw-method-card-link {
+	color: @primary;
+}
+
 // 加载图标旋转动画
 @keyframes ocs-spin {
 	to {

@@ -543,34 +543,49 @@ export const CommonProject = Project.create({
 								  })
 								: undefined;
 
-							/** 手动配置说明区（教程、剪贴板提示、多题库提示） */
-							const manualNotes = $ui.notes([
+							// 粘贴助手
+							const pasteHelper = h(
+								'div',
+								{
+									className: 'secondary'
+								},
 								[
-									h('div', { style: { fontSize: '16px', marginBottom: '8px' } }, [
-										h('b', '题库配置填写教程👉：'),
-										h('a', { href: 'https://docs.ocsjs.com/docs/work' }, 'https://docs.ocsjs.com/docs/work')
+									'⚠️ 如果无法粘贴，请点->：',
+									h('button', '读取剪贴板', (btn) => {
+										btn.classList.add('base-style-button');
+										btn.onclick = () => {
+											navigator.clipboard.readText().then((result) => {
+												textarea.value = result;
+											});
+										};
+									}),
+									'，并同意浏览器上方的剪贴板读取申请。'
+								]
+							);
+
+							// 教程入口：3D 卡片按钮样式（.aw-method-card* 见 custom.less），点击新窗口打开教程
+							const guideCard = h(
+								'div',
+								{
+									className: 'aw-method-card',
+									style: { margin: '4px' },
+									title: '打开题库配置填写教程',
+									onclick: () => window.open('https://docs.ocsjs.com/docs/work', '_blank')
+								},
+								[
+									h('span', { className: 'aw-method-card-icon' }, '📖'),
+									h('div', { className: 'aw-method-card-body' }, [
+										h('div', { className: 'aw-method-card-title' }, '👉 查看题库配置填写教程'),
+										h('div', { className: 'aw-method-card-desc' }, [
+											'链接：',
+											h('span', { className: 'aw-method-card-link' }, 'https://docs.ocsjs.com/docs/work')
+										])
 									])
-								],
-								[
-									h(
-										'div',
-										{
-											className: 'secondary'
-										},
-										[
-											'⚠️ 如果无法粘贴，请点->：',
-											h('button', '读取剪贴板', (btn) => {
-												btn.classList.add('base-style-button');
-												btn.onclick = () => {
-													navigator.clipboard.readText().then((result) => {
-														textarea.value = result;
-													});
-												};
-											}),
-											'，并同意浏览器上方的剪贴板读取申请。'
-										]
-									)
-								],
+								]
+							);
+
+							/**  配置说明区（教程卡片、剪贴板提示、多题库提示） */
+							const manualNotes = $ui.notes([
 								...(OCS_TYPE === 'common'
 									? [
 											[
@@ -607,6 +622,7 @@ export const CommonProject = Project.create({
 							/** 手动配置底部（填写/修改区 + 操作按钮），自定义题库获取方式下显示 */
 							const manualFooter = h('div', { style: { width: '100%' } }, [
 								h('div', { className: 'separator secondary' }, '题库配置填写/修改区'),
+								pasteHelper,
 								textarea,
 								h('div', { style: { marginTop: '12px', fontSize: '12px' } }, [
 									// 解析器选项独占一行
@@ -786,7 +802,7 @@ export const CommonProject = Project.create({
 								modalFooter = connectFooter;
 							} else {
 								// 自定义题库（或未配置 provider）：保持原有单页结构，已配置列表脱离 notes 独立展示
-								modalContent = h('div', [manualNotes, listContainer]);
+								modalContent = h('div', [guideCard, manualNotes, listContainer]);
 								modalFooter = manualFooter;
 							}
 
