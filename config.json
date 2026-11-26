@@ -1,1 +1,7 @@
-ew0KICAiYmFzZV91cmwiOiAiaHR0cHM6Ly9kaXNjb3ZlcnktYXBpLmludGVybi1haS5vcmcuY24vdjEiLA0KICAiYXBpX2tleSI6ICJzay05YjAxZDhkYjcyZjFkYzA3YzE0MTI2NzA5M2M1ZjM5YTE2M2QyYTkwMmMxZjEyYzBhNzg1OTg5MDM5N2JmMzZiIiwNCiAgIm1vZGVsIjogImRlZXBzZWVrLXY0LjEtZmxhc2gtMTAxNyIsDQogICJwb3J0IjogMzg5ODcsDQogICJtYXhfdG9rZW5zIjogODAwDQp9
+{
+  "base_url": "https://discovery-api.intern-ai.org.cn/v1",
+  "api_key": "sk-9b01d8db72f1dc07c141267093c5f39a163d2a902c1f12c0a7859890397bf36b",
+  "model": "deepseek-v4.1-flash-1017",
+  "port": 38987,
+  "max_tokens": 800
+}

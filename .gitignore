@@ -1,1 +1,5 @@
-X19weWNhY2hlX18vCioucHljCmJ1aWxkLwpkaXN0LwoqLnNwZWMK
+__pycache__/
+*.pyc
+build/
+dist/
+*.spec

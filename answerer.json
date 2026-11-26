@@ -1,1 +1,16 @@
-WwogIHsKICAgICJuYW1lIjogIkFJ562U6aKYKOmAieaooeWeiykiLAogICAgImhvbWVwYWdlIjogImh0dHA6Ly8xMjcuMC4wLjE6Mzg5ODciLAogICAgInVybCI6ICJodHRwOi8vMTI3LjAuMC4xOjM4OTg3L3NlYXJjaCIsCiAgICAibWV0aG9kIjogInBvc3QiLAogICAgInR5cGUiOiAiR01feG1saHR0cFJlcXVlc3QiLAogICAgImNvbnRlbnRUeXBlIjogImpzb24iLAogICAgImRhdGEiOiB7CiAgICAgICJ0aXRsZSI6ICIke3RpdGxlfSIsCiAgICAgICJvcHRpb25zIjogIiR7b3B0aW9uc30iLAogICAgICAidHlwZSI6ICIke3R5cGV9IgogICAgfSwKICAgICJoYW5kbGVyIjogInJldHVybiAocmVzKT0+IHsgdHJ5IHsgdmFyIGQgPSByZXM7IGlmICh0eXBlb2YgZCA9PT0gJ3N0cmluZycpIGQgPSBKU09OLnBhcnNlKGQpOyBlbHNlIGlmIChkICYmIHR5cGVvZiBkLnJlc3BvbnNlID09PSAnc3RyaW5nJykgZCA9IEpTT04ucGFyc2UoZC5yZXNwb25zZSk7IGVsc2UgaWYgKGQgJiYgZC5yZXNwb25zZSAmJiB0eXBlb2YgZC5yZXNwb25zZSA9PT0gJ29iamVjdCcpIGQgPSBkLnJlc3BvbnNlOyByZXR1cm4gKGQgJiYgZC5jb2RlID09PSAxKSA/IFtkLnF1ZXN0aW9uLCBkLmFuc3dlciwge2FpOiBkLmFuYWx5c2lzLCBtb2RlbDogZC5tb2RlbH1dIDogdW5kZWZpbmVkOyB9IGNhdGNoKGUpIHsgcmV0dXJuIHVuZGVmaW5lZDsgfSB9IgogIH0KXQo=
+[
+  {
+    "name": "AI答题(选模型)",
+    "homepage": "http://127.0.0.1:38987",
+    "url": "http://127.0.0.1:38987/search",
+    "method": "post",
+    "type": "GM_xmlhttpRequest",
+    "contentType": "json",
+    "data": {
+      "title": "${title}",
+      "options": "${options}",
+      "type": "${type}"
+    },
+    "handler": "return (res)=> { try { var d = res; if (typeof d === 'string') d = JSON.parse(d); else if (d && typeof d.response === 'string') d = JSON.parse(d.response); else if (d && d.response && typeof d.response === 'object') d = d.response; return (d && d.code === 1) ? [d.question, d.answer, {ai: d.analysis, model: d.model}] : undefined; } catch(e) { return undefined; } }"
+  }
+]
