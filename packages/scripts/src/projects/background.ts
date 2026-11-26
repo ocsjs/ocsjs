@@ -20,7 +20,7 @@ import semver_gt from 'semver/functions/gt';
 import semver_valid from 'semver/functions/valid';
 import md5 from 'md5';
 import { CommonProject } from './common';
-import { CXProject, definedProjects, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '..';
+import { CXProject, definedProjects, ICourseProject, IcveMoocProject, ZHSProject, ZJYProject } from '..';
 import { RenderScript } from '../render';
 import { SearchInfosElement } from '../elements/search.infos';
 import { $render } from '../utils/render';
