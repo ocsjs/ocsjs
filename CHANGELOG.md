@@ -1,5 +1,19 @@
 # Changelog
 
+## [5.6.7](https://github.com/ocsjs/ocsjs/compare/5.6.6...5.6.7) (2026-11-26)
+
+
+### 🐛 问题修复
+
+* 移除 background.ts 中未使用的 YKTProject 导入 ([1826914](https://github.com/ocsjs/ocsjs/commit/182691468578e534d56277f3f3ce0661403f630e))
+
+
+### ⚡ 优化改进
+
+* 优化搜索结果界面、通知功能的描述文案 ([191ebdc](https://github.com/ocsjs/ocsjs/commit/191ebdcfd9428107a585a888b47b5ca36341131b))
+* 优化更新模块文案、以及桌面版软件中脚本自动更新提示 ([5a5add1](https://github.com/ocsjs/ocsjs/commit/5a5add12732936dc49b61c067f273cd1ebb8bc5c))
+* 增加全局设置底部主脚本设置按钮导航，辅助玩家寻找学习设置， 优化全局设置显示，仅超星等设置项在其他平台不再显示 ([f1f9e25](https://github.com/ocsjs/ocsjs/commit/f1f9e2581b507590a6ffc8e15aecf25eb13df799))
+
 ## [5.6.6](https://github.com/ocsjs/ocsjs/compare/5.6.5...5.6.6) (2026-11-25)
 
 
