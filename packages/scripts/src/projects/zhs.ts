@@ -1,5 +1,5 @@
 import { $ui, Project, Script, $el, h, $$el, $message, $, $modal, MessageElement, $store, $gm } from 'easy-us';
-import { RemotePage, OCSWorker } from '@ocsjs/core';
+import { RemotePage, OCSWorker, request } from '@ocsjs/core';
 import { CommonProject } from './common';
 import { definition, volume, restudy } from '../utils/configs';
 import {
@@ -32,6 +32,7 @@ import { $console, BackgroundProject } from './background';
 import { waitForMedia, waitForElement } from '../utils/study';
 import { $playwright } from '../utils/app';
 import { $render } from '../utils/render';
+import { masterySession } from '../utils/zhs-mastery';
 
 const state = {
 	study: {
@@ -734,6 +735,8 @@ export const ZHSProject = Project.create({
 				['新形态课程-掌握提升页面', 'studentexamcomh5.zhihuishu.com/studentReviewTestOrExam'],
 				['新形态课程-AI助教掌握度', 'fusioncourseh5.zhihuishu.com/exam'],
 				['新形态课程-新AI助教掌握度', 'studywisdomh5.zhihuishu.com/exam'],
+				['新形态课程-新AI助教掌握度遗漏', /^https:\/\/studywisdomh5\.zhihuishu\.com\/study\/mastery(?:[?#]|$)/],
+				['新形态课程-新AI助教掌握度结果', /^https:\/\/studywisdomh5\.zhihuishu\.com\/pointOfMastery\//],
 				// ========== 新AI学伴掌握度 ==========
 				['新形态课程-新AI学伴掌握度', 'wisdom-mooc.zhihuishu.com/exam'],
 				['新形态课程-新AI学伴掌握度首页', 'wisdom-mooc.zhihuishu.com/study/analysis'],
@@ -746,14 +749,39 @@ export const ZHSProject = Project.create({
 			],
 			namespace: zhsWorkNamespace,
 			configs: workCenterConfigs,
+			methods() {
+				let desktopEnvironment: Promise<boolean> | undefined;
+				return {
+					mountMastery: async (body: HTMLElement) => {
+						if (!masterySession.isTargetList() && !masterySession.ownsRoute()) return;
+						desktopEnvironment ??= request('/ocs-environment', { type: 'fetch', method: 'get' })
+							.then((res) => res?.environment === 'playwright')
+							.catch(() => false);
+						if (!(await desktopEnvironment)) return;
+						if (masterySession.isTargetList() || masterySession.ownsRoute()) masterySession.mount(body);
+					}
+				};
+			},
+			onrender({ panel }) {
+				this.methods.mountMastery(panel.body);
+			},
 			oncomplete() {
 				// 迁移旧命名空间配置
 				migrateZhsWorkConfigs();
+				masterySession.setWorkerStarter(() => {
+					ZHSProject.scripts['smart-work'].methods.start();
+				});
 				// 置顶设置中心
 				BackgroundProject.scripts.render.methods.pin(this);
 
 				if (location.href.includes('wisdom-mooc.zhihuishu.com/study/analysis')) {
 					return $message.info({ content: '请手动进入掌握度进行自动答题。', duration: 10 });
+				}
+			},
+			onhistorychanged() {
+				if (masterySession.isTargetList() || masterySession.ownsRoute()) {
+					BackgroundProject.scripts.render.methods.pin(this);
+					if (this.panel?.body) this.methods.mountMastery(this.panel.body);
 				}
 			}
 		}),
@@ -1438,17 +1466,28 @@ export const ZHSProject = Project.create({
 			methods() {
 				return {
 					start: async () => {
+						const targetSession =
+							location.origin === 'https://studywisdomh5.zhihuishu.com' && masterySession.isActive();
+						if (targetSession && (!masterySession.ownsRoute() || !masterySession.claimWorkerStart())) return;
+						const create = targetSession ? masterySession.workerFactory() : undefined;
+						const isCurrent = targetSession ? masterySession.workerStartGuard() : undefined;
+						const mayStart = () =>
+							targetSession
+								? masterySession.isActive() && masterySession.ownsRoute() && isCurrent?.() === true
+								: !(location.origin === 'https://studywisdomh5.zhihuishu.com' && masterySession.isActive());
 						// 检查是否为软件环境
 						let remotePage: RemotePage | undefined;
 						// 掌握度
 						const remote_not_required = remote_not_required_pages.some((domain) => location.href.includes(domain));
 
 						remote_not_required ? await waitForElement('.exam-item') : await waitForElement('.questionContent');
+						if (!mayStart()) return;
 
 						if (remote_not_required) {
 							// 这两个页面不需要软件辅助
 						} else {
 							remotePage = await BackgroundProject.scripts.dev.methods.getRemotePlaywrightCurrentPage();
+							if (!mayStart()) return;
 							// 检查是否为软件环境
 							if (!remotePage) {
 								return $playwright.showError();
@@ -1459,8 +1498,10 @@ export const ZHSProject = Project.create({
 						}
 
 						commonWork({
-							mount_script: ZHSProject.scripts['work-center'],
+							mount_script: targetSession ? undefined : ZHSProject.scripts['work-center'],
 							workerProvider: (opts) => {
+								if (!mayStart()) return;
+								if (create) return create(() => fusioncourseWork(undefined, opts));
 								if (remote_not_required) {
 									return fusioncourseWork(remotePage, opts);
 								} else {
