@@ -1055,7 +1055,7 @@ export const CommonProject = Project.create({
 					options: [
 						['only-notify', '只显示右下角通知'],
 						['notify-and-voice', '通知以及提示音（叮的一声）'],
-						['all', '通知，提示音，以及任务栏闪烁提示'],
+						['all', '通知、提示音、任务栏闪烁'],
 						['no-notify', '关闭系统通知']
 					]
 				},
@@ -1186,8 +1186,11 @@ export const CommonProject = Project.create({
 			namespace: 'common.work-results',
 			configs: {
 				notes: {
-					defaultValue: $ui.notes(['点击题目序号，查看搜索结果', '如果没有搜到，可能是题库没有收录该题目答案'])
-						.outerHTML
+					defaultValue: $ui.notes([
+						'在自动答题运行时，可查看搜索结果',
+						'如果出现红色结果，可点击序号查看具体情况。',
+						'界面关闭后搜索结果会自动移除。'
+					]).outerHTML
 				},
 				currentResultIndex: {
 					defaultValue: 0
