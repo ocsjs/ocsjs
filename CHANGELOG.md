@@ -1,5 +1,12 @@
 # Changelog
 
+## [5.6.8](https://github.com/ocsjs/ocsjs/compare/5.6.7...5.6.8) (2026-11-26)
+
+
+### 🐛 问题修复
+
+* 同步 pnpm-lock.yaml（easy-us 1.1.5） ([8618d87](https://github.com/ocsjs/ocsjs/commit/8618d87749e12d2e5bca1a5b2a003d55d5460b0b))
+
 ## [5.6.7](https://github.com/ocsjs/ocsjs/compare/5.6.6...5.6.7) (2026-11-26)
 
 
