@@ -1443,45 +1443,10 @@ export const BackgroundProject = Project.create({
 				// 注册快捷菜单
 				await $menu('🏠', { scriptPanelLink: CommonProject.scripts.guide });
 				await $menu('🔎', { scriptPanelLink: CommonProject.scripts.workResults });
-				await $menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
 				await $menu('📄', { scriptPanelLink: BackgroundProject.scripts.console });
+				await $menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
 
-				const currentStudyScript = [
-					[CXProject.scripts.studyDispatcher, CXProject.scripts.study],
-					CXProject.scripts.work,
-					CXProject.scripts.autoRead,
-					CXProject.scripts.jfk,
-					ZHSProject.scripts['study-center'],
-					ZHSProject.scripts['work-center'],
-					ICourseProject.scripts['study-center'],
-					ICourseProject.scripts.work,
-					[ZJYProject.scripts.dispatcher, ZJYProject.scripts.study],
-					ZJYProject.scripts.work,
-					IcveMoocProject.scripts.study,
-					IcveMoocProject.scripts.work,
-					YKTProject.scripts.ai
-				]
-					.map((m) => {
-						const url = window.location.href;
-
-						const data = {
-							matches: Array.isArray(m) ? m[0].matches : m.matches,
-							target: Array.isArray(m) ? m[1] : m
-						};
-
-						if (
-							data.matches.some((regexp) => {
-								const r = Array.isArray(regexp) ? regexp[1] : regexp;
-								return typeof r === 'string' ? url.includes(r) : r.test(url);
-							})
-						) {
-							return data.target;
-						}
-
-						return undefined;
-					})
-					.find((m) => m !== undefined);
-
+				const currentStudyScript = CommonProject.scripts.settings.methods.getCurrentMainScript();
 				if (currentStudyScript) {
 					// 注册当前学习脚本的快捷菜单
 					await $menu(currentStudyScript.name || '🖥️', { scriptPanelLink: currentStudyScript });
