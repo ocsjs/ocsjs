@@ -1,4 +1,4 @@
-import { splitAnswer, resolvePlainAnswer } from '../utils';
+import { splitAnswer, splitAnswerBySpaceSafely, resolvePlainAnswer } from '../utils';
 import {
 	removeRedundant,
 	answerNormalizedMatch,
@@ -33,7 +33,9 @@ export interface MultipleResolveResult {
  * 1. 归一化匹配（单向 答案⊇选项）— 去除标点/空格差异后，仅当答案包含选项（或相等）才视为命中；
  *    不取"选项包含答案"方向，避免 "TCP" 误选 "TCP/IP协议" 等语义不一致的选项
  * 2. 相似匹配 + 领先度消歧 — 候选选项两两比较，文本相似时只保留匹配度更高的
- * 3. 纯ABCD答案兜底
+ * 3. 空格分隔兜底 — 题库答案为 "答案1 答案2 答案3" 这类空格分隔格式且常规分割无法匹配任何选项时，
+ *    用带安全校验（语言一致、字数差别不大）的空格分割重新匹配
+ * 4. 纯ABCD答案兜底
  *
  * @param resultAnswers  每个题库结果的原始答案字符串列表
  * @param options         选项文本列表
@@ -46,103 +48,132 @@ export function resolveMultiple(
 ): MultipleResolveResult {
 	const optionStrings = options.map(removeRedundant);
 
-	const groups: MultipleMatchGroup[] = [];
+	/**
+	 * 使用指定分割器对所有题库答案进行两阶段匹配，返回按匹配度排序的分组
+	 */
+	const buildSortedGroups = (splitter: (answer: string) => string[]) => {
+		const groups: MultipleMatchGroup[] = [];
 
-	for (let i = 0; i < resultAnswers.length; i++) {
-		const answers = splitAnswer(resultAnswers[i].trim(), separators);
+		for (let i = 0; i < resultAnswers.length; i++) {
+			const answers = splitter(resultAnswers[i].trim());
 
-		// 阶段1: 归一化匹配（包含式）
-		const normalizedGroup: MultipleMatchGroup = {
-			options: [],
-			answers: [],
-			ratings: [],
-			similarSum: 0,
-			similarCount: 0
-		};
-		const normalizedOptions = answerNormalizedMatch(answers, optionStrings);
-		for (const opt of normalizedOptions) {
-			// answerNormalizedMatch 返回的是 optionStrings（已 removeRedundant）中的字符串，
-			// 故在 optionStrings 中定位索引，再映射回原始 options，避免前缀剥离后查找不到
-			const idx = optionStrings.indexOf(opt);
-			if (idx !== -1) {
-				// 严格方向：仅当 答案⊇选项（或归一化相等）时才视为命中，
-				// 避免 "TCP" 误选 "TCP/IP协议" 等选项⊇答案的误匹配
-				const matchedAns = answers.find((a) => {
-					const na = normalizeString(removeRedundant(a));
+			// 阶段1: 归一化匹配（包含式）
+			const normalizedGroup: MultipleMatchGroup = {
+				options: [],
+				answers: [],
+				ratings: [],
+				similarSum: 0,
+				similarCount: 0
+			};
+			const normalizedOptions = answerNormalizedMatch(answers, optionStrings);
+			for (const opt of normalizedOptions) {
+				// answerNormalizedMatch 返回的是 optionStrings（已 removeRedundant）中的字符串，
+				// 故在 optionStrings 中定位索引，再映射回原始 options，避免前缀剥离后查找不到
+				const idx = optionStrings.indexOf(opt);
+				if (idx !== -1) {
+					// 严格方向：仅当 答案⊇选项（或归一化相等）时才视为命中，
+					// 避免 "TCP" 误选 "TCP/IP协议" 等选项⊇答案的误匹配
+					const matchedAns = answers.find((a) => {
+						const na = normalizeString(removeRedundant(a));
+						const no = normalizeString(removeRedundant(opt));
+						return na === no || na.includes(no);
+					});
+					if (!matchedAns) continue;
+					normalizedGroup.options.push(options[idx]);
+					normalizedGroup.answers.push(matchedAns);
+					// 归一化匹配中，答案与选项完全归一化相等的评分更高
+					const na = normalizeString(removeRedundant(matchedAns));
 					const no = normalizeString(removeRedundant(opt));
-					return na === no || na.includes(no);
-				});
-				if (!matchedAns) continue;
-				normalizedGroup.options.push(options[idx]);
-				normalizedGroup.answers.push(matchedAns);
-				// 归一化匹配中，答案与选项完全归一化相等的评分更高
-				const na = normalizeString(removeRedundant(matchedAns));
-				const no = normalizeString(removeRedundant(opt));
-				const rating = na === no ? 1 : 0.8;
-				normalizedGroup.ratings.push(rating);
-				normalizedGroup.similarSum += rating;
-				normalizedGroup.similarCount += 1;
+					const rating = na === no ? 1 : 0.8;
+					normalizedGroup.ratings.push(rating);
+					normalizedGroup.similarSum += rating;
+					normalizedGroup.similarCount += 1;
+				}
 			}
-		}
-		// 符号并列消歧：公式选项仅差正负号（-x 与 x、-2 与 2）时，
-		// 常规归一化后完全相同会并列命中，先用保留符号的严格匹配收敛候选
-		if (normalizedGroup.options.length > 1) {
-			const signStrict = disambiguateBySign(answers, normalizedGroup.options);
-			if (signStrict.length) {
-				const keepIndices = signStrict.map((opt) => normalizedGroup.options.indexOf(opt));
-				normalizedGroup.options = signStrict;
-				normalizedGroup.answers = keepIndices.map((idx) => normalizedGroup.answers[idx]);
-				normalizedGroup.ratings = keepIndices.map((idx) => normalizedGroup.ratings[idx]);
+			// 符号并列消歧：公式选项仅差正负号（-x 与 x、-2 与 2）时，
+			// 常规归一化后完全相同会并列命中，先用保留符号的严格匹配收敛候选
+			if (normalizedGroup.options.length > 1) {
+				const signStrict = disambiguateBySign(answers, normalizedGroup.options);
+				if (signStrict.length) {
+					const keepIndices = signStrict.map((opt) => normalizedGroup.options.indexOf(opt));
+					normalizedGroup.options = signStrict;
+					normalizedGroup.answers = keepIndices.map((idx) => normalizedGroup.answers[idx]);
+					normalizedGroup.ratings = keepIndices.map((idx) => normalizedGroup.ratings[idx]);
+				}
 			}
-		}
-		// 归一化匹配结果也需要消歧
-		const normalizedDisambiguated = disambiguateSimilarOptions(normalizedGroup.options, normalizedGroup.ratings);
-		const normalizedKeptIndices = normalizedDisambiguated.map((opt) => normalizedGroup.options.indexOf(opt));
-		normalizedGroup.options = normalizedDisambiguated;
-		normalizedGroup.answers = normalizedKeptIndices.map((idx) => normalizedGroup.answers[idx]);
-		normalizedGroup.ratings = normalizedKeptIndices.map((idx) => normalizedGroup.ratings[idx]);
-		normalizedGroup.similarCount = normalizedGroup.options.length;
-		normalizedGroup.similarSum = normalizedGroup.ratings.reduce((a, b) => a + b, 0);
+			// 归一化匹配结果也需要消歧
+			const normalizedDisambiguated = disambiguateSimilarOptions(normalizedGroup.options, normalizedGroup.ratings);
+			const normalizedKeptIndices = normalizedDisambiguated.map((opt) => normalizedGroup.options.indexOf(opt));
+			normalizedGroup.options = normalizedDisambiguated;
+			normalizedGroup.answers = normalizedKeptIndices.map((idx) => normalizedGroup.answers[idx]);
+			normalizedGroup.ratings = normalizedKeptIndices.map((idx) => normalizedGroup.ratings[idx]);
+			normalizedGroup.similarCount = normalizedGroup.options.length;
+			normalizedGroup.similarSum = normalizedGroup.ratings.reduce((a, b) => a + b, 0);
 
-		// 相似度匹配
-		const ratingGroup: MultipleMatchGroup = { options: [], answers: [], ratings: [], similarSum: 0, similarCount: 0 };
-		const ratings = answerSimilarWithGap(answers, optionStrings);
-		for (let j = 0; j < ratings.length; j++) {
-			if (ratings[j].rating > 0.6) {
-				ratingGroup.options.push(options[j]);
-				ratingGroup.answers.push(ratings[j].target);
-				ratingGroup.ratings.push(ratings[j].rating);
-				ratingGroup.similarSum += ratings[j].rating;
-				ratingGroup.similarCount += 1;
+			// 相似度匹配
+			const ratingGroup: MultipleMatchGroup = {
+				options: [],
+				answers: [],
+				ratings: [],
+				similarSum: 0,
+				similarCount: 0
+			};
+			const ratings = answerSimilarWithGap(answers, optionStrings);
+			for (let j = 0; j < ratings.length; j++) {
+				if (ratings[j].rating > 0.6) {
+					ratingGroup.options.push(options[j]);
+					ratingGroup.answers.push(ratings[j].target);
+					ratingGroup.ratings.push(ratings[j].rating);
+					ratingGroup.similarSum += ratings[j].rating;
+					ratingGroup.similarCount += 1;
+				}
 			}
+
+			// 领先度消歧
+			const disambiguated = disambiguateSimilarOptions(ratingGroup.options, ratingGroup.ratings);
+			const keptIndices = disambiguated.map((opt) => ratingGroup.options.indexOf(opt));
+			ratingGroup.options = disambiguated;
+			ratingGroup.answers = keptIndices.map((idx) => ratingGroup.answers[idx]);
+			ratingGroup.ratings = keptIndices.map((idx) => ratingGroup.ratings[idx]);
+			ratingGroup.similarCount = ratingGroup.options.length;
+			ratingGroup.similarSum = ratingGroup.ratings.reduce((a, b) => a + b, 0);
+
+			// 选匹配度最高的
+			const best = [normalizedGroup, ratingGroup].sort(
+				(a, b) => b.similarCount * 100 + b.similarSum - a.similarCount * 100 - a.similarSum
+			)[0];
+			groups[i] = best;
 		}
 
-		// 领先度消歧
-		const disambiguated = disambiguateSimilarOptions(ratingGroup.options, ratingGroup.ratings);
-		const keptIndices = disambiguated.map((opt) => ratingGroup.options.indexOf(opt));
-		ratingGroup.options = disambiguated;
-		ratingGroup.answers = keptIndices.map((idx) => ratingGroup.answers[idx]);
-		ratingGroup.ratings = keptIndices.map((idx) => ratingGroup.ratings[idx]);
-		ratingGroup.similarCount = ratingGroup.options.length;
-		ratingGroup.similarSum = ratingGroup.ratings.reduce((a, b) => a + b, 0);
+		const sorted = groups
+			.filter((g) => g.similarCount !== 0)
+			.sort((a, b) => {
+				const bsc = b.similarCount * 100;
+				const asc = a.similarCount * 100;
+				return bsc + b.similarSum - asc - a.similarSum;
+			});
 
-		// 选匹配度最高的
-		const best = [normalizedGroup, ratingGroup].sort(
-			(a, b) => b.similarCount * 100 + b.similarSum - a.similarCount * 100 - a.similarSum
-		)[0];
-		groups[i] = best;
+		return { sorted, groups };
+	};
+
+	// 常规分割匹配
+	const normal = buildSortedGroups((answer) => splitAnswer(answer, separators));
+	if (normal.sorted[0]) {
+		return { finish: true, options: normal.sorted[0].options, groups: normal.sorted };
 	}
 
-	const sorted = groups
-		.filter((g) => g.similarCount !== 0)
-		.sort((a, b) => {
-			const bsc = b.similarCount * 100;
-			const asc = a.similarCount * 100;
-			return bsc + b.similarSum - asc - a.similarSum;
-		});
-
-	if (sorted[0]) {
-		return { finish: true, options: sorted[0].options, groups: sorted };
+	// 空格分隔兜底：题库答案为 "答案1 答案2 答案3" 这类空格分隔格式时，
+	// 常规分隔符无法切分导致匹配不到任何选项，此时用带安全校验的空格分割重新匹配。
+	// splitAnswerBySpaceSafely 会校验分段语言一致、字数差别不大，不满足则退回常规分割结果。
+	const fallback = buildSortedGroups((answer) => {
+		const normalSplit = splitAnswer(answer, separators);
+		if (normalSplit.length > 1) {
+			return normalSplit;
+		}
+		return splitAnswerBySpaceSafely(answer) ?? normalSplit;
+	});
+	if (fallback.sorted[0]) {
+		return { finish: true, options: fallback.sorted[0].options, groups: fallback.sorted };
 	}
 
 	// 纯ABCD答案兜底

@@ -14,16 +14,37 @@ export function clearString(str: string, ...exclude: string[]) {
 }
 
 /**
+ * 纯符号内容回退形式：折叠空白、小写、全角转半角，**保留全部符号**。
+ *
+ * 当字符串不含任何英数中字符时（如 JSP 标签选项 `<%= %>`），归一化结果为空串
+ * 会导致所有此类选项无法区分、永远无法匹配；调用方在归一化结果为空时
+ * 应使用本形式（基于**原始串**，避免预剥离删除 `<` `!` 等判别符号后发生碰撞）。
+ */
+export function symbolFallback(str: string): string {
+	return str
+		.trim()
+		.toLocaleLowerCase()
+		.replace(/\s/g, '')
+		.replace(/[ａ-ｚＡ-Ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0));
+}
+
+/**
  * 归一化字符串：去除标点、空格、全角转半角后再 clearString
  * 用于精确匹配前预处理，忽略空白和标点差异
+ *
+ * 纯符号内容（如 `<%= %>`）：预剥离会删除 `<` `!` 等判别符号，
+ * 必须在**原始串**上用 {@link symbolFallback} 回退（保留全部符号），
+ * 否则 `<%%>` 与 `<%!%>` 等选项会碰撞为同一 `%`，产生误选。
  */
 export function normalizeString(str: string): string {
-	return clearString(
-		str
-			.replace(/[，。！？；：""''、（）【】《》\s]/g, '') // 去除中文标点和空白
-			.replace(/[,.\-!?;:'"()[\]<>]/g, '') // 去除英文标点
-			.replace(/[ａ-ｚＡ-Ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)) // 全角→半角
-			.replace(/％/g, '%')
+	return (
+		clearString(
+			str
+				.replace(/[，。！？；：""''、（）【】《》\s]/g, '') // 去除中文标点和空白
+				.replace(/[,.\-!?;:'"()[\]<>]/g, '') // 去除英文标点
+				.replace(/[ａ-ｚＡ-Ｚ０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)) // 全角→半角
+				.replace(/％/g, '%')
+		) || symbolFallback(str)
 	);
 }
 
@@ -82,8 +103,9 @@ export function answerNormalizedMatch(answers: string[], options: string[]): str
  *
  */
 export function answerSimilar(answers: string[], options: string[]): Rating[] {
-	const _answers = answers.map(removeRedundant).map((a) => clearString(a));
-	const _options = options.map(removeRedundant).map((o) => clearString(o));
+	// 归一化为空（纯符号内容如 `<%= %>`）时回退 symbolFallback（保留全部符号，基于原始串）
+	const _answers = answers.map(removeRedundant).map((a) => clearString(a) || symbolFallback(a));
+	const _options = options.map(removeRedundant).map((o) => clearString(o) || symbolFallback(o));
 
 	const similar =
 		_answers.length !== 0
@@ -150,8 +172,9 @@ export interface MatchRating extends Rating {
  * 用于解决"相似选项全选"的问题
  */
 export function answerSimilarWithGap(answers: string[], options: string[]): MatchRating[] {
-	const _answers = answers.map(removeRedundant).map((a) => clearString(a));
-	const _options = options.map(removeRedundant).map((o) => clearString(o));
+	// 同 answerSimilar：纯符号内容回退 symbolFallback
+	const _answers = answers.map(removeRedundant).map((a) => clearString(a) || symbolFallback(a));
+	const _options = options.map(removeRedundant).map((o) => clearString(o) || symbolFallback(o));
 
 	if (_answers.length === 0) {
 		return _options.map(() => ({ rating: 0, target: '', gap: 0 }));
@@ -251,6 +274,11 @@ export function removeRedundant(str: string) {
 	return (
 		linearizeLatex(str?.trim() || '')
 			.replace(/^[A-Z]{1}[^A-Za-z0-9⺀-鿿]+([A-Za-z0-9⺀-鿿]+)/, '$1')
+			// 标签后跟随纯符号内容（如 "A. <%= %>"、裸字母+换行 "A\n <%@ %>"）：
+			// 规则1 的捕获组要求英数中字符而失败，标签残留会污染归一化
+			// （四个选项归一化为 a/b/c/d 互相区分但与答案永远不匹配），此处补剥离。
+			// 前瞻要求标签后必须是符号（非英数中），"A man"、"B 2" 等内容不受影响
+			.replace(/^[A-Z]{1}[.、)）:：\s]+(?=[^A-Za-z0-9⺀-鿿])/, '')
 			.replace(/^[A-Z]{1}([⺀-鿿][A-Za-z0-9⺀-鿿]*)/, '$1') || ''
 	);
 }

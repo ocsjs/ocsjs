@@ -550,6 +550,7 @@ let answererWrapperUnsetMessage: MessageElement | undefined;
 export const answerWrapperEmptyWarning = cors.defineTopFunction((duration: number) => {
 	const setting = h('button', { className: 'base-style-button-secondary' }, '通用-全局设置');
 	setting.onclick = () => {
+		BackgroundProject.scripts.render.methods.normal();
 		BackgroundProject.scripts.render.methods.pin(CommonProject.scripts.settings);
 		setTimeout(() => {
 			$elements.root?.querySelector<HTMLElement>('[value="点击配置"]')?.click();

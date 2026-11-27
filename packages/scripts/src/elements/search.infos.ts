@@ -7,9 +7,10 @@ import { createAccordionCard } from '../utils/ui';
  * 图片链接正则
  * 含 query string 与 fragment，避免 URL 被截断（如带 ?response-content-disposition=... 的鉴权链接）
  * 排除空白/引号/</CJK，避免跨越标签或吞掉相邻中文
+ * 忽略大小写，适配平台返回大写扩展名的链接（如 .PNG）
  */
 const IMG_LINK_RE =
-	/https?:\/\/[^"'<\s一-鿿]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s"'<>一-鿿]*)?(?:#[^\s"'<>一-鿿]*)?/g;
+	/https?:\/\/[^"'<\s一-鿿]+?\.(?:png|jpe?g|gif|bmp|webp|svg)(?:\?[^\s"'<>一-鿿]*)?(?:#[^\s"'<>一-鿿]*)?/gi;
 
 /**
  * 判断是否有图片链接，如果有则使用 <img> 标签包裹，但如果已经被 <img> 包裹则不处理

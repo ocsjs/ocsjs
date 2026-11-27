@@ -171,3 +171,59 @@ export function splitAnswer(answer: string, separators = ['===', '#', '---', '##
 
 	return [answer];
 }
+
+/**
+ * 空格分隔兜底分割
+ *
+ * 仅用于处理"题库返回答案使用空格分隔多个答案"的异常格式（如 `答案1 答案2 答案3`）。
+ * 为防止误分割正常答案（如英文句子、短语），仅在以下条件全部满足时才进行分割：
+ *
+ * 1. 分割结果数量在 2 ~ 10 之间；
+ * 2. 所有分段语言一致：全部包含中文，或全部为纯英文/数字内容，不允许分段中英混杂、
+ *    也不允许部分分段为中文而另一部分为英文；
+ * 3. 各分段字数差别不大：最长分段长度不超过最短分段的 maxLengthRatio 倍。
+ *
+ * @param answer          答案文本
+ * @param maxLengthRatio  分段长度允许的最大倍数差，默认 3
+ * @returns 满足条件时返回分割结果，否则返回 undefined（表示不适用空格兜底）
+ */
+export function splitAnswerBySpaceSafely(answer: string, maxLengthRatio = 3): string[] | undefined {
+	const parts = answer
+		.trim()
+		.split(/\s+/)
+		.filter((p) => p.length > 0);
+	if (parts.length < 2 || parts.length > 10) {
+		return undefined;
+	}
+
+	// 语言一致性校验
+	let chineseCount = 0;
+	for (const part of parts) {
+		const hasChinese = /[一-龥]/.test(part);
+		const hasEnglish = /[a-zA-Z]/.test(part);
+		// 单个分段中英混杂，大概率是一个短语/句子而非独立答案
+		if (hasChinese && hasEnglish) {
+			return undefined;
+		}
+		if (hasChinese) {
+			chineseCount++;
+		}
+	}
+	// 部分分段为中文、部分为英文/符号，语言不一致
+	if (chineseCount !== 0 && chineseCount !== parts.length) {
+		return undefined;
+	}
+
+	// 字数差别校验：最长分段不超过最短分段的 maxLengthRatio 倍
+	let min = Infinity;
+	let max = 0;
+	for (const part of parts) {
+		min = Math.min(min, part.length);
+		max = Math.max(max, part.length);
+	}
+	if (max > min * maxLengthRatio) {
+		return undefined;
+	}
+
+	return parts;
+}

@@ -290,6 +290,19 @@ export class RemotePlaywright {
 	}
 }
 
+/**
+ * 获取当前页面 html 上的 CSS zoom 缩放比例（例如智慧树低分辨率时会自动设置 zoom 缩放）。
+ *
+ * 标准化 zoom 下的坐标系关系：
+ * - getBoundingClientRect / CDP 鼠标事件坐标：真实渲染（视觉）坐标，两者一致，无需换算；
+ * - position:fixed 的 left/top：布局坐标，绘制时会再乘一次 zoom。
+ * 所以在页面内用 fixed 元素标注某个点时，需要将 rect 坐标除以 zoom 换算回布局坐标，否则标注位置会产生偏移。
+ */
+function getPageZoomScale(): number {
+	const zoom = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('zoom') || '1');
+	return Number.isFinite(zoom) && zoom > 0 ? zoom : 1;
+}
+
 function scrollToElement(el: HTMLElement) {
 	el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 	// 等待动作完成
@@ -299,21 +312,52 @@ function scrollToElement(el: HTMLElement) {
 function showMousePointer(el: HTMLElement) {
 	setTimeout(() => {
 		const rect = el.getBoundingClientRect();
-		// 显示鼠标位置
-		const div = document.createElement('div');
-		div.textContent = '';
-		div.style.position = 'fixed';
-		div.style.zIndex = '99999';
-		div.style.width = '20px';
-		div.style.height = '20px';
-		div.style.border = '2px solid red';
-		div.style.borderRadius = '50%';
-		div.style.left = rect.left + rect.width / 2 - 11 + 'px';
-		div.style.top = rect.top + rect.height / 2 - 11 + 'px';
-		document.body.append(div);
+		// fixed 定位的 left/top 是布局坐标（绘制时会再乘 zoom），
+		// 而 getBoundingClientRect 返回的是真实渲染坐标，这里除以 zoom 换算回布局坐标，保证缩放页面下红点位置不偏移
+		const zoomScale = getPageZoomScale();
+		const x = (rect.left + rect.width / 2) / zoomScale;
+		const y = (rect.top + rect.height / 2) / zoomScale;
+
+		// 中心圆点
+		const dot = document.createElement('div');
+		dot.style.cssText = [
+			'position:fixed',
+			'z-index:99999',
+			'pointer-events:none',
+			'width:12px',
+			'height:12px',
+			'background:rgba(255,0,0,0.7)',
+			'border-radius:50%',
+			`left:${x - 6}px`,
+			`top:${y - 6}px`
+		].join(';');
+
+		// 涟漪波纹（向外扩散并淡出）
+		const ripple = document.createElement('div');
+		ripple.style.cssText = [
+			'position:fixed',
+			'z-index:99998',
+			'pointer-events:none',
+			'width:24px',
+			'height:24px',
+			'border:2px solid rgba(255,0,0,0.8)',
+			'border-radius:50%',
+			`left:${x - 13}px`,
+			`top:${y - 13}px`
+		].join(';');
+		ripple.animate(
+			[
+				{ transform: 'scale(0.5)', opacity: 1 },
+				{ transform: 'scale(2.5)', opacity: 0 }
+			],
+			{ duration: 600, easing: 'ease-out' }
+		);
+
+		document.body.append(dot, ripple);
 		setTimeout(() => {
-			div.remove();
-		}, 500);
+			dot.remove();
+			ripple.remove();
+		}, 700);
 	}, 100);
 }
 

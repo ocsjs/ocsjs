@@ -27,7 +27,7 @@ import {
 } from '../utils/work';
 import { $console, BackgroundProject } from './background';
 import { $msgwc, CommonWorkOptions, playMedia } from '../utils';
-import { createSteps } from '../utils/ui';
+import { createSteps, loadingSpinSvg, isPopupBlocked, retryOpenWindow, showPopupBlockedGuide } from '../utils/ui';
 import { waitForElement, waitForMedia } from '../utils/study';
 
 /**
@@ -40,7 +40,7 @@ const CX_SECRET_REF_TABLE_URL = 'https://cdn.ocsjs.com/resources/font/font_ref_c
 const HIGHT_PLAYBACK_RATE_WARNS = [
 	'⚠️高倍速、夜间、白天大量运行 等情况\n可能导致学习记录清空/回退',
 	'⚠️超星后台可以看到学习时长，请谨慎设置',
-	'⚠️如已清空/回退，请降低倍速至1-2倍'
+	'⚠️如已清空/回退，请降低倍速至1倍'
 ];
 
 // @ts-ignore
@@ -62,6 +62,13 @@ const state = {
 		hacked: false,
 		answererWrapperUnsetMessage: undefined as MessageElement | undefined,
 		playbackRateWarningListenerId: 0
+	},
+	jfk: {
+		current_win: null as Window | null,
+		/** 弹窗被浏览器拦截时的重试函数（必须在真实用户点击事件中调用才能绕过拦截） */
+		retry_open: undefined as (() => void) | undefined,
+		/** 是否已调度 3 秒后的自动学习（防止多个 goNext 并发执行） */
+		auto_next_pending: false
 	}
 };
 
@@ -349,6 +356,17 @@ export const CXProject = Project.create({
 					label: '链接任务自动完成',
 					attrs: { type: 'checkbox', title: '开启：链接任务自动完成' },
 					defaultValue: true
+				},
+				jobSearchTimeOut: {
+					elementClassName: 'config-details',
+					showIf: 'cx.new.study.enables',
+					label: '任务加载等待时长',
+					attrs: {
+						type: 'number',
+						title: '（单位：秒）， 不填写默认智能判断、如果网络较慢可自定义等待时长，例如30s/60s',
+						placeholder: '根据任务数量智能判断'
+					},
+					defaultValue: undefined as undefined | number
 				}
 			},
 			onrender({ panel }) {
@@ -360,9 +378,9 @@ export const CXProject = Project.create({
 				this.offConfigChange(state.study.playbackRateWarningListenerId);
 				state.study.playbackRateWarningListenerId =
 					this.onConfigChange('playbackRate', (playbackRate) => {
-						if (playbackRate > 2) {
+						if (playbackRate > 1) {
 							$modal.alert({
-								title: '⚠️高倍速警告 （倍速 >= 2）',
+								title: '⚠️高倍速警告 （倍速 > 1）',
 								content: $ui.notes(HIGHT_PLAYBACK_RATE_WARNS),
 								maskCloseable: false,
 								confirmButtonText: '我已知晓风险'
@@ -756,6 +774,12 @@ export const CXProject = Project.create({
 					return;
 				}
 
+				// 积分课不执行跳转和滚动
+				if (CXProject.scripts.jfk.methods.isJFK(location.href)) {
+					CXProject.scripts.jfk.cfg.study_status = 'studying';
+					return;
+				}
+
 				// 寻找需要运行的任务
 				if (CXProject.scripts.study.cfg.autoJumpToUnFinishJob) {
 					// 过滤掉已完成的章节
@@ -796,20 +820,316 @@ export const CXProject = Project.create({
 				await ensureCxFontDecrypted();
 			}
 		}),
-		// 积分课提示
-		jfkGuide: new Script({
-			name: '💡 积分课使用提示',
-			matches: [['积分课页面', '/plaza']],
-			namespace: 'cx.jfk.guide',
+		// 积分课
+		jfk: new Script({
+			name: '🖥️ 积分课自动学习',
+			matches: [
+				['积分课页面', '/plaza'],
+				['已完成的积分课界面', 'nodedetailcontroller/visitnodedetail']
+			],
+			namespace: 'cx.jfk.study',
 			configs: {
 				notes: {
-					defaultValue:
-						createSteps(['进入课程', '开启复习模式，并关闭自动下一章', '课程完成后手动切换']).outerHTML +
-						$ui.notes(['⚠️ 如果由脚本进行自动跳转会出现乱跳转的可能，请手动切换课程。']).outerHTML
-				}
+					defaultValue: $ui.notes([
+						'点击下列任意积分课程，开始自动学习',
+						['可切换到 “首页推荐” 和 “全部界面” 两个', '界面执行自动学习功能']
+					]).outerHTML
+				},
+				mode: {
+					label: '学习模式',
+					tag: 'select',
+					options: [
+						['next', '顺序学习'],
+						['job', '只学必学']
+					],
+					defaultValue: 'next' as 'next' | 'job'
+				},
+				// 积分课的课程ID记录，使用该字段可判断课程是否为积分课
+				jfk_course_records: {
+					defaultValue: [] as string[]
+				},
+				study_index: { defaultValue: 0 },
+				study_status: { defaultValue: 'pending' as 'pending' | 'studying' | 'finish' | 'daily_finish' }
 			},
-			oncomplete(...args) {
+			methods() {
+				const getCourseList = () => {
+					return Array.from(document.querySelectorAll<HTMLElement>('#recommend-knowledge li.list'));
+				};
+				const getCourseName = (element?: HTMLElement) => {
+					return element?.querySelector('.book-name')?.textContent || '未知课程';
+				};
+				const gotoCourse = (element?: HTMLElement) => element?.querySelector<HTMLElement>('.book-name')?.click();
+				return {
+					isJFK: (url: string) => {
+						const search = new URL(url).searchParams;
+						const courseId = search.get('courseId') || search.get('courseid') || '';
+						return !!courseId && this.cfg.jfk_course_records.includes(courseId.toString());
+					},
+					getCourseList: getCourseList,
+					getCourseName: getCourseName,
+					gotoCourse: gotoCourse,
+					getCurrentCourseName: () => this.methods.getCourseName(this.methods.getCourseList().at(this.cfg.study_index)),
+					renderCurrentJobName: async () => {
+						await waitForElement(() => getCourseList()[0]);
+						const curr = getCourseList().at(this.cfg.study_index);
+						// 弹窗被拦截且当前没有学习窗口时，提供手动重试入口
+						const blocked = !!state.jfk.retry_open && !state.jfk.current_win;
+						this.panel?.body.replaceChildren(
+							h('div', { className: 'card' }, [
+								h('hr'),
+								state.jfk.current_win ? h('span', { innerHTML: loadingSpinSvg }) : '',
+								(state.jfk.current_win ? '正在学习' : '上次在学') + '：',
+								h('br'),
+								getCourseName(curr),
+								...(state.jfk.current_win
+									? [
+											$ui.button('关闭', {
+												style: { marginLeft: '12px' },
+												onclick: () => {
+													state.jfk.current_win?.close();
+													$modal.alert({
+														title: '提示',
+														content: '学习窗口已关闭，脚本将无法继续自动学习。如需恢复自动学习，请刷新页面后重新运行。'
+													});
+												}
+											})
+									  ]
+									: [
+											...(blocked
+												? [
+														h('div', {
+															style: { color: '#e6a23c', margin: '4px 0px' },
+															innerText: '⚠️ 学习窗口被浏览器拦截'
+														})
+												  ]
+												: []),
+											blocked
+												? $ui.button('重新打开', {
+														style: { marginLeft: '12px' },
+														onclick: () => state.jfk.retry_open?.()
+												  })
+												: // 自动学习已接管流程，不再提供 “继续学习” 按钮，防止与 3 秒自动调度并发执行 goNext
+												state.jfk.auto_next_pending
+												? h('div', {
+														style: {
+															margin: '8px 0px',
+															padding: '4px',
+															borderRadius: '4px',
+															backgroundColor: '#ecf5ff',
+															color: '#409eff',
+															fontSize: '12px'
+														},
+														innerText: '⏳ 3S 后即将开始自动学习，无需手动操作'
+												  })
+												: h('div', {
+														style: {
+															margin: '8px 0px',
+															padding: '4px',
+															color: '#909399',
+															fontSize: '12px'
+														},
+														innerText: '自动学习未在运行，刷新页面可重新开始'
+												  })
+									  ])
+							])
+						);
+					}
+				};
+			},
+			async onrender() {
+				if (location.href.includes('nodedetailcontroller/visitnodedetail')) {
+					return;
+				}
+				this.methods.renderCurrentJobName();
+			},
+			async oncomplete() {
+				// 如果积分课程已完成，则会显示这个url ： https://mooc1-1.chaoxing.com/nodedetailcontroller/visitnodedetail?knowledgeId=xxxx&courseId=xxxx
+				if (location.href.includes('nodedetailcontroller/visitnodedetail')) {
+					// 直接标记已完成
+					CXProject.scripts.jfk.cfg.study_status = 'daily_finish';
+					return;
+				}
+
 				BackgroundProject.scripts.render.methods.pin(this);
+				const courseId = new URL(location.href).searchParams.get('courseId');
+				if (courseId) {
+					this.cfg.jfk_course_records.push(courseId);
+					this.cfg.jfk_course_records = Array.from(new Set(this.cfg.jfk_course_records));
+				}
+				this.cfg.study_status = 'pending';
+				const _open = $gm.unsafeWindow.open;
+				/** 通过 unsafeWindow 上的原始 open 打开窗口（站点 hook 的 open 可能已被覆盖） */
+				const opener = (...args: any[]) => Reflect.apply(_open, $gm.unsafeWindow, args) as Window | null;
+				/** 记录最近一次被拦截的 window.open 参数，用于面板 “重新打开” 按钮手动重试 */
+				let blocked_args: any[] | undefined;
+
+				/**
+				 * 在真实用户点击事件中重试打开学习窗口。
+				 * 真实点击会让浏览器进入用户激活（transient activation）状态，可绕过弹窗拦截。
+				 */
+				const retryOpen = () => {
+					if (!blocked_args) {
+						return;
+					}
+					const win = retryOpenWindow({ openArgs: blocked_args, opener });
+					if (win) {
+						blocked_args = undefined;
+						state.jfk.retry_open = undefined;
+						state.jfk.current_win = win;
+					}
+					this.methods.renderCurrentJobName();
+				};
+
+				/** 弹窗被拦截时自动弹出引导弹窗，引导用户允许弹窗或手动重试 */
+				const showBlockedModal = () => {
+					if (!blocked_args) {
+						return;
+					}
+					showPopupBlockedGuide({
+						openArgs: blocked_args,
+						opener,
+						siteName: 'chaoxing.com',
+						confirmText: '重新打开',
+						cancelText: '取消自动学习'
+					}).then((result) => {
+						if (result.action === 'retry-success') {
+							blocked_args = undefined;
+							state.jfk.retry_open = undefined;
+							state.jfk.current_win = result.win;
+						} else {
+							$msgwc.warn('已取消自动学习，可手动点击课程继续。');
+						}
+						this.methods.renderCurrentJobName();
+					});
+				};
+
+				$gm.unsafeWindow.open = (...args: any[]) => {
+					// 过滤掉不是积分课的链接
+					if (
+						['/nodedetailcontroller/visitnodedetail?knowledgeId=', '/mycourse/studentstudy', '/mycourse/transfer'].some(
+							(url) => String(args[0]).includes(url)
+						) === false
+					) {
+						return opener(...args);
+					}
+
+					// 当日积分已满的情况会触发这个URL，仅为预览课程，无法执行学习
+					if (['/nodedetailcontroller/visitnodedetail?knowledgeId='].some((url) => String(args[0]).includes(url))) {
+						// 关闭继续学习功能
+
+						return opener(...args);
+					}
+
+					this.cfg.study_status = 'pending';
+					const win = opener(...args);
+					if (isPopupBlocked(win)) {
+						// 弹窗被拦截（脚本自动点击不属于用户操作，浏览器无用户激活状态）
+						blocked_args = args;
+						state.jfk.current_win = null;
+						// 面板中提供 “重新打开” 入口（真实用户点击可绕过拦截）
+						state.jfk.retry_open = retryOpen;
+						showBlockedModal();
+					} else {
+						blocked_args = undefined;
+						state.jfk.retry_open = undefined;
+						state.jfk.current_win = win;
+					}
+					this.methods.renderCurrentJobName();
+					return win;
+				};
+
+				setInterval(() => {
+					const win = state.jfk.current_win;
+					if (!win) {
+						return;
+					}
+					let closed = false;
+					try {
+						// 窗口跨域导航后 closed 属性依然可安全读取
+						closed = win.closed;
+					} catch {
+						// 窗口对象已失效（如 Firefox dead object），视为已关闭
+						closed = true;
+					}
+					if (closed) {
+						state.jfk.current_win = null;
+						this.methods.renderCurrentJobName();
+					}
+				}, 300);
+
+				await waitForElement(() => this.methods.getCourseList()[0]);
+
+				const goNext = () => {
+					const list = this.methods.getCourseList();
+					const next = list.find((item, i) => i > this.cfg.study_index && !item.querySelector('.finished'));
+					state.jfk.current_win?.close();
+					this.methods.gotoCourse(next);
+					return next;
+				};
+
+				/**
+				 * 调度 3 秒后自动学习下一个未完成积分课。
+				 * 重复调度会被忽略（auto_next_pending 标志），防止多个 goNext 并发执行。
+				 * @param opts.replaceCurrent 完成事件触发的调度：当前窗口仍打开着，允许替换；
+				 *                            页面加载触发的调度：已有学习窗口时跳过
+				 */
+				const scheduleNext = (opts: { replaceCurrent?: boolean } = {}) => {
+					if (state.jfk.auto_next_pending) {
+						return;
+					}
+					state.jfk.auto_next_pending = true;
+					this.methods.renderCurrentJobName();
+					setTimeout(() => {
+						state.jfk.auto_next_pending = false;
+						// 已有学习窗口、或上一个会话遗留的学习窗口仍在学习中（配置仍为 studying）时不自动跳转
+						if (this.cfg.study_status === 'studying' || (!opts.replaceCurrent && state.jfk.current_win)) {
+							this.methods.renderCurrentJobName();
+							return;
+						}
+						const list = this.methods.getCourseList();
+						const next = list.find((item, i) => i > this.cfg.study_index && !item.querySelector('.finished'));
+						if (next) {
+							$msgwc.info('自动学习下一个积分课程：' + this.methods.getCourseName(next));
+							goNext();
+						} else {
+							this.methods.renderCurrentJobName();
+						}
+					}, 3000);
+				};
+
+				this.onConfigChange('study_status', (cur) => {
+					if (cur === 'daily_finish') {
+						$msgwc.success({ content: '当日学习积分已满，请改日再进行学习。', duration: 0 });
+						$modal.alert({ content: '✅ 当日学习积分已满，请改日再进行学习。', maskCloseable: false });
+						this.cfg.study_status = 'pending';
+					} else if (cur === 'finish') {
+						$msgwc.success('积分课已完成：' + this.methods.getCurrentCourseName());
+						this.cfg.study_status = 'pending';
+						$msgwc.info('三秒后将自动学习下一个积分课程');
+						// 刚完成的窗口仍打开着，调度时需允许替换当前窗口
+						scheduleNext({ replaceCurrent: true });
+					} else if (cur === 'studying') {
+						$msgwc.info('正在学习积分课：' + this.methods.getCurrentCourseName());
+					}
+				});
+
+				/**
+				 * 页面加载完成后自动学习下一个未完成积分课。
+				 * 该真实窗口的打开同时充当弹窗权限探测：
+				 * 若被浏览器拦截，上方 window.open hook 会自动弹出 “允许弹窗” 引导（showPopupBlockedGuide），
+				 * 用户允许弹窗或点击 “重新打开” 后即可开始全自动学习。
+				 */
+				scheduleNext();
+
+				const list = this.methods.getCourseList();
+				for (let index = 0; index < list.length; index++) {
+					const element = list[index];
+					const i = index;
+					element.addEventListener('click', () => {
+						this.cfg.study_index = i;
+						console.log(element);
+					});
+				}
 			}
 		})
 	}
@@ -1500,9 +1820,12 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	const wait_timeout = 3 + attachmentCount * 2;
 
 	/** 考虑到网速级慢的同学，所以10秒后如果还没有任务点才停止 */
-	setTimeout(() => {
-		searching = false;
-	}, Math.min(wait_timeout, 10) * 1000);
+	setTimeout(
+		() => {
+			searching = false;
+		},
+		opts.jobSearchTimeOut ? parseInt(opts.jobSearchTimeOut.toFixed(0)) * 1000 : Math.min(wait_timeout, 10) * 1000
+	);
 
 	/**
 	 * 递归运行任务点，一旦有新的任务点被检测到直接开始
@@ -1540,9 +1863,15 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	// @ts-ignore
 	top._preChapterId = '';
 
+	// 积分课标记处理
+	if (CXAnalyses.isInFinalTab() && CXProject.scripts.jfk.methods.isJFK(location.href)) {
+		CXProject.scripts.jfk.cfg.study_status = 'finish';
+		return;
+	}
+
 	// 手动模式
 	if (CXProject.scripts.study.cfg.mode === 'manually') {
-		const msg = '页面任务点已完成，自动跳转已关闭，请手动跳转。';
+		const msg = '页面任务点已完成，自动跳转功能已在设置关闭，请手动切换下一页。';
 		$message.warn({ content: msg, duration: 0 });
 		$console.warn(msg);
 		return;
@@ -1550,9 +1879,23 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 
 	// 闯关模式卡死
 	if (CXAnalyses.isInFinalTab() && (await CXAnalyses.isStuckInBreakingMode())) {
-		return $modal.alert({
-			content:
-				'检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致，请手动完成章节测试，然后手动点击下一章。'
+		return $modal.confirm({
+			content: $ui.notes([
+				'⚠️检测到当前课程为闯关模式（有小旗帜图标）, 但是已经重复进入多次，应该是章节测试没有完成，或者其他情况导致。',
+				'解决方法：',
+				'1.👉 手动完成章节测试，然后手动点击下一章',
+				'2.🌐 题库方面： 尽量开启带有AI搜题功能的题库',
+				'3.⚙️ 设置推荐：',
+				$ui.notes([' 全局设置-提交率：强制提交', ' 全局设置-随机答题：开启', ' 全局设置-随机填空：开启'])
+			]),
+			maskCloseable: true,
+			cancelButtonText: '我自己设置',
+			confirmButtonText: '自动应用推荐的设置',
+			onConfirm() {
+				CommonProject.scripts.settings.cfg.upload = 'force';
+				CommonProject.scripts.settings.cfg['randomWork-choice'] = true;
+				CommonProject.scripts.settings.cfg['randomWork-complete'] = true;
+			}
 		});
 	}
 
@@ -1588,7 +1931,12 @@ export async function study(opts: typeof CXProject.scripts.study.cfg) {
 	await $.sleep(3000);
 
 	// 智能模式，并且当前已经完成全部小节，则自动跳章节
-	if (CXProject.scripts.study.cfg.mode === 'job' && CXAnalyses.isInFinalTab()) {
+	if (
+		CXProject.scripts.study.cfg.mode === 'job' &&
+		CXAnalyses.isInFinalTab() &&
+		// 闯关模式下无法使用智能模式
+		CXAnalyses.isInSpecialMode() === false
+	) {
 		// 检测当前章节是否完成，如果已经完成则下一章
 		// 如果没有需要完成的章节，则暂停运行
 		const chapters = CXAnalyses.getChapterInfos();
@@ -1756,9 +2104,7 @@ function searchJob(opts: typeof CXProject.scripts.study.cfg, searchedJobs: Job[]
 
 						// 已完成
 						if (status?.classList.contains('testTit_status_complete')) {
-							const msg = `章节测试已完成 : ` + jobName;
-							$message.success({ content: msg });
-							$console.log(msg);
+							$msgwc.success(`章节测试已完成 : ` + jobName);
 						} else {
 							if (
 								// 未完成
@@ -1771,15 +2117,15 @@ function searchJob(opts: typeof CXProject.scripts.study.cfg, searchedJobs: Job[]
 									answerWrapperEmptyWarning(0);
 								} else {
 									func = () => {
-										$console.log(`开始答题 : ` + jobName);
+										$msgwc.info(`开始答题 : ` + jobName);
 										return JobRunner.chapter(root, workOptions);
 									};
 								}
 							}
 							if (work_type === 'not-job' && CommonProject.scripts.settings.cfg['work-when-no-job'] === false) {
-								const msg = `当前作业 ${jobName} 不是任务点，但待完成，如需开启自动答题请前往：通用-全局设置，开启强制答题。`;
-								$message.warn({ content: msg });
-								$console.warn(msg);
+								$msgwc.warn(
+									`当前作业 ${jobName} 不是任务点，但待完成，如需开启自动答题请前往：通用-全局设置，开启强制答题。`
+								);
 							}
 						}
 					}

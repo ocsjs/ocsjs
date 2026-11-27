@@ -1,4 +1,4 @@
-import { splitAnswer } from '../utils';
+import { splitAnswer, splitAnswerBySpaceSafely } from '../utils';
 
 /** 填空题匹配结果 */
 export interface CompletionResolveResult {
@@ -32,6 +32,21 @@ export function resolveCompletion(
 				return { finish: true, answers: ans };
 			} else if (blankCount === 1) {
 				return { finish: true, answers: [ans.join(' ')] };
+			}
+		}
+	}
+
+	// 空格分隔兜底：题库答案为 "答案1 答案2 答案3" 这类空格分隔格式时，
+	// 常规分隔符无法切分，此时用带安全校验（语言一致、字数差别不大）的空格分割再匹配一次。
+	// 仅在空数大于 1 时生效（空数为 1 时上方已直接合并填写）。
+	if (blankCount > 1) {
+		for (const answers of answerGroups) {
+			const ans = answers.filter((a) => a);
+			if (ans.length === 1) {
+				const spaceSplit = splitAnswerBySpaceSafely(ans[0]);
+				if (spaceSplit && spaceSplit.length === blankCount) {
+					return { finish: true, answers: spaceSplit };
+				}
 			}
 		}
 	}

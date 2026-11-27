@@ -8,7 +8,7 @@ import {
 	updateDynamicResult
 } from '../utils/work';
 import { playbackRate, restudy, volume } from '../utils/configs';
-import { CommonWorkOptions, playMedia } from '../utils';
+import { $msgwc, CommonWorkOptions, playMedia } from '../utils';
 import { createSteps } from '../utils/ui';
 import { CommonProject } from './common';
 
@@ -22,11 +22,6 @@ const state = {
 		playbackRateWarningListenerId: 0,
 		courseLengthListenerId: 0
 	}
-};
-
-const $msg_and_log = (type: 'info' | 'warn' | 'error', msg: string) => {
-	$message[type](msg);
-	$console[type](msg);
 };
 
 /**
@@ -58,7 +53,8 @@ export const IcveMoocProject = Project.create({
 		'course.icve.com.cn',
 		// 智慧职教套壳
 		'courshare.cn',
-		'webtrn.cn'
+		'webtrn.cn',
+		'windf.cn'
 	],
 	scripts: {
 		guide: new Script({
@@ -212,24 +208,14 @@ export const IcveMoocProject = Project.create({
 			configs: {
 				notes: {
 					defaultValue: $ui.notes([
+						'⚠️ 当前暂时不支持倍速播放',
+						'⚠️ 如果显示检测到脚本或者违规，请调低倍速为1倍',
 						'如果视频无法播放，可以手动点击其他任务跳过视频。',
-						'经过测试视频倍速最多二倍，否则会判定无效。',
 						'手动进入作业页面才能使用自动答题。'
 					]).outerHTML
 				},
-				playbackRate: playbackRate,
 				volume,
 				restudy,
-				showScrollBar: {
-					label: '显示右侧滚动条',
-					attrs: { type: 'checkbox' },
-					defaultValue: true
-				},
-				expandAll: {
-					label: '展开所有章节',
-					attrs: { type: 'checkbox' },
-					defaultValue: true
-				},
 				switchPeriod: {
 					label: '下一章节切换间隔（秒）',
 					defaultValue: 10,
@@ -241,57 +227,52 @@ export const IcveMoocProject = Project.create({
 					}
 				}
 			},
-			onrender() {
-				// 高倍速警告
-				this.offConfigChange(state.study.playbackRateWarningListenerId);
-				state.study.playbackRateWarningListenerId =
-					this.onConfigChange('playbackRate', (playbackRate) => {
-						if (playbackRate > 4) {
-							$modal.alert({
-								title: '⚠️高倍速警告',
-								content: $ui.notes(['高倍速可能导致视频无法完成！'])
-							});
-						}
-					}) || 0;
-			},
 			async oncomplete() {
 				BackgroundProject.scripts.render.methods.pin(this);
 
 				await $.sleep(3000);
 
 				this.onConfigChange('volume', (v) => state.study.currentMedia && (state.study.currentMedia.volume = v));
-				this.onConfigChange(
-					'playbackRate',
-					(r) => state.study.currentMedia && (state.study.currentMedia.playbackRate = parseFloat(r.toString()))
-				);
+
+				// 等待章节列表显示，在简介界面以及其他界面不运行，一直等待
+				await waitForElement(() => {
+					const mainContentWin = $el<HTMLIFrameElement>('#mainContent')?.contentWindow as Window & { [x: string]: any };
+					return mainContentWin.document.querySelector<HTMLElement>('.s_sectionlist');
+				});
 
 				const mainContentWin = $el<HTMLIFrameElement>('#mainContent')?.contentWindow as Window & { [x: string]: any };
 
-				if (mainContentWin) {
-					// 弹窗强制用户点击，防止视频无法自动播放
-					$modal.confirm({
-						content: h('div', [
-							'是否开始自动学习当前章节？',
-							h('br'),
-							'你也可以选择任意的章节进行点击，脚本会自动学习，并一直往下寻找章节。'
-						]),
-						cancelButtonText: '我想手动选择章节',
-						confirmButtonText: '开始学习',
-						async onConfirm() {
-							study(StudyLock.getLock());
-							scrollToJob();
-						}
-					});
+				if (!mainContentWin) {
+					return $msgwc.error('无法找到学习界面，请刷新重试。');
 				}
 
-				if (this.cfg.showScrollBar) {
-					const bar = $el('.dumascroll_area', mainContentWin.document);
-					bar && (bar.style.overflow = 'auto');
-				}
+				// 弹窗强制用户点击，防止视频无法自动播放
+				$modal.confirm({
+					content: h('div', [
+						'是否开始自动学习当前章节？',
+						h('br'),
+						'你也可以选择任意的章节进行点击，脚本会自动学习，并一直往下寻找章节。'
+					]),
+					cancelButtonText: '我想手动选择章节',
+					confirmButtonText: '开始学习',
+					maskCloseable: false,
+					async onConfirm() {
+						study(StudyLock.getLock());
+						scrollToJob();
+					}
+				});
 
-				if (this.cfg.expandAll) {
-					$$el('.s_sectionlist,.s_sectionwrap', mainContentWin.document).forEach((el) => (el.style.display = 'block'));
-				}
+				// 补上右侧滚动条（平台无滚动条）
+				const bar = $el('.dumascroll_area', mainContentWin.document);
+				bar && (bar.style.overflow = 'auto');
+
+				setInterval(async () => {
+					// 定时显示进度条，防止消失
+					fixProcessBar(mainContentWin.document);
+				}, 3000);
+
+				// 展开全部章节
+				$$el('.s_sectionlist,.s_sectionwrap', mainContentWin.document).forEach((el) => (el.style.display = 'block'));
 
 				for (const job of $$el('.s_point[itemtype]', mainContentWin.document)) {
 					job.addEventListener('click', (e) => {
@@ -330,7 +311,6 @@ export const IcveMoocProject = Project.create({
 								const media = await waitForMedia({ root: doc });
 
 								state.study.currentMedia = media;
-								media.playbackRate = parseFloat(this.cfg.playbackRate.toString());
 								media.volume = this.cfg.volume;
 								media.currentTime = 0;
 
@@ -362,7 +342,8 @@ export const IcveMoocProject = Project.create({
 									}
 								});
 							} catch (err) {
-								$message.error(String(err));
+								$msgwc.error(String(err));
+								$msgwc.error({ content: '视频播放失败请刷新界面重试！', duration: 0 });
 							}
 						} else if (iframe.src.includes('content_doc.action')) {
 							// 文档只需点击就算完成，等待5秒下一个
@@ -371,7 +352,7 @@ export const IcveMoocProject = Project.create({
 					} else {
 						// 如果为 null 证明跨域
 					}
-					$console.log(this.cfg.switchPeriod + ' 秒后切换下一章节。');
+					$msgwc.info(this.cfg.switchPeriod + ' 秒后切换下一章节。');
 					await $.sleep(this.cfg.switchPeriod * 1000);
 
 					if (studyLock.canStudy()) {
@@ -468,7 +449,8 @@ export const IcveMoocProject = Project.create({
 			matches: [
 				['课程页面', 'ai.icve.com.cn/app/coursedetails-excellent'],
 				['课程页面', 'ai.icve.com.cn/app/my-excellent-home'],
-				['学习页面', 'ai.icve.com.cn/excellent-study']
+				['学习页面', 'ai.icve.com.cn/excellent-study'],
+				['学习页面2', 'ai.icve.com.cn/moocCourse/excellent-study']
 			],
 			configs: {
 				notes: {
@@ -570,7 +552,7 @@ export const IcveMoocProject = Project.create({
 				await waitForLoad();
 				await $.sleep(3000);
 
-				$msg_and_log('info', '即将打开全部章节列表，请稍等');
+				$msgwc.info('即将打开全部章节列表，请稍等');
 				// 打开全部章节列表
 				const openAllChapter = async () => {
 					const model = $modal.simple({
@@ -629,7 +611,7 @@ export const IcveMoocProject = Project.create({
 				});
 
 				const study = async (id: string) => {
-					$msg_and_log('info', '即将开始学习：' + ($el('.contentBox')?.__vue__.nrdata.name || '未知任务点'));
+					$msgwc.info('即将开始学习：' + ($el('.contentBox')?.__vue__.nrdata.name || '未知任务点'));
 					await $.sleep(3000);
 
 					await (async () => {
@@ -638,7 +620,7 @@ export const IcveMoocProject = Project.create({
 						active?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
 						if (active?.querySelector('i.wc') && !this.cfg.restudy) {
-							return $msg_and_log('info', '当前任务已完成，即将跳过');
+							return $msgwc.info('当前任务已完成，即将跳过');
 						}
 
 						const vue = $el('.FilePreview')?.__vue__;
@@ -646,10 +628,10 @@ export const IcveMoocProject = Project.create({
 						const work = $el('.shiti');
 						if (work) {
 							// 做作业
-							return $msg_and_log('warn', '检测到当前为作业任务，请完成课程后手动进入自动答题。');
+							return $msgwc.warn('检测到当前为作业任务，请完成课程后手动进入自动答题。');
 						} else if (img) {
 							// 做作业
-							return $msg_and_log('warn', '检测到当前为图片任务，即将跳过');
+							return $msgwc.warn('检测到当前为图片任务，即将跳过');
 						} else {
 							if (!vue) {
 								return $message.error({ content: '获取课程数据失败，或者未知任务点，即将跳过' });
@@ -673,7 +655,7 @@ export const IcveMoocProject = Project.create({
 								if (id !== study_id) return;
 								await $.sleep(1000);
 							} else {
-								$msg_and_log('warn', '未知的任务点，即将跳过');
+								$msgwc.warn('未知的任务点，即将跳过');
 							}
 						}
 					})();
@@ -681,9 +663,9 @@ export const IcveMoocProject = Project.create({
 
 					const next = getNext();
 					if (!next) {
-						return $msg_and_log('warn', '没有找到下一章节！');
+						return $msgwc.warn('没有找到下一章节！');
 					}
-					$msg_and_log('info', '即将进入下一章节');
+					$msgwc.info('即将进入下一章节');
 					await $.sleep(3000);
 					if (id !== study_id) return;
 					next.click();
@@ -1130,4 +1112,11 @@ function handleContinueDialog() {
 			console.log('未找到弹窗，继续执行');
 		}, 60 * 1000);
 	});
+}
+
+function fixProcessBar(dom: Document) {
+	const iframe = $el<HTMLIFrameElement>('iframe', dom);
+	const win = iframe?.contentWindow;
+	const player = win?.document.querySelector<HTMLElement>('#screen_player');
+	if (player) player.style.display = 'block';
 }

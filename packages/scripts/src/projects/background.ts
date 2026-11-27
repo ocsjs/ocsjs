@@ -14,23 +14,18 @@ import {
 	h,
 	$,
 	MessageElement,
-	$menu,
-	cors
+	$menu
 } from 'easy-us';
 import semver_gt from 'semver/functions/gt';
 import semver_valid from 'semver/functions/valid';
+import md5 from 'md5';
 import { CommonProject } from './common';
-import { CXProject, definedProjects, ICourseProject, IcveMoocProject, YKTProject, ZHSProject, ZJYProject } from '..';
+import { CXProject, definedProjects, ICourseProject, IcveMoocProject, ZHSProject, ZJYProject } from '..';
 import { RenderScript } from '../render';
 import { SearchInfosElement } from '../elements/search.infos';
 import { $render } from '../utils/render';
 
 const state = {
-	console: {
-		listenerIds: {
-			logs: 0 as StoreListenerType
-		}
-	},
 	app: {
 		listenerIds: {
 			sync: 0 as StoreListenerType,
@@ -39,6 +34,52 @@ const state = {
 		}
 	}
 };
+
+/** 将配置键解析为可读名称（脚本名 - 配置项 label），解析失败返回原始键 */
+function resolveConfigLabel(key: string): string {
+	for (const project of definedProjects()) {
+		for (const scriptKey in project.scripts) {
+			if (Object.prototype.hasOwnProperty.call(project.scripts, scriptKey)) {
+				const script = project.scripts[scriptKey];
+				for (const ck in script.configs) {
+					if (
+						Object.prototype.hasOwnProperty.call(script.configs, ck) &&
+						$.namespaceKey(script.namespace, ck) === key
+					) {
+						const label = script.configs[ck].label;
+						return label ? `${script.name} - ${label}` : key;
+					}
+				}
+			}
+		}
+	}
+	return key;
+}
+
+/** 格式化配置值用于差异展示（布尔值翻译为 开/关，题库配置翻译为 数量+名称列表，截断超长内容） */
+function formatConfigValue(value: any): string {
+	if (value === undefined) {
+		return '（未设置）';
+	}
+	if (value === true) {
+		return '开';
+	}
+	if (value === false) {
+		return '关';
+	}
+	// 题库配置（AnswererWrapper[]）适配显示：题库数量 + 题库名称列表
+	if (Array.isArray(value)) {
+		if (value.length === 0) {
+			return '无题库';
+		}
+		if (value.every((item) => item && typeof item === 'object' && 'name' in item && 'url' in item)) {
+			const names = value.map((item) => item.name).join('、');
+			return `${value.length} 个题库（${names.length > 60 ? names.slice(0, 60) + '...' : names}）`;
+		}
+	}
+	const text = typeof value === 'string' ? value : JSON.stringify(value);
+	return text.length > 60 ? text.slice(0, 60) + '...' : text;
+}
 
 export type LogType = 'log' | 'info' | 'debug' | 'warn' | 'error';
 
@@ -68,42 +109,47 @@ const QUESTION_CACHE_TOTAL_MAX_BYTES = 1024 * 1024;
 const byteLengthOf = (text: string) => new TextEncoder().encode(text).length;
 
 /**
- * 题库缓存（内存态，页面关闭后自动清除）。
- * 此前持久化在 GM 存储（background.data.localQuestionCaches），大存储会放大每次
- * GM_setValue 的全量序列化耗时，故改为纯内存；历史遗留键在 data 脚本 onstart 中清理。
+ * 题库缓存的 tab 域存储键。
  *
- * 【多 iframe 共享】缓存本体仅存于顶层帧内存，iframe 内通过 cors 顶层函数读写
- * （不使用 tab 存储：setTab 会对大数组做全量序列化，写放大严重）。
+ * 存储介质选型（见 .codebuddy/plans/easy-us-tab-store-optimization.md）：
+ * - tab 域存储：刷新/同 tab 导航保留、跨 iframe 原生共享、扩展侧不可被页面枚举；
+ *   tab 关闭/浏览器重启失效（会话级持久化）
+ * - 不使用 GM 主存储：大对象会让每次 GM_setValue 全量序列化（写放大）
+ * - 不使用 easy-us change-handle（1.1.3 已 token 化，但缓存为纯按需读，直接 notify:false 跳过通知）
+ * - 非 GM 环境自动降级为内存 tab（MemoryStoreProvider）
+ *
+ * 【并发说明】写路径为 getTab → 合并 → setTab 的整 tab 读改写，多 frame 并发可能
+ * 丢失个别缓存条目；缓存是机会性数据，丢失仅意味着下次重新搜题，可接受。
  */
-const localQuestionCaches: QuestionCache[] = [];
+const QUESTION_CACHE_TAB_KEY = 'background.data.question-caches';
 
-/** 向缓存追加条目（含条数/总量限制，仅在顶层帧执行） */
-function addToLocalQuestionCaches(items: QuestionCache[]) {
+/** 合并新条目到缓存数组（去重 + 200 条截断 + 1MB 总量尾剔除，原地修改） */
+function mergeQuestionCaches(caches: QuestionCache[], items: QuestionCache[]) {
 	for (const item of items) {
 		// 去重
-		if (localQuestionCaches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
-			localQuestionCaches.unshift(item);
+		if (caches.find((c) => c.title === item.title && c.answer === item.answer) === undefined) {
+			caches.unshift(item);
 		}
 	}
 
 	// 限制数量
-	localQuestionCaches.splice(200);
+	caches.splice(200);
 
 	// 限制总字节数：从尾部（最旧）剔除直至达标
 	let totalBytes = 0;
-	for (let i = 0; i < localQuestionCaches.length; i++) {
-		totalBytes += byteLengthOf(localQuestionCaches[i].title) + byteLengthOf(localQuestionCaches[i].answer);
+	for (let i = 0; i < caches.length; i++) {
+		totalBytes += byteLengthOf(caches[i].title) + byteLengthOf(caches[i].answer);
 		if (totalBytes > QUESTION_CACHE_TOTAL_MAX_BYTES) {
-			localQuestionCaches.splice(i);
+			caches.splice(i);
 			break;
 		}
 	}
 }
 
-/** 在缓存中查找匹配答案（仅在顶层帧执行） */
-function findInLocalQuestionCaches(title: string): SearchInformation[] {
+/** 在缓存数组中查找匹配答案 */
+function findInQuestionCaches(caches: QuestionCache[], title: string): SearchInformation[] {
 	const results: SearchInformation[] = [];
-	for (const cache of localQuestionCaches) {
+	for (const cache of caches) {
 		if (cache.title.trim() === title.trim()) {
 			results.push({
 				name: cache.from,
@@ -114,28 +160,6 @@ function findInLocalQuestionCaches(title: string): SearchInformation[] {
 	}
 	return results;
 }
-
-/**
- * 题库缓存的跨 frame 读写代理。
- * 顶层帧调用时直接执行本地函数；iframe 调用时经 cors 事件路由到顶层帧执行。
- */
-const questionCacheTopStore = {
-	add: cors.defineTopFunction((items: QuestionCache[]) => {
-		addToLocalQuestionCaches(items);
-	}),
-	// 返回值经 GM 事件传输，defineTopFunction 类型约束仅允许原始类型，故序列化为 JSON 字符串
-	search: cors.defineTopFunction((title: string) => {
-		return JSON.stringify(findInLocalQuestionCaches(title));
-	}),
-	/** 读取全部缓存（管理弹窗用） */
-	list: cors.defineTopFunction(() => {
-		return JSON.stringify(localQuestionCaches);
-	}),
-	/** 清空缓存（管理弹窗用） */
-	clear: cors.defineTopFunction(() => {
-		localQuestionCaches.length = 0;
-	})
-};
 
 /**
  * 监听网页开发者工具打开事件（仅触发一次，多种方式组合检测）。
@@ -205,7 +229,7 @@ export const BackgroundProject = Project.create({
 					defaultValue: [] as { type: LogType; content: string; time: number; stack: string }[]
 				}
 			},
-			onrender({ panel }) {
+			methods() {
 				const getTypeDesc = (type: LogType) =>
 					type === 'info'
 						? '信息'
@@ -247,61 +271,37 @@ export const BackgroundProject = Project.create({
 					return item;
 				};
 
-				const showLogs = () => {
-					const div = h('div', { className: 'card console' });
+				return {
+					renderLogs: () => {
+						if (this.panel) {
+							const div = h('div', { className: 'card console' });
 
-					const logs = this.cfg.logs.map((log) => createLog(log));
-					if (logs.length) {
-						div.replaceChildren(...logs);
-					} else {
-						div.replaceChildren(
-							h('div', '暂无任何日志', (div) => {
-								div.style.textAlign = 'center';
-							})
-						);
-					}
-
-					return { div, logs };
-				};
-
-				/**
-				 * 判断滚动条是否滚到底部
-				 */
-				const isScrollBottom = (div: HTMLElement) => {
-					const { scrollHeight, scrollTop, clientHeight } = div;
-					return scrollTop + clientHeight + 50 > scrollHeight;
-				};
-
-				const { div, logs } = showLogs();
-				/** 已渲染的最后一条日志对象（按引用比对；日志写入为 2s 防抖批量，一次变更可能包含多条新日志，需全部追加） */
-				let lastRenderedLog = this.cfg.logs[this.cfg.logs.length - 1];
-
-				this.offConfigChange(state.console.listenerIds.logs);
-				state.console.listenerIds.logs = this.onConfigChange('logs', (logs) => {
-					const startIndex = lastRenderedLog ? logs.lastIndexOf(lastRenderedLog) + 1 : 0;
-					lastRenderedLog = logs[logs.length - 1];
-					let lastLogEl: HTMLElement | undefined;
-					for (const log of logs.slice(startIndex)) {
-						lastLogEl = createLog(log);
-						div.append(lastLogEl);
-					}
-					if (lastLogEl) {
-						setTimeout(() => {
-							if (isScrollBottom(div)) {
-								lastLogEl?.scrollIntoView();
+							const logs = this.cfg.logs.map((log) => createLog(log));
+							if (logs.length) {
+								div.replaceChildren(...logs);
+							} else {
+								div.replaceChildren(
+									h('div', '暂无任何日志', (div) => {
+										div.style.textAlign = 'center';
+									})
+								);
 							}
-						}, 10);
+
+							this.panel?.body.replaceChildren(div);
+							setTimeout(() => {
+								logs[logs.length - 1]?.scrollIntoView();
+							}, 10);
+						}
 					}
-				});
-
-				const show = () => {
-					panel.body.replaceChildren(div);
-					setTimeout(() => {
-						logs[logs.length - 1]?.scrollIntoView();
-					}, 10);
 				};
-
-				show();
+			},
+			oncomplete() {
+				this.onConfigChange('logs', (logs) => {
+					this.methods.renderLogs();
+				});
+			},
+			onrender() {
+				this.methods.renderLogs();
 			}
 		}),
 		/** 渲染脚本，窗口渲染主要脚本（从 通用 迁移至 其他） */
@@ -317,20 +317,21 @@ export const BackgroundProject = Project.create({
 				}
 			},
 			onstart() {
-				// 清理历史遗留的持久化题库缓存键（题库缓存已改为内存态，不再使用 GM 存储）
+				// 清理历史遗留的主存储题库缓存键（题库缓存已迁移至 tab 域存储，不使用 GM 主存储）
 				$store.delete('background.data.localQuestionCaches');
 			},
 			methods() {
 				return {
 					/**
-					 * 添加题库缓存
+					 * 添加题库缓存（tab 域存储，跨 frame 原生共享）
 					 *
-					 * 三层限制控制内存占用：
-					 * 1. 单条 64KB：超过直接跳过（在发送前过滤，避免大条目跨 frame 传输）
+					 * 三层限制控制体量：
+					 * 1. 单条 64KB：超过直接跳过
 					 * 2. 条数 200：超出截断
 					 * 3. 总量 1MB：从尾部（最旧）剔除直至达标
 					 *
-					 * 多 iframe 场景：iframe 内经 cors 路由到顶层帧写入（缓存本体仅存于顶层帧内存）。
+					 * notify:false：缓存为纯按需读数据，跳过跨 frame 变更通知（easy-us 1.1.3+），
+					 * 避免每条缓存写入都向主存储产生通知开销。
 					 */
 					addQuestionCache: async (...questionCacheItems: QuestionCache[]) => {
 						// 单条大小限制
@@ -341,12 +342,9 @@ export const BackgroundProject = Project.create({
 							return;
 						}
 
-						// cors.defineTopFunction 在非 GM 环境为空操作（noop），降级为本地写入
-						if ($gm.isInGMContext() === false) {
-							addToLocalQuestionCaches(items);
-						} else {
-							await questionCacheTopStore.add(items);
-						}
+						const caches: QuestionCache[] = (await $store.getTab(QUESTION_CACHE_TAB_KEY)) || [];
+						mergeQuestionCaches(caches, items);
+						await $store.setTab(QUESTION_CACHE_TAB_KEY, caches, { notify: false });
 					},
 					addQuestionCacheFromWorkResult(swr: SimplifyWorkResult[]) {
 						BackgroundProject.scripts.data.methods.addQuestionCache(
@@ -382,12 +380,9 @@ export const BackgroundProject = Project.create({
 							return await whenSearchEmpty();
 						}
 
-						// cors.defineTopFunction 在非 GM 环境为空操作（noop），降级为本地查询；
-						// iframe 内调用经 cors 路由到顶层帧查询（缓存本体仅存于顶层帧内存）
-						const results: SearchInformation[] =
-							$gm.isInGMContext() === false
-								? findInLocalQuestionCaches(title)
-								: JSON.parse(((await questionCacheTopStore.search(title)) as string) || '[]');
+						// tab 域存储：任意 frame 直接读取，无需 cors 路由
+						const caches: QuestionCache[] = (await $store.getTab(QUESTION_CACHE_TAB_KEY)) || [];
+						const results = findInQuestionCaches(caches, title);
 
 						if (results.length === 0) {
 							return await whenSearchEmpty();
@@ -398,11 +393,8 @@ export const BackgroundProject = Project.create({
 					 * 展示题库缓存管理弹窗
 					 */
 					showQuestionCaches: async () => {
-						// 经 cors 读取顶层帧缓存：iframe 中打开管理弹窗时本地数组为空，必须路由到顶层
-						const questionCaches: QuestionCache[] =
-							$gm.isInGMContext() === false
-								? localQuestionCaches.map((c) => ({ ...c }))
-								: JSON.parse(((await questionCacheTopStore.list()) as string) || '[]');
+						// tab 域存储：任意 frame 直接读取
+						const questionCaches: QuestionCache[] = (await $store.getTab(QUESTION_CACHE_TAB_KEY)) || [];
 
 						const list = questionCaches.map((c) =>
 							h(
@@ -451,12 +443,8 @@ export const BackgroundProject = Project.create({
 											countEl,
 											$ui.button('清空题库缓存', {}, (btn) => {
 												btn.onclick = async () => {
-													// 经 cors 清空顶层帧缓存
-													if ($gm.isInGMContext() === false) {
-														localQuestionCaches.length = 0;
-													} else {
-														await questionCacheTopStore.clear();
-													}
+													// tab 域存储：任意 frame 直接清空（同样跳过变更通知）
+													await $store.setTab(QUESTION_CACHE_TAB_KEY, [], { notify: false });
 													countEl.innerText = '当前缓存数量：0';
 													list.forEach((el) => el.remove());
 												};
@@ -498,7 +486,19 @@ export const BackgroundProject = Project.create({
 					]).outerHTML
 				},
 				sync_status: {
-					defaultValue: 'unconnect' as 'not_playwright_environment' | 'unconnect' | 'not_open_sync' | 'synced'
+					defaultValue: 'unconnect' as
+						| 'not_playwright_environment'
+						| 'unconnect'
+						| 'not_open_sync'
+						| 'synced'
+						| 'branch'
+				},
+				/**
+				 * 上次同步（或已处理）的软件配置版本指纹（md5）。
+				 * 用于检测软件中的配置是否发生变更：一致则不再强制合并，保留用户在脚本侧的分支修改。
+				 */
+				syncMd5: {
+					defaultValue: ''
 				},
 				closeSync: {
 					defaultValue: false,
@@ -508,12 +508,18 @@ export const BackgroundProject = Project.create({
 					}
 				}
 			},
-
+			methods() {
+				return {
+					isInAppEnvironment: () => {
+						return (
+							this.cfg.sync_status === 'synced' ||
+							this.cfg.sync_status === 'not_open_sync' ||
+							this.cfg.sync_status === 'branch'
+						);
+					}
+				};
+			},
 			onrender({ panel }) {
-				// 同步面板不会被锁定
-				panel.lockWrapper.remove();
-				panel.configsContainer.classList.remove('lock');
-
 				const update = () => {
 					if (this.cfg.closeSync) {
 						const tip = h('div', { className: 'notes card' }, ['已关闭同步。']);
@@ -529,6 +535,11 @@ export const BackgroundProject = Project.create({
 						panel.body.replaceChildren(h('hr'), tip);
 					} else if (this.cfg.sync_status === 'not_open_sync') {
 						const tip = h('div', { className: 'notes card' }, ['桌面端软件未开启配置同步功能']);
+						panel.body.replaceChildren(h('hr'), tip);
+					} else if (this.cfg.sync_status === 'branch') {
+						const tip = h('div', { className: 'notes card' }, [
+							'软件配置与上次同步一致，已保留本地分支修改（您在脚本侧的修改不会被覆盖）。'
+						]);
 						panel.body.replaceChildren(h('hr'), tip);
 					} else if (this.cfg.sync_status === 'empty_config') {
 						const tip = h('div', { className: 'notes card' }, ['已成功连接到软件，但配置为空。']);
@@ -648,6 +659,126 @@ export const BackgroundProject = Project.create({
 							}
 						}
 
+						/**
+						 * 计算当前软件配置的版本指纹（在排除规则之后计算，非同步字段的变更不会触发冲突）。
+						 * 与上次同步的指纹一致说明软件中的配置未变更，此时不再强制合并，保留用户的分支修改。
+						 */
+						const currentMd5 = md5(JSON.stringify(res));
+						const lastMd5 = (this.cfg.syncMd5 as string) || '';
+
+						if (lastMd5) {
+							if (currentMd5 === lastMd5) {
+								// 软件配置未变更：不再强制合并，允许用户在脚本侧的分支修改
+								this.cfg.sync_status = 'branch';
+								return;
+							}
+
+							// 计算同步配置与当前配置的差异项，便于用户直观判断是否需要同步
+							const configDiffs = [] as { label: string; local: string; remote: string }[];
+							for (const key in res) {
+								if (Object.prototype.hasOwnProperty.call(res, key)) {
+									// notes 内容/伸缩随脚本版本变化，不作为差异项展示
+									if (key.endsWith('.notes') || key.includes('_notes_expanded_')) {
+										continue;
+									}
+									const localValue = $store.get(key);
+									if (JSON.stringify(localValue) !== JSON.stringify(res[key])) {
+										configDiffs.push({
+											label: resolveConfigLabel(key),
+											local: formatConfigValue(localValue),
+											remote: formatConfigValue(res[key])
+										});
+									}
+								}
+							}
+
+							// 软件配置已变更：弹窗询问是否执行同步（默认保留分支修改，10s 倒计时自动关闭）
+							const shouldSync = await new Promise<boolean>((resolve) => {
+								let settled = false;
+								let countdown = 10;
+								const finish = (sync: boolean) => {
+									if (settled) {
+										return;
+									}
+									settled = true;
+									clearInterval(timer);
+									modal?.remove();
+									resolve(sync);
+								};
+								const keepButton = h('button', { className: 'base-style-button-secondary' }, (btn) => {
+									btn.onclick = () => finish(false);
+								});
+								keepButton.innerText = `保留我的修改 (${countdown}s)`;
+								const syncButton = h(
+									'button',
+									{ className: 'base-style-button', style: { marginLeft: '4px' }, innerText: '执行同步' },
+									(btn) => {
+										btn.onclick = () => finish(true);
+									}
+								);
+								const timer = setInterval(() => {
+									countdown--;
+									if (countdown <= 0) {
+										finish(false);
+									} else {
+										keepButton.innerText = `保留我的修改 (${countdown}s)`;
+									}
+								}, 1000);
+								const modal = $modal.confirm({
+									title: '配置同步冲突',
+									maskCloseable: false,
+									width: 600,
+									content: h('div', [
+										$ui.notes([
+											'检测到桌面软件中的 OCS 配置已更新，与当前脚本中的设置不一致：',
+											[h('b', '「执行同步」'), '：使用软件中的配置覆盖当前脚本设置；'],
+											[h('b', '「保留我的修改」'), '：保留当前脚本中的分支修改（默认，倒计时结束后自动选择）。']
+										]),
+										configDiffs.length
+											? h('div', { style: { marginTop: '8px' } }, [
+													h(
+														'div',
+														{ style: { fontWeight: 'bold', marginBottom: '4px' } },
+														`不一致的配置项（${configDiffs.length}）：`
+													),
+													h(
+														'div',
+														{ style: { maxHeight: '200px', overflow: 'auto', fontSize: '12px' } },
+														configDiffs.map((d) =>
+															h(
+																'div',
+																{
+																	style: {
+																		padding: '4px 8px',
+																		marginBottom: '4px',
+																		background: '#f5f5f5',
+																		borderRadius: '4px'
+																	}
+																},
+																[
+																	h('span', { style: { fontWeight: 'bold' } }, d.label + '：'),
+																	h('code', { style: { color: '#67c23a' } }, d.local),
+																	h('span', { style: { margin: '0 4px', color: '#909399' } }, '→'),
+																	h('code', { style: { color: '#e6a23c' } }, d.remote)
+																]
+															)
+														)
+													)
+											  ])
+											: h('div')
+									]),
+									footer: h('div', [keepButton, syncButton])
+								});
+							});
+
+							if (!shouldSync) {
+								// 记录已处理的版本指纹，避免每次页面加载重复弹窗；保留分支修改
+								this.cfg.syncMd5 = currentMd5;
+								this.cfg.sync_status = 'branch';
+								return;
+							}
+						}
+
 						// 同步所有的配置
 						for (const key in res) {
 							if (Object.prototype.hasOwnProperty.call(res, key)) {
@@ -655,52 +786,11 @@ export const BackgroundProject = Project.create({
 							}
 						}
 
-						// 锁定面板
-						for (const project of definedProjects()) {
-							// 排除后台脚本的锁定
-							if (project.name === BackgroundProject.name) {
-								continue;
-							}
-							for (const key in project.scripts) {
-								if (Object.prototype.hasOwnProperty.call(project.scripts, key)) {
-									const script = project.scripts[key];
-									const originalRender = script.onrender;
-									// 重新定义渲染函数。在渲染后添加锁定面板的代码
-									script.onrender = ({ panel, header }) => {
-										originalRender?.({ panel, header });
-										if (panel.configsContainer.children.length) {
-											panel.configsContainer.classList.add('lock');
-											panel.lockWrapper.style.width = (panel.configsContainer.clientWidth ?? panel.clientWidth) + 'px';
-											panel.lockWrapper.style.height =
-												(panel.configsContainer.clientHeight ?? panel.clientHeight) + 'px';
-											panel.configsContainer.prepend(panel.lockWrapper);
+						// 配置分支功能（syncMd5 指纹比对）已替代面板锁定：
+						// 软件配置未变更时跳过合并即可保留脚本侧修改，无需再锁定面板防止误改。
 
-											panel.lockWrapper.title =
-												'🚫已同步OCS桌面版软件配置，如需修改请在桌面版软件的左侧栏设置-通用设置-OCS配置，中进行修改。\n\n或者前往脚本悬浮窗:后台-软件配置同步 关闭配置同步功能。\n\n可双击强制修改，并关闭同步配置';
-											panel.lockWrapper = $ui.tooltip(panel.lockWrapper);
-											panel.lockWrapper.addEventListener('dblclick', () => {
-												panel.configsContainer.classList.remove('lock');
-												panel.lockWrapper.remove();
-												script.onrender = originalRender;
-												$message.warn({
-													content: '已解除配置同步，可正常修改配置。想开启同步请前往：后台-软件配置同步',
-													duration: 10
-												});
-												this.cfg.closeSync = true;
-												if (script.panel && script.header) {
-													script.onrender?.({ panel: script.panel, header: script.header });
-												}
-											});
-										}
-									};
-									// 重新执行渲染
-									if (script.panel && script.header) {
-										script.onrender({ panel: script.panel, header: script.header });
-									}
-								}
-							}
-						}
-
+						// 记录本次同步的配置版本指纹，用于下次检测软件配置是否变更
+						this.cfg.syncMd5 = currentMd5;
 						this.cfg.sync_status = 'synced';
 					} catch (e) {
 						console.error(e);
@@ -717,7 +807,10 @@ export const BackgroundProject = Project.create({
 			namespace: 'background.update',
 			configs: {
 				notes: {
-					defaultValue: '脚本自动更新模块，如果有新的版本会自动通知。'
+					defaultValue: $ui.notes([
+						'检测到版本发布后会显示更新提示',
+						['稳定版本不一定是最新版', '通常管理员会在测试完善后才更新稳定版本']
+					]).outerHTML
 				},
 				autoNotify: {
 					defaultValue: true,
@@ -770,28 +863,42 @@ export const BackgroundProject = Project.create({
 				const version = await this.methods.getLastVersion();
 				const infos = $gm.getInfos();
 
+				console.log('versions', {
+					notToday: this.cfg.notToday,
+					ignoreVersions: this.cfg.ignoreVersions,
+					version: version
+				});
+
 				if (!infos) {
 					return;
 				}
 
 				const changeLog = h('button', { className: 'base-style-button-secondary' }, '📄查看更新日志');
 				changeLog.onclick = () => this.methods.showChangelog();
-				const updatePage = this.startConfig?.updatePage || '';
-				panel.body.replaceChildren(
-					h('div', { className: 'card' }, [
-						h('hr'),
-						h('div', ['最新版本：' + version['last-version'] + ' - ', changeLog]),
-						h('hr'),
-						h('div', '当前版本：' + infos.script.version),
-						h('div', '脚本管理器：' + infos.scriptHandler),
-						h('div', ['脚本更新链接：', h('a', { target: '_blank', href: updatePage }, [updatePage || '无'])])
-					])
-				);
-				console.log('versions', {
-					notToday: this.cfg.notToday,
-					ignoreVersions: this.cfg.ignoreVersions,
-					version: version
-				});
+
+				// 软件环境下重启自动更新
+				if (BackgroundProject.scripts.appConfigSync.methods.isInAppEnvironment()) {
+					panel.body.replaceChildren(
+						h('div', { className: 'card' }, [
+							h('hr'),
+							h('div', 'ℹ️ 当前处于桌面版环境，重启浏览器可自动更新至最新版'),
+							h('hr'),
+							changeLog
+						])
+					);
+				} else {
+					const updatePage = this.startConfig?.updatePage || '';
+					panel.body.replaceChildren(
+						h('div', { className: 'card' }, [
+							h('hr'),
+							h('div', '当前版本：' + infos.script.version),
+							h('div', ['更新链接：', h('a', { target: '_blank', href: updatePage }, [updatePage || '无'])]),
+							h('div', '脚本管理器：' + infos.scriptHandler),
+							h('hr'),
+							changeLog
+						])
+					);
+				}
 			},
 			oncomplete() {
 				if (this.cfg.autoNotify && $.isInTopWindow()) {
@@ -1336,47 +1443,13 @@ export const BackgroundProject = Project.create({
 				// 注册快捷菜单
 				await $menu('🏠', { scriptPanelLink: CommonProject.scripts.guide });
 				await $menu('🔎', { scriptPanelLink: CommonProject.scripts.workResults });
-				await $menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
 				await $menu('📄', { scriptPanelLink: BackgroundProject.scripts.console });
+				await $menu('⚙️', { scriptPanelLink: CommonProject.scripts.settings });
 
-				const currentStudyScript = [
-					[CXProject.scripts.studyDispatcher, CXProject.scripts.study],
-					CXProject.scripts.work,
-					CXProject.scripts.autoRead,
-					ZHSProject.scripts['study-center'],
-					ZHSProject.scripts['work-center'],
-					ICourseProject.scripts['study-center'],
-					ICourseProject.scripts.work,
-					[ZJYProject.scripts.dispatcher, ZJYProject.scripts.study],
-					ZJYProject.scripts.work,
-					IcveMoocProject.scripts.study,
-					IcveMoocProject.scripts.work,
-					YKTProject.scripts.ai
-				]
-					.map((m) => {
-						const url = window.location.href;
-
-						const data = {
-							matches: Array.isArray(m) ? m[0].matches : m.matches,
-							target: Array.isArray(m) ? m[1] : m
-						};
-
-						if (
-							data.matches.some((regexp) => {
-								const r = Array.isArray(regexp) ? regexp[1] : regexp;
-								return typeof r === 'string' ? url.includes(r) : r.test(url);
-							})
-						) {
-							return data.target;
-						}
-
-						return undefined;
-					})
-					.find((m) => m !== undefined);
-
+				const currentStudyScript = CommonProject.scripts.settings.methods.getCurrentMainScript();
 				if (currentStudyScript) {
 					// 注册当前学习脚本的快捷菜单
-					await $menu('🖥️', { scriptPanelLink: currentStudyScript });
+					await $menu(currentStudyScript.name || '🖥️', { scriptPanelLink: currentStudyScript });
 					// 置顶面板
 					BackgroundProject.scripts.render.methods.pin(currentStudyScript);
 				}

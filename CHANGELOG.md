@@ -1,5 +1,117 @@
 # Changelog
 
+## [5.6.8](https://github.com/ocsjs/ocsjs/compare/5.6.7...5.6.8) (2026-11-26)
+
+
+### 🐛 问题修复
+
+* 同步 pnpm-lock.yaml（easy-us 1.1.5） ([8618d87](https://github.com/ocsjs/ocsjs/commit/8618d87749e12d2e5bca1a5b2a003d55d5460b0b))
+
+## [5.6.7](https://github.com/ocsjs/ocsjs/compare/5.6.6...5.6.7) (2026-11-26)
+
+
+### 🐛 问题修复
+
+* 移除 background.ts 中未使用的 YKTProject 导入 ([1826914](https://github.com/ocsjs/ocsjs/commit/182691468578e534d56277f3f3ce0661403f630e))
+
+
+### ⚡ 优化改进
+
+* 优化搜索结果界面、通知功能的描述文案 ([191ebdc](https://github.com/ocsjs/ocsjs/commit/191ebdcfd9428107a585a888b47b5ca36341131b))
+* 优化更新模块文案、以及桌面版软件中脚本自动更新提示 ([5a5add1](https://github.com/ocsjs/ocsjs/commit/5a5add12732936dc49b61c067f273cd1ebb8bc5c))
+* 增加全局设置底部主脚本设置按钮导航，辅助玩家寻找学习设置， 优化全局设置显示，仅超星等设置项在其他平台不再显示 ([f1f9e25](https://github.com/ocsjs/ocsjs/commit/f1f9e2581b507590a6ffc8e15aecf25eb13df799))
+
+## [5.6.6](https://github.com/ocsjs/ocsjs/compare/5.6.5...5.6.6) (2026-11-25)
+
+
+### ⚡ 优化改进
+
+* 更新题库配置教程样式 ([038ff9f](https://github.com/ocsjs/ocsjs/commit/038ff9f3e1b20ef12dbe812f17660c7cd86b564f))
+
+## [5.6.5](https://github.com/ocsjs/ocsjs/compare/5.6.4...5.6.5) (2026-11-25)
+
+
+### ⚡ 优化改进
+
+* 将高倍速警告阈值设置为1，优化闯关模式警告和自动设置功能 ([856dc7f](https://github.com/ocsjs/ocsjs/commit/856dc7f92fe8ef612bf2c9fad24df61fb17285d3))
+
+## [5.6.4](https://github.com/ocsjs/ocsjs/compare/5.6.3...5.6.4) (2026-11-25)
+
+
+### ⚡ 优化改进
+
+* 优化超星闯关模式提示、以及智能模式下闯关模式无法切换的BUG ([65b7491](https://github.com/ocsjs/ocsjs/commit/65b74911b1b5036334a3455cf83096c37827b887))
+
+## [5.6.3](https://github.com/ocsjs/ocsjs/compare/5.6.2...5.6.3) (2026-11-24)
+
+
+### 🐛 问题修复
+
+* 升级 easy-us 至 1.1.4，修复边缘吸附模式下 tooltip 气泡无法显示 ([b8cdaff](https://github.com/ocsjs/ocsjs/commit/b8cdaff879265104be01bc8dc4147debb62046f9))
+
+## [5.6.2](https://github.com/ocsjs/ocsjs/compare/5.6.1...5.6.2) (2026-11-24)
+
+
+### 🐛 问题修复
+
+* 修复上个版本智慧树复习模式失效问题 ([731c83b](https://github.com/ocsjs/ocsjs/commit/731c83bf1fec50ec483aeb52bc291fc63f92a231))
+* 修复边缘图标拖动不显示提示的问题 ([8afedcd](https://github.com/ocsjs/ocsjs/commit/8afedcd7689d63d87a659d27611f95104607e669))
+
+
+### ⚡ 优化改进
+
+* 增加智慧职教套壳域名支持windf.cn， 增加智慧职教新AI课程URL适配 ([d793073](https://github.com/ocsjs/ocsjs/commit/d793073aec6b268c7daa61f95f5fce25981dc0af))
+* 增加软件配置同步排除项：_notes_expanded_ ([9cfabef](https://github.com/ocsjs/ocsjs/commit/9cfabefaafd7ede0dd500889f0daac9a0bd80cac))
+
+## [5.6.1](https://github.com/ocsjs/ocsjs/compare/5.6.0...5.6.1) (2026-11-23)
+
+
+### 🐛 问题修复
+
+* 移除zhs.ts的lodash整体引入问题 ([679cf8f](https://github.com/ocsjs/ocsjs/commit/679cf8f3515ef5dbc59a4260e5dda5924a620a48))
+
+## [5.6.0](https://github.com/ocsjs/ocsjs/compare/5.5.0...5.6.0) (2026-11-23)
+
+
+### ✨ 新功能
+
+* pre-push 预检测增加锁文件一致性校验与拦截失败原生弹窗通知 ([80ea364](https://github.com/ocsjs/ocsjs/commit/80ea364df73a559c9ad4d49f5b1ae97c566ab71e))
+
+## [5.5.0](https://github.com/ocsjs/ocsjs/compare/5.4.2...5.5.0) (2026-11-23)
+
+
+### ✨ 新功能
+
+* 增加超星任务加载等待时长设置 ([446cd74](https://github.com/ocsjs/ocsjs/commit/446cd744360a8b8ccb09726c48b8ab1c6c7e006a))
+* 增加超星积分课自动连续学习功能、并且增加弹窗拦截解决引导功能 ([0c4eaf2](https://github.com/ocsjs/ocsjs/commit/0c4eaf208bf4db3eea09f902eb4da25f95c10cca))
+* 新增软件配置同步分支功能，用户可自行修改配置出现同步冲突才会显示合并提示，并移除配置锁定样式。 ([01b7c6a](https://github.com/ocsjs/ocsjs/commit/01b7c6a8439bcd7c537a9460c58acc8fe5fd9bda))
+
+
+### 🐛 问题修复
+
+* 修复共享课学习记录和检测规律学习按钮丢失问题 ([84342dc](https://github.com/ocsjs/ocsjs/commit/84342dcf3f1dee1c643c5ccbfc1a72f6562ef56a))
+* 修复搜索结果面板中大写扩展名（如 .PNG）图片链接无法解析显示的问题 ([0f8c300](https://github.com/ocsjs/ocsjs/commit/0f8c300698dc0f774f68e34f6f389853b44ade65))
+* 修复日志系统重复渲染的问题 ([d25c02d](https://github.com/ocsjs/ocsjs/commit/d25c02dec4e83e8744d9227d34ea1e2ae12eb3a4))
+* 修复点击全局设置按钮后无法最大化展示的问题 ([bb428f7](https://github.com/ocsjs/ocsjs/commit/bb428f7e9c502d6f8730a57d294a05869aadeae3))
+* 修复纯字符选项无法匹配的问题 ([4c4e44f](https://github.com/ocsjs/ocsjs/commit/4c4e44f05c4dbb2b0ced05850fd75ca811a2744b))
+* 修复自动界面缩放后点击特效偏离问题，优化智慧树自动缩放功能 ([99b758b](https://github.com/ocsjs/ocsjs/commit/99b758b91069fcc2173df1b71e05e7800305979f))
+* 修复题库返回答案以空格分隔时填空题与多选题无法作答的问题 ([0620747](https://github.com/ocsjs/ocsjs/commit/0620747af867f73fb1681dc66b7110a2868c2fb1))
+
+
+### ⚡ 优化改进
+
+* 优化提交率和模式切换文案提示 ([1462974](https://github.com/ocsjs/ocsjs/commit/14629742aba389ba52a531b9a286790fca1e4a96))
+* 优化日志显示系统 ([8661260](https://github.com/ocsjs/ocsjs/commit/8661260ceeda6f4b5a163fde2b0adeb7a1dd9a54))
+* 优化智慧树-智慧课程-弹窗关闭问题、 以及倍速和清晰度切换卡顿问题 ([f7c4e52](https://github.com/ocsjs/ocsjs/commit/f7c4e5262807afbafaaebe72925b366201baa378))
+* 优化智慧职教视频检测、优化日志API ([a2625cb](https://github.com/ocsjs/ocsjs/commit/a2625cb75951afc25c07b5e90101882155ca50c5))
+* 优化裸字母+换行的题目选项冗余字符串 ([df02360](https://github.com/ocsjs/ocsjs/commit/df023603eadb9c943d88afe5b672559deee6adc9))
+* 将题库缓存重新移动到TAB API域下，防止刷新界面后缓存消失 ([980a1d6](https://github.com/ocsjs/ocsjs/commit/980a1d66f0ed687657a1e561570b06655b45b3f0))
+* 缩小搜索结果高度显示 ([0210ed6](https://github.com/ocsjs/ocsjs/commit/0210ed6548ad25c75bdd8711f9af569b86fd6ce6))
+* 菜单注册时显示当前主要运行脚本名 ([7bc254e](https://github.com/ocsjs/ocsjs/commit/7bc254ee51267d6844827c30bbef12aceba28aee))
+* 适配职教云-资源库-知识点讲解视频类型任务点 ([2672d65](https://github.com/ocsjs/ocsjs/commit/2672d650090d6141fc93404f8e70706c360b81e2))
+* 适配雨课堂考试中的多选题和判断题 ([3473b2b](https://github.com/ocsjs/ocsjs/commit/3473b2bf561e6596f7ed5dd87d852762882f845c))
+* 重构优化智慧树共享课的逻辑代码 ([c1ddb9f](https://github.com/ocsjs/ocsjs/commit/c1ddb9fa6ed334dfb13da7a079de38d33597ac2a))
+
 ## [5.4.2](https://github.com/ocsjs/ocsjs/compare/5.4.1...5.4.2) (2026-11-13)
 
 

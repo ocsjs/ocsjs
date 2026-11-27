@@ -236,7 +236,7 @@ export const CommonProject = Project.create({
 					defaultValue: '' as 'dev' | 'common' | 'main' | ''
 				},
 				answererWrappers: {
-					separator: '自动答题设置',
+					separator: '自动答题',
 					defaultValue: [] as AnswererWrapper[]
 				},
 				/**
@@ -292,7 +292,11 @@ export const CommonProject = Project.create({
 								'textarea',
 								{
 									className: 'modal-input',
-									style: { minHeight: '250px', width: 'calc(100% - 20px)', maxWidth: '100%' },
+									style: {
+										minHeight: document.documentElement.clientHeight < 800 ? '120px' : '240px',
+										width: 'calc(100% - 20px)',
+										maxWidth: '100%'
+									},
 									placeholder: aw.length ? '重新输入题库配置' : '输入你的题库配置...，不会请看上方填写教程'
 								},
 								aw.length === 0 ? '' : JSON.stringify(aw, null, 4)
@@ -539,34 +543,49 @@ export const CommonProject = Project.create({
 								  })
 								: undefined;
 
-							/** 手动配置说明区（教程、剪贴板提示、多题库提示） */
-							const manualNotes = $ui.notes([
+							// 粘贴助手
+							const pasteHelper = h(
+								'div',
+								{
+									className: 'secondary'
+								},
 								[
-									h('div', { style: { fontSize: '16px', marginBottom: '8px' } }, [
-										h('b', '题库配置填写教程👉：'),
-										h('a', { href: 'https://docs.ocsjs.com/docs/work' }, 'https://docs.ocsjs.com/docs/work')
+									'⚠️ 如果无法粘贴，请点->：',
+									h('button', '读取剪贴板', (btn) => {
+										btn.classList.add('base-style-button');
+										btn.onclick = () => {
+											navigator.clipboard.readText().then((result) => {
+												textarea.value = result;
+											});
+										};
+									}),
+									'，并同意浏览器上方的剪贴板读取申请。'
+								]
+							);
+
+							// 教程入口：3D 卡片按钮样式（.aw-method-card* 见 custom.less），点击新窗口打开教程
+							const guideCard = h(
+								'div',
+								{
+									className: 'aw-method-card',
+									style: { margin: '4px' },
+									title: '打开题库配置填写教程',
+									onclick: () => window.open('https://docs.ocsjs.com/docs/work', '_blank')
+								},
+								[
+									h('span', { className: 'aw-method-card-icon' }, '📖'),
+									h('div', { className: 'aw-method-card-body' }, [
+										h('div', { className: 'aw-method-card-title' }, '👉 查看题库配置填写教程'),
+										h('div', { className: 'aw-method-card-desc' }, [
+											'链接：',
+											h('span', { className: 'aw-method-card-link' }, 'https://docs.ocsjs.com/docs/work')
+										])
 									])
-								],
-								[
-									h(
-										'div',
-										{
-											className: 'secondary'
-										},
-										[
-											'⚠️ 如果无法粘贴，请点->：',
-											h('button', '读取剪贴板', (btn) => {
-												btn.classList.add('base-style-button');
-												btn.onclick = () => {
-													navigator.clipboard.readText().then((result) => {
-														textarea.value = result;
-													});
-												};
-											}),
-											'，并同意浏览器上方的剪贴板读取申请。'
-										]
-									)
-								],
+								]
+							);
+
+							/**  配置说明区（教程卡片、剪贴板提示、多题库提示） */
+							const manualNotes = $ui.notes([
 								...(OCS_TYPE === 'common'
 									? [
 											[
@@ -603,6 +622,7 @@ export const CommonProject = Project.create({
 							/** 手动配置底部（填写/修改区 + 操作按钮），自定义题库获取方式下显示 */
 							const manualFooter = h('div', { style: { width: '100%' } }, [
 								h('div', { className: 'separator secondary' }, '题库配置填写/修改区'),
+								pasteHelper,
 								textarea,
 								h('div', { style: { marginTop: '12px', fontSize: '12px' } }, [
 									// 解析器选项独占一行
@@ -782,7 +802,7 @@ export const CommonProject = Project.create({
 								modalFooter = connectFooter;
 							} else {
 								// 自定义题库（或未配置 provider）：保持原有单页结构，已配置列表脱离 notes 独立展示
-								modalContent = h('div', [manualNotes, listContainer]);
+								modalContent = h('div', [guideCard, manualNotes, listContainer]);
 								modalFooter = manualFooter;
 							}
 
@@ -856,10 +876,12 @@ export const CommonProject = Project.create({
 					],
 					attrs: {
 						title:
-							'提交方式（提交率）：设置自动答题结束后如何保存/提交答案\n鼠标悬浮在选项上可以查看每个选项的具体解释。\n\n注意：提交率无法控制题库的正确率，题库搜索到的答案不一定正确。'
+							'提交方式（提交率）：设置自动答题结束后如何保存/提交答案\n鼠标悬浮在选项上可以查看每个选项的具体解释。\n\n注意：提交率无法控制题库的正确率，题库搜索到的答案不一定正确。\n目前仅超星、中国大学MOOC可使用此设置，其他需要手动提交。'
 					}
 				},
+				// showIf 在 electron 中渲染时不需要判断 url ，默认显示
 				'work-when-no-job': {
+					showIf: () => ($gm.isInGMContext() ? CXProject.domainMatches(location.href) : true),
 					defaultValue: false,
 					label: '强制答题（仅超星）',
 					attrs: {
@@ -869,11 +891,13 @@ export const CommonProject = Project.create({
 					}
 				},
 				'randomWork-choice': {
+					showIf: () => ($gm.isInGMContext() ? CXProject.domainMatches(location.href) : true),
 					defaultValue: false,
 					label: '随机选择（仅超星）',
 					attrs: { type: 'checkbox', title: '题库搜索不到答案时，随机选择任意一个选项，仅支持超星章节测试' }
 				},
 				'randomWork-complete': {
+					showIf: () => ($gm.isInGMContext() ? CXProject.domainMatches(location.href) : true),
 					defaultValue: false,
 					label: '随机填空（仅超星）',
 					attrs: { type: 'checkbox', title: '题库搜索不到答案时，随机填写以下任意一个文案，仅支持超星章节测试' }
@@ -882,7 +906,10 @@ export const CommonProject = Project.create({
 					defaultValue: ['不会', '不知道', '不清楚', '不懂', '不会写'].join('\n'),
 					label: '随机填空文案（仅超星）',
 					tag: 'textarea',
-					showIf: 'common.settings.randomWork-complete',
+					showIf: [
+						'common.settings.randomWork-complete',
+						(val) => val === true && ($gm.isInGMContext() ? CXProject.domainMatches(location.href) : true)
+					],
 					attrs: { title: '每行一个，随机填入', style: { minWidth: '200px', minHeight: '50px' } },
 					onload(el) {
 						el.addEventListener('change', () => {
@@ -1017,7 +1044,7 @@ export const CommonProject = Project.create({
 					}
 				},
 				notification: {
-					separator: '其他设置',
+					separator: '其他',
 					label: '系统通知',
 					attrs: {
 						title:
@@ -1035,7 +1062,7 @@ export const CommonProject = Project.create({
 					options: [
 						['only-notify', '只显示右下角通知'],
 						['notify-and-voice', '通知以及提示音（叮的一声）'],
-						['all', '通知，提示音，以及任务栏闪烁提示'],
+						['all', '通知、提示音、任务栏闪烁'],
 						['no-notify', '关闭系统通知']
 					]
 				},
@@ -1095,8 +1122,68 @@ export const CommonProject = Project.create({
 								silent: this.cfg.notification === 'only-notify'
 							});
 						}
+					},
+					// 获取当前运行的主脚本程序（自动学习、答题等主要程序）
+					getCurrentMainScript: () => {
+						return [
+							[CXProject.scripts.studyDispatcher, CXProject.scripts.study],
+							CXProject.scripts.work,
+							CXProject.scripts.autoRead,
+							CXProject.scripts.jfk,
+							ZHSProject.scripts['study-center'],
+							ZHSProject.scripts['work-center'],
+							ICourseProject.scripts['study-center'],
+							ICourseProject.scripts.work,
+							[ZJYProject.scripts.dispatcher, ZJYProject.scripts.study],
+							ZJYProject.scripts.work,
+							IcveMoocProject.scripts.study,
+							IcveMoocProject.scripts.work,
+							YKTProject.scripts.ai
+						]
+							.map((m) => {
+								const url = window.location.href;
+
+								const data = {
+									matches: Array.isArray(m) ? m[0].matches : m.matches,
+									target: Array.isArray(m) ? m[1] : m
+								};
+
+								if (
+									data.matches.some((regexp) => {
+										const r = Array.isArray(regexp) ? regexp[1] : regexp;
+										return typeof r === 'string' ? url.includes(r) : r.test(url);
+									})
+								) {
+									return data.target;
+								}
+
+								return undefined;
+							})
+							.find((m) => m !== undefined);
 					}
 				};
+			},
+			onrender({ panel }) {
+				const script = this.methods.getCurrentMainScript();
+				if (script?.configs) {
+					// 可直接渲染界面的对应设置，但可能过长暂不显示
+					// panel.body.replaceChildren(
+					// 	$ui.configsArea($ui.configs(script.namespace, $store, script.configs || {}, () => {}, script))
+					// );
+
+					panel.body.replaceChildren(
+						h('hr'),
+						h('div', { className: 'card', style: { display: 'flex', justifyContent: 'space-between' } }, [
+							h('div', '当前主脚本：' + script.fullName()),
+							$ui.button('打开主脚本设置', {
+								onclick() {
+									BackgroundProject.scripts.render.methods.normal();
+									BackgroundProject.scripts.render.methods.pin(script);
+								}
+							})
+						])
+					);
+				}
 			},
 			// 实时更新内部设置
 			oncomplete({ OCS_TYPE }) {
@@ -1166,8 +1253,11 @@ export const CommonProject = Project.create({
 			namespace: 'common.work-results',
 			configs: {
 				notes: {
-					defaultValue: $ui.notes(['点击题目序号，查看搜索结果', '如果没有搜到，可能是题库没有收录该题目答案'])
-						.outerHTML
+					defaultValue: $ui.notes([
+						'在自动答题运行时，可查看搜索结果',
+						'如果出现红色结果，可点击序号查看具体情况。',
+						'界面关闭后搜索结果会自动移除。'
+					]).outerHTML
 				},
 				currentResultIndex: {
 					defaultValue: 0
