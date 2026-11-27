@@ -28,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Resolve release version
         id: version
@@ -76,9 +76,10 @@ jobs:
           echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 22
+          package-manager-cache: false
 
       - name: Setup pnpm
         run: |
@@ -118,14 +119,22 @@ jobs:
 
       - name: Build project
         run: |
-          if node -e "const s = require('./package.json').scripts || {}; process.exit(s.build ? 0 : 1)"; then
-            pnpm run build
-          elif node -e "const s = require('./package.json').scripts || {}; process.exit(s['build:core'] ? 0 : 1)"; then
-            pnpm run build:core
-          else
-            echo "::error::package.json 中未找到 build 或 build:core 脚本，请替换为实际构建命令。"
-            exit 1
+          set -euo pipefail
+
+          # 1. 先编译 packages/utils，生成 scripts/build-core.js 依赖的 lib/index.js
+          if node -e "const s = require('./packages/utils/package.json').scripts || {}; process.exit(s.build ? 0 : 1)"; then
+            pnpm --dir packages/utils run build
+          elif node -e "const s = require('./package.json').scripts || {}; process.exit(s['build:utils'] ? 0 : 1)"; then
+            pnpm run build:utils
           fi
+
+          # 兜底：若未定义上述脚本或仍未产出 lib/index.js，直接使用 tsc 编译
+          if [ ! -f "packages/utils/lib/index.js" ]; then
+            pnpm exec tsc -p packages/utils/tsconfig.json
+          fi
+
+          # 2. 执行主构建
+          pnpm run build
 
       - name: Collect release assets
         env:
@@ -134,9 +143,17 @@ jobs:
           set -euo pipefail
           mkdir -p release-assets
 
-          # 优先收集根目录 dist/ 下的构建产物（排除 source map 和类型声明）
+          # 优先收集根目录 dist/ 下的构建产物（排除 source map 和类型声明，避免同名覆盖）
           if [ -d "dist" ]; then
-            find dist -maxdepth 2 -type f ! -name "*.map" ! -name "*.d.ts" -exec cp {} release-assets/ \;
+            find dist -maxdepth 3 -type f ! -name "*.map" ! -name "*.d.ts" | while IFS= read -r file; do
+              base="$(basename "${file}")"
+              if [ -e "release-assets/${base}" ]; then
+                parent="$(basename "$(dirname "${file}")")"
+                cp "${file}" "release-assets/${parent}-${base}"
+              else
+                cp "${file}" "release-assets/${base}"
+              fi
+            done
           fi
 
           # 若根目录 dist/ 无文件，则回退收集 packages/*/dist 下的脚本与样式产物
@@ -144,7 +161,7 @@ jobs:
             for subdist in packages/*/dist; do
               if [ -d "${subdist}" ]; then
                 pkg_name="$(basename "$(dirname "${subdist}")")"
-                find "${subdist}" -maxdepth 2 -type f \( -name "*.js" -o -name "*.css" -o -name "*.zip" \) | while IFS= read -r file; do
+                find "${subdist}" -maxdepth 3 -type f \( -name "*.js" -o -name "*.css" -o -name "*.zip" \) | while IFS= read -r file; do
                   base="$(basename "${file}")"
                   if [ -e "release-assets/${base}" ]; then
                     cp "${file}" "release-assets/${pkg_name}-${base}"
@@ -168,10 +185,11 @@ jobs:
           ls -lh release-assets/
 
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag_name }}
           name: Release ${{ steps.version.outputs.tag_name }}
           prerelease: ${{ inputs.prerelease }}
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: release-assets/*
