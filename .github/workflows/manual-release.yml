@@ -1,0 +1,149 @@
+name: Manual Build and Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本号（如 5.6.8 或 v5.6.8；留空则自动从上游获取最新版本号）'
+        required: false
+        default: ''
+        type: string
+      upstream_repo:
+        description: '上游仓库（留空则自动检测 Fork 来源，默认 ocsjs/ocsjs）'
+        required: false
+        default: ''
+        type: string
+      prerelease:
+        description: '是否标记为 Pre-release（预发布）'
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Resolve release version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_UPSTREAM: ${{ inputs.upstream_repo }}
+          CURRENT_REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+
+          VERSION="$(echo "${INPUT_VERSION}" | xargs)"
+          UPSTREAM="$(echo "${INPUT_UPSTREAM}" | xargs)"
+
+          if [ -z "${VERSION}" ]; then
+            if [ -z "${UPSTREAM}" ]; then
+              # 优先自动检测 Fork 上游，非 Fork 时回退为 ocsjs/ocsjs
+              UPSTREAM="$(gh api "repos/${CURRENT_REPO}" --jq '.parent.full_name // empty' 2>/dev/null || true)"
+              UPSTREAM="${UPSTREAM:-ocsjs/ocsjs}"
+            fi
+
+            echo "未输入版本号，正在从上游 ${UPSTREAM} 获取最新版本..."
+
+            # 优先获取上游 Latest Release 的 tag_name
+            VERSION="$(gh api "repos/${UPSTREAM}/releases/latest" --jq '.tag_name // empty' 2>/dev/null || true)"
+
+            # 若上游未发布 Release，则回退获取最新的 Git Tag
+            if [ -z "${VERSION}" ]; then
+              VERSION="$(gh api "repos/${UPSTREAM}/tags" --jq '.[0].name // empty' 2>/dev/null || true)"
+            fi
+
+            if [ -z "${VERSION}" ]; then
+              echo "::error::无法从上游仓库 ${UPSTREAM} 获取最新版本号，请手动输入或检查上游地址。"
+              exit 1
+            fi
+          fi
+
+          # RAW_VERSION 不带 v（写入 package.json 供脚本 @version 使用），TAG_NAME 带 v（用于 Release Tag）
+          RAW_VERSION="${VERSION#v}"
+          RAW_VERSION="${RAW_VERSION#V}"
+          TAG_NAME="v${RAW_VERSION}"
+          BUILD_TIME="$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S CST')"
+
+          echo "最终版本号 -> RAW_VERSION=${RAW_VERSION}, TAG_NAME=${TAG_NAME}"
+          echo "raw_version=${RAW_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "build_time=${BUILD_TIME}" >> "$GITHUB_OUTPUT"
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          package-manager-cache: false
+
+      - name: Setup build env
+        run: |
+          echo 'BUILD_PATH="../release"' > ./scripts/.env
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/core/.env
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/scripts/.env
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          # 锁定 pnpm 版本与原仓库 CI 一致，避免新版供应链策略导致安装失败
+          npm install pnpm@10.30.3 -g
+          pnpm install -w
+          cd packages/scripts && pnpm install && cd ../../
+
+      - name: Sync version to package.json
+        env:
+          RAW_VERSION: ${{ steps.version.outputs.raw_version }}
+        run: |
+          node -e '
+            const fs = require("fs");
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.version = process.env.RAW_VERSION;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+            console.log(`Updated package.json -> ${pkg.version}`);
+          '
+
+      - name: Build project
+        run: |
+          set -euo pipefail
+          # 编译 TypeScript（含 packages/utils），跳过 lint 避免自定义修改触发格式检查报错
+          npm run tsc:check
+          if [ ! -f "packages/utils/lib/index.js" ]; then
+            pnpm exec tsc -p packages/utils/tsconfig.json
+          fi
+          npm run build
+          npm run changelog:simplify
+          ls -lh ./release ./CHANGELOG_SIMPLIFIED.md
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ steps.version.outputs.tag_name }}
+          name: Release ${{ steps.version.outputs.tag_name }}
+          prerelease: ${{ inputs.prerelease }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          body: |
+            ## 资源下载列表
+
+            - [用户脚本](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/ocs.user.js)
+            - [用户脚本(全域名通用版)](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/ocs.common.user.js)
+            - [核心库](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/core.js)
+            - [完整脚本库](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/index.js)
+            - [简洁更新日志](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/CHANGELOG_SIMPLIFIED.md)
+            - [META](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/ocs.meta.js)
+
+            Created at ${{ steps.version.outputs.build_time }}.
+          files: |
+            ./release/ocs.user.js
+            ./release/ocs.meta.js
+            ./release/ocs.common.user.js
+            ./release/core.js
+            ./release/index.js
+            ./CHANGELOG_SIMPLIFIED.md

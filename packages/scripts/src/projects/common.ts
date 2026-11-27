@@ -960,7 +960,7 @@ export const CommonProject = Project.create({
 						type: 'number',
 						min: 10,
 						step: 1,
-						max: 3 * 60,
+						max: 60 * 60,
 						title: '搜题超时时间，单位为秒，超过这个时间直接放弃，进行下一题搜索。'
 					},
 					defaultValue: 120
