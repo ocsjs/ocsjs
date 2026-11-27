@@ -45,7 +45,7 @@ jobs:
 
           if [ -z "${VERSION}" ]; then
             if [ -z "${UPSTREAM}" ]; then
-              # 优先自动检测当前仓库的 Fork 上游，非 Fork 时回退为 ocsjs/ocsjs
+              # 优先自动检测 Fork 上游，非 Fork 时回退为 ocsjs/ocsjs
               UPSTREAM="$(gh api "repos/${CURRENT_REPO}" --jq '.parent.full_name // empty' 2>/dev/null || true)"
               UPSTREAM="${UPSTREAM:-ocsjs/ocsjs}"
             fi
@@ -66,14 +66,16 @@ jobs:
             fi
           fi
 
-          # 统一版本号格式：RAW_VERSION 不带 v（写入 package.json），TAG_NAME 带 v（用于 Release Tag）
+          # RAW_VERSION 不带 v（写入 package.json 供脚本 @version 使用），TAG_NAME 带 v（用于 Release Tag）
           RAW_VERSION="${VERSION#v}"
           RAW_VERSION="${RAW_VERSION#V}"
           TAG_NAME="v${RAW_VERSION}"
+          BUILD_TIME="$(TZ=Asia/Shanghai date '+%Y-%m-%d %H:%M:%S CST')"
 
           echo "最终版本号 -> RAW_VERSION=${RAW_VERSION}, TAG_NAME=${TAG_NAME}"
           echo "raw_version=${RAW_VERSION}" >> "$GITHUB_OUTPUT"
           echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "build_time=${BUILD_TIME}" >> "$GITHUB_OUTPUT"
 
       - name: Setup Node.js
         uses: actions/setup-node@v7
@@ -81,13 +83,19 @@ jobs:
           node-version: 22
           package-manager-cache: false
 
-      - name: Setup pnpm
+      - name: Setup build env
         run: |
-          corepack enable
-          if ! node -e "const p = require('./package.json'); process.exit(p.packageManager ? 0 : 1)"; then
-            corepack prepare pnpm@9 --activate
-          fi
-          pnpm -v
+          echo 'BUILD_PATH="../release"' > ./scripts/.env
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/core/.env
+          echo 'VITE_BUILD_PATH="../../release"' > ./packages/scripts/.env
+
+      - name: Install dependencies
+        run: |
+          set -euo pipefail
+          # 锁定 pnpm 版本与原仓库 CI 一致，避免新版供应链策略导致安装失败
+          npm install pnpm@10.30.3 -g
+          pnpm install -w
+          cd packages/scripts && pnpm install && cd ../../
 
       - name: Sync version to package.json
         env:
@@ -95,94 +103,23 @@ jobs:
         run: |
           node -e '
             const fs = require("fs");
-            const path = require("path");
-            const version = process.env.RAW_VERSION;
-
-            const targets = ["package.json"];
-            if (fs.existsSync("packages")) {
-              for (const dir of fs.readdirSync("packages")) {
-                const pkgPath = path.join("packages", dir, "package.json");
-                if (fs.existsSync(pkgPath)) targets.push(pkgPath);
-              }
-            }
-
-            for (const file of targets) {
-              const pkg = JSON.parse(fs.readFileSync(file, "utf8"));
-              pkg.version = version;
-              fs.writeFileSync(file, JSON.stringify(pkg, null, 2) + "\n");
-              console.log(`Updated ${file} -> ${version}`);
-            }
+            const pkg = JSON.parse(fs.readFileSync("package.json", "utf8"));
+            pkg.version = process.env.RAW_VERSION;
+            fs.writeFileSync("package.json", JSON.stringify(pkg, null, 2) + "\n");
+            console.log(`Updated package.json -> ${pkg.version}`);
           '
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile || pnpm install
 
       - name: Build project
         run: |
           set -euo pipefail
-
-          # 1. 先编译 packages/utils，生成 scripts/build-core.js 依赖的 lib/index.js
-          if node -e "const s = require('./packages/utils/package.json').scripts || {}; process.exit(s.build ? 0 : 1)"; then
-            pnpm --dir packages/utils run build
-          elif node -e "const s = require('./package.json').scripts || {}; process.exit(s['build:utils'] ? 0 : 1)"; then
-            pnpm run build:utils
-          fi
-
-          # 兜底：若未定义上述脚本或仍未产出 lib/index.js，直接使用 tsc 编译
+          # 编译 TypeScript（含 packages/utils），跳过 lint 避免自定义修改触发格式检查报错
+          npm run tsc:check
           if [ ! -f "packages/utils/lib/index.js" ]; then
             pnpm exec tsc -p packages/utils/tsconfig.json
           fi
-
-          # 2. 执行主构建
-          pnpm run build
-
-      - name: Collect release assets
-        env:
-          TAG_NAME: ${{ steps.version.outputs.tag_name }}
-        run: |
-          set -euo pipefail
-          mkdir -p release-assets
-
-          # 优先收集根目录 dist/ 下的构建产物（排除 source map 和类型声明，避免同名覆盖）
-          if [ -d "dist" ]; then
-            find dist -maxdepth 3 -type f ! -name "*.map" ! -name "*.d.ts" | while IFS= read -r file; do
-              base="$(basename "${file}")"
-              if [ -e "release-assets/${base}" ]; then
-                parent="$(basename "$(dirname "${file}")")"
-                cp "${file}" "release-assets/${parent}-${base}"
-              else
-                cp "${file}" "release-assets/${base}"
-              fi
-            done
-          fi
-
-          # 若根目录 dist/ 无文件，则回退收集 packages/*/dist 下的脚本与样式产物
-          if [ -z "$(ls -A release-assets)" ]; then
-            for subdist in packages/*/dist; do
-              if [ -d "${subdist}" ]; then
-                pkg_name="$(basename "$(dirname "${subdist}")")"
-                find "${subdist}" -maxdepth 3 -type f \( -name "*.js" -o -name "*.css" -o -name "*.zip" \) | while IFS= read -r file; do
-                  base="$(basename "${file}")"
-                  if [ -e "release-assets/${base}" ]; then
-                    cp "${file}" "release-assets/${pkg_name}-${base}"
-                  else
-                    cp "${file}" "release-assets/${base}"
-                  fi
-                done
-              fi
-            done
-          fi
-
-          if [ -z "$(ls -A release-assets)" ]; then
-            echo "::error::未在 dist/ 或 packages/*/dist/ 找到构建产物，请检查实际输出路径。"
-            exit 1
-          fi
-
-          # 额外打包一份压缩包方便一次性下载
-          tar -czf "ocsjs-${TAG_NAME}.tar.gz" -C release-assets .
-          mv "ocsjs-${TAG_NAME}.tar.gz" release-assets/
-
-          ls -lh release-assets/
+          npm run build
+          npm run changelog:simplify
+          ls -lh ./release ./CHANGELOG_SIMPLIFIED.md
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
@@ -192,4 +129,21 @@ jobs:
           prerelease: ${{ inputs.prerelease }}
           generate_release_notes: true
           fail_on_unmatched_files: true
-          files: release-assets/*
+          body: |
+            ## 资源下载列表
+
+            - [用户脚本](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/ocs.user.js)
+            - [用户脚本(全域名通用版)](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/ocs.common.user.js)
+            - [核心库](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/core.js)
+            - [完整脚本库](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/index.js)
+            - [简洁更新日志](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/CHANGELOG_SIMPLIFIED.md)
+            - [META](https://github.com/${{ github.repository }}/releases/download/${{ steps.version.outputs.tag_name }}/ocs.meta.js)
+
+            Created at ${{ steps.version.outputs.build_time }}.
+          files: |
+            ./release/ocs.user.js
+            ./release/ocs.meta.js
+            ./release/ocs.common.user.js
+            ./release/core.js
+            ./release/index.js
+            ./CHANGELOG_SIMPLIFIED.md
