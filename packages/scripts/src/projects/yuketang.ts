@@ -680,9 +680,19 @@ async function submitYktCurrentQuestion(doc: Document, order: string): Promise<b
 	// 实测发现偶发"点击提交但未生效"（按钮恢复可用但无完成标记），需要重试
 	for (let attempt = 0; attempt < 2; attempt++) {
 		// 提交按钮可能会出现额外文本，例如（剩余 x 次 提交）
+		// 兼容旧版 Element-UI button.el-button--primary 与新版自研 div.rain-btn.student-action-button
 		const submitBtn = Array.from(
-			doc.querySelectorAll<HTMLButtonElement>('.problem-box button.el-button--primary')
-		).find((b) => b.textContent?.trim().includes('提交') && !b.disabled && !b.classList.contains('is-disabled'));
+			doc.querySelectorAll<HTMLElement>(
+				'.problem-box button.el-button--primary, .problem-box .student-problem-footer__action .rain-btn.student-action-button'
+			)
+		).find((b) => {
+			const disabled =
+				Boolean((b as HTMLButtonElement).disabled) ||
+				b.classList.contains('is-disabled') ||
+				b.classList.contains('disabled') ||
+				b.getAttribute('aria-disabled') === 'true';
+			return b.textContent?.trim().includes('提交') && !disabled;
+		});
 		if (!submitBtn) {
 			// 按钮不可用：已提交成功（按钮变为"已提交"/禁用）或无答案可提交
 			return attempt > 0 ? hasStatusMark() : false;
